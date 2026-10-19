@@ -46,6 +46,7 @@ describe("comparison provenance", () => {
 		try {
 			for (const directory of [
 				"src",
+				"apps",
 				"packages",
 				"skills/archboard",
 				loaded.pins.baselineSkill.location,
@@ -106,6 +107,7 @@ describe("comparison provenance", () => {
 			fs.writeFileSync(path.join(root, "batch.json"), JSON.stringify(manifest));
 			for (const file of [
 				"src/input.txt",
+				"apps/input.txt",
 				"packages/input.txt",
 				"skills/archboard/input.txt",
 				`${loaded.pins.baselineSkill.location}/input.txt`,
@@ -117,6 +119,9 @@ describe("comparison provenance", () => {
 			}
 			expect(JSON.parse(fs.readFileSync(path.join(root, "batch.json"), "utf8"))).toEqual(manifest);
 			expect(() => assertProvenance(undefined, provenance)).toThrow();
+			// Once the last app has left `src/`, the folder is gone and a batch can still start.
+			fs.rmSync(path.join(root, "src"), { recursive: true });
+			expect(() => batchProvenance(root, loaded)).not.toThrow();
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}

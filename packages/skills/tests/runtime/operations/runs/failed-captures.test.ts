@@ -117,6 +117,7 @@ describe("failed runs keep grader capture evidence", () => {
 				.trim();
 			const fake = path.join(root, "fake");
 			mkdirSync(path.join(fake, "src"), { recursive: true });
+			mkdirSync(path.join(fake, "apps/cli/src"), { recursive: true });
 			writeFileSync(
 				path.join(fake, "src/server.ts"),
 				`
@@ -125,7 +126,7 @@ describe("failed runs keep grader capture evidence", () => {
 			`,
 			);
 			writeFileSync(
-				path.join(fake, "src/bin.ts"),
+				path.join(fake, "apps/cli/src/bin.ts"),
 				`
 				const args = process.argv.slice(2);
 				if (args[0] === "install-skill") {

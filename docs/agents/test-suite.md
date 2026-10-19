@@ -6,8 +6,8 @@ changing tests or CI, or when a browser check fails.
 `bun run test` type-checks and runs `build:frontend`, then runs four normal
 native lanes in this order:
 
-- `test:modules`: isolated module-owned and package-owned product tests discovered under `src/`
-  and `packages/`;
+- `test:modules`: isolated module-owned and package-owned product tests discovered under `src/`,
+  `packages/` and `apps/`;
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
@@ -253,7 +253,7 @@ Every transitional package check now has one final owner lane:
 | Former key                                                                     | Final lane         | Native owner selector                                                                                        |
 | ------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------ |
 | `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                            |
-| `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                   |
+| `test:contracts`                                                               | modules and system | `apps/cli/tests/`, `tests/system/cli/`                                                                       |
 | `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                      |
 | `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                            |
 | `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `packages/*/tests/`, `src/ui/canvas/tests/`, `tests/system/server-state/`, `tests/system/process-contracts/` |
@@ -485,7 +485,7 @@ their exhaustive state and failure matrices.
 
 ## Wire and lock checks
 
-- The command-contract owners under `src/cli/command-contract/tests/` and
+- The command-contract owners under `apps/cli/tests/cli/` and
   `tests/system/cli/` test the Archboard-owned command-contract interface.
   Its parser fake returns a prepared invocation and contains no parsing logic.
   The tests reject malformed public results and private file artifacts before
@@ -495,7 +495,11 @@ their exhaustive state and failure matrices.
   `docs/design/cli-command-audit.json`; the Markdown audit and JSON/Markdown
   proofs are derived views. The gate renders and validates them in memory, then
   invokes `bun run generate:cli-contract -- --output-dir <temporary-directory>`
-  twice from absent output directories and compares exact bytes. It removes
+  twice from absent output directories and compares exact bytes. The script
+  is `apps/cli/src/cli/operations/contract-artifacts/generate.ts`, which the
+  root script runs by path, and
+  `apps/cli/tests/cli/operations/contract-artifacts/render.test.ts` holds
+  the rendered routes to the live registry. The system case removes
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
   to ignored `docs/design/generated/`. The

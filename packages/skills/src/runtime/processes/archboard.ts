@@ -53,7 +53,7 @@ async function archboard(
 	stdin?: string,
 ): Promise<CliAnswer> {
 	const result = await runProcess({
-		argv: [process.execPath, `${context.checkout}/src/bin.ts`, ...args],
+		argv: [process.execPath, `${context.checkout}/apps/cli/src/bin.ts`, ...args],
 		cwd: context.cwd,
 		env: context.env,
 		stdin,

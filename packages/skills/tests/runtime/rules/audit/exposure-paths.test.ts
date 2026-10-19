@@ -1,5 +1,6 @@
 // Which paths count as the harness's source: the old module directory a batch recorded before
-// the move names, with or without a trailing slash, and not the package's shipping code.
+// the move names, with or without a trailing slash, and not the package's shipping code. And which
+// count as the product's: the old `src/` modules and the apps and packages that replaced them.
 
 import { describe, expect, test } from "bun:test";
 import { classifyCommands } from "#runtime/protocol/events.ts";
@@ -9,11 +10,11 @@ const BATCH = `${CHECKOUT}/.skill-evals/2026-09-14T13-50-10-617Z`;
 const WORLD = `${BATCH}/runs/candidate/S11/3/world`;
 
 /**
- * The exposure of one recorded command.
+ * One recorded command, classified.
  * @param command The command as Codex recorded it.
- * @returns The kind of exposure it classified as, or null.
+ * @returns The class and the kind of exposure it classified as.
  */
-function exposureOf(command: string): string | null {
+function classified(command: string): ReturnType<typeof classifyCommands>[number] {
 	const [one] = classifyCommands([{ command, exitCode: 0, status: "completed", output: "" }], {
 		skillRoot: `${WORLD}/home/.agents/skills/archboard`,
 		checkoutRoot: `${WORLD}/flask`,
@@ -29,7 +30,16 @@ function exposureOf(command: string): string | null {
 		},
 	});
 	if (one === undefined) throw new Error("nothing classified");
-	return one.exposure;
+	return one;
+}
+
+/**
+ * The exposure of one recorded command.
+ * @param command The command as Codex recorded it.
+ * @returns The kind of exposure it classified as, or null.
+ */
+function exposureOf(command: string): string | null {
+	return classified(command).exposure;
 }
 
 describe("harness source exposure by path", () => {
@@ -45,6 +55,16 @@ describe("harness source exposure by path", () => {
 				exposureOf(`bash -lc 'cat /checkout/packages/skills/src/runtime/${file}'`),
 				file,
 			).toBeNull();
+		}
+	});
+});
+
+describe("product source by path", () => {
+	test("a read of the old src modules or of an app is a read of the product", () => {
+		for (const file of ["src/cli/semantic/edit.ts", "apps/cli/src/cli/operations/pane/pane.ts"]) {
+			expect(classified(`bash -lc 'sed -n 1,80p ../archboard/${file}'`).class, file).toBe(
+				"product-source",
+			);
 		}
 	});
 });

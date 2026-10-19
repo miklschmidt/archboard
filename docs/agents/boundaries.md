@@ -48,8 +48,8 @@ to PNG scale and dimensions. Both the browser exporter and manifest validator us
 PNG validation, and ordered file-set assembly. Browser messaging and vault reads remain adapters;
 neither module owns a second geometry or bounds calculation.
 
-Root `src/` files are thin process entrypoints only. The existing entrypoints are `src/bin.ts`,
-and `src/server.ts`. Do not add implementation to these files.
+Root `src/` files are thin process entrypoints only. The one existing entrypoint is `src/server.ts`;
+the CLI's entry is `apps/cli/src/bin.ts`. Do not add implementation to these files.
 
 Browser code belongs under `src/ui/<module>`, not under a separate legacy frontend tree. Build host
 files can stay outside `src/`, but UI implementation follows the same module rules as server code.
@@ -757,6 +757,38 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
   policy.
 
 `tests/system/repository-policy/app-boundaries.test.ts` holds these rules.
+
+### `apps/cli`
+
+`apps/cli` is the command line (TASK-500.24.02). `bin/archboard` stays a regular root file that
+runs `apps/cli/src/bin.ts`; a symlink would break the checkout hand-off, which needs the launcher's
+real path to equal its root path. `bin.ts` loads everything with a dynamic import, in this order:
+the checkout hand-off, then the bootstrap that takes `--url` out of the arguments, then the command
+table. A help request is answered from the table before any runtime configuration loads. Never
+import the server there: the CLI reaches it by spawning `src/server.ts`. Nothing imports the app.
+The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
+path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
+
+- `src/cli/` is the `cli` area. `protocol/` holds the command contract (`contract/`: the
+  `defineCommand` shape, the answer schemas, the refusal and shared-option tables) and the shape of
+  a command-table entry (`routing/`). `rules/` holds the pure parts: the Commander projection and
+  argv parser, the introspection that feeds the generated proof, the registry, dispatch, global
+  flags and help, the staged tokens, and for the `semantic` commands the answers they build
+  (`semantic/compare`, `semantic/inspect`, `semantic/draw`). `clients/server/` makes sure the server
+  a command needs is running. `store/artifacts/` writes a command's file artifacts. `operations/`
+  holds the commands themselves, one folder per command family (`claim`, `pane`, `repo`, `server`
+  with `status`, `vault`, `install-skill`, and `semantic/{board,input,inspect,compare,history,draw}`)
+  and the machinery that runs one invocation: `invocation/` (the one command table in `run.ts`, the
+  session and the vault an invocation addresses), `execution/` (running and presenting one
+  contract), `bootstrap/` and `contract-artifacts/` (the generator behind
+  `bun run generate:cli-contract`).
+- `src/runtime/` is the `runtime` area, for the native clipboard: `clients/clipboard/` copies one
+  image through a detached owner process that `copy-image.ts` forks by file URL, and
+  `protocol/clipboard/` is the message pair between them.
+- `command-owner` paths in the command table and the `generatedFrom` field of the proof are
+  repository paths of these files. Moving a command file means editing `run.ts`.
+- The tests are in `tests/cli/`, in the folders of the code they cover. `support/` holds the public
+  runner fixture and the stand-in vault.
 
 ## Vendor-owned data
 

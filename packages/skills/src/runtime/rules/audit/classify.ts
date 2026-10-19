@@ -155,9 +155,12 @@ const OPERATION_RE =
 const INVESTIGATION_RE =
 	/\b(?:rg|grep|cat|sed|head|tail|less|find|ls|tree|python3?|awk|wc|bat|fd|git\s+(?:log|show|grep|ls-files|blame|diff))\b/u;
 const SOURCE_RE = /\b(?:src|tests|docs)\/|\.(?:py|rst|toml|cfg|md|txt)\b/u;
-/** The archboard product by its module layout, wherever the checkout sits. */
+/**
+ * The archboard product by its module layout, wherever the checkout sits. The `src/` folders are
+ * the layout of batches recorded before the apps and packages existed.
+ */
 const PRODUCT_SOURCE_RE =
-	/\bsrc\/(?:runtime|cli|server|shared|frontend)\/|\bpackages\/[a-z0-9-]+\/src\//u;
+	/\bsrc\/(?:runtime|cli|server|shared|frontend)\/|\b(?:apps|packages)\/[a-z0-9-]+\/src\//u;
 const SETUP_RE =
 	/^(?:cd|export|env|echo|pwd|which|mkdir|true|printf|set|type|command\s+-v|source|\.)\b/u;
 

@@ -272,7 +272,7 @@ has these steps:
    Run `git grep -n -i` on each spelling of the old name, and read every hit. Look in the
    root documents (`README.md`, `INSTALL.md`, `TESTING.md`, `AGENTS.md`). Look in the
    `CONTEXT.md` entries and their `_Avoid_` lines, and in both skills. Look in the help
-   text, the refusal descriptions and the exit-code help under `src/cli`. Look
+   text, the refusal descriptions and the exit-code help under `apps/cli`. Look
    in code comments and in test names.
    Done: every hit is still true or is history. Backlog tasks, ADR bodies
    and `docs/design/skill-evals/baseline` stay as written.
@@ -400,7 +400,7 @@ For other skills, use the exact path in the skill catalog.
 `skills experimental_install` installs the third-party skills listed in `skills-lock.json`.
 Keep those installed skills untracked outside `skills/`. Other repositories use the copies that
 `archboard install-skill` put in `~/.agents/skills/archboard` and `~/.agents/skills/archboard-pr`.
-`BUNDLED_SKILLS` in `src/cli/commands/lib/skill-destination.ts` names the skills it ships.
+`BUNDLED_SKILLS` in `apps/cli/src/cli/operations/install-skill/skill-destination.ts` names the skills it ships.
 To refresh those copies, run that command again. Keep the shipped skills free of
 machine-specific paths, because they run outside this repo.
 

@@ -555,7 +555,7 @@ no Chromium process and needs no elevation for this restriction.
 
 `bin/archboard` uses `realpath`, which older macOS versions do not have. If you see
 `realpath: command not found`, run `brew install coreutils`, or run
-`bun ~/Projects/archboard/src/bin.ts` directly.
+`bun ~/Projects/archboard/apps/cli/src/bin.ts` directly.
 
 Board names do not depend on case, on both Linux and macOS. If a vault has two
 boards whose names differ only in case, `archboard check` reports them as

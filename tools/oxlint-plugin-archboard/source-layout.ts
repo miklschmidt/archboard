@@ -5,7 +5,7 @@ import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import type { RuleContext } from "./rule-api.ts";
 
-const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/server.ts"]);
+const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/server.ts"]);
 
 /** The browser entry of the web app. It sits above `ui/` and counts as browser code. */
 const BROWSER_ENTRYPOINTS = new Set(["apps/web/src/main.tsx"]);
