@@ -1,11 +1,11 @@
 ---
 id: TASK-500.14.01
 title: Board browser-safe code is a few public interface files
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 09:18'
-updated_date: '2026-10-19 09:21'
+updated_date: '2026-10-19 09:44'
 labels: []
 dependencies: []
 parent_task_id: TASK-500.14
@@ -20,9 +20,9 @@ board exposes 23 browser-safe subpaths, one per file that outside code imports. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/board exports the browser-safe interfaces above (about 11 subpaths instead of 23), each a file that either defines or curates only the names outside code imports, and every other name is private
-- [ ] #2 No import cycle inside the package, every export loads alone in a fresh process, the browser trace reaches no node: import
-- [ ] #3 bun run check passes
+- [x] #1 packages/board exports the browser-safe interfaces above (about 11 subpaths instead of 23), each a file that either defines or curates only the names outside code imports, and every other name is private
+- [x] #2 No import cycle inside the package, every export loads alone in a fresh process, the browser trace reaches no node: import
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,3 +33,9 @@ board exposes 23 browser-safe subpaths, one per file that outside code imports. 
 3. package.json exports for shared: only api files, old shared exports removed. Rewrite outside importers by (old subpath, exported name) with a script (/tmp/pm/board/regroup.ts), preserving aliases and the type or value form. Keep the names that only outside tests import (VariantContentSchema, SemanticVariantSchema, SharedSymbol, WalkthroughBeatSchema) public; tests get no private access. Also fix any filesystem-path or dynamic import of a shared private file (grep the repo: tests/system fixtures included).
 4. Runtime exports stay as they are (.02). Check every export loads alone in a fresh process, no value cycle among package files, browser trace reaches no node: import, bun run build:frontend. The max-lines lint limit is 600. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/board exposes its shared half through 13 curated api files in src/shared/api (165 names, only re-exports, no moved declarations): document 23, content 21, flow 10, views 7, policy 15, comparison 12, container-interface 8, commands 20, render-reply 28, pane-context 10, board-listing 5, reconciliation 5, ids 1. Shared exports went from 23 to 13 (total 43 to 33). 166 importer files (576 import statements) were rewritten by name with a script. Codex verified 630 bindings keep their definition, alias and type/value form, every export loads alone and in six import orders, no value cycle, browser trace 805 modules with 0 node: imports, every public name has an outside caller and one owner. A new repository test (package-api.test.ts) holds the rules: exports of an area point only into its api folder, no private production file imports an api file (by # specifier or by the package name; Codex found the second gap and it is closed), no api file uses export *. bun run check passed on 670c8506d.
+<!-- SECTION:FINAL_SUMMARY:END -->
