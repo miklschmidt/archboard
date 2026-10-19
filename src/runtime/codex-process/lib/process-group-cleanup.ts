@@ -4,7 +4,6 @@ import {
 	CODEX_TERM_GRACE_MS,
 	PROCESS_GROUP_OBSERVATION_POLL_MS,
 } from "@archboard/timing";
-import type { CodexProcessError } from "@/runtime/codex-process/lib/process-contract";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -20,7 +19,7 @@ interface ProcessGroupCleanupClock {
 }
 
 interface ProcessGroupCleanupDiagnostics {
-	readonly failure: (message: string) => CodexProcessError;
+	readonly failure: (message: string) => Error;
 	readonly safeCauseMessage: (cause: unknown) => string;
 }
 
@@ -241,9 +240,9 @@ function createProcessGroupCleanup(
 	 * Build the terminal failure for a group that is no longer provably owned.
 	 * @param status - The verdict that stopped cleanup.
 	 * @param action - What cleanup was attempting.
-	 * @returns The terminal process error.
+	 * @returns The terminal error the diagnostics build.
 	 */
-	const groupFailure = (status: CodexProcessGroupInspection, action: string): CodexProcessError => {
+	const groupFailure = (status: CodexProcessGroupInspection, action: string): Error => {
 		const detail =
 			status === "reused" ? "its leader identity was reused" : "its ownership could not be proved";
 		return diagnostics.failure(
