@@ -306,12 +306,10 @@
 		},
 		{
 			"files": [
-				"packages/ui-kit/src/ui/components/alert-dialog.tsx",
 				"packages/ui-kit/src/ui/components/alert.tsx",
 				"packages/ui-kit/src/ui/components/badge.tsx",
 				"packages/ui-kit/src/ui/components/button.tsx",
 				"packages/ui-kit/src/ui/components/checkbox.tsx",
-				"packages/ui-kit/src/ui/components/combobox.tsx",
 				"packages/ui-kit/src/ui/components/dialog.tsx",
 				"packages/ui-kit/src/ui/components/dropdown-menu.tsx",
 				"packages/ui-kit/src/ui/components/field.tsx",
