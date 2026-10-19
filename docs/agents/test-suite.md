@@ -40,7 +40,7 @@ their cheapest product owner. These commands contain everything outside it:
 
 | Command                                                                  | Concrete regressions and cheapest interface                                                                                                                                                                                        |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run test:opt-in:capacity`                                           | Inspection input/comparison ceilings, large-index and sweep work limits, transport capacity, and the frozen app-server capacity authority.                                                                                         |
+| `bun run test:opt-in:capacity`                                           | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
 | `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
 | `bun run test:opt-in:topology`                                           | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
 | `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                                                                                                                   |
@@ -460,17 +460,17 @@ their exhaustive state and failure matrices.
   outside the checkout and invokes syntax-only Oxlint subprocesses with the repository's custom
   plugin. It proves what a package exports is the only way in, in every import spelling:
   extensionless paths, Vite resource queries, static `require()` (which fails the built-in
-  TypeScript rule too), generated-code paths, symlinks and mocks. It proves production code never
-  imports a tests folder or a `./testing` export, that a test reads only its own owner's support,
-  that the area directions hold, that the retired `@/` alias and files in the old `src/` and
-  `frontend/` roots are refused, and that misplaced, untyped and oversized tests fail.
+  TypeScript rule too), generated-code paths, symlinks and mocks. Production code cannot import
+  a tests folder or a `./testing` export. A test reads only its own owner's support, and area
+  directions hold. The retired `@/` alias and files in the old `src/` and `frontend/` roots are
+  refused. Misplaced, untyped and oversized tests fail.
 - `app-boundaries.test.ts` proves the same for apps: nothing imports an app, an app reaches a
   package only through its exports, entries stay thin and source sits in role folders.
   `ui-lint-policy.test.ts` proves the UI rules and the split of the lint configs.
-  `workspace-layout.test.ts` proves the end state: no file in the old roots, no root `imports`,
-  no `@/` in a TypeScript config or `components.json`, and the workspaces cover `packages/*` and
-  `apps/*`.
-- Each fixture project is removed even when an assertion fails.
+  `workspace-layout.test.ts` proves the end state. The old roots and root `imports` are absent.
+  TypeScript configurations and `components.json` contain no `@/`. The workspaces cover
+  `packages/*` and `apps/*`.
+- Cleanup always removes each fixture project, including after an assertion failure.
 
 ## Wire and lock checks
 

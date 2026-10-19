@@ -53,7 +53,7 @@ file moves.
 - `tests/system/browser/support/frontend-build.ts` scans `packages` and `apps` to decide whether the
   bundle is stale. Many system tests hold a server launch string that names the entry.
 - A test that imports app internals lives in the owning app. An app adds no export for it.
-- The CLI records command-owner paths (`commands/run.ts`) and `generatedFrom` file paths in its
+- The CLI records command-owner paths (`apps/cli/src/cli/operations/invocation/run.ts`) and `generatedFrom` file paths in its
   contract artifacts.
 - `apps/web`: the stylesheet `src/ui/theme/app.css` holds the renderer theme, font and `@source`
   paths, which are relative to it. `main.tsx` finds the libavoid WASM with a file URL. `index.html`

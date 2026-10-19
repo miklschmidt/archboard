@@ -26,7 +26,7 @@ resolver reads the `exports` of a package.
 Inside a package, every area has role folders. There is no catch-all `lib/` folder. Before the move
 `server/archboard/lib` held 109 files, `runtime/semantic-board-store/lib` held 44, and
 `shared/semantic-board/lib` held 29. The role names come from the file names in those folders. A
-type that more than one area uses lives at the package root, next to the area folders. A package
+type that more than one area uses lives at the root of `src/`, next to the area folders. A package
 with few such types has one `types.ts`. A package with several kinds has a `types/` folder with one
 file for each kind. A type derived from a schema stays beside its schema. A private type stays
 beside its implementation.
@@ -96,8 +96,8 @@ objects, so `services/` holds those and no more. The theme loader reads files, s
 Each package has a `tests/` folder at its root, next to `src/`. Each app has one too. It holds the
 tests of the behavior inside that package or app. Its subfolders follow the area folders, for
 example `tests/runtime/store/`. An internal test can import any private file of its own package.
-This reversed the rule of the module layout, which barred a test from importing its own
-implementation and needed a public `testing.ts` only to expose one internal parser. Direct tests of
+The module layout barred a test from importing its own implementation. It needed a public
+`testing.ts` only to expose one internal parser. The package layout removes that restriction. Direct tests of
 such behavior are cheaper. Persistence guarantees still get tests through the public exports.
 
 The speed gain is a hypothesis. Measure it on one package first. The check is the run time of the
@@ -188,7 +188,7 @@ because the code above them needs them below it. If no second caller appears, me
   `voice-output-level`, `codex-realtime` and `codex-workbench-media`, 94 files with their tests) into
   `packages/workbench/src/ui/`, in the role folders `components/`, `hooks/`, `state/`, `clients/` and `rules/`.
   TASK-500.23.07 moved the seven above them (`workbench`, `agent-setup`, `workbench-approvals`, `workbench-queue`,
-  `voice-orb`, `voice-subtitles` and `voice-session`, 132 files with their tests, and nine barrels gone). The 16 api
+  `voice-orb`, `voice-subtitles` and `voice-session`, 132 files with their tests, and nine barrels gone). The 3 api
   files of `ui/` are safe for the browser, and `apps/web` imports them.
 
 ## Decisions the move made
@@ -201,11 +201,11 @@ because the code above them needs them below it. If no second caller appears, me
   and the resolver in `code-binding` parses with `CodeBindingSchema`. If the schemas lived in
   `board`, the two packages depend on each other.
 - There is no `exports` entry for each file. The interface is a few files per package. For example,
-  `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to it.
+  `board` exposes `./document`, `./policy` and `./store-read`. The board lock implementation stays private.
   `atomic-write` stays in `workspace` with a public export, because the repository registry and the
-  code opener use it too. `workbench` exposes eight: `./browser-contract` for the browser,
-  `./runtime` and the three of the server (`./server`, `./panes`, `./host`) for Bun, and the three
-  of the UI (`./controllers`, `./agent`, `./voice`) for the browser. It keeps the browser-safe files
+  code opener use it too. `workbench` exposes eight subpaths. The browser reads `./browser-contract`
+  and the UI files (`./controllers`, `./agent`, `./voice`). Bun reads `./runtime` and the server
+  files (`./server`, `./panes`, `./host`). It keeps the browser-safe files
   apart from the Bun-only files, and each file lists only the names that code outside the package
   imports. `renderer` exposes `./browser`, `./bun` and six more. The browser file starts its own
   layout worker, so no `./worker` export exists.
@@ -236,13 +236,12 @@ product behavior.
 ## Risk: the runtime
 
 The Vite+ test guide says that Vitest requires Node (`^22.18.0 || ^24.11.0 || >=26.0.0`), and the
-guide does not mention Bun. The Bun 1.4 release notes say that Vitest runs under Bun, with the
-`threads` and `forks` pools and with `--coverage` (https://bun.com/blog/bun-v1.4#vitest). The
+guide does not mention Bun. The Bun 1.4 release notes say that Vitest runs under Bun
+(https://bun.com/blog/bun-v1.4#vitest). It supports the `threads` and `forks` pools and `--coverage`. The
 installed Bun is 1.4.3. The product runs on Bun. Production code calls `Bun.YAML`
 (`packages/board/src/runtime/store/configuration.ts`), and 27 production files use other Bun
-APIs. The test harness starts servers with `process.execPath`
-(`tests/system/support/owned-server.ts`), which names the wrong executable if Vitest runs in
-Node.
+APIs. The server test support uses `process.execPath` (`tests/system/support/owned-server.ts`).
+If Vitest runs in Node, that path names Node instead of Bun.
 
 Run a short trial before the test move. Start Vitest under Bun, with a few board-write and
 server-cleanup tests. Make sure that the Bun APIs, `process.execPath` and process cleanup behave as
