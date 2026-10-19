@@ -1,10 +1,10 @@
 ---
 id: TASK-500.23.01
 title: Workbench shared contracts are browser-safe api files of the workbench package
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 14:13'
-updated_date: '2026-10-19 14:36'
+updated_date: '2026-10-19 14:41'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -20,9 +20,9 @@ First move of the workbench package (layer 7, the largest, about 60,000 lines). 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/workbench holds the four shared modules in shared/ role folders and a browser-safe, node-free api file (or a few) exposes them; every importer uses @archboard/workbench
-- [ ] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #1 packages/workbench holds the four shared modules in shared/ role folders and a browser-safe, node-free api file (or a few) exposes them; every importer uses @archboard/workbench
+- [x] #2 Its tests move into packages/workbench/tests, outside code uses only the curated api files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -30,3 +30,9 @@ First move of the workbench package (layer 7, the largest, about 60,000 lines). 
 <!-- SECTION:PLAN:BEGIN -->
 Create packages/workbench; move the four shared modules into shared/{protocol,rules,schemas} role folders; expose five browser-safe api files (realtime-contract, browser-model, browser-approvals, browser-gateway, shown-conversation); delete the index barrels; rewrite importers by (file, name); tests move to packages/workbench/tests/shared; update boundaries, package-map, package-api ADOPTERS, assets.json.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/workbench exists with the four shared modules in shared/ role folders and five browser-safe, node-free api files (100 names). Codex reviewed e407e2603 with no findings (639 bindings compared). bun run check exited 0.
+<!-- SECTION:FINAL_SUMMARY:END -->
