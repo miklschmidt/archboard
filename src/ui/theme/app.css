@@ -9,10 +9,11 @@
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
    class names. Every class lives under `src/ui`, one level up from here, or in
-   the `ui` area of a package, which sits outside `src`. A glob over the packages
-   matched nothing, so name each package that draws. */
+   the `ui` area of a package, which sits outside `src`. One glob finds the ui
+   area of every package; the name of the folder alone matches nothing, so the
+   pattern goes on to every file below it. */
 @source "../";
-@source "../../../packages/ui-kit/src/ui";
+@source "../../../packages/*/src/ui/**/*";
 
 /* The theme is an explicit attribute the person chooses; the shell stores it
    on the root element, and the server draws a board in the same palette. */
