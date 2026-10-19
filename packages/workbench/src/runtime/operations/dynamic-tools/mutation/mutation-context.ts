@@ -29,6 +29,7 @@ import type {
 } from "#runtime/rules/dynamic-tools/effects/effects.ts";
 import {
 	assertBeforeEffect,
+	callerWorkspace,
 	freezeDeep,
 	operationWire,
 	refusalMessage,
@@ -210,25 +211,6 @@ function forkParams(
 		threadSource: built.threadSource,
 		excludeTurns: built.excludeTurns,
 	} satisfies SessionParams<"thread/fork">;
-}
-
-/**
- * The workspace a calling thread works in, as the epoch ledger recorded it when the thread
- * started. A thread the caller creates or forks works there too: a workhorse works in its own
- * checkout (ADR 0050), and so does every thread it starts.
- * @param caller The caller's authority.
- * @returns The workspace.
- * @throws {CodexDynamicToolsError} When the ledger names no workspace for the caller.
- */
-function callerWorkspace(caller: DynamicCallerAuthority): string {
-	const workspace = caller.provenance?.record.provenance.workspaceRoot ?? "";
-	if (workspace.length === 0) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The epoch ledger names no workspace for the calling thread, so it can start no thread.",
-		);
-	}
-	return workspace;
 }
 
 /**
@@ -528,7 +510,6 @@ async function executeInitialTurn(input: InitialTurnInput): Promise<InitialTurnR
 }
 
 export {
-	callerWorkspace,
 	type InitialTurnResult,
 	targetThreadSource,
 	executeInitialTurn,

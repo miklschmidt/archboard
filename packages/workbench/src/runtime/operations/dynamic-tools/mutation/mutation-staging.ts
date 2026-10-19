@@ -11,7 +11,6 @@ import {
 	type DynamicRefusalReason,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { DynamicOperationSettlement } from "#runtime/rules/dynamic-tools/effects/effects.ts";
-import { callerWorkspace } from "#runtime/operations/dynamic-tools/mutation/mutation-context.ts";
 
 /** The refusal codes an authority port may raise that the boundary passes through as its own. */
 const PASSTHROUGH_CODES = [
@@ -125,6 +124,25 @@ function operationWire(options: CodexDynamicToolsOptions, operationId: Operation
 			error,
 		);
 	}
+}
+
+/**
+ * The workspace a calling thread works in, as the epoch ledger recorded it when the thread
+ * started. A thread the caller creates or forks works there too: a workhorse works in its own
+ * checkout (ADR 0050), and so does every thread it starts.
+ * @param caller The caller's authority.
+ * @returns The workspace.
+ * @throws {CodexDynamicToolsError} When the ledger names no workspace for the caller.
+ */
+function callerWorkspace(caller: DynamicCallerAuthority): string {
+	const workspace = caller.provenance?.record.provenance.workspaceRoot ?? "";
+	if (workspace.length === 0) {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"The epoch ledger names no workspace for the calling thread, so it can start no thread.",
+		);
+	}
+	return workspace;
 }
 
 /**
@@ -318,6 +336,7 @@ export {
 	type SettlementConfirmation,
 	type MutationExecution,
 	assertBeforeEffect,
+	callerWorkspace,
 	dynamicReason,
 	epochError,
 	freezeDeep,

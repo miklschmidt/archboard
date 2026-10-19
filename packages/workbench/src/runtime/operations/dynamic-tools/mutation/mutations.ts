@@ -17,6 +17,7 @@ import type {
 } from "#runtime/rules/dynamic-tools/effects/effects.ts";
 import {
 	MUTATION_KINDS,
+	callerWorkspace,
 	dynamicReason,
 	operationWire,
 	refusalMessage,
@@ -25,7 +26,6 @@ import {
 	type MutationExecution,
 } from "#runtime/operations/dynamic-tools/mutation/mutation-staging.ts";
 import {
-	callerWorkspace,
 	executeInitialTurn,
 	targetThreadSource,
 	forkParams,

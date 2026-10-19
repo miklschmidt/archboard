@@ -14,7 +14,7 @@ import {
 	sameBinding,
 	snapshotOf,
 } from "#runtime/services/approvals/approval-record.ts";
-import { spokenEligibility as assessSpokenEligibility } from "#runtime/services/approvals/response.ts";
+import { spokenEligibility as assessSpokenEligibility } from "#runtime/services/approvals/spoken-presentation.ts";
 import type { JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 
 /** What the read-only surface needs from the broker that owns the approvals. */
