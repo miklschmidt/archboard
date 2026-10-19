@@ -1,5 +1,5 @@
 // Measures every fixture and every vault board on the scorecard a layout change
-// is judged by (src/runtime/semantic-renderer/tests/drawn-scorecard.ts): fit,
+// is judged by (packages/renderer/tests/runtime/support/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
 // margin-lane ink, flank fan, how far a label sits from the line it names, the
 // corridors two routes share and the two
@@ -20,14 +20,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
+import { renderArchitecture } from "@archboard/renderer/bun";
+import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import {
 	scorecardOf,
 	verdictOf,
 	type Measure,
-} from "@/runtime/semantic-renderer/tests/drawn-scorecard";
+} from "../../../packages/renderer/tests/runtime/support/drawn-scorecard.ts";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
@@ -37,7 +37,7 @@ const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
 const rasterizer = pictures
-	? (await import("@/runtime/semantic-rasterizer/index")).createSemanticRasterizer({})
+	? (await import("@archboard/renderer/rasterizer")).createSemanticRasterizer({})
 	: null;
 
 /** One thing to measure: a board's variant, or a fixture. */

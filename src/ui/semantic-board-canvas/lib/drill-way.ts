@@ -4,7 +4,7 @@
 // opens a coarser board, the whole this one is a part of; down a finer one, the
 // part's inside; across a board at the same level. Pure.
 
-import { drillDirection, type DrillDirection } from "@/transformers/semantic-renderer/index";
+import { drillDirection, type DrillDirection } from "@archboard/renderer/picture";
 
 /** Which way the board a part opens lies from the board it is drawn on. */
 type DrillWay = Exclude<DrillDirection, "elsewhere">;

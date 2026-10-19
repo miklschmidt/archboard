@@ -7,7 +7,7 @@
 
 import type { CSSProperties, JSX, ReactNode } from "react";
 
-import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
+import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SemanticPresentation } from "@/ui/semantic-board-canvas/components/SemanticPresentation";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";

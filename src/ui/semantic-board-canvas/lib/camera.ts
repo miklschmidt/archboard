@@ -6,7 +6,7 @@
 // and out of the component is what lets "a refetch did not move the camera" be
 // a fact about one function rather than a claim about a render.
 
-import { FIT_MARGIN, fitScale, type Size } from "@/shared/shell-geometry/index";
+import { FIT_MARGIN, fitScale, type Size } from "@archboard/renderer/shell-geometry";
 
 /** Where the pane is looking: the diagram's origin, and how magnified it is. */
 interface Camera {

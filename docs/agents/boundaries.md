@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -392,6 +392,52 @@ subpaths with 36 names, where code outside imported 7 module paths. It imports `
   finds by walking up from the package.
 - The fixture projects of the code facts tests are in `tests/runtime/support/code-facts/fixtures/`,
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
+
+The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
+`shared/`, `runtime/` and `ui/` and exposes 8 subpaths with 61 names, where code outside imported 10 module paths and
+two asset paths. It imports `board`, `timing` and `process`, and nothing from `src/`. The 2 files of `shared/api/` and the
+1 file of `ui/api/` are safe for the browser, with no Node import. The 5 files of `runtime/api/` are Node-bound and run
+only in Bun.
+
+- `shared/` holds the picture code that the browser and Bun both run. `rules/` is the pure code: `render/` has the entry
+  points and the host contract, `text/` the measurement and the fonts, `engine/` the layout engine and its worker pool,
+  `layout/`, `track/` and `blocks/` the three ways to lay a board out, `flowchart/`, and `svg/` the painters. These
+  four folders split by behavior (`blocks/tree/`, `track/routes/`, `svg/parts/`), not by a longer file prefix.
+  `constants/` holds the spacing, the typography and `shell-geometry.ts`, and `protocol/` holds what a render asks and
+  answers.
+- `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the
+  theme colors and the pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
+  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render and measure entry points, the
+  icon paths and the bounds, PNG and receipt of the rasterizer. `services/rasterizer/` is the rasterizer,
+  `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
+  `store/` reads the theme stylesheet and names where the assets are.
+- `ui/` holds the browser host. `state/` keeps what the page loads once (the faces, the icons, whether the renderer has
+  started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
+  `startBrowserRenderer({ avoidWasmUrl })` and draws a board with `drawBoardHere`. The worker is started inside the
+  package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
+  bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The page
+  tells the worker where the routing engine's WebAssembly is, because `frontend/main.tsx` finds it in the root
+  `node_modules`, where `libavoid-js` does not export it.
+- `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
+  with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
+  page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
+  `renderBoard`, `renderArchitecture`, the diagram icon paths and the text width. `./rasterizer` is the bitmap of a
+  picture and the receipt of the capture. `./headless-chromium` is the private Chromium, which the walkthrough recorder
+  and the README scripts also start. `./theme` reads the colors of the shared stylesheet.
+- The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
+  OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
+  path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
+  server's `/assets/diagram-fonts` route, `readme:assets` and the theme parity test take the path from there.
+  `src/ui/theme/app.css` is not a package file, so it names `packages/renderer/assets/` with relative `@import` and
+  `url()` paths, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `src/ui` and the Bun worker
+  into the renderer build, so a picture kept by an older build is never shown.
+- Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The browser
+  measurement contract (`tests/system/browser/measured-text.test.ts`) holds the Bun canvas, which loads from the root
+  `node_modules`, to what Chrome draws.
+- The tests are in `tests/`. `shared/rules/` tests the pure code. `runtime/operations/<behavior>/` holds the
+  whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
+  `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read board fixtures from
+  `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 ## Vendor-owned data
 

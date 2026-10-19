@@ -128,7 +128,7 @@ caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
 default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
-The diagram corpus in `src/runtime/semantic-renderer/tests/wide-boards.test.ts`
+The diagram corpus in `packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
@@ -154,10 +154,10 @@ still builds the frontend before product owners.
 `tests/system/semantic-boards/rasterize.test.ts` owns the zero-client bitmap
 workflow: `semantic rasterize` against a real Archboard server, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
-owner, `src/runtime/semantic-rasterizer/tests`, proves real pixels, native and
+owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
 scaled dimensions, full bounds past a display, font readiness, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
-`src/runtime/headless-chromium`, whose owner proves caller flags, an exact
+`packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
 file, and provable teardown.
 

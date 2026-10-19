@@ -605,7 +605,7 @@ come from upstream commit
 [`57fadab`](https://github.com/googlefonts/dm-mono/tree/57fadabfb200a77de2812540026c249dc3013077/exports).
 Both families use the SIL Open Font License 1.1. Exact binary, license, source,
 and SHA-256 provenance is recorded beside the assets in
-`src/ui/shell/assets/fonts/README.md`.
+`packages/renderer/assets/fonts/README.md`.
 
 Nothing draws the lowercase Onest wordmark measured above any more. The brand
 bar sets the wordmark as text in the display face's tracked capitals beside the

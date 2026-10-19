@@ -324,7 +324,7 @@ A picture exported into a pull request or a document had no name for what it sho
 ## Evidence
 
 - **Before:** `archboard semantic render pipeline --title --out a.svg` is refused: unknown option `--title`.
-  **After:** `bun test src/runtime/semantic-renderer/tests/export-title.test.ts` passes: the titled page is the untitled one moved down by the band, and a wide title widens the page.
+  **After:** `bun test packages/renderer/tests/runtime/operations/export/export-title.test.ts` passes: the titled page is the untitled one moved down by the band, and a wide title widens the page.
 
 ## Merge Danger
 

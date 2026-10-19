@@ -23,7 +23,7 @@ import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
-import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
+import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import {
 	RECORDING_CALL_MS,
 	RECORDING_FRAME_CALL_MS,
@@ -45,7 +45,7 @@ import {
 	isJsonRecord,
 	type HeadlessChromium,
 	type HeadlessWindow,
-} from "@/runtime/headless-chromium";
+} from "@archboard/renderer/headless-chromium";
 import { openVideoEncoder, type FfmpegCommand, type VideoEncoder } from "@/runtime/video-encoder";
 import { WalkthroughRecordingError } from "@/runtime/walkthrough-recorder/lib/errors";
 import { FrameOrder } from "@/runtime/walkthrough-recorder/lib/frame-order";

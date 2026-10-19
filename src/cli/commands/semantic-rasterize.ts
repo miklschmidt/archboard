@@ -18,11 +18,11 @@ import {
 	createSemanticRasterizer,
 	type PageRegion,
 	type Capture,
-} from "@/runtime/semantic-rasterizer/index";
+} from "@archboard/renderer/rasterizer";
 import {
 	SemanticRasterReceiptSchema,
 	type SemanticRasterPageSize,
-} from "@/runtime/semantic-rasterizer/receipt";
+} from "@archboard/renderer/rasterizer";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { refuseNothingDrawn, viewEmptyRefusal } from "@/cli/commands/lib/nothing-drawn";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";

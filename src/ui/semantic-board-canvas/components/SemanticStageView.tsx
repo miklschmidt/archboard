@@ -38,7 +38,7 @@ import type { PresentationPosition } from "@/ui/semantic-board-canvas/hooks/use-
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { PagePlace } from "@/ui/semantic-board-canvas/hooks/use-stage-tab";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
-import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
+import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice, GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";

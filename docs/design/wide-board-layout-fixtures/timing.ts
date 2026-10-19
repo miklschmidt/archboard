@@ -11,8 +11,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { renderArchitecture } from "@archboard/renderer/bun";
+import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";

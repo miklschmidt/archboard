@@ -261,7 +261,7 @@ source).
   (`src/ui/semantic-board-canvas/lib/layout-engine.ts`).
 - **One theme per file.** An exported SVG stands alone. Its root carries
   `color-scheme:<theme>` and that theme's value of every colour token
-  (`standingAlone` in `src/transformers/semantic-renderer/lib/svg/document.ts`).
+  (`standingAlone` in `packages/renderer/src/shared/rules/svg/page/document.ts`).
   Light and dark therefore need two files. A themeless picture exists only for a
   page that supplies the tokens. A file rendered for this note had no
   `prefers-color-scheme` rule.
@@ -284,7 +284,7 @@ source).
     a removed part's footprint.
 
   The renderer draws no legend, because "a legend and a caption are the
-  viewer's business" (`src/transformers/semantic-renderer/lib/svg/standing.ts`
+  viewer's business" (`packages/renderer/src/shared/rules/svg/parts/standing.ts`
   header. `DESIGN.md`, cards section). The picture has no visible title, only an
   `aria-label` such as "Architecture diagram: 12 nodes, 18 connections".
 

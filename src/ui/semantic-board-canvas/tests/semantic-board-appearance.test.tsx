@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { headLength } from "@/transformers/semantic-renderer/index";
+import { headLength } from "@archboard/renderer/picture";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { sidebarSettled } from "@/ui/semantic-board-canvas/tests/sidebar-probes";

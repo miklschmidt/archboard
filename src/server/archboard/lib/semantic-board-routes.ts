@@ -26,7 +26,7 @@ import type { SemanticBoard } from "@archboard/board/document";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { checkSemanticVault, readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { vaultIdentity } from "@archboard/code-binding/resolution";
-import { renderBoard } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@archboard/renderer/bun";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import { discardRoute } from "@/server/archboard/lib/semantic-board-discard";
 import { movePreviewRoute, moveRoute } from "@/server/archboard/lib/semantic-board-move";

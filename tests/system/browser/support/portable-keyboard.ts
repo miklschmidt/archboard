@@ -1,4 +1,4 @@
-import { DevTools, isJsonRecord, type JsonRecord } from "@/runtime/headless-chromium";
+import { DevTools, isJsonRecord, type JsonRecord } from "@archboard/renderer/headless-chromium";
 
 import type { BrowserCommandOptions } from "./agent-browser.ts";
 

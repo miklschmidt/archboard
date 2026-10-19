@@ -8,7 +8,7 @@
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
+import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@archboard/renderer/shell-geometry";
 import type {
 	LivePresentation,
 	RecoveryPresentation,

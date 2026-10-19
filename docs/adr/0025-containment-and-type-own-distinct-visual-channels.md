@@ -116,7 +116,7 @@ container as a tray cut into the page. Two sentences of "Relationship, compariso
 
 "Arrowheads remain proportionate to stroke width." An arrowhead now takes its
 length from one table, `HEAD_LENGTH` in
-`src/transformers/semantic-renderer/lib/svg/styles.ts`. A head is 11 units long
+`packages/renderer/src/shared/rules/svg/page/styles.ts`. A head is 11 units long
 on an emphasized line, 11 on a default line and 6 on a muted line. The owner
 asked for this on 2026-10-06 (TASK-403). A smaller default head left the reader
 to guess which way most lines run. TASK-404 then gave a muted line a head of
@@ -143,6 +143,6 @@ and `semantic rasterize` take `--legend horizontal` or `--legend vertical`, whic
 draw the key under or beside the picture, and `--legend-only`, which draws the
 key alone (TASK-468). The exported key lists what the legend on the page lists
 for the same picture. Both read the picture with one function,
-`pictureAppearances` in `src/transformers/semantic-renderer/picture-key.ts`,
+`pictureAppearances` in `packages/renderer/src/shared/rules/render/picture-key.ts`,
 so the two cannot list different things. Without `--legend`, an export draws no
 key, as before.

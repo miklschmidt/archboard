@@ -26,7 +26,7 @@ import { join } from "node:path";
 import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { VaultCheck } from "@archboard/board/policy";
-import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
+import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDING_CALL_MS } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
@@ -48,7 +48,7 @@ import {
 	isJsonRecord,
 	type HeadlessChromium,
 	type HeadlessWindow,
-} from "@/runtime/headless-chromium";
+} from "@archboard/renderer/headless-chromium";
 
 import {
 	WalkthroughRecordingError,

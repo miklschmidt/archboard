@@ -5,7 +5,7 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
-@import "../../shared/theme/theme.css";
+@import "../../../packages/renderer/assets/theme.css";
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
    class names. Every class lives under `src/ui`, one level up from here, or in
@@ -21,7 +21,7 @@
 
 @font-face {
 	font-family: "Archboard Onest";
-	src: url("../shell/assets/fonts/Onest-wght-v1.000.ttf") format("truetype");
+	src: url("../../../packages/renderer/assets/fonts/Onest-wght-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 400 700;
 	font-display: block;
@@ -29,7 +29,7 @@
 
 @font-face {
 	font-family: "Archboard DM Mono";
-	src: url("../shell/assets/fonts/DMMono-Regular-v1.000.ttf") format("truetype");
+	src: url("../../../packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 400;
 	font-display: block;
@@ -37,7 +37,7 @@
 
 @font-face {
 	font-family: "Archboard DM Mono";
-	src: url("../shell/assets/fonts/DMMono-Medium-v1.000.ttf") format("truetype");
+	src: url("../../../packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 500;
 	font-display: block;
@@ -47,7 +47,8 @@
    set as titles and for the wordmark. Nothing else uses it. */
 @font-face {
 	font-family: "Archboard Display";
-	src: url("../shell/assets/fonts/BigShouldersDisplay-wght.ttf") format("truetype");
+	src: url("../../../packages/renderer/assets/fonts/BigShouldersDisplay-wght.ttf")
+		format("truetype");
 	font-style: normal;
 	font-weight: 100 900;
 	font-display: block;
@@ -165,7 +166,7 @@
 	--color-warning-subtle: var(--warning-subtle);
 	/* Rows. chrome: the top row of every column (the brand, a pane's header,
 	   the conversation's title), as tall as the shell root says
-	   (--shell-chrome-height, from src/shared/shell-geometry). band: the row
+	   (--shell-chrome-height, from the renderer's shell-geometry). band: the row
 	   under it (the two find fields, the sidebar's tabs). row: the least a row
 	   of a list takes on one line. */
 	--spacing-chrome: var(--shell-chrome-height);
@@ -343,7 +344,7 @@
 :root {
 	/* The navigator's width and the chrome row's height,
 	   --shell-navigator-width and --shell-chrome-height, are set on the shell
-	   root from src/shared/shell-geometry: geometry is not the palette's. */
+	   root from the renderer's shell-geometry: geometry is not the palette's. */
 	/* Small corners: controls about 3px, dialogs about 4px. */
 	--radius: 0.3rem;
 }

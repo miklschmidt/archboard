@@ -80,7 +80,7 @@ jobs:
           packages/codex-app-server/tests/runtime/services/executable.test.ts
           packages/workspace/tests/runtime/clients/git-async.test.ts
           src/runtime/engine/tests/pidfile.test.ts
-          src/runtime/headless-chromium/tests/startup.test.ts
+          packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts
           packages/board/tests/runtime/store/policy.test.ts packages/board/tests/runtime/operations/rename/renaming.test.ts
           packages/code-binding/tests/runtime/operations/resolution.test.ts
           src/server/archboard/tests/codex-workbench-production-initialization.test.ts

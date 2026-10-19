@@ -80,8 +80,8 @@ and carries only the names that code outside the package imports. `exports` poin
 `api/` for a package that adopts it, and a private file never imports an api file. The `exports`
 then name a few interfaces of the package, not one subpath for each file that something imports.
 `board` adopts it for `shared/` with thirteen api files and for `runtime/` with seven.
-`codex-app-server`, `workspace`, `code-binding`, `process`, `ui-kit`, `server-requests` and `code-intel`
-adopt it too, with 7, 8, 3, 3, 10, 1 and 5 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
+`codex-app-server`, `workspace`, `code-binding`, `process`, `ui-kit`, `server-requests`, `code-intel` and `renderer`
+adopt it too, with 7, 8, 3, 3, 10, 1, 5 and 8 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
 
 The role lists are guidance, not a closed list, until every existing file has a home that
 describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit
@@ -90,7 +90,7 @@ does not sort each helper by type. For example, `runtime/store/format/` holds `d
 migrations, `runtime/operations/settle/` holds the ordering logic, and `runtime/services/queue/`
 holds the queue with its validation and reconciliation. Only some Codex files are long-lived
 objects, so `services/` holds those and no more. The theme loader reads files, so it moves to
-`runtime`, and the CSS stays an asset (`shared/theme/lib/source.ts:1`).
+`runtime`, and the CSS stays an asset (`runtime/store/theme/source.ts`).
 
 ## Tests
 
@@ -205,12 +205,12 @@ because the code above them needs them below it. If no second caller appears, me
   it. `atomic-write` stays in `workspace` with a public export, because the repository registry and
   the code opener use it too (`runtime/engine/lib/registry-file.ts:12`,
   `server/code-opener/lib/configuration.ts:5`). `workbench` exposes `./browser-contract`, `./runtime` and `./ui`.
-  `renderer` exposes `./browser`, `./worker` and `./bun`.
+  `renderer` exposes `./browser`, `./bun` and six more. The browser file starts its own layout worker, so no `./worker` export exists.
 - Keep these working. Update both TypeScript configurations too.
   - The generated contract path and its ignored output
     (`scripts/generate-codex-app-server-contract.ts:23`, `.gitignore:32`).
   - Codex executable resolution (`runtime/codex-process/lib/executable.ts:143`).
-  - The `@napi-rs/canvas` and font assets (`runtime/semantic-renderer/lib/bun-host.ts:14`).
+  - The `@napi-rs/canvas` and font assets (`runtime/services/bun-host.ts`).
   - The browser measurement contract (`tests/system/browser/measured-text.test.ts:19`).
   - The worker and WASM URLs (`frontend/main.tsx:26`).
   - The digest and stylesheet paths in `vite.config.ts` (lines 16 and 86).

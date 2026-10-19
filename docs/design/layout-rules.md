@@ -437,7 +437,7 @@ reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
 area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.
 Fit is the scale at which the whole drawing shows in the reference pane,
 capped at one: `min(pane.width / page.width, pane.height / page.height)`,
-the arithmetic the viewer's own fit uses. `src/shared/shell-geometry/index.ts`
+the arithmetic the viewer's own fit uses. `packages/renderer/src/shared/constants/shell-geometry.ts`
 holds two kinds of number. The shell's are measured: 1920 by 1080, less the
 320 navigator, the one-pixel line between the navigator and the panes, and the
 pane's 40 chrome row, which leaves a stage of 1599 by 1040. Nothing runs under
@@ -459,7 +459,7 @@ shell root takes the navigator's width and the chrome row's height from it
 and the sidebar its width, and the shell-layout browser owner holds the
 mounted shell's stage, chrome row and docked picture width to it.
 
-`src/runtime/semantic-renderer/tests/drawn-ink.ts` is the one owner of the
+`packages/renderer/tests/runtime/support/drawn-ink.ts` is the one owner of the
 measurements, read by `tests/wide-boards.test.ts` and by `measure.ts`: fit,
 routes through a card (frames excluded, since a route inside a frame crosses
 it by design), the largest fan of skips down one card's flank, corridor ink,
@@ -721,7 +721,7 @@ its page grows from 4.70 to 6.65 megapixels, most of it empty; a side-entry
 experiment spread Archboard server wider and emptier while cutting its crossings
 from 9 to 5. No single number decides whether a drawing is better.
 
-`src/runtime/semantic-renderer/tests/drawn-scorecard.ts` measures every
+`packages/renderer/tests/runtime/support/drawn-scorecard.ts` measures every
 drawing on ten measures, each with the direction a reader wants it to
 move:
 
@@ -1579,7 +1579,7 @@ Ordinary route bends use one `BEND_RADIUS` (8 diagram pixels), without adaptive
 minimum/maximum radii. Every target retains `APPROACH_STRAIGHT` (12 pixels),
 independent of stroke emphasis. Sequence self-loop corners use the same radius;
 crossing bridges retain their separate bridge radius. These distances and the
-other tuning values live in `src/transformers/semantic-renderer/config.ts`.
+other tuning values live in `packages/renderer/src/shared/constants/spacing.ts`.
 
 Native solid obstacles reserve the bend plus approach outside each visible card
 or title. Inset native pins still attach to the physical border. Placement leaves

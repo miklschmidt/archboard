@@ -36,7 +36,7 @@ import {
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { StandingSample } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
-import { markCounts, type MarkCount } from "@/transformers/semantic-renderer/picture-key";
+import { markCounts, type MarkCount } from "@archboard/renderer/picture";
 
 /** Inputs for the changes. */
 interface SemanticChangesProps {

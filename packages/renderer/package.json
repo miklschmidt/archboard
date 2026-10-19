@@ -1,0 +1,22 @@
+{
+	"name": "@archboard/renderer",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Draws a board as a picture: the pure picture code the browser and Bun share, the Bun host with its canvas and layout workers, the browser host, the rasterizer and its private headless Chromium, and the stylesheet and fonts the pictures are drawn with.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./picture": "./src/shared/api/picture.ts",
+		"./shell-geometry": "./src/shared/api/shell-geometry.ts",
+		"./browser": "./src/ui/api/browser.ts",
+		"./bun": "./src/runtime/api/bun.ts",
+		"./rasterizer": "./src/runtime/api/rasterizer.ts",
+		"./headless-chromium": "./src/runtime/api/headless-chromium.ts",
+		"./theme": "./src/runtime/api/theme.ts",
+		"./assets": "./src/runtime/api/assets.ts"
+	}
+}

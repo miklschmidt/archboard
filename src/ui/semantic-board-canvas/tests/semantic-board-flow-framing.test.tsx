@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 
-import { FIT_MARGIN } from "@/shared/shell-geometry/index";
+import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
 import {
 	drawing,
 	mountStage,

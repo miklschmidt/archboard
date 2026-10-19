@@ -10,7 +10,7 @@ import {
 	kindLookOf,
 	type KindLook,
 } from "@/ui/semantic-board-canvas/lib/kind-look";
-import type { AppliedAppearance } from "@/transformers/semantic-renderer/picture-key";
+import type { AppliedAppearance } from "@archboard/renderer/picture";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import { usePaneVault } from "@/ui/semantic-board-canvas/hooks/use-pane-vault";
 

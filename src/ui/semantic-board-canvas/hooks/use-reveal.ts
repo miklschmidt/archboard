@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-import { FIT_MARGIN } from "@/shared/shell-geometry/index";
+import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";

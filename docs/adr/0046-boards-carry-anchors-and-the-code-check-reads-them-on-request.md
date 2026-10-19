@@ -949,7 +949,7 @@ of `terraform plan`.
   check reads them as text: anchors and bindings get the text reading, and no
   evidence comes from them. The answer names them as read only as text.
 - **The TypeScript regex failure.** One regular expression with raw control
-  characters, in `src/transformers/semantic-renderer/lib/svg/primitives.ts`,
+  characters, in `packages/renderer/src/shared/rules/svg/page/primitives.ts`,
   puts one line in an error node. The rule for parts that did not parse covers
   it. TASK-367.06 tests that the rest of the file keeps its facts.
 - **Macros in C and C++, and newer Swift syntax**, put a few lines in error

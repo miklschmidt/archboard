@@ -5,7 +5,7 @@
 > Track and Blocks lay out every board now.
 
 TASK-278 replaces the ELK layout audited below. Spacing and clearance values
-are editable in [`config.ts`](../../src/transformers/semantic-renderer/config.ts);
+are editable in [`config.ts`](../../packages/renderer/src/shared/constants/spacing.ts);
 values use diagram pixels, independent of camera zoom. Rebuild the frontend,
 restart the canvas at its configured URL, and reload the viewer after editing.
 The current rules are:
@@ -114,7 +114,7 @@ not an additional source of constraints. The code owns the behavior.
 | Draw frames behind routes/cards, outer frames first; draw headings above them and add the title divider.                                 | Visual layering.                                                                                                                                                             | `svg/architecture.ts`, `svg/measured-cards.ts`          |
 | A configured frame color supplies descendant border/tint scope; the nearest colored frame wins. Icons retain each node's own type.       | Visual grammar, separate from layout.                                                                                                                                        | `semantic-appearance.ts`, ADR 0025                      |
 
-All code owners above are under `src/transformers/semantic-renderer/lib/`.
+All code owners above are under `packages/renderer/src/shared/rules/`.
 
 ## Global rules that also influence containers
 

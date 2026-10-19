@@ -8,7 +8,7 @@
 
 import { useLayoutEffect, type RefObject } from "react";
 
-import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
+import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SIDEBAR_MS } from "@archboard/timing";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { panCamera } from "@/ui/semantic-board-canvas/lib/camera";

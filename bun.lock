@@ -102,6 +102,10 @@
       "name": "@archboard/process",
       "version": "0.0.0",
     },
+    "packages/renderer": {
+      "name": "@archboard/renderer",
+      "version": "0.0.0",
+    },
     "packages/server-requests": {
       "name": "@archboard/server-requests",
       "version": "0.0.0",
@@ -149,6 +153,8 @@
     "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.3", "", { "os": "win32", "cpu": "x64" }, "sha512-0gur0QMU4kIXeE2dPK4ZG095KOUhxuNGzJdGpHkJRb91NGbFAOtEoIgK/Gv5ihjbQVuD5dormpq5y5fkwGLa3w=="],
 
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
+
+    "@archboard/renderer": ["@archboard/renderer@workspace:packages/renderer"],
 
     "@archboard/server-requests": ["@archboard/server-requests@workspace:packages/server-requests"],
 

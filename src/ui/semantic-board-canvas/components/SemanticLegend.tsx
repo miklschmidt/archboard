@@ -31,7 +31,7 @@ import {
 	type AppliedAppearance,
 	type LineMark,
 	type PictureKey,
-} from "@/transformers/semantic-renderer/picture-key";
+} from "@archboard/renderer/picture";
 
 /** How wide every sample of the legend is, so its labels start on one line. */
 const SAMPLE_WIDTH = 28;

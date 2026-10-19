@@ -8,10 +8,10 @@ These are the notices.
 
 Part of the SVG renderer is a fork of the PR Lens renderer (MIT, Coldtea AI).
 Its notice, with a list of what remains and what changed, is in
-[`src/transformers/semantic-renderer/NOTICE.md`](src/transformers/semantic-renderer/NOTICE.md).
+[`packages/renderer/NOTICE.md`](packages/renderer/NOTICE.md).
 
 ## Fonts
 
 Onest, DM Mono and Big Shoulders Display are licensed under the SIL Open
 Font License 1.1. The license texts sit beside the font files in
-[`src/ui/shell/assets/fonts/`](src/ui/shell/assets/fonts/README.md).
+[`packages/renderer/assets/fonts/`](packages/renderer/assets/fonts/README.md).

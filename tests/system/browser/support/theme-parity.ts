@@ -1,12 +1,11 @@
 import { expect } from "bun:test";
 import { readFileSync } from "node:fs";
-import { readThemeColors } from "@/shared/theme/server";
+import { THEME_STYLESHEET } from "@archboard/renderer/assets";
+import { readThemeColors } from "@archboard/renderer/theme";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
 /** Every colour of both themes, as a standalone picture is drawn in them. */
-const THEME = readThemeColors(
-	readFileSync(new URL("../../../../src/shared/theme/theme.css", import.meta.url), "utf8"),
-);
+const THEME = readThemeColors(readFileSync(THEME_STYLESHEET, "utf8"));
 
 /**
  * Verify the built page paints with the colours a standalone picture is drawn
