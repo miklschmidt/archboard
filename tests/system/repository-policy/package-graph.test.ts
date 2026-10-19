@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -109,6 +110,32 @@ function readEdges(owners: Owner[]): Edge[] {
 	return edges;
 }
 
+/**
+ * The imports of an app from outside it. The edges of a package or an app reach every other
+ * owner. The files of the root (`src/`, `scripts/`, `tests/`) are no owner and no layer, so
+ * they are scanned apart, and none may name an app: not by `@archboard-app/<name>` and not by a
+ * path into `apps/<name>/`. The policy tests are skipped: their fixtures spell such imports on purpose.
+ * @param rootFiles The files of the root to scan.
+ * @returns One line for each import of an app.
+ */
+function rootImportsOfApps(rootFiles: string[]): string[] {
+	return rootFiles.flatMap((file) =>
+		[...fs.readFileSync(file, "utf8").matchAll(SPECIFIER)].flatMap(([, specifier = ""]) =>
+			ownerOfSpecifier(specifier)?.startsWith("apps/")
+				? [`${path.relative(repoRoot, file)} imports "${specifier}", which names an app`]
+				: [],
+		),
+	);
+}
+
+/** The files of the root that are no owner: `src/`, `scripts/` and `tests/`, less the policy fixtures. */
+function rootSourceFiles(): string[] {
+	const fixtures = path.join(repoRoot, "tests", "system", "repository-policy");
+	return ["src", "scripts", "tests"]
+		.flatMap((area) => sourceFiles(path.join(repoRoot, area)))
+		.filter((file) => !file.startsWith(`${fixtures}${path.sep}`));
+}
+
 function layerViolations(edges: Edge[], layers: Record<string, number>): string[] {
 	return edges.flatMap(({ from, to, file, specifier }) => {
 		const source = layers[from];
@@ -211,6 +238,32 @@ describe("the package graph", () => {
 	test("an app imports a package only through a subpath that exports names", () => {
 		const appEdges = edges.filter(({ from }) => from.startsWith("apps/"));
 		expect(privateImports(appEdges, exportsByPackage(packages))).toEqual([]);
+	});
+
+	test("no file of the root imports an app, by its workspace name or by a path", () => {
+		// Catches a script, a system test or a root module that reaches an app: they are in no
+		// layer, so the edges above never see them.
+		expect(rootImportsOfApps(rootSourceFiles())).toEqual([]);
+	});
+
+	test("the root scan finds a bare app name and an app path, and no package", () => {
+		// Catches a scan that reads only paths, or only owners: a bare name resolves through the
+		// workspace link in node_modules just as a path does.
+		const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-app-scan-"));
+		try {
+			const named = path.join(scratch, "named.ts");
+			const pathed = path.join(scratch, "pathed.ts");
+			const clean = path.join(scratch, "clean.ts");
+			fs.writeFileSync(
+				named,
+				'import { clip } from "@archboard-app/cli/src/runtime/clipboard.ts";\n',
+			);
+			fs.writeFileSync(pathed, 'await import("../../apps/web/src/main.tsx");\n');
+			fs.writeFileSync(clean, 'import { id } from "@archboard/board/ids";\n');
+			expect(rootImportsOfApps([named, pathed, clean])).toHaveLength(2);
+		} finally {
+			fs.rmSync(scratch, { recursive: true, force: true });
+		}
 	});
 
 	test("a specifier names its owner, and an edge into an app is an upward edge", () => {

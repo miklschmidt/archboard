@@ -281,3 +281,33 @@ describe("the lint configs split app tests the way they split package tests", ()
 		});
 	});
 });
+
+describe("the frame clock rule follows the board canvas into apps/web", () => {
+	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
+	const CLOCK_READ = "export const stamp = (): number => Date.now();\n";
+	const canvas = [
+		"apps/web/src/ui/components/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/hooks/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/state/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/workers/semantic-board-canvas/stamp.ts",
+	];
+	const sibling = [
+		"apps/web/src/ui/components/shell/stamp.ts",
+		"apps/web/src/ui/hooks/semantic-board-canvasx/stamp.ts",
+	];
+	const files = Object.fromEntries([...canvas, ...sibling].map((file) => [file, CLOCK_READ]));
+
+	test("restricts the clocks at a canvas path of apps/web and leaves its sibling behaviors alone", () => {
+		// Catches the restriction vanishing when the canvas leaves src/ui: the override named only
+		// the old paths. A sibling behavior stays free to read the clock, so it was not widened.
+		withProject({ ".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc") }, files, (root) => {
+			for (const file of canvas) {
+				refused(lint(root, ".oxlintrc.jsonc", file), "eslint(no-restricted-properties)");
+			}
+			for (const file of sibling) {
+				const result = lint(root, ".oxlintrc.jsonc", file);
+				expect(result.output, file).not.toContain("no-restricted-properties");
+			}
+		});
+	});
+});

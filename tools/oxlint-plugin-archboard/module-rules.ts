@@ -5,6 +5,7 @@ import { createRule, report, sourceImportVisitors, type RuleContext } from "./ru
 import {
 	exportedSubpaths,
 	isTestingSubpath,
+	resolveAppSpecifier,
 	resolvePackageSpecifier,
 	resolveSourcePath,
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
@@ -221,6 +222,11 @@ function unresolvedMessage(source: string): string | undefined {
  * @returns The message id, or undefined when the import is allowed.
  */
 function entrypointMessage(importer: Importer, source: string): string | undefined {
+	// The workspace name of an app reaches its files through node_modules. No app exports
+	// anything, so no importer may use the name, the app itself included: it uses `#` imports.
+	if (resolveAppSpecifier(importer.context, source)) {
+		return "noImportOfApp";
+	}
 	const packageImport = resolvePackageSpecifier(importer.context, source);
 	if (packageImport) {
 		return packageImport.target
@@ -264,7 +270,7 @@ const moduleEntrypoints = createRule(
 		noDeepImportAcrossPackages:
 			"Import another package only through a path that its package.json exports names. Every other file of a package is private.",
 		noImportOfApp:
-			"Nothing imports an app: only the app's own source and tests reach its files. Move shared behavior into a package and import it through the package's exports.",
+			"Nothing imports an app, by path or by its @archboard-app/ name: only the app's own source and tests reach its files, through # imports. Move shared behavior into a package and import it through the package's exports.",
 		noUnresolvedSourceAlias:
 			"Canonical @/ imports must resolve to a source module entrypoint and stay inside src/.",
 		noUnresolvedSubpathImport:
