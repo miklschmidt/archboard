@@ -11,7 +11,7 @@
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/KindMarks";
 import { ContainerInterface } from "@/ui/semantic-board-canvas/components/ContainerInterface";

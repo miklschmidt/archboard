@@ -163,6 +163,18 @@ finds the checkout by walking up to the nearest directory that is an archboard c
 depth of the file decides nothing. `module-paths` is not here: the server derives its `src/` from
 its own depth.
 
+The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
+where its path lives in a checkout. Everything in `shared/` is safe for the browser, with no Node
+import. `./code-binding` holds the binding, anchor and document-reference schemas. `board` will
+import them and the resolver parses with `CodeBindingSchema`, so they stay here. `./code-target-open`
+is the wire contract of the open route and `./opener-settings` the contract of the opener settings.
+`./binding-files` and `./opener-executable` are pure rules. The rest is Node-bound, in `runtime/`.
+`./checkout-snapshot` captures the registered checkouts and the paths of some bindings once, then
+resolves a binding or a repository against that snapshot alone. `./binding-resolver` holds the
+result types and the resolution rules that the snapshot feeds. `./vault-checkout` finds the
+checkout that holds a vault and the checkouts a reader of that vault resolves identities in.
+`./code-target-link` chooses the URL a card opens.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

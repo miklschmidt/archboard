@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import { symbolLine } from "../index.ts";
 
 const LEDGER = `// The ledger.

@@ -16,12 +16,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { neverRead, readTerraformPlan, type TerraformPlan } from "@/runtime/code-facts/index";
+import { isPathWithin } from "@archboard/code-binding/binding-resolver";
 import {
-	isPathWithin,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
-} from "@/runtime/code-target/index";
+} from "@archboard/code-binding/checkout-snapshot";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** A named plan the check refuses to read, and why. */

@@ -8,7 +8,7 @@
 // they all name; else none, and the checkout's files stand. A draft that names
 // several refs of a repository, none of them its own, is read part by part.
 
-import type { CodeBinding } from "@/shared/code-target/index";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import type { SemanticBoard, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
 
 /**

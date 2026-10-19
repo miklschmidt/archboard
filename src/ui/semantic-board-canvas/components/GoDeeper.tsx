@@ -24,7 +24,7 @@ import {
 } from "@remixicon/react";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import type { DrillDown, SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
 import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";

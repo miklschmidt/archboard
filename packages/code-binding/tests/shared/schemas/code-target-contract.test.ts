@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
+import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
+import { OpenerSelectionSchema } from "#shared/schemas/opener-settings.ts";
 import {
-	CodeTargetOpenReplySchema,
-	OpenerSelectionSchema,
 	buildInternalCodeTargetUrl,
-	isAbsoluteOrBareOpenerExecutable,
 	parseInternalCodeTargetUrl,
-} from "../index.ts";
+} from "#shared/rules/internal-code-target-url.ts";
+import { isAbsoluteOrBareOpenerExecutable } from "#shared/rules/opener-executable.ts";
 
 describe("internal code-target URLs", () => {
 	test("round-trips board and element identity through the one reserved shape", () => {

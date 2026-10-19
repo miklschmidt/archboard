@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeBinding } from "#shared/schemas/code-binding.ts";
 import {
 	checkoutHead,
 	repoIdentityAt,
@@ -9,24 +9,14 @@ import {
 	type CheckoutHead,
 } from "@archboard/workspace/git";
 import type { RegisteredRepoStatus } from "@archboard/workspace/repo-registry";
-import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/lib/vault-checkout";
+import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
-	isPathWithin,
 	resolveLocalCodeTargetsWith,
 	resolveRegisteredCheckoutWith,
 	type LocalCodeTargetResult,
 	type RegisteredCheckoutResult,
 	type ResolverDependencies,
-} from "@/runtime/code-target/lib/resolver-core";
-export type {
-	LocalCodeTarget,
-	LocalCodeTargetResult,
-	OtherRef,
-	RegisteredCheckout,
-	RegisteredCheckoutResult,
-	ResolutionFailure,
-} from "@/runtime/code-target/lib/resolver-core";
-export { checkoutsReadFrom, isPathWithin, vaultIdentity };
+} from "#runtime/operations/binding-resolver.ts";
 
 interface CheckoutInspection {
 	readonly registeredRoot?: string;

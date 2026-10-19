@@ -6,7 +6,7 @@
 import { VaultDiagnostics } from "@/ui/vault-diagnostics";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeTargetNotice } from "@/shared/code-target";
+import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { livePanesOver } from "@/ui/application/lib/live-panes";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";

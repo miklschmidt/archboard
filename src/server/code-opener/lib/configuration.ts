@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { OpenerSelection } from "@/shared/code-target";
+import type { OpenerSelection } from "@archboard/code-binding/opener-settings";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { validateOpenerSelection } from "@/server/code-opener/lib/planning";

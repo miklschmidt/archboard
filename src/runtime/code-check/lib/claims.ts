@@ -11,7 +11,7 @@
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
-import type { CodeAnchor, CodeBinding } from "@/shared/code-target/index";
+import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/code-binding";
 import { messagesOf, type SemanticNode } from "@/shared/semantic-board/index";
 import type {
 	DiagnosticSubject,

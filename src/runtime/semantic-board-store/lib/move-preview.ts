@@ -8,7 +8,7 @@
 // version the preview read is the version the move states, so a board written
 // since is refused rather than moved as nobody saw it.
 
-import { vaultIdentity } from "@/runtime/code-target/index";
+import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
 import type { MoveEnd, MovedDrillDown, SemanticBoard } from "@/shared/semantic-board/index";
 import { resolveSemanticBoard } from "@/runtime/semantic-board-store/lib/former-names";
 import { locateSemanticBoard } from "@/runtime/semantic-board-store/lib/location";

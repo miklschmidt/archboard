@@ -51,7 +51,7 @@ import {
 	type Reference,
 } from "@/runtime/code-facts/index";
 import { readsSameCode, targetIn, type RefCodes } from "@/runtime/code-check/lib/ref-code";
-import type { CheckoutSnapshot } from "@/runtime/code-target/index";
+import type { CheckoutSnapshot } from "@archboard/code-binding/checkout-snapshot";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 import { describeSubject } from "@/shared/semantic-policy/index";

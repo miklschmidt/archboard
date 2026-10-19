@@ -820,7 +820,7 @@ The engine is two modules under `docs/agents/boundaries.md`:
   anchors, bindings and relationships against code facts, and gives findings.
 
 The schema of the answer lives in `src/shared/code-check`. The schema of the
-anchor lives beside the schema of the binding in `src/shared/code-target`. The
+anchor lives beside the schema of the binding in `packages/code-binding/src/shared`. The
 evidence kinds live in `src/shared/semantic-policy`, because the vault
 configuration names them. The route is mounted in `src/server/archboard`, and
 the CLI option joins the check command in `src/cli/commands/vault.ts`.
@@ -909,7 +909,7 @@ The check reads files and nothing else.
 
 - It reads only files inside a registered checkout that Git does not ignore. It
   tests that a path stays inside its checkout before and after it resolves
-  symbolic links, as the code opener does (`src/runtime/code-target`).
+  symbolic links, as the code opener does (`packages/code-binding/src/runtime`).
 - It never reads Terraform state (`*.tfstate`), variable files (`*.tfvars`) or
   the `.terraform` directory, even where Git tracks them. State and variable
   files can hold secrets in plain text, and the Archboard server has no

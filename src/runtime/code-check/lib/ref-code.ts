@@ -44,12 +44,14 @@ import { createSourceFacts, type FactsPass } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
 	type CheckoutSnapshot,
+} from "@archboard/code-binding/checkout-snapshot";
+import {
 	type LocalCodeTargetResult,
 	type OtherRef,
-} from "@/runtime/code-target/index";
+} from "@archboard/code-binding/binding-resolver";
 import { nodesAtOwnRef, sourceAt } from "@/runtime/history-lens/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
-import type { CodeBinding } from "@/shared/code-target/index";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 
 /** The code one ref names in one repository, read from Git. */
 interface RefCode {

@@ -1,24 +1,26 @@
 // The code-target and opener endpoints, as the browser calls them.
 //
 // Every one of these replies is parsed strictly against the shared schema in
-// `@/shared/code-target`, which is the contract both sides hold: this is the
+// `@archboard/code-binding/code-target-open`, which is the contract both sides hold: this is the
 // one surface where the browser asks the machine to run something, so a reply
 // it did not understand is a refusal rather than a guess.
 
 import {
 	CodeTargetOpenFailureSchema,
 	CodeTargetOpenSuccessSchema,
-	OpenerSelectionReplySchema,
-	OpenerSettingsReplySchema,
-	OpenerTestReplySchema,
 	type CodeTargetOpenFailure,
 	type CodeTargetOpenReply,
 	type CodeTargetOpenRequest,
+} from "@archboard/code-binding/code-target-open";
+import {
+	OpenerSelectionReplySchema,
+	OpenerSettingsReplySchema,
+	OpenerTestReplySchema,
 	type OpenerSelection,
 	type OpenerSelectionReply,
 	type OpenerSettingsReply,
 	type OpenerTestReply,
-} from "@/shared/code-target";
+} from "@archboard/code-binding/opener-settings";
 import { mutation, strictReply, type ReplySchema } from "@/ui/server-requests";
 
 /**

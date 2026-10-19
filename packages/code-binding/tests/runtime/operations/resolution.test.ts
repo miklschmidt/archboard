@@ -2,13 +2,16 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import { join, win32 } from "node:path";
 
+import { isPathWithin } from "#runtime/operations/binding-resolver.ts";
 import {
-	isPathWithin,
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
-} from "../index.ts";
-import { createResolverFixture, type ResolverFixture } from "./support.ts";
+} from "#runtime/operations/checkout-snapshot.ts";
+import {
+	createResolverFixture,
+	type ResolverFixture,
+} from "#tests/runtime/support/resolver-fixture.ts";
 
 let fixture: ResolverFixture;
 let previousRegistry: string | undefined;

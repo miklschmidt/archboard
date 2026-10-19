@@ -10,8 +10,8 @@
 
 import path from "node:path";
 
-import type { CodeBinding } from "@/shared/code-target";
-import type { LocalCodeTarget } from "@/runtime/code-target";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
+import type { LocalCodeTarget } from "@archboard/code-binding/binding-resolver";
 import { createCodeFacts, findSymbol, type FileFacts } from "@/runtime/code-facts/index";
 
 /** One cache for the opener: a file is parsed again only when its bytes change. */

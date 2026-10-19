@@ -1,7 +1,7 @@
 // The persistent notices the application raises, each with a stable id so a
 // repeat replaces its predecessor rather than stacking. Pure.
 
-import type { CodeTargetNotice } from "@/shared/code-target";
+import type { CodeTargetNotice } from "@archboard/code-binding/code-target-open";
 import type { ShellNotice } from "@/ui/shell";
 
 /** The ids of the notices that carry a shell action, reported back by id. */

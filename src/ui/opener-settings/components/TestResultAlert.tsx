@@ -3,7 +3,7 @@
 import { RiCheckLine, RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import type { CodeTargetOpenFailure } from "@/shared/code-target";
+import type { CodeTargetOpenFailure } from "@archboard/code-binding/code-target-open";
 import { Alert, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Technical } from "@/ui/dialog-parts";
 import type { OpenerTestResult } from "@/ui/opener-settings/types/contracts";

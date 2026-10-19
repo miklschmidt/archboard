@@ -35,7 +35,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutsReadFrom, vaultIdentity } from "@/runtime/code-target/index";
+import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/vault-checkout";
 import {
 	messagesOf,
 	type DrillDown,

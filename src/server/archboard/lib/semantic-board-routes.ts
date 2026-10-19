@@ -31,7 +31,7 @@ import {
 	readSemanticBoard,
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
-import { vaultIdentity } from "@/runtime/code-target/index";
+import { vaultIdentity } from "@archboard/code-binding/vault-checkout";
 import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/archboard/lib/mutation-work";
 import { discardRoute } from "@/server/archboard/lib/semantic-board-discard";

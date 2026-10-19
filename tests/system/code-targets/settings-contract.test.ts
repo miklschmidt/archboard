@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
+import { CodeTargetOpenFailureSchema } from "@archboard/code-binding/code-target-open";
 import {
-	CodeTargetOpenFailureSchema,
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
 	OpenerTestReplySchema,
-} from "../../../src/shared/code-target/index.ts";
+} from "@archboard/code-binding/opener-settings";
 import { createOpenerFixture, jsonBody } from "./support/opener-fixture.ts";
 
 describe("public opener settings contract", () => {

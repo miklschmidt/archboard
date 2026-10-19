@@ -8,8 +8,15 @@ import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { declareDirectory, setLanguageServer } from "@archboard/workspace/repo-registry";
-import { checkoutsReadFrom, resolveRegisteredCheckout, snapshotCheckoutAccess } from "../index.ts";
-import { createResolverFixture, type ResolverFixture } from "./support.ts";
+import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
+import {
+	resolveRegisteredCheckout,
+	snapshotCheckoutAccess,
+} from "#runtime/operations/checkout-snapshot.ts";
+import {
+	createResolverFixture,
+	type ResolverFixture,
+} from "#tests/runtime/support/resolver-fixture.ts";
 
 const BILLING = "github.com/acme/billing";
 let fixture: ResolverFixture;

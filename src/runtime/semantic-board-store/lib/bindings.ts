@@ -35,8 +35,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutsReadFrom, isPathWithin } from "@/runtime/code-target/index";
-import type { CodeBinding } from "@/shared/code-target/index";
+import { checkoutsReadFrom } from "@archboard/code-binding/vault-checkout";
+import { isPathWithin } from "@archboard/code-binding/binding-resolver";
+import type { CodeBinding } from "@archboard/code-binding/code-binding";
 import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
