@@ -810,8 +810,9 @@ of `dist/`.
   agent activity and the memory of code findings, `projections/board-announcements/` turns a lock or a doing line
   into what a pane hears, `services/checkout-work/` owns the machine-local checkout work, `rules/footprint/`
   picks the variants a footprint reads and `protocol/semantic-write/` is what a write request must prove.
-- The routes of other behavior live in `packages/workbench` (the panes, the tab sessions, the request
-  context and the listener) and `packages/code-opener`; this app imports their `exports` and mounts them.
+- The app reads the pane and tab services, request context and listener address through the exports of
+  `packages/workbench`. It mounts that package's pane context and voice trace routes, and the router of
+  `packages/code-opener`.
 - The tests are in `tests/server/`, in the folders of the code they cover. `lifecycle/lifetime/` also holds the
   proof that a stop force-reaps a real process group. The system tests that start the whole server stay in
   `tests/system/`.

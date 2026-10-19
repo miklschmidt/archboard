@@ -5,8 +5,8 @@
 //   no arguments  -> CLI help
 //   <subcommand>  -> CLI command
 //
-// IMPORTANT: never statically import ./server.js here. The CLI reaches the
-// Archboard server by spawning apps/server/src/server.ts as a child process (see runtime/operations/spawn.ts of @archboard/server-lifecycle).
+// The CLI reaches the Archboard server by spawning apps/server/src/server.ts.
+// See runtime/operations/spawn.ts in @archboard/server-lifecycle.
 
 const argv = process.argv.slice(2);
 
