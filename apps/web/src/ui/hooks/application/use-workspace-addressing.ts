@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import {
 	createWorkspacePort,
 	type WorkspacePortDeps,
-} from "#ui/rules/application/workspace-port.ts";
+} from "#ui/clients/application/workspace-port.ts";
 import type { LiveBinding } from "#ui/state/application/live-binding.ts";
 import {
 	useWorkspaceAddress,

@@ -9,7 +9,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { TalkEvent } from "@archboard/walkthrough/talk";
-import { TalkPlayback, frameOf } from "#ui/rules/walkthrough-replay/talk-playback.ts";
+import { TalkPlayback, frameOf } from "#ui/state/walkthrough-replay/talk-playback.ts";
 
 /**
  * A playback of some events, of a walkthrough of id "wk".

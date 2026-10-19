@@ -9,7 +9,7 @@ import type { CodeTargetNotice } from "@archboard/code-binding/opening";
 import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/workbench/voice";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
-import { createPaneMoves } from "#ui/rules/application/pane-moves.ts";
+import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
 import { PaneHandles, type PaneSession } from "#ui/state/application/pane-handles.ts";
 import {
 	dropRecord,

@@ -7,7 +7,7 @@ import {
 	type PaneReply,
 	type PaneReport,
 } from "#ui/clients/pane-session/pane-requests.ts";
-import { buildPaneReport, paneReportKey } from "#ui/rules/pane-session/pane-report.ts";
+import { buildPaneReport, paneReportKey } from "#ui/clients/pane-session/pane-report.ts";
 import type { PaneSocketConnector } from "#ui/clients/pane-session/pane-socket.ts";
 import type { PaneSessionOptions } from "#ui/rules/pane-session/session-contracts.ts";
 import {

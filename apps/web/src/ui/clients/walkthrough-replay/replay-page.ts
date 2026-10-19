@@ -42,7 +42,7 @@ import {
 } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.ts";
-import { TalkPlayback } from "#ui/rules/walkthrough-replay/talk-playback.ts";
+import { TalkPlayback } from "#ui/state/walkthrough-replay/talk-playback.ts";
 import { talkReads } from "#ui/clients/walkthrough-replay/talk-reads.ts";
 
 /** How long one frame lasts, in milliseconds. */

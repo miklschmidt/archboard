@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
-import { createPaneMoves } from "#ui/rules/application/pane-moves.ts";
+import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
 
 /**
  * The moves over a fresh workspace, and every list they produced.
