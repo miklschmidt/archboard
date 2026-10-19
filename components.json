@@ -6,7 +6,7 @@
 	"iconLibrary": "remixicon",
 	"tailwind": {
 		"config": "",
-		"css": "src/ui/theme/app.css",
+		"css": "apps/web/src/ui/theme/app.css",
 		"baseColor": "neutral",
 		"cssVariables": true,
 		"prefix": ""

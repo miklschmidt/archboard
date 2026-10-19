@@ -5,7 +5,7 @@
 // cache the picture is drawn from. The icon's path data comes from the same
 // server route the renderer fetches it from, but through this page's query
 // cache: the renderer keeps its own copy in its chunk, which the page loads
-// apart from the shell (frontend/main.tsx). A level the vocabulary gives no icon,
+// apart from the shell (apps/web/src/main.tsx). A level the vocabulary gives no icon,
 // or an icon not yet read, shows the plain board mark.
 
 import { RiFlowChart } from "@remixicon/react";

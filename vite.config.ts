@@ -6,7 +6,6 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const sourceRoot = fileURLToPath(new URL("./src", import.meta.url));
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
 /** The module a page imports to draw pictures itself (TASK-247). */
@@ -73,44 +72,18 @@ function rendererBuild(): Plugin {
 	};
 }
 
-/**
- * Let the dev server serve the stylesheet that index.html links one level above
- * its root. The build resolves that link, but the dev server stops a `..` at the
- * root and answers with the page itself, so a dev page would draw with no styles.
- * @returns The plugin.
- */
-function stylesheetBeyondRoot(): Plugin {
-	const link = 'href="../src/ui/theme/app.css"';
-	const served = `href="/@fs${join(repositoryRoot, "src/ui/theme/app.css")}"`;
-	return {
-		name: "archboard-stylesheet-beyond-root",
-		apply: "serve",
-		transformIndexHtml: {
-			order: "pre",
-			/**
-			 * Point the stylesheet link where the dev server can serve it from.
-			 * @param html The page.
-			 * @returns The page, with its stylesheet link rewritten.
-			 */
-			handler: (html) => html.replace(link, served),
-		},
-	};
-}
-
 export default defineConfig({
-	root: "frontend",
-	plugins: [react(), tailwindcss(), rendererBuild(), stylesheetBeyondRoot()],
-	resolve: {
-		alias: {
-			"@": sourceRoot,
-		},
-	},
+	root: join(repositoryRoot, "apps", "web"),
+	plugins: [react(), tailwindcss(), rendererBuild()],
 	build: {
-		outDir: "../dist/frontend",
+		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
+		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
 	},
 	server: {
 		fs: {
+			// The workspace packages and their dependencies are served from outside the root.
+			allow: [repositoryRoot],
 			// Preserve Vite's default secret-file denials.
 			deny: [
 				".env",

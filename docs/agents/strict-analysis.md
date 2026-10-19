@@ -34,9 +34,9 @@ project. `--tsconfig` alone is not a typed-project boundary, and the tested
 `.oxlintrc.tests.jsonc` with nested lint configuration disabled. It owns
 `tests/**` and the module tests under `src/*/*/tests/**` outside `src/ui`.
 `lint:policy` uses the approved policy in `.oxlintrc.jsonc`, type-aware analysis
-and one worker over `src`, `frontend`, `scripts`, `tools` and `vite.config.ts`; its
+and one worker over `packages`, `apps`, `scripts`, `tools` and `vite.config.ts`; its
 ignore patterns are exactly the tests lane's inventory, so neither lane has a gap
-or overlaps the other. `frontend` is a root of both TypeScript projects: the
+or overlaps the other. The browser code under `apps/web` is in both TypeScript projects: the
 repository project, because type-aware lint refuses a file it does not declare,
 and the frontend project, which builds it.
 Generated Codex declarations keep their lint exclusion and remain compiler checked.

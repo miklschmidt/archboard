@@ -1,5 +1,5 @@
 // The query keys and options for the semantic-board resources the browser
-// reads. As in `@/ui/board-catalog`, the options live here rather than at the
+// reads. As in the board-catalog behavior, the options live here rather than at the
 // call sites, so a subscription and an invalidation always name the same cache
 // entry and each resource's freshness contract is written down once.
 

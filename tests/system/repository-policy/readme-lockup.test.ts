@@ -21,7 +21,10 @@ function valuesOf(source: string, attribute: string): string[] {
 
 describe("the README banner's lockup", () => {
 	test("draws the mark the shell draws", () => {
-		const brand = fs.readFileSync(path.join(repoRoot, "src/ui/shell/components/Brand.tsx"), "utf8");
+		const brand = fs.readFileSync(
+			path.join(repoRoot, "apps/web/src/ui/components/shell/Brand.tsx"),
+			"utf8",
+		);
 		const { gradient } = MARK;
 
 		expect(valuesOf(brand, "viewBox")).toEqual([MARK.viewBox]);
