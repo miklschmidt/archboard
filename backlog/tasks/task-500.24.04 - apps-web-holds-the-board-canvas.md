@@ -1,10 +1,10 @@
 ---
 id: TASK-500.24.04
 title: apps/web holds the board canvas
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 18:24'
-updated_date: '2026-10-19 20:40'
+updated_date: '2026-10-19 20:58'
 labels: []
 dependencies:
   - TASK-500.24.03
@@ -20,9 +20,9 @@ First of two web steps: src/ui/variant-lifecycle and src/ui/semantic-board-canva
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 apps/web/src/ui holds the canvas and variant lifecycle in role folders with their tests, the canvas stays private to the app, and the importers still in src/ui use #web/*
-- [ ] #2 Lint overrides for the canvas (frame clock, shadcn and others) are relocated and probed, Tailwind still generates the same classes, and the full test:serial-browser lane passes
-- [ ] #3 bun run check passes
+- [x] #1 apps/web/src/ui holds the canvas and variant lifecycle in role folders with their tests, the canvas stays private to the app, and the importers still in src/ui use #web/*
+- [x] #2 Lint overrides for the canvas (frame clock, shadcn and others) are relocated and probed, Tailwind still generates the same classes, and the full test:serial-browser lane passes
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -35,3 +35,9 @@ First of two web steps: src/ui/variant-lifecycle and src/ui/semantic-board-canva
 5. Add the apps ui folder to the Tailwind @source list and the README asset source lists; update evals owner strings, test-suite.md, boundaries.md (apps/web) and frontend.md.
 6. Verify: tsc both configs, lint, fmt:check, bun test apps/web and src/ui, repository-policy, build:frontend CSS hash, dev server check, test:serial-browser, then bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The board canvas and variant lifecycle (220 files) live in apps/web/src/ui in role folders with 50 tests in apps/web/tests/ui; the root src/ui modules and frontend/main.tsx reach them through the temporary #web/* import. Codex reviewed 0c77adcee with the code-review skill and fixed three findings (97574d74c, 61bbdd30b, f4fa61c71); lint differential found no lost coverage; 506 tests in 83 files before and after; CSS byte-identical. bun run check exited 0 on the move and the full real-Chrome lane passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
