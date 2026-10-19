@@ -1,9 +1,11 @@
 ---
 id: TASK-500.12
 title: The board store and lock are in the board package
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-19 04:29'
+updated_date: '2026-10-19 04:58'
 labels: []
 dependencies:
   - TASK-500.11
@@ -24,3 +26,14 @@ The runtime half of board: runtime/semantic-board-store (10,055 lines, the one p
 - [ ] #3 The tests of the moved code live in packages/board/tests, and the persistence tests (atomic write, lock lease, claims) still pass unchanged in behavior
 - [ ] #4 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move into packages/board/src/runtime: all of runtime/semantic-board-store (index.ts barrel of 87 lines, 44 lib files, 29 tests) and, from runtime/engine, board.ts, board-doing.ts, board-catalogue.ts, board-target.ts, board-lock.ts and lib/board-address.ts, lib/board-lock-*.ts (acquisition, claim-state, claims, contracts, migration, state). Role folders from the doc: store (files, locks, registries, file formats, migrations), operations (one write or read a caller asks for: edit, move, rename, settle, adopt, discard, restore, shelve, propagate, batch, read, listing). The lock goes in store/ (lock) and stays private unless an outside caller imports it; split a folder past about 12 files by behavior (operations/edit, operations/move, ...).
+2. semantic-board-store/index.ts is a forwarding barrel: delete it and point importers at the defining files as in the board shared task (unbarrel script /tmp/pm/board/unbarrel.ts is the example; compare exported names; no schema or class defined twice, no cycle inside the package).
+3. exports: the minimum used outside. Make the five store-only shared exports private (integrity, positions, primitives, reconcile-candidate, reconcile) once the store is inside, unless an outside file still imports one. Report the export count before and after.
+4. Every write still goes through @archboard/workspace/atomic-write and commits before it answers; the board lock and the invariants in CLAUDE.md stay. The persistence tests (lock lease, claims, announcements, vaults) move with the lock and must pass unchanged in behavior.
+5. runtime/engine then holds no board file; grep to prove. The package imports only lower packages and nothing from src/. Check depth-dependent paths (import.meta.url) and fix them.
+6. Tests move to packages/board/tests/runtime/<role>/ with support under tests/runtime/support/. Update ci.yml, evals/coverage.json, vite.config.ts, docs, skills and boundaries.md (add that board is complete and name which exports became private). bun run check.
+<!-- SECTION:PLAN:END -->
