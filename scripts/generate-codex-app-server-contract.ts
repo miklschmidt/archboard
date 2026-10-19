@@ -538,27 +538,26 @@ function contractIsCurrent(): boolean {
 /**
  * Remove the generated tree that checkouts made before the contract moved into the package keep:
  * it is ignored by git but linted and formatted nowhere any more, and nothing reads it. Only a real
- * directory named exactly `generated` goes, and the folders it leaves empty go with it, up to the
- * old root `src/`, which no longer exists once nothing is left in it.
+ * directory named exactly `generated` goes, reached only through plain checkout directories.
+ * The folders it leaves empty go with it, up to the old root `src/`.
  */
 function removeLegacyGeneratedTree(): void {
 	const legacyContractRoot = join(repositoryRoot, "src/shared/codex-app-server-contract");
 	const legacyGeneratedRoot = join(legacyContractRoot, "generated");
-	if (!entryExists(legacyGeneratedRoot)) {
-		return;
-	}
-	const entry = lstatSync(legacyGeneratedRoot);
-	if (!entry.isDirectory() || entry.isSymbolicLink()) {
-		throw new Error(
-			`Refusing to remove ${relative(repositoryRoot, legacyGeneratedRoot)}: not a plain directory`,
-		);
+	const parents = [join(repositoryRoot, "src"), dirname(legacyContractRoot), legacyContractRoot];
+	for (const folder of [...parents, legacyGeneratedRoot]) {
+		if (!entryExists(folder)) {
+			return;
+		}
+		const entry = lstatSync(folder);
+		if (!entry.isDirectory() || entry.isSymbolicLink()) {
+			throw new Error(
+				`Refusing to remove ${relative(repositoryRoot, legacyGeneratedRoot)}: ${relative(repositoryRoot, folder)} is not a plain directory`,
+			);
+		}
 	}
 	rmSync(legacyGeneratedRoot, { recursive: true });
-	removeEmptyFolders([
-		legacyContractRoot,
-		dirname(legacyContractRoot),
-		join(repositoryRoot, "src"),
-	]);
+	removeEmptyFolders(parents.toReversed());
 }
 
 /**
