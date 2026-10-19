@@ -1,6 +1,6 @@
 import type { CodexRealtimeGeneration } from "@archboard/workbench/realtime";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
+import type { WorkhorseOperationBinding } from "@archboard/workbench/workhorses";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,

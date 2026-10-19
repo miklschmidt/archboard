@@ -6,7 +6,7 @@ import {
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
 import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import type { ThreadLinkSnapshot } from "@archboard/workbench/thread-link";
 import { projectCodexBrowserState } from "../index.js";
 import type { BrowserProjectionInput, CodexQueueProjectionInput } from "../index.js";

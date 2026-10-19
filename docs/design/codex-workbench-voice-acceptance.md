@@ -72,8 +72,8 @@ timeout -k 5s 25s bun test \
   packages/codex-app-server/tests/runtime/schemas/semantic-brief-boundaries.test.ts \
   packages/codex-app-server/tests/runtime/schemas/semantic-context-types.test.ts \
   packages/workbench/tests/runtime/services/thread-context \
-  src/runtime/codex-coordinator-callbacks/tests \
-  src/runtime/codex-spoken-approval/tests
+  packages/workbench/tests/runtime/services/coordinator-callbacks \
+  packages/workbench/tests/runtime/services/spoken-approval
 
 timeout -k 5s 25s bun tests/system/browser/run-browser-lane.ts \
   --focus tests/system/browser/codex-text-workbench.test.ts

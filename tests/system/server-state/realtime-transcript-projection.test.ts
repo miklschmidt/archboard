@@ -6,7 +6,7 @@ import {
 } from "@archboard/workbench/realtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {
 	parseRealtimeCorrelationId,

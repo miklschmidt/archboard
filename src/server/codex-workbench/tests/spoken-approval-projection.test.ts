@@ -4,7 +4,7 @@ import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
-} from "../../../runtime/codex-spoken-approval/index.js";
+} from "@archboard/workbench/coordinator";
 import { BROWSER_SPOKEN_APPROVAL_REASONS } from "@archboard/workbench/browser-approvals";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {

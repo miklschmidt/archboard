@@ -1210,7 +1210,7 @@ Operation and pagination semantics are exact:
 ## `archboard_coordinator` manifest
 
 The workhorse is started with a second namespace beside `archboard_app`,
-`src/runtime/codex-coordinator-callbacks/archboard-coordinator.json`, which the
+`packages/workbench/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
 Archboard server loads and pins by its digest (TASK-321). It has one tool,
 `tell_coordinator`, that takes one `message` of 1 to 2048 characters. The
 manifest hash that a workhorse start records is the SHA-256 of the compact JSON

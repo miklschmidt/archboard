@@ -11,7 +11,7 @@ import {
 	type TurnId,
 	type BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import type {
 	DynamicApprovalOwnerView,

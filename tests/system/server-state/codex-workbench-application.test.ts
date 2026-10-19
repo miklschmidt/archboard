@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
 import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/workbench/coordinator";
 import type {
 	ReverseResponse,
 	TransportServerRequest,

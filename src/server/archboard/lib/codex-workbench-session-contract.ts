@@ -1,20 +1,22 @@
 // What the tab sessions of one Codex child generation are, and what building one is handed
 // (TASK-373, ADR 0050). The store that keeps them is codex-workbench-sessions.
 
-import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
-import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
-import type { CodexCoordinator } from "@/runtime/codex-coordinator";
+import type {
+	CoordinatorCallbacks,
+	CoordinatorToolDispatcher,
+	CodexCoordinator,
+	CodexSpokenApprovalGate,
+} from "@archboard/workbench/coordinator";
 import type { CodexRealtimeAdapter } from "@archboard/workbench/realtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
-import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import type { ThreadUnload } from "@archboard/workbench/thread-link";
 import type {
 	CodexTransport,
 	TransportServerNotification,
 	DynamicServerRequest,
 } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
+import type { WorkhorseOperationEventListener } from "@archboard/workbench/workhorses";
 import type {
 	ChildEpoch,
 	ChildId,

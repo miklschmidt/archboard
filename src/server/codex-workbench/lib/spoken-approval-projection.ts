@@ -4,7 +4,7 @@ import type { ApprovalOwnerView } from "@archboard/workbench/approvals";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
-} from "@/runtime/codex-spoken-approval";
+} from "@archboard/workbench/coordinator";
 import type {
 	CodexCoordinatorProjectionInput,
 	CodexVoiceProjectionInput,

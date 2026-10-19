@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "@archboard/workbench/approvals";
-import type { SpokenApprovalSnapshot } from "../../../src/runtime/codex-spoken-approval/index.js";
+import type { SpokenApprovalSnapshot } from "@archboard/workbench/coordinator";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "@archboard/workbench/browser-model";
 import {

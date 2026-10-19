@@ -545,12 +545,12 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 
 The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
 conversation and the voice (layer 7, the last). It grows over TASK-500.23.01 to .07, one move for each step up its
-import graph, and the later moves add the coordinator and the workhorses to `runtime/`, then `server/` and `ui/`. So far
-it holds the browser-safe contracts that the browser and the server exchange, and the foundation of the Codex runtime
-under them. It adopts the `api/` role for `shared/` and `runtime/` and exposes 15 subpaths. It imports `codex-app-server`,
+import graph, and the later moves add `server/` and `ui/`. So far it holds the browser-safe contracts that the browser
+and the server exchange, and the Codex runtime under them: the foundation, and over it the coordinator and the
+workhorses. It adopts the `api/` role for `shared/` and `runtime/` and exposes 17 subpaths. It imports `codex-app-server`,
 `board`, `walkthrough` and `timing`, and nothing from `src/`. The 5 files of `shared/api/` hold 100 names and are safe
 for the browser, with no Node import and no path into a runtime or server area: the pane transport and the voice session
-import them as well as the server. The 10 files of `runtime/api/` hold 163 names and run only in Bun. The browser
+import them as well as the server. The 12 files of `runtime/api/` hold 204 names and run only in Bun. The browser
 imports none of them, and a trace from `frontend/` and `src/ui/` reaches no file of `runtime/`.
 
 **Shared.**
@@ -581,19 +581,32 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
 - `rules/` holds the pure decisions: `instructions/` (the two authored developer instructions, their reviewed digests and
   the context a turn carries), `thread-link/` (the classification of a target thread, the pane's binding by
   compare-and-swap and its durable evidence), `realtime/` (the presentation mode, the voice prompt and the start policy)
-  and `dynamic-tools/` (the authority a call runs under, the effects it may have and the validation of a call).
+  `dynamic-tools/` (the authority a call runs under, the effects it may have and the validation of a call),
+  `coordinator-callbacks/` (the encoding and the normalizing of a callback, and the news it carries), `coordinator-tools/`
+  (the validation, the identity and the response of a coordinator tool call), `spoken-approval/` (the classifier and the
+  validation of a spoken answer), `coordinator/` (the review hashes and the start profile of the coordinator),
+  `workhorse-operations/` (the errors and the link provenance of an operation) and `workhorse-start/` (the model, the
+  validation and the immutability of a start).
 - `protocol/` holds the contracts that a tool call or a manifest states: `thread-tools/` (the `archboard_app` manifest
   and the parse of a call response), `coordinator-tool-contract/` (the reviewed voice and workhorse manifests, the
-  tool inputs and results) and `dynamic-tools/` (the ports and the lifecycle events of an operation).
+  tool inputs and results) and `dynamic-tools/` (the ports and the lifecycle events of an operation). `coordinator/`,
+  `coordinator-callbacks/`, `coordinator-tools/`, `spoken-approval/`, `workhorse-operations/` and `workhorse-start/` each
+  hold the `contract.ts` of that module: its options, ports and snapshots.
 - `services/` holds the long-lived behaviors: `approvals/` (the broker), `workhorse-queue/`, `thread-context/` (the
   delivery of context into a thread), `realtime/` (the voice adapter) and `dynamic-tools/` (the quarantine of an
-  uncertain mutation and the wait for a thread).
+  uncertain mutation and the wait for a thread), `coordinator/` (the coordinator, its start and its reuse of an epoch),
+  `coordinator-callbacks/` (the callbacks that tell the coordinator what happened, their delivery and the
+  `tell_coordinator` tool), `coordinator-tools/` (the dispatcher that answers the coordinator's tool calls and its replay
+  ledger), `spoken-approval/` (the gate that settles a spoken approval), `workhorse-operations/` (the port that the
+  coordinator uses on a workhorse: its events, notifications and validation) and `workhorse-start/` (the start and the
+  cleanup of one workhorse thread).
 - `operations/` holds one act a caller asks for: `dynamic-tools/` (the dispatch of a call, its mutations and the pages
-  it answers with) and `thread-unload/`. `store/epoch/` is the durable epoch manifest, and `state/wait-graph/` is the
-  in-memory graph of waiting threads.
-- The two instruction documents and the two manifests of the coordinator and the `archboard_app` namespace are data
-  files that sit beside the code that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on
-  its own depth. Their digests are pinned in the code, and a changed byte is a review.
+  it answers with), `thread-unload/` and `workhorse-operations/` (inspect, delegate, steer and manage the queue).
+  `store/epoch/` is the durable epoch manifest. `state/` holds `wait-graph/` (the in-memory graph of waiting threads) and
+  the snapshots of `coordinator/`, `spoken-approval/` and `workhorse-start/`.
+- The two instruction documents and the four manifests (the voice and the workhorse manifests of the
+  coordinator, and the `archboard_app` and `archboard_coordinator` namespaces) are data files that sit beside the code
+  that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on its own depth. Their digests are pinned in the code, and a changed byte is a review.
 - `./thread-link` is a pane's link to a thread: `createCodexThreadLink`, its ports and snapshots, and the unload of a
   thread. `./epoch` is the epoch store and the proofs and transactions that its operations carry. `./instructions` is the
   authored instructions, the context and the builders of a turn's parameters. `./approvals` is the broker and the owner
@@ -602,6 +615,9 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
   `archboard_app` manifest, the parse of a tool-call response and the thread context controller. `./workhorse-queue` is
   the queue of one workhorse. `./coordinator-tools` is what the coordinator may call: the manifests with their digests,
   the names and the input schemas. `./coordinator-tool-results` is what a coordinator tool answers.
+  `./coordinator` is the voice coordinator and what runs around it: `createCodexCoordinator`, the callbacks that tell it
+  what happened, the dispatcher that answers its tool calls and the spoken approval gate. `./workhorses` is the start of
+  a workhorse thread and the operations that the coordinator asks of one.
 - The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
   fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
   (`bun run test:opt-in:capacity`).

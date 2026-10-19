@@ -21,7 +21,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@archboard/workbench/realtime-contract";
-import type { CoordinatorRetirement } from "@/runtime/codex-coordinator";
+import type { CoordinatorRetirement } from "@archboard/workbench/coordinator";
 import type { RealtimePresentation } from "@archboard/workbench/realtime";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import type {

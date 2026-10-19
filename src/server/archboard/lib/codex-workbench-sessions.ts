@@ -21,11 +21,11 @@
 // or a server shutdown drops every session without unsubscribing anything, because the child is
 // gone.
 
-import { answerUnownedTellCoordinator } from "@/runtime/codex-coordinator-callbacks";
-import { COORDINATOR_TOOLS_OWNER, refusedResponse } from "@/runtime/codex-coordinator-tools";
+import { answerUnownedTellCoordinator } from "@archboard/workbench/coordinator";
+import { COORDINATOR_TOOLS_OWNER, refusedResponse } from "@archboard/workbench/coordinator";
 import { createCodexThreadUnload } from "@archboard/workbench/thread-link";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationEventListener } from "@/runtime/codex-workhorse-operations";
+import type { WorkhorseOperationEventListener } from "@archboard/workbench/workhorses";
 import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/identity";
 import { workhorseLinkKey, type TabSessionId } from "@/server/codex-workbench";
 import {

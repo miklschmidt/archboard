@@ -8,7 +8,7 @@
 // workhorse a new thread — so the pair that counts as one session has to be asked for, never
 // sampled.
 
-import type { CoordinatorCallbackLinkCorrelation } from "@/runtime/codex-coordinator-callbacks";
+import type { CoordinatorCallbackLinkCorrelation } from "@archboard/workbench/coordinator";
 import { allNamed } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import type {
