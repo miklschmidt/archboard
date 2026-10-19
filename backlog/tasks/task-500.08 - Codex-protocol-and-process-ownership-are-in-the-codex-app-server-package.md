@@ -1,11 +1,11 @@
 ---
 id: TASK-500.08
 title: Codex protocol and process ownership are in the codex-app-server package
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 03:14'
-updated_date: '2026-10-19 03:33'
+updated_date: '2026-10-19 03:54'
 labels: []
 dependencies:
   - TASK-500.07
@@ -21,10 +21,10 @@ The runtime half of the codex-app-server package: runtime/codex-protocol (schema
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 codex-protocol and the remaining codex-process files live in packages/codex-app-server in runtime/ role folders, every importer uses the package exports, and no forwarding barrel is left
-- [ ] #2 Executable resolution uses SOURCE_CHECKOUT and still refuses an executable of a global or foreign checkout, proven by its existing test
-- [ ] #3 The tests of the moved code live in packages/codex-app-server/tests, and the normal and opt-in test paths in package.json and ci.yml name the new locations
-- [ ] #4 bun run check passes
+- [x] #1 codex-protocol and the remaining codex-process files live in packages/codex-app-server in runtime/ role folders, every importer uses the package exports, and no forwarding barrel is left
+- [x] #2 Executable resolution uses SOURCE_CHECKOUT and still refuses an executable of a global or foreign checkout, proven by its existing test
+- [x] #3 The tests of the moved code live in packages/codex-app-server/tests, and the normal and opt-in test paths in package.json and ci.yml name the new locations
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ The runtime half of the codex-app-server package: runtime/codex-protocol (schema
 5. Tests move to packages/codex-app-server/tests/runtime/<role>/. package.json test paths (test:modules ignore patterns, opt-in) and .github/workflows/ci.yml name the new locations.
 6. No @/ import in the package; the package depends on lower packages only. If a moved file needs a file that stays in src/, stop and report. Rewrite importers with /tmp/pm/move-package.ts, hand-fix reported strings, update docs/agents/boundaries.md and skills/archboard-dev/SKILL.md paths. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+runtime/codex-protocol and the rest of runtime/codex-process are in packages/codex-app-server under runtime/processes, store, services, protocol and schemas, behind 13 new Node-side subpaths; the forwarding barrels and errno-code.ts are gone. Executable resolution uses SOURCE_CHECKOUT, and two new tests prove the refusal of a global, nested foreign and sibling-prefix checkout, which no test proved before. Browser safety: only six shared files reachable, 0 node: imports, traced by the implementer and by Codex. bun run check passed. Codex review of 47b3072c7 found no defects; its two doc nits (runtime exports are not all Node-bound; the count that becomes private in task 09) are fixed there. Advice kept for task 09: make protocol-methods, request-schemas, response-schemas and thread-schemas private and merge the remaining schema needs into a session contract.
+<!-- SECTION:FINAL_SUMMARY:END -->
