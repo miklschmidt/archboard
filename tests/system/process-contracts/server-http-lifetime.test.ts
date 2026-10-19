@@ -20,6 +20,7 @@ import {
 	processExists,
 	waitForProcessExit,
 } from "../support/owned-server.ts";
+import { CODEX_PROCESS_MODULE_PATH } from "../support/codex-process-module.ts";
 import { records } from "./support/codex-workbench-lifecycle.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
@@ -44,10 +45,6 @@ async function freePort(): Promise<number> {
 }
 
 function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-error"): string {
-	const executableModule = join(
-		repoRoot,
-		"packages/codex-app-server/src/runtime/services/executable.ts",
-	);
 	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
 	const bindRace = mode === "bind-race";
 	return (
@@ -74,8 +71,8 @@ function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-
 			: "") +
 		`  return ownedServer;\n` +
 		`} }));\n` +
-		`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
-		`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
+		`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
+		`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
 		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 		`await startServer();\n` +
 		(mode === "runtime-error"
@@ -89,10 +86,6 @@ function delayedListenWrapperSource(
 	pendingPath: string,
 	outcomePath: string,
 ): string {
-	const executableModule = join(
-		repoRoot,
-		"packages/codex-app-server/src/runtime/services/executable.ts",
-	);
 	const httpFactoryModule = join(repoRoot, "src/server/archboard/lib/http-server.ts");
 	return (
 		`import { writeFileSync } from "node:fs";\n` +
@@ -127,8 +120,8 @@ function delayedListenWrapperSource(
 		`  };\n` +
 		`  return ownedServer;\n` +
 		`} }));\n` +
-		`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
-		`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
+		`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
+		`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
 		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 		`try {\n` +
 		`  await startServer();\n` +

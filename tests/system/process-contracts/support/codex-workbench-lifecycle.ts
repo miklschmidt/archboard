@@ -8,6 +8,7 @@ import {
 	type WorkbenchResult,
 } from "../../server-state/support/codex-production.ts";
 import { waitFor } from "../../server-state/support/http.ts";
+import { CODEX_PROCESS_MODULE_PATH } from "../../support/codex-process-module.ts";
 import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
 import { listOnlyVault } from "../../support/test-vault.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
@@ -119,10 +120,6 @@ export async function startServer(options: {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "production-server.ts");
-	const executableModule = join(
-		repoRoot,
-		"packages/codex-app-server/src/runtime/services/executable.ts",
-	);
 	const paths = {
 		home: join(options.root, "home"),
 		xdgConfig: join(options.root, "xdg-config"),
@@ -135,8 +132,8 @@ export async function startServer(options: {
 	writeFileSync(
 		wrapper,
 		`import { mock } from "bun:test";\n` +
-			`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
-			`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
+			`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
+			`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
 			`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 			`await startServer();\n`,
 	);

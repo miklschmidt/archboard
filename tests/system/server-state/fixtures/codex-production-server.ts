@@ -1,7 +1,8 @@
 import type * as CodexProcessInterface from "@archboard/codex-app-server/process";
 import { mock } from "bun:test";
 import { appendFileSync } from "node:fs";
-import path from "node:path";
+
+import { CODEX_PROCESS_MODULE_PATH } from "../../support/codex-process-module.ts";
 
 const executable = process.env["ARCHBOARD_TEST_CODEX_EXECUTABLE"];
 if (executable === undefined) {
@@ -15,13 +16,9 @@ if (logPath !== undefined) {
 	);
 }
 
-const executableModulePath = path.resolve(
-	import.meta.dir,
-	"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
-);
-const executableModule: typeof CodexProcessInterface = await import(executableModulePath);
+const executableModule: typeof CodexProcessInterface = await import(CODEX_PROCESS_MODULE_PATH);
 await Promise.resolve(
-	mock.module(executableModulePath, (): typeof executableModule => ({
+	mock.module(CODEX_PROCESS_MODULE_PATH, (): typeof executableModule => ({
 		...executableModule,
 		resolveProjectCodexExecutable: () =>
 			process.env["ARCHBOARD_TEST_PRODUCTION_FAIL_STAGE"] === "child_start"

@@ -12,6 +12,7 @@ import {
 } from "../server-state/support/codex-production.ts";
 import { waitFor } from "../server-state/support/http.ts";
 import { listOnlyVault } from "../support/test-vault.ts";
+import { CODEX_PROCESS_MODULE_PATH } from "../support/codex-process-module.ts";
 import { records, startServer } from "./support/codex-workbench-lifecycle.ts";
 import {
 	buildOwnedServerEnvironment,
@@ -56,15 +57,11 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 		const fixture = prepareProductionFixture(resources, fixtureSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ exit: false, holdInitialize: true }));
 		const wrapper = join(fixture.root, "startup-signal-server.ts");
-		const executableModule = join(
-			repoRoot,
-			"packages/codex-app-server/src/runtime/services/executable.ts",
-		);
 		writeFileSync(
 			wrapper,
 			`import { mock } from "bun:test";\n` +
-				`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
-				`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
+				`const actualExecutable = await import(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)});\n` +
+				`mock.module(${JSON.stringify(CODEX_PROCESS_MODULE_PATH)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
 				`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 				`await startServer();\n`,
 		);
