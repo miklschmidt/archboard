@@ -25,7 +25,7 @@ import type { Express, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
 import { parseBoardKey } from "@archboard/board/address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
-import { createBrowserOriginGuard } from "@/server/browser-origin";
+import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
 	paneBoardOf,
 	paneVaults,

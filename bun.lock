@@ -90,6 +90,10 @@
       "name": "@archboard/code-intel",
       "version": "0.0.0",
     },
+    "packages/code-opener": {
+      "name": "@archboard/code-opener",
+      "version": "0.0.0",
+    },
     "packages/codex-app-server": {
       "name": "@archboard/codex-app-server",
       "version": "0.0.0",
@@ -133,6 +137,8 @@
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
 
     "@archboard/code-intel": ["@archboard/code-intel@workspace:packages/code-intel"],
+
+    "@archboard/code-opener": ["@archboard/code-opener@workspace:packages/code-opener"],
 
     "@archboard/codex-app-server": ["@archboard/codex-app-server@workspace:packages/codex-app-server"],
 

@@ -80,8 +80,8 @@ and carries only the names that code outside the package imports. `exports` poin
 `api/` for a package that adopts it, and a private file never imports an api file. The `exports`
 then name a few interfaces of the package, not one subpath for each file that something imports.
 `board` adopts it for `shared/` with thirteen api files and for `runtime/` with seven.
-`codex-app-server`, `workspace`, `code-binding`, `process`, `ui-kit`, `server-requests`, `code-intel` and `renderer`
-adopt it too, with 7, 8, 3, 3, 10, 1, 5 and 8 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
+`codex-app-server`, `workspace`, `code-binding`, `process`, `ui-kit`, `server-requests`, `code-intel`, `renderer` and
+`code-opener` adopt it too, with 7, 8, 3, 3, 10, 1, 5, 8 and 4 api files. `process` also exports `./git-owner`, the script that a Git command runs, as the file itself.
 
 The role lists are guidance, not a closed list, until every existing file has a home that
 describes it. A first pass found that `websocket-connection.ts` and `semantic-disk-watch.ts` fit
@@ -204,7 +204,7 @@ because the code above them needs them below it. If no second caller appears, me
   example, `board` exposes `./document`, `./policy` and `./store`, and `board-lock` stays private to
   it. `atomic-write` stays in `workspace` with a public export, because the repository registry and
   the code opener use it too (`runtime/engine/lib/registry-file.ts:12`,
-  `server/code-opener/lib/configuration.ts:5`). `workbench` exposes `./browser-contract`, `./runtime` and `./ui`.
+  `packages/code-opener/src/server/store/configuration.ts`). `workbench` exposes `./browser-contract`, `./runtime` and `./ui`.
   `renderer` exposes `./browser`, `./bun` and six more. The browser file starts its own layout worker, so no `./worker` export exists.
 - Keep these working. Update both TypeScript configurations too.
   - The generated contract path and its ignored output

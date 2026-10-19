@@ -124,7 +124,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `process` for `runtime/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, module or script imports only exported files.** Oxlint refuses a subpath that
@@ -438,6 +438,32 @@ only in Bun.
   whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
   `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read board fixtures from
   `docs/design/` and the vault of this repository, by a relative path from the test file.
+
+The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
+adopts the `api/` role for `server/` and `ui/` and exposes 4 subpaths with 13 names, where code outside imported
+5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace` and `server-requests`, and
+nothing from `src/`. The 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
+`server/api/` are Node-bound and run only in Bun.
+
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, the
+  plan of an opener command and its launch. `./browser-origin` is the guard that refuses a request from a page that is not
+  Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
+  route, and the other routes of the server take the guard from the same file.
+- `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run, the
+  target inside a vault and the line that defines a symbol, which asks `code-intel` for the code facts. `lifecycle/`
+  launches the editor. `store/` holds the opener configuration, a file in the state directory that
+  `@archboard/workspace/atomic-write` writes. It is in `store/` because lint refuses a `node:fs` import in a `state/`
+  folder. `middleware/` holds the guard and the CSRF check.
+- `./code-target` asks the server to open the code a subject is bound to and gives the notice that the outcome
+  deserves. `./opener-settings` is the dialog that sets which editor opens the code, and the flow it runs against. The
+  flow reads, tests, saves and resets through `ui/clients/code-target-requests.ts`, which parses each reply strictly
+  against the schemas of `code-binding/opening`.
+- `ui/` keeps the dialog's `components/`, the flow's `hooks/` and `state/`, the endpoints in `clients/` and the pure
+  command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
+  area.
+- The tests are in `tests/`: `server/middleware/`, `server/projections/` and `server/store/` test the server files,
+  `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay in `tests/system/code-targets` and
+  `tests/system/browser/opener-settings.test.ts`.
 
 ## Vendor-owned data
 

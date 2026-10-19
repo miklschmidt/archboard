@@ -1,5 +1,5 @@
 import express from "express";
-import { createBrowserOriginGuard } from "../../../../src/server/browser-origin/index.ts";
+import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
 	closeSync,
 	existsSync,
@@ -19,7 +19,7 @@ import {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
 	type CodeOpenerRouteDependencies,
-} from "../../../../src/server/code-opener/index.ts";
+} from "@archboard/code-opener/opener";
 import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
 import type { OpenerSelection } from "@archboard/code-binding/opening";
 import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";

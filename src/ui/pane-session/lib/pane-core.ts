@@ -32,7 +32,7 @@ import {
 import type { PaneWorkbenchSocketOwner } from "@/ui/pane-session/workbench-socket";
 import type { WorkbenchTransportPort } from "@/ui/pane-session/workbench-port";
 import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@archboard/code-binding/opening";
-import { activateCodeTarget, openedNotice } from "@/ui/code-target";
+import { activateCodeTarget, openedNotice } from "@archboard/code-opener/code-target";
 import type { BoardIdentity, DoingEntry, LockHolder, PaneStatus } from "@/ui/types";
 
 /** What the core reads out of React and writes back into it. */

@@ -31,7 +31,7 @@ import { noteBoardShown } from "@/server/archboard/lib/semantic-disk-watch";
 import { showPaneRoute } from "@/server/archboard/lib/pane-show-route";
 import { shownConversationRoute } from "@/server/archboard/lib/shown-conversation-route";
 import { SHOWN_CONVERSATION_ROUTE } from "@/shared/shown-conversation";
-import { createBrowserOriginGuard } from "@/server/browser-origin";
+import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import { getPanesRoute } from "@/server/archboard/lib/pane-report-route";
 import { bodyOf, messageOf } from "@/server/archboard/lib/request-board";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";

@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "http";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
-import { checkBrowserCsrf } from "@/server/browser-origin";
+import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
