@@ -1,4 +1,4 @@
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import {
 	forgetLockAnnouncements,
 	onBoardLockChanged,

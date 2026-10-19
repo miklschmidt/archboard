@@ -7,7 +7,7 @@
 // it once is what keeps a write's `--board`, `--doing` and `--expect-version`
 // from being forgotten by whichever call site was written last.
 
-import { isRecord } from "@/runtime/engine/lib/unknown-record";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 
 /** The board this invocation names, or null when it names none. */
 let requestedBoard: string | null = null;

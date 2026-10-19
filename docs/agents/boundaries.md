@@ -138,6 +138,12 @@ split by behavior.
 The first package is `timing` (`@archboard/timing`). Its `.` export holds every product duration.
 Its `./voice` export holds the voice motion durations.
 
+The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
+and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
+`./unknown-record` exports read a caught value without Node and are safe for the browser. The two
+`errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
+Error or string, and `./thrown-error` stringifies it.
+
 ## Vendor-owned data
 
 When a dependency owns a data structure and publishes its TypeScript type, that exported type is

@@ -1,4 +1,4 @@
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { checkoutOfVault } from "@/runtime/engine/vault-finder";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
 import { workbenchFeedFor } from "@/server/archboard/lib/codex-workbench-feed";

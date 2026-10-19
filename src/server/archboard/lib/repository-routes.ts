@@ -22,7 +22,7 @@ import fs from "fs";
 import path from "path";
 import type { Express, Request, Response } from "express";
 
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { parseBoardKey } from "@/runtime/engine/board";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@/runtime/engine/repo-registry";
 import { createBrowserOriginGuard } from "@/server/browser-origin";

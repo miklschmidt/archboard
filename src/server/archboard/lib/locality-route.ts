@@ -23,7 +23,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */

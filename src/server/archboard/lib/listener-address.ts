@@ -1,5 +1,5 @@
 import net from "net";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { checkoutPort, SOURCE_CHECKOUT } from "@/runtime/engine/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server

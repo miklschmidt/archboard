@@ -1,6 +1,6 @@
 import path from "path";
 import type { Express, NextFunction, Request, Response } from "express";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { frontendState, sourceState } from "@/runtime/engine/staleness";
 import { mutationAdmission } from "@/server/archboard/lib/server-owners";
 import { serverPhase } from "@/server/archboard/lib/server-startup";

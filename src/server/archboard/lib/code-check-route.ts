@@ -42,7 +42,7 @@ import {
 } from "@/server/archboard/lib/code-findings-memory";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /**

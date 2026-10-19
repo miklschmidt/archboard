@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "url";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "@/runtime/engine/config";
 import {
 	foreignServiceError,
@@ -38,7 +38,7 @@ import {
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
 } from "@/runtime/engine/server-startup-cleanup";
-import { errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
 import {
 	serverPort,
 	healthOrNull,

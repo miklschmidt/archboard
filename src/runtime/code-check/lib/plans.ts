@@ -22,7 +22,7 @@ import {
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
 } from "@/runtime/code-target/index";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** A named plan the check refuses to read, and why. */
 interface PlanRefused {

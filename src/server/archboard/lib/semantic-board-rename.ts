@@ -24,7 +24,7 @@ import {
 } from "@/runtime/engine/board";
 import { claimBoard, claimOn, releaseClaim } from "@/runtime/engine/board-lock";
 import { forgetDoing, recentDoing, recordDoing } from "@/runtime/engine/board-doing";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import {
 	addressedVariant,
 	BoardRenameInputSchema,

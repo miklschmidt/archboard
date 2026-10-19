@@ -17,7 +17,7 @@ import {
 	type ShownConversationRefusal,
 	type ShownConversationReply,
 } from "@/shared/shown-conversation";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import type { TabSessionId } from "@/server/codex-workbench";
 import { codexWiring } from "@/server/archboard/lib/codex-wiring";
 import { paneCheckoutOf, panesOfTabSession } from "@/server/archboard/lib/codex-session-panes";

@@ -17,7 +17,7 @@ import {
 	type LockRecord,
 	type LockRequest,
 } from "@/runtime/engine/lib/board-lock-contracts";
-import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import {
 	announceHeld,
 	holderOf,

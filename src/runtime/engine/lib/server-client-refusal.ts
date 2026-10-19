@@ -4,7 +4,7 @@
 // holds it and the version the writer should have been working from, so the
 // CLI can answer without reading the board again.
 
-import { isRecord } from "@/runtime/engine/lib/unknown-record";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 
 interface BoardRefusal {
 	success: false;

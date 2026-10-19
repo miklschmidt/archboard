@@ -1,4 +1,4 @@
-import { errorCode } from "@/runtime/engine/lib/thrown-error";
+import { errorCode } from "@archboard/diagnostics/thrown-error";
 import {
 	listProcessGroupObservations,
 	readProcessObservation,

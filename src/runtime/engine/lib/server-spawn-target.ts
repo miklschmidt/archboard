@@ -8,7 +8,7 @@ import {
 	OtherSourceError,
 	type HealthStatus,
 } from "@/runtime/engine/server-client";
-import { codedError } from "@/runtime/engine/lib/thrown-error";
+import { codedError } from "@archboard/diagnostics/thrown-error";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 

@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { logger } from "@/runtime/engine/logger";
+import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { addressablePanes, panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";

@@ -9,7 +9,7 @@ import {
 	createServerApplicationLifetime,
 	createServerMutationAdmission,
 } from "../index.js";
-import { closeLogger } from "../../../runtime/engine/logger.js";
+import { closeLogger } from "@archboard/diagnostics/logger";
 
 describe("server application lifetime", () => {
 	test("starts in order and stops every owner in reverse order", async () => {

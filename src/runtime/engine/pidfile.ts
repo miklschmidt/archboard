@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { logger } from "@/runtime/engine/logger";
-import { errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { logger } from "@archboard/diagnostics/logger";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { stateDir } from "@/runtime/engine/state-dir";
 import {
 	ownerRecord,

@@ -28,7 +28,7 @@ import {
 	type Refusal,
 	variantsOf,
 } from "@/server/archboard/lib/footprint-variants";
-import { errorMessage } from "@/shared/thrown-error/index";
+import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@/server/archboard/lib/request-vault";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */

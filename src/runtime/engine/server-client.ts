@@ -40,7 +40,7 @@ import {
 	requestJson,
 	responseError,
 } from "@/runtime/engine/lib/server-client-transport";
-import { isRecord } from "@/runtime/engine/lib/unknown-record";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 
 /**
  * The options for a POST carrying a JSON body.
