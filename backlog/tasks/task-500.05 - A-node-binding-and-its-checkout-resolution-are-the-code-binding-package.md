@@ -1,9 +1,11 @@
 ---
 id: TASK-500.05
 title: A node binding and its checkout resolution are the code-binding package
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-19 01:59'
+updated_date: '2026-10-19 02:53'
 labels: []
 dependencies:
   - TASK-500.04
@@ -23,3 +25,13 @@ code-binding is layer 3 of docs/design/package-map.md: shared/code-target and ru
 - [ ] #2 The tests of the moved code live in packages/code-binding/tests
 - [ ] #3 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. packages/code-binding, same shape as the other four. Depends only on timing, diagnostics, process, workspace. No @/ import.
+2. shared/code-target (index.ts 353 lines of schemas and rules, binding-files.ts, executable.ts) goes under shared/ with role folders chosen from the file content (schemas for the binding, anchor and document-reference schemas, rules for pure functions, constants for fixed values). runtime/code-target (index.ts, diagnostics.ts, presentation.ts, lib/resolver-core.ts, lib/vault-checkout.ts) goes under runtime/ (operations for the resolver, services for vault-checkout, a role name that fits for presentation and diagnostics).
+3. exports: a browser-safe subpath for what the UI imports (70 importers, prove it with /tmp/pm/browser-trace.ts: no node: import reachable from frontend or src/ui), and a Node subpath for the resolver. Minimum, by grep of outside importers. A file with no outside importer stays private.
+4. Move the tests of the moved files (shared/code-target/tests/contract.test.ts, runtime/code-target/tests/*) to packages/code-binding/tests with # imports.
+5. Run /tmp/pm/move-package.ts, read the diff, hand-fix reported strings and depth-dependent paths. Update docs/agents/boundaries.md. bun run check.
+<!-- SECTION:PLAN:END -->
