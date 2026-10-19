@@ -32,7 +32,7 @@ project. `--tsconfig` alone is not a typed-project boundary, and the tested
 
 `lint:tests` uses the pre-policy repository rules and archive guard in
 `.oxlintrc.tests.jsonc` with nested lint configuration disabled. It owns
-`tests/**` and the module tests under `src/*/*/tests/**` outside `src/ui`.
+`tests/**`, `packages/*/tests/**` and `apps/*/tests/**`.
 `lint:policy` uses the approved policy in `.oxlintrc.jsonc`, type-aware analysis
 and one worker over `packages`, `apps`, `scripts`, `tools` and `vite.config.ts`; its
 ignore patterns are exactly the tests lane's inventory, so neither lane has a gap
@@ -62,8 +62,9 @@ only these nursery rules:
 
 Classic cyclomatic complexity is limited to **6**. Authored source is limited
 to **600 physical lines**, including blanks and comments. Local imports,
-re-exports, dynamic imports and imported types use `@/` aliases. Package imports
-remain package imports; aliases never bypass private-module boundaries. Source
+re-exports, dynamic imports and imported types in a package or app use its own `#` entries
+with file extensions. Imports of another package use its exports. These entries never
+bypass private-module boundaries. Source
 uses TypeScript, and `.js`, `.jsx`, `.mjs`, and `.cjs` are rejected; the Oxlint
 plugin and the Vite configuration are TypeScript for that reason. Vite reads its
 configuration from a default export, the one permitted default export.
