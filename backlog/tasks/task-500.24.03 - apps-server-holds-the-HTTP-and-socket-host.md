@@ -1,10 +1,10 @@
 ---
 id: TASK-500.24.03
 title: apps/server holds the HTTP and socket host
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-19 18:24'
-updated_date: '2026-10-19 19:59'
+updated_date: '2026-10-19 20:25'
 labels: []
 dependencies:
   - TASK-500.24.02
@@ -20,9 +20,9 @@ apps/server is the host: the rest of src/server/archboard and src/server.ts. Rea
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 apps/server holds the host in area and role folders with its own tests; server-lifecycle spawns apps/server/src/server.ts, source staleness watches apps, and static files are served from dist/frontend without a synthetic moduleDir
-- [ ] #2 System tests that start the server by path, the frontend-build staleness scan and the staleness test cover the app; startup failure, signals, shutdown, vault isolation, stale-source reporting and frontend serving tests pass; src/server and src/server.ts are gone
-- [ ] #3 bun run check passes
+- [x] #1 apps/server holds the host in area and role folders with its own tests; server-lifecycle spawns apps/server/src/server.ts, source staleness watches apps, and static files are served from dist/frontend without a synthetic moduleDir
+- [x] #2 System tests that start the server by path, the frontend-build staleness scan and the staleness test cover the app; startup failure, signals, shutdown, vault isolation, stale-source reporting and frontend serving tests pass; src/server and src/server.ts are gone
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,3 +36,9 @@ apps/server is the host: the rest of src/server/archboard and src/server.ts. Rea
 6. package.json scripts, .oxlintrc.jsonc, lint plugin entry list, skills processes, evals/coverage.json, docs/readme/assets.json, boundaries.md, test-suite.md, TESTING.md, INSTALL.md, AGENTS.md and the skills' references.
 7. Verify: tsc, lint, fmt, apps/server tests, repository-policy, server-lifecycle and workbench tests, system server-state and process-contracts, a real server run, then bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+apps/server holds the HTTP and socket host (about 34 files and 7 tests) in role folders under apps/server/src/server with a thin src/server.ts entry; server-lifecycle spawns apps/server/src/server.ts and watches apps; static files come from dist/frontend. Codex reviewed 9c73da677 with the code-review skill and fixed four findings in three commits (49c27e23f, ade178250, e20683e3f); 661 bindings matched, 209 test declarations preserved. bun run check exited 0 on the move; the review ran the server-state and process-contract suites (90 pass) and a real restart/stop.
+<!-- SECTION:FINAL_SUMMARY:END -->
