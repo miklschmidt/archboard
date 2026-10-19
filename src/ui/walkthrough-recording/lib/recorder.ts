@@ -11,8 +11,12 @@
 // takes the talk; this owns nothing else (TASK-381).
 
 import { RECORDING_PACE_TICK_MS } from "@archboard/timing";
-import type { RecordingPage, RecordingPhase, RecordingState } from "@/shared/walkthrough-recording";
-import { TALK_SAMPLE_RATE, type TalkLog } from "@/shared/walkthrough-recording/talk";
+import type {
+	RecordingPage,
+	RecordingPhase,
+	RecordingState,
+} from "@archboard/walkthrough/recording";
+import { TALK_SAMPLE_RATE, type TalkLog } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@/ui/codex-workbench-media";
 import {
 	sameBoardName,

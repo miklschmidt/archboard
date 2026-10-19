@@ -114,7 +114,7 @@ WebM with VP9. The picture is never encoded outside the browser.
 A page opened with `?record=<walkthrough>` shows its one pane at the full
 1920x1080 viewport and nothing else. The controls of the caption are dropped.
 The recorder drives the page through one global
-(`@/shared/walkthrough-recording`).
+(`@archboard/walkthrough/recording`).
 
 The recording does not use Remotion. Remotion renders frames that it seeks to,
 so everything on screen must move on a frame clock. The canvas moves on

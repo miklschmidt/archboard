@@ -25,6 +25,7 @@ const ADOPTERS: {
 	{ name: "code-intel", areas: ["shared", "runtime"] },
 	{ name: "renderer", areas: ["shared", "runtime", "ui"] },
 	{ name: "code-opener", areas: ["server", "ui"] },
+	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{
 		name: "process",
 		areas: ["runtime"],

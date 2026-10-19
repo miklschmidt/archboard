@@ -1,9 +1,9 @@
 // A page recording one walkthrough (TASK-304): the pane alone, paced by the
 // voice, keeping the talk its picture is rendered from afterwards (TASK-381).
 // The contract with the recorder that drives the page is in
-// `@/shared/walkthrough-recording`.
+// `@archboard/walkthrough/recording`.
 
-import { recordingAskedOf } from "@/shared/walkthrough-recording";
+import { recordingAskedOf } from "@archboard/walkthrough/recording";
 
 import { WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 

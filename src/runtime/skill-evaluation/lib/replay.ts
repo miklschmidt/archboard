@@ -11,7 +11,10 @@ import { addressedVariant, type SemanticBoard } from "@archboard/board/document"
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
 import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
-import { RecordingContainerSchema, type RecordingContainer } from "@/shared/walkthrough-recording";
+import {
+	RecordingContainerSchema,
+	type RecordingContainer,
+} from "@archboard/walkthrough/recording";
 import {
 	SAMPLES_PER_FRAME,
 	TALK_FORMAT,
@@ -22,8 +25,8 @@ import {
 	framesOf,
 	type Talk,
 	type TalkEvent,
-} from "@/shared/walkthrough-recording/talk";
-import { readTalk } from "@/runtime/walkthrough-recorder";
+} from "@archboard/walkthrough/talk";
+import { readTalk } from "@archboard/walkthrough/recorder";
 import {
 	finding,
 	type Finding,

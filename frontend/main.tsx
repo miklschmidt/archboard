@@ -6,7 +6,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { rendererBuild } from "virtual:archboard-renderer";
 
-import { replayAskedOf } from "@/shared/walkthrough-recording/talk";
+import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
 import {

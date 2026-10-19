@@ -18,7 +18,7 @@ import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
 	type RecordingState,
-} from "@/shared/walkthrough-recording";
+} from "@archboard/walkthrough/recording";
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { registeredRepositoryOfVault as repositoryOfVault } from "@archboard/workspace/checkouts";
@@ -34,7 +34,7 @@ import {
 	requireFreshPlace,
 	stateTalkPlace,
 	type TalkPlace,
-} from "@/runtime/walkthrough-recorder";
+} from "@archboard/walkthrough/recorder";
 import { CliUsageError, defineCommand, type CommandContext } from "@/cli/command-contract/contract";
 import { doingRefusal, serverRefusal } from "@/cli/command-contract/common";
 import {

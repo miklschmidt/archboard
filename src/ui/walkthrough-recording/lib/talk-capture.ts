@@ -10,11 +10,7 @@
 // picture: the picture is rendered from the talk afterwards, frame by frame.
 
 import { RECORDING_TAP_DRAIN_MS } from "@archboard/timing";
-import {
-	TALK_SAMPLE_RATE,
-	type TalkEvent,
-	type TalkLog,
-} from "@/shared/walkthrough-recording/talk";
+import { TALK_SAMPLE_RATE, type TalkEvent, type TalkLog } from "@archboard/walkthrough/talk";
 
 /** What the audio worklet's scope has that the DOM library does not declare. */
 declare class AudioWorkletProcessor {

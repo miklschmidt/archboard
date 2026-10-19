@@ -105,7 +105,7 @@ Five parts of ADR 0035 stand:
 ### The talk
 
 A talk is a directory of `talk.json` and `voice.wav`. `TalkSchema` in
-`src/shared/walkthrough-recording/talk.ts` is its one contract, and both the CLI
+`packages/walkthrough/src/shared/protocol/talk.ts` is its one contract, and both the CLI
 and the replay page read it. `talk.json` holds these things:
 
 - The format, its version, the time of the recording, the language, the theme
@@ -245,7 +245,7 @@ talk's.
 
 ### The render
 
-`renderTalk` in `src/runtime/walkthrough-recorder/lib/render.ts` starts Chromium
+`renderTalk` in `packages/walkthrough/src/runtime/operations/render-talk.ts` starts Chromium
 in software, with `--disable-gpu` and `--disable-partial-raster`. A partial
 raster reuses a tile's old content, so a frame's pixels depended on how many
 real frames Chromium drew while the page waited. Without the flag, two renders

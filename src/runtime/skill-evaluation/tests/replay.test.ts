@@ -9,8 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SemanticBoardSchema } from "@archboard/board/document";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { framesOf } from "@/shared/walkthrough-recording/talk";
-import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
+import { framesOf } from "@archboard/walkthrough/talk";
+import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
 import {
 	evaluateOutcomes,
 	inspectVideo,

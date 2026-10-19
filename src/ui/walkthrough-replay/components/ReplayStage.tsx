@@ -15,7 +15,7 @@
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { useMemo, useSyncExternalStore, type JSX } from "react";
 
-import type { Talk } from "@/shared/walkthrough-recording/talk";
+import type { Talk } from "@archboard/walkthrough/talk";
 import { TooltipProvider } from "@archboard/ui-kit/overlays";
 import {
 	PaneVaultContext,

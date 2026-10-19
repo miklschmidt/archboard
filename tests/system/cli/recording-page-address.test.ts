@@ -5,8 +5,8 @@
 // command found, and with no repository named it opens where a page opens.
 
 import { expect, test } from "bun:test";
-import { recordingPageUrl } from "@/runtime/walkthrough-recorder";
-import { recordingAskedOf } from "@/shared/walkthrough-recording";
+import { recordingPageUrl } from "@archboard/walkthrough/recorder";
+import { recordingAskedOf } from "@archboard/walkthrough/recording";
 import { addressFromSearch, parseWorkspaceSearchString } from "@/ui/board-routing/search";
 
 /**

@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 
 import { resolveProjectCodexExecutable } from "@archboard/codex-app-server/process";
 import { discoveredChromiumPath } from "@archboard/renderer/headless-chromium";
-import { findFfmpeg } from "@/runtime/video-encoder";
+import { findFfmpeg } from "@archboard/walkthrough/ffmpeg";
 
 /** The repository root. */
 const ROOT = resolve(import.meta.dir, "../..");

@@ -16,7 +16,7 @@ import {
 } from "@/shared/codex-browser-model/lib/scalars";
 import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 import type { DynamicApprovalSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval";
-import { RecordingNarrationSchema } from "@/shared/walkthrough-recording";
+import { RecordingNarrationSchema } from "@archboard/walkthrough/recording";
 
 /**
  * Builds the text command, command lease, operation outcome and browser

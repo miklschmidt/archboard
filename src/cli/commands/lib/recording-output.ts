@@ -4,7 +4,10 @@
 import { accessSync, constants, statSync } from "node:fs";
 import { dirname, extname } from "node:path";
 
-import { RecordingContainerSchema, type RecordingContainer } from "@/shared/walkthrough-recording";
+import {
+	RecordingContainerSchema,
+	type RecordingContainer,
+} from "@archboard/walkthrough/recording";
 import { CliUsageError } from "@/cli/command-contract/contract";
 
 const recorderUnavailableRefusal = {
