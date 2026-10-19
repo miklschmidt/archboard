@@ -59,6 +59,11 @@ function lint(root: string, config: string, file: string): CommandResult {
 	};
 }
 
+function ignored(result: CommandResult): void {
+	expect(result.exitCode, result.output).not.toBe(0);
+	expect(result.output).not.toContain("max-lines");
+}
+
 function refused(result: CommandResult, rule: string): void {
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain(rule);
@@ -78,6 +83,7 @@ describe("the UI rules cover the ui area of a package", () => {
 		"packages/alpha/src/ui/state/use-thing.ts": HOOK,
 		"packages/alpha/src/ui/hooks/use-thing.ts": HOOK,
 		"packages/alpha/src/ui/api/thing.ts": 'export { useThing } from "#ui/hooks/use-thing.ts";\n',
+		"packages/alpha/src/ui/api/actual-hook.ts": HOOK,
 		"packages/alpha/src/ui/components/helper.ts": "export const helper = 1;\n",
 		"packages/alpha/src/ui/rules/helper.ts": "export const helper = 1;\n",
 		"packages/alpha/src/ui/index.ts": "export const root = 1;\n",
@@ -102,6 +108,7 @@ describe("the UI rules cover the ui area of a package", () => {
 		withProject({ "oxlint.json": UI_RULES_CONFIG }, fixtures, (root) => {
 			for (const file of [
 				"packages/alpha/src/ui/state/use-thing.ts",
+				"packages/alpha/src/ui/api/actual-hook.ts",
 				"packages/alpha/src/ui/components/helper.ts",
 				"packages/alpha/src/ui/index.ts",
 				"packages/alpha/src/ui/rules/Widget.tsx",
@@ -142,10 +149,10 @@ describe("the lint configs split package tests the way they split src/ui", () =>
 		withProject(configs, files, (root) => {
 			const ui = "packages/alpha/tests/ui/components/long.test.tsx";
 			refused(lint(root, ".oxlintrc.jsonc", ui), "eslint(max-lines)");
-			refused(lint(root, ".oxlintrc.tests.jsonc", ui), "No files found to lint");
+			ignored(lint(root, ".oxlintrc.tests.jsonc", ui));
 			const other = "packages/alpha/tests/runtime/long.test.tsx";
 			refused(lint(root, ".oxlintrc.tests.jsonc", other), "eslint(max-lines)");
-			refused(lint(root, ".oxlintrc.jsonc", other), "No files found to lint");
+			ignored(lint(root, ".oxlintrc.jsonc", other));
 		});
 	});
 
