@@ -26,12 +26,12 @@ function readJsonc(name: string): Record<string, unknown> {
  * @returns The repository paths.
  */
 function gitFiles(...paths: string[]): string[] {
-	const run = (...args: string[]): string[] =>
-		Bun.spawnSync({ cmd: ["git", ...args, "--", ...paths], cwd: repoRoot })
-			.stdout.toString()
-			.split("\n")
-			.filter(Boolean);
-	return [...run("ls-files"), ...run("ls-files", "--others", "--exclude-standard")];
+	const result = Bun.spawnSync({
+		cmd: ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", ...paths],
+		cwd: repoRoot,
+	});
+	expect(result.exitCode).toBe(0);
+	return result.stdout.toString().split("\0").filter(Boolean);
 }
 
 describe("the workspace layout", () => {
