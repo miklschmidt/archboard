@@ -1,11 +1,11 @@
 ---
 id: TASK-500.07
 title: 'The Codex contract, capacity and identity start the codex-app-server package'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 03:14'
-updated_date: '2026-10-19 03:14'
+updated_date: '2026-10-19 03:33'
 labels: []
 dependencies:
   - TASK-500.05
@@ -21,10 +21,10 @@ codex-app-server is layer 5 of docs/design/package-map.md: one private app-serve
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 packages/codex-app-server holds the contract wrapper, the capacity constants and the workbench identity in shared/ role folders with an exports interface, and every importer uses @archboard/codex-app-server
-- [ ] #2 The generated contract is written under the package. scripts/generate-codex-app-server-contract.ts, .gitignore, the oxlint and formatter exclusions, postinstall, ensure:codex-contract and the lint and type-check chain name the new path, and a fresh clone with no generated output runs bun install and bun run check
-- [ ] #3 The browser reaches only subpaths that hold no node: import, and the opt-in capacity test paths in package.json point at the new location
-- [ ] #4 bun run check passes
+- [x] #1 packages/codex-app-server holds the contract wrapper, the capacity constants and the workbench identity in shared/ role folders with an exports interface, and every importer uses @archboard/codex-app-server
+- [x] #2 The generated contract is written under the package. scripts/generate-codex-app-server-contract.ts, .gitignore, the oxlint and formatter exclusions, postinstall, ensure:codex-contract and the lint and type-check chain name the new path, and a fresh clone with no generated output runs bun install and bun run check
+- [x] #3 The browser reaches only subpaths that hold no node: import, and the opt-in capacity test paths in package.json point at the new location
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ codex-app-server is layer 5 of docs/design/package-map.md: one private app-serve
 5. Prove a fresh clone: in a new empty directory under /tmp, git clone this worktree, run bun install, bun run ensure:codex-contract and bun run type-check there; report. Never reuse the old generated path.
 6. Move tests of moved files into packages/codex-app-server/tests. Update docs/agents/boundaries.md. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/codex-app-server starts with app-server-contract (wrapper), app-server-capacity and workbench-identity, all browser-safe, behind three exports; 291 files import them. The generated contract lives under packages/codex-app-server/src/shared/protocol/generated; the generator, .gitignore, both oxlint configs, the fmt exclusions, skill docs and test paths name it. A fresh clone ran bun install, ensure:codex-contract and type-check green, by the implementer and independently by Codex. Codex found that existing checkouts keep the old ignored tree, which lint then rejects; the generator now removes that tree (a real directory named generated, then the empty folder) before its ensure shortcut. bun run check passed on 52f222be8. The follow-up only changes the generator, verified by lint, the repository-policy tests and a simulated old checkout.
+<!-- SECTION:FINAL_SUMMARY:END -->
