@@ -33,7 +33,7 @@ import {
 	type VoiceLevel,
 } from "@archboard/workbench/voice";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
-import type { TalkPlayback } from "#ui/rules/walkthrough-replay/talk-playback.ts";
+import type { TalkPlayback } from "#ui/state/walkthrough-replay/talk-playback.ts";
 
 /** Inputs for the rendered picture. */
 interface ReplayStageProps {

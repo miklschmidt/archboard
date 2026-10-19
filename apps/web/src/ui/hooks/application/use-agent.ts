@@ -7,7 +7,7 @@ import { useMemo, useSyncExternalStore } from "react";
 
 import { useVoiceView } from "#ui/hooks/application/use-voice-view.ts";
 import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
-import { agentActions } from "#ui/rules/application/agent-actions.ts";
+import { agentActions } from "#ui/clients/application/agent-actions.ts";
 import type { ApprovalDecisions } from "#ui/state/application/workbench-owners.ts";
 import type { SnapshotStore } from "#ui/state/application/snapshot-cache.ts";
 import {

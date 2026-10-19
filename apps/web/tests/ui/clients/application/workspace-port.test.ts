@@ -5,7 +5,7 @@ import { initialPaneRecord } from "#ui/rules/application/pane-records.ts";
 import {
 	createWorkspacePort,
 	type WorkspacePortDeps,
-} from "#ui/rules/application/workspace-port.ts";
+} from "#ui/clients/application/workspace-port.ts";
 import type { ShellNotice } from "#ui/rules/shell/contracts.ts";
 
 // The address names a repository (ADR 0050), and the port turns that name into

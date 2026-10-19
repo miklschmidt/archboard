@@ -17,12 +17,12 @@ import {
 import { OpenerSettings } from "#ui/components/application/OpenerSettings.tsx";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
 import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
-import { createShellActions, vaultOf } from "#ui/rules/application/shell-actions.ts";
+import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
 import {
 	addressingOver,
 	announcingViews,
 	openingPaneList,
-} from "#ui/rules/application/workspace-port.ts";
+} from "#ui/clients/application/workspace-port.ts";
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
 import { applyTheme, initialTheme } from "#ui/clients/application/theme.ts";
 import { usePaneReadings } from "#ui/hooks/application/use-pane-reading.ts";

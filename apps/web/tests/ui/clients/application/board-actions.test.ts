@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createShellActions, type ShellActionDeps } from "#ui/rules/application/shell-actions.ts";
+import { createShellActions, type ShellActionDeps } from "#ui/clients/application/shell-actions.ts";
 import { initialPaneRecord } from "#ui/rules/application/pane-records.ts";
 import type { ShellNotice } from "#ui/rules/shell/contracts.ts";
 
