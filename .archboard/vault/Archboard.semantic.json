@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 71,
+	"version": 72,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-22T03:21:15.960Z",
+	"updatedAt": "2026-10-22T03:40:07.329Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -78,7 +78,25 @@
 					"U1k5hdA7",
 					"YHDPy2Y1",
 					"vBJQnNd2",
-					"yRl53uvR"
+					"yRl53uvR",
+					"f9xJZD6m",
+					"NSENtfOa",
+					"q7GKxqKL",
+					"VJXR3kbp",
+					"gnnoRaHy",
+					"LLVzjl11",
+					"WJFn6A3p",
+					"hRBLvJyD",
+					"K7yg89u4",
+					"rzta8x5j",
+					"q1ENQYcO",
+					"o56610zg",
+					"wSGdfYDg",
+					"iaq6pG14",
+					"xEGElQkc",
+					"LYFH1rhE",
+					"Gh6v3DzI",
+					"YBT0ys2i"
 				],
 				"flows": []
 			}
@@ -6846,6 +6864,314 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
 							"symbol": "cn"
+						}
+					},
+					{
+						"id": "fDI8NrtW",
+						"order": 39000,
+						"from": "DmbKboxU",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "find vaults through the chosen checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "0SFK7vbb",
+						"order": 40000,
+						"from": "w9zvoSFD",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "resolve bindings through the chosen checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "7YCu9h8P",
+						"order": 41000,
+						"from": "tdKalihR",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "list the known repositories",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/server/projections/repository-listing.ts",
+							"symbol": "listRegistry"
+						}
+					},
+					{
+						"id": "SGwsCHPo",
+						"order": 42000,
+						"from": "5zIYNuw1",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "keep the recorded talk and voice",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "writeTalk"
+						}
+					},
+					{
+						"id": "f9xJZD6m",
+						"order": 43000,
+						"from": "vEVm326r",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own the Codex process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "NSENtfOa",
+						"order": 44000,
+						"from": "OHywsFXm",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own the Chromium process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "q7GKxqKL",
+						"order": 45000,
+						"from": "doujM3ih",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "observe and stop the server process",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+							"symbol": "readProcessObservation"
+						}
+					},
+					{
+						"id": "VJXR3kbp",
+						"order": 46000,
+						"from": "LDqRcaY1",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own each evaluation process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/processes/process.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "gnnoRaHy",
+						"order": 47000,
+						"from": "DmbKboxU",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "durable board file operations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
+							"symbol": "unlinkDurably"
+						}
+					},
+					{
+						"id": "LLVzjl11",
+						"order": 48000,
+						"from": "7hdbqGFn",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate and persist opener configuration",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/store/configuration.ts",
+							"symbol": "stateDir"
+						}
+					},
+					{
+						"id": "WJFn6A3p",
+						"order": 49000,
+						"from": "doujM3ih",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate the server pidfile",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+							"symbol": "stateDir"
+						}
+					},
+					{
+						"id": "hRBLvJyD",
+						"order": 50000,
+						"from": "sw4oFps0",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "name the checkout in board context",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+							"symbol": "checkoutOfVault"
+						}
+					},
+					{
+						"id": "K7yg89u4",
+						"order": 51000,
+						"from": "6HYaX0mK",
+						"to": "w9zvoSFD",
+						"kind": "dependency",
+						"label": "select the source files of a binding",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts",
+							"symbol": "filesOfBinding"
+						}
+					},
+					{
+						"id": "rzta8x5j",
+						"order": 52000,
+						"from": "7hdbqGFn",
+						"to": "w9zvoSFD",
+						"kind": "dependency",
+						"label": "interpret and validate opener selections",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/projections/planning.ts",
+							"symbol": "OpenerSelectionSchema"
+						}
+					},
+					{
+						"id": "q1ENQYcO",
+						"order": 53000,
+						"from": "7hdbqGFn",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "read the canonical node binding",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/routes/code-opener.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "o56610zg",
+						"order": 54000,
+						"from": "doujM3ih",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "read the board protocol schemas",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "SemanticBoardLevelSchema"
+						}
+					},
+					{
+						"id": "wSGdfYDg",
+						"order": 55000,
+						"from": "LDqRcaY1",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "build evaluation board fixtures",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/laying.ts",
+							"symbol": "branchVariantTransition"
+						}
+					},
+					{
+						"id": "iaq6pG14",
+						"order": 56000,
+						"from": "5zIYNuw1",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "keep board and rendering schemas in a talk",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/shared/protocol/talk.ts",
+							"symbol": "LayoutEngineSchema"
+						}
+					},
+					{
+						"id": "xEGElQkc",
+						"order": 57000,
+						"from": "sw4oFps0",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "interpret selected board subjects",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/coordinator-callbacks/encoding.ts",
+							"symbol": "SemanticSubjectKindSchema"
+						}
+					},
+					{
+						"id": "LYFH1rhE",
+						"order": 58000,
+						"from": "LDqRcaY1",
+						"to": "OHywsFXm",
+						"kind": "dependency",
+						"label": "interpret rasterization receipts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/captures.ts",
+							"symbol": "SemanticRasterReceiptSchema"
+						}
+					},
+					{
+						"id": "Gh6v3DzI",
+						"order": 59000,
+						"from": "sw4oFps0",
+						"to": "vEVm326r",
+						"kind": "dependency",
+						"label": "correlate tool calls with the private session",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/coordinator-tools/validation.ts",
+							"symbol": "logicalToolCallKey"
+						}
+					},
+					{
+						"id": "YBT0ys2i",
+						"order": 60000,
+						"from": "5zIYNuw1",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate the recorded talks in state storage",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/store/talk-files.ts",
+							"symbol": "stateDir"
 						}
 					}
 				],
