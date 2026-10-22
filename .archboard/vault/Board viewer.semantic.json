@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 128,
+	"version": 129,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-22T03:21:15.185Z",
+	"updatedAt": "2026-10-22T03:40:37.320Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -50141,6 +50141,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
 							"symbol": "drawAgainst"
+						}
+					},
+					{
+						"id": "hHG2mx8m",
+						"order": 121000,
+						"from": "AaCxSfhT",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "include the comparison in the picture cache key",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-cache.ts",
+							"symbol": "comparisonKey"
 						}
 					}
 				],
