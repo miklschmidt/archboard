@@ -462,7 +462,11 @@ class Scene {
 	frameWalls(band: number): [string, readonly [number, number]][] {
 		return [...this.frames]
 			.filter(([id]) => band >= this.titles.get(id)!.band && band <= this.lastBandOf(id))
-			.map(([id, { node }]) => [id, [node.x!, node.x! + node.width!]]);
+			.map(([id, { node }]) => {
+				// A lone region is laid out as the frame, whose drawn walls stand inside it.
+				const inset = this.titles.get(id)!.inset ?? 0;
+				return [id, [node.x! + inset, node.x! + node.width! - inset]];
+			});
 	}
 
 	/**
