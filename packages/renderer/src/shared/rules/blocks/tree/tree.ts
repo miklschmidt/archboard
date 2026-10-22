@@ -390,16 +390,11 @@ class BlockTree {
 		const walk = new CycleWalk();
 		for (const projection of here.filter((one) => !upward.includes(one)))
 			walk.add(projection.from, projection.to, projection.edge.id);
-		// A title stands above its members even without an authored relationship.
-		// Include that ordering before Graphviz chooses how to break a cycle.
-		for (const [member, around] of block.clusterOf)
-			if (block.clusters.get(around)!.kind === "frame") walk.add(around, member);
-		const pointed = new Set([...here.map(({ to }) => to), ...block.clusterOf.keys()]);
-		const frames = [...block.clusters.values()].filter((cluster) => cluster.kind === "frame");
-		const items = [headerOf(block), ...frames.map(({ id }) => id), ...block.items];
-		for (const item of items.filter((one) => !pointed.has(one))) walk.from(item);
-		for (const item of items) walk.from(item);
-		return new Set([...upward.map(({ edge }) => edge.id), ...walk.back]);
+		const containment = [...block.clusterOf].filter(
+			([, around]) => block.clusters.get(around)!.kind === "frame",
+		);
+		const back = walk.withContainment([headerOf(block), ...block.items], containment);
+		return new Set([...upward.map(({ edge }) => edge.id), ...back]);
 	}
 
 	/**

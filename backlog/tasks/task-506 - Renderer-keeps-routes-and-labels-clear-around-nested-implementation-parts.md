@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
-updated_date: '2026-10-22 03:51'
+updated_date: '2026-10-22 04:00'
 labels: []
 dependencies: []
 references:
@@ -45,4 +45,6 @@ Implementation commit fe3510df3 keeps the existing renderer modules and contract
 The second renderer group passed 206 cases and found one remaining Board viewer Track wall hug. A minimized 30-node input reproduced qu6pVEXF beside the inner frame of a lone group region. Routing read the outer region walls while the final frame stands one region inset inside them. Scene.frameWalls now reports the drawn inner walls. The original full Board viewer geometry probe reports no card, label, or wall failures. The existing wide-board owner already catches this exact regression, so no duplicate large fixture is added. The supported renderer group is running to assess all geometry and timing contracts.
 
 The final supported renderer group passed all 207 tests across 34 files, with 2,005 assertions and zero failures in 100.68 seconds. Log: /tmp/archboard-task506-final-renderer.log. This includes both original wide-board failures, the later Board viewer wall regression, and all existing clearance, lane, and timing assertions. The complete normal gate is next.
+
+The complete gate passed type-check and every wide-board case, then found two focused routing regressions among 4,870 module tests. Both fixtures contain authored cycles among children without a relationship to their parent. The first cycle change altered their traversal root and selected different return edges. CycleWalk now preserves authored cycle choices first, then adds containment ordering and finds only the extra constraints. All 18 focused rank, route, and label cases pass in 1.44 seconds, and targeted source lint passes. No assertions or deadlines changed. The remaining normal lanes from the failed gate are running before the next complete run.
 <!-- SECTION:NOTES:END -->
