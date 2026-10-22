@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-19 23:11'
-updated_date: '2026-10-22 03:18'
+updated_date: '2026-10-22 03:24'
 labels: []
 dependencies: []
 ordinal: 908000
@@ -41,4 +41,6 @@ Baseline at 85daa00fb: archboard check --code completed in 15.055 seconds with 8
 User approved explicit additionalPaths on 2026-10-22. Archboard@TASK-501 describes complete ownership paths and retains the single code-opening action. Its compare changes code-binding and code-intel responsibilities only.
 
 The user reconsidered additionalPaths because a node spanning distinct modules needs lower-level children. Model implementation stopped. Unfinished code is preserved only on experiment/task501-additional-paths at 69b7978c0, and the product worktree again uses the existing singular schema. Archboard@TASK-501 is shelved. Representative bad anchors include gateway to thread-link citing workhorseLinkKey, and gateway to browser citing diffBrowserSnapshots. These require board repairs rather than expanded ownership.
+
+Board-only correction clears all 82 baseline ANCHOR_MISMATCH findings while keeping singular bindings. The new sibling-role-child regression passes in 0.237 seconds and retains a negative unrelated-anchor assertion. Newly visible EXPOSED_UNUSED information comes from containers now examined by interface analysis. Source inspection and a direct resolver probe show that manifest # imports are not resolved, including the real pane-core -> createPaneReportSender call. That separate analyzer defect is tracked in TASK-505. No exports changed in TASK-501. The Board rasterizer containment warning was corrected by keeping its existing Talk capture peer and addressing that owner in the recording flow. Structural archboard check now exits 0 with no diagnostics.
 <!-- SECTION:NOTES:END -->
