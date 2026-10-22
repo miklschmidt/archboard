@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
+updated_date: '2026-10-22 03:42'
 labels: []
 dependencies: []
 references:
@@ -33,3 +34,9 @@ The TASK-501 normal gate exposed two renderer failures when current boards gaine
 <!-- SECTION:PLAN:BEGIN -->
 Diagnose and minimize the two observed clearance failures, then repair their existing routing seams. Keep public behavior and board meaning unchanged. No architecture board is affected by the internal rendering correction. Run the focused repro after each relevant fix, then the complete normal gate after the repairs.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The minimized Track regression first failed on detached label 2wlebJ2T. The cause was cycle detection ignoring title-to-member ordering. The minimized Blocks regression first failed on ZDhACWtE crossing TY7m2mtd. The cause was a side port inside the obstacle clearance of a packed container. The repairs include only semantic container ordering and side clearance in PackLayout. An initial broader inset experiment changed card layouts and was removed. Five targeted regression and existing routing cases now pass in 1.98 seconds. Source lint and full corpus validation remain in progress.
+<!-- SECTION:NOTES:END -->

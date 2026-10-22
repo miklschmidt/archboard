@@ -1,0 +1,89 @@
+{
+	"nodes": [
+		{
+			"id": "dtYjWvlf",
+			"order": 3000,
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Reads and explores rendered boards",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "xsn0RvSi",
+			"order": 4000,
+			"name": "Pane session",
+			"kind": "module",
+			"responsibility": "Keeps each pane in server contact",
+			"groups": ["panes"]
+		},
+		{
+			"id": "aG0rP4SX",
+			"order": 18000,
+			"name": "Tab session",
+			"kind": "function",
+			"responsibility": "The tab's own id, kept in sessionStorage: a reload keeps it, and a new tab or window mints another",
+			"groups": ["agent", "panes"]
+		},
+		{
+			"id": "rouptSyK",
+			"order": 20000,
+			"name": "Frame clock",
+			"kind": "module",
+			"responsibility": "The one clock that glides, picture transitions and subtitle lingers read: the browser's own on a live page, a stepped one on a replay",
+			"groups": ["drawing", "walkthrough"]
+		},
+		{
+			"id": "WWPvFeLg",
+			"order": 30000,
+			"name": "Drill-down repositories",
+			"kind": "module",
+			"responsibility": "Resolves drill-down repositories for the application"
+		},
+		{
+			"id": "ScHf2pj3",
+			"order": 31000,
+			"name": "Session lifecycle",
+			"kind": "module",
+			"responsibility": "Keeps a pane session mounted and publishes its React state",
+			"parent": "xsn0RvSi"
+		},
+		{
+			"id": "8yYKWsmB",
+			"order": 32000,
+			"name": "Pane messages",
+			"kind": "module",
+			"responsibility": "Applies server board and version messages to a pane",
+			"parent": "xsn0RvSi"
+		},
+		{
+			"id": "TY7m2mtd",
+			"order": 33000,
+			"name": "Board stage",
+			"kind": "module",
+			"responsibility": "Composes the read-only board stage and its presentation controls",
+			"parent": "dtYjWvlf"
+		}
+	],
+	"edges": [
+		{
+			"id": "ZDhACWtE",
+			"order": 20000,
+			"from": "xsn0RvSi",
+			"to": "dtYjWvlf",
+			"kind": "event",
+			"label": "a board's new version, in the pane's vault",
+			"emphasis": "normal"
+		},
+		{
+			"id": "w9Qrw2Xe",
+			"order": 34000,
+			"from": "xsn0RvSi",
+			"to": "aG0rP4SX",
+			"kind": "call",
+			"label": "the id each of this tab's sockets carries",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

@@ -1,0 +1,52 @@
+{
+	"nodes": [
+		{
+			"id": "u2LFaG7R",
+			"order": 3000,
+			"name": "Browser gateway",
+			"kind": "module",
+			"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every pane of a tab is carried out by the workhorse of the checkout the tab shows"
+		},
+		{
+			"id": "tzyaOHwF",
+			"order": 11000,
+			"name": "Browser pane",
+			"kind": "service",
+			"responsibility": "The pane a user works in: it names its tab session, holds the tab's lease, sends commands and draws the published state"
+		},
+		{
+			"id": "8DmvR3O6",
+			"order": 42000,
+			"name": "Browser message publication",
+			"kind": "module",
+			"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+			"parent": "u2LFaG7R"
+		}
+	],
+	"edges": [
+		{
+			"id": "Lo6Q7GDB",
+			"order": 10000,
+			"from": "tzyaOHwF",
+			"to": "u2LFaG7R",
+			"kind": "event",
+			"label": "lease, commands, snapshots",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "2wlebJ2T",
+			"order": 12000,
+			"from": "8DmvR3O6",
+			"to": "tzyaOHwF",
+			"kind": "event",
+			"label": "publish deltas or replacement snapshots",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}
