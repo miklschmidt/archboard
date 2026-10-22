@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, jest, test } from "bun:test";
 import {
 	mkdtempSync,
 	readFileSync,
@@ -18,6 +18,7 @@ import { readSemanticBoard } from "#runtime/operations/read/read.ts";
 import { locateSemanticBoard } from "#runtime/store/location.ts";
 import { BoardCreateInputSchema, VariantEditInputSchema } from "#shared/protocol/board-input.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
+import * as timing from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-semantic-store-"));
 
@@ -61,6 +62,19 @@ async function edit(name: string, stated: Record<string, unknown>, expectedVersi
 /** The nodes on a board's first variant, by name. */
 const namesOn = (board: SemanticBoard) =>
 	board.variants[0]!.content.nodes.map((node) => node.name).toSorted();
+
+async function advanceLockTime(ms: number): Promise<void> {
+	let elapsed = 0;
+	while (elapsed < ms) {
+		const step = Math.min(timing.LOCK_POLL_MS, ms - elapsed);
+		await Promise.resolve();
+		await Promise.resolve();
+		jest.advanceTimersByTime(step);
+		await Promise.resolve();
+		await Promise.resolve();
+		elapsed += step;
+	}
+}
 
 afterAll(() => {
 	rmSync(vault, { recursive: true, force: true });
@@ -301,7 +315,8 @@ describe("one writer at a time, over the whole board", () => {
 		try {
 			const location = locateSemanticBoard("busy", vault);
 			const before = readFileSync(location.file, "utf-8");
-			const refused = await writeSemanticBoard({
+			jest.useFakeTimers();
+			const refusal = writeSemanticBoard({
 				vault,
 				board: "busy",
 				writer: { id: "me", kind: "agent" },
@@ -310,10 +325,13 @@ describe("one writer at a time, over the whole board", () => {
 				),
 				expectedVersion: 1,
 			});
+			await advanceLockTime(timing.LOCK_WAIT_CAP_MS);
+			const refused = await refusal;
 			expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_HELD");
 			expect(readFileSync(location.file, "utf-8")).toBe(before);
 		} finally {
 			lock.releaseHold(vault, key, hold.holder.id);
+			jest.useRealTimers();
 		}
 	}, 30_000);
 });
