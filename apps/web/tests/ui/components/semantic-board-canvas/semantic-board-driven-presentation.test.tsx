@@ -11,6 +11,7 @@ import { expect, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
 import { PRESENTATION_STEP_MS } from "@archboard/timing";
+import { takeFrames } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import { useOverlayPlace } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import {
@@ -147,15 +148,18 @@ test("a requested step lights its subjects without raising anything a user's han
 });
 
 test("a step still gliding is reported as on its way, and as arrived once the glide lands", async () => {
-	serving();
-	const reported = driven(1, false);
-	await settle();
-	expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: false, answering: "request-1" });
-	await act(async () => {
-		await new Promise<void>((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 100));
-	});
-	await settle();
-	expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: true, answering: "request-1" });
+	const frames = takeFrames();
+	try {
+		serving();
+		const reported = driven(1, false);
+		await settle();
+		expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: false, answering: "request-1" });
+		frames.run(PRESENTATION_STEP_MS + 100);
+		await settle();
+		expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: true, answering: "request-1" });
+	} finally {
+		frames.restore();
+	}
 });
 
 test("a user stepping by hand takes the position back, and the same request does not return it", async () => {

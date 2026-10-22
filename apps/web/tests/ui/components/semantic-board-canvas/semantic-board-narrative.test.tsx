@@ -25,7 +25,7 @@ import {
 	surface,
 	viewport,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
-import { cameraNow } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
+import { cameraNow, takeFrames } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import {
 	current,
 	goTo,
@@ -452,23 +452,24 @@ test("a reader who asked for reduced motion arrives at a step at once", async ()
 });
 
 test("a reader who did not ask for reduced motion is glided to the step, and it lands where the fit says", async () => {
-	serving();
-	mountStage();
-	await presenting();
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
-	});
-	await settle();
-	goTo(1);
-	await settle();
-	// Still on its way: the step has not finished arriving.
-	expect(surface().hasAttribute("data-camera-motion")).toBe(true);
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, PRESENTATION_STEP_MS + 200));
-	});
-	await settle();
-	expect(surface().hasAttribute("data-camera-motion")).toBe(false);
-	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	const frames = takeFrames();
+	try {
+		serving();
+		mountStage();
+		await presenting();
+		frames.run(PRESENTATION_STEP_MS + 200);
+		await settle();
+		goTo(1);
+		await settle();
+		// Still on its way: the step has not finished arriving.
+		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
+		frames.run(PRESENTATION_STEP_MS + 200);
+		await settle();
+		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+		expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	} finally {
+		frames.restore();
+	}
 });
 
 test("Escape leaves, and gives the reader back the camera and the view they had", async () => {

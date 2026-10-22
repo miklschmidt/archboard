@@ -113,6 +113,16 @@ speed. The factor multiplies how long a test waits for something that should
 happen. It never multiplies a poll cadence, a window in which nothing may happen,
 or a product duration.
 
+Advance test time explicitly for timers, debounce, motion, and fixture pacing.
+Use Bun fake timers or the existing stepped frame clock, and inspect intermediate
+states before advancing to completion. Keep all frame, geometry, ordering, and
+cleanup assertions. A real-time wait needs a contract that a controlled clock
+cannot exercise, with the reason beside the wait. Process readiness polls wait
+for external evidence and return as soon as it arrives.
+
+Run the focused owners while implementing a change. Run the complete normal gate
+at a completed checkpoint, then repeat it only after a relevant change or failure.
+
 No `TEST_*` budget comes from a product duration (TASK-154).
 `tests/system/support/timing.ts` imports nothing from `packages/timing`.
 A wait deadline is a ceiling that a passing run never reaches.

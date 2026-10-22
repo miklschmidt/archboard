@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 
 import {
 	NOTHING_READ,
@@ -12,12 +12,20 @@ import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 // the feedback loop of 2026-09-20 coming back: a change nobody's hand made being told to the
 // voice model as the user's, and the quieter failure beside it, a real pick being told to nobody.
 
-/**
- * Wait long enough for one debounce to have fired.
- * @returns Settles after the debounce.
- */
-const settled = (): Promise<void> =>
-	new Promise((resolve) => setTimeout(resolve, SELECTION_DEBOUNCE_MS * 2));
+beforeEach(() => {
+	jest.useFakeTimers();
+});
+
+afterEach(() => {
+	jest.useRealTimers();
+});
+
+/** Advance the debounce and drain the send and rejection promises. */
+async function settled(): Promise<void> {
+	jest.advanceTimersByTime(SELECTION_DEBOUNCE_MS);
+	await Promise.resolve();
+	await Promise.resolve();
+}
 
 /**
  * A drawn reading.
