@@ -91,6 +91,18 @@ function cssReferences(code: string, filename: string): CssReference[] {
 				// CSS url(#mask) names a document fragment, not a manifest import.
 				if (!reference.url.startsWith("#")) add(reference);
 			},
+			/**
+			 * Read image-set candidates, which the parser does not pass to Url.
+			 * @param image The parsed image value.
+			 */
+			Image(image) {
+				if (image.type !== "image-set") return;
+				for (const { image: candidate } of image.value.options) {
+					if (candidate.type === "url" && !candidate.value.url.startsWith("#")) {
+						add(candidate.value);
+					}
+				}
+			},
 		},
 	});
 	return found;
