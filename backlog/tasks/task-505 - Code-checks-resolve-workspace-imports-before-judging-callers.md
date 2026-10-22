@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:24'
-updated_date: '2026-10-22 03:42'
+updated_date: '2026-10-22 03:49'
 labels: []
 dependencies: []
 references:
@@ -43,4 +43,6 @@ Restore static TypeScript import resolution through manifest-local imports and w
 User explicitly requested the resolver defect fixed ASAP on 2026-10-22. Reproduction: #ui/clients/pane-session/pane-report-sender.ts resolves to undefined from pane-core.ts despite its package imports declaration. The real importing file calls createPaneReportSender, while code check reports it unused.
 
 Commit 6964cd0fa resolves manifest-local imports and declared workspace exports from CheckoutFiles and supplied text reads. All 39 focused tests pass, including pane-session callers, public package calls, containment, and cached source bytes across historical manifest changes. Targeted lint and formatting pass. The first live code pass clears the false Board move unused-export finding and exposes 30 missing-relationship identities. Source-backed board corrections reconcile architectural calls, while notes explain pure helper and data-node dependencies outside each board question. Browser visual ownership now binds components, with a child for voice box presence, instead of treating all workbench UI roles as one visual owner. Complete gate remains pending.
+
+The reconciled live code pass has zero structural diagnostics and zero ANCHOR_MISMATCH. Pane session now has 31 of 41 names unused, down from the incorrect 41 of 41. Fourteen RELATIONSHIP_UNDRAWN identities intentionally remain: Archboard omits timing/error helpers, code-intel recovery-command formatting, and reverse dependencies from stored data. Its skills package relationships already represent the evaluator process dependencies on process, board, renderer, and walkthrough. Server boards omit browser-local rendering, pure board-address helpers, workhorse checkout identification, and CLI-only bound-vault discovery. Live panes address parsing and normalization do not read or write the board store. Those source-backed omissions keep each board focused on its stated question. No checker policy, warning, or code evidence is suppressed. Evidence: /tmp/archboard-task505-root-boards.md and /tmp/archboard-task505-backend-boards.md.
 <!-- SECTION:NOTES:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-19 23:11'
-updated_date: '2026-10-22 03:31'
+updated_date: '2026-10-22 03:49'
 labels: []
 dependencies: []
 ordinal: 908000
@@ -47,4 +47,6 @@ Board-only correction clears all 82 baseline ANCHOR_MISMATCH findings while keep
 Final code-check comparison: 82 ANCHOR_MISMATCH findings become zero. All eight ANCHOR_SYMBOL_MISSING identities match the baseline, with none added. Structural diagnostics are empty. The 16 newly visible EXPOSED_UNUSED identities are information findings from existing exports now inspected through containers, not new exports; the unresolved manifest-import defect is documented in TASK-505 pending the requested approval to retain that follow-up. Browser application and Semantic renderer overviews were rasterized and inspected. The extra wide Application owners view was removed during simplification because the existing focused views and root overview already serve those readings. Product source, schemas, runtime readers, consumer skill and evaluation inputs are unchanged from 85daa00fb. Only the focused regression was added outside the board and decision records. No active model proposal remains to adopt; current boards were corrected against unchanged code.
 
 The complete normal gate failed after 253.50 seconds at the module lane: 4,859 pass, 1 skip, 2 fail. The new board detail exposes renderer clearance defects on Agent workbench (Track) and Browser application (Blocks). The exact geometry reproduces outside the duration assertion. TASK-506 records the mandatory gate repair under the archboard-dev completion workflow. Remaining normal lanes are running separately so the early module failure hides none. TASK-501 stays In Progress until the repair and complete gate pass.
+
+TASK-505 is now implemented as 6964cd0fa. Its source-backed board corrections retain singular ownership, narrow the raster session and visual workbench paths, and draw architectural calls now resolved through manifests. The live code pass still has zero ANCHOR_MISMATCH and no structural diagnostics. Newly resolved utility or data-node calls outside the board questions remain visible with scope explanations in TASK-505 notes. TASK-506 fixes the required renderer failures and remains under validation. The prior remaining-lane run passed system (257), repository (135), and all 19 browser owners. A complete gate is still required after all repairs. README freshness already failed for all 16 assets at baseline 85daa00fb, as proved by /tmp/archboard-task501-readme-baseline.json, so this task does not regenerate unrelated stale media.
 <!-- SECTION:NOTES:END -->
