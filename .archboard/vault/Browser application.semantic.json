@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 128,
+	"version": 129,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-22T03:20:16.544Z",
+	"updatedAt": "2026-10-22T03:25:51.093Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -231,46 +231,6 @@
 				"flows": [
 					"2UbNBuFP"
 				]
-			}
-		},
-		{
-			"id": "4sZqdYyC",
-			"name": "Application owners",
-			"grammar": "architecture",
-			"summary": "The application owners and their collaboration, with internal implementation parts omitted.",
-			"scope": {
-				"kind": "selection",
-				"nodes": [
-					"HggZR41l",
-					"dtYjWvlf",
-					"xsn0RvSi",
-					"HCghQa6I",
-					"zWQG6LJZ",
-					"0x47EMoO",
-					"0SRnYXnC",
-					"4LDuKQvq",
-					"G4NHQC25",
-					"c4LPnwh5",
-					"hDWpDois",
-					"6uWT4mUj",
-					"zs2QxCu7",
-					"941UBxya",
-					"0yb2VbKc",
-					"fscW90Xt",
-					"aG0rP4SX",
-					"aixSjfNe",
-					"rouptSyK",
-					"t5Wy06ua",
-					"p5UCow7F",
-					"HQWPLutt",
-					"cLeaiTWy",
-					"POloYnX3",
-					"wlbLOPSH",
-					"W0EmXnR9",
-					"01sVgqBF"
-				],
-				"edges": [],
-				"flows": []
 			}
 		}
 	],
