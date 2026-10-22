@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 32,
+	"version": 33,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-19T22:35:29.810Z",
+	"updatedAt": "2026-10-22T03:20:52.408Z",
 	"views": [
 		{
 			"id": "QJ4WHuKs",
@@ -3127,6 +3127,18 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/generation/hooks.ts"
 						}
+					},
+					{
+						"id": "99KMASDs",
+						"order": 14000,
+						"name": "Reviewed login policy",
+						"kind": "config",
+						"responsibility": "States which reviewed login variants the session supports or refuses",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/schemas/authored-schemas.ts",
+							"symbol": "LOGIN_POLICIES"
+						}
 					}
 				],
 				"edges": [
@@ -3371,9 +3383,9 @@
 						"id": "40GtFaKL",
 						"order": 21000,
 						"from": "JBu1uGdl",
-						"to": "Sk7GfGta",
+						"to": "99KMASDs",
 						"kind": "dependency",
-						"label": "reviewed methods, policies and schemas",
+						"label": "supported and refused login variants",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

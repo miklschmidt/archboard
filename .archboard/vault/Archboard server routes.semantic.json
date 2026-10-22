@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 79,
+	"version": 80,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-19T22:52:39.058Z",
+	"updatedAt": "2026-10-22T03:20:51.905Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -31238,7 +31238,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "apps/server/src/server/routes/footprint/footprint-route.ts",
-																	"symbol": "variantsOf"
+																	"symbol": "refuse"
 																}
 															}
 														]
@@ -31255,7 +31255,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "apps/server/src/server/routes/footprint/footprint-route.ts",
-																	"symbol": "variantsOf"
+																	"symbol": "refuse"
 																}
 															}
 														]

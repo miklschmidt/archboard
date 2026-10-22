@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 282,
+	"version": 283,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-19T22:48:43.466Z",
+	"updatedAt": "2026-10-22T03:20:51.501Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -325,6 +325,23 @@
 				"flows": [
 					"U1HsxCvz"
 				]
+			}
+		},
+		{
+			"id": "jFQXHEAs",
+			"name": "Code facts internals",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"mR7wPSei",
+					"3CaBjhIM",
+					"nDQmpHQi",
+					"6a2R1ddu",
+					"adthSPYy"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -111748,12 +111765,8 @@
 						"name": "Code facts",
 						"kind": "module",
 						"responsibility": "Tells the code check what one file defines, references and imports, and what a module exposes, and keeps each file's facts in memory by its content",
-						"description": "ADR 0046's engine. One table of adapters, src/runtime/code-facts/lib/adapters.ts, says which files each language or format reads, by extension or file name, with its parser (a tree-sitter grammar or one Bun has) and its resolver; each adapter's own files say what it reads. A definition carries its qualified name and the visibility its language gives it. A reference carries its evidence kind: call, import, configured path or build dependency; the name of an environment value or an event in a string counts. A resolver leads a use to the file or address it reaches: through an import or an include, or through the names that a module, project or package declares. Each language's rule in module-exposure.ts says what a module exposes. Code that did not parse has no facts, and a name the reading cannot place there is unknown, never absent; a file no adapter reads is text. It finds a definition and a module's exposed names. One cache entry per file by content hash; grammars load on first use; a pass yields after each parse.",
-						"parent": "ScjxtP0G",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/code-intel/src/runtime/operations/code-facts"
-						}
+						"description": "The cached reader and the language analysis form one code-facts subsystem. The reader retains facts by file content and starts each pass. The analysis selects adapters, resolves imports, finds definitions, and reports module exposure.",
+						"parent": "ScjxtP0G"
 					},
 					{
 						"id": "1aoB46lM",
@@ -111874,6 +111887,30 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+						}
+					},
+					{
+						"id": "mR7wPSei",
+						"order": 43000,
+						"name": "Cached fact reader",
+						"kind": "module",
+						"responsibility": "Reads permitted source files through a cache keyed by file content and creates disk or historical passes",
+						"parent": "aqjsNyJ9",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/services/code-facts/reader.ts"
+						}
+					},
+					{
+						"id": "3CaBjhIM",
+						"order": 44000,
+						"name": "Fact analysis",
+						"kind": "module",
+						"responsibility": "Parses each supported language or format, resolves references, finds definitions, and reads module exposure",
+						"parent": "aqjsNyJ9",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/code-facts"
 						}
 					}
 				],
@@ -112298,7 +112335,7 @@
 						"id": "osnkOhpk",
 						"order": 69000,
 						"from": "nDQmpHQi",
-						"to": "aqjsNyJ9",
+						"to": "mR7wPSei",
 						"kind": "call",
 						"label": "the facts of each file, and what each module exposes",
 						"emphasis": "normal",
@@ -112312,7 +112349,7 @@
 						"id": "ZAbHs2zZ",
 						"order": 70000,
 						"from": "6a2R1ddu",
-						"to": "aqjsNyJ9",
+						"to": "3CaBjhIM",
 						"kind": "call",
 						"label": "the line where a bound symbol is defined",
 						"emphasis": "normal",
@@ -112592,7 +112629,7 @@
 						"id": "kXzRYl25",
 						"order": 113000,
 						"from": "adthSPYy",
-						"to": "aqjsNyJ9",
+						"to": "3CaBjhIM",
 						"kind": "call",
 						"label": "reads declarations from historical source bytes",
 						"description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
@@ -112657,6 +112694,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/service/service-routes.ts",
 							"symbol": "mutationAdmission"
+						}
+					},
+					{
+						"id": "ZKvJWd4O",
+						"order": 121000,
+						"from": "mR7wPSei",
+						"to": "3CaBjhIM",
+						"kind": "call",
+						"label": "select the adapters for each checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/services/code-facts/reader.ts",
+							"symbol": "readingsIn"
 						}
 					}
 				],
