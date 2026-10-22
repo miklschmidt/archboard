@@ -25,6 +25,8 @@ native lanes in this order:
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
+`lint:policy` includes `lint:css`, which applies the shared import boundaries to authored CSS.
+The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.
 The workflow retains its full output as the `validation-log` artifact.
 

@@ -17,6 +17,11 @@
 		"./rasterizer": "./src/runtime/api/rasterizer.ts",
 		"./headless-chromium": "./src/runtime/api/headless-chromium.ts",
 		"./theme": "./src/runtime/api/theme.ts",
-		"./assets": "./src/runtime/api/assets.ts"
+		"./assets": "./src/runtime/api/assets.ts",
+		"./theme.css": "./assets/theme.css",
+		"./fonts/Onest-wght-v1.000.ttf": "./assets/fonts/Onest-wght-v1.000.ttf",
+		"./fonts/DMMono-Regular-v1.000.ttf": "./assets/fonts/DMMono-Regular-v1.000.ttf",
+		"./fonts/DMMono-Medium-v1.000.ttf": "./assets/fonts/DMMono-Medium-v1.000.ttf",
+		"./fonts/BigShouldersDisplay-wght.ttf": "./assets/fonts/BigShouldersDisplay-wght.ttf"
 	}
 }

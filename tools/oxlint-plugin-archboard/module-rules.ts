@@ -1,13 +1,14 @@
 // Rules about how files reach each other: area dependency directions, the exports
 // of a package, the closed doors of an app, test ownership and the # import spelling.
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
-import { createRule, report, sourceImportVisitors, type RuleContext } from "./rule-api.ts";
+import { createRule, report, sourceImportVisitors } from "./rule-api.ts";
 import {
 	exportedSubpaths,
 	isTestingSubpath,
 	resolveAppSpecifier,
 	resolvePackageSpecifier,
 	resolveSourcePath,
+	type ImportContext,
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./import-resolution.ts";
 import {
@@ -63,7 +64,7 @@ const importBoundaries = createRule(
 
 /** What the module-entrypoints rule knows about the importing file. */
 interface Importer {
-	context: RuleContext;
+	context: ImportContext;
 	relativePath: string;
 	owner: TestOwner | undefined;
 }
@@ -217,56 +218,64 @@ function placementMessages(importer: Importer): string[] {
 	return messages;
 }
 
-const moduleEntrypoints = createRule(
-	{
-		noDeepImportAcrossPackages:
-			"Import another package only through a path that its package.json exports names. Every other file of a package is private.",
-		noImportOfApp:
-			"Nothing imports an app, by path or by its @archboard-app/ name: only the app's own source and tests reach its files, through # imports. Move shared behavior into a package and import it through the package's exports.",
-		noRetiredAlias:
-			"The @/ alias is gone. Import a file of your own package or app with a # import, and another package through an @archboard/<name> export.",
-		noUnresolvedSubpathImport:
-			"A # import must name an existing file through the imports field of the package.json of the package or app that owns the importing file. Scripts, tools and root tests have no # imports.",
-		noProductTestImport:
-			"Product, scripts, and tools must not import test-owned source or a package's ./testing export. Move shared behavior behind a package export.",
-		noCrossOwnerTestImport:
-			"Test-owned source may import helpers only from its own owner (its package or app tests folder, or tests/system), and the preload's real-time declaration.",
-		noTestOutsideTestsDirectory:
-			"Bun test files must live under packages/<name>/tests, apps/<name>/tests or tests/system.",
-		untypedTestSource:
-			"Test-owned JavaScript-like source must use .ts, .tsx, .mts or .cts. Convert it to TypeScript so the root tsconfig checks it.",
-	},
-	(context) => {
-		const relativePath = getRepoRelativePath(context);
-		const importer: Importer = {
-			context,
-			relativePath,
-			owner: testOwnerAt(relativePath),
-		};
+const ENTRYPOINT_MESSAGES: Record<string, string> = {
+	noDeepImportAcrossPackages:
+		"Import another package only through a path that its package.json exports names. Every other file of a package is private.",
+	noImportOfApp:
+		"Nothing imports an app, by path or by its @archboard-app/ name: only the app's own source and tests reach its files, through # imports. Move shared behavior into a package and import it through the package's exports.",
+	noRetiredAlias:
+		"The @/ alias is gone. Import a file of your own package or app with a # import, and another package through an @archboard/<name> export.",
+	noUnresolvedSubpathImport:
+		"A # import must name an existing file through the imports field of the package.json of the package or app that owns the importing file. Scripts, tools and root tests have no # imports.",
+	noProductTestImport:
+		"Product, scripts, and tools must not import test-owned source or a package's ./testing export. Move shared behavior behind a package export.",
+	noCrossOwnerTestImport:
+		"Test-owned source may import helpers only from its own owner (its package or app tests folder, or tests/system), and the preload's real-time declaration.",
+	noTestOutsideTestsDirectory:
+		"Bun test files must live under packages/<name>/tests, apps/<name>/tests or tests/system.",
+	untypedTestSource:
+		"Test-owned JavaScript-like source must use .ts, .tsx, .mts or .cts. Convert it to TypeScript so the root tsconfig checks it.",
+};
 
-		const visitors = sourceImportVisitors((source, node) => {
-			const messageId = entrypointMessage(importer, source);
-			if (messageId) {
+const moduleEntrypoints = createRule(ENTRYPOINT_MESSAGES, (context) => {
+	const relativePath = getRepoRelativePath(context);
+	const importer: Importer = {
+		context,
+		relativePath,
+		owner: testOwnerAt(relativePath),
+	};
+
+	const visitors = sourceImportVisitors((source, node) => {
+		const messageId = entrypointMessage(importer, source);
+		if (messageId) {
+			report(context, node, messageId);
+		}
+	});
+
+	const placement = placementMessages(importer);
+	if (placement.length > 0) {
+		/**
+		 * Report the file-level placement problems at the program node.
+		 * @param node The visited node.
+		 */
+		visitors.Program = (node) => {
+			for (const messageId of placement) {
 				report(context, node, messageId);
 			}
-		});
+		};
+	}
 
-		const placement = placementMessages(importer);
-		if (placement.length > 0) {
-			/**
-			 * Report the file-level placement problems at the program node.
-			 * @param node The visited node.
-			 */
-			visitors.Program = (node) => {
-				for (const messageId of placement) {
-					report(context, node, messageId);
-				}
-			};
-		}
+	return visitors;
+});
 
-		return visitors;
-	},
-);
+/**
+ * Whether an import bypasses the manifest-local spelling of its file.
+ * @param source The specifier as written.
+ * @returns Whether it needs a manifest import or package export instead.
+ */
+function requiresAlias(source: string): boolean {
+	return source.startsWith(".") || source.startsWith("/") || source.startsWith("file:");
+}
 
 const absoluteImports = createRule(
 	{
@@ -275,11 +284,19 @@ const absoluteImports = createRule(
 	},
 	(context) => {
 		return sourceImportVisitors((source, node) => {
-			if (source.startsWith(".") || source.startsWith("/") || source.startsWith("file:")) {
+			if (requiresAlias(source)) {
 				report(context, node, "useAlias");
 			}
 		});
 	},
 );
 
-export { absoluteImports, importBoundaries, moduleEntrypoints };
+export {
+	absoluteImports,
+	importBoundaries,
+	moduleEntrypoints,
+	ENTRYPOINT_MESSAGES,
+	entrypointMessage,
+	isForbiddenAreaImport,
+	requiresAlias,
+};

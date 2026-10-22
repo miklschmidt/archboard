@@ -41,6 +41,19 @@ Do not add implementation to them.
 - **Nothing imports an app.** See [Apps](#apps).
 - **Production code never imports a `tests/` folder.** Cycles are errors.
 
+CSS follows the same package and area boundaries.
+`bun run lint:css` reads authored stylesheets under `packages/` and `apps/`, including `assets/`.
+It uses Lightning CSS to read imports and URLs, then applies the TypeScript import policy.
+Tailwind `@reference`, `@plugin`, and `@config` file references follow that policy too.
+Local stylesheet imports use `#`, and references to another package use its declared exports.
+Asset URLs use declared package exports.
+A `url(#mask)` reference addresses a fragment in the document.
+Network and data URLs do not name workspace files.
+
+Tailwind `@source` paths are filesystem scan inputs, not imports.
+They remain relative to the stylesheet and select the files whose class names Tailwind reads.
+The package graph includes CSS imports and asset URLs when it tests layers, cycles, and browser dependencies.
+
 Tests use these owner layouts:
 
 - `packages/<name>/tests/` owns the internal tests of one package. See [Packages](#packages).
@@ -81,7 +94,7 @@ A package has no `lib/` folder and no `index.ts` barrel. Name the role of a fold
 `constants`, `schemas`, `rules` or `operations`, and let a folder that grows past about 12 files
 split by behavior.
 
-- **`exports` is the interface.** Each value is a path to a source file. There is no build step, no
+- **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. There is no build step, no
   wildcard pattern and no condition object. Import `@archboard/<name>`, or
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
@@ -396,8 +409,8 @@ only in Bun.
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
   server's `/assets/diagram-fonts` route, `readme:assets` and the theme parity test take the path from there.
-  `apps/web/src/ui/theme/app.css` is not a package file, so it names `packages/renderer/assets/` with relative `@import` and
-  `url()` paths, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker
+  `./theme.css` and the four `./fonts/<filename>` exports expose the stylesheet and fonts that the web app consumes.
+  `apps/web/src/ui/theme/app.css` uses these package names in `@import` and `url()` references, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker
   into the renderer build, so a picture kept by an older build is never shown.
 - Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The browser
   measurement contract (`tests/system/browser/measured-text.test.ts`) holds the Bun canvas, which loads from the root

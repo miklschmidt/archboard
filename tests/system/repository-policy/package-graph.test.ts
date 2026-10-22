@@ -66,7 +66,7 @@ function ownerOfSpecifier(specifier: string): string | undefined {
 
 function readEdges(owners: Owner[]): Edge[] {
 	return owners.flatMap(({ id: from, directory }) =>
-		["src", "tests"]
+		["src", "tests", "assets"]
 			.flatMap((area) => sourceFiles(path.join(directory, area)))
 			.flatMap((file) =>
 				readSource(file).imports.flatMap((specifier) => {
@@ -296,7 +296,8 @@ function browserViolations(roots: string[], graphOwners: Owner[]): string[] {
 				(owner.id.startsWith("apps/") && owner.id !== "apps/web")
 			) {
 				violations.push(`${chain.join(" -> ")} imports ${specifier} (${owner.id}/${relative})`);
-			} else if (/\.[cm]?[jt]sx?$/.test(target) && fs.existsSync(target)) walk(target, chain);
+			} else if (/\.(?:[cm]?[jt]sx?|css)$/.test(target) && fs.existsSync(target))
+				walk(target, chain);
 		}
 	};
 	for (const root of roots) walk(root, []);
@@ -309,13 +310,14 @@ describe("the resolved package graph", () => {
 			Object.entries(exports).flatMap(([subpath, target]) => {
 				if (
 					typeof target !== "string" ||
-					!target.startsWith("./src/") ||
+					!(target.startsWith("./src/") || target.startsWith("./assets/")) ||
 					target.includes("*") ||
 					subpath.includes("*")
 				)
 					return [`${id}:${subpath}`];
 				const file = path.resolve(directory, target);
-				return file.startsWith(`${directory}/src/`) &&
+				const area = target.startsWith("./assets/") ? "assets" : "src";
+				return file.startsWith(`${directory}/${area}/`) &&
 					fs.existsSync(file) &&
 					fs.statSync(file).isFile()
 					? []
@@ -330,7 +332,10 @@ describe("the resolved package graph", () => {
 			path.join(appsRoot, "web/src/main.tsx"),
 			...packages.flatMap(({ directory, exports }) =>
 				Object.values(exports)
-					.filter((target) => /^\.\/src\/(?:shared|ui)\//.test(target))
+					.filter(
+						(target) =>
+							/^\.\/src\/(?:shared|ui)\//.test(target) || /^\.\/assets\/.+\.css$/.test(target),
+					)
 					.map((target) => path.resolve(directory, target)),
 			),
 		];
@@ -413,6 +418,30 @@ describe("the resolved package graph", () => {
 			write("packages/process/src/ui/background.ts", 'import "node:fs";');
 			expect(
 				browserViolations([path.join(base, "packages/process/src/shared/api.ts")], fixtureOwners),
+			).toHaveLength(1);
+			// CSS in assets contributes edges and is followed through browser-safe exports too.
+			for (const name of ["timing", "process", "workspace"]) {
+				write(`packages/${name}/src/shared/api.ts`, "export {};");
+				write(
+					`packages/${name}/package.json`,
+					JSON.stringify({
+						name: `@archboard/${name}`,
+						exports: { "./theme.css": "./assets/theme.css" },
+						imports: { "#*": "./src/*" },
+					}),
+				);
+			}
+			write("packages/process/assets/theme.css", '@import "@archboard/timing/theme.css";');
+			write("packages/timing/assets/theme.css", '@import "@archboard/workspace/theme.css";');
+			write("packages/workspace/assets/theme.css", '@import "@archboard/process/theme.css";');
+			const cssOwners = ownersIn(path.join(base, "packages"), "");
+			const cssEdges = readEdges(cssOwners);
+			expect(findCycle(cssEdges)).toEqual(["process", "timing", "workspace", "process"]);
+			expect(layerViolations(cssEdges, LAYERS)).toHaveLength(1);
+			write("packages/timing/assets/theme.css", '@import "#runtime/private.css";');
+			write("packages/timing/src/runtime/private.css", ".a { color: red; }");
+			expect(
+				browserViolations([path.join(base, "packages/process/assets/theme.css")], cssOwners),
 			).toHaveLength(1);
 		} finally {
 			fs.rmSync(base, { recursive: true, force: true });

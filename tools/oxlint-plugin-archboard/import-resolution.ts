@@ -14,6 +14,9 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./source-layout.ts";
 
+/** The only part of a lint context that filesystem resolution needs. */
+type ImportContext = Pick<RuleContext, "cwd">;
+
 /** `@archboard/<name>` and the subpath after it, if any. */
 const PACKAGE_SPECIFIER = /^@archboard\/([^/]+)(\/.+)?$/;
 
@@ -89,7 +92,7 @@ function resolutionCandidates(unresolvedPath: string): string[] {
  * @param candidate The repository path to test.
  * @returns Whether the file exists.
  */
-function isExistingFile(context: RuleContext, candidate: string): boolean {
+function isExistingFile(context: ImportContext, candidate: string): boolean {
 	try {
 		return fs.statSync(path.resolve(context.cwd, candidate)).isFile();
 	} catch {
@@ -105,7 +108,7 @@ function isExistingFile(context: RuleContext, candidate: string): boolean {
  * @returns The imported file's repository path, or undefined when it is not a local file.
  */
 function resolveSourcePath(
-	context: RuleContext,
+	context: ImportContext,
 	fromRelativePath: string,
 	source: string,
 ): string | undefined {
@@ -113,15 +116,43 @@ function resolveSourcePath(
 	if (packageImport) {
 		return packageImport.target;
 	}
+
 	const unresolvedPath = source.startsWith("#")
 		? resolveSubpathImport(context, fromRelativePath, source.split("?", 1)[0] ?? "")
-		: sourceToRepoPath(fromRelativePath, stripQueryAndFragment(source));
+		: sourceToRepoPath(
+				fromRelativePath,
+				stripQueryAndFragment(localCssSource(fromRelativePath, source)),
+			);
 	if (!unresolvedPath) {
 		return undefined;
 	}
-	const written = resolutionCandidates(unresolvedPath).find((candidate) =>
-		isExistingFile(context, candidate),
-	);
+	return existingSource(context, fromRelativePath, unresolvedPath);
+}
+
+/**
+ * CSS prefers an adjacent file even when its path has no leading dot.
+ * @param file The importing file's repository path.
+ * @param source The written specifier.
+ * @returns The relative spelling for CSS files, or the original specifier.
+ */
+function localCssSource(file: string, source: string): string {
+	return file.endsWith(".css") && !source.startsWith("#") && !source.startsWith(".")
+		? `./${source}`
+		: source;
+}
+
+/**
+ * Find the existing file using the importing language's extensions.
+ * @param context The repository directory.
+ * @param from The importing file's repository path.
+ * @param target The unresolved repository path.
+ * @returns The real repository path, or undefined when no candidate exists.
+ */
+function existingSource(context: ImportContext, from: string, target: string): string | undefined {
+	const candidates = from.endsWith(".css")
+		? [target, `${target}.css`]
+		: resolutionCandidates(target);
+	const written = candidates.find((candidate) => isExistingFile(context, candidate));
 	return written && throughSymlinks(context, written);
 }
 
@@ -132,7 +163,7 @@ function resolveSourcePath(
  * @param repoPath The existing file's repository path as written.
  * @returns The path of the real file, or the written path when the file lies outside the repository.
  */
-function throughSymlinks(context: RuleContext, repoPath: string): string {
+function throughSymlinks(context: ImportContext, repoPath: string): string {
 	const real = path.relative(
 		fs.realpathSync(context.cwd),
 		fs.realpathSync(path.resolve(context.cwd, repoPath)),
@@ -149,7 +180,7 @@ function throughSymlinks(context: RuleContext, repoPath: string): string {
  * @returns Subpath to repository path, or undefined when no such package exists.
  * @throws {Error} When `exports` holds anything but file paths: a package has no build step.
  */
-function packageExports(context: RuleContext, name: string): Map<string, string> | undefined {
+function packageExports(context: ImportContext, name: string): Map<string, string> | undefined {
 	const declared = readManifestField(context, `packages/${name}`, "exports");
 	if (declared === undefined) {
 		return undefined;
@@ -172,7 +203,7 @@ function packageExports(context: RuleContext, name: string): Map<string, string>
  * @param field The manifest field to read.
  * @returns The field's value (null when absent), or undefined when the owner has no manifest.
  */
-function readManifestField(context: RuleContext, ownerRoot: string, field: string): unknown {
+function readManifestField(context: ImportContext, ownerRoot: string, field: string): unknown {
 	try {
 		const manifest: unknown = JSON.parse(
 			fs.readFileSync(path.resolve(context.cwd, ownerRoot, "package.json"), "utf8"),
@@ -192,7 +223,7 @@ function readManifestField(context: RuleContext, ownerRoot: string, field: strin
  * @returns The entries, none when the owner declares no `imports`.
  * @throws {Error} When an entry is anything but a file path.
  */
-function subpathImports(context: RuleContext, ownerRoot: string): Array<[string, string]> {
+function subpathImports(context: ImportContext, ownerRoot: string): Array<[string, string]> {
 	const declared = readManifestField(context, ownerRoot, "imports");
 	if (typeof declared !== "object" || declared === null) {
 		return [];
@@ -215,7 +246,7 @@ function subpathImports(context: RuleContext, ownerRoot: string): Array<[string,
  * @returns The repository path the specifier names, or undefined when it names none.
  */
 function resolveSubpathImport(
-	context: RuleContext,
+	context: ImportContext,
 	fromRelativePath: string,
 	source: string,
 ): string | undefined {
@@ -257,7 +288,10 @@ function mapSubpathImport(key: string, target: string, source: string): string |
  * @param source The specifier as written.
  * @returns The exported file, or undefined when the specifier names no workspace package.
  */
-function resolvePackageSpecifier(context: RuleContext, source: string): PackageImport | undefined {
+function resolvePackageSpecifier(
+	context: ImportContext,
+	source: string,
+): PackageImport | undefined {
 	const [, name, rest] = PACKAGE_SPECIFIER.exec(stripQueryAndFragment(source)) ?? [];
 	const exported = name ? packageExports(context, name) : undefined;
 	const subpath = rest ? `.${rest}` : ".";
@@ -272,7 +306,7 @@ function resolvePackageSpecifier(context: RuleContext, source: string): PackageI
  * @param source The specifier as written.
  * @returns The app's repository path (`apps/<name>`), or undefined when no such app exists.
  */
-function resolveAppSpecifier(context: RuleContext, source: string): string | undefined {
+function resolveAppSpecifier(context: ImportContext, source: string): string | undefined {
 	const name = APP_SPECIFIER.exec(source)?.[1];
 	const root = name ? `apps/${name}` : undefined;
 	return root && readManifestField(context, root, "name") !== undefined ? root : undefined;
@@ -287,7 +321,7 @@ function resolveAppSpecifier(context: RuleContext, source: string): string | und
  * @returns The requested subpath, or else every subpath that exports the file. None means private.
  */
 function exportedSubpaths(
-	context: RuleContext,
+	context: ImportContext,
 	file: WorkspaceFile,
 	repoPath: string,
 	requested: string | undefined,
@@ -311,6 +345,7 @@ function isTestingSubpath(subpath: string): boolean {
 }
 
 export {
+	type ImportContext,
 	exportedSubpaths,
 	isTestingSubpath,
 	resolveAppSpecifier,
