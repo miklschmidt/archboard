@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { createJsonRequester } from "../support/http.ts";
 import { createAgentBrowser, pollUntil } from "./support/agent-browser.ts";
 import { askToSpeak } from "./support/codex-live-voice.ts";
+import { stepBrowserMotion } from "./support/motion-clock.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
 import {
 	SUBTITLES_IN_BOX,
@@ -37,7 +38,7 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	const { server, fixture } = await startVoiceServer(resources, "voice-box-vault");
 	await seedSemanticBoard(createJsonRequester(server), "pipeline");
 
-	const browser = resources.use(await createAgentBrowser());
+	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
 	await openForVoice(browser, addressShowing(server.base, "pipeline"));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -56,6 +57,16 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 		"the orb to rest in the voice box's socket, with all of it showing",
 		WAIT,
 	);
+	const seen = await seenSoFar(browser);
+	// The watch began while voice was off, or what follows proves nothing.
+	expect(seen[0]?.state).toBe("off");
+	// Nothing was launched: the orb was never in the air, and it showed nothing at the Talk key.
+	expect(seen.some((frame) => frame.air)).toBeFalse();
+	expect(
+		Math.max(...seen.filter((frame) => frame.home === "dock").map((frame) => frame.opacity ?? 0)),
+	).toBeLessThan(0.05);
+	expect(Math.max(...seen.map((frame) => frame.over))).toBe(0);
+
 	// The voice speaks again, so that its words are in the box when the pointer is tried on them.
 	await askToSpeak(fixture);
 	const boxed = await pollUntil(
@@ -128,40 +139,5 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	// opens the tooltip of the dock's control while the dock is still growing to show it.
 	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
 
-	await server.assertRunning();
-}, 40_000);
-
-test("voice starting with subtitles on is lit in the box, and the orb is not launched out of the Talk key", async () => {
-	await using resources = new AsyncDisposableStack();
-	const { server } = await startVoiceServer(resources, "voice-start-vault");
-	await seedSemanticBoard(createJsonRequester(server), "pipeline");
-
-	const browser = resources.use(await createAgentBrowser());
-	await openForVoice(browser, addressShowing(server.base, "pipeline"));
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
-		"the board to be drawn before voice is started",
-		WAIT,
-	);
-	await browser.eval(WATCH);
-	await talk(browser);
-	await pollUntil(
-		() => voiceWhere(browser),
-		(where) => where.box && where.home === "box" && where.off < 1,
-		"the voice to start and the orb to rest in the voice box",
-		WAIT,
-	);
-
-	const seen = await seenSoFar(browser);
-	// The watch began while voice was off, or what follows proves nothing.
-	expect(seen[0]?.state).toBe("off");
-	// Nothing was launched: the orb was never in the air, and it showed nothing at the Talk key.
-	expect(seen.some((frame) => frame.air)).toBeFalse();
-	expect(
-		Math.max(...seen.filter((frame) => frame.home === "dock").map((frame) => frame.opacity ?? 0)),
-	).toBeLessThan(0.05);
-	expect(Math.max(...seen.map((frame) => frame.over))).toBe(0);
 	await server.assertRunning();
 }, 40_000);
