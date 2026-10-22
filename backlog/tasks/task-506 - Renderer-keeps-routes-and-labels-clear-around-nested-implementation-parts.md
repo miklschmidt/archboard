@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
-updated_date: '2026-10-22 04:00'
+updated_date: '2026-10-22 04:09'
 labels: []
 dependencies: []
 references:
@@ -47,4 +47,6 @@ The second renderer group passed 206 cases and found one remaining Board viewer 
 The final supported renderer group passed all 207 tests across 34 files, with 2,005 assertions and zero failures in 100.68 seconds. Log: /tmp/archboard-task506-final-renderer.log. This includes both original wide-board failures, the later Board viewer wall regression, and all existing clearance, lane, and timing assertions. The complete normal gate is next.
 
 The complete gate passed type-check and every wide-board case, then found two focused routing regressions among 4,870 module tests. Both fixtures contain authored cycles among children without a relationship to their parent. The first cycle change altered their traversal root and selected different return edges. CycleWalk now preserves authored cycle choices first, then adds containment ordering and finds only the extra constraints. All 18 focused rank, route, and label cases pass in 1.44 seconds, and targeted source lint passes. No assertions or deadlines changed. The remaining normal lanes from the failed gate are running before the next complete run.
+
+The next complete gate had one remaining Agent workbench label crossing a container edge. The two-pass ranking preserved child cycles but overconstrained other return edges. The simpler final mechanism uses the existing Below reachability graph to include only containment arcs whose member can reach the container again. Containment outside a cycle contributes no traversal root and leaves existing routing unchanged. This removes the second ranking pass and its helper. All 18 immediate rank, route, and label cases pass in 1.40 seconds. The entire renderer package is now under validation before another full gate.
 <!-- SECTION:NOTES:END -->

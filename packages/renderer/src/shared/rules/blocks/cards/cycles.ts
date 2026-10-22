@@ -1,6 +1,8 @@
 // A depth-first walk over the lines one block draws, which finds the lines
 // that close a cycle there, so they can run upward.
 
+import { Below } from "#shared/rules/blocks/cards/below.ts";
+
 /** A depth-first walk over one block's projections that finds the ones closing a cycle. */
 class CycleWalk {
 	readonly back = new Set<string>();
@@ -34,7 +36,7 @@ class CycleWalk {
 	}
 
 	/**
-	 * Preserve authored cycles, then find cycles added by containment.
+	 * Add only containment constraints that participate in a cycle.
 	 * @param items The authored item order.
 	 * @param containment Each member and the container title above it.
 	 * @returns The relationships that run upward.
@@ -43,29 +45,13 @@ class CycleWalk {
 		items: readonly string[],
 		containment: readonly (readonly [string, string])[],
 	): ReadonlySet<string> {
-		const back = new Set(this.walk(items));
-		const constrained = this.ranked(back);
-		for (const [member, around] of containment) constrained.add(around, member);
-		const frames = [...new Set(containment.map(([, around]) => around))];
-		for (const id of constrained.walk([...frames, ...items]))
-			if (back.has(id)) back.delete(id);
-			else back.add(id);
-		return back;
-	}
-
-	/**
-	 * Read the same graph in the direction its existing cycles rank it.
-	 * @param back The relationships already ranked upward.
-	 * @returns A fresh walk over the ranked graph.
-	 */
-	private ranked(back: ReadonlySet<string>): CycleWalk {
-		const ranked = new CycleWalk();
-		for (const [from, links] of this.out)
-			for (const { to, edge } of links) {
-				const reverse = edge !== undefined && back.has(edge);
-				ranked.add(reverse ? to : from, reverse ? from : to, edge);
-			}
-		return ranked;
+		const below = new Below();
+		for (const [from, links] of this.out) for (const { to } of links) below.add(from, to);
+		for (const [member, around] of containment) below.add(around, member);
+		const cyclic = containment.filter(([member, around]) => below.reaches(member, around));
+		for (const [member, around] of cyclic) this.add(around, member);
+		const frames = [...new Set(cyclic.map(([, around]) => around))];
+		return this.walk([...frames, ...items]);
 	}
 
 	/**
