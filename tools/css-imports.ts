@@ -1,7 +1,7 @@
 // CSS uses the same manifest resolver and boundary predicates as TypeScript.
 import fs from "node:fs";
 import path from "node:path";
-import { transform, type Url } from "lightningcss";
+import { transform, type UnknownAtRule, type Url } from "lightningcss";
 import {
 	ENTRYPOINT_MESSAGES,
 	entrypointMessage,
@@ -72,7 +72,7 @@ function cssReferences(code: string, filename: string): CssReference[] {
 				 * Read Tailwind directives that load files, excluding source scan globs.
 				 * @param rule The parsed directive.
 				 */
-				unknown(rule) {
+				unknown(rule: UnknownAtRule) {
 					if (!["reference", "plugin", "config"].includes(rule.name)) return;
 					const first = rule.prelude[0];
 					if (first?.type === "token" && first.value.type === "string") {
