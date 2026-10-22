@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 104,
+	"version": 106,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-19T22:54:20.472Z",
+	"updatedAt": "2026-10-22T03:21:16.032Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -404,6 +404,61 @@
 				"flows": [
 					"OlftZnY0"
 				]
+			}
+		},
+		{
+			"id": "MKs2dwAD",
+			"name": "Browser gateway responsibilities",
+			"grammar": "architecture",
+			"summary": "The bound implementation parts and the ports that they use.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"ui4leDPl",
+					"dEfJJFtS",
+					"62UzyaBR",
+					"8DmvR3O6",
+					"jylkTBp7",
+					"2ffhMTdn"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "qBaaqr4g",
+			"name": "Workhorse operations responsibilities",
+			"grammar": "architecture",
+			"summary": "The bound implementation parts and the ports that they use.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"7XZtb0wb",
+					"75E6lJHK",
+					"8CuNvBuG",
+					"iLWBCObu",
+					"byMaoUe0",
+					"2ffhMTdn",
+					"jylkTBp7",
+					"kEF4DfR4",
+					"Uz2qReYK"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "k780bB6k",
+			"name": "Workhorse starter port",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"SsiEBdik",
+					"kEF4DfR4"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -18707,7 +18762,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						},
 						"drillDown": {
 							"board": "Codex workhorse",
@@ -18970,6 +19025,144 @@
 						"name": "Voice",
 						"kind": "module",
 						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+					},
+					{
+						"id": "ui4leDPl",
+						"order": 34000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "dEfJJFtS",
+						"order": 35000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "62UzyaBR",
+						"order": 36000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "7XZtb0wb",
+						"order": 37000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "75E6lJHK",
+						"order": 38000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "8CuNvBuG",
+						"order": 39000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "iLWBCObu",
+						"order": 40000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "SsiEBdik",
+						"order": 41000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "6Jjha6LN",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8DmvR3O6",
+						"order": 42000,
+						"name": "Browser message publication",
+						"kind": "module",
+						"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/browser-command.ts",
+							"symbol": "emit"
+						}
 					}
 				],
 				"edges": [
@@ -19072,17 +19265,18 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "the link of this tab session and the shown checkout",
+						"description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "workhorseLinkKey"
+							"symbol": "readWorkhorseBinding"
 						}
 					},
 					{
 						"id": "Qh7VZ9MQ",
 						"order": 9000,
-						"from": "u2LFaG7R",
+						"from": "62UzyaBR",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -19132,21 +19326,22 @@
 					{
 						"id": "2wlebJ2T",
 						"order": 12000,
-						"from": "u2LFaG7R",
+						"from": "8DmvR3O6",
 						"to": "tzyaOHwF",
 						"kind": "event",
-						"label": "one snapshot, then deltas",
+						"label": "publish deltas or replacement snapshots",
+						"description": "publishConnection emits the changed delta to connection listeners, or a replacement snapshot when the delta exceeds the wire budget. The socket subscriber carries these messages to the pane.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "diffBrowserSnapshots"
+							"symbol": "emit"
 						}
 					},
 					{
 						"id": "uK6QAuru",
 						"order": 13000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "2ffhMTdn",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn",
@@ -19160,10 +19355,11 @@
 					{
 						"id": "NeJ30W7X",
 						"order": 14000,
-						"from": "tlC2W839",
+						"from": "75E6lJHK",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -19174,7 +19370,7 @@
 					{
 						"id": "2ed6AqSF",
 						"order": 15000,
-						"from": "tlC2W839",
+						"from": "8CuNvBuG",
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "stage, commit or roll back",
@@ -19189,7 +19385,7 @@
 						"id": "mhknqBOz",
 						"order": 16000,
 						"from": "Fg9dkGj3",
-						"to": "tlC2W839",
+						"to": "7XZtb0wb",
 						"kind": "call",
 						"label": "delegate, steer, inspect, queue in the named checkout",
 						"emphasis": "hero",
@@ -19272,7 +19468,7 @@
 					{
 						"id": "rOBpux5i",
 						"order": 22000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
@@ -19563,7 +19759,7 @@
 					{
 						"id": "b9yFBXHz",
 						"order": 42000,
-						"from": "u2LFaG7R",
+						"from": "dEfJJFtS",
 						"to": "JHbKEH3A",
 						"kind": "call",
 						"label": "create, on the tab's first message or Talk",
@@ -19859,9 +20055,9 @@
 						"id": "uoktRrXw",
 						"order": 63000,
 						"from": "kEF4DfR4",
-						"to": "tlC2W839",
+						"to": "iLWBCObu",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -19887,9 +20083,9 @@
 						"id": "QczS1Qpk",
 						"order": 65000,
 						"from": "kEF4DfR4",
-						"to": "6Jjha6LN",
+						"to": "SsiEBdik",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20051,6 +20247,34 @@
 							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
+					},
+					{
+						"id": "aLUB44Jp",
+						"order": 77000,
+						"from": "7XZtb0wb",
+						"to": "75E6lJHK",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "0ULeTEej",
+						"order": 78000,
+						"from": "7XZtb0wb",
+						"to": "8CuNvBuG",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
+						}
 					}
 				],
 				"flows": [
@@ -20204,7 +20428,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-																	"symbol": "CodexWorkbenchGatewayError"
+																	"symbol": "createServerCanonicalTextActions"
 																}
 															}
 														]
@@ -22252,7 +22476,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						},
 						"drillDown": {
 							"board": "Codex workhorse",
@@ -22515,6 +22739,144 @@
 						"name": "Voice",
 						"kind": "module",
 						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+					},
+					{
+						"id": "ui4leDPl",
+						"order": 34000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "dEfJJFtS",
+						"order": 35000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "62UzyaBR",
+						"order": 36000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "7XZtb0wb",
+						"order": 37000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "75E6lJHK",
+						"order": 38000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "8CuNvBuG",
+						"order": 39000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "iLWBCObu",
+						"order": 40000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "SsiEBdik",
+						"order": 41000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "6Jjha6LN",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8DmvR3O6",
+						"order": 42000,
+						"name": "Browser message publication",
+						"kind": "module",
+						"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/browser-command.ts",
+							"symbol": "emit"
+						}
 					}
 				],
 				"edges": [
@@ -22617,17 +22979,18 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "the link of this tab session and the shown checkout",
+						"description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "workhorseLinkKey"
+							"symbol": "readWorkhorseBinding"
 						}
 					},
 					{
 						"id": "Qh7VZ9MQ",
 						"order": 9000,
-						"from": "u2LFaG7R",
+						"from": "62UzyaBR",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -22677,21 +23040,22 @@
 					{
 						"id": "2wlebJ2T",
 						"order": 12000,
-						"from": "u2LFaG7R",
+						"from": "8DmvR3O6",
 						"to": "tzyaOHwF",
 						"kind": "event",
-						"label": "one snapshot, then deltas",
+						"label": "publish deltas or replacement snapshots",
+						"description": "publishConnection emits the changed delta to connection listeners, or a replacement snapshot when the delta exceeds the wire budget. The socket subscriber carries these messages to the pane.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "diffBrowserSnapshots"
+							"symbol": "emit"
 						}
 					},
 					{
 						"id": "uK6QAuru",
 						"order": 13000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "2ffhMTdn",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn; clear on stop",
@@ -22705,10 +23069,11 @@
 					{
 						"id": "NeJ30W7X",
 						"order": 14000,
-						"from": "tlC2W839",
+						"from": "75E6lJHK",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -22719,7 +23084,7 @@
 					{
 						"id": "2ed6AqSF",
 						"order": 15000,
-						"from": "tlC2W839",
+						"from": "8CuNvBuG",
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "stage, commit or roll back",
@@ -22734,7 +23099,7 @@
 						"id": "mhknqBOz",
 						"order": 16000,
 						"from": "Fg9dkGj3",
-						"to": "tlC2W839",
+						"to": "7XZtb0wb",
 						"kind": "call",
 						"label": "delegate, steer, inspect, queue in the named checkout",
 						"emphasis": "hero",
@@ -22817,7 +23182,7 @@
 					{
 						"id": "rOBpux5i",
 						"order": 22000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "turn/start, turn/steer, work-tree reads, turn/interrupt",
@@ -23108,7 +23473,7 @@
 					{
 						"id": "b9yFBXHz",
 						"order": 42000,
-						"from": "u2LFaG7R",
+						"from": "dEfJJFtS",
 						"to": "JHbKEH3A",
 						"kind": "call",
 						"label": "create, on the tab's first message or Talk",
@@ -23390,9 +23755,9 @@
 						"id": "uoktRrXw",
 						"order": 63000,
 						"from": "kEF4DfR4",
-						"to": "tlC2W839",
+						"to": "iLWBCObu",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23418,9 +23783,9 @@
 						"id": "QczS1Qpk",
 						"order": 65000,
 						"from": "kEF4DfR4",
-						"to": "6Jjha6LN",
+						"to": "SsiEBdik",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23591,6 +23956,34 @@
 						"kind": "call",
 						"label": "workbench Stop uses the shared workhorse operation",
 						"emphasis": "normal"
+					},
+					{
+						"id": "aLUB44Jp",
+						"order": 79000,
+						"from": "7XZtb0wb",
+						"to": "75E6lJHK",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "0ULeTEej",
+						"order": 78000,
+						"from": "7XZtb0wb",
+						"to": "8CuNvBuG",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
+						}
 					}
 				],
 				"flows": [
@@ -23744,7 +24137,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-																	"symbol": "CodexWorkbenchGatewayError"
+																	"symbol": "createServerCanonicalTextActions"
 																}
 															}
 														]
@@ -26109,7 +26502,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						},
 						"drillDown": {
 							"board": "Codex workhorse",
@@ -26373,6 +26766,144 @@
 						"name": "Voice",
 						"kind": "module",
 						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+					},
+					{
+						"id": "ui4leDPl",
+						"order": 34000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "dEfJJFtS",
+						"order": 35000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "62UzyaBR",
+						"order": 36000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "7XZtb0wb",
+						"order": 37000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "75E6lJHK",
+						"order": 38000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "8CuNvBuG",
+						"order": 39000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "iLWBCObu",
+						"order": 40000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "SsiEBdik",
+						"order": 41000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "6Jjha6LN",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8DmvR3O6",
+						"order": 42000,
+						"name": "Browser message publication",
+						"kind": "module",
+						"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/browser-command.ts",
+							"symbol": "emit"
+						}
 					}
 				],
 				"edges": [
@@ -26475,17 +27006,18 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "the link of this tab session and the shown checkout",
+						"description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "workhorseLinkKey"
+							"symbol": "readWorkhorseBinding"
 						}
 					},
 					{
 						"id": "Qh7VZ9MQ",
 						"order": 9000,
-						"from": "u2LFaG7R",
+						"from": "62UzyaBR",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -26535,21 +27067,22 @@
 					{
 						"id": "2wlebJ2T",
 						"order": 12000,
-						"from": "u2LFaG7R",
+						"from": "8DmvR3O6",
 						"to": "tzyaOHwF",
 						"kind": "event",
-						"label": "one snapshot, then deltas",
+						"label": "publish deltas or replacement snapshots",
+						"description": "publishConnection emits the changed delta to connection listeners, or a replacement snapshot when the delta exceeds the wire budget. The socket subscriber carries these messages to the pane.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "diffBrowserSnapshots"
+							"symbol": "emit"
 						}
 					},
 					{
 						"id": "uK6QAuru",
 						"order": 13000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "2ffhMTdn",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn",
@@ -26563,10 +27096,11 @@
 					{
 						"id": "NeJ30W7X",
 						"order": 14000,
-						"from": "tlC2W839",
+						"from": "75E6lJHK",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26577,7 +27111,7 @@
 					{
 						"id": "2ed6AqSF",
 						"order": 15000,
-						"from": "tlC2W839",
+						"from": "8CuNvBuG",
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "stage, commit or roll back",
@@ -26592,7 +27126,7 @@
 						"id": "mhknqBOz",
 						"order": 16000,
 						"from": "Fg9dkGj3",
-						"to": "tlC2W839",
+						"to": "7XZtb0wb",
 						"kind": "call",
 						"label": "delegate, steer, inspect, queue in the named checkout",
 						"emphasis": "hero",
@@ -26675,7 +27209,7 @@
 					{
 						"id": "rOBpux5i",
 						"order": 22000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
@@ -26966,7 +27500,7 @@
 					{
 						"id": "b9yFBXHz",
 						"order": 42000,
-						"from": "u2LFaG7R",
+						"from": "dEfJJFtS",
 						"to": "JHbKEH3A",
 						"kind": "call",
 						"label": "create, on the tab's first message or Talk",
@@ -27262,9 +27796,9 @@
 						"id": "uoktRrXw",
 						"order": 63000,
 						"from": "kEF4DfR4",
-						"to": "tlC2W839",
+						"to": "iLWBCObu",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -27290,9 +27824,9 @@
 						"id": "QczS1Qpk",
 						"order": 65000,
 						"from": "kEF4DfR4",
-						"to": "6Jjha6LN",
+						"to": "SsiEBdik",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -27454,6 +27988,34 @@
 							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
+					},
+					{
+						"id": "aLUB44Jp",
+						"order": 77000,
+						"from": "7XZtb0wb",
+						"to": "75E6lJHK",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "0ULeTEej",
+						"order": 78000,
+						"from": "7XZtb0wb",
+						"to": "8CuNvBuG",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
+						}
 					}
 				],
 				"flows": [
@@ -27607,7 +28169,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-																	"symbol": "CodexWorkbenchGatewayError"
+																	"symbol": "createServerCanonicalTextActions"
 																}
 															}
 														]
@@ -29653,7 +30215,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						},
 						"drillDown": {
 							"board": "Codex workhorse",
@@ -29916,6 +30478,144 @@
 						"name": "Voice",
 						"kind": "module",
 						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+					},
+					{
+						"id": "ui4leDPl",
+						"order": 34000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "dEfJJFtS",
+						"order": 35000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "62UzyaBR",
+						"order": 36000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "7XZtb0wb",
+						"order": 37000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "75E6lJHK",
+						"order": 38000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "8CuNvBuG",
+						"order": 39000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "iLWBCObu",
+						"order": 40000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "SsiEBdik",
+						"order": 41000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "6Jjha6LN",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8DmvR3O6",
+						"order": 42000,
+						"name": "Browser message publication",
+						"kind": "module",
+						"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/browser-command.ts",
+							"symbol": "emit"
+						}
 					}
 				],
 				"edges": [
@@ -30018,17 +30718,18 @@
 						"to": "byMaoUe0",
 						"kind": "call",
 						"label": "the link of this tab session and the shown checkout",
+						"description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "workhorseLinkKey"
+							"symbol": "readWorkhorseBinding"
 						}
 					},
 					{
 						"id": "Qh7VZ9MQ",
 						"order": 9000,
-						"from": "u2LFaG7R",
+						"from": "62UzyaBR",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -30078,21 +30779,22 @@
 					{
 						"id": "2wlebJ2T",
 						"order": 12000,
-						"from": "u2LFaG7R",
+						"from": "8DmvR3O6",
 						"to": "tzyaOHwF",
 						"kind": "event",
-						"label": "one snapshot, then deltas",
+						"label": "publish deltas or replacement snapshots",
+						"description": "publishConnection emits the changed delta to connection listeners, or a replacement snapshot when the delta exceeds the wire budget. The socket subscriber carries these messages to the pane.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
-							"symbol": "diffBrowserSnapshots"
+							"symbol": "emit"
 						}
 					},
 					{
 						"id": "uK6QAuru",
 						"order": 13000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "2ffhMTdn",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn",
@@ -30106,10 +30808,11 @@
 					{
 						"id": "NeJ30W7X",
 						"order": 14000,
-						"from": "tlC2W839",
+						"from": "75E6lJHK",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -30120,7 +30823,7 @@
 					{
 						"id": "2ed6AqSF",
 						"order": 15000,
-						"from": "tlC2W839",
+						"from": "8CuNvBuG",
 						"to": "Uz2qReYK",
 						"kind": "call",
 						"label": "stage, commit or roll back",
@@ -30135,7 +30838,7 @@
 						"id": "mhknqBOz",
 						"order": 16000,
 						"from": "Fg9dkGj3",
-						"to": "tlC2W839",
+						"to": "7XZtb0wb",
 						"kind": "call",
 						"label": "delegate, steer, inspect, queue in the named checkout",
 						"emphasis": "hero",
@@ -30218,7 +30921,7 @@
 					{
 						"id": "rOBpux5i",
 						"order": 22000,
-						"from": "tlC2W839",
+						"from": "7XZtb0wb",
 						"to": "jylkTBp7",
 						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
@@ -30509,7 +31212,7 @@
 					{
 						"id": "b9yFBXHz",
 						"order": 42000,
-						"from": "u2LFaG7R",
+						"from": "dEfJJFtS",
 						"to": "JHbKEH3A",
 						"kind": "call",
 						"label": "create, on the tab's first message or Talk",
@@ -30805,9 +31508,9 @@
 						"id": "uoktRrXw",
 						"order": 63000,
 						"from": "kEF4DfR4",
-						"to": "tlC2W839",
+						"to": "iLWBCObu",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -30833,9 +31536,9 @@
 						"id": "QczS1Qpk",
 						"order": 65000,
 						"from": "kEF4DfR4",
-						"to": "6Jjha6LN",
+						"to": "SsiEBdik",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -31012,6 +31715,34 @@
 							"path": "packages/workbench/src/server/services/sessions/factories.ts",
 							"symbol": "recordDelegations"
 						}
+					},
+					{
+						"id": "aLUB44Jp",
+						"order": 79000,
+						"from": "7XZtb0wb",
+						"to": "75E6lJHK",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "0ULeTEej",
+						"order": 78000,
+						"from": "7XZtb0wb",
+						"to": "8CuNvBuG",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
+						}
 					}
 				],
 				"flows": [
@@ -31165,7 +31896,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-																	"symbol": "CodexWorkbenchGatewayError"
+																	"symbol": "createServerCanonicalTextActions"
 																}
 															}
 														]
