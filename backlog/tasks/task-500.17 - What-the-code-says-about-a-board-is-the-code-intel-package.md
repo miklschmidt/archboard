@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-19 11:09'
-updated_date: '2026-10-19 12:09'
+updated_date: '2026-10-22 01:43'
 labels: []
 dependencies:
   - TASK-500.14.04
@@ -22,8 +22,8 @@ code-intel is layer 5: runtime/code-facts (20,055 lines), code-check, history-le
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 packages/code-intel holds the eight modules in shared/ and runtime/ role folders with api files, the browser-reachable ones free of node: imports
-- [ ] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
-- [ ] #3 bun run check passes
+- [x] #2 Its tests live in the package, outside code uses only its curated api interface files (docs/agents/boundaries.md), and the package graph, package api and browser-safety checks pass
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,6 +33,12 @@ code-intel is layer 5: runtime/code-facts (20,055 lines), code-check, history-le
 2. Role folders from content (runtime: operations, clients for language servers, services, store; shared: schemas, rules, constants, protocol). Barrel index.ts files deleted; api files curated per capability from the importers (scan scripts in /tmp/pm/api), the browser-reachable api files carry no node: import (trace + build:frontend).
 3. Depends only on lower packages (timing, diagnostics, process, workspace, code-binding, board); package-graph test layer 5 stays valid. Tests move into the package; ci.yml, evals/coverage.json, docs/readme/assets.json (4 source lists name code-check, code-facts, history-lens), docs and skills name the new paths. bun run check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reconciled acceptance criteria 2 and 3 with the original completion summary in c3c375473. TASK-500 records bun run check exiting 0 at e462ec210, including all lanes and 19 browser files. Only the parent task record changed between that revision and 33f762dcd. This update corrects the task record and adds no new test result. No board is affected.
+<!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
