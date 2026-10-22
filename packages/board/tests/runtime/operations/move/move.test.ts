@@ -1,12 +1,4 @@
-// Moving a board to another repository's vault (ADR 0051, TASK-472.15).
-//
-// The whole note moves, the drill-downs the move changes are rewritten to name
-// repository identities, the moves ADR 0051 forbids are refused with nothing
-// written, and a move that stopped part way leaves the board in both vaults
-// and finishes when it runs again. Two throwaway git checkouts of two
-// identities, a second checkout of one of them and an untracked vault, with a
-// registry of their own.
-
+// Move tests cover repository links, partial recovery, and untracked vaults.
 import { checkSemanticVault } from "#runtime/operations/check/diagnostics.ts";
 import { writeSemanticBoard } from "#runtime/operations/write/write.ts";
 import {
@@ -18,7 +10,7 @@ import { locateSemanticBoard } from "#runtime/store/location.ts";
 import { moveSemanticBoard } from "#runtime/operations/move/move.ts";
 import { renameTransition } from "#runtime/operations/rename/rename.ts";
 import { previewSemanticMove } from "#runtime/operations/move/preview.ts";
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, jest, test } from "bun:test";
 import {
 	existsSync,
 	mkdirSync,
@@ -36,6 +28,7 @@ import { type SemanticTransition } from "#runtime/operations/write/transitions.t
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
 import { BoardCreateInputSchema } from "#shared/protocol/board-input.ts";
+import { LOCK_POLL_MS, LOCK_STEAL_GUARD_MS } from "@archboard/timing";
 
 const META = "github.com/acme/meta";
 const PRODUCT = "github.com/acme/product";
@@ -49,6 +42,16 @@ const vaults = {
 	copy: join(root, "product-copy", ".archboard", "vault"),
 	loose: join(root, "loose", ".archboard", "vault"),
 };
+
+async function advanceLockTime(ms: number): Promise<void> {
+	for (let elapsed = 0; elapsed < ms; elapsed += LOCK_POLL_MS) {
+		await Promise.resolve();
+		await Promise.resolve();
+		jest.advanceTimersByTime(Math.min(LOCK_POLL_MS, ms - elapsed));
+		await Promise.resolve();
+		await Promise.resolve();
+	}
+}
 
 /**
  * Give a directory a configured vault, and make it a git checkout whose
@@ -213,9 +216,7 @@ test("the whole note moves, and the drill-downs it changes name repository ident
 		opening("Pay", "Old payments"),
 	]);
 	const before = board(vaults.meta, "Payments");
-
 	const moved = await move("Payments", vaults.meta, vaults.product);
-
 	expect(moved.outcome).toBe("moved");
 	expect([holds(vaults.meta, "Payments"), holds(vaults.product, "Payments")]).toEqual([
 		false,
@@ -236,7 +237,6 @@ test("the whole note moves, and the drill-downs it changes name repository ident
 		`Payments ${META}`,
 		`Platform ${PRODUCT}`,
 	]);
-	// No link in either vault opens nothing.
 	for (const vault of [vaults.meta, vaults.product]) {
 		const unknown = checkSemanticVault(vault).diagnostics.filter((one) =>
 			one.code.startsWith("DRILL_DOWN_UNKNOWN"),
@@ -325,16 +325,20 @@ test("a move that stopped part way leaves the board in both vaults, and running 
 
 test("a move waiting for the board holds nothing in the target vault", async () => {
 	await create(vaults.meta, "Rates");
-	// An agent's write without a claim is waited out, not refused.
 	const writing = { id: "another-write", kind: "agent" as const };
 	await holdBoard({ vault: vaults.meta, board: "rates", holder: writing, leaseMs: 60_000 });
-	const moving = move("Rates", vaults.meta, vaults.product);
-	await Bun.sleep(100);
-	// Holding the target while waiting for the source is how two moves in
-	// opposite directions would each wait for the other.
-	expect(boardLockState(vaults.product, "rates")).toBeNull();
-	releaseHold(vaults.meta, "rates", writing.id);
-	expect((await moving).outcome).toBe("moved");
+	jest.useFakeTimers();
+	try {
+		const moving = move("Rates", vaults.meta, vaults.product);
+		await advanceLockTime(LOCK_POLL_MS);
+		expect(boardLockState(vaults.product, "rates")).toBeNull();
+		releaseHold(vaults.meta, "rates", writing.id);
+		await advanceLockTime(LOCK_POLL_MS);
+		expect((await moving).outcome).toBe("moved");
+	} finally {
+		releaseHold(vaults.meta, "rates", writing.id);
+		jest.useRealTimers();
+	}
 });
 
 test("a copy in the target that changed since the move stopped is not overwritten", async () => {
@@ -372,13 +376,19 @@ test("a link on the moved board to itself through the source repository opens it
 test("a lease that a stopped writer left on a board the move rewrites does not stop the move", async () => {
 	await create(vaults.meta, "Stock");
 	await create(vaults.meta, "Shelf", [{ name: "Web", kind: "app" }, opening("Open", "Stock")]);
-	// A server stopped while it held a claim leaves the claim's lease behind to lapse.
 	const stopped = { id: "stopped-server", kind: "agent" as const, claimed: true };
-	await holdBoard({ vault: vaults.meta, board: "shelf", holder: stopped, leaseMs: 1 });
-	await Bun.sleep(10);
-
-	expect((await move("Stock", vaults.meta, vaults.product)).outcome).toBe("moved");
-	expect(drillOf(vaults.meta, "Shelf", "Open")?.repo).toBe(PRODUCT);
+	jest.useFakeTimers();
+	try {
+		await holdBoard({ vault: vaults.meta, board: "shelf", holder: stopped, leaseMs: 1 });
+		await advanceLockTime(LOCK_POLL_MS);
+		const moving = move("Stock", vaults.meta, vaults.product);
+		await advanceLockTime(LOCK_POLL_MS * 3 + LOCK_STEAL_GUARD_MS);
+		expect((await moving).outcome).toBe("moved");
+		expect(drillOf(vaults.meta, "Shelf", "Open")?.repo).toBe(PRODUCT);
+	} finally {
+		releaseHold(vaults.meta, "shelf", stopped.id);
+		jest.useRealTimers();
+	}
 });
 
 test("a link in the target vault into the moved board through the source repository opens it within the vault", async () => {
@@ -428,7 +438,6 @@ test("a preview lists every drill-down the move then rewrites, and holds and wri
 		board: "Invoicing",
 		to: vaults.product,
 	});
-
 	expect(preview.outcome).toBe("ready");
 	expect(versions()).toEqual(before);
 	expect(holds(vaults.product, "Invoicing")).toBe(false);
@@ -478,7 +487,6 @@ test("a preview of a board that awaits a migration writes nothing, and answers t
 		board: "Archive",
 		to: vaults.product,
 	});
-
 	expect(readFileSync(file, "utf8")).toBe(bytes);
 	if (preview.outcome !== "ready") throw new Error(preview.code);
 	const moved = await moveSemanticBoard({
