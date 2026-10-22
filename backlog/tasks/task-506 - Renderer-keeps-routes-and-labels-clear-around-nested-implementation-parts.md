@@ -1,11 +1,11 @@
 ---
 id: TASK-506
 title: Renderer keeps routes and labels clear around nested implementation parts
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
-updated_date: '2026-10-22 04:18'
+updated_date: '2026-10-22 04:32'
 labels: []
 dependencies: []
 references:
@@ -24,9 +24,9 @@ The TASK-501 normal gate exposed two renderer failures when current boards gaine
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Track keeps the Agent workbench publication label on its own route after the nested owner is drawn
-- [ ] #2 Blocks routes Browser application relationships clear of the cards inside a container endpoint
-- [ ] #3 Focused renderer owners and the complete normal gate pass without weakening clearance, timing, or coverage contracts
+- [x] #1 Track keeps the Agent workbench publication label on its own route after the nested owner is drawn
+- [x] #2 Blocks routes Browser application relationships clear of the cards inside a container endpoint
+- [x] #3 Focused renderer owners and the complete normal gate pass without weakening clearance, timing, or coverage contracts
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,4 +51,18 @@ The complete gate passed type-check and every wide-board case, then found two fo
 The next complete gate had one remaining Agent workbench label crossing a container edge. The two-pass ranking preserved child cycles but overconstrained other return edges. The simpler final mechanism uses the existing Below reachability graph to include only containment arcs whose member can reach the container again. Containment outside a cycle contributes no traversal root and leaves existing routing unchanged. This removes the second ranking pass and its helper. All 18 immediate rank, route, and label cases pass in 1.40 seconds. The entire renderer package is now under validation before another full gate.
 
 The remaining label failure came from port settlement resizing a packed child about its center while its inline parent retained the original Graphviz sides. The workhorse group grew from 3514.5 to 3611 points and crossed the cached parent boundary. holdResizedChildren now grows inline frame sides and their title rows around updated children before rerouting. The original full Agent workbench probe now reports no card, detached-label, wall, or label-across-wall failures. The existing wide-board owner is the regression owner. All 18 immediate rank, route, and label tests and targeted lint pass. Temporary instrumentation is removed.
+
+Final acceptance on source commit 0e53dbb2b: bun run check passed with exit 0 in 586.74 seconds. Modules: 4,869 passed, 1 skipped, 0 failed. System: 257 passed. Repository: 135 passed. All 19 serial browser owners completed with 27 passed tests. Log: /tmp/archboard-final-check-4.log. Timing: /tmp/archboard-final-validation-timing-4.json. The separate renderer run passed 709 tests, skipped 1, and failed none in 139.29 seconds. No assertions, normal owners, lint rules, or timeout contracts were weakened.
+
+The final worktree restart and both overview rasterizations passed. The Browser application and Semantic renderer PNGs were inspected and remain readable. The refreshed code pass reports zero structural diagnostics and zero ANCHOR_MISMATCH, down from 82 at baseline. It still exits 1 for five baseline ANCHOR_SYMBOL_MISSING warnings and fourteen scope-explained RELATIONSHIP_UNDRAWN warnings. Twenty-one EXPOSED_UNUSED information findings remain. No findings are suppressed. Evidence: /tmp/archboard-closing-code-check.json, /tmp/archboard-closing-browser.png, /tmp/archboard-closing-renderer.png, and /tmp/archboard-closing-timings.json.
+
+Final simplification retains one cycle walk and reuses Below reachability to include only containment arcs that close a cycle. Only packed side ports reserve the extra turning clearance. Scene walls match the drawn lone frame. Inline frames contain children after port settlement changes their widths. The existing wide-board tests cover the original publication-label, card-clearance, and final frame-containment failures. The two small regression fixtures cover the minimized original causes. Temporary probes and instrumentation are absent from product source.
+
+The final behind audit reads the renderer changes from fe3510df3 through 0e53dbb2b. Archboard parts Workspace packages and renderer keep their package responsibilities. Renderer layout parts Card blocks, Block packing, and Block layout keep their existing interfaces and ownership. These commits repair internal ordering, spacing, and containment, so those boards remain true without a proposal. Compound graph is behind only because dffd62d00 corrected a source comment. Voice coordinator Approvals is behind because TASK-500 commit 4f1acfae4 removed internal re-exports and import cycles. Its approval responsibility remains unchanged, and none of the closing tasks modifies it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Repaired nested-container cycle ordering, side-entry clearance, drawn frame walls, and child containment after port settlement. All 709 runnable renderer tests pass, with one skipped. The complete normal gate passes in 586.74 seconds, including all 19 browser owners. Existing geometry assertions, time limits, and coverage remain intact. The final implementation reuses existing graph logic and keeps public renderer contracts unchanged.
+<!-- SECTION:FINAL_SUMMARY:END -->
