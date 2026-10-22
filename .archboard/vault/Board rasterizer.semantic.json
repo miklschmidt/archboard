@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 70,
+	"version": 71,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-22T03:23:30.780Z",
+	"updatedAt": "2026-10-22T03:25:21.435Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -20957,9 +20957,9 @@
 											{
 												"id": "g7bZI4lE",
 												"from": "T1TYskKQ",
-												"to": "T1TYskKQ",
+												"to": "JvmFYpVf",
 												"label": "Stamp the voice and each step on one clock",
-												"kind": "self",
+												"kind": "sync",
 												"note": "the voice plays through a muted element, so nobody hears a recording; its samples and every event share the 48 kHz audio clock",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
