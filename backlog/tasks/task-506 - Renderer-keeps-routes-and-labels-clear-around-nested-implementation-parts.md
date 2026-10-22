@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
-updated_date: '2026-10-22 03:49'
+updated_date: '2026-10-22 03:51'
 labels: []
 dependencies: []
 references:
@@ -43,4 +43,6 @@ The minimized Track regression first failed on detached label 2wlebJ2T. The caus
 Implementation commit fe3510df3 keeps the existing renderer modules and contracts. Renderer layout still describes Block layout, Block packing, and Card blocks correctly. Its three stale renderJSON anchors now cite the current renderString call in card-layout.ts. This corrects existing board evidence and changes no drawn architecture. No proposal or public model change is required.
 
 The second renderer group passed 206 cases and found one remaining Board viewer Track wall hug. A minimized 30-node input reproduced qu6pVEXF beside the inner frame of a lone group region. Routing read the outer region walls while the final frame stands one region inset inside them. Scene.frameWalls now reports the drawn inner walls. The original full Board viewer geometry probe reports no card, label, or wall failures. The existing wide-board owner already catches this exact regression, so no duplicate large fixture is added. The supported renderer group is running to assess all geometry and timing contracts.
+
+The final supported renderer group passed all 207 tests across 34 files, with 2,005 assertions and zero failures in 100.68 seconds. Log: /tmp/archboard-task506-final-renderer.log. This includes both original wide-board failures, the later Board viewer wall regression, and all existing clearance, lane, and timing assertions. The complete normal gate is next.
 <!-- SECTION:NOTES:END -->
