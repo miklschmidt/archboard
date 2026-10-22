@@ -32,9 +32,11 @@ import { createRequester } from "./support/http.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = "tour";
 
-/** The frame step two is shown on, and the talk's last frame. */
+/** The frame step two is shown on. */
 const STEP_TWO_FRAME = 12;
 const FRAMES = 60;
+/** The Blocks talk ends after it shows step two. */
+const BLOCKS_FRAMES = STEP_TWO_FRAME + 1;
 
 /**
  * A voice that speaks and falls silent by turns, a third of a second each: a tone at a quarter of
@@ -72,7 +74,12 @@ let recordedVariant: string;
  * @param layout The layout engine it was recorded with.
  * @returns The talk.
  */
-function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): Talk {
+function talkOf(
+	document: unknown,
+	policy: unknown,
+	layout: LayoutEngineName,
+	frames = FRAMES,
+): Talk {
 	const parsed = parseSemanticBoard(document);
 	if (!parsed.ok) throw new Error(parsed.problem);
 	const { board } = parsed;
@@ -97,7 +104,7 @@ function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): T
 			file: "voice.wav",
 			sampleRate: 48_000,
 			channels: 1,
-			samples: FRAMES * 1600,
+			samples: frames * 1600,
 			baseLatencyMs: 0,
 		},
 		events: [
@@ -106,7 +113,7 @@ function talkOf(document: unknown, policy: unknown, layout: LayoutEngineName): T
 			{ kind: "said", at: 4800, itemId: "a1", text: "Every request enters", final: false },
 			{ kind: "said", at: 8000, itemId: "a1", text: "Every request enters here.", final: true },
 			{ kind: "step", at: STEP_TWO_FRAME * 1600, beat: 1 },
-			{ kind: "end", at: FRAMES * 1600 },
+			{ kind: "end", at: frames * 1600 },
 		],
 		document,
 		policy,
@@ -226,9 +233,10 @@ beforeAll(async () => {
 		voice: voiceOf(talk.audio.samples),
 		place: askedTalkPlace(join(root, "talk")),
 	});
+	const blocksTalk = talkOf(served.body!.board, policy.body, "blocks", BLOCKS_FRAMES);
 	blocksTalkDirectory = writeTalk({
-		talk: talkOf(served.body!.board, policy.body, "blocks"),
-		voice: voiceOf(talk.audio.samples),
+		talk: blocksTalk,
+		voice: voiceOf(blocksTalk.audio.samples),
 		place: askedTalkPlace(join(root, "blocks-talk")),
 	});
 	await keepStackedTalks(request);
@@ -410,8 +418,8 @@ test(
 	() => {
 		const blocks = replay("blocks", { talk: blocksTalkDirectory });
 		const track = replay("blocks-as-track", { talk: blocksTalkDirectory, layout: "track" });
-		expect(blocks.receipt).toMatchObject({ layout: "blocks", frames: FRAMES });
-		expect(track.receipt).toMatchObject({ layout: "track", frames: FRAMES });
+		expect(blocks.receipt).toMatchObject({ layout: "blocks", frames: BLOCKS_FRAMES });
+		expect(track.receipt).toMatchObject({ layout: "track", frames: BLOCKS_FRAMES });
 		// The talk opens on the overview, which the two engines draw alike; the
 		// beats' view opens the container, which they lay out differently.
 		expect(blocks.frames.at(-1)).not.toBe(track.frames.at(-1));

@@ -42,19 +42,24 @@ function cli(vault: string, args: readonly string[], input?: string) {
  * @param name The board's name.
  * @param nodes Its parts; every part after the first is wired to the first.
  */
-function made(name: string, nodes: readonly Record<string, unknown>[]): void {
+async function made(name: string, nodes: readonly Record<string, unknown>[]): Promise<void> {
 	const [first, ...rest] = nodes;
-	const payload = {
-		level: "service",
-		nodes,
-		edges: rest.map((node) => ({ from: first?.["name"], to: node["name"], kind: "http" })),
-	};
-	const result = cli(
-		metaVault,
-		["semantic", "new", name, "--doing", "drawing a board to move"],
-		JSON.stringify(payload),
+	const result = await createRequester({ ...server, vault: metaVault })(
+		"/api/semantic-boards/create",
+		{
+			method: "POST",
+			doing: "drawing a board to move",
+			body: {
+				board: name,
+				create: {
+					level: "service",
+					nodes,
+					edges: rest.map((node) => ({ from: first?.["name"], to: node["name"], kind: "http" })),
+				},
+			},
+		},
 	);
-	expect(result.status, result.stderr).toBe(0);
+	expect(result.status).toBe(200);
 }
 
 /**
@@ -97,10 +102,10 @@ afterAll(async () => {
 	fixture?.dispose();
 });
 
-test("semantic move moves the board to the vault --to finds and lists every rewritten drill-down", () => {
-	made("Ledger", [{ name: "Books", kind: "module" }]);
-	made("Payments", [{ name: "API", kind: "app" }, opening("Books", "Ledger")]);
-	made("Platform", [{ name: "Web", kind: "app" }, opening("Pay", "Payments")]);
+test("semantic move moves the board to the vault --to finds and lists every rewritten drill-down", async () => {
+	await made("Ledger", [{ name: "Books", kind: "module" }]);
+	await made("Payments", [{ name: "API", kind: "app" }, opening("Books", "Ledger")]);
+	await made("Platform", [{ name: "Web", kind: "app" }, opening("Pay", "Payments")]);
 
 	const moved = cli(metaVault, [
 		"semantic",
@@ -131,8 +136,8 @@ test("semantic move moves the board to the vault --to finds and lists every rewr
 }, 120_000);
 
 test("a pane on the moved board follows it to its new repository, and a pane on a rewritten board is told why it changed", async () => {
-	made("Billing", [{ name: "Invoices", kind: "module" }]);
-	made("Checkout", [{ name: "Cart", kind: "app" }, opening("Bill", "Billing")]);
+	await made("Billing", [{ name: "Invoices", kind: "module" }]);
+	await made("Checkout", [{ name: "Cart", kind: "app" }, opening("Bill", "Billing")]);
 	const request = createRequester({ ...server, vault: metaVault });
 	const onMoved = await openPaneSession(server.base, request, {
 		clientId: "on-moved",
@@ -178,8 +183,8 @@ test("a pane on the moved board follows it to its new repository, and a pane on 
 	}
 }, 120_000);
 
-test("a refused move exits with the status its refusal declares and moves nothing", () => {
-	made("Refunds", [{ name: "Store", kind: "module" }]);
+test("a refused move exits with the status its refusal declares and moves nothing", async () => {
+	await made("Refunds", [{ name: "Store", kind: "module" }]);
 	const refused = cli(metaVault, [
 		"semantic",
 		"move",
@@ -207,7 +212,7 @@ test("a refused move exits with the status its refusal declares and moves nothin
 }, 120_000);
 
 test("a move into a checkout that is not chosen chooses it, and a pane on the board stays there", async () => {
-	made("Audit", [{ name: "Trail", kind: "module" }]);
+	await made("Audit", [{ name: "Trail", kind: "module" }]);
 	const added = join(fixture.root, "product-audit");
 	execFileSync("git", ["worktree", "add", "-q", "-b", "audit", added], {
 		cwd: product,
