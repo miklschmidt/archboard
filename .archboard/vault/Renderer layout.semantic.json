@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 50,
+	"version": 51,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-19T22:35:55.428Z",
+	"updatedAt": "2026-10-22T03:42:55.928Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -7037,7 +7037,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-							"symbol": "renderJSON"
+							"symbol": "renderString"
 						}
 					},
 					{
@@ -8016,7 +8016,7 @@
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
 															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-															"symbol": "renderJSON"
+															"symbol": "renderString"
 														}
 													},
 													{
@@ -8028,7 +8028,7 @@
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
 															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-															"symbol": "renderJSON"
+															"symbol": "renderString"
 														}
 													},
 													{

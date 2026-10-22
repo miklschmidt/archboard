@@ -39,4 +39,6 @@ Diagnose and minimize the two observed clearance failures, then repair their exi
 
 <!-- SECTION:NOTES:BEGIN -->
 The minimized Track regression first failed on detached label 2wlebJ2T. The cause was cycle detection ignoring title-to-member ordering. The minimized Blocks regression first failed on ZDhACWtE crossing TY7m2mtd. The cause was a side port inside the obstacle clearance of a packed container. The repairs include only semantic container ordering and side clearance in PackLayout. An initial broader inset experiment changed card layouts and was removed. Five targeted regression and existing routing cases now pass in 1.98 seconds. Source lint and full corpus validation remain in progress.
+
+Implementation commit fe3510df3 keeps the existing renderer modules and contracts. Renderer layout still describes Block layout, Block packing, and Card blocks correctly. Its three stale renderJSON anchors now cite the current renderString call in card-layout.ts. This corrects existing board evidence and changes no drawn architecture. No proposal or public model change is required.
 <!-- SECTION:NOTES:END -->
