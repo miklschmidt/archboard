@@ -21,12 +21,14 @@ function fixture(): Record<string, string> {
 			exports: {
 				"./theme.css": "./assets/theme.css",
 				"./font.woff2": "./assets/font.woff2",
+				"./image.webp": "./assets/image.webp",
 				"./server.css": "./src/server/styles/server.css",
 				"./testing": "./tests/style.css",
 			},
 		}),
 		"packages/renderer/assets/theme.css": "",
 		"packages/renderer/assets/font.woff2": "font",
+		"packages/renderer/assets/image.webp": "image",
 		"packages/renderer/assets/private.css": "",
 		"packages/renderer/src/server/styles/server.css": "",
 		"packages/renderer/tests/style.css": "",
@@ -62,6 +64,24 @@ describe("CSS import boundaries", () => {
 @font-face { src: url("@archboard/renderer/font.woff2"); }
 `;
 			expect(cssProblems(root, stylesheet, code)).toEqual([]);
+		});
+	});
+
+	test("image-set candidates follow the asset boundary policy in string and URL forms", async () => {
+		await withProject(fixture(), (root) => {
+			const code = String.raw`
+.a { background-image: image-set("@archboard/renderer/image.webp" 1x, url("\40 archboard/renderer/private.webp") 2x); }
+.b { background: -webkit-image-set(url("@archboard/renderer/private.webp") 1x); }
+`;
+			expect(cssReferences(code, stylesheet).map(({ url }) => url)).toEqual([
+				"@archboard/renderer/image.webp",
+				"@archboard/renderer/private.webp",
+				"@archboard/renderer/private.webp",
+			]);
+			expect(cssProblems(root, stylesheet, code).map(({ messageId }) => messageId)).toEqual([
+				"noDeepImportAcrossPackages",
+				"noDeepImportAcrossPackages",
+			]);
 		});
 	});
 
