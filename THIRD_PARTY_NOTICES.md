@@ -6,8 +6,8 @@ These are the notices.
 
 ## PR Lens renderer
 
-Part of the SVG renderer is a fork of the PR Lens renderer (MIT, Coldtea AI).
-Its notice, with a list of what remains and what changed, is in
+The SVG renderer includes code adapted from PR Lens (MIT, Coldtea AI).
+The source revision, retained code, and MIT License are documented in
 [`packages/renderer/NOTICE.md`](packages/renderer/NOTICE.md).
 
 ## Fonts
