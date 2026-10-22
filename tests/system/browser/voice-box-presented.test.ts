@@ -1,20 +1,15 @@
 import { expect, test } from "bun:test";
-import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedServer } from "../support/owned-server.ts";
-import { vaultIn } from "../support/test-vault.ts";
 import {
-	browserTestRoots,
-	serverTestEnvironment,
 	createAgentBrowser,
 	pollUntil,
-	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import type { ProductionFixture } from "../server-state/support/codex-production.ts";
 import { askToSpeak, lineSaid, voiceStarts } from "./support/codex-live-voice.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
+import { stepBrowserMotion } from "./support/motion-clock.ts";
 import { press } from "./support/drilling.ts";
 import {
 	A_SMALL_PIPELINE,
@@ -22,7 +17,6 @@ import {
 	seedSemanticBoard,
 	stageState,
 } from "./support/semantic-page.ts";
-import { serverPath } from "./support/navigator-support.ts";
 import {
 	WAIT,
 	WATCH,
@@ -146,7 +140,7 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	const { server, fixture } = await startVoiceServer(resources, "voice-foot-vault");
 	await seedSemanticBoard(createJsonRequester(server), "pipeline", TOUR);
 
-	const browser = resources.use(await createAgentBrowser());
+	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
 	await openForVoice(browser, addressShowing(server.base, "pipeline"));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -268,39 +262,3 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	expect(Math.max(...frames.map((frame) => frame.over))).toBe(0);
 	await server.assertRunning();
 }, 90_000);
-
-test("the key that narrates takes the pointer at the foot of a presented walkthrough's box", async () => {
-	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "voice-key-vault"));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	await seedSemanticBoard(createJsonRequester(server), "pipeline", TOUR);
-
-	// A real pane with a voice owner and the voice off, where what the shell lays over the picture is
-	// drawn over the key, empty, and must let a press through to it.
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(server.base, "pipeline")]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
-		"the board to be drawn before a walkthrough is presented",
-		WAIT,
-	);
-	await press(browser, "[data-slot='semantic-walkthrough-choice']");
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const key = document.querySelector('[data-slot="semantic-presentation-narrate"]');` +
-					` if (!key) return false; const box = key.getBoundingClientRect();` +
-					` const at = document.elementFromPoint(box.x + 40, box.y + box.height / 2);` +
-					` return at !== null && key.contains(at); })()`,
-			),
-		Boolean,
-		"the key that narrates to take the pointer at its foot",
-		WAIT,
-	);
-	await server.assertRunning();
-}, 40_000);

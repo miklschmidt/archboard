@@ -16,6 +16,7 @@ import {
 import { WAIT, press } from "./support/drilling.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { pictureAtRest } from "./support/semantic-page.ts";
+import { stepBrowserMotion } from "./support/motion-clock.ts";
 
 // Presenting a walkthrough in a real browser: the half only a browser can
 // answer. Keys reach the presentation wherever focus is, the camera really
@@ -164,7 +165,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(created.status).toBe(200);
 	const before = readFileSync(join(vault, "tour.semantic.json"), "utf8");
 
-	const browser = resources.use(await createAgentBrowser());
+	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
 	await browser.run(["open", `${server.base}/?paneA=tour`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -182,6 +183,19 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const first = await arrivedAt(browser, "0");
 	expect(first.heading).toBe("All of it");
 	expect(first.sidebar).toBe(false);
+
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const key = document.querySelector('[data-slot="semantic-presentation-narrate"]');` +
+					` if (!key) return false; const box = key.getBoundingClientRect();` +
+					` const at = document.elementFromPoint(box.x + 40, box.y + box.height / 2);` +
+					` return at !== null && key.contains(at); })()`,
+			),
+		Boolean,
+		"the key that narrates to take the pointer at its foot",
+		WAIT,
+	);
 
 	// A key steps, wherever focus is; the camera glides there and lands.
 	await browser.eval(WATCH_HAND_OVER);

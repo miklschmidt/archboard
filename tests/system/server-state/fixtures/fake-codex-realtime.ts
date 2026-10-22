@@ -26,9 +26,6 @@ function narrating(controlPath: string): boolean {
 	);
 }
 
-/** How long apart the words of the scripted exchange arrive, in milliseconds. */
-const SCRIPTED_WORD_MS = 300;
-
 /** How long apart the words of a narrated step arrive: brisker, so a recording stays short. */
 const NARRATED_WORD_MS = 120;
 
@@ -121,13 +118,13 @@ function startRealtime(notify: Notify, params: Record<string, unknown>, narrates
 	};
 	notify("thread/realtime/item/started", { threadId, item: user });
 	notify("thread/realtime/item/completed", { threadId, item: user });
-	// The voice model's words arrive one delta at a time, as the real session's do.
+	// Keep the ordered word deltas without simulating the model's real-time speech pace.
 	speak(
 		notify,
 		{ threadId, realtimeSessionId },
 		"controlled-assistant-transcript",
 		SCRIPTED_LINE,
-		SCRIPTED_WORD_MS,
+		0,
 	);
 }
 
@@ -151,7 +148,7 @@ function speakAgain(
 			{ threadId, realtimeSessionId },
 			`controlled-assistant-transcript-${speaks}`,
 			SCRIPTED_LINE,
-			SCRIPTED_WORD_MS,
+			0,
 		);
 	}
 }

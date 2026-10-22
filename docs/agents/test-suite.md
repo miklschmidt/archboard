@@ -312,6 +312,13 @@ set -o pipefail
 bun run check 2>&1 | tee "$check_log"
 ```
 
+Motion owners call `stepBrowserMotion` before the first navigation.
+It installs the existing stepped clock before application startup and advances ten 16 ms frames
+before each observation. Page-side samplers inspect every frame. The helper
+yields through `MessageChannel`, so React and browser events run between frames
+without the nested timeout clamp. The real browser, command deadlines, and cleanup
+remain under the strict adapter. The voice and walkthrough owners use this helper.
+
 The normal package command is the canonical normal lane. Focused diagnosis accepts:
 
 ```bash

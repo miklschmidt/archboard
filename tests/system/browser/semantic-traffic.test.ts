@@ -145,7 +145,7 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 	const board = encodeURIComponent(BOARD);
 
 	// Trains on the board, and a pulse a message on its sequence view: every form the renderer writes.
-	for (const address of [`?paneA=${board}`, `?paneA=${board}&viewA=${SEQUENCE_VIEW}`]) {
+	for (const address of [`?paneA=${board}&viewA=${SEQUENCE_VIEW}`, `?paneA=${board}`]) {
 		await openAtRest(browser, `${server.base}/${address}`);
 		const compared = await compareTraffic(browser);
 		expect(compared.running, `${address} runs SMIL`).toBe(0);
@@ -156,14 +156,9 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 	}
 
 	// A new version puts the picture up again; its traffic runs on rather than starting over.
-	await openAtRest(browser, `${server.base}/?paneA=${board}`);
-	await pollUntil(
-		() => browser.eval<number | null>(TRAFFIC_CLOCK),
-		(time) => time !== null && time > 3000,
-		"the traffic to have run for three seconds",
-		WAIT,
-	);
+	// The final comparison left the board's live traffic at MOMENTS' last time, then resumed it.
 	const before = await browser.eval<number>(TRAFFIC_CLOCK);
+	expect(before).toBeGreaterThan(3000);
 	const read = await request<{ board: { version: number } }>(
 		`/api/semantic-boards/board?board=${board}`,
 	);
