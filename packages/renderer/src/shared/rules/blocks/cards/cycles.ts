@@ -9,7 +9,7 @@ class CycleWalk {
 	/**
 	 * The ordering constraints leaving each item.
 	 */
-	readonly out = new Map<string, { to: string; edge?: string }[]>();
+	readonly out = new Map<string, { to: string; edge: string | undefined }[]>();
 
 	/**
 	 * Add an ordering constraint. Containment has no relationship to reverse.
