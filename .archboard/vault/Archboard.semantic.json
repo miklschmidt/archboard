@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 69,
+	"version": 70,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-22T03:12:36.040Z",
+	"updatedAt": "2026-10-22T03:18:00.073Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -7377,7 +7377,7 @@
 		{
 			"id": "VPnAp2Wz",
 			"name": "TASK-501",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "3M2UsnnM",
 			"summary": "One code-opening target with explicit ownership paths across roles",
 			"documents": [
@@ -8967,6 +8967,13 @@
 			"from": "PcvERJa4",
 			"at": "2026-10-19T22:59:46.264Z",
 			"reason": "TASK-500.06: the source is sixteen workspace packages in nine layers under three apps; the board draws them, with the direct imports between packages"
+		}
+	],
+	"shelvings": [
+		{
+			"variant": "VPnAp2Wz",
+			"at": "2026-10-22T03:18:00.073Z",
+			"reason": "Keep singular bindings. Repair existing boards with bound children and accurate anchors instead of adding ownership paths."
 		}
 	]
 }
