@@ -2,8 +2,11 @@
 // on each pass, because it depends on other files: a `tsconfig.json` and the
 // files that exist.
 //
-// A relative specifier resolves against the importing file. Any other
-// specifier resolves through the `paths` of the nearest `tsconfig.json`, such
+// A relative specifier resolves against the importing file. A `#` import uses
+// the nearest package.json's imports. A workspace package uses only its declared
+// public exports, found through the root manifest's workspace patterns. Both
+// read string targets from the same snapshot as the source files.
+// Other specifiers resolve through the `paths` of the nearest `tsconfig.json`, such
 // as `@/*` to `./src/*`, and then against its `baseUrl`. A configuration's
 // `extends` is followed where it names a file of the checkout; one that names
 // a package is not, because a package lives in an ignored `node_modules` that
@@ -168,7 +171,8 @@ function readPathConfig(file: string, read: ReadText, depth: number): PathConfig
  */
 function probe(candidate: string, files: ReadonlySet<string>): string | undefined {
 	const normal = path.posix.normalize(candidate).replace(/^\.\//u, "");
-	if (normal.startsWith("..")) return undefined;
+	if (path.posix.isAbsolute(normal) || normal === ".." || normal.startsWith("../"))
+		return undefined;
 	const written = path.posix.extname(normal);
 	const stem = normal.slice(0, normal.length - written.length);
 	const tries = [
@@ -250,16 +254,83 @@ function isRelative(specifier: string): boolean {
 }
 
 /**
- * The `tsconfig.json` files that could govern a directory, nearest first.
+ * The configuration files that could govern a directory, nearest first.
  * @param directory The directory, relative to the checkout.
+ * @param name The configuration's file name.
  * @returns Each candidate file, up to the checkout root.
  */
-function configFiles(directory: string): string[] {
+function configFiles(directory: string, name = "tsconfig.json"): string[] {
 	const files: string[] = [];
 	for (let at = directory; at !== "." && at !== ""; at = path.posix.dirname(at)) {
-		files.push(`${at}/tsconfig.json`);
+		files.push(`${at}/${name}`);
 	}
-	return [...files, "tsconfig.json"];
+	return [...files, name];
+}
+
+/**
+ * A manifest mapping's one selected string target, exact before longest pattern.
+ * A missing or blocked target never falls through to a less specific mapping.
+ * @param mappings The imports or exports map.
+ * @param specifier Its requested key.
+ * @returns The target with its wildcard replaced, or none.
+ */
+function mappedTarget(mappings: unknown, specifier: string): string | undefined {
+	if (!isRecord(mappings)) return undefined;
+	const pattern = Object.keys(mappings)
+		.filter((key) => starOf(key, specifier) !== undefined)
+		.toSorted(
+			(left, right) => prefixLength(right) - prefixLength(left) || right.length - left.length,
+		)[0];
+	if (pattern === undefined) return undefined;
+	const target = mappings[pattern];
+	return typeof target === "string"
+		? target.replaceAll("*", starOf(pattern, specifier) ?? "")
+		: undefined;
+}
+
+/**
+ * A manifest's local target, refusing traversal and package redirects.
+ * @param directory The manifest's directory.
+ * @param target Its selected target.
+ * @returns The candidate inside that package, or none.
+ */
+function localTarget(directory: string, target: string | undefined): string | undefined {
+	if (target === undefined || !target.startsWith("./") || target.includes("\\")) return undefined;
+	const segments = target.slice(2).split("/");
+	if (segments.some((segment) => ["..", ".", "node_modules"].includes(segment))) return undefined;
+	return path.posix.join(directory, target);
+}
+
+/**
+ * Workspace manifests listed by the root's workspace array, without reading disk.
+ * @param files The snapshot's files.
+ * @param workspaces The root manifest's workspace patterns.
+ * @returns Each workspace's package.json in a stable order.
+ */
+function workspaceManifests(files: ReadonlySet<string>, workspaces: unknown): string[] {
+	if (!Array.isArray(workspaces)) return [];
+	const patterns = workspaces
+		.filter((pattern): pattern is string => typeof pattern === "string")
+		.map((pattern) => new Bun.Glob(pattern.replace(/^\.\//u, "").replace(/\/$/u, "")));
+	return [...files]
+		.filter(
+			(file) =>
+				file.endsWith("/package.json") &&
+				patterns.some((pattern) => pattern.match(path.posix.dirname(file))),
+		)
+		.toSorted();
+}
+
+/**
+ * The package name at the start of a bare import, including its scope.
+ * @param specifier The import.
+ * @returns Its package name.
+ */
+function packageName(specifier: string): string {
+	return specifier
+		.split("/")
+		.slice(0, specifier.startsWith("@") ? 2 : 1)
+		.join("/");
 }
 
 /**
@@ -270,6 +341,60 @@ function configFiles(directory: string): string[] {
  */
 function createModuleResolver(checkout: CheckoutFiles, read: ReadText): ModuleResolver {
 	const configs = new Map<string, PathConfig | undefined>();
+	const manifests = new Map<string, Record<string, unknown> | undefined>();
+	/**
+	 * Read a manifest once, only when the snapshot lists it.
+	 * @param file The manifest path.
+	 * @returns Its fields, or none.
+	 */
+	const manifestOf = (file: string): Record<string, unknown> | undefined => {
+		if (!checkout.files.has(file)) return undefined;
+		if (!manifests.has(file)) manifests.set(file, readJsonc(file, read));
+		return manifests.get(file);
+	};
+	const workspaces = new Map<string, string>();
+	for (const file of workspaceManifests(
+		checkout.files,
+		manifestOf("package.json")?.["workspaces"],
+	)) {
+		const name = manifestOf(file)?.["name"];
+		if (typeof name === "string") workspaces.set(name, file);
+	}
+	/**
+	 * Resolve a package-local import through its nearest owner, never an ancestor's aliases.
+	 * @param directory The importing directory.
+	 * @param specifier The import.
+	 * @returns Its candidate, or none.
+	 */
+	const importTarget = (directory: string, specifier: string): string | undefined => {
+		const file = configFiles(directory, "package.json").find((candidate) =>
+			checkout.files.has(candidate),
+		);
+		if (file === undefined) return undefined;
+		return localTarget(
+			path.posix.dirname(file),
+			mappedTarget(manifestOf(file)?.["imports"], specifier),
+		);
+	};
+	/**
+	 * Resolve only a workspace package's declared public export.
+	 * @param file Its manifest.
+	 * @param subpath The requested export key.
+	 * @returns Its candidate, or none.
+	 */
+	const exportTarget = (file: string, subpath: string): string | undefined => {
+		const exports = manifestOf(file)?.["exports"];
+		const target =
+			typeof exports === "string" && subpath === "." ? exports : mappedTarget(exports, subpath);
+		return localTarget(path.posix.dirname(file), target);
+	};
+	/**
+	 * Probe a selected package target, if it exists.
+	 * @param target The candidate.
+	 * @returns Its listed source file, or none.
+	 */
+	const probeTarget = (target: string | undefined): string | undefined =>
+		target === undefined ? undefined : probe(target, checkout.files);
 	/**
 	 * The configuration that governs a directory: the nearest `tsconfig.json`.
 	 * @param directory The directory, relative to the checkout.
@@ -280,6 +405,21 @@ function createModuleResolver(checkout: CheckoutFiles, read: ReadText): ModuleRe
 		if (file === undefined) return undefined;
 		if (!configs.has(file)) configs.set(file, readPathConfig(file, read, EXTENDS_DEPTH));
 		return configs.get(file);
+	};
+	/**
+	 * Resolve an existing tsconfig alias or baseUrl import.
+	 * @param directory The importing directory.
+	 * @param specifier The import.
+	 * @returns Its listed source file, or none.
+	 */
+	const resolvePaths = (directory: string, specifier: string): string | undefined => {
+		const config = configOf(directory);
+		if (config === undefined) return undefined;
+		const candidates = [
+			...pathCandidates(config, specifier),
+			...(config.baseUrl === undefined ? [] : [path.posix.join(config.baseUrl, specifier)]),
+		];
+		return candidates.map((candidate) => probe(candidate, checkout.files)).find(Boolean);
 	};
 	return {
 		/**
@@ -292,13 +432,14 @@ function createModuleResolver(checkout: CheckoutFiles, read: ReadText): ModuleRe
 			const directory = path.posix.dirname(from);
 			if (isRelative(specifier))
 				return probe(path.posix.join(directory, specifier), checkout.files);
-			const config = configOf(directory);
-			if (config === undefined) return undefined;
-			const candidates = [
-				...pathCandidates(config, specifier),
-				...(config.baseUrl === undefined ? [] : [path.posix.join(config.baseUrl, specifier)]),
-			];
-			return candidates.map((candidate) => probe(candidate, checkout.files)).find(Boolean);
+			if (specifier.startsWith("#")) return probeTarget(importTarget(directory, specifier));
+			const name = packageName(specifier);
+			const workspace = workspaces.get(name);
+			if (workspace !== undefined) {
+				const subpath = specifier === name ? "." : `.${specifier.slice(name.length)}`;
+				return probeTarget(exportTarget(workspace, subpath));
+			}
+			return resolvePaths(directory, specifier);
 		},
 	};
 }

@@ -153,6 +153,63 @@ test("historical Terraform roots resolve nested module addresses and each instan
 	]);
 });
 
+test("historical manifests resolve local and workspace imports from their own revision around cached source bytes", async () => {
+	const checkout = fixtureCheckout({
+		"package.json": JSON.stringify({ workspaces: [] }),
+		"apps/web/package.json": JSON.stringify({ imports: { "#target": "./one.ts" } }),
+		"packages/kit/package.json": JSON.stringify({ name: "kit", exports: "./one.ts" }),
+		"apps/web/main.ts": [
+			'import { local } from "#target";',
+			'import { publicCall } from "kit";',
+			"local(); publicCall();",
+		].join("\n"),
+		"apps/web/one.ts": "export function local() {}",
+		"apps/web/two.ts": "export function local() {}",
+		"packages/kit/one.ts": "export function publicCall() {}",
+		"packages/kit/two.ts": "export function publicCall() {}",
+	});
+	try {
+		const sources = new Map<string, string>([
+			["package.json", JSON.stringify({ workspaces: ["packages/*", "apps/*"] })],
+			[
+				"apps/web/main.ts",
+				'import { local } from "#target";\nimport { publicCall } from "kit";\nlocal(); publicCall();',
+			],
+			["apps/web/one.ts", "export function local() {}"],
+			["apps/web/two.ts", "export function local() {}"],
+			["packages/kit/one.ts", "export function publicCall() {}"],
+			["packages/kit/two.ts", "export function publicCall() {}"],
+		]);
+		const facts = createSourceFacts();
+		for (const revision of ["one", "two"]) {
+			sources.set(
+				"apps/web/package.json",
+				JSON.stringify({ imports: { "#target": `./${revision}.js` } }),
+			);
+			sources.set(
+				"packages/kit/package.json",
+				JSON.stringify({ name: "kit", exports: `./${revision}.js` }),
+			);
+			const pass = facts.pass(checkout, new Map(sources));
+			expect(await definitionSite(pass, checkout, "apps/web/main.ts", "local")).toMatchObject({
+				path: `apps/web/${revision}.ts`,
+			});
+			expect(await definitionSite(pass, checkout, "apps/web/main.ts", "publicCall")).toMatchObject({
+				path: `packages/kit/${revision}.ts`,
+			});
+		}
+		sources.delete("apps/web/package.json");
+		sources.delete("packages/kit/package.json");
+		const absent = facts.pass(checkout, sources);
+		expect(await definitionSite(absent, checkout, "apps/web/main.ts", "local")).toBeUndefined();
+		expect(
+			await definitionSite(absent, checkout, "apps/web/main.ts", "publicCall"),
+		).toBeUndefined();
+	} finally {
+		checkout.remove();
+	}
+});
+
 test("source passes never fall back to disk for missing texts and retain file-read exclusions", async () => {
 	const checkout = fixtureCheckout({
 		"main.ts": "export function current() {}\n",
