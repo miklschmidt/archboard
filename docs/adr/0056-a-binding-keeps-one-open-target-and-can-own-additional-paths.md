@@ -1,42 +1,28 @@
 ---
-status: proposed
+status: rejected
 ---
 
-# A binding keeps one open target and can own additional paths
+# Keep one code owner per binding and draw its internal parts
 
-TASK-501 addresses a behavior whose implementation spans several role folders.
-The current code check reports 82 anchor mismatches, including 40 on Browser application.
-A directory binding reaches only one of those folders.
-Binding their common ancestor also claims unrelated behavior.
+TASK-501 exposed incomplete bindings and incorrect anchors after the source moved into workspace packages.
+The baseline code check reports 82 anchor mismatches, including 40 on Browser application.
+That count alone does not establish a missing binding feature.
 
-Keep `binding.path` as the one target that opens in the code editor.
-Add optional `binding.additionalPaths` for the other files and directories that implement the same behavior.
-All paths use the binding's repository, branch, and commit.
-Each path remains literal and passes the existing checkout containment and symbolic link rules.
+Keep the existing singular binding model.
+A node names one primary code owner.
+When a behavior contains several implementation parts, draw separately bound children at the appropriate level.
+The code check already includes descendants when it judges an anchored relationship endpoint.
+Preserve the parent node's identity as the explanation gains detail.
 
-For example, a viewer can open its client folder and own its implementation across the other roles:
+A role folder does not establish a separate architectural responsibility by itself.
+Name children for what their code does, and bind each to its actual implementation.
+If an anchor cites a helper rather than the exchange that the relationship describes, correct the anchor or the relationship.
+Do not expand a node's ownership to make an unrelated anchor pass.
 
-```json
-{
-	"repo": "github.com/miklschmidt/archboard",
-	"path": "apps/web/src/ui/clients/semantic-board-canvas",
-	"additionalPaths": [
-		"apps/web/src/ui/components/semantic-board-canvas",
-		"apps/web/src/ui/hooks/semantic-board-canvas",
-		"apps/web/src/ui/rules/semantic-board-canvas",
-		"apps/web/src/ui/state/semantic-board-canvas"
-	]
-}
-```
+The rejected proposal added optional `additionalPaths` beside the code-opening target.
+That field can combine independently owned modules without showing their boundaries on the board.
+It also introduces a second path contract for ownership, history, and code opening.
+The user chose explicit lower-level children instead.
 
-A binding with `symbol` keeps its existing meaning: one definition.
-It cannot also carry `additionalPaths`.
-A binding without `symbol` owns the union of its primary and additional paths.
-Ownership uses the narrowest matching location, so an explicitly bound child still owns its own code.
-The code check and all history readings use the same complete scope.
-The plain check reports a missing additional path, and code opening continues to use the primary path.
-
-The alternative is to draw a child node for each role folder under every behavior.
-That uses the existing model, but adds source organization to diagrams whose question is which behaviors collaborate.
-Globs add matching rules and make the set of owned files less explicit.
-Explicit additional paths keep the behavior as one part and preserve the single code-opening action.
+The unfinished experiment remains on branch `experiment/task501-additional-paths` for inspection.
+It is not part of the product branch and is not a validated implementation.
