@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 78,
+	"version": 79,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-19T22:40:46.466Z",
+	"updatedAt": "2026-10-22T03:20:52.130Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -25413,12 +25413,12 @@
 																				"id": "4uioSf3Q",
 																				"from": "i2CrY6Xj",
 																				"to": "i2CrY6Xj",
-																				"label": "settleByRestoring: settle it and carry the answer down",
+																				"label": "settle restored subjects and carry the answer down",
 																				"kind": "self",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
 																					"path": "packages/board/src/runtime/operations/write/transitions.ts",
-																					"symbol": "carriedFamily"
+																					"symbol": "editVariantTransition"
 																				}
 																			}
 																		]

@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 74,
+	"version": 75,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-19T22:49:44.924Z",
+	"updatedAt": "2026-10-22T03:20:53.051Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -14094,7 +14094,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
-													"symbol": "refusedResponse"
+													"symbol": "respondOnce"
 												}
 											}
 										]
@@ -16857,7 +16857,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
-													"symbol": "refusedResponse"
+													"symbol": "respondOnce"
 												}
 											}
 										]
@@ -19657,7 +19657,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
-													"symbol": "refusedResponse"
+													"symbol": "respondOnce"
 												}
 											}
 										]

@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 112,
+	"version": 114,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-19T22:51:21.961Z",
+	"updatedAt": "2026-10-22T03:21:29.750Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -49,7 +49,9 @@
 					"jAKtfzMA",
 					"XgeEM0Pb",
 					"OfRn3av3",
-					"iIJ5MRhi"
+					"iIJ5MRhi",
+					"yHgIapK7",
+					"fF4A9uvU"
 				],
 				"edges": [],
 				"flows": []
@@ -82,7 +84,9 @@
 					"eMSAZPvG",
 					"MUs4pwRq",
 					"XKjn4icZ",
-					"fOJvfmZv"
+					"fOJvfmZv",
+					"yHgIapK7",
+					"fF4A9uvU"
 				],
 				"edges": [],
 				"flows": []
@@ -38115,12 +38119,12 @@
 						"order": 17000,
 						"name": "Server client",
 						"kind": "module",
-						"responsibility": "Health, claims and panes, and the one request path every call to the Archboard server takes; refuses a server that runs another checkout's source",
-						"description": "The typed surface for everything but board content. Its transport checks the server's identity and shapes its errors; the board, doing line, expected version and writing session the invocation stated, and the vault it found, ride on every request from here.",
+						"responsibility": "Provides the typed health, claim, pane, and board-refusal operations that commands use",
+						"description": "These operations call the shared request transport. The transport handles server identity and errors and reads the invocation context for request addressing.",
 						"parent": "dHZeNcMs",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/server-lifecycle/src/runtime/clients"
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts"
 						}
 					},
 					{
@@ -38473,6 +38477,30 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/server-lifecycle/src/runtime/operations/restart.ts"
 						}
+					},
+					{
+						"id": "yHgIapK7",
+						"order": 46000,
+						"name": "Request transport",
+						"kind": "module",
+						"responsibility": "Sends JSON requests, rejects a server from another checkout, and reports transport errors",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts"
+						}
+					},
+					{
+						"id": "fF4A9uvU",
+						"order": 47000,
+						"name": "Invocation context",
+						"kind": "module",
+						"responsibility": "Keeps the board, vault, doing line, expected version, and writing session for one CLI invocation",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/state/server-client-session.ts"
+						}
 					}
 				],
 				"edges": [
@@ -38569,7 +38597,7 @@
 					{
 						"id": "pB6BrbXY",
 						"order": 6000,
-						"from": "iIJ5MRhi",
+						"from": "yHgIapK7",
 						"to": "MUs4pwRq",
 						"kind": "http",
 						"label": "JSON",
@@ -38816,7 +38844,7 @@
 						"id": "EBy8Rjwh",
 						"order": 23000,
 						"from": "OfRn3av3",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"label": "requestJson",
 						"emphasis": "hero",
@@ -38834,7 +38862,7 @@
 						"id": "REIYPxdO",
 						"order": 24000,
 						"from": "PQcK5dF2",
-						"to": "iIJ5MRhi",
+						"to": "fF4A9uvU",
 						"kind": "call",
 						"label": "the stated board, doing, version and the found vault",
 						"emphasis": "muted",
@@ -39104,7 +39132,7 @@
 						"id": "QiGtsvq5",
 						"order": 43000,
 						"from": "yQCdykGt",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"label": "the code check, after the plain check",
 						"emphasis": "normal",
@@ -39132,7 +39160,7 @@
 						"id": "VRlgnU3b",
 						"order": 45000,
 						"from": "NRfiV6wN",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"label": "the hotspots of one board, over a period",
 						"emphasis": "normal",
@@ -39146,7 +39174,7 @@
 						"id": "xVdE7NdL",
 						"order": 47000,
 						"from": "MrE3v2T6",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"label": "the footprint, from the server",
 						"emphasis": "normal",
@@ -39230,7 +39258,7 @@
 						"id": "wRsRzFtD",
 						"order": 52000,
 						"from": "bLpk2XKU",
-						"to": "iIJ5MRhi",
+						"to": "fF4A9uvU",
 						"kind": "call",
 						"label": "the stated version and doing",
 						"emphasis": "normal",
@@ -39328,7 +39356,7 @@
 						"id": "qXImR60k",
 						"order": 59000,
 						"from": "eMSAZPvG",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"label": "identity probe",
 						"emphasis": "normal",
@@ -39397,7 +39425,7 @@
 					{
 						"id": "WxUHKpD6",
 						"order": 64000,
-						"from": "iIJ5MRhi",
+						"from": "yHgIapK7",
 						"to": "NG7OXLv9",
 						"kind": "dependency",
 						"label": "the running checkout, to refuse another's server",
@@ -39561,6 +39589,34 @@
 							"path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
 							"symbol": "stopServer"
 						}
+					},
+					{
+						"id": "k8S5STpk",
+						"order": 76000,
+						"from": "iIJ5MRhi",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "send each operation as JSON",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "AvVUuBuI",
+						"order": 77000,
+						"from": "yHgIapK7",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "address each request with its board, vault, and write claims",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+							"symbol": "withVault"
+						}
 					}
 				],
 				"flows": [
@@ -39574,7 +39630,7 @@
 							"E2MAq7W7",
 							"cWbvcIYa",
 							"OfRn3av3",
-							"iIJ5MRhi",
+							"yHgIapK7",
 							"MUs4pwRq"
 						],
 						"steps": [
@@ -39642,7 +39698,7 @@
 							{
 								"id": "rhovm4Dt",
 								"from": "OfRn3av3",
-								"to": "iIJ5MRhi",
+								"to": "yHgIapK7",
 								"label": "requestJson",
 								"kind": "sync",
 								"anchor": {
@@ -39653,7 +39709,7 @@
 							},
 							{
 								"id": "EmmUHOxW",
-								"from": "iIJ5MRhi",
+								"from": "yHgIapK7",
 								"to": "MUs4pwRq",
 								"label": "GET the board",
 								"kind": "sync",
@@ -39667,7 +39723,7 @@
 							{
 								"id": "mbT6i23s",
 								"from": "MUs4pwRq",
-								"to": "iIJ5MRhi",
+								"to": "yHgIapK7",
 								"label": "board as JSON",
 								"kind": "return",
 								"anchor": {
@@ -39678,7 +39734,7 @@
 							},
 							{
 								"id": "kT7FGZQI",
-								"from": "iIJ5MRhi",
+								"from": "yHgIapK7",
 								"to": "OfRn3av3",
 								"label": "the answer, or the server's refusal",
 								"kind": "return",
@@ -40356,14 +40412,14 @@
 						"name": "A request reaches the server",
 						"participants": [
 							"OfRn3av3",
-							"iIJ5MRhi",
+							"yHgIapK7",
 							"MUs4pwRq"
 						],
 						"steps": [
 							{
 								"id": "BlvdRRwP",
 								"from": "OfRn3av3",
-								"to": "iIJ5MRhi",
+								"to": "yHgIapK7",
 								"label": "requestJson",
 								"kind": "sync",
 								"anchor": {
@@ -40382,38 +40438,38 @@
 										"steps": [
 											{
 												"id": "A2YQ6ASl",
-												"from": "iIJ5MRhi",
+												"from": "yHgIapK7",
 												"to": "MUs4pwRq",
 												"label": "GET /health",
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-													"symbol": "getHealth"
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "probeHealth"
 												}
 											},
 											{
 												"id": "DJOodCKl",
 												"from": "MUs4pwRq",
-												"to": "iIJ5MRhi",
+												"to": "yHgIapK7",
 												"label": "an identity that is not this checkout's server",
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-													"symbol": "getHealth"
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "probeHealth"
 												}
 											},
 											{
 												"id": "uuuNQUDo",
-												"from": "iIJ5MRhi",
+												"from": "yHgIapK7",
 												"to": "OfRn3av3",
 												"label": "SERVER_UNREACHABLE, naming the service or the checkout",
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-													"symbol": "getHealth"
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "verifyIdentity"
 												}
 											}
 										]
@@ -40423,7 +40479,7 @@
 										"steps": [
 											{
 												"id": "eizWExyA",
-												"from": "iIJ5MRhi",
+												"from": "yHgIapK7",
 												"to": "MUs4pwRq",
 												"label": "the route, with the vault and the board",
 												"kind": "sync",
@@ -40437,7 +40493,7 @@
 											{
 												"id": "246hJJey",
 												"from": "MUs4pwRq",
-												"to": "iIJ5MRhi",
+												"to": "yHgIapK7",
 												"label": "JSON",
 												"kind": "return",
 												"anchor": {
@@ -40456,14 +40512,14 @@
 														"steps": [
 															{
 																"id": "AfrwKD7V",
-																"from": "iIJ5MRhi",
+																"from": "yHgIapK7",
 																"to": "OfRn3av3",
 																"label": "an error carrying the server's code and its reason",
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-																	"symbol": "boardRefusalOf"
+																	"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+																	"symbol": "responseError"
 																}
 															}
 														]
@@ -40473,7 +40529,7 @@
 														"steps": [
 															{
 																"id": "8OvW4mS5",
-																"from": "iIJ5MRhi",
+																"from": "yHgIapK7",
 																"to": "OfRn3av3",
 																"label": "the answer, as the route's own shape",
 																"kind": "return",
@@ -40500,6 +40556,7 @@
 							"XKjn4icZ",
 							"eMSAZPvG",
 							"iIJ5MRhi",
+							"yHgIapK7",
 							"MUs4pwRq"
 						],
 						"steps": [
@@ -40696,7 +40753,7 @@
 																			{
 																				"id": "deHPnTNf",
 																				"from": "eMSAZPvG",
-																				"to": "iIJ5MRhi",
+																				"to": "yHgIapK7",
 																				"label": "mark the identity verified",
 																				"kind": "sync",
 																				"anchor": {
