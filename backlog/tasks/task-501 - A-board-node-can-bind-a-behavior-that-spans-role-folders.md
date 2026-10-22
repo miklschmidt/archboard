@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-19 23:11'
-updated_date: '2026-10-22 03:26'
+updated_date: '2026-10-22 03:31'
 labels: []
 dependencies: []
 ordinal: 908000
@@ -45,4 +45,6 @@ The user reconsidered additionalPaths because a node spanning distinct modules n
 Board-only correction clears all 82 baseline ANCHOR_MISMATCH findings while keeping singular bindings. The new sibling-role-child regression passes in 0.237 seconds and retains a negative unrelated-anchor assertion. Newly visible EXPOSED_UNUSED information comes from containers now examined by interface analysis. Source inspection and a direct resolver probe show that manifest # imports are not resolved, including the real pane-core -> createPaneReportSender call. That separate analyzer defect is tracked in TASK-505. No exports changed in TASK-501. The Board rasterizer containment warning was corrected by keeping its existing Talk capture peer and addressing that owner in the recording flow. Structural archboard check now exits 0 with no diagnostics.
 
 Final code-check comparison: 82 ANCHOR_MISMATCH findings become zero. All eight ANCHOR_SYMBOL_MISSING identities match the baseline, with none added. Structural diagnostics are empty. The 16 newly visible EXPOSED_UNUSED identities are information findings from existing exports now inspected through containers, not new exports; the unresolved manifest-import defect is documented in TASK-505 pending the requested approval to retain that follow-up. Browser application and Semantic renderer overviews were rasterized and inspected. The extra wide Application owners view was removed during simplification because the existing focused views and root overview already serve those readings. Product source, schemas, runtime readers, consumer skill and evaluation inputs are unchanged from 85daa00fb. Only the focused regression was added outside the board and decision records. No active model proposal remains to adopt; current boards were corrected against unchanged code.
+
+The complete normal gate failed after 253.50 seconds at the module lane: 4,859 pass, 1 skip, 2 fail. The new board detail exposes renderer clearance defects on Agent workbench (Track) and Browser application (Blocks). The exact geometry reproduces outside the duration assertion. TASK-506 records the mandatory gate repair under the archboard-dev completion workflow. Remaining normal lanes are running separately so the early module failure hides none. TASK-501 stays In Progress until the repair and complete gate pass.
 <!-- SECTION:NOTES:END -->
