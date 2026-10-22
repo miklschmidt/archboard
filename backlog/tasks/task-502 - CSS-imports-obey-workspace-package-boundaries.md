@@ -1,11 +1,11 @@
 ---
 id: TASK-502
 title: CSS imports obey workspace package boundaries
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-22 01:53'
-updated_date: '2026-10-22 02:00'
+updated_date: '2026-10-22 02:43'
 labels: []
 dependencies: []
 type: chore
@@ -20,10 +20,10 @@ The web stylesheet reaches renderer assets through directory-relative paths. Typ
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CSS imports and asset URLs use local manifest imports or declared package exports, and lint refuses private package paths, imports of apps, and forbidden area directions.
-- [ ] #2 The renderer declares the CSS and font assets that the web app consumes, and app.css uses those public names.
-- [ ] #3 Tailwind source scanning remains explicit and the built stylesheet and emitted font assets remain equivalent.
-- [ ] #4 Focused boundary regressions and bun run check pass.
+- [x] #1 CSS imports and asset URLs use local manifest imports or declared package exports, and lint refuses private package paths, imports of apps, and forbidden area directions.
+- [x] #2 The renderer declares the CSS and font assets that the web app consumes, and app.css uses those public names.
+- [x] #3 Tailwind source scanning remains explicit and the built stylesheet and emitted font assets remain equivalent.
+- [x] #4 Focused boundary regressions and bun run check pass.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,4 +36,14 @@ The web stylesheet reaches renderer assets through directory-relative paths. Typ
 
 <!-- SECTION:NOTES:BEGIN -->
 The native Lightning CSS visitor reads CSS references in recovery mode because Tailwind extends the import syntax. Vite and Tailwind still own compilation. No dependency was added. CSS reuses the TypeScript package resolver and boundary predicates. The package graph now includes CSS and package assets. Focused CSS and graph tests passed (18 tests), and targeted production and test lint passed. The baseline build passed and its CSS and font assets are saved under /tmp/archboard-task502-baseline for comparison.
+
+After the public asset paths changed, the frontend build emitted the same CSS and four font assets as the baseline, with identical names and SHA-256 bytes. The first complete gate found an implicit visitor type, corrected in 51fbda9b6. The second gate reached an unrelated Codex environment observation failure, repaired by TASK-503 in dbf48e9d6. All remaining lanes passed separately: system 257 tests, repository 135 tests, browser all 19 owners. TASK-504 removes measured waits before the final combined gate. The final gate log is /tmp/archboard-task504-check.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+CSS imports and asset URLs now use the TypeScript workspace resolver and boundary rules. Lightning CSS parses the references, with no added dependency. The renderer exports its stylesheet and four fonts, and app.css consumes those names. The package graph includes CSS references and assets.
+
+All five emitted CSS and font files match the baseline names and SHA-256 bytes. Focused policy tests and the complete bun run check gate pass at 510a33d34. The combined gate includes the independent TASK-503 test repair and TASK-504 timing changes.
+<!-- SECTION:FINAL_SUMMARY:END -->
