@@ -116,7 +116,7 @@ test("check names the subject beside its message, and its JSON answer carries th
 	} finally {
 		out.mockRestore();
 		err.mockRestore();
-		process.exitCode = exitCode;
+		process.exitCode = exitCode ?? 0;
 	}
 	expect(exited).toBe(1);
 	expect(VaultCheckSchema.parse(JSON.parse(stdout)).diagnostics[0]?.subject).toEqual(ledger);

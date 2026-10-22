@@ -43,7 +43,7 @@ beforeEach(() => {
 afterEach(() => {
 	stdout.mockRestore();
 	stderr.mockRestore();
-	process.exitCode = exitCode;
+	process.exitCode = exitCode ?? 0;
 });
 
 /**
