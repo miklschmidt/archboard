@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
+import { spawn } from "node:child_process";
 import path from "node:path";
 
 import {
@@ -27,9 +28,26 @@ describe("Codex process owner", () => {
 		try {
 			const executable = fixture(
 				root,
-				`console.log(JSON.stringify({ argv: process.argv.slice(2), keys: Object.keys(process.env), home: process.env.CODEX_HOME, sqlite: process.env.CODEX_SQLITE_HOME, pwd: process.env.PWD, secret: process.env.OPENAI_API_KEY })); process.stdin.resume(); process.on("SIGTERM", () => process.exit(0));`,
+				`console.log(JSON.stringify({ argv: process.argv.slice(2), home: process.env.CODEX_HOME, sqlite: process.env.CODEX_SQLITE_HOME, pwd: process.env.PWD, secret: process.env.OPENAI_API_KEY })); process.stdin.resume(); process.on("SIGTERM", () => process.exit(0));`,
 			);
-			const processOwner = createCodexProcessForTesting(processOptions(root, executable));
+			const processOwner = createCodexProcessForTesting({
+				...processOptions(root, executable),
+				dependencies: {
+					spawn(command, args, options) {
+						// Measure Archboard's environment before the executable's runtime starts.
+						// On NixOS the ELF loader adds LD_LIBRARY_PATH to an ordinary Bun child.
+						expect(Object.keys(options.env ?? {})).toEqual([
+							"HOME",
+							"PATH",
+							"CODEX_HOME",
+							"CODEX_SQLITE_HOME",
+							"ARCHBOARD_URL",
+							"ARCHBOARD_NO_AUTOSTART",
+						]);
+						return spawn(command, args, options);
+					},
+				},
+			});
 			owner = processOwner;
 			const output = new Promise<Record<string, unknown>>((resolve) => {
 				const unsubscribe = processOwner.onChild((child) => {
@@ -46,14 +64,6 @@ describe("Codex process owner", () => {
 			expect(started.ready).toBe(true);
 			expect(started.argv).toEqual([executable, ...CODEX_APP_SERVER_ARGUMENTS]);
 			expect(observed["argv"]).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed["keys"]).toEqual([
-				"HOME",
-				"PATH",
-				"CODEX_HOME",
-				"CODEX_SQLITE_HOME",
-				"ARCHBOARD_URL",
-				"ARCHBOARD_NO_AUTOSTART",
-			]);
 			expect(observed["home"]).toBe(path.join(root, "storage", "codex-home"));
 			expect(observed["pwd"]).toBeUndefined();
 			expect(observed["secret"]).toBeUndefined();
