@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 114,
+	"version": 115,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-22T03:21:29.750Z",
+	"updatedAt": "2026-10-22T03:40:20.474Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -39616,6 +39616,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
 							"symbol": "withVault"
+						}
+					},
+					{
+						"id": "PDFACmp1",
+						"order": 78000,
+						"from": "PQcK5dF2",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "formats board refusals for the command result",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+							"symbol": "formatBoardRefusal"
+						}
+					},
+					{
+						"id": "y4wp6XOf",
+						"order": 79000,
+						"from": "OfRn3av3",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "reads the write version, doing line and session",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "currentExpectedVersion"
+						}
+					},
+					{
+						"id": "IybnFJlJ",
+						"order": 80000,
+						"from": "iIJ5MRhi",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "reads the writing session for a pane show",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+							"symbol": "currentWriteSession"
 						}
 					}
 				],
