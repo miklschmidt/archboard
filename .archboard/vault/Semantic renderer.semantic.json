@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 77,
+	"version": 78,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-19T22:51:42.039Z",
+	"updatedAt": "2026-10-22T03:21:30.143Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -20726,13 +20726,13 @@
 					{
 						"id": "0XCanbzp",
 						"order": 12000,
-						"name": "Bun host",
+						"name": "Bun renderer",
 						"kind": "module",
-						"responsibility": "The renderer under Bun: installs the Bun host once, then calls the core",
-						"description": "Every Bun entrypoint calls installBunHost (lib/bun-host.ts) first. It registers an @napi-rs/canvas canvas as the global OffscreenCanvas with the four diagram faces loaded, and installs a pool of Bun Workers that each run Graphviz placement and libavoid routing, the theme colours read from theme.css, the font bytes and the icon paths.",
+						"responsibility": "Installs the Bun host, then renders and measures diagrams",
+						"description": "The public Bun rendering entry calls the shared renderer with the host installed. Host installation and measurement are separate implementation parts below it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/renderer/src/runtime/services/bun-host.ts"
+							"path": "packages/renderer/src/runtime/operations/render.ts"
 						}
 					},
 					{
@@ -20953,6 +20953,54 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts"
+						}
+					},
+					{
+						"id": "eMXdmcWP",
+						"order": 33000,
+						"name": "Bun host installation",
+						"kind": "module",
+						"responsibility": "Installs the canvas, fonts, worker pool, theme and icons for Bun",
+						"parent": "0XCanbzp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/bun-host.ts"
+						}
+					},
+					{
+						"id": "GSL08xvL",
+						"order": 34000,
+						"name": "Bun measurement entry",
+						"kind": "module",
+						"responsibility": "Installs the Bun host before measuring architecture",
+						"parent": "0XCanbzp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/measure.ts"
+						}
+					},
+					{
+						"id": "n7ZlRkbA",
+						"order": 35000,
+						"name": "Subject code marks",
+						"kind": "module",
+						"responsibility": "Adds code-check warning overlays to the rendered subjects",
+						"parent": "CzHSL7yr",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/code-marks.ts"
+						}
+					},
+					{
+						"id": "vbRNGERE",
+						"order": 36000,
+						"name": "Subject standing marks",
+						"kind": "module",
+						"responsibility": "Draws the warning badges and standing marks of a subject",
+						"parent": "m6HOX0lf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/svg/parts/standing.ts"
 						}
 					}
 				],
@@ -21713,10 +21761,10 @@
 					{
 						"id": "kxJJ5IPb",
 						"order": 54000,
-						"from": "CzHSL7yr",
-						"to": "wpI1LbzG",
+						"from": "n7ZlRkbA",
+						"to": "vbRNGERE",
 						"kind": "call",
-						"label": "the picture's own marks and inks, for its chrome",
+						"label": "draw the subject warning badge",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

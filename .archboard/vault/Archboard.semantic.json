@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 70,
+	"version": 71,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-22T03:18:00.073Z",
+	"updatedAt": "2026-10-22T03:21:15.960Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -6369,7 +6369,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
-							"symbol": "broadcast"
+							"symbol": "announceDoing"
 						}
 					},
 					{

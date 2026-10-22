@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 127,
+	"version": 128,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-19T22:49:29.171Z",
+	"updatedAt": "2026-10-22T03:21:15.185Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -48482,6 +48482,30 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts"
+						}
+					},
+					{
+						"id": "Hc8yakWW",
+						"order": 55000,
+						"name": "Talk playback",
+						"kind": "module",
+						"responsibility": "Advances the recorded talk to a frame and reads its moment",
+						"parent": "G6arm4oI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-replay/talk-playback.ts"
+						}
+					},
+					{
+						"id": "EKpFBFTC",
+						"order": 56000,
+						"name": "Replay stage",
+						"kind": "module",
+						"responsibility": "Hosts the recorded board stage and reports the reading on screen",
+						"parent": "G6arm4oI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx"
 						}
 					}
 				],

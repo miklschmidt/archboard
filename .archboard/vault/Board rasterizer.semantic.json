@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 68,
+	"version": 69,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-19T22:48:19.106Z",
+	"updatedAt": "2026-10-22T03:21:14.950Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -19400,13 +19400,9 @@
 						"id": "JvmFYpVf",
 						"order": 23000,
 						"name": "Talk capture",
-						"kind": "function",
-						"responsibility": "Taps the voice through an AudioWorklet and stamps each step, subtitle line and drawn version on the audio's own 48 kHz clock",
-						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.",
-						"parent": "44gQ5gUw",
-						"groups": [
-							"walkthrough"
-						],
+						"kind": "module",
+						"responsibility": "Captures voice samples and talk events on one audio clock",
+						"parent": "T1TYskKQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
@@ -19562,6 +19558,30 @@
 						"kind": "module",
 						"responsibility": "Turns the drawn frames and the voice into one video file with ffmpeg, which it finds on the machine or runs through Nix",
 						"parent": "gTwVYQo9"
+					},
+					{
+						"id": "QNRrx3i3",
+						"order": 37000,
+						"name": "Encoder availability",
+						"kind": "module",
+						"responsibility": "Finds ffmpeg and tests its required encoders before recording",
+						"parent": "peB5Bs5R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts"
+						}
+					},
+					{
+						"id": "fEsvd4ka",
+						"order": 38000,
+						"name": "Recording pace",
+						"kind": "module",
+						"responsibility": "Decides when a recorded step finishes and the next step starts",
+						"parent": "T1TYskKQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts"
+						}
 					}
 				],
 				"edges": [
