@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 65,
+	"version": 66,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-19T22:52:39.790Z",
+	"updatedAt": "2026-10-22T03:21:15.439Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -14939,6 +14939,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+						}
+					},
+					{
+						"id": "pbmVZ2Bh",
+						"order": 32000,
+						"name": "Pane messages",
+						"kind": "module",
+						"responsibility": "Applies server board and version messages to the pane",
+						"parent": "K385etzX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
 						}
 					}
 				],

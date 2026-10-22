@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 127,
+	"version": 128,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-19T22:45:56.018Z",
+	"updatedAt": "2026-10-22T03:20:16.544Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -231,6 +231,46 @@
 				"flows": [
 					"2UbNBuFP"
 				]
+			}
+		},
+		{
+			"id": "4sZqdYyC",
+			"name": "Application owners",
+			"grammar": "architecture",
+			"summary": "The application owners and their collaboration, with internal implementation parts omitted.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"HggZR41l",
+					"dtYjWvlf",
+					"xsn0RvSi",
+					"HCghQa6I",
+					"zWQG6LJZ",
+					"0x47EMoO",
+					"0SRnYXnC",
+					"4LDuKQvq",
+					"G4NHQC25",
+					"c4LPnwh5",
+					"hDWpDois",
+					"6uWT4mUj",
+					"zs2QxCu7",
+					"941UBxya",
+					"0yb2VbKc",
+					"fscW90Xt",
+					"aG0rP4SX",
+					"aixSjfNe",
+					"rouptSyK",
+					"t5Wy06ua",
+					"p5UCow7F",
+					"HQWPLutt",
+					"cLeaiTWy",
+					"POloYnX3",
+					"wlbLOPSH",
+					"W0EmXnR9",
+					"01sVgqBF"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -16445,6 +16485,294 @@
 						"name": "Walkthrough recordings",
 						"kind": "module",
 						"responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time"
+					},
+					{
+						"id": "zkDth8gp",
+						"order": 29000,
+						"name": "Pane composition",
+						"kind": "module",
+						"responsibility": "Mounts the session and drawing stage for one pane",
+						"parent": "HggZR41l",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx"
+						}
+					},
+					{
+						"id": "WWPvFeLg",
+						"order": 30000,
+						"name": "Drill-down repositories",
+						"kind": "module",
+						"responsibility": "Resolves drill-down repositories for the application",
+						"parent": "HggZR41l",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts"
+						}
+					},
+					{
+						"id": "ScHf2pj3",
+						"order": 31000,
+						"name": "Session lifecycle",
+						"kind": "module",
+						"responsibility": "Keeps a pane session mounted and publishes its React state",
+						"parent": "xsn0RvSi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/pane-session/use-pane-session.ts"
+						}
+					},
+					{
+						"id": "8yYKWsmB",
+						"order": 32000,
+						"name": "Pane messages",
+						"kind": "module",
+						"responsibility": "Applies server board and version messages to a pane",
+						"parent": "xsn0RvSi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
+						}
+					},
+					{
+						"id": "TY7m2mtd",
+						"order": 33000,
+						"name": "Board stage",
+						"kind": "module",
+						"responsibility": "Composes the read-only board stage and its presentation controls",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx"
+						}
+					},
+					{
+						"id": "DW1hIFRx",
+						"order": 34000,
+						"name": "Board addresses",
+						"kind": "module",
+						"responsibility": "Identifies the board and variant that a pane reads",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/semantic-board-canvas/board/address.ts"
+						}
+					},
+					{
+						"id": "RKEuUGxw",
+						"order": 35000,
+						"name": "Board change announcements",
+						"kind": "module",
+						"responsibility": "Publishes board changes by vault and board",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts"
+						}
+					},
+					{
+						"id": "SzB9LKAM",
+						"order": 36000,
+						"name": "Board refresh subscription",
+						"kind": "module",
+						"responsibility": "Invalidates board reads when their version changes",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts"
+						}
+					},
+					{
+						"id": "b6D8IxT0",
+						"order": 37000,
+						"name": "Board level mark",
+						"kind": "module",
+						"responsibility": "Shows the level of the board in the pane",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/LevelMark.tsx"
+						}
+					},
+					{
+						"id": "MPUyJZXc",
+						"order": 38000,
+						"name": "Catalog subscription",
+						"kind": "module",
+						"responsibility": "Combines repository queries into the live catalog",
+						"parent": "zWQG6LJZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts"
+						}
+					},
+					{
+						"id": "j7j12e3U",
+						"order": 39000,
+						"name": "Navigator listing",
+						"kind": "module",
+						"responsibility": "Combines vault listings and live pane inventory",
+						"parent": "zWQG6LJZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-catalog/listing.ts"
+						}
+					},
+					{
+						"id": "H17EYQ6u",
+						"order": 40000,
+						"name": "Recording stage",
+						"kind": "module",
+						"responsibility": "Hosts the recording workflow on its board stage",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/walkthrough-recording/RecordingStage.tsx"
+						}
+					},
+					{
+						"id": "uG3OntgL",
+						"order": 41000,
+						"name": "Talk capture",
+						"kind": "module",
+						"responsibility": "Captures voice samples and talk events on one audio clock",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
+						}
+					},
+					{
+						"id": "Dvxjjmxv",
+						"order": 42000,
+						"name": "Recorder opening",
+						"kind": "module",
+						"responsibility": "Opens a separate walkthrough recording page",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-recording/open-recorder.ts"
+						}
+					},
+					{
+						"id": "kJ3eg3Rp",
+						"order": 43000,
+						"name": "Recording pace",
+						"kind": "module",
+						"responsibility": "Decides when the recording starts, advances, finishes or fails",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts"
+						}
+					},
+					{
+						"id": "bnZdIxyK",
+						"order": 44000,
+						"name": "Recording voice source",
+						"kind": "module",
+						"responsibility": "Reads voice readiness, status and output level for the recorder",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts"
+						}
+					},
+					{
+						"id": "eycwAQQN",
+						"order": 45000,
+						"name": "Talk playback",
+						"kind": "module",
+						"responsibility": "Advances a recorded talk to each frame and exposes its current moment",
+						"parent": "aixSjfNe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-replay/talk-playback.ts"
+						}
+					},
+					{
+						"id": "3WdEEXWG",
+						"order": 46000,
+						"name": "Replay stage",
+						"kind": "module",
+						"responsibility": "Hosts the recorded board stage and reports when it is drawn",
+						"parent": "aixSjfNe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx"
+						}
+					},
+					{
+						"id": "KjwB3zCC",
+						"order": 47000,
+						"name": "Workspace restore decisions",
+						"kind": "module",
+						"responsibility": "Plans workspace restore steps and records unreachable boards",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-routing/restore.ts"
+						}
+					},
+					{
+						"id": "2QnHyWTR",
+						"order": 48000,
+						"name": "Routing outcomes",
+						"kind": "module",
+						"responsibility": "Defines the outcomes of board-opening requests",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-routing/contracts.ts"
+						}
+					},
+					{
+						"id": "nTwJDWl8",
+						"order": 49000,
+						"name": "Pending board operation",
+						"kind": "module",
+						"responsibility": "Tracks a board open until the pane reports that it moved",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/board-routing/operation.ts"
+						}
+					},
+					{
+						"id": "gYvouMDV",
+						"order": 50000,
+						"name": "Voice link capture",
+						"kind": "module",
+						"responsibility": "Captures the workhorse link that a voice session follows",
+						"parent": "0SRnYXnC",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/rules/voice-session/binding.ts"
+						}
+					},
+					{
+						"id": "j7JouHlL",
+						"order": 51000,
+						"name": "Move controls",
+						"kind": "module",
+						"responsibility": "Presents the target, preview, rewrites and refusal of a board move",
+						"parent": "HQWPLutt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/board-move"
+						}
+					},
+					{
+						"id": "nAwAFz6Y",
+						"order": 52000,
+						"name": "Move lifecycle",
+						"kind": "module",
+						"responsibility": "Reads move targets and preview, then follows the requested move",
+						"parent": "HQWPLutt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts"
+						}
 					}
 				],
 				"edges": [
@@ -19438,6 +19766,294 @@
 						"name": "Walkthrough recordings",
 						"kind": "module",
 						"responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time"
+					},
+					{
+						"id": "zkDth8gp",
+						"order": 29000,
+						"name": "Pane composition",
+						"kind": "module",
+						"responsibility": "Mounts the session and drawing stage for one pane",
+						"parent": "HggZR41l",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx"
+						}
+					},
+					{
+						"id": "WWPvFeLg",
+						"order": 30000,
+						"name": "Drill-down repositories",
+						"kind": "module",
+						"responsibility": "Resolves drill-down repositories for the application",
+						"parent": "HggZR41l",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts"
+						}
+					},
+					{
+						"id": "ScHf2pj3",
+						"order": 31000,
+						"name": "Session lifecycle",
+						"kind": "module",
+						"responsibility": "Keeps a pane session mounted and publishes its React state",
+						"parent": "xsn0RvSi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/pane-session/use-pane-session.ts"
+						}
+					},
+					{
+						"id": "8yYKWsmB",
+						"order": 32000,
+						"name": "Pane messages",
+						"kind": "module",
+						"responsibility": "Applies server board and version messages to a pane",
+						"parent": "xsn0RvSi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
+						}
+					},
+					{
+						"id": "TY7m2mtd",
+						"order": 33000,
+						"name": "Board stage",
+						"kind": "module",
+						"responsibility": "Composes the read-only board stage and its presentation controls",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx"
+						}
+					},
+					{
+						"id": "DW1hIFRx",
+						"order": 34000,
+						"name": "Board addresses",
+						"kind": "module",
+						"responsibility": "Identifies the board and variant that a pane reads",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/semantic-board-canvas/board/address.ts"
+						}
+					},
+					{
+						"id": "RKEuUGxw",
+						"order": 35000,
+						"name": "Board change announcements",
+						"kind": "module",
+						"responsibility": "Publishes board changes by vault and board",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts"
+						}
+					},
+					{
+						"id": "SzB9LKAM",
+						"order": 36000,
+						"name": "Board refresh subscription",
+						"kind": "module",
+						"responsibility": "Invalidates board reads when their version changes",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts"
+						}
+					},
+					{
+						"id": "b6D8IxT0",
+						"order": 37000,
+						"name": "Board level mark",
+						"kind": "module",
+						"responsibility": "Shows the level of the board in the pane",
+						"parent": "dtYjWvlf",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/LevelMark.tsx"
+						}
+					},
+					{
+						"id": "MPUyJZXc",
+						"order": 38000,
+						"name": "Catalog subscription",
+						"kind": "module",
+						"responsibility": "Combines repository queries into the live catalog",
+						"parent": "zWQG6LJZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts"
+						}
+					},
+					{
+						"id": "j7j12e3U",
+						"order": 39000,
+						"name": "Navigator listing",
+						"kind": "module",
+						"responsibility": "Combines vault listings and live pane inventory",
+						"parent": "zWQG6LJZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-catalog/listing.ts"
+						}
+					},
+					{
+						"id": "H17EYQ6u",
+						"order": 40000,
+						"name": "Recording stage",
+						"kind": "module",
+						"responsibility": "Hosts the recording workflow on its board stage",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/walkthrough-recording/RecordingStage.tsx"
+						}
+					},
+					{
+						"id": "uG3OntgL",
+						"order": 41000,
+						"name": "Talk capture",
+						"kind": "module",
+						"responsibility": "Captures voice samples and talk events on one audio clock",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
+						}
+					},
+					{
+						"id": "Dvxjjmxv",
+						"order": 42000,
+						"name": "Recorder opening",
+						"kind": "module",
+						"responsibility": "Opens a separate walkthrough recording page",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-recording/open-recorder.ts"
+						}
+					},
+					{
+						"id": "kJ3eg3Rp",
+						"order": 43000,
+						"name": "Recording pace",
+						"kind": "module",
+						"responsibility": "Decides when the recording starts, advances, finishes or fails",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts"
+						}
+					},
+					{
+						"id": "bnZdIxyK",
+						"order": 44000,
+						"name": "Recording voice source",
+						"kind": "module",
+						"responsibility": "Reads voice readiness, status and output level for the recorder",
+						"parent": "fscW90Xt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts"
+						}
+					},
+					{
+						"id": "eycwAQQN",
+						"order": 45000,
+						"name": "Talk playback",
+						"kind": "module",
+						"responsibility": "Advances a recorded talk to each frame and exposes its current moment",
+						"parent": "aixSjfNe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-replay/talk-playback.ts"
+						}
+					},
+					{
+						"id": "3WdEEXWG",
+						"order": 46000,
+						"name": "Replay stage",
+						"kind": "module",
+						"responsibility": "Hosts the recorded board stage and reports when it is drawn",
+						"parent": "aixSjfNe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx"
+						}
+					},
+					{
+						"id": "KjwB3zCC",
+						"order": 47000,
+						"name": "Workspace restore decisions",
+						"kind": "module",
+						"responsibility": "Plans workspace restore steps and records unreachable boards",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-routing/restore.ts"
+						}
+					},
+					{
+						"id": "2QnHyWTR",
+						"order": 48000,
+						"name": "Routing outcomes",
+						"kind": "module",
+						"responsibility": "Defines the outcomes of board-opening requests",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/board-routing/contracts.ts"
+						}
+					},
+					{
+						"id": "nTwJDWl8",
+						"order": 49000,
+						"name": "Pending board operation",
+						"kind": "module",
+						"responsibility": "Tracks a board open until the pane reports that it moved",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/board-routing/operation.ts"
+						}
+					},
+					{
+						"id": "gYvouMDV",
+						"order": 50000,
+						"name": "Voice link capture",
+						"kind": "module",
+						"responsibility": "Captures the workhorse link that a voice session follows",
+						"parent": "0SRnYXnC",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/rules/voice-session/binding.ts"
+						}
+					},
+					{
+						"id": "j7JouHlL",
+						"order": 51000,
+						"name": "Move controls",
+						"kind": "module",
+						"responsibility": "Presents the target, preview, rewrites and refusal of a board move",
+						"parent": "HQWPLutt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/board-move"
+						}
+					},
+					{
+						"id": "nAwAFz6Y",
+						"order": 52000,
+						"name": "Move lifecycle",
+						"kind": "module",
+						"responsibility": "Reads move targets and preview, then follows the requested move",
+						"parent": "HQWPLutt",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts"
+						}
 					}
 				],
 				"edges": [
