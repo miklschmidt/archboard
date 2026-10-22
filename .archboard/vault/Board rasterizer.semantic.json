@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 69,
+	"version": 70,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-22T03:21:14.950Z",
+	"updatedAt": "2026-10-22T03:23:30.780Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -19400,9 +19400,13 @@
 						"id": "JvmFYpVf",
 						"order": 23000,
 						"name": "Talk capture",
-						"kind": "module",
-						"responsibility": "Captures voice samples and talk events on one audio clock",
-						"parent": "T1TYskKQ",
+						"kind": "function",
+						"responsibility": "Taps the voice through an AudioWorklet and stamps each step, subtitle line and drawn version on the audio's own 48 kHz clock",
+						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.",
+						"parent": "44gQ5gUw",
+						"groups": [
+							"walkthrough"
+						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
@@ -20769,6 +20773,7 @@
 							"peB5Bs5R",
 							"R9St060W",
 							"T1TYskKQ",
+							"JvmFYpVf",
 							"2UcHnREN",
 							"XtzfRQkG",
 							"EWBbxckL"
