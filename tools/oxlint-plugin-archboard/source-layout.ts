@@ -40,7 +40,7 @@ const AREA_IMPORT_DENIALS: Readonly<Record<string, ReadonlySet<string>>> = {
 };
 
 /**
- * A file of a workspace owner: `packages/<name>/(src|tests)/...` or `apps/<name>/(src|tests)/...`.
+ * A file of a workspace owner: `packages/<name>/(src|tests|assets)/...` or `apps/<name>/(src|tests|assets)/...`.
  * Two files belong to one owner when their `root` is equal.
  */
 interface WorkspaceFile {
@@ -48,8 +48,8 @@ interface WorkspaceFile {
 	name: string;
 	/** `packages/<name>` or `apps/<name>`. */
 	root: string;
-	folder: "src" | "tests";
-	/** The path below `src/` or `tests/`. */
+	folder: "src" | "tests" | "assets";
+	/** The path below `src/`, `tests/` or `assets/`. */
 	rest: string;
 	area: string | undefined;
 }
@@ -110,8 +110,8 @@ function isStateFile(relativePath: string): boolean {
 }
 
 /**
- * The area a file sits in: the first folder below `src/` or `tests/`.
- * @param rest The file's path below `src/` or `tests/`.
+ * The area a file sits in: the first folder below `src/`, `tests/` or `assets/`.
+ * @param rest The file's path below `src/`, `tests/` or `assets/`.
  * @returns The area, or undefined for a file at the root or in a folder that is no area.
  */
 function areaFolder(rest: string): string | undefined {
@@ -122,11 +122,11 @@ function areaFolder(rest: string): string | undefined {
 /**
  * The package or app a file belongs to: the one place that tells the two owners apart.
  * @param relativePath The file's repository path.
- * @returns The owner's file, or undefined outside `<packages|apps>/<name>/(src|tests)`.
+ * @returns The owner's file, or undefined outside `<packages|apps>/<name>/(src|tests|assets)`.
  */
 function workspaceAt(relativePath: string): WorkspaceFile | undefined {
 	const [, group, name, folder, rest] =
-		/^(packages|apps)\/([^/]+)\/(src|tests)\/(.+)$/.exec(relativePath) ?? [];
+		/^(packages|apps)\/([^/]+)\/(src|tests|assets)\/(.+)$/.exec(relativePath) ?? [];
 	if (!group || !name || !folder || !rest) {
 		return undefined;
 	}
@@ -136,7 +136,7 @@ function workspaceAt(relativePath: string): WorkspaceFile | undefined {
 /**
  * The record of a file that the workspace pattern matched.
  * @param relativePath The file's repository path.
- * @param parts The pattern's groups: `packages` or `apps`, the name, `src` or `tests`, and the rest.
+ * @param parts The pattern's groups: `packages` or `apps`, the name, `src`, `tests` or `assets`, and the rest.
  * @param parts.group The folder that holds the owner.
  * @param parts.name The owner's directory name.
  * @param parts.folder `src` or `tests`.
@@ -152,7 +152,7 @@ function workspaceFile(
 		kind: group === "apps" ? "app" : "package",
 		name,
 		root: `${group}/${name}`,
-		folder: folder === "tests" ? "tests" : "src",
+		folder: folder === "tests" ? "tests" : folder === "assets" ? "assets" : "src",
 		rest,
 		area: areaOfWorkspaceFile(relativePath, rest),
 	};
@@ -162,7 +162,7 @@ function workspaceFile(
  * The area of a file of a package or an app. The web app's browser entry has none below
  * `src/`, and counts as browser code.
  * @param relativePath The file's repository path.
- * @param rest The file's path below `src/` or `tests/`.
+ * @param rest The file's path below `src/`, `tests/` or `assets/`.
  * @returns The area, or undefined for a file in no area.
  */
 function areaOfWorkspaceFile(relativePath: string, rest: string): string | undefined {

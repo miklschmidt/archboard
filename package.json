@@ -54,7 +54,8 @@
 		"generate:skill-artifacts": "bun scripts/generate-skill-artifacts.ts",
 		"shadcn": "shadcn",
 		"lint:tests": "bun scripts/lint.ts --disable-nested-config --config .oxlintrc.tests.jsonc tests packages/*/tests apps/*/tests",
-		"lint:policy": "bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools vite.config.ts",
+		"lint:policy": "bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools vite.config.ts && bun run lint:css",
+		"lint:css": "bun scripts/lint-css.ts",
 		"eval:skill": "bun scripts/evaluate-skill.ts",
 		"readme:assets": "bun scripts/readme-assets/make.ts",
 		"readme:check": "bun scripts/readme-assets/check.ts"

@@ -55,9 +55,9 @@ file moves.
 - A test that imports app internals lives in the owning app. An app adds no export for it.
 - The CLI records command-owner paths (`apps/cli/src/cli/operations/invocation/run.ts`) and `generatedFrom` file paths in its
   contract artifacts.
-- `apps/web`: the stylesheet `src/ui/theme/app.css` holds the renderer theme, font and `@source`
-  paths, which are relative to it. `main.tsx` finds the libavoid WASM with a file URL. `index.html`
-  links the stylesheet.
+- `apps/web`: the stylesheet `src/ui/theme/app.css` imports the renderer theme and fonts through
+  public package exports (TASK-502). Tailwind `@source` paths remain relative filesystem scan inputs.
+  `main.tsx` finds the libavoid WASM with a file URL. `index.html` links the stylesheet.
 - `docs/readme/assets.json` source lists and `evals/coverage.json` owner strings name app paths. The
   README asset digest includes paths.
 - Vault boards stay stale until TASK-500.06.

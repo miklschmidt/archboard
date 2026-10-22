@@ -1,6 +1,7 @@
 // The graph and API checks share one syntax reader, so comments cannot invent imports and
 // type imports, mocks and resolver calls cannot bypass either boundary.
 import { parse } from "@babel/parser";
+import { cssReferences } from "../../../../tools/css-imports.ts";
 import { VISITOR_KEYS, type Node } from "@babel/types";
 import fs from "node:fs";
 import path from "node:path";
@@ -91,7 +92,15 @@ function sourceOf(text: string): Source {
 }
 
 function readSource(file: string): Source {
-	return sourceOf(fs.readFileSync(file, "utf8"));
+	const text = fs.readFileSync(file, "utf8");
+	return file.endsWith(".css")
+		? {
+				imports: cssReferences(text, file).map(({ url }) => url),
+				strings: [],
+				exportStar: false,
+				bun: false,
+			}
+		: sourceOf(text);
 }
 
 function sourceFiles(directory: string): string[] {
@@ -100,7 +109,7 @@ function sourceFiles(directory: string): string[] {
 		.readdirSync(directory, { recursive: true, encoding: "utf8" })
 		.filter(
 			(file) =>
-				/\.[cm]?[jt]sx?$/.test(file) &&
+				/\.(?:[cm]?[jt]sx?|css)$/.test(file) &&
 				!file
 					.split(path.sep)
 					.some((part) => ["generated", "node_modules", "dist", ".git"].includes(part)),
@@ -183,12 +192,13 @@ function resolveSource(
 			);
 		}
 	} else if (source.startsWith("file:")) target = fileURLToPath(source);
-	else if (source.startsWith(".") || path.isAbsolute(source))
+	else if (source.startsWith(".") || path.isAbsolute(source) || file.endsWith(".css"))
 		target = path.resolve(path.dirname(file), source);
 	if (target === undefined) return undefined;
 	const stem = target.replace(/\.[cm]?[jt]sx?$/, "");
 	const candidates = [
 		target,
+		...(file.endsWith(".css") ? [`${target}.css`] : []),
 		`${target}.ts`,
 		`${target}.tsx`,
 		`${target}/index.ts`,

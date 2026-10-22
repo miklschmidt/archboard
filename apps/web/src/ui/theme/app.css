@@ -5,7 +5,7 @@
 @import "tailwindcss" source(none);
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
-@import "../../../../../packages/renderer/assets/theme.css";
+@import "@archboard/renderer/theme.css";
 
 /* Tailwind reads class names only where @source says. `source(none)` above
    stops it scanning Vite's root, `apps/web`, whose tests hold strings that look
@@ -21,7 +21,7 @@
 
 @font-face {
 	font-family: "Archboard Onest";
-	src: url("../../../../../packages/renderer/assets/fonts/Onest-wght-v1.000.ttf") format("truetype");
+	src: url("@archboard/renderer/fonts/Onest-wght-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 400 700;
 	font-display: block;
@@ -29,8 +29,7 @@
 
 @font-face {
 	font-family: "Archboard DM Mono";
-	src: url("../../../../../packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf")
-		format("truetype");
+	src: url("@archboard/renderer/fonts/DMMono-Regular-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 400;
 	font-display: block;
@@ -38,8 +37,7 @@
 
 @font-face {
 	font-family: "Archboard DM Mono";
-	src: url("../../../../../packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf")
-		format("truetype");
+	src: url("@archboard/renderer/fonts/DMMono-Medium-v1.000.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 500;
 	font-display: block;
@@ -49,8 +47,7 @@
    set as titles and for the wordmark. Nothing else uses it. */
 @font-face {
 	font-family: "Archboard Display";
-	src: url("../../../../../packages/renderer/assets/fonts/BigShouldersDisplay-wght.ttf")
-		format("truetype");
+	src: url("@archboard/renderer/fonts/BigShouldersDisplay-wght.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 100 900;
 	font-display: block;
