@@ -3,11 +3,11 @@ id: TASK-503
 title: >-
   The Codex environment test measures the spawn boundary before runtime
   additions
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-22 02:06'
-updated_date: '2026-10-22 02:07'
+updated_date: '2026-10-22 02:42'
 labels: []
 dependencies: []
 type: bug
@@ -22,8 +22,8 @@ The TASK-502 gate fails in the Codex process owner test on this NixOS host. Even
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The process test still asserts the exact environment passed to the real child spawn and rejects ambient secret or working-directory leakage.
-- [ ] #2 The focused process owner tests and the complete normal gate pass without filtering runtime environment keys or changing the product allowlist.
+- [x] #1 The process test still asserts the exact environment passed to the real child spawn and rejects ambient secret or working-directory leakage.
+- [x] #2 The focused process owner tests and the complete normal gate pass without filtering runtime environment keys or changing the product allowlist.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ The TASK-502 gate fails in the Codex process owner test on this NixOS host. Even
 <!-- SECTION:NOTES:BEGIN -->
 The original focused case failed consistently because the launched Bun runtime reported an extra LD_LIBRARY_PATH key. A minimal node:child_process spawn of Bun with only HOME and PATH reproduced the addition. The same exact-key assertion now observes the environment at the existing spawn dependency and forwards all arguments unchanged to the real node:child_process spawn. Child argv, private home, secret exclusion, readiness and cleanup assertions remain. All 13 process owner tests passed after the fix.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Codex process owner asserts the exact environment supplied to the real spawn dependency. The child still proves argv, private home, secret exclusion, readiness, and cleanup. This separates Archboard input from the LD_LIBRARY_PATH key that Bun adds on this host. No runtime key is filtered and the product allowlist is unchanged. All 13 focused process tests and the complete bun run check gate pass at 510a33d34.
+<!-- SECTION:FINAL_SUMMARY:END -->
