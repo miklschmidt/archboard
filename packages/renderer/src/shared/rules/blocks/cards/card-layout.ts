@@ -18,6 +18,7 @@ import type { Band, Insets, Laid } from "#shared/rules/blocks/tree/laid.ts";
 import {
 	PORT,
 	cornerHeader,
+	holdResizedChildren,
 	leavesOf,
 	letPortsSlide,
 	markRegions,
@@ -470,6 +471,7 @@ class CardLayout {
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
 			else Object.assign(leaf, settledLeaf(this.tree, this.laid, leaf.id, centres));
 		}
+		holdResizedChildren(placed.children ?? []);
 		return this.routed(placed, held);
 	}
 
