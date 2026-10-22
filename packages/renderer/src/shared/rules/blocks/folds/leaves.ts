@@ -6,7 +6,13 @@ import type { Insets, Laid } from "#shared/rules/blocks/tree/laid.ts";
 import type { Rim } from "#shared/rules/track/channels/spacing.ts";
 import { LANE } from "#shared/rules/track/routes/chains.ts";
 import { extentOf } from "#shared/rules/track/labels/labels.ts";
-import type { Item, Scene } from "#shared/rules/track/scene/scene.ts";
+import {
+	TRACK_BELOW,
+	TRACK_TITLE,
+	type Item,
+	type Scene,
+} from "#shared/rules/track/scene/scene.ts";
+import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import type { Nesting } from "#shared/rules/blocks/tree/inline.ts";
 import { frameWidth, roomOf, sideRoom } from "#shared/rules/blocks/tree/lone.ts";
 import { headerOf, type Block, type BlockTree } from "#shared/rules/blocks/tree/tree.ts";
@@ -194,6 +200,33 @@ function settledLeaf(
 }
 
 /**
+ * Grow inline frames around children resized after their ports settle.
+ * @param nodes The placed nodes. Frame sides and title rows grow in place.
+ */
+function holdResizedChildren(nodes: readonly ElkNode[]): void {
+	const nested = nodes.filter(({ children }) => children !== undefined && children.length > 0);
+	for (const node of nested) {
+		const children = node.children!;
+		holdResizedChildren(children);
+		const options = node.layoutOptions;
+		if (options === undefined) continue;
+		const title = options[TRACK_TITLE];
+		if (title === undefined) continue;
+		const inset = CONTAINER_INSET + Number(options[TRACK_BELOW] ?? 0);
+		const low = Math.min(node.x!, ...children.map((child) => child.x! - inset));
+		const high = Math.max(
+			node.x! + node.width!,
+			...children.map((child) => child.x! + child.width! + inset),
+		);
+		node.x = low;
+		node.width = high - low;
+		const row = title.split(",");
+		[row[0], row[2]] = [String(low), String(node.width)];
+		options[TRACK_TITLE] = row.join(",");
+	}
+}
+
+/**
  * A block's own top and bottom ports in its scene, each with the stretch of
  * its edge it may stand on.
  * @param scene The block's scene.
@@ -227,4 +260,14 @@ function rimOf(block: Block, insets: Insets): Rim | undefined {
 	return [...block.ports.values()].includes("bottom") ? { head: own, foot: own } : { head: own };
 }
 
-export { PORT, cornerHeader, leavesOf, letPortsSlide, markRegions, pinnedLeaf, rimOf, settledLeaf };
+export {
+	PORT,
+	cornerHeader,
+	holdResizedChildren,
+	leavesOf,
+	letPortsSlide,
+	markRegions,
+	pinnedLeaf,
+	rimOf,
+	settledLeaf,
+};
