@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 71,
+	"version": 72,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-22T03:25:21.435Z",
+	"updatedAt": "2026-10-22T03:40:21.105Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -19139,7 +19139,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/renderer/src/runtime/services/rasterizer"
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts"
 						}
 					},
 					{

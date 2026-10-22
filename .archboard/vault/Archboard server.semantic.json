@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 283,
+	"version": 284,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-22T03:20:51.501Z",
+	"updatedAt": "2026-10-22T03:40:19.773Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -112708,6 +112708,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/code-intel/src/runtime/services/code-facts/reader.ts",
 							"symbol": "readingsIn"
+						}
+					},
+					{
+						"id": "eW22MD6a",
+						"order": 122000,
+						"from": "nDQmpHQi",
+						"to": "adthSPYy",
+						"kind": "call",
+						"label": "reads each draft at its own ref",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+							"symbol": "nodesAtOwnRef"
 						}
 					}
 				],

@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 78,
+	"version": 79,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-22T03:21:38.162Z",
+	"updatedAt": "2026-10-22T03:40:20.771Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -8841,6 +8841,20 @@
 							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "stage"
 						}
+					},
+					{
+						"id": "mmo8IFo3",
+						"order": 37000,
+						"from": "AmRajmt1",
+						"to": "L4s2Ndtt",
+						"kind": "call",
+						"label": "builds turn input with the prompt and board context",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"symbol": "createTurnStartParams"
+						}
 					}
 				],
 				"flows": [
@@ -11188,6 +11202,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "stage"
+						}
+					},
+					{
+						"id": "mmo8IFo3",
+						"order": 39000,
+						"from": "AmRajmt1",
+						"to": "L4s2Ndtt",
+						"kind": "call",
+						"label": "builds turn input with the prompt and board context",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"symbol": "createTurnStartParams"
 						}
 					}
 				],
@@ -13888,6 +13916,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "stage"
+						}
+					},
+					{
+						"id": "mmo8IFo3",
+						"order": 37000,
+						"from": "AmRajmt1",
+						"to": "L4s2Ndtt",
+						"kind": "call",
+						"label": "builds turn input with the prompt and board context",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"symbol": "createTurnStartParams"
 						}
 					}
 				],

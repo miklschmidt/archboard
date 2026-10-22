@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 80,
+	"version": 81,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-22T03:20:51.905Z",
+	"updatedAt": "2026-10-22T03:40:20.209Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -29118,6 +29118,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
 							"symbol": "moveRoute"
+						}
+					},
+					{
+						"id": "m1F0u7X1",
+						"order": 87000,
+						"from": "5SMX69gS",
+						"to": "radK8osF",
+						"kind": "call",
+						"label": "reads each draft at its own ref",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+							"symbol": "nodesAtOwnRef"
 						}
 					}
 				],
