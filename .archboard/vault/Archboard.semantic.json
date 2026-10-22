@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 68,
+	"version": 69,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-22T03:12:08.543Z",
+	"updatedAt": "2026-10-22T03:12:36.040Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -7380,6 +7380,12 @@
 			"lifecycle": "draft",
 			"parent": "3M2UsnnM",
 			"summary": "One code-opening target with explicit ownership paths across roles",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0056-a-binding-keeps-one-open-target-and-can-own-additional-paths.md"
+				}
+			],
 			"content": {
 				"nodes": [
 					{
@@ -7700,7 +7706,7 @@
 						"order": 28000,
 						"name": "code-binding",
 						"kind": "package",
-						"responsibility": "A node's code binding and where its path lives in a checkout",
+						"responsibility": "A node's code-opening target and explicit ownership paths within one checkout",
 						"parent": "t38bKOue",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -7736,7 +7742,7 @@
 						"order": 31000,
 						"name": "code-intel",
 						"kind": "package",
-						"responsibility": "What the code says about a board: the code check, its facts and the history lens",
+						"responsibility": "The code check and Git history read every explicit binding path as one behavior",
 						"parent": "aIT2jJaC",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
