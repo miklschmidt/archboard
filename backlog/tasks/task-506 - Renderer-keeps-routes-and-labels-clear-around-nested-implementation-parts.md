@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-22 03:28'
-updated_date: '2026-10-22 03:42'
+updated_date: '2026-10-22 03:49'
 labels: []
 dependencies: []
 references:
@@ -41,4 +41,6 @@ Diagnose and minimize the two observed clearance failures, then repair their exi
 The minimized Track regression first failed on detached label 2wlebJ2T. The cause was cycle detection ignoring title-to-member ordering. The minimized Blocks regression first failed on ZDhACWtE crossing TY7m2mtd. The cause was a side port inside the obstacle clearance of a packed container. The repairs include only semantic container ordering and side clearance in PackLayout. An initial broader inset experiment changed card layouts and was removed. Five targeted regression and existing routing cases now pass in 1.98 seconds. Source lint and full corpus validation remain in progress.
 
 Implementation commit fe3510df3 keeps the existing renderer modules and contracts. Renderer layout still describes Block layout, Block packing, and Card blocks correctly. Its three stale renderJSON anchors now cite the current renderString call in card-layout.ts. This corrects existing board evidence and changes no drawn architecture. No proposal or public model change is required.
+
+The second renderer group passed 206 cases and found one remaining Board viewer Track wall hug. A minimized 30-node input reproduced qu6pVEXF beside the inner frame of a lone group region. Routing read the outer region walls while the final frame stands one region inset inside them. Scene.frameWalls now reports the drawn inner walls. The original full Board viewer geometry probe reports no card, label, or wall failures. The existing wide-board owner already catches this exact regression, so no duplicate large fixture is added. The supported renderer group is running to assess all geometry and timing contracts.
 <!-- SECTION:NOTES:END -->
