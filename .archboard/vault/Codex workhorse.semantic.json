@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 75,
+	"version": 78,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-19T22:54:18.879Z",
+	"updatedAt": "2026-10-22T03:21:38.162Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -277,6 +277,78 @@
 				"flows": [
 					"Kq98fFAW"
 				]
+			}
+		},
+		{
+			"id": "FtRKFFo6",
+			"name": "Browser gateway responsibilities",
+			"grammar": "architecture",
+			"summary": "The bound implementation parts and the ports that they use.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"gZlZjSqI",
+					"aYEhcAKR",
+					"AmRajmt1",
+					"4slFgCMu",
+					"5SYKj5bN"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "3ZycuFu0",
+			"name": "Workhorse operations responsibilities",
+			"grammar": "architecture",
+			"summary": "The bound implementation parts and the ports that they use.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"RbOKtjyQ",
+					"L2PNo3wo",
+					"dypG1VCb",
+					"X03SzXI2",
+					"p05yEm5U",
+					"5SYKj5bN",
+					"4slFgCMu",
+					"mWD948LG",
+					"6T3oOpxS"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "fTZaprmI",
+			"name": "Workhorse starter port",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"yWMUS3et",
+					"mWD948LG"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "Q46gzyVy",
+			"name": "Workhorse start responsibilities",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"nFnr4lj9",
+					"fDdhxdXp",
+					"yWMUS3et",
+					"mWD948LG",
+					"L4s2Ndtt",
+					"Fxm7RW2x"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -7937,7 +8009,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						}
 					},
 					{
@@ -8140,13 +8212,123 @@
 						"name": "Cross-thread calls",
 						"kind": "module",
 						"responsibility": "Runs the archboard_app calls a thread makes on the server's other threads, and registers every wait so that no wait closes a cycle"
+					},
+					{
+						"id": "gZlZjSqI",
+						"order": 21000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "aYEhcAKR",
+						"order": 22000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "AmRajmt1",
+						"order": 23000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "RbOKtjyQ",
+						"order": 24000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "L2PNo3wo",
+						"order": 25000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "dypG1VCb",
+						"order": 26000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "X03SzXI2",
+						"order": 27000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						}
+					},
+					{
+						"id": "yWMUS3et",
+						"order": 28000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						}
+					},
+					{
+						"id": "nFnr4lj9",
+						"order": 29000,
+						"name": "Thread start parameters",
+						"kind": "module",
+						"responsibility": "Builds the thread start request with its checkout, instructions, tool manifests and reviewed model",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "gPWhZQeZ",
 						"order": 1000,
-						"from": "tIEJl3KY",
+						"from": "AmRajmt1",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -8165,7 +8347,7 @@
 						"id": "e1viO4QT",
 						"order": 2000,
 						"from": "npbOHMgi",
-						"to": "glxfDGYq",
+						"to": "RbOKtjyQ",
 						"kind": "call",
 						"label": "of the named checkout; a delegation starts it first",
 						"emphasis": "hero",
@@ -8182,7 +8364,7 @@
 					{
 						"id": "l3RkMYAH",
 						"order": 3000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "5SYKj5bN",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn",
@@ -8196,10 +8378,11 @@
 					{
 						"id": "KGiq6epE",
 						"order": 4000,
-						"from": "glxfDGYq",
+						"from": "L2PNo3wo",
 						"to": "p05yEm5U",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -8210,7 +8393,7 @@
 					{
 						"id": "yR5sjMnY",
 						"order": 5000,
-						"from": "glxfDGYq",
+						"from": "dypG1VCb",
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "stage and settle the operation",
@@ -8280,7 +8463,7 @@
 					{
 						"id": "zIWijDn9",
 						"order": 10000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "Fxm7RW2x",
 						"kind": "dependency",
 						"label": "archboard_app, by digest",
@@ -8294,7 +8477,7 @@
 					{
 						"id": "jAdLjEha",
 						"order": 11000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "L4s2Ndtt",
 						"kind": "dependency",
 						"label": "the instructions, by digest",
@@ -8364,7 +8547,7 @@
 					{
 						"id": "8xJt3Mud",
 						"order": 16000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
@@ -8382,7 +8565,7 @@
 					{
 						"id": "uLGJACZb",
 						"order": 17000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "WaIHZ8sZ",
 						"kind": "dependency",
 						"label": "archboard_coordinator, by digest",
@@ -8522,7 +8705,7 @@
 					{
 						"id": "iwsP4kmN",
 						"order": 27000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "L4s2Ndtt",
 						"kind": "call",
 						"label": "a delegation as the authored user input",
@@ -8593,9 +8776,9 @@
 						"id": "AscFDt7l",
 						"order": 32000,
 						"from": "mWD948LG",
-						"to": "glxfDGYq",
+						"to": "X03SzXI2",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -8607,9 +8790,9 @@
 						"id": "incCs60x",
 						"order": 33000,
 						"from": "mWD948LG",
-						"to": "fDdhxdXp",
+						"to": "yWMUS3et",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -8629,6 +8812,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
+						}
+					},
+					{
+						"id": "FSTG1rQt",
+						"order": 35000,
+						"from": "RbOKtjyQ",
+						"to": "L2PNo3wo",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "iK5V95pN",
+						"order": 36000,
+						"from": "RbOKtjyQ",
+						"to": "dypG1VCb",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
 						}
 					}
 				],
@@ -8695,7 +8906,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-													"symbol": "CodexWorkbenchGatewayError"
+													"symbol": "createServerCanonicalTextActions"
 												}
 											}
 										]
@@ -10132,7 +10343,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						}
 					},
 					{
@@ -10335,13 +10546,123 @@
 						"name": "Cross-thread calls",
 						"kind": "module",
 						"responsibility": "Runs the archboard_app calls a thread makes on the server's other threads, and registers every wait so that no wait closes a cycle"
+					},
+					{
+						"id": "gZlZjSqI",
+						"order": 21000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "aYEhcAKR",
+						"order": 22000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "AmRajmt1",
+						"order": 23000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "RbOKtjyQ",
+						"order": 24000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "L2PNo3wo",
+						"order": 25000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "dypG1VCb",
+						"order": 26000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "X03SzXI2",
+						"order": 27000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						}
+					},
+					{
+						"id": "yWMUS3et",
+						"order": 28000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						}
+					},
+					{
+						"id": "nFnr4lj9",
+						"order": 29000,
+						"name": "Thread start parameters",
+						"kind": "module",
+						"responsibility": "Builds the thread start request with its checkout, instructions, tool manifests and reviewed model",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "gPWhZQeZ",
 						"order": 1000,
-						"from": "tIEJl3KY",
+						"from": "AmRajmt1",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -10360,7 +10681,7 @@
 						"id": "e1viO4QT",
 						"order": 2000,
 						"from": "npbOHMgi",
-						"to": "glxfDGYq",
+						"to": "RbOKtjyQ",
 						"kind": "call",
 						"label": "of the named checkout; a delegation starts it first",
 						"emphasis": "hero",
@@ -10377,7 +10698,7 @@
 					{
 						"id": "l3RkMYAH",
 						"order": 3000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "5SYKj5bN",
 						"kind": "call",
 						"label": "queue a delegation; list or delete pending requests",
@@ -10391,10 +10712,11 @@
 					{
 						"id": "KGiq6epE",
 						"order": 4000,
-						"from": "glxfDGYq",
+						"from": "L2PNo3wo",
 						"to": "p05yEm5U",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -10405,7 +10727,7 @@
 					{
 						"id": "yR5sjMnY",
 						"order": 5000,
-						"from": "glxfDGYq",
+						"from": "dypG1VCb",
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "stage and settle the operation",
@@ -10475,7 +10797,7 @@
 					{
 						"id": "zIWijDn9",
 						"order": 10000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "Fxm7RW2x",
 						"kind": "dependency",
 						"label": "archboard_app, by digest",
@@ -10489,7 +10811,7 @@
 					{
 						"id": "jAdLjEha",
 						"order": 11000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "L4s2Ndtt",
 						"kind": "dependency",
 						"label": "the instructions, by digest",
@@ -10559,7 +10881,7 @@
 					{
 						"id": "8xJt3Mud",
 						"order": 16000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "turn/start, turn/steer, turn/interrupt, and work-tree reads",
@@ -10577,7 +10899,7 @@
 					{
 						"id": "uLGJACZb",
 						"order": 17000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "WaIHZ8sZ",
 						"kind": "dependency",
 						"label": "archboard_coordinator, by digest",
@@ -10717,7 +11039,7 @@
 					{
 						"id": "iwsP4kmN",
 						"order": 27000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "L4s2Ndtt",
 						"kind": "call",
 						"label": "a delegation as the authored user input",
@@ -10774,9 +11096,9 @@
 						"id": "AscFDt7l",
 						"order": 32000,
 						"from": "mWD948LG",
-						"to": "glxfDGYq",
+						"to": "X03SzXI2",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -10788,9 +11110,9 @@
 						"id": "incCs60x",
 						"order": 33000,
 						"from": "mWD948LG",
-						"to": "fDdhxdXp",
+						"to": "yWMUS3et",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -10838,6 +11160,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "stopWorkhorses"
+						}
+					},
+					{
+						"id": "FSTG1rQt",
+						"order": 37000,
+						"from": "RbOKtjyQ",
+						"to": "L2PNo3wo",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "iK5V95pN",
+						"order": 38000,
+						"from": "RbOKtjyQ",
+						"to": "dypG1VCb",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
 						}
 					}
 				],
@@ -10904,7 +11254,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-													"symbol": "CodexWorkbenchGatewayError"
+													"symbol": "createServerCanonicalTextActions"
 												}
 											}
 										]
@@ -12706,7 +13056,7 @@
 						"parent": "QkrB0Q3B",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts"
 						}
 					},
 					{
@@ -12910,13 +13260,123 @@
 						"name": "Cross-thread calls",
 						"kind": "module",
 						"responsibility": "Runs the archboard_app calls a thread makes on the server's other threads, and registers every wait so that no wait closes a cycle"
+					},
+					{
+						"id": "gZlZjSqI",
+						"order": 21000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "aYEhcAKR",
+						"order": 22000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "AmRajmt1",
+						"order": 23000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "tIEJl3KY",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "RbOKtjyQ",
+						"order": 24000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "L2PNo3wo",
+						"order": 25000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "dypG1VCb",
+						"order": 26000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "X03SzXI2",
+						"order": 27000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "glxfDGYq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+							"symbol": "CodexWorkhorseOperations"
+						}
+					},
+					{
+						"id": "yWMUS3et",
+						"order": 28000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+							"symbol": "CodexWorkhorseStart"
+						}
+					},
+					{
+						"id": "nFnr4lj9",
+						"order": 29000,
+						"name": "Thread start parameters",
+						"kind": "module",
+						"responsibility": "Builds the thread start request with its checkout, instructions, tool manifests and reviewed model",
+						"parent": "fDdhxdXp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "gPWhZQeZ",
 						"order": 1000,
-						"from": "tIEJl3KY",
+						"from": "AmRajmt1",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "a typed message: turn/start or turn/steer",
@@ -12935,7 +13395,7 @@
 						"id": "e1viO4QT",
 						"order": 2000,
 						"from": "npbOHMgi",
-						"to": "glxfDGYq",
+						"to": "RbOKtjyQ",
 						"kind": "call",
 						"label": "of the named checkout; a delegation starts it first",
 						"emphasis": "hero",
@@ -12952,7 +13412,7 @@
 					{
 						"id": "l3RkMYAH",
 						"order": 3000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "5SYKj5bN",
 						"kind": "call",
 						"label": "queue a delegation behind the running turn",
@@ -12966,10 +13426,11 @@
 					{
 						"id": "KGiq6epE",
 						"order": 4000,
-						"from": "glxfDGYq",
+						"from": "L2PNo3wo",
 						"to": "p05yEm5U",
 						"kind": "call",
-						"label": "the link of its checkout's workhorse",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -12980,7 +13441,7 @@
 					{
 						"id": "yR5sjMnY",
 						"order": 5000,
-						"from": "glxfDGYq",
+						"from": "dypG1VCb",
 						"to": "6T3oOpxS",
 						"kind": "call",
 						"label": "stage and settle the operation",
@@ -13050,7 +13511,7 @@
 					{
 						"id": "zIWijDn9",
 						"order": 10000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "Fxm7RW2x",
 						"kind": "dependency",
 						"label": "archboard_app, by digest",
@@ -13064,7 +13525,7 @@
 					{
 						"id": "jAdLjEha",
 						"order": 11000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "L4s2Ndtt",
 						"kind": "dependency",
 						"label": "the instructions, by digest",
@@ -13134,7 +13595,7 @@
 					{
 						"id": "8xJt3Mud",
 						"order": 16000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "4slFgCMu",
 						"kind": "rpc",
 						"label": "turn/start when idle, turn/steer",
@@ -13152,7 +13613,7 @@
 					{
 						"id": "uLGJACZb",
 						"order": 17000,
-						"from": "fDdhxdXp",
+						"from": "nFnr4lj9",
 						"to": "WaIHZ8sZ",
 						"kind": "dependency",
 						"label": "archboard_coordinator, by digest",
@@ -13292,7 +13753,7 @@
 					{
 						"id": "iwsP4kmN",
 						"order": 27000,
-						"from": "glxfDGYq",
+						"from": "RbOKtjyQ",
 						"to": "L4s2Ndtt",
 						"kind": "call",
 						"label": "a delegation as the authored user input",
@@ -13363,9 +13824,9 @@
 						"id": "AscFDt7l",
 						"order": 32000,
 						"from": "mWD948LG",
-						"to": "glxfDGYq",
+						"to": "X03SzXI2",
 						"kind": "dependency",
-						"label": "its own operations",
+						"label": "the workhorse operations port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -13377,9 +13838,9 @@
 						"id": "incCs60x",
 						"order": 33000,
 						"from": "mWD948LG",
-						"to": "fDdhxdXp",
+						"to": "yWMUS3et",
 						"kind": "dependency",
-						"label": "its own starter and thread",
+						"label": "the workhorse starter port",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -13399,6 +13860,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
+						}
+					},
+					{
+						"id": "FSTG1rQt",
+						"order": 35000,
+						"from": "RbOKtjyQ",
+						"to": "L2PNo3wo",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "iK5V95pN",
+						"order": 36000,
+						"from": "RbOKtjyQ",
+						"to": "dypG1VCb",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
 						}
 					}
 				],
@@ -13465,7 +13954,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
-													"symbol": "CodexWorkbenchGatewayError"
+													"symbol": "createServerCanonicalTextActions"
 												}
 											}
 										]
