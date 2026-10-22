@@ -1,11 +1,11 @@
 ---
 id: TASK-501
 title: A board node can bind a behavior that spans role folders
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-19 23:11'
-updated_date: '2026-10-22 03:49'
+updated_date: '2026-10-22 04:32'
 labels: []
 dependencies: []
 ordinal: 908000
@@ -19,8 +19,8 @@ Packages and apps put each behavior under several role folders (components, hook
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The code check reports no ANCHOR_MISMATCH that comes only from a behavior spread across role folders
-- [ ] #2 The binding model change or the board restructure is recorded in an ADR or the domain language, and a test covers the spread case
+- [x] #1 The code check reports no ANCHOR_MISMATCH that comes only from a behavior spread across role folders
+- [x] #2 The binding model change or the board restructure is recorded in an ADR or the domain language, and a test covers the spread case
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,16 @@ Final code-check comparison: 82 ANCHOR_MISMATCH findings become zero. All eight 
 The complete normal gate failed after 253.50 seconds at the module lane: 4,859 pass, 1 skip, 2 fail. The new board detail exposes renderer clearance defects on Agent workbench (Track) and Browser application (Blocks). The exact geometry reproduces outside the duration assertion. TASK-506 records the mandatory gate repair under the archboard-dev completion workflow. Remaining normal lanes are running separately so the early module failure hides none. TASK-501 stays In Progress until the repair and complete gate pass.
 
 TASK-505 is now implemented as 6964cd0fa. Its source-backed board corrections retain singular ownership, narrow the raster session and visual workbench paths, and draw architectural calls now resolved through manifests. The live code pass still has zero ANCHOR_MISMATCH and no structural diagnostics. Newly resolved utility or data-node calls outside the board questions remain visible with scope explanations in TASK-505 notes. TASK-506 fixes the required renderer failures and remains under validation. The prior remaining-lane run passed system (257), repository (135), and all 19 browser owners. A complete gate is still required after all repairs. README freshness already failed for all 16 assets at baseline 85daa00fb, as proved by /tmp/archboard-task501-readme-baseline.json, so this task does not regenerate unrelated stale media.
+
+Final acceptance on source commit 0e53dbb2b: bun run check passed with exit 0 in 586.74 seconds. Modules: 4,869 passed, 1 skipped, 0 failed. System: 257 passed. Repository: 135 passed. All 19 serial browser owners completed with 27 passed tests. Log: /tmp/archboard-final-check-4.log. Timing: /tmp/archboard-final-validation-timing-4.json. The separate renderer run passed 709 tests, skipped 1, and failed none in 139.29 seconds. No assertions, normal owners, lint rules, or timeout contracts were weakened.
+
+The final worktree restart and both overview rasterizations passed. The Browser application and Semantic renderer PNGs were inspected and remain readable. The refreshed code pass reports zero structural diagnostics and zero ANCHOR_MISMATCH, down from 82 at baseline. It still exits 1 for five baseline ANCHOR_SYMBOL_MISSING warnings and fourteen scope-explained RELATIONSHIP_UNDRAWN warnings. Twenty-one EXPOSED_UNUSED information findings remain. No findings are suppressed. Evidence: /tmp/archboard-closing-code-check.json, /tmp/archboard-closing-browser.png, /tmp/archboard-closing-renderer.png, and /tmp/archboard-closing-timings.json.
+
+ADR 0056 records the rejected additionalPaths model and the retained singular owner contract. The sibling-role-child regression proves ownership through explicit children and rejects an unrelated anchor. No active model proposal remains to adopt. TASK-505 resolves the analyzer gap and TASK-506 repairs the renderer gate. All three tasks now satisfy the complete normal gate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Kept one code path per node and repaired the boards with responsibility-based children, accurate targets, and source-backed anchors. All 82 baseline anchor mismatches are gone. ADR 0056 and the focused ownership regression record the retained model. TASK-505 and TASK-506 repairs pass the complete normal gate in 586.74 seconds. Five baseline missing-symbol warnings and documented scope exclusions remain visible.
+<!-- SECTION:FINAL_SUMMARY:END -->
