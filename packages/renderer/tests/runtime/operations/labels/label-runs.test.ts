@@ -2,6 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import parentReturn from "#tests/runtime/support/fixtures/parent-return.json";
 import reservedCorner from "#tests/runtime/support/fixtures/reserved-label-corner.json";
 import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
 import archboardServer from "#tests/runtime/support/fixtures/archboard-server.json";
@@ -161,4 +162,12 @@ test("a row of labels moves toward its gap's middle only as far as the lines tur
 	const others = [...corridorPoints(drawn.svg)].filter(([id]) => id !== "ENymHNDK");
 	const nearest = Math.min(...others.map(([, points]) => distanceToRoute(label, points)));
 	expect(nearest).toBeGreaterThanOrEqual(16);
+});
+
+// A request enters a container and its child publishes the response. The
+// container title orders its child, so both relationships form one cycle.
+test("a response from a child keeps its label on the return route", async () => {
+	const content = orderedFixture(parentReturn);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	expect(labelsOffRuns(drawing)).toEqual([]);
 });

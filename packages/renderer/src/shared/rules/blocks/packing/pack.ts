@@ -79,6 +79,10 @@ class PackLayout {
 		readonly insets: Insets,
 	) {
 		this.header = block.header === undefined ? undefined : { size: block.header };
+		// Both the side port and the packed block have router buffers. A trunk
+		// needs a lane between them to turn before it reaches the packed block.
+		if ([...block.ports.values()].some((side) => ["left", "right"].includes(side)))
+			this.insets = { ...insets, side: Math.max(insets.side, 2 * TRUNK_CLEARANCE + LANE) };
 	}
 
 	/**
