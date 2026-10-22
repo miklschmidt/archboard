@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 129,
+	"version": 130,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-22T03:25:51.093Z",
+	"updatedAt": "2026-10-22T03:40:37.078Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -16136,7 +16136,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/ui"
+							"path": "packages/workbench/src/ui/components"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -16732,6 +16732,22 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts"
+						}
+					},
+					{
+						"id": "sOSPdXJh",
+						"order": 53000,
+						"name": "Voice box presence",
+						"kind": "module",
+						"responsibility": "Keeps the voice box present until its exit motion ends",
+						"parent": "0x47EMoO",
+						"groups": [
+							"agent",
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts"
 						}
 					}
 				],
@@ -17381,7 +17397,7 @@
 					{
 						"id": "294aYIvD",
 						"order": 49000,
-						"from": "0x47EMoO",
+						"from": "sOSPdXJh",
 						"to": "rouptSyK",
 						"kind": "call",
 						"label": "the voice box's wait while it leaves",
@@ -17600,6 +17616,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
 							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "cHxuRI45",
+						"order": 65000,
+						"from": "zkDth8gp",
+						"to": "WWPvFeLg",
+						"kind": "call",
+						"label": "resolve the repositories a drill-down opens",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "useDrillRepositories"
+						}
+					},
+					{
+						"id": "yK8KVlKw",
+						"order": 66000,
+						"from": "MPUyJZXc",
+						"to": "j7j12e3U",
+						"kind": "call",
+						"label": "combine the vault and pane listings",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+							"symbol": "composeListing"
 						}
 					}
 				],
@@ -19417,7 +19461,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/ui"
+							"path": "packages/workbench/src/ui/components"
 						},
 						"drillDown": {
 							"board": "Agent workbench",
@@ -20013,6 +20057,22 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/hooks/board-move/use-board-move.ts"
+						}
+					},
+					{
+						"id": "sOSPdXJh",
+						"order": 53000,
+						"name": "Voice box presence",
+						"kind": "module",
+						"responsibility": "Keeps the voice box present until its exit motion ends",
+						"parent": "0x47EMoO",
+						"groups": [
+							"agent",
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts"
 						}
 					}
 				],
@@ -20662,7 +20722,7 @@
 					{
 						"id": "294aYIvD",
 						"order": 49000,
-						"from": "0x47EMoO",
+						"from": "sOSPdXJh",
 						"to": "rouptSyK",
 						"kind": "call",
 						"label": "the voice box's wait while it leaves",
@@ -20881,6 +20941,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
 							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "cHxuRI45",
+						"order": 65000,
+						"from": "zkDth8gp",
+						"to": "WWPvFeLg",
+						"kind": "call",
+						"label": "resolve the repositories a drill-down opens",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "useDrillRepositories"
+						}
+					},
+					{
+						"id": "yK8KVlKw",
+						"order": 66000,
+						"from": "MPUyJZXc",
+						"to": "j7j12e3U",
+						"kind": "call",
+						"label": "combine the vault and pane listings",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+							"symbol": "composeListing"
 						}
 					}
 				],
