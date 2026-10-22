@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-19 23:11'
-updated_date: '2026-10-22 03:24'
+updated_date: '2026-10-22 03:26'
 labels: []
 dependencies: []
 ordinal: 908000
@@ -43,4 +43,6 @@ User approved explicit additionalPaths on 2026-10-22. Archboard@TASK-501 describ
 The user reconsidered additionalPaths because a node spanning distinct modules needs lower-level children. Model implementation stopped. Unfinished code is preserved only on experiment/task501-additional-paths at 69b7978c0, and the product worktree again uses the existing singular schema. Archboard@TASK-501 is shelved. Representative bad anchors include gateway to thread-link citing workhorseLinkKey, and gateway to browser citing diffBrowserSnapshots. These require board repairs rather than expanded ownership.
 
 Board-only correction clears all 82 baseline ANCHOR_MISMATCH findings while keeping singular bindings. The new sibling-role-child regression passes in 0.237 seconds and retains a negative unrelated-anchor assertion. Newly visible EXPOSED_UNUSED information comes from containers now examined by interface analysis. Source inspection and a direct resolver probe show that manifest # imports are not resolved, including the real pane-core -> createPaneReportSender call. That separate analyzer defect is tracked in TASK-505. No exports changed in TASK-501. The Board rasterizer containment warning was corrected by keeping its existing Talk capture peer and addressing that owner in the recording flow. Structural archboard check now exits 0 with no diagnostics.
+
+Final code-check comparison: 82 ANCHOR_MISMATCH findings become zero. All eight ANCHOR_SYMBOL_MISSING identities match the baseline, with none added. Structural diagnostics are empty. The 16 newly visible EXPOSED_UNUSED identities are information findings from existing exports now inspected through containers, not new exports; the unresolved manifest-import defect is documented in TASK-505 pending the requested approval to retain that follow-up. Browser application and Semantic renderer overviews were rasterized and inspected. The extra wide Application owners view was removed during simplification because the existing focused views and root overview already serve those readings. Product source, schemas, runtime readers, consumer skill and evaluation inputs are unchanged from 85daa00fb. Only the focused regression was added outside the board and decision records. No active model proposal remains to adopt; current boards were corrected against unchanged code.
 <!-- SECTION:NOTES:END -->
