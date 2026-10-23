@@ -79,7 +79,8 @@ The schema, renderer choice, and implementation approach remain under design.
   parent's branching-time content. Automatic inheritance applies only to draft
   proposals. Adoption preserves ancestry but stops automatic inheritance from
   the predecessor. Current architecture changes through explicit edits, and
-  historical states remain frozen.
+  historical states refuse ordinary edits. TASK-509 adds the narrow correction
+  path below.
 - Parent changes that break a child must be visible in the rendered viewer.
   Nonconflicting parent changes flow into children automatically while
   preserving each child's own changes. Conflicting edits and broken references
@@ -305,3 +306,29 @@ The accepted implementation design is in
 with the spec in TASK-170 and delivery tickets TASK-171 through TASK-181. The
 user explicitly pre-approved the implementation approach and breakdown. The user
 also authorized autonomous implementation using Claude Opus 5 through herdr.
+
+## Historical corrections (TASK-509)
+
+A historical variant records an architecture that existed. Its diagram can
+still contain a mistake. Correcting that description does not change which
+architecture existed or which variant succeeded it.
+
+Ordinary edits still refuse historical content. `semantic correct` accepts an
+explicit correction with a reason and immutable Git commits for every
+repository that its bindings, anchors or documents reference. A preview reads
+the candidate against those Git trees, including when a commit equals HEAD.
+Local edits never supply historical evidence. The write repeats that reading
+and refuses code warnings before the normal lease and expected-version boundary
+commits the checked candidate.
+
+The correction keeps the variant's identity, ancestry, lifecycle and adoption
+records. It changes no descendant, shared view or board level. The variant
+records each correction's time, reason and repository commits. The code check
+reports skipped evidence too. The author must inspect that evidence and assess
+responsibilities and labels that a code check cannot prove.
+
+`--suggest` uses the time when the variant stopped being current to find the
+last commit before that time in each repository's HEAD ancestry. These commits
+are guesses. An author inspects them and supplies the exact commits to preview
+and write. A repository with another historical branch can need a different
+commit. A missing timestamp or unavailable commit never selects current code.
