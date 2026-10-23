@@ -5,7 +5,7 @@ import {
 	type SemanticVariant,
 } from "#shared/schemas/board-document.ts";
 import type { HistoricalCorrectionInput } from "#shared/protocol/historical-correction.ts";
-import { editsVariant, restated } from "#runtime/operations/edit/scope.ts";
+import { editsContent, editsVariant, restated } from "#runtime/operations/edit/scope.ts";
 import { propagateEdit } from "#runtime/operations/variant/propagate.ts";
 import { refuse, type SemanticRefusal } from "#runtime/operations/write/outcome.ts";
 import { restoredContent, type SemanticTransition } from "#runtime/operations/write/transitions.ts";
@@ -77,7 +77,14 @@ function correctHistoricalTransition(input: HistoricalCorrectionInput): Semantic
 				variant.id,
 				edit,
 			)[0]!;
-			const carried = propagateEdit(before, corrected, nextVersion(before));
+			// A summary or its documents belong to this variant alone, so as with an
+			// ordinary edit only a content correction reaches the drafts under it.
+			const carried = editsContent(edit)
+				? propagateEdit(before, corrected, nextVersion(before))
+				: {
+						variants: before.variants.map((one) => (one.id === variant.id ? corrected : one)),
+						descendants: [],
+					};
 			return {
 				ok: true,
 				board: {

@@ -322,8 +322,8 @@ and refuses code warnings before the normal lease and expected-version boundary
 commits the checked candidate.
 
 The correction keeps the variant's identity, ancestry, lifecycle and adoption
-records. Corrections flow into inheriting drafts through the normal three-way
-merge. Drafts keep their own changes, and conflicts remain visible. Propagation
+records. Content corrections flow into inheriting drafts through the normal
+three-way merge. Drafts keep their own changes, and conflicts remain visible. Propagation
 stops at current, historical and shelved successors. Shared views and board
 level stay unchanged. The variant
 records each correction's time, reason and repository commits. The code check
