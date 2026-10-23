@@ -5,7 +5,10 @@ import { DescriptionSchema } from "#shared/schemas/primitives.ts";
 const HistoricalRevisionSchema = z
 	.object({
 		repo: z.string().trim().min(1),
-		commit: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/iu, "must be a full Git commit id"),
+		commit: z
+			.string()
+			.regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/iu, "must be a full Git commit id")
+			.toLowerCase(),
 	})
 	.strict();
 
