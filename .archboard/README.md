@@ -109,8 +109,9 @@ three readings.
 
 A historical variant is a record, not a board to maintain. `Initial`'s bindings
 name files that moved out of `src/runtime/semantic-renderer/lib` in September,
-and `Readable layout`'s name files deleted with the Graphviz engine. The store
-refuses to edit them, which is the point: what was true then does not change.
+and `Readable layout`'s name files deleted with the Graphviz engine. Ordinary edits refuse them. If a diagram contains a factual mistake,
+`semantic correct` repairs it against explicit historical Git commits and records
+the reason. The architecture it describes remains the architecture of that time.
 
 ## Maintain the architecture
 
