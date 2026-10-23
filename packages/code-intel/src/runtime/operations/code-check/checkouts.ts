@@ -24,6 +24,22 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@archboard/code-binding/bindings";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
+/** A pass that always reads the stated immutable trees, including at HEAD. */
+interface RevisionSnapshot extends CheckoutSnapshot {
+	readonly revisions?: ReadonlyMap<string, string>;
+}
+
+/**
+ * The authoritative tree a candidate reads in a repository, when stated.
+ * @param repo The repository identity.
+ * @param snapshot The checkouts and optional immutable revisions.
+ * @returns The forced tree, if any.
+ */
+function forcedRefOf(repo: string, snapshot: RevisionSnapshot): OtherRef | undefined {
+	const commit = snapshot.revisions?.get(repo);
+	return commit === undefined ? undefined : { named: commit, checkedOut: "working tree" };
+}
+
 /** A registered checkout the pass reads: its canonical root, and the files Git does not ignore. */
 interface ReadCheckout {
 	readonly status: "read";
@@ -81,7 +97,9 @@ async function readCheckouts(
  * @param snapshot The registered checkouts.
  * @returns The two refs, or undefined when the checkout has the pinned ref out or none is pinned.
  */
-function otherRefOf(binding: CodeBinding, snapshot: CheckoutSnapshot): OtherRef | undefined {
+function otherRefOf(binding: CodeBinding, snapshot: RevisionSnapshot): OtherRef | undefined {
+	const forced = forcedRefOf(binding.repo, snapshot);
+	if (forced !== undefined) return forced;
 	if (binding.branch === undefined && binding.commit === undefined) return undefined;
 	const root = resolveLocalCodeTarget({ ...binding, path: "." }, snapshot);
 	return root.ok ? root.otherRef : undefined;
@@ -201,6 +219,8 @@ function checkoutSkips(
 
 export {
 	type Checkout,
+	type RevisionSnapshot,
+	forcedRefOf,
 	type ReadCheckout,
 	type Readable,
 	checkoutSkips,

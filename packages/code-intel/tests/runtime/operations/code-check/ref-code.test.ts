@@ -43,7 +43,7 @@ function git(...args: string[]): void {
  * @param binding Its path, and its symbol and ref if any.
  * @returns The node.
  */
-function part(id: string, order: number, binding: Record<string, string>) {
+function part(id: string, order: number, binding: { path: string } & Record<string, string>) {
 	return { id, name: id, kind: "module", order, binding: { repo: SHOP, ...binding } };
 }
 
@@ -58,7 +58,15 @@ function part(id: string, order: number, binding: Record<string, string>) {
 function edge(id: string, from: string, to: string, anchor?: [string, string]) {
 	const cited =
 		anchor === undefined ? {} : { anchor: { repo: SHOP, path: anchor[0], symbol: anchor[1] } };
-	return { id, order: Number(id.slice(1)) * 1000, from, to, kind: "call", ...cited };
+	return {
+		id,
+		order: Number(id.slice(1)) * 1000,
+		from,
+		to,
+		kind: "call",
+		emphasis: "normal" as const,
+		...cited,
+	};
 }
 
 beforeAll(async () => {
@@ -190,4 +198,104 @@ test("a named draft reports a bound path that its branch lacks, and the checkout
 	expect(found(outcome)).toEqual(["BINDING_PATH_MISSING pOld"]);
 	const status = Bun.spawnSync(["git", "status", "--porcelain", "--branch"], { cwd: shop });
 	expect(status.stdout.toString().trim()).toBe("## main");
+});
+
+test("a historical candidate reads its authoritative commit even at dirty HEAD", async () => {
+	const read = check.readBoardsToCheck(vault);
+	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
+	const base = read.boards[0];
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
+		.stdout.toString()
+		.trim();
+	const variant = {
+		...base.variant,
+		lifecycle: "historical" as const,
+		documents: [{ repo: SHOP, path: "src/old.ts", branch: "feat/x" }],
+		content: {
+			...base.variant.content,
+			nodes: [part("pPost", 1000, { path: "src/ledger.ts", symbol: "post", branch: "feat/x" })],
+			edges: [],
+		},
+	};
+	write(shop, { "src/ledger.ts": "export class Ledger { dirty(): void {} }\n" });
+	try {
+		const outcome = await check.checkCandidateCode({
+			vault,
+			board: base.board,
+			file: base.file,
+			variant,
+			revisions: [{ repo: SHOP, commit }],
+			signal: new AbortController().signal,
+		});
+		expect(outcome.ok).toBe(true);
+		if (!outcome.ok) throw new Error(outcome.problem);
+		expect(outcome.findings.filter((finding) => finding.severity === "warning")).toEqual([]);
+		expect(variant.lifecycle).toBe("historical");
+		const anchorOnly = {
+			...variant,
+			documents: [],
+			content: {
+				...variant.content,
+				nodes: [
+					{ id: "pOne", name: "One", kind: "module", order: 1000 },
+					{ id: "pTwo", name: "Two", kind: "module", order: 2000 },
+				],
+				edges: [edge("e1", "pOne", "pTwo", ["src/ledger.ts", "post"])],
+			},
+		};
+		const anchored = await check.checkCandidateCode({
+			vault,
+			board: base.board,
+			file: base.file,
+			variant: anchorOnly,
+			revisions: [{ repo: SHOP, commit }],
+			signal: new AbortController().signal,
+		});
+		expect(anchored.ok).toBe(true);
+		if (!anchored.ok) throw new Error(anchored.problem);
+		expect(anchored.findings.filter((finding) => finding.code === "ANCHOR_SYMBOL_MISSING")).toEqual(
+			[],
+		);
+	} finally {
+		git("checkout", "--", "src/ledger.ts");
+	}
+});
+
+test("candidate revision evidence refuses duplicates, omissions and unavailable commits", async () => {
+	const read = check.readBoardsToCheck(vault);
+	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
+	const base = read.boards[0];
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
+		.stdout.toString()
+		.trim();
+	const revision = { repo: SHOP, commit };
+	for (const revisions of [[], [revision, revision], [{ repo: SHOP, commit: "0".repeat(40) }]]) {
+		const outcome = await check.checkCandidateCode({
+			vault,
+			...base,
+			revisions,
+			signal: new AbortController().signal,
+		});
+		expect(outcome.ok).toBe(false);
+	}
+});
+
+test("historical suggestions use HEAD ancestry and report missing timestamp history", async () => {
+	const read = check.readBoardsToCheck(vault);
+	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
+	const variant = read.boards[0].variant;
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
+		.stdout.toString()
+		.trim();
+	const signal = new AbortController().signal;
+	expect(
+		await check.suggestHistoricalCommits(vault, variant, "2030-01-01T00:00:00Z", signal),
+	).toEqual([{ repo: SHOP, commit }]);
+	const missing = await check.suggestHistoricalCommits(
+		vault,
+		variant,
+		"1970-01-01T00:00:00Z",
+		signal,
+	);
+	expect(missing.map((one) => one.commit)).toEqual([null]);
 });

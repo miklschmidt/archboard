@@ -27,6 +27,7 @@ import {
 	readCheckouts,
 	readableOf,
 	type Checkout,
+	type RevisionSnapshot,
 	type ReadCheckout,
 	type Readable,
 } from "#runtime/operations/code-check/checkouts.ts";
@@ -503,6 +504,7 @@ function timedFacts(facts: FactsPass) {
  * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
  * @param serverOf The server of a language in a checkout, where an owner fixes
  * it; by default each checkout's registration decides (ADR 0046).
+ * @param revisions Authoritative immutable trees for a historical candidate.
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
@@ -511,15 +513,22 @@ async function checkCode(
 	signal: AbortSignal,
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
+	revisions?: ReadonlyMap<string, string>,
 ): Promise<CodeCheckOutcome> {
 	const inherited = droppedBindings(boards);
 	const asked = boards.flatMap(claimsOf);
 	const documents = documentsOf(boards);
 	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited, ...documents];
-	const snapshot = await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null });
+	const snapshot: RevisionSnapshot = {
+		...(await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null })),
+		...(revisions === undefined ? {} : { revisions }),
+	};
 	const repos = [...asked.map(repoOf), ...bindings.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
-	const reads = await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)));
+	const reads =
+		revisions === undefined
+			? await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)))
+			: boards;
 	const claims = reads.flatMap(claimsOf);
 	const bound = [...partBindings(reads), ...documents];
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
