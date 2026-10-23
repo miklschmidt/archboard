@@ -100,7 +100,7 @@ test("ordinary edits refuse historical changes; correction preserves family and 
 	expect(again.board.variants[0]!.corrections).toHaveLength(2);
 });
 
-test("correction requires a historical target and an existing board and variant", () => {
+test("correction requires a stated change to an existing historical variant", () => {
 	const before = family();
 	const command = (variant: string) =>
 		correctHistoricalTransition(
@@ -113,6 +113,10 @@ test("correction requires a historical target and an existing board and variant"
 	expect(command("Proposal").apply(before, at)).toMatchObject({
 		ok: false,
 		code: "VARIANT_NOT_HISTORICAL",
+	});
+	expect(command("Initial").apply(before, at)).toMatchObject({
+		ok: false,
+		code: "NOTHING_TO_CORRECT",
 	});
 	expect(command("absent").apply(before, at)).toMatchObject({ ok: false, code: "UNKNOWN_VARIANT" });
 	expect(command("Initial").apply(null, at)).toMatchObject({ ok: false, code: "BOARD_MISSING" });

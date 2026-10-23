@@ -134,6 +134,11 @@ const SemanticVariantSchema = z
 		 * is: an empty list says nothing.
 		 */
 		documents: DocumentsSchema.optional(),
+		/**
+		 * Each explicit correction of this historical reading, oldest first, with
+		 * the Git commits it was checked against (TASK-509). Absent when it was
+		 * never corrected. Nothing rewrites an entry.
+		 */
 		corrections: z.array(HistoricalCorrectionSchema).min(1).optional(),
 		content: VariantContentSchema,
 		/**

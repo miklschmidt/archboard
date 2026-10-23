@@ -70,6 +70,8 @@ type SemanticRefusalCode =
 	| "VARIANT_HISTORICAL"
 	/** A historical correction named a state that is not historical. */
 	| "VARIANT_NOT_HISTORICAL"
+	/** A historical correction stated no change to the variant's content, summary or documents. */
+	| "NOTHING_TO_CORRECT"
 	/** A later adoption superseded what the proposal was built on, and the request did not force it. */
 	| "PARENT_SUPERSEDED"
 	// Letting a proposal go.
