@@ -113,14 +113,18 @@ async function correct(
 	if (prepared === null) return;
 	const { envelope, expected, input, doing, vault } = stated;
 	const { read, transition, produced, candidate, selected } = prepared;
-	const checked = await checkCandidateCode({
-		vault,
-		board: candidate.board,
-		file: read.location.file,
-		variant: selected.variant,
-		revisions: input.revisions,
-		signal,
-	});
+	// The code reading is checkout work, so a stopping server cancels it rather
+	// than waiting for it as it waits for the write.
+	const checked = await checkoutWork.track("Historical correction code check", signal, (reading) =>
+		checkCandidateCode({
+			vault,
+			board: candidate.board,
+			file: read.location.file,
+			variant: selected.variant,
+			revisions: input.revisions,
+			signal: reading,
+		}),
+	);
 	if (!checked.ok) {
 		res
 			.status(422)
