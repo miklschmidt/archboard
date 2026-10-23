@@ -139,7 +139,7 @@ async function correct(
 			success: true,
 			board: candidate.board,
 			previousVersion: read.board.version,
-			reconciliation: needsAttention(produced.descendants ?? []),
+			reconciliation: needsAttention(produced.descendants),
 			codeCheck,
 		});
 		return;
