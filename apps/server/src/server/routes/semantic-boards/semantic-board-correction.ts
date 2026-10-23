@@ -229,11 +229,15 @@ function historicalSelection(req: Request, res: Response) {
 		return null;
 	}
 	const found = addressedVariant(read.board, wanted);
-	if (!found.ok || found.variant.lifecycle !== "historical") {
+	if (!found.ok) {
+		res.status(422).json({ success: false, code: "UNKNOWN_VARIANT", error: found.problem });
+		return null;
+	}
+	if (found.variant.lifecycle !== "historical") {
 		res.status(422).json({
 			success: false,
 			code: "VARIANT_NOT_HISTORICAL",
-			error: "Name a historical variant to suggest its code revisions.",
+			error: `"${found.variant.name}" is not historical. Name a historical variant to suggest its code revisions.`,
 		});
 		return null;
 	}
