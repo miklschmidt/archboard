@@ -1,7 +1,11 @@
-// Normal content diagnostics read current and draft variants. Historical
-// corrections use an explicit, revision-pinned path (TASK-509), so checking
-// history against today's files or boards would suggest changes to the wrong
-// architecture. Shelved proposals also stay outside ordinary content repair.
+// Which variants a content diagnostic runs over: current and draft.
+//
+// A content diagnostic names a repair from the board as it reads today. A
+// historical variant changes only through an explicit correction pinned to the
+// Git commits it describes (TASK-509), so a warning there would drive a
+// correction that no commit supports. A shelved proposal refuses content edits
+// (ADR 0030). The rule names what it admits, so a lifecycle added later stays
+// outside the checks until somebody decides that it belongs.
 //
 // Vocabulary warnings still read every variant: defining a missing term in
 // the vault configuration repairs how history is read without changing it.

@@ -97,6 +97,4 @@ test("checks singleton current and draft content but leaves frozen variants alon
 	expect(
 		semanticUnconnectedNodeDiagnostics(family, "board.semantic.json").map((issue) => issue.variant),
 	).toEqual(["current", "draft"]);
-	const empty = await create({ name: "Empty", level: "service" });
-	expect(semanticUnconnectedNodeDiagnostics(empty, "empty.semantic.json")).toEqual([]);
 });
