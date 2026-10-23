@@ -236,3 +236,27 @@ test("suggestion refuses a board address that contains a variant", async () => {
 	expect(suggest).not.toHaveBeenCalled();
 	expect(readFileSync(file, "utf8")).toBe(before);
 });
+
+test("correction preview names the drafts that inherit a content repair", async () => {
+	const before = family();
+	const historical = before.variants[0]!;
+	before.variants.push({
+		...historical,
+		id: "draft",
+		name: "Proposal",
+		parent: historical.id,
+		lifecycle: "draft",
+	});
+	writeFileSync(file, JSON.stringify(before));
+	const bytes = readFileSync(file, "utf8");
+	const response = await ask(
+		"preview",
+		{},
+		{ nodes: [{ ...historical.content.nodes[0]!, responsibility: "Accepts orders" }] },
+	);
+	expect(response.status).toBe(200);
+	expect(await response.json()).toMatchObject({
+		reconciliation: { required: false, drafts: [{ variant: "draft", outcome: "merged" }] },
+	});
+	expect(readFileSync(file, "utf8")).toBe(bytes);
+});

@@ -349,6 +349,7 @@ const HistoricalCorrectionPreviewAnswerSchema = z.object({
 	success: z.literal(true),
 	board: SemanticBoardSchema,
 	previousVersion: z.int(),
+	reconciliation: ReconciliationReportSchema.nullable(),
 	codeCheck: CodeCheckAnswerSchema.pick({ timings: true, findings: true, skipped: true }),
 });
 
