@@ -12,8 +12,9 @@ import { requireVault } from "@archboard/workbench/host";
 import {
 	correctionPreviewRoute,
 	correctionRoute,
-	correctionSuggestRoute,
 } from "#server/routes/semantic-boards/semantic-board-correction.ts";
+
+import { mountSemanticBoardRoutes } from "#server/routes/semantic-boards/semantic-board-routes.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-correction-route-"));
 const vault = join(scratch, ".archboard", "vault");
@@ -63,11 +64,8 @@ beforeAll(async () => {
 			setImmediate(next, error);
 		});
 	});
-	app.get("/suggest", (req, res, next) => {
-		void correctionSuggestRoute(req, res, next, signal).catch((error: unknown) => {
-			setImmediate(next, error);
-		});
-	});
+	mountSemanticBoardRoutes(app);
+
 	http = await new Promise<Server>((resolve) => {
 		const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
 	});
@@ -179,7 +177,7 @@ test("stale versions and undescribed applies stop before checking or writing", a
 
 test("suggestion uses the historical state's supersession time", async () => {
 	const response = await fetch(
-		`${base}/suggest?${new URLSearchParams({ vault, board: "Example", variant: "Initial" })}`,
+		`${base}/api/semantic-boards/correct-suggest?${new URLSearchParams({ vault, board: "Example", variant: "Initial" })}`,
 	);
 	expect(response.status).toBe(200);
 	expect(await response.json()).toMatchObject({ success: true, at, revisions: [] });
