@@ -524,6 +524,7 @@ function writerOf(envelope: z.infer<typeof WriteEnvelopeSchema>): {
 export {
 	adoptRoute,
 	announceWork,
+	needsAttention,
 	answerRefusal,
 	answerWrite,
 	branchRoute,

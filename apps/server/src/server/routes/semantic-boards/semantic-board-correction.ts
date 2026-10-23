@@ -19,6 +19,7 @@ import {
 } from "#server/protocol/semantic-write/semantic-write-requests.ts";
 import {
 	announceWork,
+	needsAttention,
 	answerWrite,
 	describedWrite,
 	writerOf,
@@ -138,6 +139,7 @@ async function correct(
 			success: true,
 			board: candidate.board,
 			previousVersion: read.board.version,
+			reconciliation: needsAttention(produced.descendants ?? []),
 			codeCheck,
 		});
 		return;
