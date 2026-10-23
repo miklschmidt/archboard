@@ -9,6 +9,7 @@ import {
 	writeSemanticBoard,
 } from "@archboard/board/store-write";
 import { checkCandidateCode, suggestHistoricalCommits } from "@archboard/code-intel/code-check-run";
+import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { queryString, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	asCommand,
@@ -242,7 +243,7 @@ function historicalSelection(req: Request, res: Response) {
  * @param _next The unused next handler.
  * @param signal Cancels the Git reading.
  */
-async function correctionSuggestRoute(
+async function suggestCorrection(
 	req: Request,
 	res: Response,
 	_next: NextFunction,
@@ -263,6 +264,22 @@ async function correctionSuggestRoute(
 	}
 	const revisions = await suggestHistoricalCommits(vault, variant, at, signal);
 	res.json({ success: true, board: read.board.name, variant: variant.name, at, revisions });
+}
+
+/**
+ * Track the read-only suggestion request without requiring a mutation lease.
+ * @param req The request.
+ * @param res Its response.
+ * @param next Receives unexpected failures.
+ */
+function correctionSuggestRoute(req: Request, res: Response, next: NextFunction): void {
+	void checkoutWork
+		.trackRequest(req, res, "Historical commit suggestions", (signal) =>
+			suggestCorrection(req, res, next, signal),
+		)
+		.catch((error: unknown) => {
+			setImmediate(next, error);
+		});
 }
 
 export { correctionPreviewRoute, correctionRoute, correctionSuggestRoute };

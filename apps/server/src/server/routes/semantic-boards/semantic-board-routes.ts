@@ -492,11 +492,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 		asyncEndpoint(correctionPreviewRoute),
 	);
 	app.post("/api/semantic-boards/correct", requireVault, asyncEndpoint(correctionRoute));
-	app.get(
-		"/api/semantic-boards/correct-suggest",
-		requireVault,
-		asyncEndpoint(correctionSuggestRoute),
-	);
+	app.get("/api/semantic-boards/correct-suggest", requireVault, correctionSuggestRoute);
 	app.post("/api/semantic-boards/branch", requireVault, asyncEndpoint(branchRoute));
 	app.post("/api/semantic-boards/resolve", requireVault, asyncEndpoint(resolveRoute));
 	app.post("/api/semantic-boards/adopt", requireVault, asyncEndpoint(adoptRoute));
