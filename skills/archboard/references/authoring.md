@@ -417,9 +417,10 @@ gone, or one with no vault; a binding into such a repository draws no warning,
 but a link that opens nothing does. `archboard repo add <directory>` or
 `archboard repo use <directory>` clears it).
 
-Those check a variant's content, so they run only over the variants a
-write can still change: no accepted write could clear a warning on a frozen
-variant. `BINDING_PATH_MISSING` runs only over the current variant: a binding to
+Those check a variant's content, so they run only over current and draft
+variants, as `NODE_UNCONNECTED` does. An ordinary write cannot change a
+historical or shelved variant, and a historical correction answers the Git
+commits that the variant describes, not these warnings. `BINDING_PATH_MISSING` runs only over the current variant: a binding to
 a file that existed then is a correct record, not drift, and one on a draft is
 ahead of the code rather than behind it. `UNKNOWN_VOCABULARY` is not one of them: its cause
 is the vault configuration, so defining the kind again clears it wherever it
