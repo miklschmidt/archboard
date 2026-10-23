@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-23 02:27'
-updated_date: '2026-10-23 02:31'
+updated_date: '2026-10-23 02:39'
 labels: []
 dependencies: []
 ordinal: 916000
@@ -35,4 +35,6 @@ Historical variants can contain diagram mistakes. Authors need a deliberate corr
 
 <!-- SECTION:NOTES:BEGIN -->
 User approved the explicit correction design. Adoption timestamps can suggest candidate commits, but preview and write use explicit immutable commits after inspection.
+
+Implemented semantic correct with default preview, explicit --apply, and --suggest. Suggestions use supersession time and HEAD ancestry as guesses. The candidate checker forces immutable Git trees for bindings, anchors, and documents, including dirty HEAD. The write refuses code warnings and uses the existing expected-version lease boundary. Correction provenance stays on the historical variant. Descendants and adoption records do not change. Live preview/apply succeeded and ordinary historical edit remained refused. Footprint read against 820e12fdf: Command catalogue and its Commands container only gained registration of the new command through their existing contract edge, so their responsibilities and drawn relationship remain correct. README asset fingerprints report all assets stale, but this change alters no existing pictured UI or example diagram, so no visual asset refresh is needed. TASK-510 repairs the observed GET suggestion lifetime error.
 <!-- SECTION:NOTES:END -->

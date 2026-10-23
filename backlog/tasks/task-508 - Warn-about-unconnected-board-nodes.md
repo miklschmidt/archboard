@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-23 02:24'
-updated_date: '2026-10-23 02:26'
+updated_date: '2026-10-23 02:39'
 labels: []
 dependencies: []
 ordinal: 915000
@@ -34,4 +34,6 @@ Readers need boards to explain connections. An isolated node can signal a missin
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented NODE_UNCONNECTED in the existing vault checker. Connections include containment, relationships, and nested flow messages between distinct nodes. Current and draft variants are checked. Historical and shelved variants remain unchanged. Focused tests pass. Simplicity pass kept one set of connected ids and reused existing variant and flow traversal rules.
+
+Live archboard check passed after server restart. Initial full-gate lint findings were fixed without changing product behavior. A concurrent TASK-509 source addition briefly caused missing-file errors in system fixtures before its file was committed; the final gate will rerun with all files tracked.
 <!-- SECTION:NOTES:END -->
