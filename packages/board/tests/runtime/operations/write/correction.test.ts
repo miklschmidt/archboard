@@ -237,4 +237,10 @@ test("historical corrections expose conflicting draft changes and block dependen
 	expect(result.board.variants[3]!.reconciliation?.blockedBy).toBe("draft");
 	expect(result.board.variants[1]).toBe(before.variants[1]);
 	expect(acceptedBoard(before, result.board, at, null)).toHaveProperty("board");
+	const summarized = correctHistoricalTransition(
+		HistoricalCorrectionInputSchema.parse({ ...input, edit: { summary: "The first API" } }),
+	).apply(result.board, at);
+	if (!summarized.ok) throw new Error(summarized.problem);
+	expect(summarized.board.variants.slice(1)).toEqual(result.board.variants.slice(1));
+	expect(summarized.descendants).toEqual([]);
 });

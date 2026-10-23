@@ -342,7 +342,8 @@ Preview the candidate at the version that the board reported:
 archboard semantic correct Payments --variant Initial --expect-version 8 --input correction.json
 ```
 
-Read the candidate, code findings and skipped evidence. The code check reads
+Read the candidate, including each inheriting draft, the code findings and the
+skipped evidence. The code check reads
 Git trees, never local edits. It cannot prove every responsibility or label.
 Inspect the historical source for those claims. Preview writes nothing.
 
@@ -354,8 +355,9 @@ archboard semantic correct Payments --variant Initial --expect-version 8 --input
 
 The write repeats the code check and refuses warnings. It records the reason,
 commits and correction time on the historical variant. Its identity, ancestry,
-adoption records stay unchanged. Inheriting drafts receive nonconflicting
-corrections and keep their own changes. Conflicts remain visible and block
-dependent drafts. Current, historical and shelved successors stay unchanged.
-A stale board version refuses
-the correction. Read the board again and inspect a new preview.
+lifecycle and adoption records stay unchanged. Inheriting drafts receive
+nonconflicting content corrections and keep their own changes. Conflicts remain
+visible and block dependent drafts. The answer's `reconciliation` names each
+draft and what it did. Current, historical and shelved successors stay
+unchanged. A summary or document correction reaches no draft. A stale board
+version refuses the correction. Read the board again and inspect a new preview.
