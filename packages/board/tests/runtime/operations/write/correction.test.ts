@@ -80,7 +80,12 @@ test("ordinary edits refuse historical changes; correction preserves family and 
 		summary: historical.summary,
 		documents: historical.documents,
 		corrections: undefined,
-	}).toEqual({ ...historical, corrections: undefined });
+	}).toEqual({
+		...historical,
+		summary: historical.summary,
+		documents: historical.documents,
+		corrections: undefined,
+	});
 	expect(result.board.variants.slice(1)).toEqual(before.variants.slice(1));
 	expect(result.board.variants[1]).toBe(before.variants[1]);
 	expect(result.board.variants[2]).toBe(before.variants[2]);
