@@ -484,7 +484,7 @@ export {
 
 /**
  * The variant an edit names, when it exists and may be edited: a state that
- * was implemented and superseded is a record, and records are not edited, and
+ * was implemented and superseded requires an explicit correction, and
  * a proposal that has been let go is an argument that is over.
  *
  * Both refusals are narrow on purpose — they fire only when a batch changes
@@ -510,8 +510,8 @@ function editableVariant(
 		return refuse(
 			"VARIANT_HISTORICAL",
 			`"${variant.name}" is an architecture that was implemented and has since been ` +
-				"superseded. What was true then does not change: branch a proposal from it if you " +
-				"want to say something different.",
+				"superseded. Use semantic correct to repair its description against historical " +
+				"Git commits, or branch a proposal to describe an architectural change.",
 		);
 	}
 	if (variant.lifecycle === "shelved" && changesVariant) {
