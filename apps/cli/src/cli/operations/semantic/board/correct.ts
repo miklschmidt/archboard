@@ -147,10 +147,36 @@ const semanticCorrectContract = defineCommand({
 		boardVersionRefusal,
 		claimRevokedRefusal,
 		{
+			code: "UNKNOWN_VARIANT",
+			exit: 2,
+			stream: "stderr",
+			description: "--variant names no variant of the board.",
+		},
+		{
 			code: "VARIANT_NOT_HISTORICAL",
 			exit: 2,
 			stream: "stderr",
 			description: "The selected variant was never built or is still current.",
+		},
+		{
+			code: "HISTORICAL_EVIDENCE_UNREADABLE",
+			exit: 2,
+			stream: "stderr",
+			description:
+				"A repository the correction describes has no stated commit, does not have the stated commit, or cannot be read at it.",
+		},
+		{
+			code: "HISTORICAL_CODE_MISMATCH",
+			exit: 2,
+			stream: "stderr",
+			description:
+				"--apply found code warnings against the stated commits. Preview the correction to read them.",
+		},
+		{
+			code: "HISTORICAL_TIME_UNKNOWN",
+			exit: 2,
+			stream: "stderr",
+			description: "--suggest found no recorded time when the variant stopped being current.",
 		},
 	],
 	relationships: [

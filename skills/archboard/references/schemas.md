@@ -12,6 +12,10 @@ are running. Do not edit them.
 - [`generated/semantic-edit-input.schema.json`](generated/semantic-edit-input.schema.json):
   The JSON you give `archboard semantic edit`: one batch of restated subjects
   and `remove...` lists against one `variant`.
+- [`generated/semantic-correct-input.schema.json`](generated/semantic-correct-input.schema.json):
+  The JSON you give `archboard semantic correct`: a `reason`, one immutable
+  commit per repository in `revisions`, and one `edit` batch. `--variant`
+  names the historical variant.
 - [`generated/semantic-board.schema.json`](generated/semantic-board.schema.json):
   One persisted board family as `archboard semantic show` prints it and the
   vault stores it: variants, lifecycle, ancestry, ids.
