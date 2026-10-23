@@ -69,6 +69,14 @@ function edge(id: string, from: string, to: string, anchor?: [string, string]) {
 	};
 }
 
+/**
+ * The commit the shop has out.
+ * @returns Its full id.
+ */
+function headCommit(): string {
+	return Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop }).stdout.toString().trim();
+}
+
 beforeAll(async () => {
 	mkdirSync(shop, { recursive: true });
 	writeFileSync(join(scratch, "gitconfig"), "");
@@ -204,9 +212,7 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 	const read = check.readBoardsToCheck(vault);
 	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
 	const base = read.boards[0];
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
-		.stdout.toString()
-		.trim();
+	const commit = headCommit();
 	const variant = {
 		...base.variant,
 		lifecycle: "historical" as const,
@@ -261,15 +267,19 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 	}
 });
 
-test("candidate revision evidence refuses duplicates, omissions and unavailable commits", async () => {
+test("candidate revision evidence refuses duplicates, omissions, branch names and unavailable commits", async () => {
 	const read = check.readBoardsToCheck(vault);
 	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
 	const base = read.boards[0];
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
-		.stdout.toString()
-		.trim();
+	const commit = headCommit();
 	const revision = { repo: SHOP, commit };
-	for (const revisions of [[], [revision, revision], [{ repo: SHOP, commit: "0".repeat(40) }]]) {
+	const refused = [
+		[],
+		[revision, revision],
+		[{ repo: SHOP, commit: "main" }],
+		[{ repo: SHOP, commit: "0".repeat(40) }],
+	];
+	for (const revisions of refused) {
 		const outcome = await check.checkCandidateCode({
 			vault,
 			...base,
@@ -284,9 +294,7 @@ test("historical suggestions use HEAD ancestry and report missing timestamp hist
 	const read = check.readBoardsToCheck(vault);
 	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
 	const variant = read.boards[0].variant;
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: shop })
-		.stdout.toString()
-		.trim();
+	const commit = headCommit();
 	const signal = new AbortController().signal;
 	expect(
 		await check.suggestHistoricalCommits(vault, variant, "2030-01-01T00:00:00Z", signal),
