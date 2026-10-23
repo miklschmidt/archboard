@@ -132,7 +132,7 @@ function generatedSchemas(): GeneratedSchema[] {
 			"semantic-correct-input.schema.json",
 			"Archboard semantic correct payload",
 			"A historical correction with a reason, immutable repository commits and a batch of variant content edits.",
-			z.toJSONSchema(HistoricalCorrectionInputSchema, { io: "input" }),
+			z.toJSONSchema(HistoricalCorrectionInputSchema.omit({ variant: true }), { io: "input" }),
 			AUTHORING_RUNTIME_OBLIGATIONS,
 		),
 	];
