@@ -13,6 +13,11 @@ import { nodeSubject } from "#runtime/operations/check/subject.ts";
 function semanticUnconnectedNodeDiagnostics(board: SemanticBoard, file: string): VaultDiagnostic[] {
 	return contentCheckedVariants(board).flatMap((variant) => {
 		const connected = new Set<string>();
+		/**
+		 * Record both ends of a connection between distinct parts.
+		 * @param from The first part.
+		 * @param to The other part.
+		 */
 		const connect = (from: string, to: string): void => {
 			if (from !== to) {
 				connected.add(from);

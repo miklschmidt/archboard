@@ -90,11 +90,9 @@ test("checks singleton current and draft content but leaves frozen variants alon
 	const variant = board.variants[0]!;
 	const family = {
 		...board,
-		variants: (["current", "draft", "historical", "shelved"] as const).map((lifecycle) => ({
-			...variant,
-			name: lifecycle,
-			lifecycle,
-		})),
+		variants: (["current", "draft", "historical", "shelved"] as const).map((lifecycle) =>
+			Object.assign({}, variant, { name: lifecycle, lifecycle }),
+		),
 	};
 	expect(
 		semanticUnconnectedNodeDiagnostics(family, "board.semantic.json").map((issue) => issue.variant),
