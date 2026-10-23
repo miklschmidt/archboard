@@ -1,6 +1,8 @@
-// Pack child blocks in rows or columns, scored by fit, crossings and detours.
-// Libavoid routes unlabelled trunks between their ports. Labels stay inside
-// the child blocks beside their cards.
+// A block of blocks: its items are blocks alone (`tree.ts` gathers its loose
+// cards into a cluster), packed in rows or columns in the order their lines
+// run, scored by fit, crossings and detours (`scoreOf` in score.ts). Libavoid
+// routes the unlabelled trunks around them. Labels stay inside the child
+// blocks beside their cards.
 import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
@@ -55,7 +57,7 @@ class PackLayout {
 	settled: ReadonlyMap<string, number> = new Map();
 	/** The width it keeps, once its parent has placed it. */
 	held = 0;
-	/** Use unification only if the chosen packing still has crowded lanes. */
+	/** Whether libavoid's unifying prepass routes its trunks: a chosen packing's, when they crowd. */
 	private unify = false;
 	/** Room between two packed blocks, for the trunks that pass between them. */
 	gap = PACK_GAP;
@@ -403,10 +405,8 @@ class PackLayout {
 	 * @param avoid The initialized libavoid module.
 	 */
 	route(avoid: AvoidEngine): void {
-		const trunks = new TrunkRouter(this.block, this.laid, this.tree, this.boxes, this.unify).route(
-			avoid,
-		);
-		for (const [key, points] of trunks) this.lines.set(key, points);
+		const router = new TrunkRouter(this.block, this.laid, this.tree, this.boxes, this.unify);
+		for (const [key, points] of router.route(avoid)) this.lines.set(key, points);
 	}
 
 	/**
@@ -478,7 +478,7 @@ class PackLayout {
 	}
 
 	/**
-	 * Widen crowded gaps and keep the left wall inset.
+	 * Widen gaps whose trunks crowd closer than a lane, and keep the left wall inset.
 	 * @param avoid The initialized libavoid module.
 	 * @param laid The block as this layout laid it out.
 	 * @returns The laid-out block.

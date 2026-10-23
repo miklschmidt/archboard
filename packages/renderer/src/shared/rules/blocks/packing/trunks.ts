@@ -171,7 +171,7 @@ function roomNeeded(items: readonly Box[], lines: readonly Point[][], gap: numbe
 /**
  * Whether separate trunks overlap along parallel runs less than a lane apart.
  * @param lines The routed trunks.
- * @returns True when their ordering needs the unification prepass.
+ * @returns True when two of them do, over more than a lane.
  */
 function crowdedTrunks(lines: Iterable<readonly Point[]>): boolean {
 	const runs = [...lines].flatMap((points, line) =>
@@ -209,6 +209,7 @@ class TrunkRouter {
 	 * @param laid Every block laid out, its items included.
 	 * @param tree The blocks.
 	 * @param boxes Where the block put its items, header and own ports.
+	 * @param unify Whether libavoid runs its unifying nudging prepass first.
 	 */
 	constructor(
 		readonly block: Block,
@@ -365,7 +366,8 @@ class TrunkRouter {
 	connect(avoid: AvoidEngine, router: Router): { line: Line; connection: Connection }[] {
 		// The optional unification prepass repeatedly solves every pair of free
 		// segments. Dense route boards spend tens of seconds there (TASK-512).
-		// Normal nudging still separates the routed lines afterwards.
+		// Normal nudging still separates the routed lines afterwards, so only a
+		// chosen packing whose trunks still crowd (`crowdedTrunks`) runs it.
 		router.setRoutingOption(
 			avoid.RoutingOption.performUnifyingNudgingPreprocessingStep,
 			this.unify,
