@@ -168,6 +168,39 @@ function roomNeeded(items: readonly Box[], lines: readonly Point[][], gap: numbe
 	return (Math.max(0, ...most) + 1) * LANE;
 }
 
+/**
+ * Whether separate trunks overlap along parallel runs less than a lane apart.
+ * @param lines The routed trunks.
+ * @returns True when their ordering needs the unification prepass.
+ */
+function crowdedTrunks(lines: Iterable<readonly Point[]>): boolean {
+	const runs = [...lines].flatMap((points, line) =>
+		points.slice(1).map((to, index) => {
+			const from = points[index]!;
+			const vertical = Math.abs(from.x - to.x) < SAME;
+			return {
+				line,
+				vertical,
+				at: vertical ? from.x : from.y,
+				low: Math.min(vertical ? from.y : from.x, vertical ? to.y : to.x),
+				high: Math.max(vertical ? from.y : from.x, vertical ? to.y : to.x),
+			};
+		}),
+	);
+	return runs.some((one, index) =>
+		runs
+			.slice(index + 1)
+			.some(
+				(other) =>
+					one.line !== other.line &&
+					one.vertical === other.vertical &&
+					Math.abs(one.at - other.at) > SAME &&
+					Math.abs(one.at - other.at) < LANE - SAME &&
+					Math.min(one.high, other.high) - Math.max(one.low, other.low) > LANE,
+			),
+	);
+}
+
 /** The trunks of one block of blocks, routed around its packed blocks. */
 class TrunkRouter {
 	/**
@@ -182,6 +215,7 @@ class TrunkRouter {
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly boxes: ReadonlyMap<string, Box>,
+		private readonly unify = false,
 	) {}
 
 	/**
@@ -332,7 +366,10 @@ class TrunkRouter {
 		// The optional unification prepass repeatedly solves every pair of free
 		// segments. Dense route boards spend tens of seconds there (TASK-512).
 		// Normal nudging still separates the routed lines afterwards.
-		router.setRoutingOption(avoid.RoutingOption.performUnifyingNudgingPreprocessingStep, false);
+		router.setRoutingOption(
+			avoid.RoutingOption.performUnifyingNudgingPreprocessingStep,
+			this.unify,
+		);
 		router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
 		router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
 		router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
@@ -382,4 +419,4 @@ class TrunkRouter {
 	}
 }
 
-export { TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };
+export { crowdedTrunks, TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };

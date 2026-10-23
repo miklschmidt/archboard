@@ -1,10 +1,6 @@
-// A block of blocks. Its items are blocks alone (`tree.ts` gathers its loose
-// cards into a cluster), and every line between them is a trunk between two
-// ports that carries no label (the labels sit inside the blocks, next to the
-// cards they name). So this level is a packing problem and a sparse routing
-// problem: the blocks are packed in rows or columns in the order their lines
-// run, whichever scores best on its fit and its trunks' crossings and detours
-// (`scoreOf` in shared/rules/track/scene/score.ts), and libavoid routes the trunks around them.
+// Pack child blocks in rows or columns, scored by fit, crossings and detours.
+// Libavoid routes unlabelled trunks between their ports. Labels stay inside
+// the child blocks beside their cards.
 import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
@@ -35,6 +31,7 @@ import { nearestAway } from "#shared/rules/blocks/lines/away.ts";
 import {
 	TRUNK_CLEARANCE,
 	TrunkRouter,
+	crowdedTrunks,
 	packedWeighed,
 	roomNeeded,
 } from "#shared/rules/blocks/packing/trunks.ts";
@@ -58,6 +55,8 @@ class PackLayout {
 	settled: ReadonlyMap<string, number> = new Map();
 	/** The width it keeps, once its parent has placed it. */
 	held = 0;
+	/** Use unification only if the chosen packing still has crowded lanes. */
+	private unify = false;
 	/** Room between two packed blocks, for the trunks that pass between them. */
 	gap = PACK_GAP;
 	/** Room left of the packed blocks, for trunks that run round the leftmost. */
@@ -404,7 +403,9 @@ class PackLayout {
 	 * @param avoid The initialized libavoid module.
 	 */
 	route(avoid: AvoidEngine): void {
-		const trunks = new TrunkRouter(this.block, this.laid, this.tree, this.boxes).route(avoid);
+		const trunks = new TrunkRouter(this.block, this.laid, this.tree, this.boxes, this.unify).route(
+			avoid,
+		);
 		for (const [key, points] of trunks) this.lines.set(key, points);
 	}
 
@@ -431,7 +432,7 @@ class PackLayout {
 		const { layout, laid } = near.reduce((one, other) =>
 			scoresBetter(packedWeighed(other.laid), packedWeighed(one.laid)) ? other : one,
 		);
-		return layout.widened(avoid, laid);
+		return layout.roomy(avoid, laid.packing, laid);
 	}
 
 	/**
@@ -459,19 +460,25 @@ class PackLayout {
 	}
 
 	/**
-	 * Lay the block of blocks out packed one way, its gaps widened where
-	 * its trunks crowd them.
+	 * Route the chosen packing with enough room between its trunks.
 	 * @param avoid The initialized libavoid module.
 	 * @param packing The packing.
+	 * @param laid Its routed geometry, when the choice already laid it out.
 	 * @returns The laid-out block, and the packing it used.
 	 */
-	roomy(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
-		return this.widened(avoid, this.layOut(avoid, packing));
+	roomy(
+		avoid: AvoidEngine,
+		packing: Packing,
+		laid = this.layOut(avoid, packing),
+	): Laid & { packing: Packing } {
+		const room = this.widened(avoid, laid);
+		if (!crowdedTrunks(room.lines.values())) return room;
+		this.unify = true;
+		return this.widened(avoid, this.layOut(avoid, room.packing));
 	}
 
 	/**
-	 * The block as laid out, or again with wider gaps where its trunks crowd one
-	 * closer than a lane apart, and room on its left where one runs nearer its left wall than its inset.
+	 * Widen crowded gaps and keep the left wall inset.
 	 * @param avoid The initialized libavoid module.
 	 * @param laid The block as this layout laid it out.
 	 * @returns The laid-out block.
@@ -483,6 +490,7 @@ class PackLayout {
 		if (room <= this.gap && short === 0) return laid;
 		const again = new PackLayout(this.block, this.laid, this.tree, this.insets);
 		[again.settled, again.held] = [this.settled, this.held];
+		again.unify = this.unify;
 		const margin = (laid.packing.margin ?? 0) + short;
 		return again.layOut(avoid, { ...laid.packing, gap: Math.max(room, this.gap), margin });
 	}
@@ -525,9 +533,7 @@ class PackLayout {
 	}
 
 	/**
-	 * Close the gaps kept for trunks that turn under the header or over the
-	 * bottom ports to the block's inset, where no trunk turns: under the
-	 * header, the inset a block of cards keeps there too (`rimOf`).
+	 * Close unused trunk space to the header or bottom port inset (`rimOf`).
 	 * @param items Where the packed items start.
 	 * @param bottom Where the bottom ports stand.
 	 * @param ended Whether the block has bottom ports.
@@ -541,9 +547,7 @@ class PackLayout {
 	}
 
 	/**
-	 * Close a strip across the block to some room when no trunk turns in it:
-	 * everything at or below its foot moves up, and the trunks that only
-	 * cross it get shorter.
+	 * Close a strip without turns, moving its lower geometry up.
 	 * @param from Where the strip starts.
 	 * @param to Where it ends.
 	 * @param room The room it keeps.
