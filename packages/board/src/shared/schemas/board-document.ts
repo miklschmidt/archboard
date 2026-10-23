@@ -19,6 +19,7 @@
 // `packages/board/src/runtime/operations/write` is the only thing that may advance it.
 
 import { z } from "zod";
+import { HistoricalCorrectionSchema } from "#shared/schemas/historical-correction.ts";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -133,6 +134,7 @@ const SemanticVariantSchema = z
 		 * is: an empty list says nothing.
 		 */
 		documents: DocumentsSchema.optional(),
+		corrections: z.array(HistoricalCorrectionSchema).min(1).optional(),
 		content: VariantContentSchema,
 		/**
 		 * What this variant is waiting on, when its predecessor has moved under it

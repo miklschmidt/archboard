@@ -534,12 +534,14 @@ function editableVariant(
  * @param input The edit as stated.
  * @returns The content, what it could restore and what the answer says, or the refusal.
  */
-function restoredContent(
+export function restoredContent(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	input: VariantEditInput,
 ):
-	| (Extract<ContentEdit, { ok: true }> & { readonly restorable: RestorableSubjects })
+	| (Extract<ContentEdit, { ok: true }> & {
+			readonly restorable: RestorableSubjects;
+	  })
 	| SemanticRefusal {
 	const restoring = restoration(board, variant, input);
 	if (!restoring.ok) {

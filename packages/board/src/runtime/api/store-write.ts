@@ -14,3 +14,4 @@ export {
 export type { SemanticTransition } from "#runtime/operations/write/transitions.ts";
 export { writeSemanticBoard } from "#runtime/operations/write/write.ts";
 export type { SemanticWriteResult } from "#runtime/operations/write/write.ts";
+export { correctHistoricalTransition } from "#runtime/operations/write/correction.ts";

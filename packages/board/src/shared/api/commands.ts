@@ -29,3 +29,11 @@ export {
 	BoardShelveInputSchema,
 	ResolutionInputSchema,
 } from "#shared/protocol/resolution-input.ts";
+export {
+	HistoricalCorrectionInputSchema,
+	HistoricalRevisionSchema,
+} from "#shared/protocol/historical-correction.ts";
+export type {
+	HistoricalCorrectionInput,
+	HistoricalRevision,
+} from "#shared/protocol/historical-correction.ts";
