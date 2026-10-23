@@ -8,7 +8,11 @@
 // named as runtime obligations rather than silently left out.
 
 import { z } from "zod";
-import { BoardCreateInputSchema, VariantEditInputSchema } from "@archboard/board/commands";
+import {
+	BoardCreateInputSchema,
+	HistoricalCorrectionInputSchema,
+	VariantEditInputSchema,
+} from "@archboard/board/commands";
 import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/board/document";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
 
@@ -121,6 +125,14 @@ function generatedSchemas(): GeneratedSchema[] {
 			"Archboard semantic edit payload",
 			"The JSON an agent gives semantic edit: one batch of stated subjects and removals against one variant, with names, ids or same-write handles as references.",
 			z.toJSONSchema(VariantEditInputSchema, { io: "input" }),
+			AUTHORING_RUNTIME_OBLIGATIONS,
+		),
+
+		stamped(
+			"semantic-correct-input.schema.json",
+			"Archboard semantic correct payload",
+			"A historical correction with a reason, immutable repository commits and a batch of variant content edits.",
+			z.toJSONSchema(HistoricalCorrectionInputSchema, { io: "input" }),
 			AUTHORING_RUNTIME_OBLIGATIONS,
 		),
 	];

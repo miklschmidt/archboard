@@ -320,7 +320,8 @@ ancestry. These commits are guesses. Inspect the Git history and replace a
 guess if the variant describes another commit or branch. If the time is
 unknown, supply commits explicitly.
 
-Read the board and put the correction in a JSON file. `reason` explains the
+Read the board and put the correction in a JSON file. The
+[payload schema](generated/semantic-correct-input.schema.json) names its fields. `reason` explains the
 mistake. `revisions` names a full commit hash for every repository that the
 corrected variant references. `edit` accepts the ordinary content batch,
 summary and documents. It cannot change shared views or board level.
