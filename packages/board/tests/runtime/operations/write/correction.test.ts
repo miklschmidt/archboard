@@ -43,7 +43,7 @@ function family(): SemanticBoard {
 	};
 }
 
-test("ordinary edits refuse historical changes; correction preserves family and records evidence", () => {
+test("ordinary edits refuse historical changes; correction reconciles drafts, preserves implemented history and records evidence", () => {
 	const before = family();
 	const historical = before.variants[0]!;
 	const input = HistoricalCorrectionInputSchema.parse({
@@ -86,9 +86,10 @@ test("ordinary edits refuse historical changes; correction preserves family and 
 		documents: historical.documents,
 		corrections: undefined,
 	});
-	expect(result.board.variants.slice(1)).toEqual(before.variants.slice(1));
 	expect(result.board.variants[1]).toBe(before.variants[1]);
-	expect(result.board.variants[2]).toBe(before.variants[2]);
+	expect(result.board.variants[2]!.content.nodes[0]!.responsibility).toBe("Accepts orders");
+	expect(result.board.variants[2]!.corrections).toBeUndefined();
+	expect(result.descendants).toMatchObject([{ variant: "draft", outcome: "merged" }]);
 	expect(result.board.current).toBe(before.current);
 	expect(result.board.adoptions).toBe(before.adoptions);
 	expect(result.board.views).toBe(before.views);
@@ -170,4 +171,70 @@ test("correction retains restoration confirmation guardrails", () => {
 	if (!result.ok) throw new Error(result.problem);
 	expect(result.board.variants[0]!.content.nodes.map((node) => node.id)).toContain(absent.id);
 	expect(result.board.variants[1]).toBe(successor);
+});
+
+test("historical corrections preserve draft-local changes and stop at adopted successors", () => {
+	const before = family();
+	const historical = before.variants[0]!;
+	const draft = structuredClone(before.variants[2]!);
+	draft.content.nodes[0]!.description = "The proposal adds retries";
+	const nested = { ...draft, id: "nested", name: "Nested proposal", parent: draft.id };
+	const implementedDraft = { ...draft, id: "later", name: "After implementation", parent: "next" };
+	before.variants = [historical, before.variants[1]!, draft, nested, implementedDraft];
+	const input = HistoricalCorrectionInputSchema.parse({
+		variant: historical.id,
+		reason: "Correct the inherited responsibility",
+		revisions,
+		edit: { nodes: [{ ...historical.content.nodes[0]!, responsibility: "Accepts orders" }] },
+	});
+	const result = correctHistoricalTransition(input).apply(before, at);
+	if (!result.ok) throw new Error(result.problem);
+	for (const id of ["draft", "nested"]) {
+		const changed = result.board.variants.find((variant) => variant.id === id)!;
+		expect(changed.content.nodes[0]).toMatchObject({
+			responsibility: "Accepts orders",
+			description: "The proposal adds retries",
+		});
+		expect(changed.reconciliation).toBeUndefined();
+	}
+	expect(result.board.variants[1]).toBe(before.variants[1]);
+	expect(result.board.variants[4]).toBe(implementedDraft);
+	expect(result.descendants).toMatchObject([
+		{ variant: "draft", outcome: "merged" },
+		{ variant: "nested", outcome: "merged" },
+	]);
+	expect(acceptedBoard(before, result.board, at, null)).toHaveProperty("board");
+});
+
+test("historical corrections expose conflicting draft changes and block dependent drafts", () => {
+	const before = family();
+	const historical = before.variants[0]!;
+	const draft = structuredClone(before.variants[2]!);
+	draft.content.nodes[0]!.responsibility = "Queues orders";
+	const nested = { ...draft, id: "nested", name: "Nested proposal", parent: draft.id };
+	before.variants = [historical, before.variants[1]!, draft, nested];
+	const input = HistoricalCorrectionInputSchema.parse({
+		variant: historical.id,
+		reason: "Correct the inherited responsibility",
+		revisions,
+		edit: { nodes: [{ ...historical.content.nodes[0]!, responsibility: "Accepts orders" }] },
+	});
+	const result = correctHistoricalTransition(input).apply(before, at);
+	if (!result.ok) throw new Error(result.problem);
+	expect(result.descendants).toMatchObject([
+		{ variant: "draft", outcome: "conflicted" },
+		{ variant: "nested", outcome: "blocked", blockedBy: "draft" },
+	]);
+	expect(result.board.variants[2]!.content.nodes[0]!.responsibility).toBe("Queues orders");
+	expect(result.board.variants[2]!.reconciliation?.issues).toMatchObject([
+		{
+			field: "responsibility",
+			kind: "competing-field",
+			mine: "Queues orders",
+			theirs: "Accepts orders",
+		},
+	]);
+	expect(result.board.variants[3]!.reconciliation?.blockedBy).toBe("draft");
+	expect(result.board.variants[1]).toBe(before.variants[1]);
+	expect(acceptedBoard(before, result.board, at, null)).toHaveProperty("board");
 });

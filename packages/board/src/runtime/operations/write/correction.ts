@@ -1,10 +1,12 @@
 import {
 	addressedVariant,
+	nextVersion,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "#shared/schemas/board-document.ts";
 import type { HistoricalCorrectionInput } from "#shared/protocol/historical-correction.ts";
 import { editsVariant, restated } from "#runtime/operations/edit/scope.ts";
+import { propagateEdit } from "#runtime/operations/variant/propagate.ts";
 import { refuse, type SemanticRefusal } from "#runtime/operations/write/outcome.ts";
 import { restoredContent, type SemanticTransition } from "#runtime/operations/write/transitions.ts";
 
@@ -39,7 +41,7 @@ function correctableVariant(
 }
 
 /**
- * Correct a historical description without replaying an architectural change into its descendants.
+ * Correct a historical description and reconcile drafts that still inherit it.
  * @param input The correction and its immutable evidence, verified by the caller.
  * @returns A pure candidate transition; the normal write boundary validates and commits it.
  */
@@ -48,7 +50,7 @@ function correctHistoricalTransition(input: HistoricalCorrectionInput): Semantic
 		summary: "correct a historical architecture",
 		changesExistingBoard: true,
 		/**
-		 * Build only the corrected historical reading.
+		 * Build the corrected historical reading and its inheriting drafts.
 		 * @param before The board as it stands.
 		 * @param at The correction timestamp.
 		 * @returns The candidate board, or a refusal.
@@ -61,25 +63,29 @@ function correctHistoricalTransition(input: HistoricalCorrectionInput): Semantic
 			const { variant } = found;
 			const content = restoredContent(before, variant, edit);
 			if (!content.ok) return content;
-			const corrected = {
-				...variant,
-				content: content.content,
-				corrections: [
-					...(variant.corrections ?? []),
-					{ at, reason: input.reason, revisions: input.revisions },
+			const corrected = restated(
+				[
+					{
+						...variant,
+						content: content.content,
+						corrections: [
+							...(variant.corrections ?? []),
+							{ at, reason: input.reason, revisions: input.revisions },
+						],
+					},
 				],
-			};
+				variant.id,
+				edit,
+			)[0]!;
+			const carried = propagateEdit(before, corrected, nextVersion(before));
 			return {
 				ok: true,
 				board: {
 					...before,
 					updatedAt: at,
-					variants: restated(
-						before.variants.map((one) => (one.id === variant.id ? corrected : one)),
-						variant.id,
-						edit,
-					),
+					variants: [...carried.variants],
 				},
+				descendants: carried.descendants,
 				notices: content.notices,
 			};
 		},
