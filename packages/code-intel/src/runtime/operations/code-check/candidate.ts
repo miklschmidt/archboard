@@ -5,7 +5,7 @@ import {
 	snapshotCheckoutAccess,
 	resolveRegisteredCheckout,
 } from "@archboard/code-binding/resolution";
-import type { HistoricalRevision } from "@archboard/board/commands";
+import { HistoricalRevisionSchema, type HistoricalRevision } from "@archboard/board/commands";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { commitOf } from "#runtime/clients/history-lens/source-history.ts";
@@ -45,7 +45,7 @@ function candidateRevisions(
 	for (const revision of input) {
 		if (revisions.has(revision.repo))
 			return { ok: false, problem: `Repository ${revision.repo} has more than one revision.` };
-		if (!/^(?:[a-f\d]{40}|[a-f\d]{64})$/iu.test(revision.commit))
+		if (!HistoricalRevisionSchema.safeParse(revision).success)
 			return {
 				ok: false,
 				problem: `Repository ${revision.repo} needs a full immutable Git commit.`,
