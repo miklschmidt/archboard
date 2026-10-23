@@ -251,6 +251,11 @@ recipe names.
   the same command. In Codex, use `sandbox_permissions="require_escalated"`.
   Wait for approval before retrying. This applies to rasterization, recording,
   and replay. SVG rendering needs no Chromium process.
+  `archboard check` warns `NODE_UNCONNECTED` for a node with no connection to
+  another node in a current or draft variant. Relationships, flow messages and
+  containment count. A self call or presentation membership does not count.
+  Add the missing connection, move the node to a board where it connects, or
+  delete it.
   The check has no time limit. Cancel the command to stop waiting. Its output
   starts with the time for each check, and JSON carries those times in `timings`.
   `archboard check --code` holds every anchor and bound `symbol` of each

@@ -20,6 +20,7 @@ import {
 	semanticDrillDownDiagnostics,
 } from "#runtime/operations/check/drill-down.ts";
 import { sharedSymbolDiagnostics } from "#runtime/operations/check/shared-symbols.ts";
+import { semanticUnconnectedNodeDiagnostics } from "#runtime/operations/check/unconnected-nodes.ts";
 import {
 	createCheckoutLookup,
 	semanticBindingDiagnostics,
@@ -159,6 +160,7 @@ function checkSemanticVault(root: string): VaultCheck {
 		diagnostics.push(...semanticBindingDiagnostics(board, file, checkoutOf));
 		diagnostics.push(...semanticOverviewDiagnostics(board, file));
 		diagnostics.push(...semanticContainerLineDiagnostics(board, file));
+		diagnostics.push(...semanticUnconnectedNodeDiagnostics(board, file));
 	}
 	diagnostics.push(...sharedSymbolDiagnostics(read, lookup));
 	return {
