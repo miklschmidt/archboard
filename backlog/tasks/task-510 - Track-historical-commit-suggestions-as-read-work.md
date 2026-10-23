@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-23 02:36'
+updated_date: '2026-10-23 02:39'
 labels: []
 dependencies: []
 ordinal: 917000
@@ -27,3 +28,9 @@ Live TASK-509 smoke reproduced an internal error for semantic correct --suggest.
 <!-- SECTION:PLAN:BEGIN -->
 Replace the GET mutation wrapper with checkout request tracking. Extend the route owner to mount the production wrapper. No architecture board is affected because this repairs route lifetime handling inside the planned historical correction routes.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Cause: asyncEndpoint requires a mutation lease, but admission intentionally excludes GET. The suggestion route now uses checkoutWork.trackRequest. The regression test mounts the actual production route registration. Live semantic correct --suggest returned the supersession timestamp and a real full commit hash after restart. Five focused route tests pass.
+<!-- SECTION:NOTES:END -->
