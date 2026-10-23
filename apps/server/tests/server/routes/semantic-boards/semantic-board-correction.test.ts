@@ -13,6 +13,7 @@ import {
 	correctionPreviewRoute,
 	correctionRoute,
 } from "#server/routes/semantic-boards/semantic-board-correction.ts";
+import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 
 import { mountSemanticBoardRoutes } from "#server/routes/semantic-boards/semantic-board-routes.ts";
 
@@ -119,6 +120,28 @@ test("preview checks a candidate without writing or requiring a doing line", asy
 		revisions,
 		variant: { lifecycle: "historical", summary: "Corrected account" },
 	});
+	expect(readFileSync(file, "utf8")).toBe(before);
+});
+
+test("a stopping server cancels the correction's code reading", async () => {
+	const started = Promise.withResolvers<AbortSignal>();
+	check.mockImplementation(
+		async ({ signal }) =>
+			new Promise((_resolve, reject) => {
+				started.resolve(signal);
+				signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+			}),
+	);
+	const before = readFileSync(file, "utf8");
+	const answer = ask("apply", { doing: "Correcting the historical account" });
+	const reading = await started.promise;
+	checkoutWork.quiesce();
+	try {
+		expect((await answer).status).toBe(500);
+		expect(reading.aborted).toBe(true);
+	} finally {
+		checkoutWork.resume();
+	}
 	expect(readFileSync(file, "utf8")).toBe(before);
 });
 
