@@ -147,6 +147,18 @@ const semanticCorrectContract = defineCommand({
 		boardVersionRefusal,
 		claimRevokedRefusal,
 		{
+			code: "BAD_BOARD_NAME",
+			exit: 2,
+			stream: "stderr",
+			description: "Name the board separately from the variant.",
+		},
+		{
+			code: "NOTHING_TO_CORRECT",
+			exit: 2,
+			stream: "stderr",
+			description: "The correction states no change to historical content.",
+		},
+		{
 			code: "UNKNOWN_VARIANT",
 			exit: 2,
 			stream: "stderr",

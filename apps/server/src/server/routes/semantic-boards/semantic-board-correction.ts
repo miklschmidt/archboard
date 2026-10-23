@@ -15,6 +15,7 @@ import {
 	asCommand,
 	requiredVersion,
 	statedEnvelope,
+	usableBoard,
 } from "#server/protocol/semantic-write/semantic-write-requests.ts";
 import {
 	announceWork,
@@ -211,7 +212,7 @@ async function correctionRoute(
  * @param res Its response.
  * @returns The selected history, or null after a refusal.
  */
-function historicalSelection(req: Request, res: Response) {
+function suggestionTarget(req: Request, res: Response) {
 	const name = queryString(req, "board");
 	const wanted = queryString(req, "variant");
 	if (!name || !wanted) {
@@ -222,6 +223,20 @@ function historicalSelection(req: Request, res: Response) {
 		});
 		return null;
 	}
+	if (usableBoard({ board: name }, res) === null) return null;
+	return { name, wanted };
+}
+
+/**
+ * Read the historical variant named by a valid suggestion request.
+ * @param req The request.
+ * @param res Its response.
+ * @returns The selected history, or null after a refusal.
+ */
+function historicalSelection(req: Request, res: Response) {
+	const target = suggestionTarget(req, res);
+	if (target === null) return null;
+	const { name, wanted } = target;
 	const vault = vaultOfRequest(req);
 	const read = readSemanticBoard(vault, name);
 	if (!read.ok) {

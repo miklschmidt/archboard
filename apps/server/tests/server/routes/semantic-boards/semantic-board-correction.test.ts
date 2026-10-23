@@ -226,3 +226,13 @@ test("suggestion tells an unknown variant from one that is not historical", asyn
 	expect(await refusal("Implemented")).toBe("VARIANT_NOT_HISTORICAL");
 	expect(suggest).not.toHaveBeenCalled();
 });
+
+test("suggestion refuses a board address that contains a variant", async () => {
+	const before = readFileSync(file, "utf8");
+	const query = new URLSearchParams({ vault, board: "Example@Initial", variant: "Initial" });
+	const response = await fetch(`${base}/api/semantic-boards/correct-suggest?${query}`);
+	expect(response.status).toBe(400);
+	expect(await response.json()).toMatchObject({ code: "BAD_BOARD_NAME" });
+	expect(suggest).not.toHaveBeenCalled();
+	expect(readFileSync(file, "utf8")).toBe(before);
+});
