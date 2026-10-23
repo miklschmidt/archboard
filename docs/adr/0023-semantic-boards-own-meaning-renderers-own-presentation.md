@@ -322,7 +322,10 @@ and refuses code warnings before the normal lease and expected-version boundary
 commits the checked candidate.
 
 The correction keeps the variant's identity, ancestry, lifecycle and adoption
-records. It changes no descendant, shared view or board level. The variant
+records. Corrections flow into inheriting drafts through the normal three-way
+merge. Drafts keep their own changes, and conflicts remain visible. Propagation
+stops at current, historical and shelved successors. Shared views and board
+level stay unchanged. The variant
 records each correction's time, reason and repository commits. The code check
 reports skipped evidence too. The author must inspect that evidence and assess
 responsibilities and labels that a code check cannot prove.

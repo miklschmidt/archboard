@@ -354,5 +354,8 @@ archboard semantic correct Payments --variant Initial --expect-version 8 --input
 
 The write repeats the code check and refuses warnings. It records the reason,
 commits and correction time on the historical variant. Its identity, ancestry,
-adoption records and descendants stay unchanged. A stale board version refuses
+adoption records stay unchanged. Inheriting drafts receive nonconflicting
+corrections and keep their own changes. Conflicts remain visible and block
+dependent drafts. Current, historical and shelved successors stay unchanged.
+A stale board version refuses
 the correction. Read the board again and inspect a new preview.
