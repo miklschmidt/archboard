@@ -49,7 +49,7 @@ test("ordinary edits refuse historical changes; correction preserves family and 
 	const input = HistoricalCorrectionInputSchema.parse({
 		variant: historical.name,
 		reason: "The API responsibility was recorded incorrectly",
-		revisions,
+		revisions: revisions.map(({ repo, commit }) => ({ repo, commit: commit.toUpperCase() })),
 		edit: {
 			nodes: [
 				{
