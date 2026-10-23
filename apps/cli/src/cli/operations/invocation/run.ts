@@ -29,6 +29,7 @@ import {
 	semanticShelveContract,
 } from "#cli/operations/semantic/board/lifecycle.ts";
 import { semanticCompareContract } from "#cli/operations/semantic/compare/compare.ts";
+import { semanticCorrectContract } from "#cli/operations/semantic/board/correct.ts";
 import { semanticMoveContract } from "#cli/operations/semantic/board/move.ts";
 import { semanticRenameContract } from "#cli/operations/semantic/board/rename.ts";
 import { semanticInspectContract } from "#cli/operations/semantic/inspect/inspect.ts";
@@ -93,6 +94,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			rename: child(
 				contract(semanticRenameContract, "apps/cli/src/cli/operations/semantic/board/rename.ts"),
+			),
+			correct: child(
+				contract(semanticCorrectContract, "apps/cli/src/cli/operations/semantic/board/correct.ts"),
 			),
 			move: child(
 				contract(semanticMoveContract, "apps/cli/src/cli/operations/semantic/board/move.ts"),
