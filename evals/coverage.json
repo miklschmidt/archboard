@@ -123,6 +123,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/renderer/tests/runtime/operations/marks/drawn-marks.test.ts owns the key's counts and the answer's subjects against the drawn marks in all three grammars; tests/system/semantic-boards/view-listing.test.ts and rasterize.test.ts own the receipts"
+				},
+				{
+					"path": "check.NODE_UNCONNECTED",
+					"expectedUse": "repair isolated nodes by connecting, moving, or deleting them; containment and flow messages count, self calls do not",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/check/unconnected-nodes.test.ts"
 				}
 			]
 		},
