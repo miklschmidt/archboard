@@ -1,11 +1,11 @@
 ---
 id: TASK-512
 title: Keep server route board layouts within the existing render budgets
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-23 03:14'
-updated_date: '2026-10-23 03:30'
+updated_date: '2026-10-23 03:53'
 labels: []
 dependencies: []
 ordinal: 919000
@@ -19,14 +19,14 @@ The normal TASK-511 gate reproduces a renderer regression on the updated Archboa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Both layouts render the complete server-routes board within their existing test budgets.
-- [ ] #2 Existing routing clarity and semantic completeness assertions remain intact.
+- [x] #1 Both layouts render the complete server-routes board within their existing test budgets.
+- [x] #2 Existing routing clarity and semantic completeness assertions remain intact.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-No architecture board is affected: existing layout engine, block placement and trunk router keep their roles and connections. Disable optional quadratic unification preprocessing while retaining normal nudging and every clarity assertion. For Track, choose the stacking option using partial solves before starting the selected full layout, removing speculative whole solves. Reject cache and local-loop experiments that showed no material speedup. Run the complete renderer suite and keep original time budgets, then run the complete repository gate.
+No architecture board is affected: layout engine, block packing and trunk routing retain their roles and relationships. Choose stacking from partial solves before starting one selected full solve. Route packing candidates without optional unification, then use it only when the selected packing violates existing lane spacing. Preserve every assertion and timeout. Run renderer corpus, Opus review and the full repository gate.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -37,4 +37,12 @@ Deterministic loop: bun test packages/renderer/tests/runtime/operations/blocks/w
 Successful focused owner: Track1630ms, Blocks4417ms, all17 assertions pass, original3000ms and20000ms bounds unchanged. Removed speculative whole-layout tasks and abort-controller state, reducing the implementation. Cache-sharing and small chain-loop experiments showed no material gain and were reverted. Blocks optional preprocessing disabled globally; normal nudging stays enabled. Complete corpus still required.
 
 Opus 5.5 high review found that globally disabling unification squeezed two pairs of Agent workbench trunks. The repair uses existing LANE and SAME geometry rules to detect parallel runs below the required spacing, then enables unification only for the chosen final packing. Discarded packing candidates keep the fast route. Original lane owner passes in 851 ms; complete server-routes owners pass at Track1712 ms and Blocks7922 ms. No assertions or budgets changed. Complete corpus and gate pending.
+
+Final Opus 5.5 effort-high review approves the spacing repair, with documentation fixes in f03f8df28. Renderer corpus passes709 tests,1skip. Complete bun run check passes at f03f8df28:4890module,257system,136repository and19browser owners. Server restart succeeds. Post-adoption behind review: Renderer layout responsibilities for Layout engine, Block packing, Trunk router and Block layout remain accurate. Commits8b9169126 and604f3be0d change internal solve selection and optional routing preprocessing, not board parts or relationships.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Restored the original server-route render budgets while preserving lane spacing and completeness. Removed redundant solves and limited expensive unification to crowded final packings. Opus5.5 high approved the repair. Renderer corpus and complete repository gate pass.
+<!-- SECTION:FINAL_SUMMARY:END -->

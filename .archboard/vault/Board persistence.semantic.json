@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 88,
+	"version": 90,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-23T03:09:05.700Z",
+	"updatedAt": "2026-10-23T03:52:57.039Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -26505,7 +26505,7 @@
 		{
 			"id": "FhAn6kp6",
 			"name": "TASK-509",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "As9UmFaC",
 			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
@@ -30698,9 +30698,9 @@
 		{
 			"id": "IcCJumNs",
 			"name": "TASK-511",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "FhAn6kp6",
-			"summary": "Historical corrections reconcile inheriting drafts",
+			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -34902,7 +34902,7 @@
 			}
 		}
 	],
-	"current": "FhAn6kp6",
+	"current": "IcCJumNs",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -34993,6 +34993,12 @@
 			"from": "As9UmFaC",
 			"at": "2026-10-23T02:55:35.922Z",
 			"reason": "Historical descriptions can be corrected against immutable Git revisions without changing descendants or adoption history"
+		},
+		{
+			"variant": "IcCJumNs",
+			"from": "FhAn6kp6",
+			"at": "2026-10-23T03:52:57.039Z",
+			"reason": "Historical content corrections now reconcile inheriting drafts in the same checked write"
 		}
 	],
 	"shelvings": [
