@@ -159,16 +159,14 @@ async function solved(
 }
 
 /**
- * A board drawn inline laid out one way, its stacking choice laid out side
- * by side. Two solves lay the board's first block that could stack, one
- * stacked and one plain, and answer what it stood at once laid; two more lay
- * the whole board each of those ways from the start. Once both have told,
- * the way {@link stacks} chooses is the drawing, and the other whole solve
- * is called off where it still waits. A board with no block that could
- * stack is drawn by the first two solves, which then lay it whole.
+ * Choose whether the first block that can stack is stacked, then lay the
+ * whole board only that way. The two partial solves stop once they can
+ * answer the choice. Starting both whole layouts before that choice also
+ * starts expensive work for a drawing that nobody will read (TASK-512).
+ * A board with no block that can stack is drawn by the partial solves.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own, by id.
+ * @param apart The blocks whose joins keep ports of their own.
  * @param signal Calls every solve off while it waits for the engine.
  * @returns The drawing's geometry.
  */
@@ -178,31 +176,13 @@ async function stackedSolved(
 	apart: ReadonlySet<string>,
 	signal: AbortSignal,
 ): Promise<Placed> {
-	const whole = [true, false].map((stacking) => {
-		const calling = new AbortController();
-		const laid = solved(
-			graph,
-			nesting,
-			{ apart, stacking },
-			AbortSignal.any([signal, calling.signal]),
-		);
-		// Only the way chosen is awaited; the other is called off or answers unread.
-		laid.catch(() => undefined);
-		return { calling, laid };
-	});
-	let kept: Promise<Placed> | undefined;
-	try {
-		const [stacked, plain] = await Promise.all(
-			[true, false].map((stacking) =>
-				answered(graph, nesting, { apart, stacking, until: true }, signal),
-			),
-		);
-		if (stacked!.stood === undefined || plain!.stood === undefined) return drawingOf(plain!);
-		kept = whole.splice(stacks(stacked!.stood, plain!.stood) ? 0 : 1, 1)[0]!.laid;
-	} finally {
-		for (const { calling } of whole) calling.abort();
-	}
-	return kept;
+	const [stacked, plain] = await Promise.all(
+		[true, false].map((stacking) =>
+			answered(graph, nesting, { apart, stacking, until: true }, signal),
+		),
+	);
+	if (stacked!.stood === undefined || plain!.stood === undefined) return drawingOf(plain!);
+	return solved(graph, nesting, { apart, stacking: stacks(stacked!.stood, plain!.stood) }, signal);
 }
 
 /**
