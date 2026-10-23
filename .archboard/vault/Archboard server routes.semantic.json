@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 84,
+	"version": 87,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-23T02:31:40.183Z",
+	"updatedAt": "2026-10-23T02:55:36.447Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -27608,7 +27608,7 @@
 		{
 			"id": "mrxA7iel",
 			"name": "TASK-498",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "1FGVtYic",
 			"summary": "The route handlers, and what each one reaches",
 			"documents": [
@@ -31812,9 +31812,9 @@
 		{
 			"id": "jHge59R8",
 			"name": "TASK-509",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "mrxA7iel",
-			"summary": "Check and commit historical corrections",
+			"summary": "The route handlers, and what each one reaches",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -33374,6 +33374,45 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
 							"symbol": "checkCandidateCode"
+						}
+					},
+					{
+						"id": "7FQbjXyh",
+						"order": 90000,
+						"from": "r6IpmadI",
+						"to": "XSLgfg1m",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
+							"symbol": "correctionRoute"
+						}
+					},
+					{
+						"id": "ijjfX3dW",
+						"order": 91000,
+						"from": "XSLgfg1m",
+						"to": "iwrhchml",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+							"symbol": "answerWrite"
+						}
+					},
+					{
+						"id": "ujYiodpp",
+						"order": 92000,
+						"from": "XSLgfg1m",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+							"symbol": "vaultOfRequest"
 						}
 					}
 				],
@@ -36052,7 +36091,7 @@
 			}
 		}
 	],
-	"current": "mrxA7iel",
+	"current": "jHge59R8",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -36143,6 +36182,12 @@
 			"from": "1FGVtYic",
 			"at": "2026-10-18T16:06:04.821Z",
 			"reason": "The code check holds each variant's document references to the files at their version (ADR 0054)"
+		},
+		{
+			"variant": "jHge59R8",
+			"from": "mrxA7iel",
+			"at": "2026-10-23T02:55:36.447Z",
+			"reason": "Correction routes check an immutable candidate and commit it through the existing write boundary"
 		}
 	],
 	"shelvings": [

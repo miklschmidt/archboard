@@ -1,11 +1,11 @@
 ---
 id: TASK-508
 title: Warn about unconnected board nodes
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-23 02:24'
-updated_date: '2026-10-23 02:39'
+updated_date: '2026-10-23 02:56'
 labels: []
 dependencies: []
 ordinal: 915000
@@ -19,9 +19,9 @@ Readers need boards to explain connections. An isolated node can signal a missin
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The vault check warns for each node with no connection to another node in current and draft variants.
-- [ ] #2 Relationships, flow exchanges, and containment count as connections. Self calls and presentation membership do not.
-- [ ] #3 Diagnostics identify the node and describe linking, moving, or deleting it.
+- [x] #1 The vault check warns for each node with no connection to another node in current and draft variants.
+- [x] #2 Relationships, flow exchanges, and containment count as connections. Self calls and presentation membership do not.
+- [x] #3 Diagnostics identify the node and describe linking, moving, or deleting it.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,4 +36,12 @@ Readers need boards to explain connections. An isolated node can signal a missin
 Implemented NODE_UNCONNECTED in the existing vault checker. Connections include containment, relationships, and nested flow messages between distinct nodes. Current and draft variants are checked. Historical and shelved variants remain unchanged. Focused tests pass. Simplicity pass kept one set of connected ids and reused existing variant and flow traversal rules.
 
 Live archboard check passed after server restart. Initial full-gate lint findings were fixed without changing product behavior. A concurrent TASK-509 source addition briefly caused missing-file errors in system fixtures before its file was committed; the final gate will rerun with all files tracked.
+
+Final complete bun run check passed with TASK-509 and TASK-510 included. Plain archboard check reports no diagnostics after final restart and proposal adoption.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check reports NODE_UNCONNECTED for isolated nodes in current and draft variants. Diagnostics offer connection, relocation or deletion. Focused behavior tests and the complete repository gate pass.
+<!-- SECTION:FINAL_SUMMARY:END -->

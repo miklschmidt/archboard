@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 82,
+	"version": 86,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-23T02:31:39.746Z",
+	"updatedAt": "2026-10-23T02:55:35.922Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -22351,7 +22351,7 @@
 		{
 			"id": "As9UmFaC",
 			"name": "TASK-498",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "B1ylVwwS",
 			"summary": "Board reads, transitions, and durable writes",
 			"documents": [
@@ -26505,9 +26505,9 @@
 		{
 			"id": "FhAn6kp6",
 			"name": "TASK-509",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "As9UmFaC",
-			"summary": "Correct historical variants against immutable code revisions",
+			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -28092,25 +28092,26 @@
 						"id": "RcPn7dtE",
 						"order": 79000,
 						"from": "iBeGsio7",
-						"to": "xoapCJNG",
+						"to": "i2CrY6Xj",
 						"kind": "call",
+						"label": "restore content under existing edit guardrails",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/correction.ts",
-							"symbol": "editContent"
+							"path": "packages/board/src/runtime/operations/write/transitions.ts",
+							"symbol": "restoredContent"
 						}
 					},
 					{
-						"id": "FA3DidAj",
+						"id": "tovZfxLM",
 						"order": 80000,
-						"from": "i2CrY6Xj",
+						"from": "4P7YZdnj",
 						"to": "iBeGsio7",
 						"kind": "call",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/correction.ts",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
 							"symbol": "correctHistoricalTransition"
 						}
 					}
@@ -30695,7 +30696,7 @@
 			}
 		}
 	],
-	"current": "As9UmFaC",
+	"current": "FhAn6kp6",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -30780,6 +30781,12 @@
 			"from": "B1ylVwwS",
 			"at": "2026-10-18T16:06:05.052Z",
 			"reason": "An edit restates a variant's document references and a branch copies them (ADR 0054)"
+		},
+		{
+			"variant": "FhAn6kp6",
+			"from": "As9UmFaC",
+			"at": "2026-10-23T02:55:35.922Z",
+			"reason": "Historical descriptions can be corrected against immutable Git revisions without changing descendants or adoption history"
 		}
 	],
 	"shelvings": [
