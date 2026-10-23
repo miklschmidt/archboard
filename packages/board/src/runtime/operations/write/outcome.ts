@@ -68,6 +68,8 @@ type SemanticRefusalCode =
 	| "VARIANT_UNSETTLED"
 	| "VARIANT_BLOCKED"
 	| "VARIANT_HISTORICAL"
+	/** A historical correction named a state that is not historical. */
+	| "VARIANT_NOT_HISTORICAL"
 	/** A later adoption superseded what the proposal was built on, and the request did not force it. */
 	| "PARENT_SUPERSEDED"
 	// Letting a proposal go.
