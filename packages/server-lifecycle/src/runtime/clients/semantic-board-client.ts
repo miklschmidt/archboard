@@ -14,6 +14,8 @@ import {
 // reloaded.
 
 import { z } from "zod";
+import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import type { HistoricalCorrectionInput } from "@archboard/board/commands";
 import {
 	currentExpectedVersion,
 	currentWriteDoing,
@@ -341,6 +343,67 @@ async function moveSemanticBoardOnServer(board: string, to: string): Promise<Boa
 	});
 	return BoardMoveAnswerSchema.parse(reply);
 }
+
+/** The candidate and its code evidence, before a historical correction writes. */
+const HistoricalCorrectionPreviewAnswerSchema = z.object({
+	success: z.literal(true),
+	board: SemanticBoardSchema,
+	previousVersion: z.int(),
+	codeCheck: CodeCheckAnswerSchema.pick({ timings: true, findings: true, skipped: true }),
+});
+
+/** Timestamp-based revision guesses; callers must inspect and state explicit commits. */
+const HistoricalCorrectionSuggestionsAnswerSchema = z.object({
+	success: z.literal(true),
+	board: z.string(),
+	variant: z.string(),
+	at: z.string(),
+	revisions: z.array(
+		z.object({ repo: z.string(), commit: z.string().nullable(), problem: z.string().optional() }),
+	),
+});
+
+/**
+ * Preview or apply a correction to an already built variant.
+ * @param board The board name.
+ * @param correct The stated correction and explicit repository revisions.
+ * @param apply Whether to write the candidate.
+ * @returns The checked candidate or the written board.
+ */
+async function correctHistoricalBoardOnServer(
+	board: string,
+	correct: HistoricalCorrectionInput,
+	apply: boolean,
+) {
+	if (apply) return postSemantic("/api/semantic-boards/correct", { board, correct });
+	return HistoricalCorrectionPreviewAnswerSchema.parse(
+		await requestJson<unknown>(withWriterClaims("/api/semantic-boards/correct-preview"), {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ board, correct, ...statedSession() }),
+		}),
+	);
+}
+
+/**
+ * Suggest revisions near the historical variant's recorded time.
+ * @param board The board name.
+ * @param variant The historical variant.
+ * @returns Unconfirmed commit guesses for each repository.
+ */
+async function suggestHistoricalCommitsOnServer(board: string, variant: string) {
+	const query = new URLSearchParams({ board, variant });
+	return HistoricalCorrectionSuggestionsAnswerSchema.parse(
+		await requestJson<unknown>(`/api/semantic-boards/correct-suggest?${query.toString()}`),
+	);
+}
+
+export {
+	HistoricalCorrectionPreviewAnswerSchema,
+	HistoricalCorrectionSuggestionsAnswerSchema,
+	correctHistoricalBoardOnServer,
+	suggestHistoricalCommitsOnServer,
+};
 
 const DiscardReplySchema = z.object({
 	success: z.literal(true),

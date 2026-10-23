@@ -1,5 +1,9 @@
 // How the CLI reads and writes a semantic board: through the running server, never the vault directly.
 export {
+	HistoricalCorrectionPreviewAnswerSchema,
+	HistoricalCorrectionSuggestionsAnswerSchema,
+	correctHistoricalBoardOnServer,
+	suggestHistoricalCommitsOnServer,
 	adoptSemanticBoardOnServer,
 	branchSemanticBoardOnServer,
 	checkSemanticVaultOnServer,
