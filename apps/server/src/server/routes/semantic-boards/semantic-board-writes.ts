@@ -201,7 +201,7 @@ function answerRefusal(
  * @param descendants What every draft under the change did about it.
  * @returns The account, or null when nothing needs anybody.
  */
-function needsAttention(descendants: readonly DescendantOutcome[]): {
+function needsAttention(descendants: readonly DescendantOutcome[] = []): {
 	required: boolean;
 	drafts: readonly DescendantOutcome[];
 } | null {
