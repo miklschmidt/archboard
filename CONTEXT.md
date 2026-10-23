@@ -413,7 +413,9 @@ _Avoid_: promotion, rename, merge
 
 **Historical variant**:
 A formerly current architectural state retained under its name after a successor
-is adopted. It is frozen against ordinary edits so it preserves what existed.
+is adopted. It refuses ordinary edits so it preserves what existed. An explicit
+correction repairs its description against stated historical Git commits and
+records the reason without changing its identity or adoption history.
 _Avoid_: abandoned proposal, snapshot, shelved variant (that was never current)
 
 **Shelved variant**:

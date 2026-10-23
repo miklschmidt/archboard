@@ -28,6 +28,11 @@ import { checkSemanticVault, readSemanticBoardConfiguration } from "@archboard/b
 import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderBoard } from "@archboard/renderer/bun";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
+import {
+	correctionPreviewRoute,
+	correctionRoute,
+	correctionSuggestRoute,
+} from "#server/routes/semantic-boards/semantic-board-correction.ts";
 import { discardRoute } from "#server/routes/semantic-boards/semantic-board-discard.ts";
 import { movePreviewRoute, moveRoute } from "#server/routes/semantic-boards/semantic-board-move.ts";
 import { renameRoute } from "#server/routes/semantic-boards/semantic-board-rename.ts";
@@ -481,6 +486,17 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.get("/api/semantic-boards/render", requireVault, renderRoute);
 	app.post("/api/semantic-boards/create", requireVault, asyncEndpoint(createRoute));
 	app.post("/api/semantic-boards/edit", requireVault, asyncEndpoint(editRoute));
+	app.post(
+		"/api/semantic-boards/correct-preview",
+		requireVault,
+		asyncEndpoint(correctionPreviewRoute),
+	);
+	app.post("/api/semantic-boards/correct", requireVault, asyncEndpoint(correctionRoute));
+	app.get(
+		"/api/semantic-boards/correct-suggest",
+		requireVault,
+		asyncEndpoint(correctionSuggestRoute),
+	);
 	app.post("/api/semantic-boards/branch", requireVault, asyncEndpoint(branchRoute));
 	app.post("/api/semantic-boards/resolve", requireVault, asyncEndpoint(resolveRoute));
 	app.post("/api/semantic-boards/adopt", requireVault, asyncEndpoint(adoptRoute));

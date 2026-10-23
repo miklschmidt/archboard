@@ -269,7 +269,7 @@ the values: a long one is cut to fit the line.
 
 `archboard semantic adopt <board> --variant <name> --reason "<why>" --expect-version <n> --doing "..."`
 moves the current designation: the adopted variant becomes current and stays
-editable, the previous current becomes historical and stops being editable,
+editable, the previous current becomes historical and refuses ordinary edits,
 every proposal still says what it was derived from, and nothing is renamed. The
 move is recorded with its reason. On a board that had no current variant there
 is no previous current: adoption is the moment its architecture starts existing,
@@ -303,3 +303,55 @@ A claim keeps the board between your writes, and each write is still one
 `--doing` step. `--for 1h` says how long; claim again to extend. Every pane
 showing the board says who holds it and why, and offers the control that ends
 it.
+
+## Correct a historical description
+
+Use `semantic correct` to repair a historical diagram against its code at that
+point in history. Use ordinary edits for current variants and drafts.
+
+First, inspect suggested commits:
+
+```bash
+archboard semantic correct Payments --variant Initial --suggest
+```
+
+The answer uses the recorded supersession time and each repository's HEAD
+ancestry. These commits are guesses. Inspect the Git history and replace a
+guess if the variant describes another commit or branch. If the time is
+unknown, supply commits explicitly.
+
+Read the board and put the correction in a JSON file. `reason` explains the
+mistake. `revisions` names a full commit hash for every repository that the
+corrected variant references. `edit` accepts the ordinary content batch,
+summary and documents. It cannot change shared views or board level.
+
+```json
+{
+	"reason": "The initial implementation called storage directly",
+	"revisions": [
+		{ "repo": "github.com/acme/payments", "commit": "0123456789abcdef0123456789abcdef01234567" }
+	],
+	"edit": { "removeEdges": ["edge-id"] }
+}
+```
+
+Preview the candidate at the version that the board reported:
+
+```bash
+archboard semantic correct Payments --variant Initial --expect-version 8 --input correction.json
+```
+
+Read the candidate, code findings and skipped evidence. The code check reads
+Git trees, never local edits. It cannot prove every responsibility or label.
+Inspect the historical source for those claims. Preview writes nothing.
+
+Apply the inspected correction with the same payload and expected version:
+
+```bash
+archboard semantic correct Payments --variant Initial --expect-version 8 --input correction.json --apply --doing "correcting the historical storage call"
+```
+
+The write repeats the code check and refuses warnings. It records the reason,
+commits and correction time on the historical variant. Its identity, ancestry,
+adoption records and descendants stay unchanged. A stale board version refuses
+the correction. Read the board again and inspect a new preview.

@@ -130,6 +130,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/check/unconnected-nodes.test.ts"
+				},
+				{
+					"path": "semantic.correct historical correction",
+					"expectedUse": "inspect timestamp-based commit guesses, preview a correction against explicit immutable commits, then apply with reason and expected version",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/write/correction.test.ts; packages/code-intel/tests/runtime/operations/code-check/candidate.test.ts; apps/server/tests/server/routes/semantic-boards/semantic-board-correction.test.ts"
 				}
 			]
 		},
