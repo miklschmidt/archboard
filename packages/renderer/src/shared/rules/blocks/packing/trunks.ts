@@ -329,6 +329,10 @@ class TrunkRouter {
 	 * @returns Each line and its connector.
 	 */
 	connect(avoid: AvoidEngine, router: Router): { line: Line; connection: Connection }[] {
+		// The optional unification prepass repeatedly solves every pair of free
+		// segments. Dense route boards spend tens of seconds there (TASK-512).
+		// Normal nudging still separates the routed lines afterwards.
+		router.setRoutingOption(avoid.RoutingOption.performUnifyingNudgingPreprocessingStep, false);
 		router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
 		router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
 		router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
