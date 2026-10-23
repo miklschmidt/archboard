@@ -33,6 +33,7 @@
 import path from "node:path";
 import {
 	normalized,
+	forcedRefOf,
 	otherRefOf,
 	type Checkout,
 	type ReadCheckout,
@@ -111,7 +112,24 @@ function keyOf(repo: string, named: string): string {
  * @returns The two refs, and for an anchor the end that is pinned, or nothing.
  */
 function pinOf(claim: Claim, snapshot: CheckoutSnapshot): Pick<CodeCheckSkip, "ref" | "detail"> {
+	if (claim.kind === "anchor") {
+		const forced = forcedRefOf(claim.anchor.repo, snapshot);
+		if (forced !== undefined) return { ref: forced };
+	}
 	if (claim.kind === "binding") return { ref: otherRefOf(claim.binding, snapshot) };
+	return anchorPinOf(claim, snapshot);
+}
+
+/**
+ * The endpoint pin an anchor inherits when no revision override was stated.
+ * @param claim The anchor.
+ * @param snapshot The checkouts read by this pass.
+ * @returns Its inherited pin, if any.
+ */
+function anchorPinOf(
+	claim: AnchorClaim,
+	snapshot: CheckoutSnapshot,
+): Pick<CodeCheckSkip, "ref" | "detail"> {
 	const end = claim.ends.find((each) => each.binding?.repo === claim.anchor.repo);
 	const ref = end?.binding === undefined ? undefined : otherRefOf(end.binding, snapshot);
 	return ref === undefined ? {} : { ref, detail: `${end?.name} is pinned to ${ref.named}` };

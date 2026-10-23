@@ -4,3 +4,12 @@ export type { NoSuchDraft } from "#runtime/operations/code-check/boards.ts";
 export { checkCode } from "#runtime/operations/code-check/check.ts";
 export { readPlans } from "#runtime/operations/code-check/plans.ts";
 export type { PlanRefused } from "#runtime/operations/code-check/plans.ts";
+export {
+	checkCandidateCode,
+	suggestHistoricalCommits,
+} from "#runtime/operations/code-check/candidate.ts";
+export type {
+	CandidateCodeRequest,
+	CandidateCodeResult,
+	CandidateRevision,
+} from "#runtime/operations/code-check/candidate.ts";
