@@ -37,6 +37,7 @@ import {
 import { discardRoute } from "#server/routes/semantic-boards/semantic-board-discard.ts";
 import { movePreviewRoute, moveRoute } from "#server/routes/semantic-boards/semantic-board-move.ts";
 import { renameRoute } from "#server/routes/semantic-boards/semantic-board-rename.ts";
+import { trackEmbedRoute } from "#server/routes/semantic-boards/semantic-board-track.ts";
 import {
 	adoptRoute,
 	shelveRoute,
@@ -555,6 +556,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/adopt", requireVault, asyncEndpoint(adoptRoute));
 	app.post("/api/semantic-boards/shelve", requireVault, asyncEndpoint(shelveRoute));
 	app.post("/api/semantic-boards/rename", requireVault, asyncEndpoint(renameRoute));
+	app.post("/api/semantic-boards/track-embed", requireVault, asyncEndpoint(trackEmbedRoute));
 	app.post("/api/semantic-boards/discard", requireVault, asyncEndpoint(discardRoute));
 	app.post("/api/semantic-boards/move", requireVault, asyncEndpoint(moveRoute));
 	app.get("/api/semantic-boards/move-preview", requireVault, movePreviewRoute);
