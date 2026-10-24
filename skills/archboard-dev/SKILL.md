@@ -253,6 +253,11 @@ refresh it with `bun run readme:assets <name>` and look at what it wrote.
 Commit the files with `docs/readme/assets.json`. Codex assets spend the
 owner's Codex usage: list them in the report for a person to run.
 `docs/agents/readme-assets.md` says how each asset is made.
+The `architecture` SVGs are tracked embeds of the `Archboard` board, so
+`archboard check` warns `EMBED_OUTDATED` on them after a change to what its
+overview draws. Draw them again with `bun run readme:assets architecture`,
+which cuts their faces, rather than with `check --fix`, which writes the full
+render.
 
 ## Removing or renaming something
 
