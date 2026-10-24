@@ -91,9 +91,9 @@ afterAll(async () => {
  * @returns The exit status and the code and part of each drill-down diagnostic.
  */
 function drillFindings(vault: string) {
-	const checked = cli(vault, ["check"]);
-	const answer = JSON.parse(checked.stdout) as {
-		diagnostics: { code: string; subject?: { name: string } }[];
+	const checked = cli(vault, ["check", "semantics"]);
+	const { semantics: answer } = JSON.parse(checked.stdout) as {
+		semantics: { diagnostics: { code: string; subject?: { name: string } }[] };
 	};
 	return {
 		status: checked.status,

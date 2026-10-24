@@ -49,7 +49,7 @@ function conventions(): string {
 		"",
 		"Exit codes: 0 ok, 1 error, 2 usage, 3 server unreachable, 4 browser pane required,",
 		"5 board write refused (held, claim revoked, or version moved).",
-		"`check` exits 1 while the vault still has diagnostics.",
+		"`check` exits 1 while a check still has a diagnostic or a warning.",
 		"",
 		`Inside the archboard checkout, \`./bin/archboard <command>\` runs the CLI from source.`,
 		`Run \`${PROGRAM} help <command>\` or \`${PROGRAM} <command> --help\` for one command.`,
