@@ -63,7 +63,10 @@ interface StagedCoordinator {
  * @returns The coordinator module.
  */
 export function createCodexCoordinator(starterOptions: CodexCoordinatorOptions): CodexCoordinator {
-	const options = { ...starterOptions, profile: captureThreadProfile(starterOptions.profile) };
+	const options = {
+		...starterOptions,
+		profile: captureThreadProfile(starterOptions.profile, "coordinator"),
+	};
 	if (options.workingDirectory.length === 0) {
 		throw new CodexCoordinatorError(
 			"invalid_input",
