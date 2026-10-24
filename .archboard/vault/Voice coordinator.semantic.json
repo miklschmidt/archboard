@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 81,
+	"version": 82,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T13:34:43.542Z",
+	"updatedAt": "2026-10-24T13:40:54.423Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -21013,13 +21013,13 @@
 					{
 						"id": "YVc05dVh",
 						"order": 10000,
-						"name": "Authored instructions",
+						"name": "Shared instruction policy",
 						"kind": "module",
-						"responsibility": "The coordinator's own developer instructions, which neither contain nor refer to the workhorse's, pinned by digest",
+						"responsibility": "Compose core role rules, turn input, context encoding, and exact immutable profile hashes",
 						"parent": "CkB9Bygm",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/instructions"
+							"path": "packages/agent-workbench/src/runtime/rules/host"
 						}
 					},
 					{
@@ -21215,6 +21215,7 @@
 						"name": "Host role instructions",
 						"kind": "module",
 						"responsibility": "Compose domain instructions with core coordination and approval rules",
+						"parent": "YVc05dVh",
 						"groups": [
 							"agent"
 						],
@@ -21222,6 +21223,18 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/rules/host/instructions.ts",
 							"symbol": "createWorkbenchThreadProfile"
+						}
+					},
+					{
+						"id": "r7P2iu6H",
+						"order": 28000,
+						"name": "Archboard role policy",
+						"kind": "module",
+						"responsibility": "Supply board workflow, pointing, skills, and persona instructions",
+						"parent": "CkB9Bygm",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/instructions"
 						}
 					}
 				],
@@ -21246,12 +21259,12 @@
 						"from": "NUoTEPga",
 						"to": "YVc05dVh",
 						"kind": "dependency",
-						"label": "its developer instructions, by digest",
+						"label": "capture exact role instruction and tool bytes",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/rules/coordinator/review.ts",
-							"symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256"
+							"path": "packages/agent-workbench/src/runtime/services/coordinator/coordinator.ts",
+							"symbol": "captureThreadProfile"
 						}
 					},
 					{
@@ -21669,7 +21682,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/services/coordinator/model.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/host/tools.ts",
 							"symbol": "ARCHBOARD_WORKHORSE_NAMESPACE"
 						}
 					},
@@ -21755,7 +21768,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
-							"symbol": "createTurnStartParams"
+							"symbol": "createWorkbenchTurnStartParams"
 						}
 					},
 					{
@@ -21783,7 +21796,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/server/services/voice/outcome-report.ts",
-							"symbol": "createTurnStartParams"
+							"symbol": "createWorkbenchTurnStartParams"
 						}
 					},
 					{
@@ -21848,12 +21861,12 @@
 						"from": "YVc05dVh",
 						"to": "En8mB6jo",
 						"kind": "dependency",
-						"label": "provide Archboard role policy",
+						"label": "compose built-in role and approval rules",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
-							"symbol": "createWorkbenchThreadProfile"
+							"path": "packages/agent-workbench/src/runtime/rules/host/instructions.ts",
+							"symbol": "CORE_ROLE_INSTRUCTIONS"
 						}
 					},
 					{
@@ -21868,6 +21881,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/services/coordinator/model.ts",
 							"symbol": "createCoordinatorThreadStartParams"
+						}
+					},
+					{
+						"id": "qU9USAdL",
+						"order": 45000,
+						"from": "r7P2iu6H",
+						"to": "En8mB6jo",
+						"kind": "dependency",
+						"label": "supply domain instructions to the exact role profile",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
+							"symbol": "createWorkbenchThreadProfile"
 						}
 					}
 				],

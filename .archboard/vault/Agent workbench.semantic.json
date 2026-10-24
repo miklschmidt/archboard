@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 111,
+	"version": 112,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T13:34:43.086Z",
+	"updatedAt": "2026-10-24T13:40:53.961Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -34089,7 +34089,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+							"path": "packages/agent-workbench/src/server/services/sessions/browser-tabs.ts"
 						}
 					},
 					{
@@ -34369,7 +34369,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/owner/wiring.ts"
+							"path": "packages/workbench/src/server/services/owner"
 						}
 					},
 					{
@@ -34383,7 +34383,8 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/server/api/server.ts"
+							"path": "packages/agent-workbench/src/server/services/owner/workbench.ts",
+							"symbol": "createCodexWorkbench"
 						}
 					}
 				],
@@ -35514,7 +35515,54 @@
 						"to": "skyIeErO",
 						"kind": "call",
 						"label": "compose and own the shared generation",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/owner/workbench.ts",
+							"symbol": "installProductionCodexWorkbench"
+						}
+					},
+					{
+						"id": "3494fDAK",
+						"order": 81000,
+						"from": "yyFS6UVO",
+						"to": "42Ws0Eeo",
+						"kind": "dependency",
+						"label": "supply board context publishers",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "createSemanticContextPublisher"
+						}
+					},
+					{
+						"id": "tef70baL",
+						"order": 82000,
+						"from": "yyFS6UVO",
+						"to": "ME7EbWl8",
+						"kind": "dependency",
+						"label": "project each tab workhorse for the visual shell",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "liveWorkhorseCheckouts"
+						}
+					},
+					{
+						"id": "UE6yrRV7",
+						"order": 83000,
+						"from": "yyFS6UVO",
+						"to": "hCKEBd5f",
+						"kind": "dependency",
+						"label": "attach pane registration to core-owned tab presence",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/production.ts",
+							"symbol": "installBrowserSessions"
+						}
 					}
 				],
 				"flows": [

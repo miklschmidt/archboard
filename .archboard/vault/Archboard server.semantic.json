@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 286,
+	"version": 287,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-24T11:40:05.218Z",
+	"updatedAt": "2026-10-24T13:40:55.251Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -116243,6 +116243,20 @@
 						"kind": "call",
 						"label": "start and stop the shared workbench with host policy",
 						"emphasis": "normal"
+					},
+					{
+						"id": "7plLLcKh",
+						"order": 124000,
+						"from": "2naazvac",
+						"to": "MYbmjfIR",
+						"kind": "dependency",
+						"label": "mount the shared voice-start trace route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "mountVoiceStartTraceRoute"
+						}
 					}
 				],
 				"flows": [
