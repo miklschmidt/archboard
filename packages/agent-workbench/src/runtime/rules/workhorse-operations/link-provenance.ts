@@ -131,7 +131,7 @@ function assertExecutableClassification(
 function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
 	return (
 		classification.link.state === "executable" &&
-		classification.link.source === "appServer" &&
+		classification.link.source === WORKHORSE_THREAD_SOURCE &&
 		classification.proof?.record.operation.kind === WORKHORSE_CREATION_KIND &&
 		classification.proof.record.provenance.threadSource === WORKHORSE_THREAD_SOURCE
 	);

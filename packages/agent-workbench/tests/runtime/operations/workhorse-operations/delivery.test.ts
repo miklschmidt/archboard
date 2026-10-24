@@ -156,6 +156,9 @@ describe("codex workhorse operation delivery", () => {
 			if (first === undefined) {
 				throw new Error("delegate did not create a queue item");
 			}
+			expect(
+				await fixtureValue.operations.inspect({ call: fixtureValue.setCall("inspect_workhorse") }),
+			).toMatchObject({ queuedSubmissionIds: [first.id] });
 			const second = {
 				...first,
 				id: fixtureValue.identity.decoder.adoptQueuedSubmissionId("second"),
@@ -189,6 +192,7 @@ describe("codex workhorse operation delivery", () => {
 			});
 			expect(fixtureValue.queue.calls).toEqual([
 				"add",
+				"list",
 				"list",
 				"update",
 				"reorder",

@@ -158,7 +158,7 @@ export function prepareFixture(
 				"coordinator-link",
 				"link",
 				coordinatorThreadId,
-				"appServer",
+				CODEX_SESSION_THREAD_SOURCE,
 				"turn/start",
 			),
 		),
@@ -254,7 +254,7 @@ export function buildFixture(
 					: "direct_input_false";
 		const thread = {
 			id: target.threadId,
-			source: "appServer" as const,
+			source: CODEX_SESSION_THREAD_SOURCE,
 			status:
 				targetStatus === "active"
 					? { type: "active" as const, activeFlags: [] }
@@ -274,7 +274,7 @@ export function buildFixture(
 				childId: identity.validator.childId,
 				epoch: identity.validator.epoch,
 				threadId: target.threadId,
-				source: "appServer",
+				source: CODEX_SESSION_THREAD_SOURCE,
 				status: targetStatus,
 				loaded: targetStatus !== "notLoaded",
 				canAcceptDirectInput: targetControllable,
@@ -286,7 +286,7 @@ export function buildFixture(
 				persistedRows: 1,
 				loaded: targetStatus !== "notLoaded",
 				loadedOccurrences: 1,
-				source: "appServer",
+				source: CODEX_SESSION_THREAD_SOURCE,
 				status: targetStatus,
 				canAcceptDirectInput: targetControllable,
 			},
