@@ -68,4 +68,20 @@ function pickedLine(
 	return { line, ids: line === undefined ? [selection] : line.joins.map(({ edge }) => edge.id) };
 }
 
-export { type LineSubject, pickedLine };
+/**
+ * The ends a line runs between, named for reading: each part's name, or the id
+ * the board names it by when the variant no longer holds it.
+ * @param from The part it starts at, when the variant holds it.
+ * @param to The part it ends at, when the variant holds it.
+ * @param edge The line, for the ids of its ends.
+ * @returns The words, such as "API → Store".
+ */
+function endsOf(
+	from: SemanticNode | undefined,
+	to: SemanticNode | undefined,
+	edge: SemanticEdge,
+): string {
+	return `${from?.name ?? edge.from} → ${to?.name ?? edge.to}`;
+}
+
+export { type LineSubject, endsOf, overviewLineOf, pickedLine };

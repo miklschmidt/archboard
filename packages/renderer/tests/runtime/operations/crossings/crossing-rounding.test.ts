@@ -180,7 +180,10 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 	const label = { x: -30, y: 30, width: 60, height: 20 };
 	const before = drawing(routes);
 	const edges = [
-		{ ...before.edges[0]!, label: { box: label, measured: { width: 60, height: 20, runs: [] } } },
+		{
+			...before.edges[0]!,
+			label: { box: label, measured: { width: 60, height: 20, runs: [], rules: [] } },
+		},
 		before.edges[1]!,
 	];
 	const result = bridged({ ...before, width: 240, height: 160, edges });

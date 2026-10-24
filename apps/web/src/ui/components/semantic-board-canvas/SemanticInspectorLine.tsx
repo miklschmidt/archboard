@@ -4,16 +4,12 @@
 // The line keeps the id of the first relationship it joins, so a comparison
 // marks it. Read by that id alone, the panel would describe one relationship,
 // with ends the picture does not draw, as the line on screen. The line is its
-// drawn ends and every relationship it joins.
+// drawn ends, its title, and every relationship it joins.
 
 import type { JSX, ReactNode } from "react";
 
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
-import {
-	Facts,
-	Row,
-	SubjectTitle,
-} from "#ui/components/semantic-board-canvas/SemanticInspectorParts.tsx";
+import { SubjectTitle } from "#ui/components/semantic-board-canvas/SemanticInspectorParts.tsx";
 import {
 	SidebarLabel,
 	SidebarMeta,
@@ -22,9 +18,8 @@ import {
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import type { EdgeSubject } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
-import type { LineSubject } from "#ui/rules/semantic-board-canvas/board/overview-line.ts";
+import { endsOf, type LineSubject } from "#ui/rules/semantic-board-canvas/board/overview-line.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
-import type { SemanticNode } from "@archboard/board/content";
 
 /** Inputs for the line body. */
 interface LineBodyProps {
@@ -46,18 +41,12 @@ function LineBody(props: LineBodyProps): JSX.Element {
 	return (
 		<>
 			<SidebarRegion slot="semantic-inspector-about">
-				<SubjectTitle name={line.label ?? "Connection"}>
+				<SubjectTitle name={endsOf(from, to, line)}>
 					<RelationshipChip look={props.look} kind={line.kind} />
 				</SubjectTitle>
 			</SidebarRegion>
 			{props.children}
 			<SidebarRegion slot="semantic-inspector-wiring">
-				<SidebarSection title="Between" slot="semantic-inspector-between" level={3}>
-					<Facts>
-						<Row label="from" value={nameOf(from, line.from)} />
-						<Row label="to" value={nameOf(to, line.to)} />
-					</Facts>
-				</SidebarSection>
 				<SidebarSection title="Joins" slot="semantic-inspector-joins" level={3}>
 					<ul className="flex flex-col">
 						{joins.map((joined) => (
@@ -80,7 +69,7 @@ function LineBody(props: LineBodyProps): JSX.Element {
  */
 function Joined(props: { readonly joined: EdgeSubject; readonly look: KindLook }): JSX.Element {
 	const { edge, from, to } = props.joined;
-	const ends = `${nameOf(from, edge.from)} → ${nameOf(to, edge.to)}`;
+	const ends = endsOf(from, to, edge);
 	return (
 		<SidebarRow as="li" data-slot="semantic-inspector-joined" data-edge={edge.id}>
 			<SidebarLabel>
@@ -92,17 +81,6 @@ function Joined(props: { readonly joined: EdgeSubject; readonly look: KindLook }
 			</span>
 		</SidebarRow>
 	);
-}
-
-/**
- * What a part is called, or the id the board names it by when the variant no
- * longer holds it.
- * @param node The part, when the variant still holds it.
- * @param id The id the board names it by.
- * @returns The name.
- */
-function nameOf(node: SemanticNode | undefined, id: string): string {
-	return node?.name ?? id;
 }
 
 export { LineBody };

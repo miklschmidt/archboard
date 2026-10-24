@@ -1,6 +1,10 @@
 // What the picture says about a subject the pointer rests on, beyond what it
 // already draws of it.
 //
+// A line of the overview that joins several relationships keeps the id of the
+// first one, so its tip names its drawn ends and every relationship it joins,
+// each with its own ends (ADR 0052).
+//
 // A card drawn near shows its name and responsibility, so its tip is its
 // description; seen from far away it shows its name alone, so its tip is its
 // responsibility and description. A label shows its words, so its tip names the
@@ -15,6 +19,11 @@ import type { SemanticVariant } from "@archboard/board/document";
 import type { AppliedAppearance } from "@archboard/renderer/picture";
 import { drawnAppearance } from "#ui/clients/semantic-board-canvas/subjects/appearance.ts";
 import { PULSE_CLASS } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import {
+	endsOf,
+	overviewLineOf,
+	type LineSubject,
+} from "#ui/rules/semantic-board-canvas/board/overview-line.ts";
 
 /** The attribute naming the subject a group of the picture draws. */
 const SUBJECT_ATTRIBUTE = "data-semantic-id";
@@ -188,6 +197,7 @@ function openHint(node: SemanticNode, place: TipPlace): string | undefined {
  * @param target The part under the pointer.
  * @param far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @param place Where the board sits among the vault's levels, when known.
+ * @param overview Whether the picture is the overview, whose joined lines are subjects of their own.
  * @returns The tip, or null when it would say nothing the picture does not.
  */
 function subjectTip(
@@ -195,9 +205,10 @@ function subjectTip(
 	target: TipTarget,
 	far: boolean,
 	place: TipPlace = {},
+	overview = false,
 ): SubjectTip | null {
 	if (target.part === "label") {
-		return labelTip(variant, target);
+		return joinedTip(variant, target, overview) ?? labelTip(variant, target);
 	}
 	const node = variant.content.nodes.find((candidate) => candidate.id === target.id);
 	return node === undefined ? null : cardTip(node, target, far, place);
@@ -266,6 +277,43 @@ function labelTip(variant: SemanticVariant, target: TipTarget): SubjectTip | nul
 function edgeTip(edge: SemanticEdge, appearance: AppliedAppearance | undefined): SubjectTip {
 	const kind = appearance?.typeName ?? edge.kind;
 	return { ...UNSAID, title: edge.label ?? kind, kind, appearance, body: edge.description };
+}
+
+/**
+ * The tip over the label of a line of the overview, when the line joins several relationships.
+ * @param variant The variant the overview is drawn from.
+ * @param target The label under the pointer.
+ * @param overview Whether the picture is the overview; no other reading joins lines.
+ * @returns The tip, or undefined when the line stands for one relationship.
+ */
+function joinedTip(
+	variant: SemanticVariant,
+	target: TipTarget,
+	overview: boolean,
+): SubjectTip | undefined {
+	const line = overview ? overviewLineOf(variant, target.id) : undefined;
+	return line === undefined ? undefined : lineTip(line, drawnAppearance(target.anchor, target.id));
+}
+
+/**
+ * The tip over a joined line's label: the ends the picture draws, and each
+ * relationship it joins with the ends it was stated between.
+ * @param line The joined line.
+ * @param appearance How the picture draws the line, when it names its kind.
+ * @returns The tip.
+ */
+function lineTip(line: LineSubject, appearance: AppliedAppearance | undefined): SubjectTip {
+	const kind = appearance?.typeName ?? line.line.kind;
+	const joined = line.joins.map(({ edge, from, to }) =>
+		edge.label === undefined ? endsOf(from, to, edge) : `${edge.label}: ${endsOf(from, to, edge)}`,
+	);
+	return {
+		...UNSAID,
+		title: endsOf(line.from, line.to, line.line),
+		kind,
+		appearance,
+		body: joined.join("\n"),
+	};
 }
 
 /**

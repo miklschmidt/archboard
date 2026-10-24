@@ -4,6 +4,7 @@ import {
 	ARCHITECTURE_NOTE_GAP,
 	ARCHITECTURE_LABEL_PADDING_X,
 	ARCHITECTURE_LABEL_PADDING_Y,
+	ARCHITECTURE_LABEL_STACK_GAP,
 } from "#shared/constants/spacing.ts";
 import {
 	HEADER_SLAB_INSET,
@@ -259,26 +260,47 @@ const LABEL_MIN_WIDTH = 40;
 /**
  * Settle a relationship's complete words and padded plate before routing it.
  * The words wrap balanced, the plate hugs the widest line, and every line is
- * centred, so the text sits on the line the plate is centred on.
+ * centred, so the text sits on the line the plate is centred on. A line of the
+ * overview that joins several relationships stacks their labels, one to a
+ * line of the text (ADR 0052): each wraps on its own, and a gap with a rule
+ * across its middle sets each apart from the next.
  * @param text The connection label.
  * @returns Its box and the relative positions of its lines.
  */
 function measureLabel(text: string): MeasuredLabel {
-	const prepared = prepare(text, LABEL);
 	const limit = LABEL_MAX_WIDTH - 2 * ARCHITECTURE_LABEL_PADDING_X;
-	// A hanging space is not painted, so it neither widens nor off-centres the plate.
-	const lines = layoutWithLines(prepared, balancedWrapWidth(prepared, limit), LABEL.lineHeight)
-		.lines.map(({ text: line }) => line.trimEnd())
-		.map((line) => ({ text: line, width: exactWidth(line, LABEL) }));
+	const lines = text.split("\n").flatMap((words, block) => {
+		const prepared = prepare(words, LABEL);
+		// A hanging space is not painted, so it neither widens nor off-centres the plate.
+		return layoutWithLines(prepared, balancedWrapWidth(prepared, limit), LABEL.lineHeight)
+			.lines.map(({ text: line }) => line.trimEnd())
+			.map((line) => ({ text: line, width: exactWidth(line, LABEL), block }));
+	});
 	const widest = lines.reduce((most, line) => Math.max(most, line.width), 0);
 	const width = Math.max(LABEL_MIN_WIDTH, widest + 2 * ARCHITECTURE_LABEL_PADDING_X);
+	const gaps = (lines.at(-1)?.block ?? 0) * ARCHITECTURE_LABEL_STACK_GAP;
+	// The top of a block's first line, less half the gap above it.
+	const rules = lines.flatMap(({ block }, index) =>
+		index === 0 || lines[index - 1]!.block === block
+			? []
+			: [
+					ARCHITECTURE_LABEL_PADDING_Y +
+						index * LABEL.lineHeight +
+						(block - 0.5) * ARCHITECTURE_LABEL_STACK_GAP,
+				],
+	);
 	return {
+		rules,
 		width,
-		height: Math.max(1, lines.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
-		runs: lines.map((line, index) => ({
+		height: Math.max(1, lines.length) * LABEL.lineHeight + gaps + 2 * ARCHITECTURE_LABEL_PADDING_Y,
+		runs: lines.map(({ block, ...line }, index) => ({
 			...line,
 			x: (width - line.width) / 2,
-			y: ARCHITECTURE_LABEL_PADDING_Y + LABEL.fontSize + index * LABEL.lineHeight,
+			y:
+				ARCHITECTURE_LABEL_PADDING_Y +
+				LABEL.fontSize +
+				index * LABEL.lineHeight +
+				block * ARCHITECTURE_LABEL_STACK_GAP,
 			font: LABEL.font,
 			fontSize: LABEL.fontSize,
 			role: LABEL.role,
@@ -471,6 +493,7 @@ function measureCaption(name: string): MeasuredLabel {
 	return {
 		width: width + 2 * CAPTION_PADDING.x,
 		height: CAPTION.lineHeight + 2 * CAPTION_PADDING.y,
+		rules: [],
 		runs: [
 			{
 				text: name,

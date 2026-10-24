@@ -164,10 +164,10 @@ function rootOf(content: VariantContent): (id: string) => string {
  *
  * A lone relationship is drawn as stated. A joined line keeps the identity of
  * the first relationship in board order, so a comparison marks it, and it
- * takes the kind most of them have. Its label says how many relationships it
- * joins, because no one of their labels speaks for all of them. What only one
- * of them says, its description, emphasis, traffic and anchor, is not said of
- * the line.
+ * takes the kind most of them have. Its label stacks their labels, each once,
+ * one to a line of the text, because no one of them speaks for all of them; a
+ * relationship with no label adds none. What only one of them says, its
+ * description, emphasis, traffic and anchor, is not said of the line.
  * @param edges The relationships, in board order.
  * @param from The drawn part the line starts at.
  * @param to The drawn part the line ends at.
@@ -188,13 +188,14 @@ function oneLine(
 	}
 	// Map order is board order, so the first kind to reach the most wins a tie.
 	const kind = [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0];
+	const labels = [...new Set(edges.flatMap(({ label }) => (label === undefined ? [] : [label])))];
 	return {
 		id: first.id,
 		order: first.order,
 		from,
 		to,
 		kind,
-		label: `${edges.length} relationships`,
+		...(labels.length === 0 ? {} : { label: labels.join("\n") }),
 		emphasis: "normal",
 	};
 }

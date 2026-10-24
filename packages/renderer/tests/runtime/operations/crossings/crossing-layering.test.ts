@@ -78,7 +78,10 @@ test("a hop keeps a card's or a label's clearance from it, bulging away where it
 	const plain = drawing([down(50), across(50)]);
 	const label = { x: 62, y: 40, width: 30, height: 8 };
 	const edges = [
-		{ ...plain.edges[0]!, label: { box: label, measured: { width: 30, height: 8, runs: [] } } },
+		{
+			...plain.edges[0]!,
+			label: { box: label, measured: { width: 30, height: 8, runs: [], rules: [] } },
+		},
 		plain.edges[1]!,
 	];
 	const result = bridged({ ...plain, edges });

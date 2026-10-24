@@ -186,3 +186,37 @@ test("a tip is placed against the card, not against the pulses that run round it
 	// What the positioning library watches for change holds still while the pulse moves.
 	expect(anchor.contextElement).toBe(picture);
 });
+
+test("a joined line's tip in the overview names its drawn ends and every relationship it joins", () => {
+	// Two parts of the Server reach the Store, so the overview draws one line for e1 and e2.
+	const joined = SemanticVariantSchema.parse(
+		withFixtureOrders({
+			id: "v1",
+			name: "as it is",
+			lifecycle: "current",
+			content: {
+				nodes: [
+					{ id: "c1", name: "Server", kind: "system" },
+					{ id: "n1", name: "API", kind: "service", parent: "c1" },
+					{ id: "n3", name: "Jobs", kind: "service", parent: "c1" },
+					{ id: "n2", name: "Store", kind: "service" },
+				],
+				edges: [
+					{ id: "e1", from: "n1", to: "n2", kind: "call", label: "reads", description: "Once." },
+					{ id: "e2", from: "n3", to: "n2", kind: "call", label: "writes" },
+				],
+				flows: [],
+			},
+		}),
+	);
+	const label = tipTargetAt(at(drawn(), "pill"), 0)!;
+	const tip = subjectTip(joined, label, false, {}, true)!;
+	expect(tip.title).toContain("Server");
+	expect(tip.title).toContain("Store");
+	expect(tip.body).toContain("reads");
+	expect(tip.body).toContain("writes");
+	expect(tip.body).toContain("Jobs");
+	expect(tip.body).not.toContain("Once.");
+	// Everything draws e1 alone, so its tip is e1's.
+	expect(subjectTip(joined, label, false, {}, false)!.title).toBe("reads");
+});

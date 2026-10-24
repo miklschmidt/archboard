@@ -527,8 +527,8 @@ test("picking a joined line of the overview shows its drawn ends and every relat
 		...document.querySelectorAll<HTMLElement>("[data-slot='semantic-inspector-joined']"),
 	];
 	expect(joined.map((row) => row.dataset["edge"])).toEqual(["e1", "e2"]);
-	expect(slot("semantic-inspector-between")?.textContent).toContain("Board Runtime");
-	expect(slot("semantic-inspector-between")?.textContent).not.toContain("board-io");
+	expect(slot("semantic-inspector-about")?.textContent).toContain("Board Runtime");
+	expect(slot("semantic-inspector-about")?.textContent).not.toContain("reads notes");
 });
 
 test("the same id in Everything is the one relationship it names", async () => {
