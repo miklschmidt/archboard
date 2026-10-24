@@ -249,8 +249,8 @@ recipe names.
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
   temporary directory, never into the checkout you are describing. A picture
-  that a document embeds is drawn into its Git checkout with `--track`, so
-  `archboard check` says when it is outdated
+  that a document embeds is drawn into its Git checkout with `--track`, so its
+  board lists it, and committed, so `archboard check` there says when it is outdated
   ([a picture in documentation](references/sequences-views-walkthroughs.md#a-picture-in-documentation-that-stays-current)).
   On macOS, Chromium commands detect the host sandbox before starting a browser.
   If startup reports a macOS sandbox, request approved execution outside it for

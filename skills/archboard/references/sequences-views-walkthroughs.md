@@ -152,7 +152,8 @@ A post-processor that strips metadata, such as SVGO with its default
 
 When a document in a Git checkout shows a board, draw the picture into that
 checkout with `--track`. Prefer SVG; `semantic rasterize` takes the same
-options for a PNG.
+options for a PNG. A picture for a pull request body, or one you draw only to
+look at, is no embed: draw it in a temporary directory without `--track`.
 
 ```bash
 archboard semantic render payments --out docs/payments.svg --track --doing "Drawing the payments picture for the design doc"
