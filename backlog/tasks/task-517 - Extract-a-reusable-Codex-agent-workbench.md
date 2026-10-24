@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:37'
-updated_date: '2026-10-24 14:31'
+updated_date: '2026-10-24 14:38'
 labels: []
 dependencies: []
 references:
@@ -68,4 +68,6 @@ The independent app uses its own private storage and a permitted checkout withou
 
 <!-- SECTION:NOTES:BEGIN -->
 Final footprints read against main at 71180e211, with every proposal still based on its current parent. No part-only namedNotChanged deviations remain. Codex workhorse names two unchanged domain tool parts only through changed relationships, which is expected. ChangedNotNamed internal changes: Archboard Workspace packages is its directory aggregate; renderer changes belong to TASK-519. Agent workbench Codex process forwards explicit host environment in 78c87705e without changing lifecycle responsibility; Thread tool calls changes imports in 7e5287f0f; Board-change delivery retains Archboard matching while generic delivery moves in dec053209/7e5287f0f. Browser application Application composition and Recording pace change type imports only in 816b6d79c; Agent setup, Walkthrough recording, Pane composition, and Recording voice source use canonical shared interfaces in 5b1b58472/751fdfedd. Their host responsibilities and diagram relationships stay true. Archboard server Semantic context input uses relocated local types and matching helpers in dec053209/b2c7508b9 without changing its board-to-host projection responsibility. New code warnings from the proposals are cleared. Remaining added EXPOSED_UNUSED information describes pre-existing private helper exports within moved runtime folders, rather than public package entry exports. Public entries were pruned to real outside callers.
+
+The parent inspected all seven proposal captures and corrected their prose about independent host storage and application/package counts. Every added or changed relationship now carries a source anchor. The final draft code comparison introduces no warning. The removal sweep found no obsolete SDK semantic-context imports, required Archboard process fields, or moved runtime/browser paths outside historical specifications. The authored-contract reference now distinguishes recorded Archboard profiles from current core-plus-host composition. Controlled QA host and private Codex child were stopped. README refresh uses generated local artifacts only; attachments and four Codex assets remain owner actions because this task does not publish or spend model usage on README recordings.
 <!-- SECTION:NOTES:END -->
