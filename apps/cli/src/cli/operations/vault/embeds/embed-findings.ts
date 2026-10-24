@@ -64,7 +64,7 @@ function unavailableFinding(
 	embed: CheckoutEmbed,
 	repo: string | null,
 	reason: string,
-	code: "EMBED_VAULT_UNAVAILABLE" | "EMBED_VAULT_FETCH_FAILED" = "EMBED_VAULT_UNAVAILABLE",
+	code: "EMBED_VAULT_UNAVAILABLE" | "EMBED_VAULT_FETCH_FAILED",
 ): EmbedFinding {
 	return findingOn(embed, {
 		severity: code === "EMBED_VAULT_FETCH_FAILED" ? "warning" : "information",
