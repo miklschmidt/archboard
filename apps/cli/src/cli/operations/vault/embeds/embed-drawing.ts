@@ -16,6 +16,7 @@ import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import type { DrawnBoard, NothingDrawn } from "@archboard/board/render-reply";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
+import { regionWithin } from "#cli/operations/semantic/draw/rasterize.ts";
 import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import type { MissingSource } from "#cli/protocol/check/embeds-answer.ts";
 import type { TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.ts";
@@ -58,11 +59,13 @@ function bitmapsFor(signal: AbortSignal): Bitmaps {
 		 * @param drawn The SVG and its page.
 		 * @param raster The scale and region it is drawn at.
 		 * @returns The PNG.
+		 * @throws {Error} When the region reaches outside the page drawn now.
 		 */
 		async draw(drawn, raster) {
+			// Refused as `semantic rasterize --region` refuses it, before a browser starts.
+			const region = regionWithin(raster.region ?? undefined, drawn);
 			rasterizer ??= createSemanticRasterizer();
 			const page = { svg: drawn.svg, width: drawn.width, height: drawn.height };
-			const region = raster.region ?? undefined;
 			return (await rasterizer.rasterize({ ...page, scale: raster.scale, region }, signal)).png;
 		},
 		/**

@@ -457,4 +457,4 @@ const semanticRasterizeContract = defineCommand({
 	},
 });
 
-export { SemanticRasterError, semanticRasterizeContract };
+export { regionWithin, SemanticRasterError, semanticRasterizeContract };

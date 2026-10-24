@@ -379,9 +379,10 @@ describe("check embeds", () => {
 	);
 
 	test(
-		"--fix with Chromium draws the PNG again, and exits 0 when nothing remains",
+		"--fix with Chromium draws the PNG again, exits 0 when nothing remains, and rewrites nothing the second time",
 		() => {
 			git(docs, "rm", "-q", "docs/broken.svg", "docs/queue-front.svg");
+			const outdated = recipeOf("docs/ledger.png");
 			const part = checkEmbeds(["--fix"], 0);
 			expect(part.fixed).toEqual([
 				{ action: "drawn", file: "docs/ledger.png", code: "EMBED_OUTDATED" },
@@ -391,9 +392,21 @@ describe("check embeds", () => {
 				theme: "dark",
 			});
 			expect(codes(part)).toEqual({ "docs/elsewhere.svg": "EMBED_VAULT_UNAVAILABLE" });
-			const again = checkEmbeds([], 0);
+			// A PNG cut to a region the drawing does not reach is refused, as `rasterize --region` refuses it.
+			const region = { x: 100_000, y: 0, width: 10, height: 10 };
+			const corner = embedRecipeInPng(PNG, { ...outdated, raster: { scale: 1, region } });
+			fs.writeFileSync(path.join(docs, "docs", "corner.png"), corner);
+			git(docs, "add", "docs/corner.png");
+			const again = checkEmbeds(["--fix"], 1);
 			expect(again.fixed).toEqual([]);
-			expect(codes(again)).toEqual({ "docs/elsewhere.svg": "EMBED_VAULT_UNAVAILABLE" });
+			expect(codes(again)).toEqual({
+				"docs/corner.png": "EMBED_OUTDATED",
+				"docs/elsewhere.svg": "EMBED_VAULT_UNAVAILABLE",
+			});
+			expect(again.findings.find((one) => one.file === "docs/corner.png")?.notFixed).toEqual(
+				expect.any(String),
+			);
+			expect(fs.readFileSync(path.join(docs, "docs", "corner.png"))).toEqual(Buffer.from(corner));
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
