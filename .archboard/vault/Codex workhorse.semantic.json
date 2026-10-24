@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 81,
+	"version": 83,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-24T11:40:01.401Z",
+	"updatedAt": "2026-10-24T13:34:43.953Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -15486,7 +15486,7 @@
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/protocol/thread-tools"
+							"path": "packages/workbench/src/runtime/protocol/thread-tools"
 						}
 					},
 					{
@@ -15526,7 +15526,7 @@
 						"parent": "FZjiPawv",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/services/dynamic-tools"
+							"path": "packages/workbench/src/runtime/services/dynamic-tools"
 						}
 					},
 					{
@@ -15764,7 +15764,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -15782,7 +15782,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "delegate"
 						}
 					},
@@ -15796,7 +15796,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "add"
 						}
 					},
@@ -15811,7 +15811,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts",
 							"symbol": "classify"
 						}
 					},
@@ -15825,7 +15825,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/events.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -15839,7 +15839,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 							"symbol": "queueAdd"
 						}
 					},
@@ -15853,7 +15853,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "classifyAndBind"
 						}
 					},
@@ -15867,7 +15867,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "stageOperation"
 						}
 					},
@@ -15881,7 +15881,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -15895,7 +15895,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_APP_MANIFEST_SHA256"
 						}
 					},
@@ -15909,7 +15909,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
 						}
 					},
@@ -15951,7 +15951,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+							"path": "packages/agent-workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "add"
 						}
 					},
@@ -15965,7 +15965,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"path": "packages/agent-workbench/src/server/services/actions/thread-links.ts",
 							"symbol": "start"
 						}
 					},
@@ -15983,7 +15983,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "turnStart"
 						}
 					},
@@ -15997,7 +15997,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
 							"symbol": "ARCHBOARD_COORDINATOR_MANIFEST_SHA256"
 						}
 					},
@@ -16011,7 +16011,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 							"symbol": "classify"
 						}
 					},
@@ -16053,7 +16053,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/thread-link/binding.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/thread-link/binding.ts",
 							"symbol": "assertCurrent"
 						}
 					},
@@ -16067,7 +16067,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
 							"symbol": "realtimeAppendText"
 						}
 					},
@@ -16095,7 +16095,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/thread-link/classifier.ts",
 							"symbol": "threadRead"
 						}
 					},
@@ -16109,7 +16109,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/thread-link/link-shape.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/thread-link/link-shape.ts",
 							"symbol": "ADDITIONAL_CONTEXT_POLICY"
 						}
 					},
@@ -16137,7 +16137,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -16151,7 +16151,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
 							"symbol": "createTextUserInput"
 						}
 					},
@@ -16165,7 +16165,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+							"path": "packages/agent-workbench/src/server/services/actions/browser-gateway.ts",
 							"symbol": "workhorse"
 						}
 					},
@@ -16179,7 +16179,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "turnInterrupt"
 						}
 					},
@@ -16193,7 +16193,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseQueue"
 						}
 					},
@@ -16207,7 +16207,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseOperations"
 						}
 					},
@@ -16221,7 +16221,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 							"symbol": "CodexWorkhorseStart"
 						}
 					},
@@ -16235,7 +16235,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 							"symbol": "stopWork"
 						}
 					},
@@ -16249,7 +16249,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "classify"
 						}
 					},
@@ -16263,7 +16263,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 							"symbol": "stage"
 						}
 					},
@@ -16277,7 +16277,7 @@
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 							"symbol": "createTurnStartParams"
 						}
 					}
@@ -16299,7 +16299,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+									"path": "packages/agent-workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							},
@@ -16311,7 +16311,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+									"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -16323,7 +16323,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+									"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 									"symbol": "threadRead"
 								}
 							},
@@ -16344,7 +16344,7 @@
 												"note": "a start needs an idle thread and a steer needs an active one",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+													"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "createServerCanonicalTextActions"
 												}
 											}
@@ -16361,7 +16361,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+													"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -16373,7 +16373,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+													"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
 													"symbol": "turnStart"
 												}
 											}
@@ -16389,7 +16389,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+									"path": "packages/agent-workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -16413,7 +16413,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+									"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -16425,7 +16425,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+									"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "CodexWorkbenchWorkhorse"
 								}
 							},
@@ -16437,7 +16437,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
+									"path": "packages/agent-workbench/src/server/operations/command/command-dispatch.ts",
 									"symbol": "createBrowserActionDispatch"
 								}
 							},
@@ -16454,7 +16454,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+											"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -16466,7 +16466,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+											"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -16480,7 +16480,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -16492,7 +16492,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 									"symbol": "queueAdd"
 								}
 							},
@@ -16509,7 +16509,7 @@
 										"kind": "sync",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+											"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									},
@@ -16521,7 +16521,7 @@
 										"kind": "return",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+											"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 											"symbol": "queueListPage"
 										}
 									}
@@ -16543,7 +16543,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -16560,7 +16560,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "runMutation"
 												}
 											}
@@ -16576,7 +16576,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+									"path": "packages/agent-workbench/src/server/services/gateway/gateway-execution.ts",
 									"symbol": "createCommandExecutor"
 								}
 							}
@@ -16602,7 +16602,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							},
@@ -16615,7 +16615,7 @@
 								"note": "one operation at a time, so two effects never interleave on one thread",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -16627,7 +16627,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -16639,7 +16639,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -16659,7 +16659,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -16671,7 +16671,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -16683,7 +16683,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "assertActiveForQueue"
 												}
 											},
@@ -16695,7 +16695,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -16707,7 +16707,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -16719,7 +16719,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-queue/queue.ts",
 													"symbol": "queueAdd"
 												}
 											},
@@ -16731,7 +16731,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/turns.ts",
 													"symbol": "add"
 												}
 											},
@@ -16743,7 +16743,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -16760,7 +16760,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -16772,7 +16772,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -16784,7 +16784,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "assertIdleForDelegate"
 												}
 											},
@@ -16796,7 +16796,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -16808,7 +16808,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "turnStart"
 												}
 											},
@@ -16820,7 +16820,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -16832,7 +16832,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
 													"symbol": "correlateTurnStart"
 												}
 											},
@@ -16844,7 +16844,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											}
@@ -16860,7 +16860,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "delegate"
 								}
 							}
@@ -16885,7 +16885,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "steer"
 								}
 							},
@@ -16897,7 +16897,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/operations.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/operations.ts",
 									"symbol": "enqueue"
 								}
 							},
@@ -16909,7 +16909,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -16921,7 +16921,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts",
 									"symbol": "classify"
 								}
 							},
@@ -16941,7 +16941,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "assertExpectedTurn"
 												}
 											}
@@ -16958,7 +16958,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/events.ts",
 													"symbol": "stageOperation"
 												}
 											},
@@ -16970,7 +16970,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -16982,7 +16982,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "revalidateSteer"
 												}
 											},
@@ -16994,7 +16994,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -17006,7 +17006,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "turnSteer"
 												}
 											},
@@ -17018,7 +17018,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -17030,7 +17030,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/operations/workhorse-operations/steer.ts",
+													"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations/steer.ts",
 													"symbol": "createSteer"
 												}
 											}
@@ -17057,7 +17057,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
 									"symbol": "stopWork"
 								}
 							},
@@ -17082,7 +17082,7 @@
 														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+															"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "stopWorkhorses"
 														}
 													}
@@ -17099,7 +17099,7 @@
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+															"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													},
@@ -17111,7 +17111,7 @@
 														"kind": "return",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+															"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 															"symbol": "turnInterrupt"
 														}
 													}
@@ -17129,7 +17129,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+									"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts",
 									"symbol": "stopWorkhorses"
 								}
 							}
@@ -17154,7 +17154,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							},
@@ -17166,7 +17166,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -17178,7 +17178,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "stageOperation"
 								}
 							},
@@ -17190,7 +17190,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/rules/workhorse-start/model.ts",
+									"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
 									"symbol": "createWorkhorseThreadStartParams"
 								}
 							},
@@ -17202,7 +17202,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -17214,7 +17214,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},
@@ -17234,7 +17234,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "rollbackOperation"
 												}
 											}
@@ -17251,7 +17251,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "markOutcomeUnknown"
 												}
 											}
@@ -17268,7 +17268,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "commitOperation"
 												}
 											},
@@ -17280,7 +17280,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -17292,7 +17292,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+													"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 													"symbol": "classifyAndBind"
 												}
 											},
@@ -17312,7 +17312,7 @@
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
+																	"path": "packages/agent-workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															},
@@ -17324,7 +17324,7 @@
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/workbench/src/runtime/services/workhorse-start/cleanup.ts",
+																	"path": "packages/agent-workbench/src/runtime/services/workhorse-start/cleanup.ts",
 																	"symbol": "threadDelete"
 																}
 															}
@@ -17348,7 +17348,7 @@
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "createCodexWorkhorseStart"
 								}
 							}
@@ -17371,7 +17371,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "settle"
 								}
 							},
@@ -17392,7 +17392,7 @@
 												"note": "the call was malformed, the thread is not the coordinator's workhorse, or no voice session is live",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+													"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "ANSWERS"
 												}
 											}
@@ -17409,7 +17409,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+													"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 													"symbol": "enqueue"
 												}
 											},
@@ -17421,7 +17421,7 @@
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+													"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
 													"symbol": "drain"
 												}
 											},
@@ -17433,7 +17433,7 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+													"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -17445,7 +17445,7 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+													"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 													"symbol": "classifyForDelivery"
 												}
 											},
@@ -17465,7 +17465,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																	"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "refuseBeforeAttempt"
 																}
 															}
@@ -17482,7 +17482,7 @@
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																	"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
 																	"symbol": "deliverThroughCoordinatorTurn"
 																}
 															}
@@ -17514,7 +17514,7 @@
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+									"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
 									"symbol": "answerFor"
 								}
 							}

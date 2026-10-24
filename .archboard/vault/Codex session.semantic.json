@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 35,
+	"version": 37,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-24T11:40:02.590Z",
+	"updatedAt": "2026-10-24T13:34:44.362Z",
 	"views": [
 		{
 			"id": "QJ4WHuKs",
@@ -4404,7 +4404,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/generation/hooks.ts",
+							"path": "packages/agent-workbench/src/server/services/generation/hooks.ts",
 							"symbol": "initialize"
 						}
 					},
@@ -4473,7 +4473,7 @@
 						},
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -4706,7 +4706,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/server/services/generation/hooks.ts",
+									"path": "packages/agent-workbench/src/server/services/generation/hooks.ts",
 									"symbol": "initialize"
 								}
 							},
@@ -4921,7 +4921,7 @@
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+									"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
 									"symbol": "threadStart"
 								}
 							},

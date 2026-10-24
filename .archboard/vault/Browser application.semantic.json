@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 134,
+	"version": 135,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-24T13:21:04.938Z",
+	"updatedAt": "2026-10-24T13:34:44.795Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -24977,7 +24977,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+															"path": "packages/agent-workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -25023,7 +25023,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+															"path": "packages/agent-workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -25052,7 +25052,7 @@
 														"kind": "async",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+															"path": "packages/agent-workbench/src/ui/clients/transport/socket-run.ts",
 															"symbol": "sendRequest"
 														}
 													}
@@ -25068,7 +25068,7 @@
 										"kind": "async",
 										"anchor": {
 											"repo": "github.com/miklschmidt/archboard",
-											"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+											"path": "packages/agent-workbench/src/ui/clients/transport/socket-run.ts",
 											"symbol": "onMessage"
 										}
 									},
