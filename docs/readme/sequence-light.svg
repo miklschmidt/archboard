@@ -8,7 +8,8 @@
 <linearGradient id="ab-shadow-01" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="1"/><stop offset="0.25" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.82"/><stop offset="0.5" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.52"/><stop offset="0.75" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.16"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0"/></linearGradient>
 <linearGradient id="ab-shadow-10" x1="1" y1="0" x2="0" y2="0"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="1"/><stop offset="0.25" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.82"/><stop offset="0.5" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.52"/><stop offset="0.75" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.16"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0"/></linearGradient>
 <linearGradient id="ab-shadow-12" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="1"/><stop offset="0.25" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.82"/><stop offset="0.5" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.52"/><stop offset="0.75" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.16"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0"/></linearGradient>
-<linearGradient id="ab-shadow-21" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="1"/><stop offset="0.25" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.82"/><stop offset="0.5" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.52"/><stop offset="0.75" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.16"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0"/></linearGradient><linearGradient id="ab-slab-sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--slab-sheen)"/><stop offset="1" style="stop-color:var(--slab-sheen)" stop-opacity="0"/></linearGradient><linearGradient id="ab-slab-sheen-soft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-glint) 20%, transparent), var(--slab-sheen))"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-glint) 20%, transparent), var(--slab-sheen))" stop-opacity="0"/></linearGradient><radialGradient id="ab-port-well" cx="0.5" cy="0.3" r="0.62"><stop offset="0" style="stop-color:var(--port-deep)"/><stop offset="0.45" style="stop-color:var(--port-deep)"/><stop offset="1" style="stop-color:var(--port-wall)"/></radialGradient><linearGradient id="ab-port-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--port-deep)"/><stop offset="0.45" style="stop-color:var(--port-deep)" stop-opacity="0.8"/><stop offset="0.85" style="stop-color:var(--port-deep)" stop-opacity="0"/></linearGradient></defs>
+<linearGradient id="ab-shadow-21" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="1"/><stop offset="0.25" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.82"/><stop offset="0.5" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.52"/><stop offset="0.75" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0.16"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))" stop-opacity="0"/></linearGradient>
+<linearGradient id="ab-shadow-11"><stop style="stop-color:light-dark(color-mix(in srgb, var(--slab-shadow) 65%, transparent), var(--slab-shadow))"/></linearGradient><linearGradient id="ab-slab-sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--slab-sheen)"/><stop offset="1" style="stop-color:var(--slab-sheen)" stop-opacity="0"/></linearGradient><linearGradient id="ab-slab-sheen-soft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:light-dark(color-mix(in srgb, var(--slab-glint) 20%, transparent), var(--slab-sheen))"/><stop offset="1" style="stop-color:light-dark(color-mix(in srgb, var(--slab-glint) 20%, transparent), var(--slab-sheen))" stop-opacity="0"/></linearGradient><radialGradient id="ab-port-well" cx="0.5" cy="0.3" r="0.62"><stop offset="0" style="stop-color:var(--port-deep)"/><stop offset="0.45" style="stop-color:var(--port-deep)"/><stop offset="1" style="stop-color:var(--port-wall)"/></radialGradient><linearGradient id="ab-port-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--port-deep)"/><stop offset="0.45" style="stop-color:var(--port-deep)" stop-opacity="0.8"/><stop offset="0.85" style="stop-color:var(--port-deep)" stop-opacity="0"/></linearGradient></defs>
 <rect x="0" y="0" width="1516" height="836" style="fill:var(--background)"/>
 <g data-semantic-kind="flow" data-semantic-id="yRuuRooQ"><rect x="20" y="20" width="1476" height="795.43" rx="10" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="17" y="17" width="1482" height="801.43" rx="13" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
@@ -23,14 +24,14 @@
 <rect x="47.5" y="27.5" width="1432.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="1480" y="27.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="27.5" y="47.5" width="20" height="43.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="47.5" y="47.5" width="1432.5" height="43.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="1480" y="47.5" width="20" height="43.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="27.5" y="91" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="47.5" y="91" width="1432.5" height="20" style="fill:url(#ab-shadow-21)"/>
 <rect x="1480" y="91" width="20" height="20" style="fill:url(#ab-shadow-22)"/></g>
-<rect x="28" y="28" width="1460" height="71" rx="8" pointer-events="none" style="fill:var(--slab-edge)"/>
-<rect x="28" y="28" width="1460" height="67" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 9%, var(--slab-face)))"/>
-<rect x="28" y="29" width="1460" height="66" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
-<rect x="28" y="29" width="1460" height="66" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
+<rect x="28" y="28" width="1460" height="71" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-deep) 80%, var(--background)), color-mix(in srgb, var(--slab-deep) 45%, var(--background)))"/>
+<rect x="28" y="28" width="1460" height="67" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--background)), color-mix(in srgb, var(--slab-glint) 9%, var(--background)))"/>
+<rect x="28" y="29" width="1460" height="66" rx="8" pointer-events="none" style="fill:var(--background)"/>
 <g class="ab-near"><g class="ab-words" style="--away:translate(-18.86px,-24.61px) scale(1.4286)"><text x="44" y="58" font-size="14" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Place an order</text>
 <text x="44" y="77" font-size="11" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">One press of Pay, from the basket to the confirmation page.</text></g></g>
 <g class="ab-far" display="none"><g class="ab-words" style="--away:translate(13.2px,17.23px) scale(0.7)"><text xml:space="preserve" x="44" y="58.25" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Place an order</text>
@@ -39,6 +40,7 @@
 <rect x="340.5" y="249.98" width="4.5" height="5" style="fill:url(#ab-shadow-01)"/>
 <rect x="345" y="249.98" width="5" height="5" style="fill:url(#ab-shadow-02)"/>
 <rect x="335.5" y="254.98" width="5" height="535.45" style="fill:url(#ab-shadow-10)"/>
+<rect x="340.5" y="254.98" width="4.5" height="535.45" style="fill:url(#ab-shadow-11)"/>
 <rect x="345" y="254.98" width="5" height="535.45" style="fill:url(#ab-shadow-12)"/>
 <rect x="335.5" y="790.43" width="5" height="5" style="fill:url(#ab-shadow-20)"/>
 <rect x="340.5" y="790.43" width="4.5" height="5" style="fill:url(#ab-shadow-21)"/>
@@ -47,6 +49,7 @@
 <rect x="756.5" y="421.63" width="4.5" height="5" style="fill:url(#ab-shadow-01)"/>
 <rect x="761" y="421.63" width="5" height="5" style="fill:url(#ab-shadow-02)"/>
 <rect x="751.5" y="426.63" width="5" height="56.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="756.5" y="426.63" width="4.5" height="56.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="761" y="426.63" width="5" height="56.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="751.5" y="483.13" width="5" height="5" style="fill:url(#ab-shadow-20)"/>
 <rect x="756.5" y="483.13" width="4.5" height="5" style="fill:url(#ab-shadow-21)"/>
@@ -55,6 +58,7 @@
 <rect x="964.5" y="501.63" width="4.5" height="5" style="fill:url(#ab-shadow-01)"/>
 <rect x="969" y="501.63" width="5" height="5" style="fill:url(#ab-shadow-02)"/>
 <rect x="959.5" y="506.63" width="5" height="90.15" style="fill:url(#ab-shadow-10)"/>
+<rect x="964.5" y="506.63" width="4.5" height="90.15" style="fill:url(#ab-shadow-11)"/>
 <rect x="969" y="506.63" width="5" height="90.15" style="fill:url(#ab-shadow-12)"/>
 <rect x="959.5" y="596.78" width="5" height="5" style="fill:url(#ab-shadow-20)"/>
 <rect x="964.5" y="596.78" width="4.5" height="5" style="fill:url(#ab-shadow-21)"/>
@@ -63,6 +67,7 @@
 <rect x="1172.5" y="615.28" width="4.5" height="5" style="fill:url(#ab-shadow-01)"/>
 <rect x="1177" y="615.28" width="5" height="5" style="fill:url(#ab-shadow-02)"/>
 <rect x="1167.5" y="620.28" width="5" height="20.83" style="fill:url(#ab-shadow-10)"/>
+<rect x="1172.5" y="620.28" width="4.5" height="20.83" style="fill:url(#ab-shadow-11)"/>
 <rect x="1177" y="620.28" width="5" height="20.83" style="fill:url(#ab-shadow-12)"/>
 <rect x="1167.5" y="641.11" width="5" height="5" style="fill:url(#ab-shadow-20)"/>
 <rect x="1172.5" y="641.11" width="4.5" height="5" style="fill:url(#ab-shadow-21)"/>
@@ -71,6 +76,7 @@
 <rect x="1380.5" y="655.28" width="4.5" height="5" style="fill:url(#ab-shadow-01)"/>
 <rect x="1385" y="655.28" width="5" height="5" style="fill:url(#ab-shadow-02)"/>
 <rect x="1375.5" y="660.28" width="5" height="90.15" style="fill:url(#ab-shadow-10)"/>
+<rect x="1380.5" y="660.28" width="4.5" height="90.15" style="fill:url(#ab-shadow-11)"/>
 <rect x="1385" y="660.28" width="5" height="90.15" style="fill:url(#ab-shadow-12)"/>
 <rect x="1375.5" y="750.43" width="5" height="5" style="fill:url(#ab-shadow-20)"/>
 <rect x="1380.5" y="750.43" width="4.5" height="5" style="fill:url(#ab-shadow-21)"/>
@@ -79,6 +85,7 @@
 <rect x="206.37" y="239.98" width="64.76" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="271.13" y="239.98" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="200.37" y="245.98" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="206.37" y="245.98" width="64.76" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="271.13" y="245.98" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="200.37" y="251.48" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="206.37" y="251.48" width="64.76" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -87,6 +94,7 @@
 <rect x="361.5" y="279.98" width="114.97" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="476.47" y="279.98" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="355.5" y="285.98" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="361.5" y="285.98" width="114.97" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="476.47" y="285.98" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="355.5" y="291.48" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="361.5" y="291.48" width="114.97" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -95,6 +103,7 @@
 <rect x="403.1" y="337.98" width="87.3" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="490.4" y="337.98" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="397.1" y="343.98" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="403.1" y="343.98" width="87.3" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="490.4" y="343.98" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="397.1" y="349.48" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="403.1" y="349.48" width="87.3" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -103,6 +112,7 @@
 <rect x="406.35" y="411.63" width="80.8" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="487.15" y="411.63" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="400.35" y="417.63" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="406.35" y="417.63" width="80.8" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="487.15" y="417.63" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="400.35" y="423.13" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="406.35" y="423.13" width="80.8" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -111,6 +121,7 @@
 <rect x="632.69" y="451.63" width="44.11" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="676.81" y="451.63" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="626.69" y="457.63" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="632.69" y="457.63" width="44.11" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="676.81" y="457.63" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="626.69" y="463.13" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="632.69" y="463.13" width="44.11" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -119,6 +130,7 @@
 <rect x="617.57" y="491.63" width="74.36" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="691.93" y="491.63" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="611.57" y="497.63" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="617.57" y="497.63" width="74.36" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="691.93" y="497.63" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="611.57" y="503.13" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="617.57" y="503.13" width="74.36" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -127,6 +139,7 @@
 <rect x="642.2" y="565.28" width="25.09" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="667.3" y="565.28" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="636.2" y="571.28" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="642.2" y="571.28" width="25.09" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="667.3" y="571.28" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="636.2" y="576.78" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="642.2" y="576.78" width="25.09" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -135,6 +148,7 @@
 <rect x="608.83" y="605.28" width="91.83" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="700.67" y="605.28" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="602.83" y="611.28" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="608.83" y="611.28" width="91.83" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="700.67" y="611.28" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="602.83" y="616.78" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="608.83" y="616.78" width="91.83" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -143,6 +157,7 @@
 <rect x="818.08" y="645.28" width="89.33" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="907.42" y="645.28" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="812.08" y="651.28" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="818.08" y="651.28" width="89.33" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="907.42" y="651.28" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="812.08" y="656.78" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="818.08" y="656.78" width="89.33" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -151,6 +166,7 @@
 <rect x="839.2" y="718.93" width="47.09" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="886.3" y="718.93" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="833.2" y="724.93" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="839.2" y="724.93" width="47.09" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="886.3" y="724.93" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="833.2" y="730.43" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="839.2" y="730.43" width="47.09" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -159,6 +175,7 @@
 <rect x="200.97" y="758.93" width="75.57" height="6" style="fill:url(#ab-shadow-01)"/>
 <rect x="276.53" y="758.93" width="6" height="6" style="fill:url(#ab-shadow-02)"/>
 <rect x="194.97" y="764.93" width="6" height="5.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="200.97" y="764.93" width="75.57" height="5.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="276.53" y="764.93" width="6" height="5.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="194.97" y="770.43" width="6" height="6" style="fill:url(#ab-shadow-20)"/>
 <rect x="200.97" y="770.43" width="75.57" height="6" style="fill:url(#ab-shadow-21)"/>
@@ -203,6 +220,7 @@
 <rect x="57.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="222" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="37.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="57.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="222" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="37.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="57.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -211,6 +229,7 @@
 <rect x="265.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="430" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="245.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="265.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="430" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="245.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="265.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -219,6 +238,7 @@
 <rect x="473.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="638" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="453.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="473.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="638" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="453.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="473.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -227,6 +247,7 @@
 <rect x="681.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="846" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="661.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="681.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="846" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="661.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="681.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -235,6 +256,7 @@
 <rect x="889.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="1054" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="869.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="889.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="1054" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="869.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="889.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -243,6 +265,7 @@
 <rect x="1097.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="1262" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="1077.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="1097.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="1262" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="1077.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="1097.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -251,6 +274,7 @@
 <rect x="1305.5" y="116.5" width="164.5" height="20" style="fill:url(#ab-shadow-01)"/>
 <rect x="1470" y="116.5" width="20" height="20" style="fill:url(#ab-shadow-02)"/>
 <rect x="1285.5" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-10)"/>
+<rect x="1305.5" y="136.5" width="164.5" height="68.97" style="fill:url(#ab-shadow-11)"/>
 <rect x="1470" y="136.5" width="20" height="68.97" style="fill:url(#ab-shadow-12)"/>
 <rect x="1285.5" y="205.48" width="20" height="20" style="fill:url(#ab-shadow-20)"/>
 <rect x="1305.5" y="205.48" width="164.5" height="20" style="fill:url(#ab-shadow-21)"/>
@@ -261,10 +285,11 @@
 <rect x="38" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 9%, var(--slab-face)))"/>
 <rect x="38" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="38" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(51,153.24) scale(1)" style="--near:translate(51px,153.24px) scale(1);--far:translate(50px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(51,130) scale(1)" style="--near:translate(51px,130px) scale(1);--far:translate(50px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -272,22 +297,23 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-pink) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-pink) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-pink) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-pink) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-pink) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-pink) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiStore2Line"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--semantic-pink)" aria-hidden="true" class="remixicon "><path d="M21 13.2422V20H22V22H2V20H3V13.2422C1.79401 12.435 1 11.0602 1 9.5C1 8.67286 1.22443 7.87621 1.63322 7.19746L4.3453 2.5C4.52393 2.1906 4.85406 2 5.21132 2H18.7887C19.1459 2 19.4761 2.1906 19.6547 2.5L22.3575 7.18172C22.7756 7.87621 23 8.67286 23 9.5C23 11.0602 22.206 12.435 21 13.2422ZM19 13.9725C18.8358 13.9907 18.669 14 18.5 14C17.2409 14 16.0789 13.478 15.25 12.6132C14.4211 13.478 13.2591 14 12 14C10.7409 14 9.5789 13.478 8.75 12.6132C7.9211 13.478 6.75911 14 5.5 14C5.331 14 5.16417 13.9907 5 13.9725V20H19V13.9725ZM5.78865 4L3.35598 8.21321C3.12409 8.59843 3 9.0389 3 9.5C3 10.8807 4.11929 12 5.5 12C6.53096 12 7.44467 11.3703 7.82179 10.4295C8.1574 9.59223 9.3426 9.59223 9.67821 10.4295C10.0553 11.3703 10.969 12 12 12C13.031 12 13.9447 11.3703 14.3218 10.4295C14.6574 9.59223 15.8426 9.59223 16.1782 10.4295C16.5553 11.3703 17.469 12 18.5 12C19.8807 12 21 10.8807 21 9.5C21 9.0389 20.8759 8.59843 20.6347 8.19746L18.2113 4H5.78865Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-16.77px,-62.15px) scale(1.5385)"><text x="85" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Storefront</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-16.77px,-67.89px) scale(1.5385)"><text x="85" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Storefront</text>
 <text xml:space="preserve" x="85" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">Where shoppers browse, fill a</text>
 <text xml:space="preserve" x="85" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">basket and pay</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(10.9px,40.4px) scale(0.65)"><text xml:space="preserve" x="114" y="153.24" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Storefront</text>
-<text xml:space="preserve" x="114" y="174.39" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Where</text>
-<text xml:space="preserve" x="114" y="191.89" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">shoppers bro…</text></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(10.9px,44.13px) scale(0.65)"><text xml:space="preserve" x="114" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Storefront</text>
+<text xml:space="preserve" x="114" y="168.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Where</text>
+<text xml:space="preserve" x="114" y="186.15" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">shoppers bro…</text></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="kZjjfq1m" data-depiction="card" data-body-color="neutral" data-type-color="violet" data-type-name="Route" data-type-kind="route"><rect x="246" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="243" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="246" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:var(--slab-edge)"/>
 <rect x="246" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 9%, var(--slab-face)))"/>
 <rect x="246" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="246" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(259,153.24) scale(1)" style="--near:translate(259px,153.24px) scale(1);--far:translate(258px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(259,130) scale(1)" style="--near:translate(259px,130px) scale(1);--far:translate(258px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -295,24 +321,25 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-violet) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-violet) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-violet) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-violet) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-violet) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-violet) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiRouteLine"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--semantic-violet)" aria-hidden="true" class="remixicon "><path d="M4 15V8.5C4 6.01472 6.01472 4 8.5 4C10.9853 4 13 6.01472 13 8.5V15.5C13 16.8807 14.1193 18 15.5 18C16.8807 18 18 16.8807 18 15.5V8.82929C16.8348 8.41746 16 7.30622 16 6C16 4.34315 17.3431 3 19 3C20.6569 3 22 4.34315 22 6C22 7.30622 21.1652 8.41746 20 8.82929V15.5C20 17.9853 17.9853 20 15.5 20C13.0147 20 11 17.9853 11 15.5V8.5C11 7.11929 9.88071 6 8.5 6C7.11929 6 6 7.11929 6 8.5V15H9L5 20L1 15H4ZM19 7C19.5523 7 20 6.55228 20 6C20 5.44772 19.5523 5 19 5C18.4477 5 18 5.44772 18 6C18 6.55228 18.4477 7 19 7Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-128.78px,-64.9px) scale(1.5385)"><text x="293" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Place order</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-128.78px,-67.89px) scale(1.5385)"><text x="293" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Place order</text>
 <text xml:space="preserve" x="293" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">POST /orders: reserves the</text>
 <text xml:space="preserve" x="293" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">stock, charges the card,</text>
 <text xml:space="preserve" x="293" y="181.65" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">saves the order and emails</text>
 <text xml:space="preserve" x="293" y="194.48" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">the receipt, then answers</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(83.7px,42.18px) scale(0.65)"><text xml:space="preserve" x="322" y="150.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Place</text>
-<text xml:space="preserve" x="322" y="173.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">order</text>
-<text xml:space="preserve" x="322" y="194.64" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">POST /orders…</text></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(83.7px,44.13px) scale(0.65)"><text xml:space="preserve" x="322" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Place</text>
+<text xml:space="preserve" x="322" y="170.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">order</text>
+<text xml:space="preserve" x="322" y="191.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">POST /orders…</text></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="VONp3yKV" data-depiction="card" data-body-color="neutral" data-type-color="cyan" data-type-name="Function" data-type-kind="function"><rect x="454" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="451" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="454" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:var(--slab-edge)"/>
 <rect x="454" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 9%, var(--slab-face)))"/>
 <rect x="454" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="454" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(467,153.24) scale(1)" style="--near:translate(467px,153.24px) scale(1);--far:translate(466px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(467,130) scale(1)" style="--near:translate(467px,130px) scale(1);--far:translate(466px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -320,22 +347,23 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-cyan) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-cyan) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-cyan) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-cyan) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-cyan) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-cyan) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiCodeLine"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--semantic-cyan)" aria-hidden="true" class="remixicon "><path d="M23 12L15.9289 19.0711L14.5147 17.6569L20.1716 12L14.5147 6.34317L15.9289 4.92896L23 12ZM3.82843 12L9.48528 17.6569L8.07107 19.0711L1 12L8.07107 4.92896L9.48528 6.34317L3.82843 12Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-240.79px,-64.9px) scale(1.5385)"><text x="501" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Timeout guard</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-240.79px,-67.89px) scale(1.5385)"><text x="501" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Timeout guard</text>
 <text xml:space="preserve" x="501" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">Cancels an order still running</text>
 <text xml:space="preserve" x="501" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">after 10 seconds</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(156.5px,42.18px) scale(0.65)"><text xml:space="preserve" x="530" y="150.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Timeout</text>
-<text xml:space="preserve" x="530" y="173.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">guard</text>
-<text xml:space="preserve" x="530" y="194.64" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Cancels an or…</text></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(156.5px,44.13px) scale(0.65)"><text xml:space="preserve" x="530" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Timeout</text>
+<text xml:space="preserve" x="530" y="170.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">guard</text>
+<text xml:space="preserve" x="530" y="191.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Cancels an or…</text></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="HYDbL5fE" data-depiction="card" data-body-color="teal" data-group="fulfilment" data-type-color="blue" data-type-name="Service" data-type-kind="service"><rect x="662" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="659" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="662" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-teal) 0.78 calc(min(c, 0.12) * 0.8) h), oklch(from var(--semantic-teal) 0.212 calc(min(c, 0.12) * 0.45) h))"/>
 <rect x="662" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))))"/>
 <rect x="662" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))"/>
 <rect x="662" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(675,153.24) scale(1)" style="--near:translate(675px,153.24px) scale(1);--far:translate(674px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(675,130) scale(1)" style="--near:translate(675px,130px) scale(1);--far:translate(674px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -343,23 +371,24 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-blue) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-blue) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-blue) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-blue) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-blue) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-blue) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiServerLine"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--semantic-blue)" aria-hidden="true" class="remixicon "><path d="M5 11H19V5H5V11ZM21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4ZM19 13H5V19H19V13ZM7 15H10V17H7V15ZM7 7H10V9H7V7Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-134.64px,-28.42px) scale(1.2308)"><text x="709" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Inventory service</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-134.64px,-28.51px) scale(1.2308)"><text x="709" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Inventory service</text>
 <text xml:space="preserve" x="709" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">Knows the stock and sets it</text>
 <text xml:space="preserve" x="709" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">aside for an order</text></g><g class="ab-drill" data-drill="down" transform="translate(838,133)"><circle r="6.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.2" stroke-opacity="0.75"/><path d="M0,-3.1 V3.1 M-2.7,0.5 L0,3.2 L2.7,0.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(109.38px,23.09px) scale(0.8125)"><text xml:space="preserve" x="738" y="143.89" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="16">Inventory</text>
-<text xml:space="preserve" x="738" y="162.29" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="16">service</text>
-<text xml:space="preserve" x="738" y="181.56" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="13">Knows the</text>
-<text xml:space="preserve" x="738" y="197.81" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="13">stock and…</text></g><g class="ab-drill" data-drill="down" transform="translate(838,133) scale(1.2)"><circle r="6.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.2" stroke-opacity="0.75"/><path d="M0,-3.1 V3.1 M-2.7,0.5 L0,3.2 L2.7,0.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(109.38px,23.16px) scale(0.8125)"><text xml:space="preserve" x="738" y="143.8" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="16">Inventory</text>
+<text xml:space="preserve" x="738" y="162.2" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="16">service</text>
+<text xml:space="preserve" x="738" y="181.48" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="13">Knows the</text>
+<text xml:space="preserve" x="738" y="197.73" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="13">stock and…</text></g><g class="ab-drill" data-drill="down" transform="translate(838,133) scale(1.2)"><circle r="6.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.2" stroke-opacity="0.75"/><path d="M0,-3.1 V3.1 M-2.7,0.5 L0,3.2 L2.7,0.5" style="fill:none;stroke:var(--diagram-text-muted)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="ZaOafnWt" data-depiction="card" data-body-color="violet" data-group="payments" data-type-color="neutral" data-type-name="External" data-type-kind="external"><rect x="870" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="867" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="870" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-violet) 0.78 calc(min(c, 0.12) * 0.8) h), oklch(from var(--semantic-violet) 0.212 calc(min(c, 0.12) * 0.45) h))"/>
 <rect x="870" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-violet) 0.89 calc(min(c, 0.054) * 1) h), oklch(from var(--semantic-violet) 0.31 calc(min(c, 0.12) * 0.4) h))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-violet) 0.89 calc(min(c, 0.054) * 1) h), oklch(from var(--semantic-violet) 0.31 calc(min(c, 0.12) * 0.4) h))))"/>
 <rect x="870" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-violet) 0.89 calc(min(c, 0.054) * 1) h), oklch(from var(--semantic-violet) 0.31 calc(min(c, 0.12) * 0.4) h))"/>
 <rect x="870" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(883,153.24) scale(1)" style="--near:translate(883px,153.24px) scale(1);--far:translate(882px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(883,130) scale(1)" style="--near:translate(883px,130px) scale(1);--far:translate(882px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -367,22 +396,23 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiExternalLinkLine"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--diagram-text-muted)" aria-hidden="true" class="remixicon "><path d="M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-464.8px,-64.9px) scale(1.5385)"><text x="917" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Payment provider</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-464.8px,-67.89px) scale(1.5385)"><text x="917" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Payment provider</text>
 <text xml:space="preserve" x="917" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">Charges the card and reports</text>
 <text xml:space="preserve" x="917" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">the outcome</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(302.1px,42.18px) scale(0.65)"><text xml:space="preserve" x="946" y="150.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Payment</text>
-<text xml:space="preserve" x="946" y="173.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">provider</text>
-<text xml:space="preserve" x="946" y="194.64" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Charges the c…</text></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(302.1px,44.13px) scale(0.65)"><text xml:space="preserve" x="946" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Payment</text>
+<text xml:space="preserve" x="946" y="170.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">provider</text>
+<text xml:space="preserve" x="946" y="191.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Charges the c…</text></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="wlyh3hT6" data-depiction="card" data-body-color="neutral" data-type-color="emerald" data-type-name="Data store" data-type-kind="datastore"><rect x="1078" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="1075" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="1078" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:var(--slab-edge)"/>
 <rect x="1078" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 9%, var(--slab-face)))"/>
 <rect x="1078" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="1078" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(1091,153.24) scale(1)" style="--near:translate(1091px,153.24px) scale(1);--far:translate(1090px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(1091,130) scale(1)" style="--near:translate(1091px,130px) scale(1);--far:translate(1090px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -390,22 +420,23 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-emerald) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-emerald) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-emerald) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-emerald) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-emerald) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--semantic-emerald) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiDatabase2Line"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--semantic-emerald)" aria-hidden="true" class="remixicon "><path d="M5 12.5C5 12.8134 5.46101 13.3584 6.53047 13.8931C7.91405 14.5849 9.87677 15 12 15C14.1232 15 16.0859 14.5849 17.4695 13.8931C18.539 13.3584 19 12.8134 19 12.5V10.3287C17.35 11.3482 14.8273 12 12 12C9.17273 12 6.64996 11.3482 5 10.3287V12.5ZM19 15.3287C17.35 16.3482 14.8273 17 12 17C9.17273 17 6.64996 16.3482 5 15.3287V17.5C5 17.8134 5.46101 18.3584 6.53047 18.8931C7.91405 19.5849 9.87677 20 12 20C14.1232 20 16.0859 19.5849 17.4695 18.8931C18.539 18.3584 19 17.8134 19 17.5V15.3287ZM3 17.5V7.5C3 5.01472 7.02944 3 12 3C16.9706 3 21 5.01472 21 7.5V17.5C21 19.9853 16.9706 22 12 22C7.02944 22 3 19.9853 3 17.5ZM12 10C14.1232 10 16.0859 9.58492 17.4695 8.89313C18.539 8.3584 19 7.81342 19 7.5C19 7.18658 18.539 6.6416 17.4695 6.10687C16.0859 5.41508 14.1232 5 12 5C9.87677 5 7.91405 5.41508 6.53047 6.10687C5.46101 6.6416 5 7.18658 5 7.5C5 7.81342 5.46101 8.3584 6.53047 8.89313C7.91405 9.58492 9.87677 10 12 10Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-576.81px,-62.15px) scale(1.5385)"><text x="1125" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Orders DB</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-576.81px,-67.89px) scale(1.5385)"><text x="1125" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Orders DB</text>
 <text xml:space="preserve" x="1125" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">One row per order, with its</text>
 <text xml:space="preserve" x="1125" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">payment state</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(374.9px,40.4px) scale(0.65)"><text xml:space="preserve" x="1154" y="153.24" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Orders DB</text>
-<text xml:space="preserve" x="1154" y="174.39" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">One row per</text>
-<text xml:space="preserve" x="1154" y="191.89" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">order, with its…</text></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(374.9px,44.13px) scale(0.65)"><text xml:space="preserve" x="1154" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Orders DB</text>
+<text xml:space="preserve" x="1154" y="168.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">One row per</text>
+<text xml:space="preserve" x="1154" y="186.15" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">order, with its…</text></g></g></g>
 <g data-semantic-kind="node" data-semantic-id="lXgq75bO" data-depiction="card" data-body-color="teal" data-group="fulfilment" data-type-color="neutral" data-type-name="External" data-type-kind="external"><rect x="1286" y="117" width="192" height="96.48" rx="8" pointer-events="all" style="fill:none"/>
 <rect class="ab-halo" x="1283" y="114" width="198" height="102.48" rx="11" stroke-width="2" style="fill:none;stroke:var(--diagram-selection)"/>
 <rect x="1286" y="117" width="192" height="96.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-teal) 0.78 calc(min(c, 0.12) * 0.8) h), oklch(from var(--semantic-teal) 0.212 calc(min(c, 0.12) * 0.45) h))"/>
 <rect x="1286" y="117" width="192" height="92.48" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))))"/>
 <rect x="1286" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:light-dark(oklch(from var(--semantic-teal) 0.92 calc(min(c, 0.07) * 1) h), oklch(from var(--semantic-teal) 0.31 calc(min(c, 0.12) * 0.4) h))"/>
 <rect x="1286" y="118" width="192" height="91.48" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g class="ab-chip" transform="translate(1299,153.24) scale(1)" style="--near:translate(1299px,153.24px) scale(1);--far:translate(1298px,139.24px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(1299,130) scale(1)" style="--near:translate(1299px,130px) scale(1);--far:translate(1298px,129px) scale(2.1667)"><g pointer-events="none"><rect x="-0.5" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6.5" y="-0.5" width="12.5" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="19" y="-0.5" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-0.5" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-10)"/>
+<rect x="6.5" y="6.5" width="12.5" height="12.5" style="fill:url(#ab-shadow-11)"/>
 <rect x="19" y="6.5" width="7" height="12.5" style="fill:url(#ab-shadow-12)"/>
 <rect x="-0.5" y="19" width="7" height="7" style="fill:url(#ab-shadow-20)"/>
 <rect x="6.5" y="19" width="12.5" height="7" style="fill:url(#ab-shadow-21)"/>
@@ -413,12 +444,12 @@
 <rect x="0" y="0" width="24" height="22.5" rx="5" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:light-dark(oklch(from var(--diagram-text-muted) 0.955 calc(min(c, 0.12) * 0.17) h), color-mix(in srgb, var(--diagram-text-muted) 20%, var(--slab-face)))"/>
 <rect x="0" y="1" width="24" height="21.5" rx="5" pointer-events="none" style="fill:url(#ab-slab-sheen)"/><g transform="translate(3,2.25)" data-type-icon="RiExternalLinkLine"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18" style="fill:var(--diagram-text-muted)" aria-hidden="true" class="remixicon "><path d="M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z"></path></svg></g></g>
-<g class="ab-near"><g class="ab-words" style="--away:translate(-688.82px,-64.9px) scale(1.5385)"><text x="1333" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Email provider</text>
+<g class="ab-near"><g class="ab-words" style="--away:translate(-688.82px,-67.89px) scale(1.5385)"><text x="1333" y="140" font-size="13" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">Email provider</text>
 <text xml:space="preserve" x="1333" y="156" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">Delivers the receipt to the</text>
 <text xml:space="preserve" x="1333" y="168.83" font-size="9.5" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400">shopper</text></g></g>
-<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(447.7px,42.18px) scale(0.65)"><text xml:space="preserve" x="1362" y="150.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Email</text>
-<text xml:space="preserve" x="1362" y="173.49" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">provider</text>
-<text xml:space="preserve" x="1362" y="194.64" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Delivers the r…</text></g></g></g></g>
+<g class="ab-far" display="none"><g class="ab-words" style="--away:translate(447.7px,44.13px) scale(0.65)"><text xml:space="preserve" x="1362" y="147.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">Email</text>
+<text xml:space="preserve" x="1362" y="170.5" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500" font-size="20">provider</text>
+<text xml:space="preserve" x="1362" y="191.65" style="fill:var(--diagram-text-muted)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="14">Delivers the r…</text></g></g></g></g>
 <g><g data-semantic-kind="step" data-semantic-id="cNRTLaGJ"><path class="ab-halo" d="M134,262.48 L333.8,262.48" stroke-width="6.4" stroke-opacity="0.3" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:var(--diagram-selection)"/>
 <path d="M134,262.48 L333.8,262.48" marker-end="url(#ah-filled-normal)" style="fill:none;stroke:var(--diagram-edge)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
 <path class="ab-halo" d="M134,262.48 L333.8,262.48" marker-end="url(#ah-filled-normal-lit)" style="fill:none;stroke:var(--diagram-selection)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -507,4 +538,5 @@
 <g data-semantic-kind="step" data-semantic-id="9L3Vfmq7" data-semantic-part="label"><rect x="195.47" y="759.43" width="85.07" height="15" rx="4" pointer-events="all" style="fill:none"/><rect x="195.47" y="759.43" width="85.07" height="15" rx="4" pointer-events="none" style="fill:color-mix(in srgb, var(--slab-deep) 60%, light-dark(var(--slab-face), var(--popover)))"/>
 <rect x="195.47" y="759.43" width="85.07" height="13" rx="4" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 45%, light-dark(var(--slab-face), var(--popover))), color-mix(in srgb, var(--slab-glint) 9%, light-dark(var(--slab-face), var(--popover))))"/>
 <rect x="195.47" y="760.43" width="85.07" height="12" rx="4" pointer-events="none" style="fill:light-dark(var(--slab-face), var(--popover))"/><rect class="ab-halo" x="195.47" y="759.43" width="85.07" height="15" rx="4" stroke-width="1.25" style="fill:none;stroke:var(--diagram-selection)"/><text x="238" y="769.63" text-anchor="middle" font-size="9" style="fill:var(--diagram-text)" font-family="&quot;Archboard Diagram Sans&quot;, ui-sans-serif, system-ui, sans-serif" font-weight="500">order confirmed</text></g>
+
 </svg>

@@ -67,6 +67,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		name: "web-shop",
 		vault: "examples/web-shop",
 		board: "Web shop",
+		view: "Everything",
 		thumbnail: { file: "docs/readme/idx-docs.webp", theme: "dark", width: 1600 },
 	}),
 	architecture: diagramProducer({
