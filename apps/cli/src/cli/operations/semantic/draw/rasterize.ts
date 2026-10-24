@@ -112,7 +112,9 @@ const rasterFailedRefusal = {
 	code: "RASTER_FAILED",
 	exit: 1,
 	stream: "stderr" as const,
-	description: "The browser did not produce the bitmap the diagram asks for; nothing was written.",
+	description:
+		"The browser did not produce the bitmap the diagram asks for, or the server's picture carried no " +
+		"render recipe for it; nothing was written.",
 };
 
 /**
@@ -205,7 +207,10 @@ function carryingRecipe(
 	if (read.kind !== "recipe") {
 		throw new SemanticRasterError(
 			"RASTER_FAILED",
-			`The server's picture carries no render recipe to give the bitmap (${read.kind === "absent" ? "none" : read.problem}).`,
+			read.kind === "absent"
+				? "The server's picture carries no render recipe to give the bitmap. A server that started " +
+						"before this checkout's source changed draws none: run `archboard restart`, then try again."
+				: `The server's picture carries a render recipe that cannot be read: ${read.problem}.`,
 		);
 	}
 	return embedRecipeInPng(png, {
