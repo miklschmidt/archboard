@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 132,
+	"version": 133,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T18:53:45.492Z",
+	"updatedAt": "2026-10-24T19:19:28.332Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -48215,7 +48215,7 @@
 		{
 			"id": "fkmIpH7L",
 			"name": "TASK-526.03",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "tEUCnc5Z",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -51724,7 +51724,7 @@
 		{
 			"id": "21GbEl6v",
 			"name": "TASK-526.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "fkmIpH7L",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"content": {
@@ -55302,7 +55302,7 @@
 			}
 		}
 	],
-	"current": "fkmIpH7L",
+	"current": "21GbEl6v",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -55459,6 +55459,12 @@
 			"from": "tEUCnc5Z",
 			"at": "2026-10-24T18:23:45.887Z",
 			"reason": "archboard check embeds reports outdated embeds and --fix draws them again (TASK-526.03)"
+		},
+		{
+			"variant": "21GbEl6v",
+			"from": "fkmIpH7L",
+			"at": "2026-10-24T19:19:28.332Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 92,
+	"version": 93,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-24T18:54:00.732Z",
+	"updatedAt": "2026-10-24T19:19:28.641Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -30698,7 +30698,7 @@
 		{
 			"id": "IcCJumNs",
 			"name": "TASK-511",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "FhAn6kp6",
 			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
@@ -34904,7 +34904,7 @@
 		{
 			"id": "JY01vdHt",
 			"name": "TASK-526.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "IcCJumNs",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"documents": [
@@ -39152,7 +39152,7 @@
 			}
 		}
 	],
-	"current": "IcCJumNs",
+	"current": "JY01vdHt",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -39249,6 +39249,12 @@
 			"from": "FhAn6kp6",
 			"at": "2026-10-23T03:52:57.039Z",
 			"reason": "Historical content corrections now reconcile inheriting drafts in the same checked write"
+		},
+		{
+			"variant": "JY01vdHt",
+			"from": "IcCJumNs",
+			"at": "2026-10-24T19:19:28.641Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
 		}
 	],
 	"shelvings": [

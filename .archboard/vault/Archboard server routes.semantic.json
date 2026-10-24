@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 95,
+	"version": 96,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-24T18:54:46.222Z",
+	"updatedAt": "2026-10-24T19:19:28.889Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -36093,7 +36093,7 @@
 		{
 			"id": "bURuoB8l",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "jHge59R8",
 			"summary": "The route handlers, and what each one reaches",
 			"documents": [
@@ -40374,7 +40374,7 @@
 		{
 			"id": "HygCzh3o",
 			"name": "TASK-526.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "bURuoB8l",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"documents": [
@@ -44739,7 +44739,7 @@
 			}
 		}
 	],
-	"current": "bURuoB8l",
+	"current": "HygCzh3o",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -44842,6 +44842,12 @@
 			"from": "jHge59R8",
 			"at": "2026-10-24T17:14:14.517Z",
 			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
+		},
+		{
+			"variant": "HygCzh3o",
+			"from": "bURuoB8l",
+			"at": "2026-10-24T19:19:28.889Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
 		}
 	],
 	"shelvings": [
