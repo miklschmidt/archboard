@@ -234,15 +234,6 @@ export function createCodexWorkbenchGenerationFixture(
 			events.push(`dynamic:${value.method}`);
 			return { contentItems: [{ type: "inputText", text: "fixture" }], success: true };
 		},
-		inspectMutationQuarantine: () => ({
-			epochCount: 0,
-			callCount: 0,
-			ordinaryInFlightWireCount: 0,
-			wireCount: 0,
-			blockedWireCount: 0,
-			fatalEpochCount: 0,
-			entries: [],
-		}),
 		dispose: () => void events.push("dynamic:dispose"),
 	} satisfies CodexWorkbenchComponents["dynamicTools"];
 	const sessionComponents = createSessionComponentsFixture(events);

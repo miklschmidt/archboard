@@ -13,13 +13,11 @@ function unavailable(owner: string): never {
 export function createSessionComponentsFixture(events: string[]): CodexWorkbenchSessionComponents {
 	const semanticPublisher = {
 		subscribeSettledChange: () => () => undefined,
-		subscribePaneFocus: () => () => undefined,
-		subscribePaneSelection: () => () => undefined,
-		publishPaneFocus: () => unavailable("semanticPublisher.publishPaneFocus"),
-		publishPaneSelection: () => unavailable("semanticPublisher.publishPaneSelection"),
-		freshBrief: () => unavailable("semanticPublisher.freshBrief"),
-		freshBriefFor: () => unavailable("semanticPublisher.freshBriefFor"),
-		drainListenerFailures: () => ({ entries: [], droppedCount: 0 }),
+		freshBrief: () => ({
+			brief: "Test task context.",
+			freshness: { state: "fresh" as const, capturedAtMs: 1, freshUntilMs: 2 },
+		}),
+		freshBriefForRealtime: () => "Test task context.",
 		dispose: () => void events.push("publisher:dispose"),
 	} satisfies CodexWorkbenchSessionComponents["semanticPublisher"];
 	const realtime = {
@@ -159,13 +157,11 @@ export function createWorkhorseComponentsFixture(
 	} satisfies CodexWorkbenchWorkhorseComponents["workhorse"];
 	const semanticPublisher = {
 		subscribeSettledChange: () => () => undefined,
-		subscribePaneFocus: () => () => undefined,
-		subscribePaneSelection: () => () => undefined,
-		publishPaneFocus: () => unavailable("semanticPublisher.publishPaneFocus"),
-		publishPaneSelection: () => unavailable("semanticPublisher.publishPaneSelection"),
-		freshBrief: () => unavailable("semanticPublisher.freshBrief"),
-		freshBriefFor: () => unavailable("semanticPublisher.freshBriefFor"),
-		drainListenerFailures: () => ({ entries: [], droppedCount: 0 }),
+		freshBrief: () => ({
+			brief: "Test task context.",
+			freshness: { state: "fresh" as const, capturedAtMs: 1, freshUntilMs: 2 },
+		}),
+		freshBriefForRealtime: () => "Test task context.",
 		dispose: () => void events.push("workhorse-publisher:dispose"),
 	} satisfies CodexWorkbenchWorkhorseComponents["semanticPublisher"];
 	const semanticDelivery = {

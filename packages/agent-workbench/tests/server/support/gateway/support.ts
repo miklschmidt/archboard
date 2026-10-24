@@ -1,5 +1,4 @@
-import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
-import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
+import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
@@ -11,10 +10,7 @@ import {
 } from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type {
-	DynamicApprovalOwnerView,
-	BrowserOwnerProjection,
-} from "#server/protocol/projection/projection-contract.ts";
+import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
 import type { BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	BrowserWorkbenchActions,
@@ -72,7 +68,7 @@ export interface GatewayHarness {
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
 	readonly setOrdinaryApproval: (approval: ApprovalOwnerView | null, notify?: boolean) => void;
-	readonly setDynamicApprovals: (approvals: readonly DynamicApprovalOwnerView[]) => void;
+	readonly setDynamicApprovals: (approvals: readonly BrowserDynamicApproval[]) => void;
 	readonly emitProjectionChange: () => void;
 	readonly setActionError: (error: unknown) => void;
 	readonly setActionResult: (result: BrowserActionResult | undefined) => void;
@@ -88,7 +84,7 @@ export interface GatewayHarness {
 	readonly makeDynamicApproval: (
 		commandId: BrowserCommandId,
 		targetThreadId?: ThreadId,
-	) => DynamicApprovalOwnerView;
+	) => BrowserDynamicApproval;
 }
 
 export interface GatewayHarnessOptions {
@@ -136,7 +132,7 @@ export function createGatewayHarness(
 	let link: ThreadLinkSnapshot = executableLink(childId, epoch, threadId);
 	let revision = 0;
 	let ordinaryApproval: ApprovalOwnerView | null = null;
-	let dynamicApprovals: readonly DynamicApprovalOwnerView[] = [];
+	let dynamicApprovals: readonly BrowserDynamicApproval[] = [];
 	let actionError: unknown = null;
 	let actionResult: BrowserActionResult | undefined;
 	let actionGate: Promise<BrowserActionResult> | null = null;
@@ -342,8 +338,7 @@ export function createGatewayHarness(
 	const makeDynamicApproval = (
 		commandId: BrowserCommandId,
 		targetThreadId = threadId,
-	): DynamicApprovalOwnerView => {
-		const authority = createDynamicAuthorityTokenIssuer();
+	): BrowserDynamicApproval => {
 		const operationId = authorities.operation.issuer.mintOperationId();
 		const identity = {
 			child: childId,
@@ -354,31 +349,32 @@ export function createGatewayHarness(
 			namespace: "archboard_app",
 			tool: "send_message_to_thread",
 			manifestHash: "gateway-manifest",
-			operationId: String(operationId),
+			operationId,
 		} as const;
 		const effect = {
 			tool: "send_message_to_thread",
 			arguments: {
-				threadId: authorities.identity.decoder.serializeCodexIdentity(targetThreadId),
+				threadId: targetThreadId,
 				prompt: "Send one bounded message",
 			},
-			callerAuthority: authority.issue(),
-			targetAuthority: authority.issue(),
-			contextAuthority: authority.issue(),
+			target: targetThreadId,
 			effectiveBoundary: null,
-			mutationOperationId: String(operationId),
+			mutationOperationId: operationId,
 			initialTurnOperationId: null,
 			visualSummary: "Send one bounded message",
 		} as const;
-		const request: DynamicToolApprovalRequest = {
+		return {
+			kind: "dynamic_approval",
+			state: "pending",
 			identity,
 			effect,
 			effectHash: `sha256:${"7".repeat(64)}`,
 			createdAtMs: CLOCK_START,
 			expiresAtMs: CLOCK_START + 90_000,
-		};
-		return {
-			request,
+			decision: null,
+			delivery: null,
+			toolResult: null,
+			resumable: false,
 			binding: { commandId, paneId, capturedLink: { threadId: targetThreadId, childId, epoch } },
 		};
 	};

@@ -180,6 +180,7 @@ function dynamicResponse(
 	approval: ReturnType<GatewayHarness["makeDynamicApproval"]>,
 	decision: "approve" | "decline" = "approve",
 ): BrowserDynamicApprovalResponse {
+	if (approval.binding === null) throw new Error("The approval has no browser binding.");
 	return harnessValue.model.BrowserDynamicApprovalResponseSchema.parse({
 		kind: "browser_command",
 		command: "dynamicApprovalRespond",
@@ -188,8 +189,8 @@ function dynamicResponse(
 		childId: harnessValue.childId,
 		epoch: harnessValue.epoch,
 		capturedLink: approval.binding.capturedLink,
-		identity: approval.request.identity,
-		effectHash: approval.request.effectHash,
+		identity: approval.identity,
+		effectHash: approval.effectHash,
 		decision,
 	});
 }
