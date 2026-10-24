@@ -90,12 +90,11 @@ test("a line crosses a trunk once, wherever it is painted among the trunk's rout
 	expect(between.bridges[0]!.edgeId).toBe("1");
 	expect(between.bridges[0]!.under.toSorted()).toEqual(["0", "2"]);
 	// A trunk painted over the line rises as one: its drawer hops, and the
-	// route beneath it keeps its ink, which the painter leaves to the drawer.
-	const trunk = drawing([across, down, down]);
-	const over = bridged(trunk);
+	// route beneath it hops the same way, so its traffic rides over the crossing.
+	const over = bridged(drawing([across, down, down]));
 	expect(over.bridges).toHaveLength(1);
 	expect(over.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
-	expect(over.edges[2]).toEqual(trunk.edges[2]!);
+	expect(over.edges[2]!.curve).toEqual(over.edges[1]!.curve);
 });
 
 // Blocks: routes of one kind on one trunk, sharing no card, erased each

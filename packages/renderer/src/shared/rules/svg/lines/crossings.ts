@@ -106,7 +106,7 @@ function pastEnd(piece: Curve, end: Point, past: number): Curve {
  * line, its dashes, its pulses and an arrowhead on the same point, so the trunk
  * reads as one line. Square across its ends, so where the routes part the
  * route's own ink carries on from exactly there.
- * @param routes The routes before any hop is drawn, as the trunks were found.
+ * @param routes Final bridged routes: every route of a trunk hops with it.
  * @returns One cutout per hidden stretch.
  */
 function trunkCutouts(routes: readonly DrawingEdge[]): Cutout[] {

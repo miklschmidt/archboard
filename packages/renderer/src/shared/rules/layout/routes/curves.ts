@@ -45,6 +45,23 @@ function segmentStart(curve: Curve, index: number): Point {
 }
 
 /**
+ * A line read backwards: the same pieces, from its end to its start.
+ * @param curve The line.
+ * @returns The line reversed.
+ */
+function reversed(curve: Curve): Curve {
+	const segments = curve.segments
+		.map((segment, index): Segment => {
+			const to = segmentStart(curve, index);
+			return segment.kind === "line"
+				? { kind: "line", to }
+				: { kind: "cubic", first: segment.second, second: segment.first, to };
+		})
+		.toReversed();
+	return { from: curve.segments.at(-1)?.to ?? curve.from, segments };
+}
+
+/**
  * A point partway along one segment.
  * @param from Where the segment starts.
  * @param segment The segment.
@@ -520,6 +537,7 @@ export {
 	type Curve,
 	EPSILON,
 	segmentStart,
+	reversed,
 	pointOnSegment,
 	pathOf,
 	curveBounds,
