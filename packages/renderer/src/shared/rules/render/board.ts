@@ -35,6 +35,7 @@ import type {
 import type { ToldStanding } from "@archboard/board/reconciliation";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import type { VariantContent } from "@archboard/board/content";
+import type { FlowStep } from "@archboard/board/flow";
 import { SemanticRenderError } from "#shared/protocol/render-request.ts";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
 import { placedStanding } from "#shared/rules/render/picture-key.ts";
@@ -71,7 +72,9 @@ interface BoardRenderChoices {
 
 /**
  * What a variant draws: its parts, relationships and flows. Its walkthroughs
- * are told over the picture and never drawn in it.
+ * are told over the picture and never drawn in it, and the code that a
+ * relationship or a step cites is bookkeeping that neither the picture nor a
+ * comparison reads (ADR 0046), so neither is here.
  */
 type DrawnContent = Pick<VariantContent, "nodes" | "edges" | "flows">;
 
@@ -81,7 +84,8 @@ type DrawnContent = Pick<VariantContent, "nodes" | "edges" | "flows">;
  * picture does not draw: the board's name and version, its other variants
  * and every walkthrough. A render recipe fingerprints this, so the
  * fingerprint moves when what the picture draws moves, and not when the
- * renderer does.
+ * renderer does. Its shape is part of every recipe already written: a field
+ * added here or taken away moves every embed's fingerprint at once.
  */
 interface DrawnInput {
 	readonly level: string;
@@ -347,12 +351,36 @@ function drawnInput(
 }
 
 /**
- * What a variant draws, without the walkthroughs told over it.
+ * What a variant draws, without the walkthroughs told over it and the code its
+ * relationships and steps cite.
  * @param content The variant's content.
  * @returns Its parts, relationships and flows.
  */
 function drawnContent(content: VariantContent): DrawnContent {
-	return { nodes: content.nodes, edges: content.edges, flows: content.flows };
+	return {
+		nodes: content.nodes,
+		edges: content.edges.map(({ anchor: _cited, ...edge }) => edge),
+		flows: content.flows.map((flow) => ({ ...flow, steps: uncitedSteps(flow.steps) })),
+	};
+}
+
+/**
+ * Steps without the code their messages cite, at every depth.
+ * @param steps The steps of a flow, an alternative or a loop.
+ * @returns The same steps without anchors.
+ */
+function uncitedSteps(steps: readonly FlowStep[]): FlowStep[] {
+	return steps.map((step) => {
+		if (step.kind === "decision") {
+			return {
+				...step,
+				alternatives: step.alternatives.map((one) => ({ ...one, steps: uncitedSteps(one.steps) })),
+			};
+		}
+		if (step.kind === "loop") return { ...step, steps: uncitedSteps(step.steps) };
+		const { anchor: _cited, ...message } = step;
+		return message;
+	});
 }
 
 /**

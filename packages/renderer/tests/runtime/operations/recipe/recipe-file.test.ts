@@ -2,11 +2,13 @@
 // file holds it in its metadata element and a PNG in a text chunk, a reader
 // gets it back from the bytes alone, and the picture digest is of the SVG the
 // renderer drew before the recipe went in. The fingerprint's behaviour under
-// real writes is the system owner's (tests/system/semantic-boards/render-recipe).
+// real writes is the system owner's (tests/system/semantic-boards/render-recipe);
+// this owner holds that a code citation, which nothing draws, is not in it.
 
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
+import type { SemanticBoard } from "@archboard/board/document";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderBoard } from "#runtime/operations/render.ts";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
@@ -16,14 +18,16 @@ import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 import { EXPORT_BOARD } from "#tests/runtime/support/export-board.ts";
 
 /**
- * The SVG of the export board, with or without its recipe.
+ * The SVG of a board's draft, with or without its recipe.
  * @param recipe Whether the render carries one.
+ * @param board The board; the export board when absent.
+ * @param view The view drawn.
  * @returns The document.
  */
-async function drawnSvg(recipe: boolean): Promise<string> {
+async function drawnSvg(recipe: boolean, board = EXPORT_BOARD, view = "intake"): Promise<string> {
 	const outcome = await renderBoard(
-		EXPORT_BOARD,
-		{ theme: "light", fonts: "embedded", variant: "draft", view: "intake", legend: "vertical" },
+		board,
+		{ theme: "light", fonts: "embedded", variant: "draft", view, legend: "vertical" },
 		DEFAULT_SEMANTIC_POLICY,
 		recipe ? { vault: { repo: "github.com/example/vault" } } : undefined,
 	);
@@ -151,5 +155,29 @@ test("a recipe that cannot be read is said to be unreadable, not absent", async 
 	});
 	for (const bytes of [Buffer.from(newer), Buffer.from(broken), auto]) {
 		expect(readRenderRecipe(bytes).kind).toBe("unreadable");
+	}
+});
+
+test("a code citation on a relationship or a step moves neither the picture nor its fingerprint", async () => {
+	const anchor = { repo: "github.com/example/app", path: "src/queue.ts", symbol: "enqueue" };
+	const cited: SemanticBoard = {
+		...EXPORT_BOARD,
+		variants: EXPORT_BOARD.variants.map((variant) => ({
+			...variant,
+			content: {
+				...variant.content,
+				edges: variant.content.edges.map((edge) => ({ ...edge, anchor })),
+				flows: variant.content.flows.map((flow) => ({
+					...flow,
+					steps: flow.steps.map((step) => ({ ...step, anchor })),
+				})),
+			},
+		})),
+	};
+	for (const view of ["intake", "exchange"]) {
+		const plain = recipeIn(Buffer.from(await drawnSvg(true, EXPORT_BOARD, view), "utf8"));
+		const citing = recipeIn(Buffer.from(await drawnSvg(true, cited, view), "utf8"));
+		expect(citing.picture).toBe(plain.picture);
+		expect(citing.fingerprint).toBe(plain.fingerprint);
 	}
 });
