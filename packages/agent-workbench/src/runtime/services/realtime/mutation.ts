@@ -1,15 +1,6 @@
-import type {
-	AppendOutcome,
-	RealtimeCorrelationId,
-	RealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
+import type { AppendOutcome, RealtimeCorrelation } from "#shared/protocol/realtime-contract.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { realtimeErrorMessage } from "#runtime/services/realtime/binding.ts";
-
-interface MutationRequest {
-	readonly sessionId: RealtimeSessionId;
-	readonly correlationId: RealtimeCorrelationId;
-}
 
 /**
  * Classify a failed app-server mutation: a pre-effect rejection is not delivered, anything else
@@ -18,7 +9,7 @@ interface MutationRequest {
  * @param error - What the session threw.
  * @returns The outcome to report.
  */
-function failureOutcome(request: Readonly<MutationRequest>, error: unknown): AppendOutcome {
+function failureOutcome(request: RealtimeCorrelation, error: unknown): AppendOutcome {
 	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
 		return { ...request, outcome: "not_delivered", reason: "rejected" };
 	}
@@ -39,7 +30,7 @@ function failureOutcome(request: Readonly<MutationRequest>, error: unknown): App
  * @returns The outcome to report to the browser.
  */
 async function runRealtimeMutation(
-	request: Readonly<MutationRequest>,
+	request: RealtimeCorrelation,
 	invoke: () => Promise<unknown>,
 	isCurrent: () => boolean,
 	diagnose: (message: string) => void,
