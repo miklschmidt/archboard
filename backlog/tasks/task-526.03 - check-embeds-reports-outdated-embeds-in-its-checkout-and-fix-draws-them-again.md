@@ -3,11 +3,11 @@ id: TASK-526.03
 title: >-
   check embeds reports outdated embeds in its checkout, and --fix draws them
   again
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T18:03:00Z'
+updated_date: '2026-10-24T18:34:00Z'
 labels:
   - cli
   - code-check
@@ -32,16 +32,16 @@ With a recipe in every board render, the check can find the embeds that a reposi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The check reads every file that Git tracks in the checkout and that carries a recipe, and ignores ignored files and files without a recipe
-- [ ] #2 A changed fingerprint or a missing board, variant or view is a warning, and a changed picture hash alone is information
-- [ ] #3 A warning for a deleted board names the commit that removed it when the vault history has it, and says when another board holds the name now
-- [ ] #4 A renamed board is still found, because the recipe names it by id
-- [ ] #5 --fix draws each outdated embed again from its own recipe, lists every file it rewrote, and exits 0 when nothing remains
-- [ ] #6 --fix points a recipe that asks for current and the overview or Everything at the board that now holds a deleted board name, and lists each such re-pointing with the file, the old board and the new board
-- [ ] #7 A PNG that --fix cannot draw again without Chromium stays reported as not fixed
-- [ ] #8 The check reads a vault of a registered checkout as that checkout holds it
-- [ ] #9 Only a .svg file whose content is an SVG document and a .png file count as embeds; an SVG inlined in an HTML, Markdown or MDX page is not an embed, and --fix never rewrites such a page
-- [ ] #10 A changed fingerprint with an unchanged fresh picture digest is not outdated: the embed is current, and --fix only refreshes its recipe
+- [x] #1 The check reads every file that Git tracks in the checkout and that carries a recipe, and ignores ignored files and files without a recipe
+- [x] #2 A warning for a deleted board names the commit that removed it when the vault history has it, and says when another board holds the name now
+- [x] #3 A renamed board is still found, because the recipe names it by id
+- [x] #4 --fix draws each outdated embed again from its own recipe, lists every file it rewrote, and exits 0 when nothing remains
+- [x] #5 --fix points a recipe that asks for current and the overview or Everything at the board that now holds a deleted board name, and lists each such re-pointing with the file, the old board and the new board
+- [x] #6 A PNG that --fix cannot draw again without Chromium stays reported as not fixed
+- [x] #7 The check reads a vault of a registered checkout as that checkout holds it
+- [x] #8 Only a .svg file whose content is an SVG document and a .png file count as embeds; an SVG inlined in an HTML, Markdown or MDX page is not an embed, and --fix never rewrites such a page
+- [x] #9 A changed fingerprint with an unchanged fresh picture digest is not outdated: the embed is current, and --fix only refreshes its recipe
+- [x] #10 A changed fingerprint with a changed picture, or a missing board, variant or view, is a warning, and a changed picture alone is information (ADR 0057 as amended on 2026-10-24)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -88,4 +88,12 @@ Decision: re-pointing needs variant current, view overview or Everything, and co
 Code check diff (check code with and without --variant TASK-526.03 after correcting the anchors to embed-drawing.ts): no new finding, one cleared (RELATIONSHIP_UNDRAWN Commands to Board rasterizer, which the embeds check's rasterizer call made).
 
 Footprint read against base 0cb4fc8e5^ (the commit before this task's first code commit; the branch base main lacks the TASK-526 branch, so main would show the work of TASK-526.01 and .02). namedAndChanged: Board client, Vault check, Embeds check. changedNotNamed: Command catalogue (run.ts gains the check embeds entry in the table, a contract per command as drawn, b398005e3) and Commands (container of the named parts). namedNotChanged: none. Board rasterizer is a drill-down: its board is behind by png-recipe.ts (embedRecipeInPng drops an earlier recipe chunk, an internal change), and Semantic renderer by the recipe folder (render-request.ts and replaceRenderRecipe added inside Render recipe). Both stay true; neither draws the CLI as a caller, and adding the embeds check there is for the parent to decide.
+
+Review: three independent reviewers (discovery and judging, --fix and rewriting, integration boundary) fixed every finding: da24a41ce (a tracked symbolic link is no embed), 09d70e4de and 832a4c747 (a board replaced under its own name in one commit names that commit), e4a2766e4 (one board-name comparison), f2931ecbb and 991a2e963 (--fix refuses a PNG region outside the board as rasterize does), e02acaef6 and 9c60afe81 (a run that stops still lists the files it rewrote), 237211554 (a board the vault cannot read is not reported as gone), 73db4685d, 2ca0520b8. The parent renamed the discovery module to checkout-embeds (a tracked embed is one its board lists) and made a file reached through a linked directory no embed (05ba5925b). Acceptance criterion 2 was replaced to match the ADR 0057 amendment (a warning needs a changed picture too). Closing: Command interface@TASK-526.03 adopted at version 130; the code check diff showed it adds no finding and clears one. Gate on the merged branch: bun run check exit 0. For TASK-526.07: --fix replaces a font-subset SVG with the full render when its picture changed; a recipe-only refresh keeps the subsetting.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check embeds, also run by check and check all, finds the Git-tracked SVG documents and PNGs of the checkout that carry a render recipe, resolves the recipe vault by repository identity and the board by id, draws it again through the server and compares. EMBED_OUTDATED (fingerprint and picture changed) and EMBED_SOURCE_MISSING (board, variant, view or picture gone, with the removing commit and the board that took the name) are warnings; EMBED_RENDERER_CHANGED and EMBED_VAULT_UNAVAILABLE are information; a fingerprint-only change is current. --fix redraws SVGs and PNGs atomically inside the checkout, refreshes recipes, re-points a current overview recipe to the board that took a deleted name, and lists every rewrite, also when a run stops. Verified by embeds-check.test.ts (system), embed-state, checkout-embeds, vault-history and unreadable-board tests, and a full bun run check on the merged branch.
+<!-- SECTION:FINAL_SUMMARY:END -->
