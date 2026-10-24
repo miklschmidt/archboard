@@ -1,4 +1,4 @@
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import { TEST_CONTEXT_SCHEMA, testContextFixture } from "#tests/runtime/support/host.ts";
 
 const CODEX_WORKBENCH_COMPONENT_ORDER = [
 	"identity",
@@ -12,10 +12,9 @@ const CODEX_WORKBENCH_COMPONENT_ORDER = [
 	"gateway",
 ] as const;
 
-const generationContextFixture: ArchboardContext = {
-	schema: 1,
+const generationContextFixture = TEST_CONTEXT_SCHEMA.parse({
+	...testContextFixture,
 	paneId: "pane-fixture",
-	board: { name: "Fixture board", key: "fixture board", version: 1, cursor: null },
 	threadLink: { state: "unbound", reason: null },
 	child: { id: "fixture-child", epoch: "fixture-epoch" },
 	workhorse: { threadId: null, turnId: null },
@@ -26,14 +25,6 @@ const generationContextFixture: ArchboardContext = {
 		freshUntilMs: 2,
 		truncated: false,
 	},
-	focus: { paneId: "pane-fixture", capturedAtMs: 1 },
-	variant: null,
-	view: null,
-	selection: { count: 0, subjects: [], capturedAtMs: 1 },
-	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
-	claim: { holder: "none", doing: null },
-	ambiguity: [],
-	operation: { id: null, kind: null, rpc: null, outcome: null },
-};
+});
 
 export { CODEX_WORKBENCH_COMPONENT_ORDER, generationContextFixture };

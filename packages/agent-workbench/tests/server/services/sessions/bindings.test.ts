@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
 
+import { TEST_CALLBACK_POLICY } from "#tests/runtime/support/host.ts";
+import { createSessionComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";
 import { createSessionBindings } from "#server/services/sessions/bindings.ts";
 
 /**
@@ -19,7 +21,14 @@ function bindingsOfTab() {
 	};
 	const bindings = createSessionBindings({
 		scope,
-		server: { semanticPublisherFor: () => ({}) },
+		server: {
+			host: {
+				sessionContextFor: () => ({
+					publisher: createSessionComponentsFixture([]).semanticPublisher,
+					callbacks: TEST_CALLBACK_POLICY,
+				}),
+			},
+		},
 		shared: {},
 		coordinatorDirectory: "/state/coordinator",
 		publishProjection: () => undefined,

@@ -1,7 +1,10 @@
-import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
+import {
+	TEST_CONTEXT_CODEC,
+	TEST_CONTEXT_SCHEMA,
+	testContextFixture,
+} from "#tests/runtime/support/host.ts";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 import {
@@ -19,7 +22,6 @@ import {
 } from "#server/services/sessions/workhorses.ts";
 import { createServerBrowserGatewayOptions } from "#server/services/actions/browser-gateway.ts";
 import { createServerBrowserProjectionBudget } from "#server/projections/timeline/budget.ts";
-import { createServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
 import { type ServerBrowserBindingState } from "#server/projections/browser-state/binding-state.ts";
 import { type ServerTimelineOwner } from "#server/projections/timeline/timeline.ts";
 import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/generation/generation-fixture.ts";
@@ -30,29 +32,10 @@ import { createWorkhorseComponentsFixture } from "#tests/server/support/generati
 const HARNESS_CHECKOUT = "/work/payments";
 
 /** The production browser adapter over the generation fixture, live sources injectable. */
-const archboardContext: ArchboardContext = {
-	schema: 1,
+const executionContext = TEST_CONTEXT_SCHEMA.parse({
+	...testContextFixture,
 	paneId: "pane-readiness",
-	board: { name: "Fixture board", key: "fixture board", version: 1, cursor: null },
-	threadLink: { state: "executable", reason: null },
-	child: { id: "child", epoch: "epoch" },
-	workhorse: { threadId: "thread", turnId: null },
-	coordinator: { threadId: null, realtimeSessionId: null },
-	semantic: {
-		brief: "Readiness projection fixture.",
-		capturedAtMs: 1,
-		freshUntilMs: 2,
-		truncated: false,
-	},
-	focus: { paneId: "pane-readiness", capturedAtMs: 1 },
-	variant: null,
-	view: null,
-	selection: { count: 0, subjects: [], capturedAtMs: 1 },
-	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
-	claim: { holder: "none", doing: null },
-	ambiguity: [],
-	operation: { id: null, kind: null, rpc: null, outcome: null },
-};
+});
 
 function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 	return {
@@ -179,17 +162,11 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		dispose: () => undefined,
 	};
 	const options = createServerBrowserGatewayOptions({
-		contextCodec: ARCHBOARD_CONTEXT_CODEC,
+		contextCodec: TEST_CONTEXT_CODEC,
 		components,
 		repositoryOf: overrides.repositoryOf ?? (() => null),
 		sessions,
-		dynamicApprovals: createServerDynamicApprovalOwner({
-			identity: authorities,
-			now: () => 1,
-			bindingForCaller: () => {
-				throw new Error("The projection owner issues no dynamic approvals.");
-			},
-		}),
+		domainApprovals: null,
 		state,
 		timeline,
 		coordinatorTimeline: timeline,
@@ -197,7 +174,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		leaseLedger: { sessions: new Map() },
 		process: () => facts,
 		...(overrides.now === undefined ? {} : { now: overrides.now }),
-		contextForOperation: () => archboardContext,
+		contextForOperation: () => executionContext,
 		onChange: () => () => undefined,
 		onAccountNotification: (listener) => {
 			accountListeners.add(listener);

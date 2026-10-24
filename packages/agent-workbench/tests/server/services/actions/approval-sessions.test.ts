@@ -6,34 +6,25 @@
 // shown it and a running turn must never wait on nobody. A session that ends settles its own.
 
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { withProductionState } from "#tests/server/support/generation/production-state.ts";
 
-import { createCodexApprovalBroker } from "@archboard/agent-workbench/runtime";
+import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId } from "@archboard/agent-workbench/server";
-import { visibleApprovalViews } from "@archboard/agent-workbench/server";
-import { createServerCodexWorkbenchInstallation } from "#server/services/owner/production.ts";
+import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+import { visibleApprovalViews } from "#server/services/actions/ordinary-approvals.ts";
+import { createProductionBindingsFixture } from "#tests/server/support/generation/production-fixture.ts";
+import type { CodexWorkbenchGenerationInput } from "#server/services/owner/owner-state.ts";
 
 /**
  * The production bindings of one generation, over a throwaway state directory.
  * @returns The bindings and a cleanup.
  */
 function productionBindings() {
-	const root = mkdtempSync(join(tmpdir(), "archboard-approval-sessions-"));
-	return withProductionState(root, () => {
-		const installation = createServerCodexWorkbenchInstallation({
-			sourceRoot: "/repo",
-			onFatal: () => undefined,
-		} as never);
-		const bindings = installation.bindings({
-			generation: 1,
-			process: { stop: async () => undefined },
-		} as unknown as Parameters<typeof installation.bindings>[0]);
-		return { bindings, cleanup: () => rmSync(root, { recursive: true, force: true }) };
-	});
+	const fixture = createProductionBindingsFixture();
+	const bindings = fixture.bindings({
+		generation: 1,
+		process: { stop: async () => undefined },
+	} as unknown as CodexWorkbenchGenerationInput);
+	return { bindings, cleanup: fixture.close };
 }
 
 test("an approval is linked to the workhorse or coordinator whose thread asked, and one no tab session holds is cancelled on receipt", async () => {
