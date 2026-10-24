@@ -84,4 +84,4 @@ function embedsCheckLines(part: EmbedsPart | undefined): string[] {
 	];
 }
 
-export { embedsCheckLines, embedStanding, isRepointable, type EmbedStanding };
+export { embedsCheckLines, embedStanding, fixLine, isRepointable, type EmbedStanding };

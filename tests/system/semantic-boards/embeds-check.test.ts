@@ -410,4 +410,31 @@ describe("check embeds", () => {
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
+
+	// Root writes into a directory without write permission, so nothing stops the run there.
+	test.skipIf(process.getuid?.() === 0)(
+		"a --fix that stops midway names each file it rewrote before, and writes none after",
+		() => {
+			const locked = path.join(docs, "locked");
+			fs.mkdirSync(locked);
+			cli(docs, ["semantic", "render", "ledger", "--out", path.join(locked, "ledger.svg")]);
+			git(docs, "add", "locked/ledger.svg");
+			reword(docs, "ledger", "Auditor", "Reads the ledger every hour");
+			const before = fs.readFileSync(path.join(locked, "ledger.svg"));
+			fs.chmodSync(locked, 0o555);
+			try {
+				const run = cli(docs, ["check", "embeds", "--fix"], {
+					status: 1,
+					env: { ARCHBOARD_RENDERER_CHROMIUM: path.join(root, "no-chromium") },
+				});
+				expect(run.stderr).toContain("docs/ledger.svg");
+				expect(run.stderr).toContain("docs/ledger-front.svg");
+				expect(recipeOf("docs/ledger.svg").fingerprint).not.toBe(recipeIn(before).fingerprint);
+				expect(fs.readFileSync(path.join(locked, "ledger.svg"))).toEqual(before);
+			} finally {
+				fs.chmodSync(locked, 0o755);
+			}
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
 });

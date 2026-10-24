@@ -13,8 +13,10 @@ import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { repoRootOf } from "@archboard/workspace/checkouts";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { checkoutsReadFrom } from "@archboard/code-binding/resolution";
+import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type { EmbedFinding, EmbedFix, EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
-import { embedStanding, isRepointable } from "#cli/rules/check/embed-state.ts";
+import { embedStanding, fixLine, isRepointable } from "#cli/rules/check/embed-state.ts";
 import {
 	bitmapsFor,
 	drawAgain,
@@ -181,16 +183,39 @@ async function checkEmbed(embed: TrackedEmbed, run: Run): Promise<Checked> {
 }
 
 /**
+ * What stopped a run of the check, naming each file `--fix` rewrote before it,
+ * so no rewrite and no re-pointing goes unsaid (ADR 0057).
+ * @param error What stopped it.
+ * @param fixed What `--fix` rewrote before it.
+ * @returns The error itself when nothing was rewritten, else an error with its
+ * message and its code that lists each rewrite.
+ */
+function stoppedAfter(error: unknown, fixed: readonly EmbedFix[]): unknown {
+	if (fixed.length === 0) return error;
+	const code = isRecord(error) ? stringAt(error, "code") : undefined;
+	const message = [errorMessage(error), "Before it stopped:", ...fixed.map(fixLine)].join("\n");
+	return Object.assign(new Error(message, { cause: error }), code === undefined ? {} : { code });
+}
+
+/**
  * Check every embed, one render at a time in the order Git lists them.
  * @param embeds The embeds.
  * @param run The run.
  * @returns What each one found and did.
+ * @throws {Error} What stopped the run, naming each file `--fix` rewrote before it.
  */
 async function checkInOrder(embeds: readonly TrackedEmbed[], run: Run): Promise<Checked[]> {
 	const checked: Checked[] = [];
-	for (const embed of embeds) {
-		// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order Git lists the files
-		checked.push(await checkEmbed(embed, run));
+	try {
+		for (const embed of embeds) {
+			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order Git lists the files
+			checked.push(await checkEmbed(embed, run));
+		}
+	} catch (error) {
+		throw stoppedAfter(
+			error,
+			checked.flatMap((one) => one.fix ?? []),
+		);
 	}
 	return checked;
 }
