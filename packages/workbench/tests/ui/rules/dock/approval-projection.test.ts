@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval, BrowserSpokenApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval, BrowserSpokenApproval } from "@archboard/agent-workbench/contract";
 import { projectApproval, spokenApprovalLine } from "#ui/rules/dock/approval-projection.ts";
 import { identities } from "#tests/ui/support/dock/identities.ts";
 

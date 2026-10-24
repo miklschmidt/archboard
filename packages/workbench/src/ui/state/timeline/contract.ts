@@ -3,7 +3,7 @@
 // long it ran, how it ended, and the plan it was working to. The voice
 // coordinator's turns stand among the workhorse's, tagged by whose they are.
 
-import type { BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
 
 type BrowserTurn = BrowserTimeline["turns"][number];
 

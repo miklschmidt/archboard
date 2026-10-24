@@ -38,6 +38,7 @@ const LAYERS: Record<string, number> = {
 	"server-lifecycle": 6,
 	"code-opener": 6,
 	walkthrough: 6,
+	"agent-workbench": 6,
 	workbench: 7,
 	skills: 7,
 	"apps/cli": 8,
@@ -168,6 +169,20 @@ const owners = [...packages, ...apps];
 const edges = readEdges(owners);
 
 describe("the package graph", () => {
+	test("the reusable workbench depends only on its host-neutral foundation", () => {
+		const foundation = new Set([
+			"codex-app-server",
+			"diagnostics",
+			"process",
+			"timing",
+			"workspace",
+		]);
+		const violations = edges
+			.filter(({ from, to }) => from === "agent-workbench" && !foundation.has(to))
+			.map(({ file, specifier }) => `${file} imports "${specifier}"`);
+		expect(violations).toEqual([]);
+	});
+
 	test("every directory under packages/ and apps/ has a layer", () => {
 		expect(owners.filter(({ id }) => LAYERS[id] === undefined).map(({ id }) => id)).toEqual([]);
 	});

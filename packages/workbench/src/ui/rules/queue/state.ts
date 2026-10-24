@@ -3,7 +3,7 @@
 // not been proven current, and a restart outranks everything, because the
 // queue on screen belonged to another child.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchQueueChildIdentity,
 	WorkbenchQueueEntry,

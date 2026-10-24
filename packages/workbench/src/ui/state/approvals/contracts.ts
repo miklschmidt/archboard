@@ -3,9 +3,9 @@
 // the offers and reviewed fields the model allows, the form state a decision
 // reads, and how one decision settles.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import type {
 	ApprovalCommandDraft,
 	WorkbenchCommandIntent,

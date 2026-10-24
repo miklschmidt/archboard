@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { RealtimeMediaSession } from "#ui/state/realtime/session-contract.ts";
+import type { RealtimeMediaSession } from "@archboard/agent-workbench/browser";
 import { createBrowserWorkbenchMediaOwner } from "#ui/clients/media/media-owner.ts";
 import type { BrowserWorkbenchMediaOwner } from "#ui/clients/media/media-state.ts";
 import { FakeMediaBrowser } from "#tests/ui/support/media/fake-media-environment.ts";

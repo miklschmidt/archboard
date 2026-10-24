@@ -5,12 +5,12 @@
 
 import { z } from "zod";
 
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
 import {
 	type BrowserCommand,
 	type BrowserCommandLease,
 	type BrowserSnapshot,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/agent-workbench/contract";
 import type {
 	BrowserWorkbenchDeltaMessage,
 	BrowserWorkbenchGatewayMessage,

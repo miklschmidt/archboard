@@ -2,7 +2,7 @@
 // broker's identity, the effect, a safe link, and the notices that say what
 // the server did not publish or what this browser will not do.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchApprovalDisclosure,
 	WorkbenchApprovalLink,

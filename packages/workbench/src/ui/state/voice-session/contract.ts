@@ -3,13 +3,11 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type {
-	BrowserSnapshot,
-	BrowserVoicePresentation,
-} from "#shared/schemas/browser/snapshot.ts";
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
+import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
 import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
+import type { VoiceOutputLevelSource } from "@archboard/agent-workbench/browser";
 import type {
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,

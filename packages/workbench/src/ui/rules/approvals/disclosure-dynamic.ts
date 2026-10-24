@@ -2,7 +2,7 @@
 // the exact target, prompt and fork boundary, both OperationIds, the
 // immutable effect hash, and the tool result once the server published one.
 
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
 import type { WorkbenchApprovalDisclosure } from "#ui/state/approvals/contracts.ts";
 import { row, timestampText } from "#ui/rules/approvals/disclosure.ts";
 

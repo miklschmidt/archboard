@@ -4,8 +4,8 @@
 // effect hash exactly as the server published them. Nothing here can retarget
 // an effect or widen it.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchApprovalDraftResult,
 	WorkbenchApprovalField,

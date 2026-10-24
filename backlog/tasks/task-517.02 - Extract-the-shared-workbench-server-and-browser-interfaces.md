@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 12:47'
+updated_date: '2026-10-24 12:54'
 labels: []
 dependencies:
   - TASK-517.01
@@ -43,3 +43,9 @@ The parent owns board adoption, the complete gate, review, and final acceptance 
 
 Implementation split: the backend implementer owns reusable runtime and server code, the mixed generation/session contracts, and Archboard backend wiring. The parent owns all shared browser contracts, media clients, UI callers, package manifests, dependency policies, and ownership docs. The exact source map is /tmp/task517.01-host-separation-handoff.json. Shared realtime contracts move once to the new canonical owner.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Parent moved 18 shared implementation files, 14 browser media and output files, and 23 test or support files into agent-workbench. The integration now imports those declarations through public entries. The core voice presentation payload is JSON; Archboard retains its strict walkthrough and recording schema. All 666 isolated UI and shared cases passed. Browser types and scoped UI/shared lint passed. The new package sits at layer 6, with an explicit foundation dependency contract. The final integration pass will remove public exports without an outside caller after backend imports converge.
+<!-- SECTION:NOTES:END -->

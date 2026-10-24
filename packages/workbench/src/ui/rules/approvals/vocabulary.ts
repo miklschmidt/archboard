@@ -2,7 +2,7 @@
 // labels, the server's spoken-eligibility vocabulary in human words, and the
 // transport's refusals.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchApprovalFamily,
 	WorkbenchApprovalPhase,

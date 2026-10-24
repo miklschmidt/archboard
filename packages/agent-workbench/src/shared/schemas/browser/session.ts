@@ -14,9 +14,9 @@ const BROWSER_WORKHORSE_LIMIT = 32;
 /** One workhorse of the tab session, as the agent dock lists it (ADR 0050). */
 const BrowserWorkhorseSchema = z
 	.object({
-		/** The checkout it works in: the directory that holds the vault. */
+		/** The checkout that the workhorse works in. */
 		checkout: boundedText(4096),
-		/** The repository identity, or an untracked vault's registry name; null when none is listed. */
+		/** The host-provided repository identity, or null when none is listed. */
 		repository: boundedText(512).nullable(),
 		/** Whether the tab session has a workhorse here; false only for the shown checkout before its first message. */
 		live: z.boolean(),

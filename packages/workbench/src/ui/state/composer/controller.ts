@@ -5,7 +5,7 @@
 // retargeted. The controller holds no message list: the only turn a person
 // ever sees came from the server snapshot through the runtime.
 
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserWorkbenchCommandResult,

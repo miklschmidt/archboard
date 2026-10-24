@@ -2,7 +2,7 @@
 // person chose, the refusals it makes before anything leaves the browser, and
 // the one state owner the official assistant-ui composer submits through.
 
-import type { BrowserSnapshot, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot, DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchState,

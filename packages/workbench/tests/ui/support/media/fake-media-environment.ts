@@ -12,9 +12,9 @@ import type {
 	RealtimeReceiver,
 	RealtimeSender,
 	RealtimeTimer,
-} from "#ui/state/realtime/environment.ts";
+} from "@archboard/agent-workbench/browser";
 import type { BrowserAudioElementPort } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputMeter, VoiceOutputPlayback } from "#ui/clients/output-level/meter.ts";
+import type { VoiceOutputMeter, VoiceOutputPlayback } from "@archboard/agent-workbench/browser";
 
 /**
  * Does nothing.

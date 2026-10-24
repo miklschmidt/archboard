@@ -2,7 +2,7 @@
 // state machine: the transport, the media owner, and the server's coordinator
 // and voice projections.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
 import type {
 	VoiceSessionFailure,

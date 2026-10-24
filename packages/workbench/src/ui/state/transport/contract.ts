@@ -16,7 +16,7 @@ import type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserSnapshotDelta,
-} from "#shared/protocol/gateway-envelope.ts";
+} from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -24,7 +24,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/agent-workbench/contract";
 
 /**
  * The pane's socket to the Archboard server, as the transport sees it. It is

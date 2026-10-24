@@ -3,7 +3,7 @@
 // gateway sends, plus the branded identities a typed draft needs.
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/agent-workbench/contract";
 import type { BrowserCommandDraft } from "#ui/state/transport/contract.ts";
 
 /** A wire record. */

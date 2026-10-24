@@ -2,7 +2,7 @@
 // the server published it. A secret default is never projected, so it can never
 // be echoed either.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchApprovalControl,
 	WorkbenchApprovalField,

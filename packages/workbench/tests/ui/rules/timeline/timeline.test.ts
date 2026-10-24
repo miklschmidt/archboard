@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	conversationTurnId,

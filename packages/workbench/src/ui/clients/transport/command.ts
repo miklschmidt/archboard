@@ -2,7 +2,7 @@
 // to the target it was composed against, refuse a subject that moved, then
 // send it once and read its result.
 
-import type { BrowserCommand, BrowserCommandLease } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommand, BrowserCommandLease } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCommandResult,

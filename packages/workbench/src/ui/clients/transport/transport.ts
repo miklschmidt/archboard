@@ -4,7 +4,7 @@
 // only composes the session, lease, command and prepared-action owners over
 // one core.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchAccountReadResult,

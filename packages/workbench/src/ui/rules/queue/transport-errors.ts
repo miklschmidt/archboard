@@ -1,8 +1,8 @@
 // Reading a thrown transport error without depending on the transport's
 // error class: the facts it carries are read structurally.
 
-import { BROWSER_GATEWAY_ERROR_CODES } from "#shared/protocol/gateway-envelope.ts";
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/agent-workbench/contract";
+import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportErrorFacts,

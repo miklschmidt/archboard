@@ -5,7 +5,7 @@
 // deliberately preserves the shared model's exact object, enum, cross-field
 // and bounded-text checks instead of copying those schemas into the UI.
 
-import type { IdentityContext } from "#shared/schemas/browser/scalars.ts";
+import type { IdentityContext } from "@archboard/agent-workbench/contract";
 import type {
 	ApprovalId,
 	BrowserCommandId,

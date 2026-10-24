@@ -16,7 +16,6 @@ import {
 } from "#shared/schemas/browser/scalars.ts";
 import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
 import type { DynamicApprovalSchemas } from "#shared/schemas/dynamic-approval/approval.ts";
-import { RecordingNarrationSchema } from "@archboard/walkthrough/recording";
 
 /**
  * Builds the text command, command lease, operation outcome and browser
@@ -172,17 +171,8 @@ function createBrowserCommandSchemas(
 				command: z.literal("realtimeStart"),
 				threadId: ThreadIdSchema,
 				sdp: boundedText(16_384),
-				/**
-				 * Start voice to present one walkthrough of the board this pane is showing
-				 * (TASK-251). Only the walkthrough is the browser's to name; the server reads
-				 * what it says from the board. A recording (TASK-304) is a narration nobody is
-				 * listening to live, which the page paces itself, and it names the language it is
-				 * narrated in (TASK-380).
-				 */
-				presentation: z
-					.object({ walkthrough: boundedText(64), recording: RecordingNarrationSchema.optional() })
-					.strict()
-					.optional(),
+				/** The host validates the meaning of this optional JSON payload. */
+				presentation: JsonValueSchema.optional(),
 			})
 			.strict(),
 		z

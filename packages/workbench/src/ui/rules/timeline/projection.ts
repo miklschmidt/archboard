@@ -4,7 +4,7 @@
 // never something silently merged. The voice coordinator's turns are projected
 // the same way and stand among the workhorse's by when they started.
 
-import type { BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
 import type {
 	ConversationOutcome,
 	ConversationOwner,

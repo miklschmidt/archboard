@@ -1,14 +1,14 @@
 // The wire parsers for what a request answers with: the response envelope,
 // the pushed event envelope, command results and account results.
 
-import { BROWSER_GATEWAY_ERROR_CODES } from "#shared/protocol/gateway-envelope.ts";
-import { DeliveryOutcomeSchema } from "#shared/schemas/browser/vocabulary.ts";
-import { type DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/agent-workbench/contract";
+import { DeliveryOutcomeSchema } from "@archboard/agent-workbench/contract";
+import { type DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type AnswerSdp,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import type {
 	BrowserGatewayErrorCode,
 	BrowserWorkbenchAccountReadResult,
