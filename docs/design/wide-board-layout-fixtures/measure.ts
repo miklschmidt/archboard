@@ -13,6 +13,7 @@
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every board, not only the current one
+// ENGINE=blocks      lay every board out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
@@ -22,6 +23,9 @@ import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
 import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
+import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
+import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import {
 	scorecardOf,
@@ -33,6 +37,8 @@ const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
+const layout =
+	process.env["ENGINE"] === undefined ? undefined : LayoutEngineSchema.parse(process.env["ENGINE"]);
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
@@ -45,6 +51,8 @@ interface Item {
 	readonly name: string;
 	readonly variant: string;
 	readonly content: unknown;
+	/** The vault's policy, which names the groups the board draws; a fixture has none of its own. */
+	readonly policy: SemanticPolicy;
 }
 
 /** One board's saved result. */
@@ -63,8 +71,10 @@ for (const file of fs
 		name: file.replace(".content.json", ""),
 		variant: "fixture",
 		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
+		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
+const { configuration: policy } = readSemanticBoardConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
@@ -81,6 +91,7 @@ for (const file of fs
 			name: parsed.board.name,
 			variant: `${current ? "*" : ""}${variant.name}`,
 			content: variant.content,
+			policy,
 		});
 	}
 }
@@ -103,7 +114,13 @@ let header = false;
 for (const item of items) {
 	// A fixture authored before subjects carried an order is given one by position.
 	const content = orderedFixture(item.content);
-	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
+	const drawn = await renderArchitecture({
+		content,
+		theme: "light",
+		fonts: "embedded",
+		layout,
+		policy: item.policy,
+	});
 	const key = `${item.name} ${item.variant}`;
 	const measures = scorecardOf(drawn, content);
 	const reads = drawn.readingDirection ?? "-";

@@ -9,6 +9,7 @@ import {
 	registeredFaces,
 	spanFits,
 } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // A step's note is the caveat a sequence carries on one message: the branch,
 // the loop's condition. A picture that leaves it out tells a reader less than
@@ -83,6 +84,7 @@ function paintedBox(markup: string): DiagramBox {
 
 test("a crossing step explanation stays clear of the receiver's activation bar", () => {
 	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture({
 			nodes: [
 				{ id: "client", name: "Client", kind: "service" },
@@ -129,8 +131,16 @@ test("a crossing step explanation stays clear of the receiver's activation bar",
 });
 
 test("a self step's note is drawn whole under its loop, and the next message makes room for it", () => {
-	const plain = renderDataFlow({ content: startup(), theme: "light" });
-	const rendered = renderDataFlow({ content: startup(NOTE), theme: "light" });
+	const plain = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: startup(),
+		theme: "light",
+	});
+	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: startup(NOTE),
+		theme: "light",
+	});
 	const faces = registeredFaces(rendered.svg);
 	const words = drawnTexts(rendered.svg).filter(
 		(text) => text.subject.id === "s2" && text.text !== "import candidate ×2",

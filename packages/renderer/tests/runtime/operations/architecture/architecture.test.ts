@@ -19,6 +19,9 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/board/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+const policy = DEFAULT_SEMANTIC_POLICY;
 
 /**
  * One architecture, as its own contract reads it.
@@ -79,7 +82,7 @@ async function render(
 	content: VariantContent = SAMPLE,
 	theme: DiagramTheme = "light",
 ): Promise<RenderedDiagram> {
-	return renderArchitecture({ content, theme });
+	return renderArchitecture({ policy, content, theme });
 }
 
 /**
@@ -436,8 +439,9 @@ describe("renderArchitecture", () => {
 	});
 
 	test("an embedded render carries its faces instead of pointing at them", async () => {
-		const linked = await renderArchitecture({ content: SAMPLE, theme: "light" });
+		const linked = await renderArchitecture({ policy, content: SAMPLE, theme: "light" });
 		const embedded = await renderArchitecture({
+			policy,
 			content: SAMPLE,
 			theme: "light",
 			fonts: "embedded",

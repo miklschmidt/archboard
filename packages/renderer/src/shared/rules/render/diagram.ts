@@ -1,4 +1,4 @@
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
+import type { SemanticPolicy } from "@archboard/board/policy";
 // A semantic board in, one self-contained SVG plus its geometry out.
 //
 // This module is an in-repository fork of both grammars of the PR
@@ -215,7 +215,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 	}
 
 	const stepLines = withStepLines(request.content, held);
-	const policy = request.policy ?? DEFAULT_SEMANTIC_POLICY;
+	const { policy } = request;
 	const drawing = await layoutRemembered(
 		stepLines.content,
 		request.standing,
@@ -311,7 +311,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		PALETTE,
 		standingsFrom(plain ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
-		{ policy: request.policy ?? DEFAULT_SEMANTIC_POLICY, level: request.level },
+		{ policy: request.policy, level: request.level },
 		{ held: plain ? told.flows : undefined, standingOf: standingsFrom(request.standing) },
 	);
 	const page = framedForExport(pageFor(painting, PALETTE, request.unbuilt), request, PALETTE);

@@ -4,6 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { VariantContent } from "@archboard/board/content";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { pointsOf } from "#tests/runtime/support/drawn-traffic.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 export const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
@@ -85,7 +86,14 @@ const CHAIN_NODES = [
  * @returns The markup.
  */
 export async function drawn(grammar: "architecture" | "sequence"): Promise<string> {
-	return (await renderSemanticView({ content: SAMPLE, grammar, theme: "light" })).svg;
+	return (
+		await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: SAMPLE,
+			grammar,
+			theme: "light",
+		})
+	).svg;
 }
 
 /**
@@ -95,7 +103,14 @@ export async function drawn(grammar: "architecture" | "sequence"): Promise<strin
  */
 export async function chain(edges: Record<string, unknown>[]): Promise<string> {
 	const content = variant({ nodes: CHAIN_NODES, edges });
-	return (await renderSemanticView({ content, grammar: "architecture", theme: "light" })).svg;
+	return (
+		await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			grammar: "architecture",
+			theme: "light",
+		})
+	).svg;
 }
 
 /**
@@ -111,7 +126,14 @@ export async function solo(traffic: Record<string, unknown>): Promise<string> {
 			{ id: "e", from: "api", to: "store", kind: "call", label: "reads from the store", traffic },
 		],
 	});
-	return (await renderSemanticView({ content, grammar: "architecture", theme: "light" })).svg;
+	return (
+		await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			grammar: "architecture",
+			theme: "light",
+		})
+	).svg;
 }
 
 /**

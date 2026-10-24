@@ -11,6 +11,7 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { across, along, breadth, depth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const NESTED = orderedFixture({
 	nodes: [
@@ -41,7 +42,11 @@ describe("compound architecture layout", () => {
 				{ id: "newout", from: "added", to: "sink", kind: "call" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+		});
 		const routes = routePoints(drawing.svg);
 		for (const edge of content.edges) {
 			for (const id of ["entry", "worker", "added", "sink"]) {
@@ -52,7 +57,11 @@ describe("compound architecture layout", () => {
 	});
 
 	test("ancestor and cross-container routes attach to their own semantic endpoints", async () => {
-		const drawing = await renderArchitecture({ content: NESTED, theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: NESTED,
+			theme: "light",
+		});
 		const routes = routePoints(drawing.svg);
 		expect(Object.keys(drawing.atlas.nodes).toSorted()).toEqual(
 			NESTED.nodes.map((node) => node.id).toSorted(),
@@ -94,14 +103,18 @@ describe("compound architecture layout", () => {
 			nodes: [{ id: "solo", name: "Another board", kind: "module" }],
 		});
 		const [first, separate, concurrent] = await Promise.all([
-			renderArchitecture({ content: NESTED, theme: "light" }),
-			renderArchitecture({ content: other, theme: "dark" }),
-			renderArchitecture({ content: NESTED, theme: "light" }),
+			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),
+			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: other, theme: "dark" }),
+			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),
 		]);
 		expect(first).toEqual(concurrent);
 		expect(Object.keys(separate.atlas.nodes)).toEqual(["solo"]);
 		expect(separate.atlas.edges).toEqual({});
-		const subsequent = await renderArchitecture({ content: NESTED, theme: "light" });
+		const subsequent = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: NESTED,
+			theme: "light",
+		});
 		expect(subsequent).toEqual(first);
 	});
 });
@@ -132,7 +145,12 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 		],
 		edges: [{ id: "write", from: "frame", to: "store", kind: "data" }],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "blocks",
+	});
 
 	const frame = drawing.atlas.nodes["frame"]!;
 	const target = drawing.atlas.nodes["store"]!;
@@ -165,7 +183,12 @@ test.each(LayoutEngineSchema.options)(
 				.slice(1)
 				.map((to, index) => ({ id: `e${index}`, from: stages[index]!, to, kind: "call" })),
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const cards = stages.map((id) => drawing.atlas.nodes[id]!);
 		expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
 		const frame = drawing.atlas.nodes["box"]!;
@@ -180,7 +203,12 @@ test.each(LayoutEngineSchema.options)(
 // ends stand in one column or clearly apart, never a near miss.
 test("stacked cards joined through a label share a column or stand clearly apart", async () => {
 	const content = orderedFixture(nearMiss);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const [one, other] = [drawing.atlas.nodes["CtoOMxca"]!, drawing.atlas.nodes["wLF1X11D"]!];
 	expect(one.y + one.height).toBeLessThan(other.y);
 	const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
@@ -193,7 +221,12 @@ test("stacked cards joined through a label share a column or stand clearly apart
 test.each(LayoutEngineSchema.options)(
 	"a %s page keeps the same margin on every side of what it draws",
 	async (layout) => {
-		const drawing = await renderArchitecture({ content: NESTED, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: NESTED,
+			theme: "light",
+			layout,
+		});
 		const boxes = [
 			...Object.values(drawing.atlas.nodes),
 			...routeLabels(drawing.svg).values(),

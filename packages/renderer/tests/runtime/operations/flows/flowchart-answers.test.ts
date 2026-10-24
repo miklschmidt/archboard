@@ -17,6 +17,7 @@ import {
 } from "#tests/runtime/support/drawn-flowchart.ts";
 import { corridorPoints, routesCross, routeLabels } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** How near a line's start may be to the outline it leaves. */
 const MEETING = 2.5;
@@ -233,7 +234,12 @@ const NESTED: VariantContent = orderedFixture({
  * @returns The lines, and the diamond's left and right x, middle height and foot.
  */
 async function answersOf(content: VariantContent, id: string) {
-	const { svg } = await renderSemanticView({ content, grammar: "flowchart", theme: "light" });
+	const { svg } = await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		grammar: "flowchart",
+		theme: "light",
+	});
 	const outline = outlineOf(svg, id);
 	const xs = outline.map(({ x }) => x);
 	const ys = outline.map(({ y }) => y);
@@ -295,6 +301,7 @@ describe("a decision's answers leave it from separate points", () => {
 
 	test("answers take the sides that cross no line, a loop's line back up included", async () => {
 		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: LOOPED,
 			grammar: "flowchart",
 			theme: "light",
@@ -311,6 +318,7 @@ describe("a decision's answers leave it from separate points", () => {
 
 	test("an answer from a side point stays beside its diamond down to its words", async () => {
 		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: NESTED,
 			grammar: "flowchart",
 			theme: "light",

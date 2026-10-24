@@ -18,6 +18,7 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE } from "#shared/constants/spacing.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** The room a badge keeps from a card and from the ends of its run. */
 const AIR = LABEL_CARD_CLEARANCE;
@@ -47,7 +48,12 @@ test.each(
 				{ id: "e2", from: "source", to: "third", kind: "call", label: "accept request" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const labels = routeLabels(drawing.svg);
 		const routes = routePoints(drawing.svg);
 		expect(labels.size).toBe(content.edges.length);
@@ -88,7 +94,14 @@ test.each(
 				expect(label.y + label.height).toBeLessThanOrEqual(frame.y + frame.height - 24);
 			}
 		}
-		expect(await renderArchitecture({ content, theme: "light", layout })).toEqual(drawing);
+		expect(
+			await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				theme: "light",
+				layout,
+			}),
+		).toEqual(drawing);
 	},
 );
 
@@ -104,7 +117,11 @@ test("a long relationship's label remains within reach of its endpoints on a cle
 			{ id: "skip", from: "a", to: "d", kind: "data", label: "complete drawing" },
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const label = routeLabels(drawing.svg).get("skip")!;
 	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
 	const route = routePoints(drawing.svg).get("skip")!;
@@ -121,7 +138,11 @@ test("a long relationship's label remains within reach of its endpoints on a cle
 // relationships need an engine-reserved label just before a rounded corner.
 test("reserved labels keep their whole straight run when a neighboring corner rounds", async () => {
 	const content = orderedFixture(reservedCorner);
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });
 
@@ -129,7 +150,11 @@ test("reserved labels keep their whole straight run when a neighboring corner ro
 // run left its label behind; moving only that label instead covered another route.
 test("reserved labels follow their shared lanes without covering routes, cards or other labels", async () => {
 	const content = orderedFixture(reservedLane);
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	expect(labelsOffRuns(drawing)).toEqual([]);
 	expect(covering(drawing)).toEqual([]);
 	expect(overlaps(drawing, content)).toEqual([]);
@@ -140,7 +165,12 @@ test("reserved labels follow their shared lanes without covering routes, cards o
 // stood twice as far from one card as from the other.
 test("a label on a straight line stands in the middle of the gap between its cards", async () => {
 	const content = orderedFixture(oneCommandPath);
-	const drawn = await renderArchitecture({ content, theme: "light", layout: "blocks" });
+	const drawn = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "blocks",
+	});
 	const labels = routeLabels(drawn.svg);
 	for (const id of ["kcqc65Ye", "EBy8Rjwh"]) {
 		const edge = content.edges.find((one) => one.id === id)!;
@@ -157,7 +187,12 @@ test("a label on a straight line stands in the middle of the gap between its car
 // turns beside the row, and the label sat half a lane from that line.
 test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {
 	const content = orderedFixture(archboardServer);
-	const drawn = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawn = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const label = routeLabels(drawn.svg).get("ENymHNDK")!;
 	const others = [...corridorPoints(drawn.svg)].filter(([id]) => id !== "ENymHNDK");
 	const nearest = Math.min(...others.map(([, points]) => distanceToRoute(label, points)));
@@ -168,6 +203,11 @@ test("a row of labels moves toward its gap's middle only as far as the lines tur
 // container title orders its child, so both relationships form one cycle.
 test("a response from a child keeps its label on the return route", async () => {
 	const content = orderedFixture(parentReturn);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });

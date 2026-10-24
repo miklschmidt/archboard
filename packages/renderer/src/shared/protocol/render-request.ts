@@ -42,8 +42,12 @@ class SemanticRenderError extends Error {
 interface DiagramRenderRequest {
 	/** The content, already cut down to what the caller wants drawn. */
 	readonly content: VariantContent;
-	/** Current vault presentation, shared by every variant. */
-	readonly policy?: SemanticPolicy;
+	/**
+	 * The vault's presentation, shared by every variant: its groups, kinds and
+	 * line looks. Required, so a caller drawing a vault board cannot leave out
+	 * the groups it draws; a drawing with no vault names `DEFAULT_SEMANTIC_POLICY`.
+	 */
+	readonly policy: SemanticPolicy;
 	/**
 	 * The theme a document that stands alone is drawn in: it then carries that
 	 * theme's value of every colour token it paints with. Absent, the picture is

@@ -2,6 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const MEMBERS = ["vm1", "vm2", "vm3", "vm4"];
 // Relationship IDs are independent of the cards' stable ordering.
@@ -58,8 +59,8 @@ test("unchanged sibling identities keep their horizontal order when a proposal c
 		edges: [...content.edges, { id: "auditlog", from: "gateway", to: "audit", kind: "data" }],
 	});
 	const [before, after] = await Promise.all([
-		renderArchitecture({ content, theme: "light" }),
-		renderArchitecture({ content: proposal, theme: "light" }),
+		renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" }),
+		renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: proposal, theme: "light" }),
 	]);
 	for (const drawing of [before, after]) {
 		expect(drawing.readingDirection).toBe("down");

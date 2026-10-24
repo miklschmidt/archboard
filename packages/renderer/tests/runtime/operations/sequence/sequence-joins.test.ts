@@ -12,6 +12,7 @@ import { messagesOf } from "@archboard/board/flow";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { labelPlates } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;
@@ -65,6 +66,7 @@ test("the heads of one flow stand one height, so every lifeline starts level und
 	// several lines needs more height. Heads of their own heights started their
 	// lifelines at as many heights down the page.
 	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: [
@@ -165,7 +167,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 			},
 		],
 	});
-	const rendered = renderDataFlow({ theme: "light", content });
+	const rendered = renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, theme: "light", content });
 	const markers = new Map(
 		[...rendered.svg.matchAll(/<marker\s[^>]*>/g)].map(([tag]) => [
 			/id="([^"]+)"/.exec(tag)![1]!,
@@ -219,6 +221,7 @@ test("a flow's header slab spans the whole of a frame its words widened", () => 
 	// grows with it, as far in from either side of the frame.
 	const long = "a label long enough to reach past every column of this flow";
 	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: [
@@ -251,6 +254,7 @@ test("a message's words stand between the lifelines either side of them", () => 
 	// A label wider than the gap it names ran across the next lifeline, and one
 	// centred over an arrow that passes a column stood on that column's lifeline.
 	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: ["a", "b", "c"].map((id) => ({ id, name: `Part ${id}`, kind: "service" })),

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import { renderDataFlow } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * Whether one box sits wholly inside another, allowing a hair of rounding.
@@ -25,6 +26,7 @@ test("every message's loop and words lie inside its own flow's frame, on either 
 	// a frame that does not follow leaves those words outside the flow.
 	const long = "a label long enough to reach past every column of this flow";
 	const rendered = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: [

@@ -4,6 +4,7 @@ import { expect, test } from "bun:test";
 import { diagramTextWidth, renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test("a failed required block solve cancels the speculative solves through the host", async () => {
 	diagramTextWidth("Warm", { family: "Inter", weight: 400 }, 12);
@@ -44,9 +45,12 @@ test("a failed required block solve cancels the speculative solves through the h
 		},
 	});
 	try {
-		const outcome = await renderArchitecture({ content, layout: "blocks", theme: "light" }).catch(
-			(error: unknown) => error,
-		);
+		const outcome = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			layout: "blocks",
+			theme: "light",
+		}).catch((error: unknown) => error);
 		expect(outcome).toBe(failure);
 		// Two joining source blocks produce several candidates before the first
 		// failure is observed. Passing no signal would leave these jobs queued.

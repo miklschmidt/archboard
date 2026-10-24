@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
-import type { SemanticPolicy } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { locateSemanticBoard } from "@archboard/board/address";
@@ -115,9 +115,9 @@ const HEAVY_BLOCKS = new Set(["Browser application (blocks)", "Board viewer (blo
 const cases: {
 	name: string;
 	content: Parameters<typeof orderedFixture>[0];
-	policy: SemanticPolicy | undefined;
+	policy: SemanticPolicy;
 }[] = [
-	...FIXTURES.map(({ name, content }) => ({ name, content, policy: undefined })),
+	...FIXTURES.map(({ name, content }) => ({ name, content, policy: DEFAULT_SEMANTIC_POLICY })),
 	...boards.map(({ name, content }) => ({ name, content, policy })),
 ];
 for (const board of cases) {
@@ -144,7 +144,7 @@ for (const board of cases) {
 					content,
 					theme: "light",
 					layout,
-					...(board.policy === undefined ? {} : { policy: board.policy }),
+					policy: board.policy,
 				});
 				const took = performance.now() - began;
 				if (layout === DEFAULT_LAYOUT_ENGINE)

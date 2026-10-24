@@ -6,6 +6,7 @@ import type { VariantContent } from "@archboard/board/content";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */
 const CHANNEL_EDGE_IDS = [
@@ -59,6 +60,7 @@ test("routes leaving one gateway in one direction may share a run", async () => 
 	// The shared trunk this engine draws here is what the overdrawn-run
 	// measure below must see, so a zero from it means no run is shared.
 	const plain = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: channelContent,
 		theme: "dark",
 		layout: SHARING,
@@ -69,7 +71,12 @@ test("routes leaving one gateway in one direction may share a run", async () => 
 test.each(LayoutEngineSchema.options)(
 	"opposing same-kind channels do not share an overdrawn run (%s)",
 	async (layout) => {
-		const plain = await renderArchitecture({ content: channelContent, theme: "dark", layout });
+		const plain = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: channelContent,
+			theme: "dark",
+			layout,
+		});
 		// Each pair below uses the same HTTP kind but arrives at the gateway where
 		// the other route leaves it. Their local direction is therefore different.
 		for (const pair of [
@@ -94,6 +101,7 @@ for (const [left, right] of [
 ] as const) {
 	test(`different comparison standings use distinct same-kind channels (${left}/${right})`, async () => {
 		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: channelContent,
 			theme: "dark",
 			layout: SHARING,
@@ -119,6 +127,7 @@ const DIFFERENCES: Record<string, (edge: Edge) => void> = {
 for (const [name, change] of Object.entries(DIFFERENCES)) {
 	test(`different ${name} uses distinct same-kind channels`, async () => {
 		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: outgoingDiffering(change),
 			theme: "dark",
 			layout: SHARING,

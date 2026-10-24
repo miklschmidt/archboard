@@ -13,11 +13,13 @@ import { roundBridges, routePoints } from "#tests/runtime/support/drawn-routes.t
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import gradingFan from "#tests/runtime/support/fixtures/grading-fan.json";
 import sideExit from "#tests/runtime/support/fixtures/side-exit.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(LayoutEngineSchema.options)(
 	"lines to cards beside their source leave along the shared trunk without hops (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: orderedFixture(sideExit),
 			theme: "light",
 			layout,
@@ -33,7 +35,12 @@ test.each(LayoutEngineSchema.options)(
 	"a fan from one card to the cards below it leaves by the bottom and enters their tops (%s)",
 	async (layout) => {
 		const content = orderedFixture(gradingFan);
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const routes = routePoints(drawing.svg);
 		const fan = content.nodes.find(({ name }) => name === "Grading session")!.id;
 		const across = content.edges.flatMap(({ id, from }) => {
