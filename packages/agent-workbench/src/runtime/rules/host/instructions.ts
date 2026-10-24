@@ -83,6 +83,12 @@ function captureThreadProfile(
 	const captured = cloneAndFreeze(profile);
 	assertWorkbenchThreadTools(captured.dynamicTools, role);
 	if (
+		role !== undefined &&
+		!captured.instructions.text.startsWith(`${CORE_ROLE_INSTRUCTIONS[role]}\n`)
+	) {
+		throw new TypeError(`The ${role} profile must retain its core role instructions.`);
+	}
+	if (
 		createHash("sha256").update(captured.instructions.text, "utf8").digest("hex") !==
 			captured.instructions.sha256 ||
 		createHash("sha256").update(JSON.stringify(captured.dynamicTools), "utf8").digest("hex") !==

@@ -141,7 +141,8 @@ function assertWorkbenchThreadTools(
 	if (role === undefined) return;
 	const required =
 		role === "coordinator" ? coordinatorDynamicTools() : [ARCHBOARD_COORDINATOR_NAMESPACE];
-	if (required.some((tool) => !names.has(tool.name)))
-		throw new TypeError(`The ${role} profile lacks a required workbench coordination namespace.`);
+	const reservedNames = new Set([...names].filter(isReservedWorkbenchNamespace));
+	if (!isDeepStrictEqual(reservedNames, new Set(required.map((tool) => tool.name))))
+		throw new TypeError(`The ${role} profile must declare exactly its coordination namespaces.`);
 }
 export { assertWorkbenchThreadTools, isReservedWorkbenchNamespace };
