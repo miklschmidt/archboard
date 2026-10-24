@@ -1,5 +1,5 @@
 import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-read";
-import type { WorkbenchContextSource } from "#runtime/protocol/host/context-source.ts";
+import type { WorkbenchContextSource } from "@archboard/agent-workbench/runtime";
 
 // Follow the vault a tab presents. The reusable watcher receives complete formatted snapshots.
 /**

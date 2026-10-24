@@ -1,8 +1,10 @@
 import type {
-	CodexWorkbenchServer,
+	CodexWorkbenchHostPolicy,
 	PendingOperation,
 	WorkbenchOperationAuthority,
-} from "#server/protocol/generation/host.ts";
+	CodexWorkbenchDomainScope,
+	BrowserLeaseLedger,
+} from "@archboard/agent-workbench/server";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -11,12 +13,7 @@ import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
 } from "#runtime/schemas/semantic-context-types.ts";
-import type { BrowserLeaseLedger } from "#server/protocol/gateway/contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import type {
-	CodexWorkbenchComponents,
-	CodexWorkbenchGenerationHooks,
-} from "#server/services/generation/workbench.ts";
+import type { TabSessionId } from "@archboard/agent-workbench/server";
 import type { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
 
 /**
@@ -25,7 +22,8 @@ import type { createServerDynamicLifecycleOwner } from "#server/services/generat
  * context comes from, and how it wires itself into the server's sockets and
  * lifetime. The server provides one of these; the workbench keeps none of it.
  */
-export interface ArchboardWorkbenchServer extends CodexWorkbenchServer {
+export interface ArchboardWorkbenchServer {
+	readonly host: CodexWorkbenchHostPolicy;
 	/**
 	 * The checkout whose source this server runs. The Codex child runs its `bin`, and the
 	 * coordinator reads its archboard skill. No thread works in it unless it is that thread's own
@@ -94,12 +92,9 @@ export interface ArchboardWorkbenchServer extends CodexWorkbenchServer {
 	readonly waitForTargets: Parameters<
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];
-	readonly installIdentityDecoders: (identity: CodexWorkbenchComponents["identity"]) => void;
-	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
-	readonly installBrowserGateway: (
-		components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
-	) => () => void;
+	readonly installLifecycleSignals: (components: CodexWorkbenchDomainScope) => () => void;
+	readonly installBrowserGateway: NonNullable<CodexWorkbenchHostPolicy["onBrowserGateway"]>;
 	readonly browserLeaseLedger: BrowserLeaseLedger;
-	readonly stopBrowser: CodexWorkbenchGenerationHooks["stopBrowser"];
+
 	readonly onFatal: (error: unknown) => void;
 }

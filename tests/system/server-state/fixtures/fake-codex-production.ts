@@ -131,7 +131,7 @@ const buildThread = (
 		cliVersion: "0.160.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
-		threadSource: "archboard",
+		threadSource: params["threadSource"],
 		...unsetThreadFields,
 		turns: [],
 	}) satisfies FixtureThread;

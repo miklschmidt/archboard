@@ -345,3 +345,46 @@ test("another pane of the tab can stop voice, whichever checkout it shows, but c
 	});
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
+
+test("a refused host presentation leaves live voice and its coordinator unchanged", async () => {
+	const value = fixture();
+	let prepared = 0;
+	const actions = createServerRealtimeActions(
+		value.components as never,
+		value.scope as never,
+		undefined,
+		{
+			validate: () => {
+				throw new TypeError("invalid_host_presentation");
+			},
+			prepare: () => {
+				prepared++;
+				return { topic: "valid" };
+			},
+		},
+	);
+	const handle = await startVoice(actions, value);
+	const coordinator = value.components.coordinator.snapshot().threadId;
+	await expect(
+		actions.start(
+			{
+				kind: "browser_command",
+				command: "realtimeStart",
+				commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+				paneId: value.context.paneId,
+				childId: value.context.childId,
+				epoch: value.context.epoch,
+				threadId: value.threadId,
+				sdp: "v=0",
+				presentation: { topic: 42 },
+			},
+			value.context,
+		),
+	).rejects.toThrow("invalid_host_presentation");
+	expect(prepared).toBe(0);
+	expect(value.replacements).toHaveLength(0);
+	expect(value.components.coordinator.snapshot().threadId).toBe(coordinator);
+	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
+	await onSession(actions, value, handle, "append");
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "append"]);
+});

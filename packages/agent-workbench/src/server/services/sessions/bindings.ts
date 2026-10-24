@@ -1,9 +1,3 @@
-import {
-	archboardContextEvent,
-	archboardContextMatchesEvent,
-} from "#runtime/services/host/archboard-context-match.ts";
-import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
-import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
 // What each owner of one tab session, and of each of its workhorses, is configured with: where it
 // works, what it is bound to, read at the moment it asks, and the context its operations run
 // under.
@@ -34,17 +28,18 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 	CodexWorkbenchWorkhorseScope,
 } from "#server/services/sessions/sessions.ts";
-import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
+import type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
 import {
 	readyDelegatedWorkhorse,
 	workhorseOfCheckout,
 } from "#server/services/sessions/checkouts.ts";
-import type { SemanticContextPublisherOptions } from "#runtime/schemas/semantic-context-types.ts";
+import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
+import type { CoordinatorCallbackHostPolicy } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
 /** What building one tab session's bindings needs from around it. */
 interface SessionBindingContext {
 	readonly scope: CodexWorkbenchTabSessionScope;
-	readonly server: ArchboardWorkbenchServer;
+	readonly server: CodexWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
 	/** The directory of its own the coordinator works in, which is no checkout (ADR 0050). */
 	readonly coordinatorDirectory: string;
@@ -55,13 +50,14 @@ interface SessionBindingContext {
 /** What building one workhorse's bindings needs from around it. */
 interface WorkhorseBindingContext {
 	readonly scope: CodexWorkbenchWorkhorseScope;
-	readonly server: ArchboardWorkbenchServer;
+	readonly server: CodexWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
 }
 
 /** A session's binding context with its semantic publisher's options, made once. */
 interface ScopedBindingContext extends SessionBindingContext {
-	readonly publisher: SemanticContextPublisherOptions;
+	readonly publisher: WorkbenchContextPublisher;
+	readonly callbacks: CoordinatorCallbackHostPolicy;
 }
 
 /** Which workhorse an operation belongs to: its tab session, its checkout and its link key. */
@@ -84,7 +80,7 @@ interface WorkhorseOwner {
 function provenWorkhorseTarget(
 	owner: WorkhorseOwner,
 	workhorse: CodexWorkbenchWorkhorseComponents["workhorse"],
-): Parameters<ArchboardWorkbenchServer["contextForOperation"]>[0] {
+): Parameters<CodexWorkbenchServer["host"]["contextForOperation"]>[0] {
 	const snapshot = workhorse.snapshot();
 	const { childId, epoch, threadId } = snapshot;
 	const target = { childId, epoch, threadId };
@@ -130,16 +126,7 @@ function voiceBindings(
 			 * @param wireSessionId The session it is for.
 			 * @returns The brief.
 			 */
-			freshSemanticBrief: (wireSessionId) => {
-				const freshInput = publisher.fresh.read();
-				return requireCreated(created, "semanticPublisher").freshBriefFor({
-					...freshInput,
-					coordinator: {
-						threadId: freshInput.coordinator?.threadId ?? null,
-						realtimeSessionId: wireSessionId,
-					},
-				}).brief;
-			},
+			freshSemanticBrief: publisher.freshBriefForRealtime,
 			/**
 			 * The child epoch and threads a voice session may be opened against: the coordinator's,
 			 * and that of the workhorse of the checkout voice starts from.
@@ -312,7 +299,7 @@ function callbackBindings(
 		 * @returns The callbacks binding.
 		 */
 		callbacks: (created) => ({
-			semantic: requireCreated(created, "semanticPublisher"),
+			host: context.callbacks,
 			operations: scope.workhorseOperations,
 			realtime: createCoordinatorCallbackRealtimePort({
 				session,
@@ -364,11 +351,7 @@ function callbackBindings(
 			 * on. A recording is narrated to nobody listening, so it is no narration to stop.
 			 * @returns The canvas.
 			 */
-			canvas: () => {
-				const canvas = server.canvasFor(scope.id);
-				const recording = isArchboardRecording(created.realtime?.presentation());
-				return recording ? { ...canvas, narrated: null } : canvas;
-			},
+
 			coordinatorContext: createCoordinatorCallbackContextPort(session),
 			coordinatorTurn: createOutcomeReportPort({
 				contextCodec: server.host.contextCodec,
@@ -404,7 +387,7 @@ function callbackBindings(
 				 * Whether a recording holds the voice, which nobody hears an outcome through.
 				 * @returns True while the live session is a recording's.
 				 */
-				recording: () => isArchboardRecording(created.realtime?.presentation()),
+				recording: () => server.host.recording?.(created.realtime?.presentation() ?? null) ?? false,
 			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {
@@ -423,12 +406,15 @@ function callbackBindings(
 function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSessionBindings {
 	const scoped = {
 		...context,
-		publisher: context.server.semanticPublisherFor(context.scope.id),
+		...context.server.host.sessionContextFor(context.scope.id),
 	};
 	return {
 		...voiceBindings(scoped),
 		...coordinatorBindings(scoped),
 		...callbackBindings(scoped),
+		...(context.server.host.presentation === undefined
+			? {}
+			: { presentation: context.server.host.presentation }),
 	};
 }
 
@@ -444,7 +430,8 @@ function createWorkhorseBindings(
 	const { server, shared, scope } = context;
 	const { identity, epoch } = shared;
 	const tab = scope.session;
-	const publisher = server.workhorsePublisherFor(tab.id, scope.checkout);
+	const source = server.host.workhorseContextFor(tab.id, scope.checkout);
+	const publisher = source.publisher;
 	/**
 	 * The child epoch and threads this workhorse and the tab's coordinator run on together.
 	 * @param created What the workhorse has built so far.
@@ -480,12 +467,10 @@ function createWorkhorseBindings(
 			 * @param capturedContext The immutable context to compare.
 			 * @returns Whether the stated condition holds.
 			 */
-			matchesHostContext: (event, capturedContext) =>
-				archboardContextMatchesEvent(
-					archboardContextEvent(event),
-					ArchboardContextSchema.parse(capturedContext),
-				),
-			feedId: publisher.feedId,
+			...(source.matchesHostContext === undefined
+				? {}
+				: { matchesHostContext: source.matchesHostContext }),
+			feedId: source.feedId,
 			/**
 			 * The coordinator paired with this workhorse.
 			 * @returns Its thread, or null when none is ready.
@@ -512,7 +497,7 @@ function createWorkhorseBindings(
 				 * @param event The settled change.
 				 * @returns The context.
 				 */
-				contextForEvent: (event) => server.contextForEvent(archboardContextEvent(event)),
+				contextForEvent: source.contextForEvent,
 			},
 			/**
 			 * Close the epoch store, which retires the epoch itself.

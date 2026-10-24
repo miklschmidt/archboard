@@ -8,13 +8,11 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,
-	codexWiring,
 	type BrowserConnectionInstance,
 	parseTabSessionId,
 	type TabSessionId,
-	forgetTabSession,
-	noteTabSession,
-} from "@archboard/workbench/server";
+} from "@archboard/agent-workbench/server";
+import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
 import {
 	agentActivity,
 	tellPaneAboutLock,

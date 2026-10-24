@@ -3,15 +3,16 @@ import { expect, test } from "bun:test";
 import {
 	createCodexApprovalBroker,
 	type SpokenApprovalSnapshot,
-} from "@archboard/workbench/runtime";
+} from "@archboard/agent-workbench/runtime";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import {
-	createCodexBrowserModel,
-	parseRealtimeItemId,
-	parseRealtimeSessionId,
-} from "@archboard/workbench/browser-contract";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
+import { parseRealtimeItemId, parseRealtimeSessionId } from "@archboard/agent-workbench/realtime";
+
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState, type BrowserProjectionInput } from "@archboard/workbench/server";
+import {
+	projectCodexBrowserState,
+	type BrowserProjectionInput,
+} from "@archboard/agent-workbench/server";
 
 const NOW = 1_700_000_000_000;
 
@@ -151,7 +152,7 @@ test("a real unknown owner settlement remains unknown through the browser projec
 			operation: null,
 		};
 		const model = createCodexBrowserModel(authorities);
-		const projected = projectCodexBrowserState(model, identity.decoder, projectionInput);
+		const projected = projectCodexBrowserState(model, projectionInput);
 		expect(projected.tag).toBe("projected");
 		if (projected.tag !== "projected") {
 			throw new Error(projected.message);

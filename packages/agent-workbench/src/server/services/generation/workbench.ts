@@ -24,7 +24,6 @@ import {
 import type {
 	CodexWorkbenchComponentFactories,
 	CodexWorkbenchCoordinatorCallOwner,
-	CodexWorkbenchDynamicAdapterFactories,
 	ComposeCodexWorkbenchGenerationOptions,
 	InstallProductionCodexWorkbenchOptions,
 	ProductionCodexWorkbenchBindings,
@@ -81,7 +80,7 @@ function productionKernelFactory(
 			identity: identity.identity,
 		});
 		if (transport.inspect().state === "open") {
-			installDynamicRegistrations(transport);
+			installDynamicRegistrations(transport, bindings.dynamicRegistrations);
 		}
 		return Object.freeze({
 			kernel: Object.freeze({ identityLedger, transport }),
@@ -137,7 +136,6 @@ export {
 	type CodexWorkbenchStopReason,
 	type CodexWorkbenchComponentFactories,
 	type ComposeCodexWorkbenchGenerationOptions,
-	type CodexWorkbenchDynamicAdapterFactories,
 	type CodexWorkbenchCoordinatorCallOwner,
 	type ProductionCodexWorkbenchBindings,
 	createProductionCodexWorkbenchFactories,

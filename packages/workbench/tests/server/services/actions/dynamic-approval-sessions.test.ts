@@ -72,7 +72,7 @@ test("a tab session's end settles its coordination approvals as unanswered and l
 		owner.bindLease(tab, "B", commandId);
 		const browser = owner.projectPending(tab);
 		expect(browser).toHaveLength(1);
-		expect(browser[0]?.identity).toEqual(owner.pending(tab)[0]?.request.identity);
+		expect<unknown>(browser[0]?.identity).toEqual(owner.pending(tab)[0]?.request.identity);
 		expect(browser[0]?.binding).toMatchObject({ paneId: "B", commandId });
 		expect(browser[0]?.effect).not.toHaveProperty("callerAuthority");
 

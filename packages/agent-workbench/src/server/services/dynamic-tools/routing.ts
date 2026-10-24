@@ -1,5 +1,5 @@
 import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
-import type { CodexDynamicTools } from "#runtime/protocol/dynamic-tools/contract.ts";
+import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {
 	DynamicServerRequest,
@@ -9,7 +9,7 @@ import type { CodexWorkbenchSessions } from "#server/services/sessions/sessions.
 
 interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
-	readonly dynamicTools: Pick<CodexDynamicTools, "dispatch">;
+	readonly dynamicTools: Pick<CodexWorkbenchDomain, "dispatch"> | null;
 	readonly sessions: Pick<CodexWorkbenchSessions, "routeCoordinatorTool" | "routeCallback">;
 	readonly session: Pick<
 		CodexSession,
@@ -62,6 +62,7 @@ function routeDynamicRequest(
 ): void {
 	switch (request.owner) {
 		case "codex-dynamic-tools":
+			if (owners.dynamicTools === null) throw new Error("No domain tools are installed for this workbench.");
 			void owners.dynamicTools.dispatch(request);
 			return;
 		case "codex-coordinator-tools":

@@ -3,19 +3,12 @@ import type { CoordinatorCallbackOptions } from "#runtime/protocol/coordinator-c
 import type { CodexCoordinatorToolsOptions } from "#runtime/protocol/coordinator-tools/contract.ts";
 import type { CodexCoordinatorOptions } from "#runtime/protocol/coordinator/contract.ts";
 import type { CodexSpokenApprovalGateOptions } from "#runtime/protocol/spoken-approval/contract.ts";
-import type {
-	CodexDynamicToolsOptions,
-	DynamicContextPort,
-	DynamicOperationIdPort,
-	DynamicThreadAuthorityPort,
-	DynamicToolApprovalPort,
-	DynamicToolLifecyclePort,
-} from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { CodexEpochStoreOptions } from "#runtime/store/epoch/contract.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
 import type { CodexRealtimeAdapterOptions } from "#runtime/services/realtime/contract.ts";
-import type { SemanticContextPublisherOptions } from "#runtime/schemas/semantic-context-types.ts";
+import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
+import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { CodexThreadContextControllerOptions } from "#runtime/services/thread-context/contract.ts";
 import type { CodexThreadLinkOptions } from "#runtime/rules/thread-link/thread-link.ts";
 import type {
@@ -61,14 +54,6 @@ interface ComposeCodexWorkbenchGenerationOptions {
 
 type ComponentBuilder<Value> = (created: Readonly<Partial<CodexWorkbenchComponents>>) => Value;
 
-interface CodexWorkbenchDynamicAdapterFactories {
-	readonly approval: ComponentBuilder<DynamicToolApprovalPort>;
-	readonly threadAuthority: ComponentBuilder<DynamicThreadAuthorityPort>;
-	readonly context: ComponentBuilder<DynamicContextPort>;
-	readonly operationId: ComponentBuilder<DynamicOperationIdPort>;
-	readonly lifecycle: ComponentBuilder<DynamicToolLifecyclePort>;
-}
-
 interface CodexWorkbenchCoordinatorCallOwner {
 	readonly run: <Value>(
 		request: DynamicServerRequest,
@@ -97,7 +82,7 @@ interface CodexWorkbenchWorkhorseBindings {
 	readonly workhorse: WorkhorseComponentBuilder<
 		Omit<CodexWorkhorseStartOptions, "session" | "threadLink" | "epoch" | "identity" | "operation">
 	>;
-	readonly semanticPublisher: WorkhorseComponentBuilder<SemanticContextPublisherOptions>;
+	readonly semanticPublisher: WorkhorseComponentBuilder<WorkbenchContextPublisher>;
 	readonly semanticDelivery: WorkhorseComponentBuilder<
 		Omit<CodexThreadContextControllerOptions, "session" | "threadLink" | "identity" | "epoch">
 	>;
@@ -114,7 +99,8 @@ interface CodexWorkbenchWorkhorseBindings {
 
 /** What each of one tab session's own components is configured with. */
 interface CodexWorkbenchSessionBindings {
-	readonly semanticPublisher: SessionComponentBuilder<SemanticContextPublisherOptions>;
+	readonly presentation?: import("#server/services/voice/presentation.ts").WorkbenchVoicePresentationAdapter;
+	readonly semanticPublisher: SessionComponentBuilder<WorkbenchContextPublisher>;
 	readonly realtime: SessionComponentBuilder<
 		Omit<CodexRealtimeAdapterOptions, "session" | "identity">
 	>;
@@ -137,6 +123,10 @@ interface CodexWorkbenchSessionBindings {
 }
 
 interface ProductionCodexWorkbenchBindings {
+	readonly dynamicRegistrations?: readonly {
+		readonly namespace: string;
+		readonly manifestHash: string;
+	}[];
 	readonly epoch: ComponentBuilder<CodexEpochStoreOptions>;
 	readonly transport: ComponentBuilder<Omit<CodexTransportOptions, "identity">>;
 	readonly session: ComponentBuilder<
@@ -146,21 +136,7 @@ interface ProductionCodexWorkbenchBindings {
 	readonly approvals: ComponentBuilder<
 		Omit<CodexApprovalBrokerOptions, "transport" | "identity" | "listenerOwnership">
 	>;
-	readonly dynamicAdapters: CodexWorkbenchDynamicAdapterFactories;
-	readonly dynamicTools: ComponentBuilder<
-		Omit<
-			CodexDynamicToolsOptions,
-			| "session"
-			| "transport"
-			| "threadLink"
-			| "epoch"
-			| "approval"
-			| "threadAuthority"
-			| "context"
-			| "operationId"
-			| "lifecycle"
-		>
-	>;
+	readonly dynamicTools: ComponentBuilder<CodexWorkbenchDomain | null>;
 	/** How the generation's tab sessions settle what an ended session was asked. */
 	readonly sessions: ComponentBuilder<
 		Pick<
@@ -193,7 +169,6 @@ interface InstallProductionCodexWorkbenchOptions {
 export type {
 	CodexWorkbenchComponentFactories,
 	CodexWorkbenchCoordinatorCallOwner,
-	CodexWorkbenchDynamicAdapterFactories,
 	CodexWorkbenchSessionBindings,
 	CodexWorkbenchWorkhorseBindings,
 	ComponentBuilder,

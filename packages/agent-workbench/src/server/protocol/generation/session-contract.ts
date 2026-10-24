@@ -7,7 +7,7 @@ import type { CodexCoordinator } from "#runtime/protocol/coordinator/contract.ts
 import type { CodexSpokenApprovalGate } from "#runtime/protocol/spoken-approval/contract.ts";
 import type { CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
+import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
 import type { ThreadUnload } from "#runtime/operations/thread-unload/unload.ts";
 import type {
 	CodexTransport,
@@ -39,7 +39,7 @@ import type { SessionVoiceStartTrace } from "#server/services/voice/start-trace.
 /** The runtime owners a tab session's coordinator and voice run on. */
 interface CodexWorkbenchSessionComponents {
 	/** Publishes what the tab's panes show and change, as voice and its coordinator are told. */
-	readonly semanticPublisher: SemanticContextPublisher;
+	readonly semanticPublisher: WorkbenchContextPublisher;
 	readonly realtime: CodexRealtimeAdapter;
 	readonly coordinator: CodexCoordinator;
 	readonly spokenApproval: CodexSpokenApprovalGate;
@@ -64,12 +64,6 @@ interface CodexWorkbenchTabSessionState {
 	readonly threads: Set<ThreadId>;
 	/** The attempt this tab's latest voice start began, which its voice notes into. */
 	readonly voiceTrace: SessionVoiceStartTrace;
-	/**
-	 * The pane work nobody's command started presented through last, and the vault it was in. While
-	 * none of the tab's panes is open, its context is filed under that pane id, and the changes the
-	 * session hears are those of that vault; null before any pane was open.
-	 */
-	presenting: { readonly paneId: string; readonly vault: string } | null;
 	/**
 	 * The checkout the tab showed when voice last started. Voice speaks for the whole tab, and its
 	 * session is bound to that checkout's workhorse for as long as it runs; null before any start.

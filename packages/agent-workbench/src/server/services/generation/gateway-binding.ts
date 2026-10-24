@@ -5,10 +5,6 @@ import {
 	createServerTimelineOwner,
 } from "#server/projections/timeline/timeline.ts";
 import { publishProjection, requireCreated } from "#server/services/generation/owners.ts";
-import {
-	requireDynamicOwners,
-	type DynamicOwnerContext,
-} from "#server/services/generation/dynamic-owners.ts";
 import type { BindingContext } from "#server/services/generation/bindings.ts";
 
 /** What the voice coordinator's turns may take in a snapshot, beside the workhorse's own. */
@@ -27,14 +23,9 @@ function createGatewayBinding(
 	context: BindingContext,
 ): ProductionCodexWorkbenchBindings["gateway"] {
 	const { server, owners, input } = context;
-	const dynamicContext: DynamicOwnerContext = {
-		server,
-		waitGraph: context.waitGraph,
-		input,
-		owners,
-	};
+
 	return (created) => {
-		const dynamic = requireDynamicOwners(dynamicContext, created).approval;
+		const dynamic = owners.domain?.approvals ?? null;
 		const budget = createServerBrowserProjectionBudget();
 		const timelineOptions = {
 			session: requireCreated(created, "session"),
@@ -54,11 +45,12 @@ function createGatewayBinding(
 			components: created,
 			sessions: requireCreated(created, "sessions"),
 			dynamicApprovals: dynamic,
+			...(server.host.recording === undefined ? {} : { recording: server.host.recording }),
 			timeline: owners.timeline,
 			coordinatorTimeline: owners.coordinatorTimeline,
 			budget,
 			state: owners.browserState,
-			leaseLedger: server.browserLeaseLedger,
+			leaseLedger: context.leaseLedger,
 			/**
 			 * What the owned Codex process reports, which browser readiness is
 			 * partly derived from.
@@ -97,7 +89,7 @@ function createGatewayBinding(
 					operation,
 				);
 			},
-			repositoryOf: server.repositoryOfCheckout,
+			repositoryOf: server.host.repositoryOfCheckout,
 			/**
 			 * Watch what the browser is shown, which a change of a tab's shown conversation changes
 			 * too: every pane of the tab shows that checkout's workhorse (ADR 0050).
@@ -106,7 +98,7 @@ function createGatewayBinding(
 			 */
 			onChange: (listener) => {
 				owners.projectionListeners.add(listener);
-				const stopHearingShown = server.onShownChange(listener);
+				const stopHearingShown = server.host.onShownChange(listener);
 				return () => {
 					stopHearingShown();
 					owners.projectionListeners.delete(listener);
@@ -126,7 +118,7 @@ function createGatewayBinding(
 		});
 		return {
 			...options,
-			checkoutOf: server.shownCheckoutOf,
+			checkoutOf: server.host.shownCheckoutOf,
 			lifecycle: {
 				/**
 				 * The owned process is the gateway's change source.

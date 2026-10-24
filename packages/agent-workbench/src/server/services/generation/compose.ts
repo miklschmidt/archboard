@@ -88,7 +88,7 @@ function constructComponents(
 	cleanups.push(() => approvals.dispose());
 	const dynamicTools = factories.dynamicTools(created);
 	created.dynamicTools = dynamicTools;
-	cleanups.push(() => dynamicTools.dispose());
+	cleanups.push(() => dynamicTools?.dispose());
 	const sessions = factories.sessions(created);
 	created.sessions = sessions;
 	cleanups.push(async () => {
