@@ -127,7 +127,7 @@ const CARD_WIDTH = { least: 260, most: 340 } as const;
 /**
  * Reserve all title and responsibility lines before a card gains neighbours.
  * A container's header is a slab measured as a card is, standing in the
- * container's well (`shared/rules/svg/parts/tray.ts`) a small gap inside its walls; it is as
+ * container's well (`crates/archboard-scene/src/paint/tray.rs`) a small gap inside its walls; it is as
  * tall as its words need and no taller. Its width is the box's least width,
  * between a card's least and most, and its words are placed relative to the
  * box, on the slab. A container laid out wider than that wraps its header's
