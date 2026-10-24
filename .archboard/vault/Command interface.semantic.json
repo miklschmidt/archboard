@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 125,
+	"version": 126,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T16:19:20.505Z",
+	"updatedAt": "2026-10-24T16:39:43.011Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -41305,7 +41305,7 @@
 		{
 			"id": "wJUCTDTj",
 			"name": "TASK-509",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "S0SxSDMx",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -44760,7 +44760,7 @@
 		{
 			"id": "tEUCnc5Z",
 			"name": "TASK-526.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "wJUCTDTj",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -48213,7 +48213,7 @@
 			}
 		}
 	],
-	"current": "wJUCTDTj",
+	"current": "tEUCnc5Z",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -48358,6 +48358,12 @@
 			"from": "S0SxSDMx",
 			"at": "2026-10-23T02:55:36.228Z",
 			"reason": "semantic correct suggests commits, previews a correction and explicitly applies it"
+		},
+		{
+			"variant": "tEUCnc5Z",
+			"from": "wJUCTDTj",
+			"at": "2026-10-24T16:39:43.011Z",
+			"reason": "archboard check runs every check, and check semantics and check code run one each (TASK-526.01)"
 		}
 	],
 	"shelvings": [
