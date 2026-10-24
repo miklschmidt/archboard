@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 14:34'
+updated_date: '2026-10-24 14:45'
 labels:
   - renderer
   - tooling
@@ -62,4 +62,6 @@ Verification, 2026-10-24:
 - Gate: bun run check inside nix develop passed to the end on the third run. Run 1 failed tests/system/repository-policy/package-api.test.ts, which parsed the generated .d.ts glue: productionFiles now skips the generated trees that the same file already skips elsewhere. Run 2 failed wide-boards.test.ts by 10 ms over its 3000 ms first-layout bound under load. It passed three times alone and in runs 1 and 3, so no repair task.
 - Board: Semantic renderer@TASK-520.01 adopted at version 83. archboard check --code showed no finding added by the proposal. The footprint against 1c6759c19 named all four new parts as changed and nothing changed but unnamed. The vault check then flagged Browser application -> Browser layout worker as drawn by nesting already, so that relationship was removed (version 84). The Archboard board is behind on packages/renderer, but it draws packages and their layers, and the crates and the loader live inside the renderer package, so it stays right. The Rust file of Renderer core has no code-facts adapter, so the check reads it as text.
 - Not verified: criterion 5. .github/workflows/ci.yml installs Nix and runs install and the gate inside nix develop, but no CI run has happened, because nothing was pushed.
+
+Restructure after review, 2026-10-24: the crate moved to crates/archboard-renderer-wasm, with the root workspace members crates/*. The dev shell now reads Bun from package.json packageManager and the wasm-bindgen CLI from Cargo.lock (nixpkgs carries one package per version, wasm-bindgen-cli_0_2_N). A lock set to 0.2.128 gave wasm-bindgen-cli-0.2.128, and one set to 0.2.999 stopped evaluation with a message naming the fix. The board correction was adopted as "TASK-520.01 crates" (version 87), and bun run check passed to the end inside nix develop.
 <!-- SECTION:NOTES:END -->
