@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 136,
+	"version": 137,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T19:38:56.185Z",
+	"updatedAt": "2026-10-24T19:58:23.104Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -51724,7 +51724,7 @@
 		{
 			"id": "21GbEl6v",
 			"name": "TASK-526.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "fkmIpH7L",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"content": {
@@ -55304,7 +55304,7 @@
 		{
 			"id": "MIL2mAEV",
 			"name": "TASK-526.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "21GbEl6v",
 			"summary": "check embeds fetches the vault of a repository that this machine has not registered",
 			"content": {
@@ -58904,7 +58904,7 @@
 			}
 		}
 	],
-	"current": "21GbEl6v",
+	"current": "MIL2mAEV",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -59067,6 +59067,12 @@
 			"from": "fkmIpH7L",
 			"at": "2026-10-24T19:19:28.332Z",
 			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "MIL2mAEV",
+			"from": "21GbEl6v",
+			"at": "2026-10-24T19:58:23.104Z",
+			"reason": "check embeds fetches the vault of an unregistered repository, and the check runs the embeds check alone in a checkout without a vault (TASK-526.05)"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 52,
+	"version": 53,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-24T19:39:16.863Z",
+	"updatedAt": "2026-10-24T19:58:23.583Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -5030,7 +5030,7 @@
 		{
 			"id": "LES6yFR6",
 			"name": "TASK-480 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4xIPSuGG",
 			"summary": "TASK-480 restated after TASK-482.07",
 			"content": {
@@ -6579,7 +6579,7 @@
 		{
 			"id": "fbmnCGgd",
 			"name": "TASK-526.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "LES6yFR6",
 			"summary": "check embeds fetches the vault of a repository that this machine has not registered",
 			"content": {
@@ -8154,7 +8154,7 @@
 			}
 		}
 	],
-	"current": "LES6yFR6",
+	"current": "fbmnCGgd",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -8209,6 +8209,12 @@
 			"from": "4xIPSuGG",
 			"at": "2026-10-17T09:58:53.407Z",
 			"reason": "a checkout with no vault is told which known vaults hold boards of its code (TASK-480, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "fbmnCGgd",
+			"from": "LES6yFR6",
+			"at": "2026-10-24T19:58:23.583Z",
+			"reason": "check embeds fetches the vault of an unregistered repository, and the check runs the embeds check alone in a checkout without a vault (TASK-526.05)"
 		}
 	]
 }
