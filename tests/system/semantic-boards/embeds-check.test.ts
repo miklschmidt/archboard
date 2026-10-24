@@ -253,7 +253,9 @@ beforeAll(async () => {
 	);
 	put(
 		"elsewhere.svg",
-		replaceRenderRecipe(payments, { ...recipe, vault: { repo: "github.com/example/nowhere" } }),
+		// A vault in no repository: a repository this machine has no checkout of
+		// is fetched, which embeds-fetch.test.ts owns.
+		replaceRenderRecipe(payments, { ...recipe, vault: { repo: null } }),
 	);
 	put("broken.svg", payments.toString("utf8").replace('"recipe":1', '"recipe":2'));
 	const dark = recipeIn(cli(docs, ["semantic", "render", "ledger", "--theme", "dark"]).stdoutBytes);

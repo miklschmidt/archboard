@@ -178,7 +178,9 @@ async function checkEmbed(embed: CheckoutEmbed, run: Run): Promise<Checked> {
 	if (!embed.recipe.ok) return { finding: unreadableFinding(embed, embed.recipe.problem) };
 	const { recipe } = embed.recipe;
 	const reading = await run.vault(recipe.vault.repo);
-	if (!reading.ok) return { finding: unavailableFinding(embed, recipe.vault.repo, reading.reason) };
+	if (!reading.ok) {
+		return { finding: unavailableFinding(embed, recipe.vault.repo, reading.reason, reading.code) };
+	}
 	const board = reading.byId.get(recipe.board.id);
 	return board === undefined
 		? checkGoneBoard(embed, recipe, reading, run)
@@ -250,11 +252,13 @@ async function checkEmbeds(
 	options: { readonly fix: boolean; readonly signal: AbortSignal },
 ): Promise<EmbedsPart> {
 	const root = await checkoutRoot(vault, options.signal);
-	if (root === undefined) return { checkout: null, embeds: [], findings: [], fixed: [] };
+	if (root === undefined)
+		return { checkout: null, embeds: [], vaults: [], findings: [], fixed: [] };
 	const embeds = await checkoutEmbeds(root, options.signal);
+	const vaults = vaultReader(checkoutsReadFrom(vault), options.signal);
 	const run: Run = {
 		...options,
-		vault: vaultReader(checkoutsReadFrom(vault)),
+		vault: vaults.read,
 		bitmaps: bitmapsFor(options.signal),
 	};
 	const checked = await checkInOrder(embeds, run).catch(async (error: unknown) => {
@@ -268,6 +272,7 @@ async function checkEmbeds(
 	return {
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
+		vaults: await vaults.vaults(),
 		findings: checked.flatMap((one) => (one.finding === undefined ? [] : [one.finding])),
 		fixed,
 	};
