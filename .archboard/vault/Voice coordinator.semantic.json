@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 82,
+	"version": 83,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T13:40:54.423Z",
+	"updatedAt": "2026-10-24T13:43:32.179Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -21896,6 +21896,20 @@
 							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
 							"symbol": "createWorkbenchThreadProfile"
 						}
+					},
+					{
+						"id": "6wH1TupJ",
+						"order": 46000,
+						"from": "r7P2iu6H",
+						"to": "YVc05dVh",
+						"kind": "dependency",
+						"label": "build domain turns through the shared input contract",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/instructions/bodies.ts",
+							"symbol": "createTextUserInput"
+						}
 					}
 				],
 				"flows": [
@@ -22108,8 +22122,8 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/coordinator/model.ts",
-													"symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS"
+													"path": "packages/agent-workbench/src/runtime/services/coordinator/coordinator.ts",
+													"symbol": "captureThreadProfile"
 												}
 											},
 											{
@@ -22120,8 +22134,8 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/rules/coordinator/review.ts",
-													"symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256"
+													"path": "packages/agent-workbench/src/runtime/services/coordinator/coordinator.ts",
+													"symbol": "captureThreadProfile"
 												}
 											},
 											{
@@ -22736,8 +22750,8 @@
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
-													"symbol": "createTurnStartParams"
+													"path": "packages/agent-workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+													"symbol": "createWorkbenchTurnStartParams"
 												}
 											},
 											{
@@ -22748,8 +22762,8 @@
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
-													"symbol": "createTurnStartParams"
+													"path": "packages/agent-workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+													"symbol": "createWorkbenchTurnStartParams"
 												}
 											},
 											{

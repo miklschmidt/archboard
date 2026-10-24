@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 84,
+	"version": 85,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-24T13:40:54.825Z",
+	"updatedAt": "2026-10-24T13:43:31.749Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -16057,7 +16057,7 @@
 						"id": "VOPbBx8O",
 						"order": 20000,
 						"from": "ZGoXFusm",
-						"to": "L4s2Ndtt",
+						"to": "624ETIsk",
 						"kind": "dependency",
 						"label": "the workhorse instructions, by digest",
 						"emphasis": "muted",
@@ -16141,7 +16141,7 @@
 						"id": "7I026qcA",
 						"order": 26000,
 						"from": "Fxm7RW2x",
-						"to": "L4s2Ndtt",
+						"to": "624ETIsk",
 						"kind": "call",
 						"label": "prove the workhorse instructions canonical",
 						"emphasis": "muted",
@@ -16317,6 +16317,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
 							"symbol": "createWorkbenchThreadProfile"
+						}
+					},
+					{
+						"id": "joxzVFXq",
+						"order": 39000,
+						"from": "fDdhxdXp",
+						"to": "L4s2Ndtt",
+						"kind": "dependency",
+						"label": "capture immutable core and host role evidence",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start/start.ts",
+							"symbol": "captureThreadProfile"
+						}
+					},
+					{
+						"id": "9ymbrMYT",
+						"order": 40000,
+						"from": "624ETIsk",
+						"to": "sWw1Z9kM",
+						"kind": "dependency",
+						"label": "retain the shared link reasons and refusal order",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+							"symbol": "ADDITIONAL_CONTEXT_POLICY"
 						}
 					}
 				],

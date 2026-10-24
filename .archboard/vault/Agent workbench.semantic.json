@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 112,
+	"version": 113,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T13:40:53.961Z",
+	"updatedAt": "2026-10-24T13:43:31.320Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -34386,6 +34386,18 @@
 							"path": "packages/agent-workbench/src/server/services/owner/workbench.ts",
 							"symbol": "createCodexWorkbench"
 						}
+					},
+					{
+						"id": "Q2sXZO7T",
+						"order": 45000,
+						"name": "Archboard tab adapter",
+						"kind": "module",
+						"responsibility": "Forward pane registration and browser activation to core-owned tab state",
+						"parent": "Akuz1a3J",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+						}
 					}
 				],
 				"edges": [
@@ -34853,7 +34865,7 @@
 						"id": "egDoJ9fH",
 						"order": 33000,
 						"from": "tzyaOHwF",
-						"to": "hCKEBd5f",
+						"to": "Q2sXZO7T",
 						"kind": "event",
 						"label": "each socket names its tab, and its close forgets it",
 						"description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
@@ -35320,7 +35332,7 @@
 						"id": "99za8lFO",
 						"order": 66000,
 						"from": "tzyaOHwF",
-						"to": "hCKEBd5f",
+						"to": "Q2sXZO7T",
 						"kind": "http",
 						"label": "the person activated a checkout (/api/panes/conversation)",
 						"description": "A focus, a board the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
@@ -35554,14 +35566,42 @@
 						"id": "UE6yrRV7",
 						"order": 83000,
 						"from": "yyFS6UVO",
-						"to": "hCKEBd5f",
+						"to": "Q2sXZO7T",
 						"kind": "dependency",
 						"label": "attach pane registration to core-owned tab presence",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/owner/production.ts",
-							"symbol": "installBrowserSessions"
+							"symbol": "installWorkbenchTabSessions"
+						}
+					},
+					{
+						"id": "2NPuX9QA",
+						"order": 84000,
+						"from": "Q2sXZO7T",
+						"to": "hCKEBd5f",
+						"kind": "dependency",
+						"label": "use the core tab-presence and shown-conversation contract",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+							"symbol": "TabSessions"
+						}
+					},
+					{
+						"id": "d57vavqj",
+						"order": 85000,
+						"from": "k9hxdLjq",
+						"to": "hCKEBd5f",
+						"kind": "call",
+						"label": "own the tab store and its lifetime",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/owner/workbench.ts",
+							"symbol": "createTabSessions"
 						}
 					}
 				],
@@ -37215,13 +37255,14 @@
 							"iay14AUl",
 							"QGVPyMwG",
 							"YxDrzJtI",
-							"jylkTBp7"
+							"jylkTBp7",
+							"Q2sXZO7T"
 						],
 						"steps": [
 							{
 								"id": "EPxYqowm",
 								"from": "tzyaOHwF",
-								"to": "hCKEBd5f",
+								"to": "Q2sXZO7T",
 								"label": "a socket closes and its tab is forgotten",
 								"kind": "async",
 								"anchor": {
@@ -37265,7 +37306,7 @@
 															{
 																"id": "r9HIC4rX",
 																"from": "tzyaOHwF",
-																"to": "hCKEBd5f",
+																"to": "Q2sXZO7T",
 																"label": "a new socket names its tab",
 																"kind": "sync",
 																"anchor": {
