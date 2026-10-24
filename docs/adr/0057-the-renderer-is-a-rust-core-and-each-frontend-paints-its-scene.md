@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# The renderer is a Rust core, and each frontend paints its paint list
+# The renderer is a Rust core, and each frontend paints its scene
 
 The user decided this on 2026-10-24. TASK-520 and its subtasks build it. When the task that builds a change lands,
 that change replaces a clause of an earlier decision:
@@ -55,37 +55,37 @@ Archboard server and a browser tab lay out a board to the same numbers. The
 core avoids float operations whose result depends on the platform, so a native
 build draws the same bytes as the WASM build.
 
-### The output is a paint list
+### The output is a scene
 
-The output of the core is a paint list. A paint list is the ordered and
-positioned list of what a picture is made of: shapes, fills, masks, clips,
+The output of the core is a scene. A scene is the ordered and positioned
+list of what a picture is made of: shapes, fills, masks, clips,
 glyph runs, and the marks that a painter animates. Each group in it names the
 subject that it draws and its role. With these names, a painter can light,
 recede or pick out a part without reading the structure of the picture. Traffic is data on the
-paint list: the route pieces, the speed and the spacing of
+scene: the route pieces, the speed and the spacing of
 [ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md). It is
 not SMIL.
 
-The paint list holds no interaction state. The light, the recede, the far view,
+The scene holds no interaction state. The light, the recede, the far view,
 the camera and the flight stay presentation, and each painter owns them
 ([ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md)).
 
-The types of the paint list are defined once, in Rust. The TypeScript types are
+The types of the scene are defined once, in Rust. The TypeScript types are
 generated from them.
 
-### A painter turns a paint list into what a frontend shows
+### A painter turns a scene into what a frontend shows
 
 The SVG painter is part of the core. So an export, a README asset and a picture
 in the browser are the same bytes wherever they are made. The SVG painter
 writes traffic as SMIL for an export, as it does today. The browser viewer
 keeps its classes and Web Animations over that SVG. A native frontend paints
-the paint list itself. A GPUI frontend that paints with Vello comes after
+the scene itself. A GPUI frontend that paints with Vello comes after
 TASK-520 and is not part of it.
 
 ### The core shapes text into glyph runs
 
 The core shapes text with harfrust and skrifa, on the font files in
-`packages/renderer/assets/fonts`. The paint list carries glyph runs: the face,
+`packages/renderer/assets/fonts`. The scene carries glyph runs: the face,
 the size, the id and the position of each glyph, and the string of the run.
 The SVG painter defines each glyph that a picture uses once, as a path, and
 uses it again wherever it occurs. It writes the string of each run as
@@ -109,7 +109,11 @@ router is written from the published algorithms of orthogonal connector
 routing and nudging, not from the source of libavoid. So the core is not a
 derived work of LGPL code. The output of libavoid-js can be compared as a black
 box while the router is built. Nobody who writes the router reads the source of
-libavoid. A route is judged by the measures of
+libavoid, the libavoid-js patch in `patches/`, which edits code that libavoid
+ships, or any port of libavoid. The writer can read archboard's own code and
+notes that call libavoid or describe what it was seen to do, such as
+`unsatisfiable.ts` and the notes of TASK-512, but the router does not follow
+them. A route is judged by the measures of
 [ADR 0039](0039-a-drawing-is-measured-by-how-easily-it-reads.md), not by
 equality with the route of libavoid.
 
@@ -136,11 +140,13 @@ before it lands.
 
 ### Build
 
-The crates live in `packages/renderer/crates`, because the renderer package
-owns the behavior
-([ADR 0055](0055-packages-own-behavior-and-apps-compose-it.md)). The Cargo
-workspace is at the root of the repository, so a native frontend under `apps/`
-can join it. A Nix flake
+The Rust crates live in `crates/`, each in a folder named for its crate, and
+one Cargo workspace at the root of the repository holds them. The JavaScript
+packages stay in `packages/`. This is the layout of most repositories that
+hold both, and it lets a native frontend and later Rust crates join the same
+workspace. The renderer package loads the core and stays the host that
+JavaScript callers import
+([ADR 0055](0055-packages-own-behavior-and-apps-compose-it.md)). A Nix flake
 gives the dev shell its tools: the Rust toolchain with the
 `wasm32-unknown-unknown` target, a `wasm-bindgen` CLI of the same version as the
 crate's `wasm-bindgen` dependency, and Bun. A person who installs from a clone

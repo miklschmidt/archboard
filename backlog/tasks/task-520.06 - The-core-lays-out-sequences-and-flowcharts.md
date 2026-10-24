@@ -4,14 +4,14 @@ title: The core lays out sequences and flowcharts
 status: To Do
 assignee: []
 created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 12:55'
+updated_date: '2026-10-24 14:34'
 labels:
   - renderer
 dependencies:
   - TASK-520.03
 documentation:
   - >-
-    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-paint-list.md
+    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md
 parent_task_id: TASK-520
 ordinal: 926000
 ---

@@ -23,7 +23,7 @@ Codex app-server contract and the generated references of the skill. Bun runs
 the CLI and the server directly from TypeScript (ADR 0014). The renderer core is
 Rust, built to WebAssembly by `bun run build:core` (ADR 0057). A Bun process
 refuses a core built from other sources than the checkout holds, so after you
-change `packages/renderer/crates`, run `bun run build:core` before the next
+change `crates/`, run `bun run build:core` before the next
 command. Lint, type checks and the frontend build run it first.
 
 A new worktree needs its own `bun install` and `bun run build`. A
