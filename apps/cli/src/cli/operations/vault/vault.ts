@@ -143,7 +143,7 @@ function failsCheck(answer: CheckAnswer): boolean {
 	);
 }
 
-/** Which checks a command runs. The order is the order of the answer's lines. */
+/** Which checks a command runs. They run, and print, in the order semantics, code. */
 type CheckName = "semantics" | "code";
 
 /**
@@ -166,7 +166,7 @@ function checkLines(answer: CheckAnswer): string[] {
 /**
  * Run the named checks and gather what the command answers: one part for each,
  * the exit status, and the lines for stderr.
- * @param checks The checks to run, in order.
+ * @param checks The checks to run.
  * @param reading What the code check reads, when it runs.
  * @param context Runtime prerequisites.
  * @returns Check results and a failure exit when issues remain.

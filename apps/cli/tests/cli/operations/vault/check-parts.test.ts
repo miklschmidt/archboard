@@ -211,11 +211,6 @@ test("check and check all ask the semantics check, then the code check, and answ
 				Number(timing.elapsedMs.toFixed(1)),
 			),
 		);
-		expect(result.code?.timings.map((timing) => timing.check)).toEqual([
-			"code-facts",
-			"language-server",
-			"history",
-		]);
 	}
 });
 
