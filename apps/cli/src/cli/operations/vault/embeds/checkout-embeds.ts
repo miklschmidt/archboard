@@ -13,6 +13,11 @@ import { gitOutput } from "#cli/clients/git/git-output.ts";
 interface CheckoutEmbed {
 	/** The file as Git names it in the checkout. */
 	readonly file: string;
+	/**
+	 * The repository identity of a tracked embed of another repository, read
+	 * from that repository's checkout; absent for a file of the vault's checkout.
+	 */
+	readonly repo?: string;
 	/** The file on disk. */
 	readonly path: string;
 	readonly bytes: Uint8Array;
@@ -127,4 +132,4 @@ async function checkoutEmbeds(checkout: string, signal: AbortSignal): Promise<Ch
 	return (await candidateFiles(checkout, signal)).flatMap((file) => embedAt(root, file) ?? []);
 }
 
-export { checkoutEmbeds, type CheckoutEmbed };
+export { checkoutEmbeds, embedAt, type CheckoutEmbed };

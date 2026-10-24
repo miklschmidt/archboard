@@ -61,10 +61,24 @@ function isRepointable(recipe: RenderRecipe): boolean {
  * @returns The line.
  */
 function fixLine(fix: EmbedFix): string {
+	const file = located(fix);
 	if (fix.action === "re-pointed") {
-		return `fixed: re-pointed: ${fix.file}: ${fix.from.name} (${fix.from.id}) -> ${fix.to.name} (${fix.to.id})`;
+		return `fixed: re-pointed: ${file}: ${fix.from.name} (${fix.from.id}) -> ${fix.to.name} (${fix.to.id})`;
 	}
-	return `fixed: ${fix.action === "drawn" ? "drawn again" : "recipe written"}: ${fix.file}`;
+	const moved =
+		fix.movedFrom === undefined ? "" : `: its recipe named ${fix.movedFrom ?? "no repository"}`;
+	return `fixed: ${fix.action === "drawn" ? "drawn again" : "recipe written"}: ${file}${moved}`;
+}
+
+/**
+ * A file as a line names it: its path, and its repository when it is another's.
+ * @param at The file, and its repository when it is another's.
+ * @param at.file The file.
+ * @param at.embedRepo Its repository, for a tracked embed of another repository.
+ * @returns The words.
+ */
+function located(at: { readonly file: string; readonly embedRepo?: string | undefined }): string {
+	return at.embedRepo === undefined ? at.file : `${at.embedRepo}:${at.file}`;
 }
 
 /**
@@ -77,7 +91,7 @@ function embedsCheckLines(part: EmbedsPart | undefined): string[] {
 	if (part === undefined) return [];
 	return [
 		...part.findings.flatMap((finding) => [
-			`${finding.severity}: ${finding.code}: ${finding.file}: ${finding.message}`,
+			`${finding.severity}: ${finding.code}: ${located(finding)}: ${finding.message}`,
 			...(finding.notFixed === undefined ? [] : [`  not fixed: ${finding.notFixed}`]),
 		]),
 		...part.fixed.map(fixLine),
