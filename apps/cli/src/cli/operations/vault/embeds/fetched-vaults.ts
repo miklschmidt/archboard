@@ -8,8 +8,8 @@
 //
 // The cache is in the state directory, one checkout per commit:
 // `<state>/fetched-vaults/<identity>/<commit>/.archboard/vault`, the layout the
-// server serves (`isVaultLayout`). A commit's directory appears whole, by a
-// rename, so a directory that is there is complete. A commit the default branch
+// server serves (`isVaultLayout`). A commit's directory appears and goes whole,
+// by a rename, so a directory that is there is complete. A commit the default branch
 // is still at is read again without a fetch. When the remote cannot be reached,
 // the newest cached commit is read, and the caller says so.
 //
@@ -275,9 +275,27 @@ function land(incoming: string, target: string): void {
 	fs.utimesSync(target, now, now);
 	const cache = path.dirname(target);
 	for (const commit of cachedCommits(cache)) {
-		if (commit.directory !== target) fs.rmSync(commit.directory, { recursive: true, force: true });
+		if (commit.directory !== target) removeCommit(cache, commit.directory);
 	}
 	removeKilledFetches(cache, now.getTime());
+}
+
+/**
+ * Remove a cached commit. It leaves the commits' names by a rename first, so a
+ * removal that is killed leaves no part of a commit under a commit's name.
+ * @param cache The identity's cache directory.
+ * @param directory The commit's directory.
+ */
+function removeCommit(cache: string, directory: string): void {
+	const removing = path.join(cache, `${INCOMING_PREFIX}${randomUUID()}`);
+	try {
+		fs.renameSync(directory, removing);
+	} catch (error) {
+		// Another check removed it first.
+		if (fs.existsSync(directory)) throw error;
+		return;
+	}
+	fs.rmSync(removing, { recursive: true, force: true });
 }
 
 /**
