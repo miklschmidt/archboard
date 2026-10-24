@@ -172,7 +172,7 @@ archboard semantic rasterize "Skill install" --view "Setup exchange" --out /tmp/
    Open the picture through the `sequence` view that you made, not the whole
    board. Make sure that the columns are in order, and that every message is
    readable and in sequence. Make sure that returns and repeats are
-   distinguishable, and that nothing is cut off. Run `archboard check --code`
+   distinguishable, and that nothing is cut off. Run `archboard check code`
    when the steps carry anchors: each one holds in the files on disk.
 
 ## When a flow branches or repeats

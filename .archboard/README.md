@@ -125,7 +125,10 @@ Read with `archboard semantic show <board>` and edit with the reported version
 and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
 is separate from this living vault.
 
-After board work, also run `archboard check --code`. When a task closes,
+After board work, run `archboard check`. It runs every check: the semantics
+check of the vault and the code check
+([ADR 0057](../docs/adr/0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)).
+`archboard check code` runs the code check alone. When a task closes,
 run it as the closing steps of `archboard-dev` say. The code check reads the
 bound code
 ([ADR 0046](../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)).

@@ -200,7 +200,7 @@ Run these commands in the repository:
 
 ```bash
 archboard status          # the server runs, and at which URL
-archboard check           # the vault configuration and every board are valid
+archboard check           # every check: the vault and its boards are valid, and the boards match their code
 archboard semantic config # the vocabulary in use, and the configuration file
 ```
 
@@ -287,7 +287,7 @@ GitHub. It uses the commit, then the branch, then the default branch.
 
 ## Language servers for the code check
 
-`archboard check --code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
+`archboard check code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
 
 A language server reads a checkout the way your editor does. For most languages, that runs code of the checkout:
 
