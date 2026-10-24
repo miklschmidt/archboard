@@ -4,7 +4,9 @@
 //! left the whole way, so the two never cross on the shared stretch. A pair
 //! is walked forward and backward from the segment where they meet; where
 //! the two ends disagree a crossing cannot be avoided, and the forward end
-//! decides.
+//! decides. How sure the order is goes with it, so that a caller ordering
+//! many routes on one line can keep the surest orders where the pairs
+//! contradict each other.
 
 use crate::Point;
 use crate::grid::SAME;
@@ -96,10 +98,21 @@ fn parting(a: View, mut ia: usize, b: View, mut ib: usize) -> i32 {
     }
 }
 
+/// How sure an order of two routes on one line is, surest first.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Sureness {
+    /// Both ends of the shared stretch say the same.
+    Agreed,
+    /// One end says, and the other ends a route.
+    OneEnd,
+    /// The two ends disagree: the routes cross on the stretch either way.
+    Crossing,
+}
+
 /// Which side of route `b` route `a` runs on along the line their segments
 /// `ia` and `ib` share: -1 at the lower coordinate across the line, 1 at the
-/// higher, 0 when where they part does not say.
-pub fn side(a: &[Point], ia: usize, b: &[Point], ib: usize) -> i32 {
+/// higher, and how sure that is; nothing when where they part does not say.
+pub fn side(a: &[Point], ia: usize, b: &[Point], ib: usize) -> Option<(i32, Sureness)> {
     let a = View {
         points: a,
         reversed: false,
@@ -115,14 +128,18 @@ pub fn side(a: &[Point], ia: usize, b: &[Point], ib: usize) -> i32 {
         b.turned(ib)
     };
     let forward = parting(a, ia, b, ib);
-    let handedness = if forward != 0 {
-        forward
-    } else {
+    let backward = {
         let ((ra, ria), (rb, rib)) = (a.turned(ia), b.turned(ib));
         -parting(ra, ria, rb, rib)
+    };
+    let (handedness, sureness) = match (forward, backward) {
+        (0, 0) => return None,
+        (0, one) | (one, 0) => (one, Sureness::OneEnd),
+        (one, other) if one == other => (one, Sureness::Agreed),
+        (one, _) => (one, Sureness::Crossing),
     };
     // The side handedness 1 names, across the line: the heading turned a
     // quarter clockwise on the page, where y runs down.
     let across = if along.0 == 0.0 { -along.1 } else { along.0 };
-    handedness * sign(across)
+    Some((handedness * sign(across), sureness))
 }
