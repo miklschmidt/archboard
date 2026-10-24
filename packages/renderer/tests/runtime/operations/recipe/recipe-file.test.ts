@@ -159,6 +159,8 @@ test("a PNG carries the recipe in a text chunk after its header, and stays a val
 		{ type: "IEND", crc: true },
 	]);
 	expect(readPngDimensions(carried)).toEqual({ width: 2, height: 1 });
+	// A decoder ignores what follows the end chunk, and so does the reader.
+	expect(recipeIn(Buffer.concat([carried, Buffer.from("appended")]))).toEqual(recipe);
 	expect(readRenderRecipe(PNG)).toEqual({ kind: "absent" });
 });
 

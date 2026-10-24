@@ -23,7 +23,8 @@ interface Chunk {
 }
 
 /**
- * Every chunk of a PNG, in file order.
+ * Every chunk of a PNG, in file order, up to its end chunk: a decoder ignores
+ * whatever a tool appended after it.
  * @param png The file.
  * @returns Its chunks.
  * @throws {Error} When a chunk runs past the end of the file.
@@ -38,6 +39,7 @@ function chunksOf(png: Uint8Array): Chunk[] {
 		if (end > png.length) throw new Error("A PNG chunk runs past the end.");
 		const type = Buffer.from(png.subarray(start + 4, start + CHUNK_HEAD)).toString("latin1");
 		chunks.push({ type, data: png.subarray(start + CHUNK_HEAD, end - CHUNK_TAIL), start, end });
+		if (type === "IEND") break;
 		start = end;
 	}
 	return chunks;
