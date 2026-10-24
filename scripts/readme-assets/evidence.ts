@@ -40,11 +40,18 @@ const PARTNERS = "[data-slot='semantic-inspector-partners']";
  * @param browser The private browser.
  * @param board The board's name.
  * @param width The window's width.
+ * @param view The explicit view, when the scene needs nested parts.
  * @returns The ready page.
  */
-async function openBoard(server: TakeServer, browser: Browser, board: string, width: number) {
+async function openBoard(
+	server: TakeServer,
+	browser: Browser,
+	board: string,
+	width: number,
+	view?: string,
+) {
 	const page = await browser.open({
-		url: `${server.url}/?paneA=${encodeURIComponent(board)}`,
+		url: `${server.url}/?paneA=${encodeURIComponent(board)}${view === undefined ? "" : `&viewA=${encodeURIComponent(view)}`}`,
 		theme: "light",
 		width,
 		height: PANE.height,
@@ -231,7 +238,7 @@ async function filmInterfaces(
  */
 async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.board, PANE.width);
+	const page = await openBoard(server, browser, fixture.board, PANE.width, "Everything");
 	await terminal.say(
 		"Read changes through the architecture.\nSynthetic checkout and example Git history.",
 	);
