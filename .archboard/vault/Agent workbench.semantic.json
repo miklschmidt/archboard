@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 108,
+	"version": 109,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T11:39:58.936Z",
+	"updatedAt": "2026-10-24T11:45:42.630Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -34060,7 +34060,7 @@
 						"parent": "Fvl3uDPi",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-app-server/src/runtime/operations/semantic-context-publisher.ts"
+							"path": "packages/workbench/src/runtime/operations/semantic-context-publisher.ts"
 						}
 					},
 					{

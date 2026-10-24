@@ -176,13 +176,13 @@ and the resolution rules that the snapshot feeds, the checkout that holds a vaul
 checkouts a reader of that vault resolves identities in, and the GitHub URL that a card opens when
 the code is not local.
 
-The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
-session over stdio. The package is complete. It holds the shared files, the wire protocol, the
-process owner, the stdio transport, the session and the semantic context. It imports `board`
-(layer 4) and the lower packages. It adopts the `api/` role for `shared/`
-and `runtime/` and exposes 7 subpaths, where it exposed 17 files. The 2 files of `shared/api/` are
-safe for the browser, with no Node import. The 5 files of `runtime/api/` are runtime-only by policy:
-the browser imports none of them, though `./session` carries some Zod schemas.
+The sixth is `codex-app-server` (`@archboard/codex-app-server`). It owns one private Codex app-server session over stdio.
+It holds protocol contracts, the process owner, the stdio transport, and the session.
+It imports the lower process, workspace, diagnostics, and timing packages.
+It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
+
+The two shared entries are safe for the browser. The four runtime entries run only in Bun.
+Archboard owns board context in `workbench` through its `./semantic-context` entry.
 
 - `shared/api/`: `./contract` holds the authored wrapper over the generated protocol types: the
   request methods, the status types, the approval decisions and their schemas, and the connection
@@ -211,13 +211,6 @@ the browser imports none of them, though `./session` carries some Zod schemas.
   the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
   or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
   `runtime/services/` holds the child's environment and its diagnostics buffer.
-- `./semantic-context` turns a user's gestures and the settled changes of a board into the briefs
-  and events that the coordinator and the workhorse read. It creates the publisher and carries its
-  input, brief, event and publisher types and the byte and entry limits. The input normalizers, the
-  brief builder, the fitter and the bounded-text and listener-diagnostic helpers are private. The
-  barrel `codex-semantic-context/index.ts` is gone: a name is imported from the api file that
-  carries it. The package reads board schemas by value from `@archboard/board` (`./views`,
-  `./document`, `./reconciliation`, `./pane-context`) to normalize the architecture a pane reports.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
@@ -523,25 +516,21 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
   and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
 
-The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
-conversation and the voice (layer 7, the last). It came over in TASK-500.23.01 to .07, one move for each step up its
-import graph, and it is complete. It holds the browser-safe contracts that the
-browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
-workhorses), the server side (the gateway over the runtime, and the sessions, generations and pane plumbing that wire
-it into the Archboard server) and the browser UI (the transport, the conversation and the composer, then the dock, the
-panes, the approvals, the queue, the agent setup and the voice). It adopts the `api/` role for
-`shared/`, `runtime/`, `server/` and `ui/` and exposes 8 subpaths, each an api file that carries only the names that code
-outside the package imports (TASK-500.23.08). It imports `board`, `codex-app-server`,
-`diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`.
-The file of `shared/api/` (`./browser-contract`) holds 12 names and is safe for the browser, with no Node import and no
-path into a runtime or server area: the pane session imports it as well as the server. The 3 files of `ui/api/`
-(`./controllers`, `./agent` and `./voice`) hold 58 names and are safe for the browser too. The file of `runtime/api/`
-(`./runtime`) holds 8 names and the 3 of `server/api/` (`./server`, `./panes` and `./host`) hold 82, and they run only
-in Bun. The browser imports none of them, and a trace from `apps/web/src` reaches no file of `runtime/` or
-`server/`. `ui/` never imports the `runtime/` or `server/` of the package, and the shared files it reads are the
-private ones, not the api files. An api file lists a name only when code outside the package imports it, and a test
-outside the package counts as that code. The approvals, the gateway envelope and the realtime commands of the shared
-contracts have no such importer, so they are private.
+The `workbench` package (`@archboard/workbench`) owns the Archboard agent integration.
+It holds shared browser contracts, the Codex runtime, server composition, and the browser workbench.
+The browser workbench includes conversation, the composer, approvals, agent setup, and voice.
+The package adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
+It imports the board, Codex, diagnostics, process, lifecycle, timing, UI, walkthrough, and workspace packages.
+
+The shared entry is `./browser-contract`. The browser entries are `./controllers`, `./agent`, and `./voice`.
+These entries are safe for the browser and reach no runtime or server files.
+The runtime entries are `./runtime` and `./semantic-context`.
+The server entries are `./server`, `./panes`, and `./host`.
+The runtime and server entries run only in Bun.
+
+Each entry exposes only names that code outside the package imports.
+The UI reads private shared files and never imports runtime or server code.
+Approvals, gateway envelopes, and realtime commands remain private shared contracts.
 
 **Shared.**
 
@@ -563,6 +552,11 @@ contracts have no such importer, so they are private.
 **Runtime.** `runtime/` keeps its code in role folders, each with one folder for each behavior. A role folder that
 grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `mutation/` and `projection/` below
 `operations/`). A module that is not in `runtime/api/` is private, and no private file imports an api file.
+
+- `./semantic-context` publishes board context for the coordinator and workhorses.
+  It exposes the publisher, its input and event types, and the byte and entry limits.
+  Its schemas, bounded text, brief builder, and listener diagnostics stay private.
+  The publisher reads board schemas from `@archboard/board` and belongs to the Archboard integration.
 
 - `rules/` holds the pure decisions: `instructions/` (the two authored developer instructions, their reviewed digests and
   the context a turn carries), `thread-link/` (the classification of a target thread, the pane's binding by

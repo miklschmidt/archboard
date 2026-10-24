@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 77,
+	"version": 78,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T11:40:00.192Z",
+	"updatedAt": "2026-10-24T11:45:43.671Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -21007,7 +21007,7 @@
 						"parent": "hshxlvQL",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-app-server/src/runtime/operations/semantic-context-publisher.ts"
+							"path": "packages/workbench/src/runtime/operations/semantic-context-publisher.ts"
 						}
 					},
 					{
