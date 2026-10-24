@@ -15,7 +15,6 @@
 		"./protocol": "./src/runtime/api/protocol.ts",
 		"./process": "./src/runtime/api/process.ts",
 		"./transport": "./src/runtime/api/transport.ts",
-		"./session": "./src/runtime/api/session.ts",
-		"./semantic-context": "./src/runtime/api/semantic-context.ts"
+		"./session": "./src/runtime/api/session.ts"
 	}
 }
