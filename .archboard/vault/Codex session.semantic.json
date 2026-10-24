@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 37,
+	"version": 38,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-24T13:34:44.362Z",
+	"updatedAt": "2026-10-24T14:30:21.636Z",
 	"views": [
 		{
 			"id": "QJ4WHuKs",
@@ -4224,7 +4224,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "dlqsT0DB",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Private Codex process environment, transport, typed requests, and shutdown",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",

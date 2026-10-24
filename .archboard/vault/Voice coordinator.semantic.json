@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 83,
+	"version": 84,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T13:43:32.179Z",
+	"updatedAt": "2026-10-24T14:30:20.435Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -20885,7 +20885,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "O1N446cC",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Voice session identity, coordinator lifecycle, ordered workhorse context, and spoken approvals",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",

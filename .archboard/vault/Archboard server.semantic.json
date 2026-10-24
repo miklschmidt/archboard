@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 287,
+	"version": 288,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-24T13:40:55.251Z",
+	"updatedAt": "2026-10-24T14:30:22.936Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -115028,7 +115028,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "ikFyiS12",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Archboard HTTP and pane services composed with the shared Codex workbench host",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",

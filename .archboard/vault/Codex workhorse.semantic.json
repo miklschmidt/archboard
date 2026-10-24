@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 85,
+	"version": 86,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-24T13:43:31.749Z",
+	"updatedAt": "2026-10-24T14:30:21.047Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -15382,7 +15382,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "VbwPSZYa",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Checkout workhorse creation, commands, queues, approvals, and coordinator reporting",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
