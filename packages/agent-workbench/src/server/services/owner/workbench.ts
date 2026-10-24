@@ -51,17 +51,18 @@ export type CodexWorkbenchExtensions = Omit<
 function captureProcessOptions(
 	input: CreateCodexWorkbenchOptions["process"],
 ): CreateCodexWorkbenchOptions["process"] {
+	const captured = { ...input };
 	return Object.freeze({
-		...input,
-		...(input.hostEnvironment === undefined
+		...captured,
+		...(captured.hostEnvironment === undefined
 			? {}
-			: { hostEnvironment: Object.freeze({ ...input.hostEnvironment }) }),
-		...(input.pathPrefixes === undefined
+			: { hostEnvironment: Object.freeze({ ...captured.hostEnvironment }) }),
+		...(captured.pathPrefixes === undefined
 			? {}
-			: { pathPrefixes: Object.freeze([...input.pathPrefixes]) }),
-		...(input.diagnosticSecrets === undefined
+			: { pathPrefixes: Object.freeze([...captured.pathPrefixes]) }),
+		...(captured.diagnosticSecrets === undefined
 			? {}
-			: { diagnosticSecrets: Object.freeze([...input.diagnosticSecrets]) }),
+			: { diagnosticSecrets: Object.freeze([...captured.diagnosticSecrets]) }),
 	});
 }
 
