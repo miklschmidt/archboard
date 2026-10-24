@@ -122,7 +122,7 @@
 					"expectedUse": "draw a picture that a document in a Git checkout embeds with --track, SVG preferred, and commit the file with the vault",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/tracked-embeds.test.ts owns the list, the lease and doing line, the unchanged last change, both refusals and tracking a file twice. Mechanical validation: no Flask scenario embeds a picture in a document"
+					"owner": "tests/system/semantic-boards/tracked-embeds.test.ts owns the list, the doing line, both refusals and tracking a file twice; packages/code-intel/tests/runtime/operations/history-lens/behind.test.ts owns the unchanged last change. Mechanical validation: no Flask scenario embeds a picture in a document"
 				},
 				{
 					"path": "archboard check embeds and check --fix: EMBED_OUTDATED, EMBED_SOURCE_MISSING and EMBED_RECIPE_UNREADABLE warnings, EMBED_RENDERER_CHANGED and EMBED_VAULT_UNAVAILABLE information, a fetched or cached vault of an unregistered repository, the embeds check alone in a checkout without a vault",
