@@ -109,12 +109,16 @@ export function createWorkbenchBrowserConnections(
 			 * @param transport The host socket send boundary.
 			 * @returns Resolves after the request and its publication settle.
 			 */
-			handle: (
+			handle: async (
 				instance: BrowserConnectionInstance,
 				browserId: string,
 				input: unknown,
 				transport: SocketTransport,
-			) => owner().handle(instance, browserId, input, transport),
+			) => {
+				if (registrations.get(browserId)?.instance !== instance)
+					throw new Error("The browser socket instance is not registered.");
+				return owner().handle(instance, browserId, input, transport);
+			},
 			/**
 			 * Close one exact socket without forgetting its replacement.
 			 * @param instance The exact physical socket capability.

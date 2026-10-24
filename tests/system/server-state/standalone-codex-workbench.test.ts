@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { z } from "zod";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { delimiter, join } from "node:path";
 import { createCodexWorkbench, parseTabSessionId } from "@archboard/agent-workbench/server";
 import { createWorkbenchThreadProfile } from "@archboard/agent-workbench/runtime";
 import { prepareProductionFixture, productionRecords } from "./support/codex-production.ts";
@@ -22,6 +22,73 @@ const instructions = {
 		dynamicTools: [],
 	}),
 };
+
+test("the public factory captures process getters and detaches mutable inputs before startup", async () => {
+	const resources = new AsyncDisposableStack();
+	try {
+		const fixture = prepareProductionFixture(
+			resources,
+			join(import.meta.dir, "fixtures/fake-codex-production.ts"),
+		);
+		writeFileSync(
+			fixture.executablePath,
+			`${readFileSync(fixture.executablePath, "utf8")}\nrecord({ kind: "captured_process", params: {
+				marker: process.env["WORKBENCH_CAPTURE"], path: process.env["PATH"],
+				codexHome: process.env["CODEX_HOME"], sqliteHome: process.env["CODEX_SQLITE_HOME"]
+			} });\n`,
+		);
+		const checkout = join(fixture.root, "checkout");
+		mkdirSync(checkout);
+		const originalPrefix = join(fixture.root, "tools");
+		const environment = { WORKBENCH_CAPTURE: "captured", PATH: "/usr/bin" };
+		const prefixes = [originalPrefix];
+		const secrets = ["captured-diagnostic-secret"];
+		const reads = { environment: 0, prefixes: 0, secrets: 0 };
+		const workbench = createCodexWorkbench({
+			storage: { rootDirectory: join(fixture.root, "private") },
+			process: {
+				executablePath: fixture.executablePath,
+				get hostEnvironment() {
+					reads.environment += 1;
+					return reads.environment === 1 ? environment : undefined;
+				},
+				get pathPrefixes() {
+					reads.prefixes += 1;
+					return reads.prefixes === 1 ? prefixes : undefined;
+				},
+				get diagnosticSecrets() {
+					reads.secrets += 1;
+					if (reads.secrets !== 1) throw new Error("The process getter was read again.");
+					return secrets;
+				},
+			},
+			host: { instructions, allowedCheckouts: [checkout] },
+		});
+		resources.defer(() => workbench.shutdown());
+		expect(reads).toEqual({ environment: 1, prefixes: 1, secrets: 1 });
+		environment.WORKBENCH_CAPTURE = "mutated";
+		prefixes[0] = "relative-path-is-not-admitted";
+		Object.defineProperty(secrets, Symbol.iterator, {
+			value: () => {
+				throw new Error("The caller changed its diagnostic secrets after installation.");
+			},
+		});
+		expect(await workbench.start()).toMatchObject({ ready: true });
+		expect(
+			productionRecords(fixture.logPath).find((entry) => entry.kind === "captured_process"),
+		).toMatchObject({
+			params: {
+				marker: "captured",
+				path: [originalPrefix, "/usr/bin"].join(delimiter),
+				codexHome: join(fixture.root, "private", "codex-home"),
+				sqliteHome: join(fixture.root, "private", "sqlite-home"),
+			},
+		});
+		expect(reads).toEqual({ environment: 1, prefixes: 1, secrets: 1 });
+	} finally {
+		await resources.disposeAsync();
+	}
+});
 
 test("the public Codex factory starts a standalone host and owns workhorses and voice without a vault", async () => {
 	const resources = new AsyncDisposableStack();
