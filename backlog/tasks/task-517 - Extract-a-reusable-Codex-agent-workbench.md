@@ -1,0 +1,65 @@
+---
+id: TASK-517
+title: Extract a reusable Codex agent workbench
+status: In Progress
+assignee:
+  - '@codex'
+created_date: '2026-10-24 11:37'
+updated_date: '2026-10-24 11:40'
+labels: []
+dependencies: []
+references:
+  - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
+  - >-
+    docs/adr/0050-the-browser-is-one-app-and-each-checkout-has-its-own-workhorse.md
+  - docs/adr/0055-packages-own-behavior-and-apps-compose-it.md
+priority: high
+type: feature
+ordinal: 925000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+The owner wants a second application to use the same live voice, coordinator, and checkout workhorse design. The current workbench package requires Archboard boards, vaults, panes, and prompts. A reusable workbench lets both applications share the lifecycle and authority rules. This work keeps Codex explicit and keeps the Archboard visual shell in its host integration. Package publication and support for other model providers are outside this work.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Archboard and a second minimal application use one shared Codex workbench implementation through public server and browser interfaces.
+- [ ] #2 The second application starts without an Archboard server, board, or vault and supports voice, conversation, checkout workhorses, and approval handling.
+- [ ] #3 The reusable implementation owns lifecycle, queues, routing, transcript recovery, and approval authority. Its host supplies domain instructions, context events, tools, and allowed checkouts.
+- [ ] #4 Exact session identity, unknown delivery outcomes, spoken approval settlement, coordinator retirement, and independent voice and workhorse stop behavior retain meaningful behavior coverage.
+- [ ] #5 The complete bun run check gate passes, reviewers commit fixes, and the affected architecture boards describe the implementation.
+<!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+The owner approved this architecture and its implementation in the conversation.
+Material value: application developers can reuse the working agent design without implementing Archboard concepts or duplicating authority rules.
+The dedicated branch is feat/reusable-codex-workbench.
+
+Affected board proposals: Archboard@TASK-517; Agent workbench@TASK-517; Voice coordinator@TASK-517; Codex workhorse@TASK-517; Codex session@TASK-517; Browser application@TASK-517; Archboard server@TASK-517.
+The parent owns these proposals for the single end-to-end extraction. Each delivery task records its contribution and deviations.
+
+1. Complete TASK-517.01. Separate domain policy from execution authority, and supply host instructions, context events, tools, and admitted checkouts.
+2. Complete TASK-517.02. Move reusable behavior into packages/agent-workbench and retain packages/workbench as the Archboard integration.
+3. Complete TASK-517.03. Add apps/workbench-example as a minimal second host through the same public interfaces.
+4. Keep Codex explicit. Preserve one coordinator per session and one workhorse per checkout within that session.
+5. Preserve exact generation checks, unknown outcomes, queue behavior, spoken approval authority, transcript recovery, and coordinator retirement.
+6. Keep core coordination instructions separate from host domain instructions and voice persona.
+7. Keep application context distinct from user authorization and preserve speakable results versus quiet context.
+8. Delegate backend implementation to gpt-6.1-sol agents with disjoint scopes in this dedicated worktree. The parent owns browser changes.
+9. Run focused behavior owners during implementation. Pause after each delivery to simplify the result.
+10. Run the complete bun run check gate. Expose all remaining lanes after an early failure and track reproducible repairs separately.
+11. Review independent scopes and their contracts through parallel gpt-6.1-sol reviewers. Reviewers commit their fixes.
+12. Inspect board proposals against source, compare code findings and commit footprints, and adopt the proposals after the passing gate.
+13. Record evidence, close the delivery tasks and parent, and commit the final state. Do not push or publish a package.
+
+The public server factory owns the internal generation graph. Hosts do not assemble its factories.
+The host contract supplies domain instructions, context sources and events, domain tools, and checkout admission.
+Private storage and the Codex executable are explicit installation inputs.
+Browser media uses a separate browser-safe entry. The existing Archboard visual shell stays in the integration.
+The independent app uses its own private storage and a permitted checkout without a vault.
+<!-- SECTION:PLAN:END -->
