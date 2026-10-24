@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 74,
+	"version": 76,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-24T16:19:29.633Z",
+	"updatedAt": "2026-10-24T16:45:40.002Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -21605,7 +21605,7 @@
 			"name": "TASK-526.02",
 			"lifecycle": "draft",
 			"parent": "4lZZiZuM",
-			"summary": "A board render carries its render recipe, and SVG renders follow the reader and show their legend",
+			"summary": "Bitmaps and videos drawn headlessly from a board, and the recipe a PNG carries",
 			"content": {
 				"nodes": [
 					{
@@ -22371,7 +22371,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
-							"symbol": "renderSemanticBoardOnServer"
+							"symbol": "semanticRasterizeContract"
 						}
 					},
 					{
@@ -22898,6 +22898,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
 							"symbol": "embedRecipeInPng"
+						}
+					},
+					{
+						"id": "rzORtiO1",
+						"order": 54000,
+						"from": "H2MUNwiC",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"label": "the bytes are a PNG",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/recipe/png-recipe.ts",
+							"symbol": "readPngDimensions"
 						}
 					}
 				],

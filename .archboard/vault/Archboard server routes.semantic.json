@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 89,
+	"version": 91,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-24T16:19:44.835Z",
+	"updatedAt": "2026-10-24T16:45:40.225Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -36095,7 +36095,7 @@
 			"name": "TASK-526.02",
 			"lifecycle": "draft",
 			"parent": "jHge59R8",
-			"summary": "A board render carries its render recipe, and SVG renders follow the reader and show their legend",
+			"summary": "The route handlers, and what each one reaches",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -36853,7 +36853,7 @@
 						"from": "wQ63dmRZ",
 						"to": "3bPZg9a5",
 						"kind": "http",
-						"label": "check --code",
+						"label": "check code",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",

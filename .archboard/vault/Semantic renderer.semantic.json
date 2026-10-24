@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 81,
+	"version": 83,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-24T16:18:57.283Z",
+	"updatedAt": "2026-10-24T16:45:39.780Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -23108,7 +23108,7 @@
 			"name": "TASK-526.02",
 			"lifecycle": "draft",
 			"parent": "MgiCUw9a",
-			"summary": "A board render carries its render recipe, and SVG renders follow the reader and show their legend",
+			"summary": "Meaning to SVG and interaction geometry, and the recipe a board render carries",
 			"content": {
 				"nodes": [
 					{
@@ -23670,7 +23670,7 @@
 						"from": "0XCanbzp",
 						"to": "yOV8Znnv",
 						"kind": "call",
-						"label": "renderBoard on the core",
+						"label": "drawBoard on the core",
 						"emphasis": "hero",
 						"traffic": {
 							"speed": 40,
@@ -23679,7 +23679,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/operations/render.ts",
-							"symbol": "renderBoardIn"
+							"symbol": "drawBoard"
 						}
 					},
 					{
@@ -24604,7 +24604,8 @@
 							"LgbAlvMN",
 							"0XCanbzp",
 							"yOV8Znnv",
-							"wpI1LbzG"
+							"wpI1LbzG",
+							"bm9AWXkW"
 						],
 						"steps": [
 							{
@@ -24652,12 +24653,12 @@
 								"id": "llrceIKD",
 								"from": "0XCanbzp",
 								"to": "yOV8Znnv",
-								"label": "renderBoard on the core",
+								"label": "drawBoard on the core",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "packages/renderer/src/runtime/operations/render.ts",
-									"symbol": "renderBoardIn"
+									"symbol": "drawBoard"
 								}
 							},
 							{
@@ -24677,7 +24678,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/renderer/src/shared/rules/render/board.ts",
-													"symbol": "renderBoard"
+													"symbol": "drawBoard"
 												}
 											},
 											{
@@ -24754,13 +24755,41 @@
 												"id": "gYWFY5g5",
 												"from": "yOV8Znnv",
 												"to": "0XCanbzp",
-												"label": "document, size, atlas, the drawn subjects and their standing",
+												"label": "the drawing, its subjects and standing, and the drawn input",
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/renderer/src/shared/rules/render/board.ts",
-													"symbol": "drawnReply"
+													"symbol": "drawBoard"
 												}
+											},
+											{
+												"id": "0OU4kUv0",
+												"kind": "decision",
+												"question": "Does the render stand alone, for a file?",
+												"alternatives": [
+													{
+														"label": "yes",
+														"steps": [
+															{
+																"id": "hY60CCac",
+																"from": "0XCanbzp",
+																"to": "bm9AWXkW",
+																"label": "fingerprint, digest and write the recipe into the SVG",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/operations/render.ts",
+																	"symbol": "carryingRecipe"
+																}
+															}
+														]
+													},
+													{
+														"label": "no, a pane",
+														"steps": []
+													}
+												]
 											},
 											{
 												"id": "AXncoKD3",
