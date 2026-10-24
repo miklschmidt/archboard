@@ -4,6 +4,8 @@
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
+import { labelStation, type Station } from "#shared/rules/track/routes/chains.ts";
+import { channelsFor, crossingsIn, crossingsOf } from "#shared/rules/track/routes/crossings.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import {
@@ -117,4 +119,58 @@ test("a lap costs its run only where it sets the page's edge", async () => {
 test("a leaving label is pulled down only where the drawing reads no worse", async () => {
 	const lines = await linesOf(workhorseNews, "track");
 	expect(routesCross(lines.get("5EeoHuyh")!, lines.get("yjIBH8F4")!)).toBeFalse();
+});
+
+// Endpoint preparation must retain card ports, shared ends, strict crossings,
+// and trunk membership while each search weighs its candidate columns.
+test("prepared channel endpoints preserve direct crossing counts and trunk identities", () => {
+	const card = { box: { x: -30, y: 0, width: 60, height: 20 }, band: 0 };
+	const own: Station[] = [
+		{ kind: "card", band: 0, x: 0, item: card, at: 15 },
+		{ kind: "lane", band: 1, x: 0 },
+		{ kind: "lane", band: 2, x: 0 },
+	];
+	const bands: readonly ReadonlyMap<number, Station>[] = [
+		new Map(own.map((station) => [station.band, station])),
+		new Map<number, Station>([
+			[0, { kind: "card", band: 0, x: 0, item: card }],
+			[1, { kind: "lane", band: 1, x: 20 }],
+			[2, { kind: "lane", band: 2, x: -20 }],
+		]),
+		new Map<number, Station>([
+			[0, { kind: "lane", band: 0, x: -20 }],
+			[1, { kind: "lane", band: 1, x: 20 }],
+			[2, { kind: "lane", band: 2, x: -20 }],
+		]),
+		new Map<number, Station>([[1, { kind: "lane", band: 1, x: 0 }]]),
+	];
+	const channels = channelsFor(own, bands);
+	for (let x = -40; x <= 40; x += 2) {
+		const xs = [0, x, x];
+		expect(crossingsIn(own, xs, channels)).toBe(crossingsOf(own, xs, bands));
+		const counted = (crossed: readonly ReadonlyMap<number, Station>[]) =>
+			crossed.reduce((sum, chain) => sum + bands.indexOf(chain), 0);
+		expect(crossingsIn(own, xs, channels, counted)).toBe(crossingsOf(own, xs, bands, counted));
+	}
+});
+
+// Accepted relays move lane and label positions. A later search must prepare
+// fresh endpoints rather than retain the positions from the previous search.
+test("each new search reads moved lane and label endpoints", () => {
+	const own: Station[] = [0, 1, 2].map((band) => ({ kind: "lane", band, x: 0 }));
+	const label = labelStation({ box: { x: 10, y: 0, width: 20, height: 10 }, band: 1 }, 1);
+	const lane: Station = { kind: "lane", band: 2, x: -20 };
+	const bands = [
+		new Map<number, Station>([
+			[0, { kind: "lane", band: 0, x: -20 }],
+			[1, label],
+			[2, lane],
+		]),
+	];
+	const count = () => crossingsIn(own, [0, 0, 0], channelsFor(own, bands));
+	expect(count()).toBe(2);
+	label.x = -20;
+	expect(count()).toBe(0);
+	lane.x = 20;
+	expect(count()).toBe(1);
 });
