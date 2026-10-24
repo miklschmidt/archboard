@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 69,
+	"version": 70,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-24T15:07:39.030Z",
+	"updatedAt": "2026-10-24T15:08:46.122Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -14537,7 +14537,7 @@
 		{
 			"id": "os4w3COk",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "vEIEbVj4",
 			"summary": "Exchanges are flows with decisions and loops, drawn by sequence and flowchart views",
 			"content": {
@@ -17486,7 +17486,7 @@
 		{
 			"id": "csyD8fmQ",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "os4w3COk",
 			"summary": "Archboard pane sockets, vault routing, and their adapter to shared tab sessions",
 			"content": {
@@ -20462,7 +20462,7 @@
 			}
 		}
 	],
-	"current": "os4w3COk",
+	"current": "csyD8fmQ",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -20528,6 +20528,12 @@
 			"from": "vEIEbVj4",
 			"at": "2026-10-16T02:58:38.883Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "csyD8fmQ",
+			"from": "os4w3COk",
+			"at": "2026-10-24T15:08:46.122Z",
+			"reason": "Pane registration and browser activation use an Archboard adapter to the shared tab session owner (TASK-517)."
 		}
 	]
 }

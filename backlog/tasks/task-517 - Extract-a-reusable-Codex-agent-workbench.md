@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: 2026-10-24 11:37
-updated_date: '2026-10-24T14:54:00Z'
+updated_date: '2026-10-24T15:08:00Z'
 labels: []
 dependencies: []
 references:
@@ -62,6 +62,8 @@ The host contract supplies domain instructions, context sources and events, doma
 Private storage and the Codex executable are explicit installation inputs.
 Browser media uses a separate browser-safe entry. The existing Archboard visual shell stays in the integration.
 The independent app uses its own private storage and a permitted checkout without a vault.
+
+The closing behind sweep also names Live panes. Its tab presence implementation moved to the shared owner while the retained file became a pane adapter. Draw and adopt Live panes@TASK-517 as an eighth affected proposal. The remaining parts on Live panes and Board rasterizer change only imports or exact host types, so their responsibilities remain true.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -74,4 +76,6 @@ The parent inspected all seven proposal captures and corrected their prose about
 After the final prose correction, the Archboard footprint adds Codex home to namedNotChanged. This is an intentional documentation correction: the existing storage owner already accepts host-owned roots and needs no code change. The new example supplies its own root through the shared factory. The unchanged storage binding remains correct. Workspace packages is now named by its corrected description, so only the independent TASK-519 renderer repair remains changedNotNamed on Archboard.
 
 The .03 complete gate at 74751d397 passes lint, formatting, both type projects, both browser builds, and all 4,940 module tests (one skip). Ten system cases fail before exercising behavior because a controlled fixture insertion point changed. All remaining lanes ran: 149 repository cases and all 19 browser owners pass. TASK-525 owns the fixture repair, followed by another complete gate. The cause is fixture source matching, not old application wiring.
+
+The complete repaired gate at 33aa81f0f passes all 13 stages in 534 seconds: 5,378 passes, one skip, no failures, lint zero warnings. The eight adopted boards pass archboard check with zero diagnostics. The first seven adoptions exposed two visual diagnostics, corrected before closure: Workbench interface now nests under Child ownership, and Shared instruction policy no longer draws a redundant line to its own part. The post-adoption sweep discovered Live panes tab ownership, now drawn as a pane adapter plus core tab sessions. Its footprint against main names both changed parts, has no namedNotChanged entries, and adds no code finding. Its other changedNotNamed parts change imports in b2c7508b9/dec053209, retaining their behavior. Board rasterizer Recording page and Recording pace change only shared type imports in 751fdfedd/816b6d79c. Their descriptions remain true. Remaining global code findings are pre-existing and outside this extraction; introduced warnings are zero.
 <!-- SECTION:NOTES:END -->
