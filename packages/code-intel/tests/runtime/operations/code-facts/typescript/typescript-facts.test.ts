@@ -3,8 +3,6 @@
 // that count as names, and code that did not parse.
 
 import { afterAll, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createCodeFacts } from "#runtime/services/code-facts/reader.ts";
 import { findSymbol } from "#runtime/operations/code-facts/lookup.ts";
 import { type FileFacts, type SyntaxFacts } from "#runtime/operations/code-facts/facts.ts";
@@ -261,11 +259,22 @@ test("code that did not parse holds no facts, a name found only there is unparse
 	expect(findSymbol(broken, "missing", "definition-or-reference").status).toBe("absent");
 });
 
-test("the regular expression tree-sitter-typescript 0.23.2 cannot parse leaves the rest of primitives.ts its facts", async () => {
-	// The one file of this repository the grammar fails on (ADR 0046).
-	const repository = join(import.meta.dir, "..", "..", "..", "..", "..", "..", "..");
-	const file = "packages/renderer/src/shared/rules/svg/page/primitives.ts";
-	const text = readFileSync(join(repository, file), "utf8");
+test("a regular expression tree-sitter-typescript 0.23.2 cannot parse leaves the rest of its file its facts", async () => {
+	// The character class of raw control characters that the grammar failed
+	// on in this repository's former SVG writer (ADR 0046).
+	const file = "src/primitives.ts";
+	const text = [
+		"const FORBIDDEN_IN_XML = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\\uD800-\\uDFFF\ufffe\uffff]/gu;",
+		"type Attributes = Readonly<Record<string, string>>;",
+		"function escapeXml(value: string): string {",
+		'\treturn value.replace(FORBIDDEN_IN_XML, "").replace(/&/g, "&amp;");',
+		"}",
+		"function lines(fragments: readonly string[]): string {",
+		'\treturn fragments.join(" ");',
+		"}",
+		"export { type Attributes, escapeXml, lines };",
+		"",
+	].join("\n");
 	const own = fixtureCheckout({ [file]: text });
 	try {
 		const primitives = await createCodeFacts().pass(new AbortController().signal).read(own, file);
