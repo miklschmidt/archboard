@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 13:41'
+updated_date: '2026-10-24 13:44'
 labels: []
 dependencies:
   - TASK-517.01
@@ -58,4 +58,6 @@ Removed temporary public names without outside callers. The shared entries now e
 Removed generic snapshot/model/realtime reexports from the Archboard browser-contract entry. Browser callers now use the shared package directly; the host entry retains only Archboard conversation routes and narration contracts. The backend public-factory smoke passed with root-only storage, normal host inputs, separate coordinator/workhorse directories, and no server, board, or vault. Backend final focused validation remains active.
 
 Independent scoped reviews fixed queue source provenance, voice subscription cleanup, core instruction and reserved-tool capture, semantic output type duplication, and canonical private-path ownership. Boundary identity and default-context reviews found no behavior defects. Parent updated the retained integration catalogue snapshot and exact reviewed workhorse digest after the generic tool description change. The catalogue owner passes. Server lifecycle and core/host boundary reviews remain active; complete gate follows their commits.
+
+All seven final backend scopes and interface reviews completed. Fixes: fb7125cfe aligns queue provenance; 374cade2d releases voice subscriptions once; b9f1e265f preserves core role and reserved-tool contracts; 11ffc424c clarifies admitted checkout guidance; 100a43b65 derives realtime correlation; b510fc361 derives semantic output types; bad2c29ec centralizes storage paths; a062c3c4d guards startup during shutdown; cc10e7c75 captures mutable process inputs once and rejects replaced sockets. Focused regressions passed in each scope. Identity/voice and runtime/server reviewers found no additional behavior defects. The parent reviewed shared/browser changes and repaired malformed-presentation admission through the backend implementer. Complete bun run check now runs in /tmp/task517.02-check.log with system Chromium. No public interface or behavior acceptance is closed before that gate passes.
 <!-- SECTION:NOTES:END -->
