@@ -233,7 +233,7 @@ Put a diagram of the Payments board in docs/design.md, and keep it current.
 ```
 
 - **Docs in another repository**. A documentation repository needs no vault of its own. The check finds each picture's board in the repository that its recipe names, and fetches that vault when this machine has no checkout of it.
-- **Only real changes**. A draft, a walkthrough or a new name for the board leaves the picture current. A warning means the board says something new.
+- **Only real changes**. A draft, a walkthrough or an edit to what the picture leaves out keeps the picture current. A warning means the board says something new.
 - **On this page too**. The system board under [How it works](#how-it-works) is a tracked embed of this repository's own vault.
 
 ---
@@ -245,7 +245,7 @@ Put a diagram of the Payments board in docs/design.md, and keep it current.
   <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server. The server keeps the board vault, serves the browser, reads the repository checkouts and runs a private Codex app-server. The CLI copies PNG and HTML through a native clipboard helper and encodes videos with ffmpeg. The skill evaluation runs the CLI against a server of its own." src="docs/readme/architecture-light.svg" width="100%">
 </picture>
 
-<p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>, drawn with <code>archboard semantic render Archboard --track</code>. <code>archboard check</code> in this repository says when this picture is outdated.</sub></p>
+<p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>, drawn as a tracked embed with <code>semantic render --track</code>. <code>archboard check</code> in this repository says when this picture is outdated.</sub></p>
 
 1. **Your agent reads the code and writes meaning** with `archboard semantic …`: parts, containment, relationships, flows, views and walkthroughs, one JSON payload per change. The `archboard` skill teaches it how, and makes it back every claim with a line of source.
 2. **The Archboard server checks the write and stores it**. One `.semantic.json` file per board holds every variant. One writer at a time, a version check on every change, and the change is on disk before the agent hears back.
