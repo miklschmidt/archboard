@@ -35,7 +35,7 @@ import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
 } from "#ui/state/pane-session/workbench-publication.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 
 /** The transports by pane id; null while a pane has none. */
 type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;

@@ -4,7 +4,7 @@
 
 import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
+import type { BrowserWorkbenchState } from "@archboard/agent-workbench/browser";
 
 /** Where the agent stands. */
 type AgentPhase =

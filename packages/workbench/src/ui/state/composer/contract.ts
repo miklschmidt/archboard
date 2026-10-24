@@ -7,7 +7,7 @@ import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/agent-workbench/browser";
 
 /** The workbench identities this composer targets, taken from the closed model. */
 type Timeline = NonNullable<BrowserSnapshot["timeline"]>;

@@ -15,7 +15,7 @@ import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/agent-workbench/browser";
 
 /** The conversation, or why it could not be read. */
 interface Conversation {

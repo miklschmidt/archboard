@@ -6,7 +6,7 @@
 import type { SnapshotStore } from "#ui/state/application/snapshot-cache.ts";
 import type { VoiceOwner } from "#ui/state/application/workbench-owners.ts";
 import { createVoiceSession, type VoiceSessionPorts } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 
 /** What a voice session is made over: a pane, its transport and its media. */
 interface VoicePane {

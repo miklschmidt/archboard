@@ -2,8 +2,12 @@
 // the request details, the decisions the model defines, and the phase the
 // card is in. Public so tests can reach it.
 
-import type { BrowserApproval, BrowserSpokenApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type {
+	BrowserApproval,
+	BrowserSpokenApproval,
+	BrowserDynamicApproval,
+} from "@archboard/agent-workbench/contract";
+
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { ApprovalChoice } from "#ui/state/surfaces/contracts.ts";
 import { clockTime, counted } from "#ui/rules/dock/format.ts";

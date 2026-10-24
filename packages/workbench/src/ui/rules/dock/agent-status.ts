@@ -4,8 +4,8 @@
 // applies speaks, so the line never says two things at once. Pure.
 
 import { AGENT_QUIET_MS } from "@archboard/timing";
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+
 import type { AgentPhase } from "#ui/rules/agent-setup/phase.ts";
 import type { AgentView } from "#ui/state/surfaces/contracts.ts";
 import { activityLabel, runSummary } from "#ui/rules/thread/activity-words.ts";

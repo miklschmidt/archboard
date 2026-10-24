@@ -5,8 +5,8 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+
 import { Button } from "@archboard/ui-kit/controls";
 import {
 	projectApproval,

@@ -17,7 +17,7 @@ import type {
 	RecordingState,
 } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE, type TalkLog } from "@archboard/walkthrough/talk";
-import type { BrowserAudioElementPort } from "@archboard/workbench/voice";
+import type { BrowserAudioElementPort } from "@archboard/agent-workbench/browser";
 import {
 	sameBoardName,
 	type SemanticPaneReading,

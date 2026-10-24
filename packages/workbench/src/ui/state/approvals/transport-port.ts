@@ -8,10 +8,7 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "@archboard/agent-workbench/contract";
-import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type {
+	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserReadiness,
@@ -19,6 +16,7 @@ import type {
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "@archboard/agent-workbench/contract";
+import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

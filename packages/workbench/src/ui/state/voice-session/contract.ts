@@ -5,13 +5,13 @@
 
 import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
-import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
-import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputLevelSource } from "@archboard/agent-workbench/browser";
 import type {
+	BrowserWorkbenchMediaOwner,
+	BrowserWorkbenchMediaState,
+	RealtimeMediaSnapshot,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/agent-workbench/browser";
 
 /**
  * Every state the persistent voice control may present. `agent_speaking` is the
@@ -151,22 +151,10 @@ type VoiceNarration = BrowserVoicePresentation;
  * only what the person chose to have narrated, because minting a correlation is
  * media work the UI does not do.
  */
-interface VoiceRealtimePort {
-	readonly snapshot: () => RealtimeMediaSnapshot | null;
-	readonly state: () => BrowserWorkbenchMediaState;
-	/** The active session's measured model output level, or null between sessions. */
-	readonly outputLevel: () => VoiceOutputLevelSource | null;
-	/**
-	 * The owner's own publication channel. It carries the browser-originated
-	 * realtime changes that no transport delta announces.
-	 */
-	readonly subscribe: (listener: () => void) => () => void;
-	readonly start: (presentation?: VoiceNarration | null) => Promise<RealtimeMediaSnapshot>;
-	/** Silences and restores the captured microphone; no lease, no command. */
-	readonly mute: () => Promise<RealtimeMediaSnapshot>;
-	readonly unmute: () => Promise<RealtimeMediaSnapshot>;
-	readonly stop: () => Promise<RealtimeMediaSnapshot>;
-}
+type VoiceRealtimePort = Pick<
+	BrowserWorkbenchMediaOwner,
+	"snapshot" | "state" | "outputLevel" | "subscribe" | "start" | "mute" | "unmute" | "stop"
+>;
 
 /**
  * The already-constructed workbench transport, seen through its read surface.
