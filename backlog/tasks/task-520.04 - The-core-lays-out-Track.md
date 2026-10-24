@@ -4,14 +4,14 @@ title: The core lays out Track boards
 status: To Do
 assignee: []
 created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 12:55'
+updated_date: '2026-10-24 14:34'
 labels:
   - renderer
 dependencies:
   - TASK-520.03
 documentation:
   - >-
-    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-paint-list.md
+    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md
 parent_task_id: TASK-520
 ordinal: 924000
 ---
@@ -29,3 +29,9 @@ Layout moves to Rust one engine at a time, each against the drawing geometry tha
 - [ ] #3 The ported TypeScript rules are gone from packages/renderer
 - [ ] #4 No corpus board renders slower, measured with the same harness before and after
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Naming: shared/rules/track/scene calls a block's placement read back a Scene. CONTEXT.md now gives Scene to the output of the renderer core (ADR 0057), so the port names the Track structure otherwise.
+<!-- SECTION:NOTES:END -->

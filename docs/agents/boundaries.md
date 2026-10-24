@@ -15,6 +15,7 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 ```text
 packages/<name>/   # a library that owns one behavior. See Packages.
 apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
+crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0057)
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
 vite.config.ts     # the build host of the browser app

@@ -10,6 +10,6 @@ publish.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-# Exactly the version of the wasm-bindgen CLI in the Nix dev shell: the CLI
-# refuses a module built against any other.
-wasm-bindgen = "=0.2.129"
+# Cargo.lock decides the version, and the Nix dev shell carries the
+# wasm-bindgen CLI of that version, which refuses a module of any other.
+wasm-bindgen = "0.2.129"

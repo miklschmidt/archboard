@@ -7,14 +7,14 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 13:53'
+updated_date: '2026-10-24 14:34'
 labels:
   - renderer
   - tooling
 dependencies: []
 documentation:
   - >-
-    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-paint-list.md
+    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md
 parent_task_id: TASK-520
 priority: high
 ordinal: 921000
@@ -40,7 +40,7 @@ Every later step of TASK-520 needs Rust code that Bun and the browser load. ADR 
 
 <!-- SECTION:PLAN:BEGIN -->
 1. flake.nix: nixpkgs cargo, rustc, rustfmt, clippy, lld and wasm-bindgen-cli; Bun pinned to 1.4.3 from its release archives, because nixpkgs has 1.4.2.
-2. Root Cargo workspace with members packages/renderer/crates/*; crate archboard-renderer-wasm pins wasm-bindgen =0.2.129 and answers sourceHash().
+2. Root Cargo workspace with members crates/*; crate archboard-renderer-wasm pins wasm-bindgen =0.2.129 and answers sourceHash().
 3. scripts/build-core.ts: keeps a build that records the hash of the current sources, else cargo build for wasm32 with ARCHBOARD_CORE_SOURCE_HASH and wasm-bindgen --target web into packages/renderer/src/shared/protocol/generated/core (ignored like the Codex bindings).
 4. @archboard/renderer/core: coreSourceHash() and loadCore(), which refuses CORE_BUILD_MISSING and CORE_BUILD_STALE with the build command.
 5. Both layout workers load the core before loadLayoutEngine, which must capture only the Graphviz and libavoid memories.
@@ -55,7 +55,7 @@ Board proposal: Semantic renderer@TASK-520.01 (Renderer core, Core loader, Bun l
 <!-- SECTION:NOTES:BEGIN -->
 Verification, 2026-10-24:
 - nix develop gives Bun 1.4.3, cargo and rustc 1.99.0, lld and wasm-bindgen 0.2.129; the crate pins wasm-bindgen =0.2.129. nixpkgs Rust builds wasm32-unknown-unknown without an overlay, but links it with lld, so the shell carries lld.
-- bun run build:core builds packages/renderer/crates/wasm into packages/renderer/src/shared/protocol/generated/core (ignored, like the Codex bindings; git check-ignore confirms it and /target/). A second run keeps the build without cargo.
+- bun run build:core builds crates/archboard-renderer-wasm into packages/renderer/src/shared/protocol/generated/core (ignored, like the Codex bindings; git check-ignore confirms it and /target/). A second run keeps the build without cargo.
 - Bun: packages/renderer/tests/runtime/services/core.test.ts loads the build and reads its hash, and holds the CORE_BUILD_STALE refusal. A stale core (a changed Rust comment) made scripts/engine-gallery.ts fail with the refusal, which names bun run build:core.
 - Browser: the first browser run failed: loadLayoutEngine counts the WebAssembly memories made during its load and expects exactly Graphviz and libavoid. Both workers now load the core before the engine. The browser lane then passed, with pictures drawn in the tab by workers that initialize the core.
 - The core load costs about 1.3 ms per worker (0.24 ms hash, 1.1 ms instantiate).
