@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T20:23:00Z'
+updated_date: '2026-10-24T20:34:00Z'
 labels:
   - skill
   - docs
@@ -68,4 +68,6 @@ A person must attach the code-evidence clip: bun run readme:assets code-evidence
 No board proposal: no board draws the README kit or the skills. The Archboard board gains only its tracked-embed list, which is no architecture.
 
 Gate on worktree-agent-a79292b0539f5c66b (main merged with feat/check-export-artifacts): bun run check stopped at test:modules with 4924 pass and 2 fail, both the known timing case in packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts (first layout 3119 ms and 3113 ms against 3000 ms, Agent workbench and Archboard server routes; TASK-527 repairs it). Lint, fmt:check, type-check and build:frontend passed before it. The remaining lanes run on their own: test:system 281 pass 0 fail, test:repository 136 pass 0 fail, test:serial-browser 19 of 19 files, exit 0. archboard check embeds in this checkout lists docs/readme/architecture-light.svg and -dark.svg as embeds and as tracked embeds of Archboard, with no finding; archboard check semantics exit 0; readme:check lists architecture, sequence and web-shop as current.
+
+Review (2026-10-24): a reviewer fixed six findings in 82173775d (README caption showed a refused command; a rename is not current for a titled picture), f8a2dcd4b (--track only lists the file; when not to track), 2d3efd2cb (coverage row owners), f87fc3980 (edit.md line left to TASK-526.06, which names semantic delete; the earlier note that this task names it is superseded), cf4797374 (renderer changes now show as EMBED_RENDERER_CHANGED). Criterion 3 holds for the architecture SVGs only: sequence and web-shop come from examples/web-shop, which is no servable vault in this checkout, so the kit strips their recipe and its manifest hash owns their staleness. Moving the example into a repository of its own makes them tracked embeds; that is the owner decision. A person must attach the refreshed code-evidence clip (it types check code). readme:check lists 12 clips, banner and videos stale because the TASK-526 branch changed their sources; they need filming and attaching by a person.
 <!-- SECTION:NOTES:END -->
