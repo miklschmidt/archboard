@@ -137,6 +137,8 @@ beforeAll(async () => {
 	vaultIn(docs);
 	ensureSemanticVaultConfiguration(vaultIn(models));
 	git(root, "init", "-q", "--bare", "-b", "main", remote);
+	// As a hosted remote does, so the fetch can leave out the blobs outside the vault.
+	git(remote, "config", "uploadpack.allowFilter", "true");
 	for (const [repository, origin] of [
 		[docs, "https://github.com/example/docs.git"],
 		[models, `https://${MODELS}.git`],
@@ -195,6 +197,11 @@ describe("check embeds with a vault of an unregistered repository", () => {
 				true,
 			);
 			expect(git(checkout, "rev-parse", "--is-shallow-repository")).toBe("true");
+			// The README's blob was never downloaded: Git lists it as missing.
+			const readme = git(models, "rev-parse", `${first}:README.md`);
+			expect(git(checkout, "rev-list", "--objects", "--missing=print", "HEAD")).toContain(
+				`?${readme}`,
+			);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
