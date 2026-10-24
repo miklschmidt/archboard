@@ -231,6 +231,17 @@ async function filmInterfaces(
 }
 
 /**
+ * Remove CLI context metadata before the strict library result decoder.
+ * @param input The CLI response envelope.
+ * @returns The analysis result with every other field preserved for validation.
+ */
+function withoutVaultMetadata(input: unknown) {
+	const answer = z.record(z.string(), z.unknown()).parse(input);
+	delete answer["vault"];
+	return answer;
+}
+
+/**
  * Film recent commits, a pair that changes together, and the branch against its proposal.
  * @param server The take's server.
  * @param browser The private browser.
@@ -248,8 +259,8 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await reveal(page, PARTNERS);
 		await pinInspector(page);
 		await terminal.command(`archboard semantic locality "${fixture.board}"`);
-		const locality = LocalityReplySchema.extend({ vault: z.unknown() }).parse(
-			await server.cli(["semantic", "locality", fixture.board]),
+		const locality = LocalityReplySchema.parse(
+			withoutVaultMetadata(await server.cli(["semantic", "locality", fixture.board])),
 		);
 		const pair = locality.coupling.find(
 			(one) =>
@@ -278,16 +289,18 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await terminal.command(
 			`archboard semantic footprint "${fixture.board}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
 		);
-		const footprint = FootprintReplySchema.extend({ vault: z.unknown() }).parse(
-			await server.cli([
-				"semantic",
-				"footprint",
-				fixture.board,
-				"--base",
-				fixture.base,
-				"--variant",
-				fixture.proposals.narrow,
-			]),
+		const footprint = FootprintReplySchema.parse(
+			withoutVaultMetadata(
+				await server.cli([
+					"semantic",
+					"footprint",
+					fixture.board,
+					"--base",
+					fixture.base,
+					"--variant",
+					fixture.proposals.narrow,
+				]),
+			),
 		);
 		if (footprint.proposal === null) throw new Error("The example footprint has no proposal");
 		if (
