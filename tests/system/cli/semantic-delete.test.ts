@@ -11,6 +11,8 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { z } from "zod";
+import { SemanticBoardSchema, type SemanticBoard } from "@archboard/board/document";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -49,23 +51,33 @@ function cli(args: readonly string[], input?: string) {
  * Ask the server directly, as a test sets a board up.
  * @param path The route.
  * @param body What it states.
+ * @returns What the server answered.
  */
-async function asked(path: string, body: Record<string, unknown>): Promise<void> {
+async function asked(path: string, body: Record<string, unknown>): Promise<unknown> {
 	const answer = await createRequester({ ...server, vault })(path, {
 		method: "POST",
 		doing: "setting a board up",
 		body,
 	});
 	expect(answer.status, JSON.stringify(answer.body)).toBe(200);
+	return answer.body;
 }
 
 /**
  * Make a board.
  * @param name Its name.
  * @param nodes Its parts.
+ * @returns The board as it was made.
  */
-async function made(name: string, nodes: readonly Record<string, unknown>[]): Promise<void> {
-	await asked("/api/semantic-boards/create", { board: name, create: { level: "system", nodes } });
+async function made(
+	name: string,
+	nodes: readonly Record<string, unknown>[],
+): Promise<SemanticBoard> {
+	const answer = await asked("/api/semantic-boards/create", {
+		board: name,
+		create: { level: "system", nodes },
+	});
+	return z.object({ board: SemanticBoardSchema }).parse(answer).board;
 }
 
 /**
@@ -89,7 +101,7 @@ function deleting(name: string, ...more: string[]): string[] {
 
 test("a refused delete exits with the status its refusal declares and removes nothing", async () => {
 	await made("Ledger", [{ name: "Books", kind: "module" }]);
-	await made("Payments", [
+	const payments = await made("Payments", [
 		{ name: "API", kind: "app" },
 		{
 			name: "Books",
@@ -111,8 +123,11 @@ test("a refused delete exits with the status its refusal declares and removes no
 
 	const opened = cli(deleting("Ledger", "--expect-version", "1", ...doing));
 	expect(opened.status).toBe(5);
-	// The refusal names the board whose node opens it.
+	// The refusal names the board whose node opens it, and the node.
+	const opener = payments.variants[0]?.content.nodes.find((node) => node.name === "Books");
+	if (opener === undefined) throw new Error("Payments was made without its Books node");
 	expect(opened.stderr).toContain('"Payments"');
+	expect(opened.stderr).toContain(opener.id);
 	expect(holds("Ledger")).toBeTrue();
 }, 120_000);
 
