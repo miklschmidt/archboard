@@ -136,9 +136,11 @@ before it lands.
 
 ### Build
 
-The crates live in a Cargo workspace inside `packages/renderer`, because the
-renderer package owns the behavior
-([ADR 0055](0055-packages-own-behavior-and-apps-compose-it.md)). A Nix flake
+The crates live in `packages/renderer/crates`, because the renderer package
+owns the behavior
+([ADR 0055](0055-packages-own-behavior-and-apps-compose-it.md)). The Cargo
+workspace is at the root of the repository, so a native frontend under `apps/`
+can join it. A Nix flake
 gives the dev shell its tools: the Rust toolchain with the
 `wasm32-unknown-unknown` target, a `wasm-bindgen` CLI of the same version as the
 crate's `wasm-bindgen` dependency, and Bun. A person who installs from a clone

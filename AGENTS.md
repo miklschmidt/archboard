@@ -35,6 +35,11 @@ Where things are written down:
 - This box has node and bun but no npm or npx. Use `bun run <script>`, never
   `npm run`. `bun install` intermittently fails to extract a tarball. If it
   fails, run it again.
+- The renderer core is Rust, built to WebAssembly (ADR 0057). Run Rust and
+  build commands inside `nix develop`, which gives cargo, `wasm-bindgen` and
+  Bun. After a change to `packages/renderer/crates`, run `bun run build:core`:
+  a Bun process refuses a core built from other sources than its checkout
+  holds.
 - A running server read its source at start. Editing source changes the next
   CLI command, not the running server: `archboard restart` stops it, builds
   the frontend and starts it again.

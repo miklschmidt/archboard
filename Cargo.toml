@@ -1,0 +1,15 @@
+# The crates of the renderer core (ADR 0057). They live in packages/renderer,
+# which owns the behavior; the workspace is at the root so a native frontend
+# under apps/ can join it.
+[workspace]
+resolver = "3"
+members = ["packages/renderer/crates/*"]
+
+[workspace.package]
+edition = "2024"
+license = "BUSL-1.1"
+publish = false
+
+[profile.release]
+lto = true
+codegen-units = 1
