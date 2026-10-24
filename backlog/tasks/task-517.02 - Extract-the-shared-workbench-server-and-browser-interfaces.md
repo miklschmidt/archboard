@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 13:44'
+updated_date: '2026-10-24 13:55'
 labels: []
 dependencies:
   - TASK-517.01
@@ -60,4 +60,6 @@ Removed generic snapshot/model/realtime reexports from the Archboard browser-con
 Independent scoped reviews fixed queue source provenance, voice subscription cleanup, core instruction and reserved-tool capture, semantic output type duplication, and canonical private-path ownership. Boundary identity and default-context reviews found no behavior defects. Parent updated the retained integration catalogue snapshot and exact reviewed workhorse digest after the generic tool description change. The catalogue owner passes. Server lifecycle and core/host boundary reviews remain active; complete gate follows their commits.
 
 All seven final backend scopes and interface reviews completed. Fixes: fb7125cfe aligns queue provenance; 374cade2d releases voice subscriptions once; b9f1e265f preserves core role and reserved-tool contracts; 11ffc424c clarifies admitted checkout guidance; 100a43b65 derives realtime correlation; b510fc361 derives semantic output types; bad2c29ec centralizes storage paths; a062c3c4d guards startup during shutdown; cc10e7c75 captures mutable process inputs once and rejects replaced sockets. Focused regressions passed in each scope. Identity/voice and runtime/server reviewers found no additional behavior defects. The parent reviewed shared/browser changes and repaired malformed-presentation admission through the backend implementer. Complete bun run check now runs in /tmp/task517.02-check.log with system Chromium. No public interface or behavior acceptance is closed before that gate passes.
+
+The first complete gate failed formatting in routing.ts. Remaining normal lanes exposed the removed README asset source and a startup preload importing the removed application module. Modules passed 4937 cases with one skip, browser passed all 19 owners, source types and frontend build passed. TASK-521 fixes metadata/formatting; TASK-522 fixes the preload. Both repairs preserve normal owners and assertions. The full gate will run again after their commits.
 <!-- SECTION:NOTES:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 13:53'
-updated_date: '2026-10-24 13:54'
+updated_date: '2026-10-24 13:55'
 labels: []
 dependencies: []
 references:
@@ -38,5 +38,5 @@ No architecture board is affected: the source owner move is already drawn by TAS
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Formatted the reported routing file. Updated the three removed realtime source paths and added the extracted shared/UI owners beside retained integration sources. Narrated assets also track the moved core realtime and instruction rules. Existing generation hashes remain untouched, so readme:check can still identify stale output. The README manifest owner passes all 14 cases and focused formatting passes. Complete gate remains pending TASK-522 repair.
+Formatted the reported routing file. Updated the three removed realtime source paths and added the extracted shared/UI owners beside retained integration sources. Narrated assets also track the moved core realtime and instruction rules. Existing generation hashes remain untouched, so readme:check can still identify stale output. The README manifest owner passes all 11 cases and focused formatting passes. Complete gate remains pending TASK-522 repair.
 <!-- SECTION:NOTES:END -->
