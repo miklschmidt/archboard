@@ -49,7 +49,6 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 		}
 		const preparing = preparePromise;
 		const stoppingOwner = owner;
-		let stopped = false;
 		const operation = (async () => {
 			installed = false;
 			// Do not wait for readiness before stopping. The owner invalidates its
@@ -64,15 +63,14 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 					// Cancellation is the expected completion of startup during stop.
 				}
 			}
-			stopped = true;
-			owner = null;
+			if (owner === stoppingOwner) {
+				owner = null;
+			}
 		})();
 		shutdownPromise = operation.finally(() => {
-			// A failed verified stop keeps its owner reachable so a force/retry
-			// call can finish reaping it. Successful shutdown stays idempotent.
-			if (!stopped) {
-				shutdownPromise = null;
-			}
+			// A failed stop retains its owner for a retry. A successful stop
+			// clears it, so another shutdown reaches no owner.
+			shutdownPromise = null;
 		});
 		return shutdownPromise;
 	};
@@ -86,13 +84,19 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 		if (preparePromise !== null) {
 			return preparePromise;
 		}
+		if (shutdownPromise !== null) {
+			return Promise.reject(
+				new Error(
+					"The Codex workbench is shutting down. Wait for shutdown before preparing again.",
+				),
+			);
+		}
 		if (installed || owner !== null) {
 			return Promise.reject(
 				new Error("The Codex workbench is already installed; stop it before preparing again."),
 			);
 		}
 		shutdownRequested = false;
-		shutdownPromise = null;
 		preparePromise = (async () => {
 			try {
 				owner = options.module.installProductionCodexWorkbench(options.installation());
@@ -127,9 +131,10 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 	 * @returns The failure to throw.
 	 */
 	async function abandonPreparation(error: unknown): Promise<unknown> {
+		const abandonedOwner = owner;
 		let cleanupFailure: unknown = null;
 		try {
-			await owner?.shutdown();
+			await abandonedOwner?.shutdown();
 		} catch (thrown) {
 			cleanupFailure = thrown;
 		}
@@ -140,7 +145,7 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 				{ cause: error },
 			);
 		}
-		if (!shutdownRequested) {
+		if (!shutdownRequested && owner === abandonedOwner) {
 			owner = null;
 		}
 		return error;
