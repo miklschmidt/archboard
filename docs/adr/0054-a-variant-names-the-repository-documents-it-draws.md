@@ -6,6 +6,13 @@ status: accepted
 
 Decided for TASK-498 on 2026-10-18.
 
+Amended by TASK-526.01 (2026-10-24): the code check that reads the
+references of every variant is `archboard check code`, also run by
+`archboard check` and `archboard check all`. The plain check of this ADR is
+now `archboard check semantics`, which reads no Git.
+[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
+decides the split.
+
 ## Context
 
 A board held no link to the documents that it draws. In the

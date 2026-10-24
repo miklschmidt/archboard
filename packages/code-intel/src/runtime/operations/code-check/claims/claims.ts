@@ -7,7 +7,7 @@
 // claims that its file holds its symbol, and that where the symbol is defined
 // in the checkout, the bound code of an end or of a part inside one holds it.
 // A binding with no symbol on the current variant claims only its path, which
-// the plain check tests.
+// the semantics check tests.
 
 import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";

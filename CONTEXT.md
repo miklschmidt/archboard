@@ -687,6 +687,8 @@ commit, big commit
 Reading a vault's boards against the vault's own configuration: the board
 families, the vocabulary that the boards use, and the configuration itself. It
 reads no code and no Git, and it is the check that canvases poll.
+`archboard check semantics` runs it, and so do `archboard check` and
+`archboard check all`.
 _Avoid_: plain check, board check, vault check, lint
 
 **Embeds check**:
@@ -698,10 +700,11 @@ _Avoid_: artifact check, render check, docs check
 **Code check**:
 Reading, on request, the code and the infrastructure that the bindings and
 anchors of a board name. It reports findings on the current variant or on a
-named draft. `archboard check --code` runs it, and the check that canvases poll
-never does (ADR 0046).
-_Avoid_: lint, scan, drift detection, the check alone (that is the plain
-`archboard check`)
+named draft. `archboard check code` runs it, and so do `archboard check` and
+`archboard check all`, with the other checks. The Semantics check, which
+canvases poll, never does (ADR 0046, ADR 0057).
+_Avoid_: lint, scan, drift detection, the check alone (that is `archboard check`,
+which runs every check)
 
 **Code facts**:
 What one file tells the code check: what it defines, with the visibility of each
@@ -735,7 +738,7 @@ _Avoid_: match, hit, guess, possible finding, unresolved evidence
 One thing that the code check reports about one part, relationship or flow
 step. It has the shape of a vault diagnostic, with the evidence that it rests
 on, and its severity is warning or information (ADR 0046).
-_Avoid_: diagnostic (what `archboard check` reports without `--code`), issue,
+_Avoid_: diagnostic (what the Semantics check reports), issue,
 violation, drift, problem
 
 ### Working

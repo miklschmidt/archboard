@@ -25,7 +25,7 @@
   # neutral so the others stand out. No kind uses the comparison colours
   # (green added, amber changed, red removed) or the selection blue, which
   # would read as a change or a pick.
-  # Each kind names the evidence kinds that prove it to `check --code`, as the
+  # Each kind names the evidence kinds that prove it to `check code`, as the
   # default vocabulary does (ADR 0046): a call and a render are uses in code; a
   # network or data relationship is a use or a configured path; a dependency
   # is anything that shows one part needs the other. Other accepts every kind.

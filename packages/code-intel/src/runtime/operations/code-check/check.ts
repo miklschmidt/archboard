@@ -261,7 +261,7 @@ function searchOf(checkout: ClaimCheckout, pass: Pass) {
 /**
  * What the pass reads of a binding, or nothing when its path is not in the
  * checkout: on a named draft that is a finding, and on the current variant the
- * plain check's to report.
+ * semantics check's to report.
  * @param claim The binding.
  * @param checkout Its checkout.
  * @param pass The pass.

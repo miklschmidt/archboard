@@ -12,7 +12,7 @@
 //
 // It lives in memory and nowhere else. Nothing writes a finding into a board,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
-// restarted server knows nothing until somebody runs `archboard check --code`.
+// restarted server knows nothing until somebody runs `archboard check code`.
 // It is no copy of a board either: it answers what the code said, never what is
 // on a board, and a pane shows it only over the version it was found on.
 
