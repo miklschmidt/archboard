@@ -78,13 +78,15 @@ async function candidateFiles(checkout: string, signal: AbortSignal): Promise<st
 
 /**
  * The bytes of a tracked file, when it is on disk: a file deleted and not yet
- * committed is tracked and is not there.
+ * committed is tracked and is not there. A symbolic link is no embed: Git
+ * tracks the link and not what it points at, and `--fix` would write a file
+ * in its place.
  * @param file The file.
- * @returns Its bytes, or undefined when it cannot be read as a file.
+ * @returns Its bytes, or undefined when it is not a file of its own on disk.
  */
 function bytesOf(file: string): Uint8Array | undefined {
 	try {
-		return fs.statSync(file).isFile() ? fs.readFileSync(file) : undefined;
+		return fs.lstatSync(file).isFile() ? fs.readFileSync(file) : undefined;
 	} catch {
 		return undefined;
 	}
