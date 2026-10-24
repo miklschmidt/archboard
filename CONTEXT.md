@@ -23,7 +23,7 @@ _Avoid_: alias, old name, redirect
 **Canvas**:
 The live, pannable and zoomable surface on which exactly one board is open at a
 time for exploration and inspection.
-_Avoid_: scene, workspace, session, drawing area
+_Avoid_: scene (that is what the renderer core answers), workspace, session, drawing area
 
 **Archboard server**:
 The one process on the machine that serves every vault. It serves the vault of
@@ -158,14 +158,15 @@ The Rust crate that measures, lays out and paints a Board. Bun and the browser
 load it as WebAssembly, and a native frontend links it (ADR 0057).
 _Avoid_: engine (that is a layout engine), WASM module
 
-**Paint list**:
+**Scene**:
 The ordered, positioned list of what a picture is made of: shapes, glyph runs,
 and the marks that a painter animates. The renderer core answers it, and each
-group in it names its subject and role. It holds no interaction state.
-_Avoid_: scene, scene graph, display list, render tree
+group in it names its subject and role. It holds no interaction state, so it is
+never the Canvas that shows it.
+_Avoid_: paint list, display list, render tree, canvas
 
 **Painter**:
-What turns a Paint list into what a frontend shows. The SVG painter is part of
+What turns a Scene into what a frontend shows. The SVG painter is part of
 the renderer core. A native frontend paints the list itself.
 _Avoid_: rasterizer (that makes a PNG from SVG), backend
 

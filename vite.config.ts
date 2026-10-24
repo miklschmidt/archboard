@@ -162,7 +162,7 @@ const testCache = {
 };
 // The Rust checks read only the crates and their lock file.
 const coreCache = {
-	input: ["packages/renderer/crates/**", "Cargo.toml", "Cargo.lock"],
+	input: ["crates/**", "Cargo.toml", "Cargo.lock"],
 	output: [],
 	env: analysisCache.env,
 };

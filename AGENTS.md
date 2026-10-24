@@ -36,7 +36,7 @@ Where things are written down:
   fails, run it again.
 - The renderer core is Rust, built to WebAssembly (ADR 0057). Run Rust and
   build commands inside `nix develop`, which gives cargo, `wasm-bindgen` and
-  Bun. After a change to `packages/renderer/crates`, run `bun run build:core`:
+  Bun. After a change to `crates/`, run `bun run build:core`:
   a Bun process refuses a core built from other sources than its checkout
   holds.
 - A running server read its source at start. Editing source changes the next

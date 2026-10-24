@@ -1,9 +1,8 @@
-# The crates of the renderer core (ADR 0057). They live in packages/renderer,
-# which owns the behavior; the workspace is at the root so a native frontend
-# under apps/ can join it.
+# The Rust crates of the repository (ADR 0057). Each lives in crates/ under
+# its crate name; the JavaScript packages stay in packages/.
 [workspace]
 resolver = "3"
-members = ["packages/renderer/crates/*"]
+members = ["crates/*"]
 
 [workspace.package]
 edition = "2024"

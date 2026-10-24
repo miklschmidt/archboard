@@ -6,6 +6,18 @@
   outputs =
     { nixpkgs, ... }:
     let
+      inherit (nixpkgs) lib;
+
+      # The repository pins each tool once, and the shell follows that pin:
+      # Bun from the packageManager field of package.json, and the wasm-bindgen
+      # CLI from the wasm-bindgen crate in Cargo.lock, which refuses a CLI of
+      # any other version.
+      bunVersion = lib.removePrefix "bun@" (lib.importJSON ./package.json).packageManager;
+      wasmBindgenVersion =
+        (lib.findFirst (crate: crate.name == "wasm-bindgen") (throw "Cargo.lock holds no wasm-bindgen")
+          (lib.importTOML ./Cargo.lock).package
+        ).version;
+
       # Bun's release name for each system this shell supports.
       bunPlatforms = {
         x86_64-linux = "linux-x64";
@@ -13,31 +25,42 @@
         x86_64-darwin = "darwin-x64";
         aarch64-darwin = "darwin-aarch64";
       };
-      # package.json pins Bun 1.4.3, which nixpkgs does not carry yet.
-      bunVersion = "1.4.3";
-      bunHashes = {
-        linux-x64 = "sha256-PnMFKNiXdfA/h/BcBnh8TfQJnQo38/JS57gpyyOBbhg=";
-        linux-aarch64 = "sha256-76mBPaXtckI7+Ef5FujSxHwNd2rdlyNUAmp14Q2pqiE=";
-        darwin-x64 = "sha256-YmYOZDjrhyJ4h3rMp34RUtXQMTJN82jUqBtCghFInS0=";
-        darwin-aarch64 = "sha256-gK/UwGm0am+o8+xSC+vHUKeEPkqNW5WD0prUNsAKNAM=";
+      # The release archives of a Bun that nixpkgs does not carry yet.
+      bunReleases = {
+        "1.4.3" = {
+          linux-x64 = "sha256-PnMFKNiXdfA/h/BcBnh8TfQJnQo38/JS57gpyyOBbhg=";
+          linux-aarch64 = "sha256-76mBPaXtckI7+Ef5FujSxHwNd2rdlyNUAmp14Q2pqiE=";
+          darwin-x64 = "sha256-YmYOZDjrhyJ4h3rMp34RUtXQMTJN82jUqBtCghFInS0=";
+          darwin-aarch64 = "sha256-gK/UwGm0am+o8+xSC+vHUKeEPkqNW5WD0prUNsAKNAM=";
+        };
       };
     in
     {
-      devShells = nixpkgs.lib.mapAttrs (
+      devShells = lib.mapAttrs (
         system: bunPlatform:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          bun = pkgs.bun.overrideAttrs {
-            version = bunVersion;
-            src = pkgs.fetchurl {
-              url = "https://github.com/oven-sh/bun/releases/download/bun-v${bunVersion}/bun-${bunPlatform}.zip";
-              hash = bunHashes.${bunPlatform};
-            };
-          };
+          bun =
+            if pkgs.bun.version == bunVersion then
+              pkgs.bun
+            else
+              pkgs.bun.overrideAttrs {
+                version = bunVersion;
+                src = pkgs.fetchurl {
+                  url = "https://github.com/oven-sh/bun/releases/download/bun-v${bunVersion}/bun-${bunPlatform}.zip";
+                  hash =
+                    bunReleases.${bunVersion}.${bunPlatform}
+                      or (throw "nixpkgs has Bun ${pkgs.bun.version}, and flake.nix has no hash for Bun ${bunVersion} on ${bunPlatform}: add it to bunReleases");
+                };
+              };
+          wasmBindgenAttribute = "wasm-bindgen-cli_${lib.replaceStrings [ "." ] [ "_" ] wasmBindgenVersion}";
+          wasm-bindgen-cli =
+            pkgs.${wasmBindgenAttribute}
+              or (throw "nixpkgs has no ${wasmBindgenAttribute} for the wasm-bindgen ${wasmBindgenVersion} that Cargo.lock pins: pin a version nixpkgs carries, or update flake.lock");
         in
         {
-          # The renderer core builds for wasm32-unknown-unknown with nixpkgs' rustc
-          # (ADR 0057). The crate pins wasm-bindgen to the CLI version below.
+          # The renderer core builds for wasm32-unknown-unknown with nixpkgs'
+          # rustc (ADR 0057).
           default = pkgs.mkShell {
             packages = [
               bun
@@ -47,7 +70,7 @@
               pkgs.clippy
               # nixpkgs' rustc links wasm32 with lld.
               pkgs.lld
-              pkgs.wasm-bindgen-cli
+              wasm-bindgen-cli
             ];
           };
         }
