@@ -1,11 +1,11 @@
 ---
 id: TASK-515
 title: 'Migrate build, lint, and formatting to Vite+'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 02:27'
-updated_date: '2026-10-24 03:21'
+updated_date: '2026-10-24 03:42'
 labels: []
 dependencies: []
 references:
@@ -23,10 +23,11 @@ TASK-500 left the Vite+ conversion as follow-up work. Contributors still install
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Build and development commands use Vite+ and the frontend retains its worker, WASM, font, and renderer digest behavior.
-- [ ] #2 Lint and formatting use the tools bundled with the pinned Vite+ release, with all current rules, project-scope protections, and formatting exclusions preserved.
-- [ ] #3 The complete bun run check gate passes with the existing Bun test lanes.
-- [ ] #4 The completed package-map document is removed and live documentation retains its current guidance and the separate test-runner follow-up.
+- [x] #1 Build and development commands use Vite+ and the frontend retains its worker, WASM, font, and renderer digest behavior.
+- [x] #2 Lint and formatting use the tools bundled with the pinned Vite+ release, with all current rules, project-scope protections, and formatting exclusions preserved.
+- [x] #3 The complete bun run check gate passes with the existing Bun test lanes.
+- [x] #4 The completed package-map document is removed and live documentation retains its current guidance and the separate test-runner follow-up.
+- [x] #5 Vite+ tasks cache validation with explicit source and environment inputs, and an unchanged complete gate reuses the saved results.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +54,16 @@ The source invalidation probe exposed a Bun automatic-tracking gap: changing scr
 CI now installs the pinned Vite+ release and package-manager version through setup-vp v1.21.2, restores task results after installation, and saves successful results with an OS/architecture key. The macOS inventory is the test:macos task. Chrome version joins the test environment fingerprint. INSTALL.md and package engines now state the Vite+ Node requirement. The workflow parses locally; hosted execution remains pending until these commits are pushed.
 
 Command interface footprint against 3aa85af6a names Restart as changed by 8a7a5ef1c and reports no named-but-unchanged part. Commands changes only its internal artifact formatter (86e9f8bed), so its interface and responsibility remain correct. Server launcher contains the named Restart change. The 33-file migration commit is a tooling/format sweep, and the intervening stacked-label commit belongs to TASK-514. The proposal keeps all part and relationship ids and changes no interface.
+
+Final repaired gate and repeat pass at 8d9bdaa55. The first run takes 559.091 seconds and passes 5,328 tests. The unchanged repeat takes 0.528 seconds and reuses all 12 task results. TASK-515.01 records the repairs and logs. No rule, assertion, timeout, or normal test owner is removed. Hosted CI remains unexecuted until a push. The existing 500 kB chunk advisory remains.
+
+Final board audit: archboard check passes. The code check keeps the same 41 existing findings. Agent workbench and Codex workhorse Thread link remain correct after helper hoists in 27c1801f5. Live panes Pane registry remains correct after the same internal refactor. Codex session Response contracts retains its optional-key contract after the mapped-type expression change in 86e9f8bed. Skill evaluation Evaluation inputs changes only README formatting. Archboard package containers retain their responsibilities, boundaries, and interfaces after helper, test, and formatting changes. The repair in 8d9bdaa55 changes fixture isolation and build metadata, so no further board proposal is needed.
+
+Simplification pass retains one task map, one browser inventory, and one capacity inventory. Short package scripts expose common actions. Ordered pipelines reuse cached leaves, and fixing commands bypass caches. No temporary probe task or compatibility script remains. Generated skill artifacts stay ignored. Installed skill copies need archboard install-skill to refresh their installation document.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Vite+ 1.4.0 now owns build, development, lint, formatting, and cached task orchestration. Package scripts expose common actions and the Vite configuration owns individual lanes. CI retains task results. The completed package map is removed, and canonical guidance remains. The complete gate passes 5,328 tests. Its unchanged repeat reuses all 12 cached results in 0.528 seconds. Main includes the remote commit through a linear rebase. Bun remains the product and test runtime. TASK-516 tracks the separate Bun/Vitest trial. Hosted CI awaits a push, and the existing bundle-size advisory remains.
+<!-- SECTION:FINAL_SUMMARY:END -->
