@@ -263,7 +263,9 @@ async function checkEmbed(embed: CheckoutEmbed, run: Run): Promise<Checked> {
 	const here = heldIn(embed, recipe, run);
 	const reading = await run.vault(here ?? recipe.vault.repo);
 	if (!reading.ok) {
-		return { findings: [unavailableFinding(embed, recipe.vault.repo, reading.reason)] };
+		return {
+			findings: [unavailableFinding(embed, recipe.vault.repo, reading.reason, reading.code)],
+		};
 	}
 	const checked = await checkInVault(embed, recipe, reading, run);
 	return here !== undefined && recipe.vault.repo !== here
@@ -340,14 +342,15 @@ async function checkEmbeds(
 ): Promise<EmbedsPart> {
 	const root = await checkoutRoot(vault, options.signal);
 	if (root === undefined) {
-		return { checkout: null, embeds: [], tracked: [], findings: [], fixed: [] };
+		return { checkout: null, embeds: [], tracked: [], vaults: [], findings: [], fixed: [] };
 	}
 	const embeds = await checkoutEmbeds(root, options.signal);
 	const tracked = await trackedEmbedsOf(vault);
 	const checkouts = checkoutsReadFrom(vault);
+	const vaults = vaultReader(checkouts, options.signal);
 	const run: Run = {
 		...options,
-		vault: vaultReader(checkouts),
+		vault: vaults.read,
 		bitmaps: bitmapsFor(options.signal),
 		ownRepo: vaultIdentity(vault),
 		tracking: trackingBoards(tracked),
@@ -374,6 +377,7 @@ async function checkEmbeds(
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
 		tracked: tracked.map(({ board, repo, path }) => ({ board, repo, path })),
+		vaults: await vaults.vaults(),
 		findings: [...checked.flatMap((one) => one.findings ?? []), ...trackedFindings],
 		fixed,
 	};

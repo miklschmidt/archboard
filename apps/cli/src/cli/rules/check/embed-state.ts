@@ -12,7 +12,7 @@
 
 import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { EVERYTHING_VIEW } from "@archboard/board/views";
-import type { EmbedFix, EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
+import type { EmbedFix, EmbedsPart, EmbedVault } from "#cli/protocol/check/embeds-answer.ts";
 
 /**
  * How a kept embed stands against the same recipe drawn now.
@@ -82,14 +82,30 @@ function located(at: { readonly file: string; readonly embedRepo?: string | unde
 }
 
 /**
- * The lines of the embeds check: each finding with its code and file, the
- * reason `--fix` left it when it did, then each file `--fix` rewrote.
+ * The line of a vault the check fetched or read from the cache. A checkout's
+ * vault, read as it is, has none.
+ * @param vault Where the check read it.
+ * @returns The line, or none.
+ */
+function vaultLines(vault: EmbedVault): string[] {
+	if (vault.source === "checkout") return [];
+	if (vault.source === "fetched") {
+		return [`vault: fetched: ${vault.repo} at ${vault.commit.slice(0, 9)}`];
+	}
+	return [`${vault.severity}: ${vault.code}: ${vault.repo}: ${vault.message}`];
+}
+
+/**
+ * The lines of the embeds check: each vault it fetched or read from the
+ * cache, each finding with its code and file, the reason `--fix` left it when
+ * it did, then each file `--fix` rewrote.
  * @param part The embeds check's part, when it ran.
  * @returns The lines.
  */
 function embedsCheckLines(part: EmbedsPart | undefined): string[] {
 	if (part === undefined) return [];
 	return [
+		...part.vaults.flatMap(vaultLines),
 		...part.findings.flatMap((finding) => [
 			`${finding.severity}: ${finding.code}: ${located(finding)}: ${finding.message}`,
 			...(finding.notFixed === undefined ? [] : [`  not fixed: ${finding.notFixed}`]),

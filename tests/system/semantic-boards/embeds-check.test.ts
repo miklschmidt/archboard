@@ -152,6 +152,7 @@ const PNG = Buffer.concat([
 interface EmbedsPart {
 	checkout: string | null;
 	embeds: string[];
+	vaults: { source: string; repo: string }[];
 	findings: {
 		severity: string;
 		code: string;
@@ -253,7 +254,9 @@ beforeAll(async () => {
 	);
 	put(
 		"elsewhere.svg",
-		replaceRenderRecipe(payments, { ...recipe, vault: { repo: "github.com/example/nowhere" } }),
+		// A vault in no repository: a repository this machine has no checkout of
+		// is fetched, which embeds-fetch.test.ts owns.
+		replaceRenderRecipe(payments, { ...recipe, vault: { repo: null } }),
 	);
 	put("broken.svg", payments.toString("utf8").replace('"recipe":1', '"recipe":2'));
 	const dark = recipeIn(cli(docs, ["semantic", "render", "ledger", "--theme", "dark"]).stdoutBytes);
@@ -334,6 +337,11 @@ describe("check embeds", () => {
 				nameHeldBy: { id: idOf("new queue") },
 			});
 			expect(part.fixed).toEqual([]);
+			// Each registered checkout's vault is read as it holds it, never fetched.
+			expect(part.vaults).toEqual([
+				{ source: "checkout", repo: "github.com/example/docs" },
+				{ source: "checkout", repo: "github.com/example/models" },
+			]);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);

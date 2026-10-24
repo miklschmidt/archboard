@@ -52,20 +52,23 @@ function unreadableFinding(embed: CheckoutEmbed, problem: string): EmbedFinding 
 }
 
 /**
- * An embed whose vault no checkout on this machine holds.
+ * An embed whose vault cannot be read.
  * @param embed The embed.
  * @param repo The repository identity its recipe names.
  * @param reason Why the vault cannot be read.
- * @returns The information.
+ * @param code Information for a vault nothing can read, a warning for a fetch
+ * that failed with no copy cached (ADR 0057).
+ * @returns The finding.
  */
 function unavailableFinding(
 	embed: CheckoutEmbed,
 	repo: string | null,
 	reason: string,
+	code: "EMBED_VAULT_UNAVAILABLE" | "EMBED_VAULT_FETCH_FAILED" = "EMBED_VAULT_UNAVAILABLE",
 ): EmbedFinding {
 	return findingOn(embed, {
-		severity: "information",
-		code: "EMBED_VAULT_UNAVAILABLE",
+		severity: code === "EMBED_VAULT_FETCH_FAILED" ? "warning" : "information",
+		code,
 		vaultRepo: repo,
 		message: reason,
 	});

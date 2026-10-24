@@ -694,7 +694,9 @@ _Avoid_: plain check, board check, vault check, lint
 **Embeds check**:
 Reading the Embeds of a repository against the boards they draw, in this vault
 or in another repository's vault. It says which Embed is outdated or lost its
-board, and it can draw each outdated one again.
+board, and it can draw each outdated one again. When no checkout on this
+machine holds that vault, it fetches the vault of the repository's default
+branch.
 _Avoid_: artifact check, render check, docs check
 
 **Code check**:
