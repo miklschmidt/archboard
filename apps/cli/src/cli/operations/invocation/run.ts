@@ -38,6 +38,7 @@ import {
 import { semanticCompareContract } from "#cli/operations/semantic/compare/compare.ts";
 import { semanticCorrectContract } from "#cli/operations/semantic/board/correct.ts";
 import { semanticMoveContract } from "#cli/operations/semantic/board/move.ts";
+import { semanticDeleteContract } from "#cli/operations/semantic/board/delete.ts";
 import { semanticRenameContract } from "#cli/operations/semantic/board/rename.ts";
 import { semanticInspectContract } from "#cli/operations/semantic/inspect/inspect.ts";
 import { semanticFootprintContract } from "#cli/operations/semantic/history/footprint.ts";
@@ -118,6 +119,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			move: child(
 				contract(semanticMoveContract, "apps/cli/src/cli/operations/semantic/board/move.ts"),
+			),
+			delete: child(
+				contract(semanticDeleteContract, "apps/cli/src/cli/operations/semantic/board/delete.ts"),
 			),
 			show: child(
 				contract(semanticShowContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),

@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 41,
-		"paths": 74
+		"subcommands": 42,
+		"paths": 75
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1703,6 +1703,54 @@
 				},
 				{
 					"code": "MOVE_STOPPED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic delete",
+			"introducedBy": "TASK-526.06",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "apps/cli/src/cli/operations/semantic/board/delete.ts",
+			"stdout": "json object",
+			"result": "the board that went, the version it was at, and the embeds it tracked",
+			"diagnostics": "which board went and at what version, and one line for each tracked embed that now shows a board that is gone; a refusal because other boards open the board names each node that does",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/discard"],
+			"semantics": "removes the whole note with every variant, and with it the board's name and former names, which a new board can then take; refused while a node on a current or draft variant of another board in the vault opens the board, naming each node, and never for a tracked embed, which the answer lists; a board in another repository's vault that opens it cannot be seen; panes on the board are told it is gone, and the deleter's claim ends",
+			"ordering": "version stated, then on the server: the board's lease, expected-version check, the drill-downs of the vault that open it, the note unlinked durably, the pane announcement",
+			"nextFields": ["trackedEmbeds[]"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "SERVER_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_OPENED_BY",
 					"exit": 5
 				}
 			],
