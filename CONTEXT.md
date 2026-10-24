@@ -150,8 +150,21 @@ _Avoid_: view command, board command, pane command
 **Board render**:
 An image of one named Board drawn without a live Pane: an SVG from the renderer,
 or a PNG drawn in a private headless browser. It never attaches to a browser
-session.
-_Avoid_: screenshot, pane export
+session. It carries its Render recipe, so it can be drawn again and compared.
+_Avoid_: screenshot, pane export, artifact, export
+
+**Render recipe**:
+What a Board render records about how it was drawn: the Board, the variant or
+"current", the view, the comparison, and the drawing choices such as theme and
+legend. It is not the command line: it holds no output path, and it names a
+variant or a view by id, not by the name somebody typed.
+_Avoid_: render request, render settings, command, export options
+
+**Tracked render**:
+A Board render that its Board lists, so that the Board's side knows where the
+picture is embedded, also in another repository. Somebody asks for each one: no
+Board render is tracked by default.
+_Avoid_: artifact, export, embed, subscription
 
 ### Meaning
 
