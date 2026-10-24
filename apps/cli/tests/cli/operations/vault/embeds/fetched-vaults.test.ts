@@ -15,13 +15,14 @@ test("an identity of a host and a path is fetched over HTTPS and cached below th
 	});
 });
 
-test("an identity that names no remote, or a path out of the cache, is not fetched", () => {
+test("an identity that names no remote, or a path out of the cache or into a cached commit, is not fetched", () => {
 	for (const identity of [
 		"models",
 		"/srv/git/models",
 		"github.com/../../etc",
 		"github.com/owner/name with space",
 		"github.com//name",
+		`github.com/owner/name/${"A0".repeat(20)}/.archboard/vault`,
 	]) {
 		expect(remoteOf(identity)).toBeUndefined();
 	}

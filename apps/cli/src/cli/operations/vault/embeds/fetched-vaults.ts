@@ -74,8 +74,14 @@ const REPOSITORY_VARIABLES = [
  */
 function remoteOf(identity: string): { url: string; cache: string } | undefined {
 	const segments = identity.split("/");
+	// A segment named like a commit would put the cache of one identity inside
+	// the cached checkout of another, in any case on a filesystem that ignores it.
 	const named = segments.every(
-		(segment) => IDENTITY_SEGMENT.test(segment) && segment !== "." && segment !== "..",
+		(segment) =>
+			IDENTITY_SEGMENT.test(segment) &&
+			segment !== "." &&
+			segment !== ".." &&
+			!COMMIT_NAME.test(segment.toLowerCase()),
 	);
 	return named && segments.length >= 2
 		? { url: `https://${identity}`, cache: path.join(stateDir(), "fetched-vaults", ...segments) }
