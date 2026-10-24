@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { z } from "zod";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { createCodexWorkbench, parseTabSessionId } from "@archboard/agent-workbench/server";
@@ -41,25 +42,59 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(workbench.snapshot()).toMatchObject({ state: "idle", ready: false });
 		expect(await workbench.start()).toMatchObject({ state: "ready", ready: true });
 		const tab = parseTabSessionId("standalone-proof")!;
-		const browser = workbench.connect("browser", "main", tab, checkout, {});
-		const command = (name: string, extra: Record<string, unknown> = {}) => {
-			const lease = browser.claimLease();
-			return browser.command({
-				kind: "browser_command",
-				command: name,
-				commandId: lease.commandId,
-				paneId: lease.paneId,
-				childId: lease.childId,
-				epoch: lease.epoch,
-				...extra,
+
+		const physical = {};
+		const registration = { paneId: "main", tabSessionId: tab, checkout };
+		workbench.browser.accept(physical, "browser", registration);
+		type Gateway = ReturnType<typeof workbench.gateway>;
+		type Lease = ReturnType<Gateway["claimLease"]>;
+		type Snapshot = ReturnType<Gateway["snapshot"]>;
+		type Command = Awaited<ReturnType<Gateway["command"]>>;
+		let sequence = 0;
+		const request = async <Result>(
+			action: string,
+			extra: Record<string, unknown> = {},
+			instance: object = physical,
+		): Promise<Result> => {
+			const requestId = `neutral-${++sequence}`;
+			let response: unknown;
+			await workbench.browser.handle(
+				instance,
+				"browser",
+				{ type: "codex_workbench_request", requestId, action, ...extra },
+				{
+					send: async (message) => {
+						response = message;
+					},
+				},
+			);
+			const envelope = z
+				.object({ ok: z.boolean(), value: z.unknown(), error: z.string().optional() })
+				.parse(response);
+			expect(envelope.ok).toBe(true);
+			return envelope.value as Result;
+		};
+		await request<Snapshot>("connect");
+		const command = async (name: string, extra: Record<string, unknown> = {}): Promise<Command> => {
+			const lease = await request<Lease>("claimLease");
+			return request<Command>("command", {
+				command: {
+					kind: "browser_command",
+					command: name,
+					commandId: lease.commandId,
+					paneId: lease.paneId,
+					childId: lease.childId,
+					epoch: lease.epoch,
+					...extra,
+				},
 			});
 		};
 		expect(await command("threadLinkCreate")).toMatchObject({ outcome: "delivered" });
-		const linked = browser.snapshot().snapshot.threadLink;
+		const linked = (await request<Snapshot>("snapshot")).snapshot.threadLink;
 		expect(linked.state).toBe("executable");
 		expect(workbench.session(tab).workhorses.size).toBe(1);
 		const workhorse = workbench.session(tab).workhorses.get(checkout)!;
-		browser.setMediaReady(true);
+		await request<Snapshot>("mediaReady", { ready: true });
 		const voice = await command("realtimeStart", { threadId: linked.threadId, sdp: "v=0" });
 		expect(voice).toMatchObject({
 			outcome: "delivered",
@@ -83,9 +118,13 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		]);
 		expect(starts[0]?.params?.["dynamicTools"]).toHaveLength(2);
 		expect(starts[1]?.params?.["dynamicTools"]).toHaveLength(1);
-		const replacement = workbench.connect("browser", "main", tab, checkout, {});
-		await browser.close();
-		expect(replacement.snapshot().snapshot.threadLink.threadId).toBe(linked.threadId);
+		const replacement = {};
+		workbench.browser.accept(replacement, "browser", registration);
+		await request<Snapshot>("connect", {}, replacement);
+		await workbench.browser.close(physical, "browser");
+		expect(
+			(await request<Snapshot>("snapshot", {}, replacement)).snapshot.threadLink.threadId,
+		).toBe(linked.threadId);
 		expect(existsSync(join(checkout, ".archboard"))).toBe(false);
 		expect(existsSync(join(fixture.root, ".archboard"))).toBe(false);
 		await workbench.shutdown();

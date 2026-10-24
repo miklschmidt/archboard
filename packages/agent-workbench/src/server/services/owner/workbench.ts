@@ -8,7 +8,7 @@ import {
 	type CodexWorkbenchStorageInput,
 } from "#server/services/host/storage.ts";
 import { createTabSessions, type TabSessions } from "#server/services/sessions/browser-tabs.ts";
-import type { BrowserConnectionInstance } from "#server/protocol/gateway/contract.ts";
+import { createWorkbenchBrowserConnections } from "#server/services/browser-socket/connections.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
 import {
@@ -73,11 +73,15 @@ function captureProcessOptions(
 export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	const storage = workbenchStorage(options.storage);
 	const tabs = createTabSessions();
-	const browsers = new Map<
-		string,
-		{ readonly instance: BrowserConnectionInstance; readonly checkout: string }
-	>();
+
 	const extensions = Object.freeze({ ...options.extensions });
+	const ingress = createWorkbenchBrowserConnections(
+		tabs,
+		(named) => host.resolveCheckout(named),
+		() => {
+			requireScope();
+		},
+	);
 	const defaults = createDefaultWorkbenchHost(options.host, {
 		/**
 		 * Resolve the shown checkout through the core tab registry.
@@ -88,8 +92,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 			const id = tabs.of(browserId);
 			if (id === null) throw new Error("The browser has no registered tab session.");
 			return tabs.shown(id, () => {
-				const checkout =
-					extensions.browserCheckoutOf?.(browserId) ?? browsers.get(browserId)?.checkout;
+				const checkout = extensions.browserCheckoutOf?.(browserId) ?? ingress.checkoutOf(browserId);
 				if (checkout === undefined) throw new Error("The browser has no admitted checkout.");
 				return checkout;
 			});
@@ -165,9 +168,12 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 				scope.gateway.endSession(id);
 				void scope.sessions.end(id).catch(policy.onFatal);
 			});
-			let remove: (() => void) | undefined;
+			let remove: () => void;
 			try {
-				remove = extensions.onBrowserGateway?.(scope);
+				remove =
+					extensions.onBrowserGateway === undefined
+						? ingress.install(scope)
+						: extensions.onBrowserGateway(scope);
 			} catch (error) {
 				stopEnding();
 				removeTabs?.();
@@ -175,7 +181,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 			}
 			return () => {
 				try {
-					remove?.();
+					remove();
 				} finally {
 					stopEnding();
 					removeTabs?.();
@@ -262,7 +268,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 		shutdown: async () => {
 			await application.shutdown();
 			tabs.forgetAll();
-			browsers.clear();
+			ingress.clear();
 		},
 		/**
 		 * Read the private process lifecycle without starting a child.
@@ -306,58 +312,6 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 			requireScope().sessions.require(id);
 			return tabs.show(id, admitted);
 		},
-		/**
-		 * Register a browser and connect it to its session and shown checkout.
-		 * @param browserId The registered browser identity.
-		 * @param paneId The browser surface identity.
-		 * @param id The tab session identity.
-		 * @param checkout The initial admitted checkout.
-		 * @param instance The exact socket capability.
-		 * @returns The browser connection.
-		 */
-		connect: (
-			browserId: string,
-			paneId: string,
-			id: TabSessionId,
-			checkout: string,
-			instance?: BrowserConnectionInstance,
-		) => {
-			const scope = requireScope();
-			const admitted = host.resolveCheckout(checkout);
-			if (admitted === null)
-				throw new Error("The checkout is not admitted by this workbench host.");
-			const physical = instance ?? Object.freeze({});
-			browsers.set(browserId, { instance: physical, checkout: admitted });
-			tabs.note(browserId, id);
-			tabs.shown(id, () => admitted);
-			scope.sessions.open(id);
-			const connection = requireOwner().gateway().connect(browserId, paneId, id, physical);
-			return Object.freeze({
-				...connection,
-				/** Close this exact connection without forgetting a replacement socket. */
-				close: async () => {
-					await connection.close();
-					if (browsers.get(browserId)?.instance === physical) {
-						tabs.forget(browserId);
-						browsers.delete(browserId);
-					}
-				},
-			});
-		},
-		/**
-		 * Close the exact browser connection and begin its session grace.
-		 * @param browserId The registered browser identity.
-		 * @param paneId The browser surface identity.
-		 * @param instance The exact socket capability.
-		 */
-		disconnect: async (browserId: string, paneId: string, instance?: BrowserConnectionInstance) => {
-			if (instance === undefined)
-				throw new Error("Disconnect requires the exact browser connection instance.");
-			await requireOwner().gateway().closeConnection(browserId, paneId, instance);
-			if (browsers.get(browserId)?.instance === instance) {
-				tabs.forget(browserId);
-				browsers.delete(browserId);
-			}
-		},
+		browser: ingress.port,
 	});
 }
