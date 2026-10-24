@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 115,
+	"version": 116,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T14:32:09.769Z",
+	"updatedAt": "2026-10-24T14:32:38.967Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -33912,7 +33912,7 @@
 						"order": 10000,
 						"name": "Codex app-server",
 						"kind": "external",
-						"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home",
+						"responsibility": "The pinned Codex binary runs as one private child over stdio in the host-owned Codex home.",
 						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are each tab session's coordinator and one workhorse for each checkout, and every thread runs in its auto-review mode. Nothing here describes its internals."
 					},
 					{
