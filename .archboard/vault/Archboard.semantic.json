@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 74,
+	"version": 75,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T11:39:57.633Z",
+	"updatedAt": "2026-10-24T11:45:41.608Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -10097,7 +10097,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-app-server/src/runtime/schemas/semantic-architecture-input.ts",
+							"path": "packages/workbench/src/runtime/schemas/semantic-architecture-input.ts",
 							"symbol": "DiagramGrammarSchema"
 						}
 					},
