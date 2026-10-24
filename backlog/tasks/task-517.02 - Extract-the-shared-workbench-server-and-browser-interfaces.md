@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 13:24'
+updated_date: '2026-10-24 13:41'
 labels: []
 dependencies:
   - TASK-517.01
@@ -56,4 +56,6 @@ Moved the domain-free browser transport, wire parser, lease and target logic, pl
 Removed temporary public names without outside callers. The shared entries now expose 29 contract names, 13 realtime names, and 18 browser names. Browser types pass after pruning. Package graph/API owners passed all 79 cases. The updated Browser application proposal shows the shared media owner in the agent workflow view; its PNG was rendered and inspected at /tmp/task517-browser-agent-updated.png.
 
 Removed generic snapshot/model/realtime reexports from the Archboard browser-contract entry. Browser callers now use the shared package directly; the host entry retains only Archboard conversation routes and narration contracts. The backend public-factory smoke passed with root-only storage, normal host inputs, separate coordinator/workhorse directories, and no server, board, or vault. Backend final focused validation remains active.
+
+Independent scoped reviews fixed queue source provenance, voice subscription cleanup, core instruction and reserved-tool capture, semantic output type duplication, and canonical private-path ownership. Boundary identity and default-context reviews found no behavior defects. Parent updated the retained integration catalogue snapshot and exact reviewed workhorse digest after the generic tool description change. The catalogue owner passes. Server lifecycle and core/host boundary reviews remain active; complete gate follows their commits.
 <!-- SECTION:NOTES:END -->

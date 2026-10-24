@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 83,
+	"version": 84,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-24T13:34:43.953Z",
+	"updatedAt": "2026-10-24T13:40:54.825Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -15492,13 +15492,13 @@
 					{
 						"id": "L4s2Ndtt",
 						"order": 8000,
-						"name": "Authored instructions",
+						"name": "Shared instruction policy",
 						"kind": "module",
-						"responsibility": "The developer instructions a thread starts with, and the digest that proves them unchanged",
+						"responsibility": "Compose core role rules, turn input, context encoding, and exact immutable profile hashes",
 						"parent": "5Pg20iSq",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/instructions"
+							"path": "packages/agent-workbench/src/runtime/rules/host"
 						}
 					},
 					{
@@ -15588,8 +15588,8 @@
 						"order": 14000,
 						"name": "Coordinator callbacks",
 						"kind": "module",
-						"responsibility": "What a workhorse and the panes tell the voice coordinator, and the tool a workhorse tells it through; callers reach it only through its index",
-						"description": "Callers outside import only src/runtime/codex-coordinator-callbacks/index.ts. Its lib/ files are private; this board draws only the archboard_coordinator tool, whose manifest digest and namespace index re-exports from lib/tell-coordinator.ts. The callback queue and delivery behind it are on Voice coordinator.",
+						"responsibility": "Deliver ordered workhorse and host context to the voice coordinator",
+						"description": "The shared runtime owns callback ordering, correlation, and delivery outcomes. Archboard supplies board-specific source conversion through its host adapter. The tell_coordinator tool uses this same callback owner.",
 						"parent": "WkOwgUIR",
 						"groups": [
 							"voice"
@@ -15747,6 +15747,30 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts"
 						}
+					},
+					{
+						"id": "624ETIsk",
+						"order": 30000,
+						"name": "Archboard role policy",
+						"kind": "module",
+						"responsibility": "Supply board workflow, skills, and persona instructions",
+						"parent": "5Pg20iSq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/instructions"
+						}
+					},
+					{
+						"id": "sWw1Z9kM",
+						"order": 31000,
+						"name": "Execution context policy",
+						"kind": "module",
+						"responsibility": "Define stable thread-link reasons and the ordering of execution-context refusals",
+						"parent": "5Pg20iSq",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/rules/instructions/context-policy.ts"
+						}
 					}
 				],
 				"edges": [
@@ -15891,12 +15915,12 @@
 						"from": "nFnr4lj9",
 						"to": "Fxm7RW2x",
 						"kind": "dependency",
-						"label": "archboard_app, by digest",
+						"label": "Archboard tools supplied through the host profile",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
-							"symbol": "ARCHBOARD_APP_MANIFEST_SHA256"
+							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
+							"symbol": "ARCHBOARD_APP_DYNAMIC_TOOLS"
 						}
 					},
 					{
@@ -15905,12 +15929,12 @@
 						"from": "nFnr4lj9",
 						"to": "L4s2Ndtt",
 						"kind": "dependency",
-						"label": "the instructions, by digest",
+						"label": "captured role instructions and exact hashes",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
-							"symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
+							"symbol": "createWorkhorseThreadStartParams"
 						}
 					},
 					{
@@ -15993,12 +16017,12 @@
 						"from": "nFnr4lj9",
 						"to": "WaIHZ8sZ",
 						"kind": "dependency",
-						"label": "archboard_coordinator, by digest",
+						"label": "canonical coordinator tool in every workhorse profile",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/rules/workhorse-start/model.ts",
-							"symbol": "ARCHBOARD_COORDINATOR_MANIFEST_SHA256"
+							"path": "packages/agent-workbench/src/runtime/rules/host/tools.ts",
+							"symbol": "ARCHBOARD_COORDINATOR_NAMESPACE"
 						}
 					},
 					{
@@ -16103,7 +16127,7 @@
 						"id": "qdsTcqWf",
 						"order": 25000,
 						"from": "p05yEm5U",
-						"to": "L4s2Ndtt",
+						"to": "sWw1Z9kM",
 						"kind": "dependency",
 						"label": "the link reasons the context policy orders",
 						"emphasis": "muted",
@@ -16278,7 +16302,21 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts",
-							"symbol": "createTurnStartParams"
+							"symbol": "createWorkbenchTurnStartParams"
+						}
+					},
+					{
+						"id": "D4d4rLZt",
+						"order": 38000,
+						"from": "624ETIsk",
+						"to": "L4s2Ndtt",
+						"kind": "dependency",
+						"label": "compose domain text with core role rules",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
+							"symbol": "createWorkbenchThreadProfile"
 						}
 					}
 				],
