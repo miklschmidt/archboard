@@ -53,6 +53,21 @@ class HeldWorker extends EventTarget {
 		const message = this.sent[index]!;
 		this.dispatchEvent(new MessageEvent("message", { data: { id: message.id, ...reply } }));
 	}
+
+	/**
+	 * Tell what one held solve found before it answers.
+	 * @param index Which held solve.
+	 * @param told What the engine tells, as root options.
+	 */
+	tell(index: number, told: Record<string, string>): void {
+		const message = this.sent[index]!;
+		this.dispatchEvent(new MessageEvent("message", { data: { id: message.id, told } }));
+	}
+
+	/** Say that its engine is loaded. */
+	ready(): void {
+		this.dispatchEvent(new MessageEvent("message", { data: { ready: true } }));
+	}
 }
 
 /**
@@ -312,6 +327,49 @@ test("a solve waits for the first worker free, and the pool grows one worker at 
 		{ id: "e!" },
 	]);
 	expect(workers).toHaveLength(2);
+});
+
+test("a worker whose engine is loaded lets the next solve start another worker before it answers", () => {
+	const { solve, workers } = heldPool(3);
+	void solve({ id: "long" }, {});
+	void solve({ id: "short" }, {});
+	void solve({ id: "later" }, {});
+	expect(workers).toHaveLength(1);
+	workers[0]!.ready();
+	// The first worker still solves; the second starts, and the third waits until it is loaded too.
+	expect(workers).toHaveLength(2);
+	expect(sentTo(workers[1]!)).toEqual(["short"]);
+	workers[1]!.ready();
+	expect(workers).toHaveLength(3);
+	expect(sentTo(workers[2]!)).toEqual(["later"]);
+});
+
+test("a heard solve tells its caller what it found, and called off while a worker holds it, stops that worker", async () => {
+	const { solve, workers } = heldPool(1);
+	const heard: Record<string, string>[] = [];
+	const calling = new AbortController();
+	const reason = new Error("the other way was chosen");
+	const dropped = solve({ id: "dropped" }, {}, calling.signal, (told) => heard.push(told));
+	const refusal = dropped.catch((error: unknown) => error);
+	const next = solve({ id: "next" }, {});
+	workers[0]!.tell(0, { found: "early" });
+	expect(heard).toEqual([{ found: "early" }]);
+	calling.abort(reason);
+	expect(await refusal).toBe(reason);
+	expect(workers[0]!.terminated).toBe(true);
+	expect(sentTo(workers[1]!)).toEqual(["next"]);
+	workers[1]!.answer(0, { data: { id: "next!" } });
+	expect(await next).toEqual({ id: "next!" });
+});
+
+test("a heard solve that answers is answered, and calling it off afterwards stops nothing", async () => {
+	const { solve, workers } = heldPool(1);
+	const calling = new AbortController();
+	const kept = solve({ id: "kept" }, {}, calling.signal, () => undefined);
+	workers[0]!.answer(0, { data: { id: "kept!" } });
+	expect(await kept).toEqual({ id: "kept!" });
+	calling.abort();
+	expect(workers[0]!.terminated).toBe(false);
 });
 
 test("a solve called off while it waits is never sent, and one a worker holds still answers", async () => {
