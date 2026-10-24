@@ -37,7 +37,9 @@ import { z } from "zod";
  * A finding about a file of another repository is information whatever its
  * code: a warning would fail the vault's pull request until that repository
  * draws the file again, and that repository reads the vault's default branch
- * only after the pull request merges (ADR 0057).
+ * only after the pull request merges (ADR 0057). A finding against a vault
+ * read from the cache is information too, and `--fix` leaves its embed as it
+ * was, with `notFixed`: the cache can be behind the default branch.
  */
 const EMBED_FINDING_CODES = [
 	"EMBED_OUTDATED",
@@ -136,7 +138,8 @@ type EmbedFix = z.infer<typeof EmbedFixSchema>;
  *   from the cache because the branch has not moved.
  * - `cache`: the fetch failed, and the check read the newest cached commit,
  *   which can be behind the default branch. `EMBED_VAULT_CACHED` says so as
- *   information, which never changes the exit status.
+ *   information, which never changes the exit status. Every finding against it
+ *   is information, and `--fix` writes no embed from it.
  */
 const EmbedVaultSchema = z.discriminatedUnion("source", [
 	z.object({ source: z.literal("checkout"), repo: z.string() }),

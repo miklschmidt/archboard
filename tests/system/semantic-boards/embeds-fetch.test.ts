@@ -119,6 +119,7 @@ interface EmbedsPart {
 		missing?: string;
 		removedIn?: unknown;
 	}[];
+	fixed: unknown[];
 }
 
 /** Run the embeds check in the docs repository. */
@@ -268,6 +269,38 @@ describe("check embeds with a vault of an unregistered repository", () => {
 			]);
 			expect(part.findings).toEqual([]);
 			expect(stderr).toContain("EMBED_VAULT_CACHED");
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
+
+	test(
+		"offline, a cached vault that differs from the embed is information, and --fix leaves the embed as it was",
+		() => {
+			const newest = git(models, "rev-parse", "HEAD");
+			const board = path.join(cached(newest), ".archboard", "vault", "orders.semantic.json");
+			const kept = fs.readFileSync(board, "utf8");
+			const embed = path.join(docs, "docs", "orders.svg");
+			const drawn = fs.readFileSync(embed);
+			// The cache stands for a default branch behind the commit the embed was drawn from.
+			fs.writeFileSync(board, kept.replace("Keeps every order", "Keeps the older orders"));
+			try {
+				const { part } = checkEmbeds(offline, 0);
+				expect(part.findings).toEqual([
+					expect.objectContaining({ severity: "information", code: "EMBED_OUTDATED" }),
+				]);
+				const fixed = checkEmbeds(offline, 0, ["--fix"]).part;
+				expect(fixed.fixed).toEqual([]);
+				expect(fixed.findings).toEqual([
+					expect.objectContaining({
+						severity: "information",
+						code: "EMBED_OUTDATED",
+						notFixed: expect.any(String),
+					}),
+				]);
+				expect(fs.readFileSync(embed)).toEqual(drawn);
+			} finally {
+				fs.writeFileSync(board, kept);
+			}
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);

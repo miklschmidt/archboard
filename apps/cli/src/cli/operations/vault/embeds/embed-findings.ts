@@ -194,6 +194,30 @@ function changedFinding(
 	});
 }
 
+/** Why `--fix` leaves an embed that was checked against a cached vault as it is. */
+const CACHED_NOT_FIXED =
+	"Its vault was read from a cache that can be behind its default branch, so `--fix` left the embed as it was. Run the check again where the fetch succeeds.";
+
+/**
+ * A finding against a vault read from the cache. The cache can be behind the
+ * default branch, so the finding is information, and `--fix` says why it left
+ * the embed as it was (ADR 0057).
+ * @param finding The finding against the cached vault.
+ * @param fix Whether the run was asked to fix.
+ * @returns The information.
+ */
+function cachedFinding(finding: EmbedFinding, fix: boolean): EmbedFinding {
+	const fixable =
+		finding.code === "EMBED_OUTDATED" ||
+		finding.code === "EMBED_RENDERER_CHANGED" ||
+		finding.nameHeldBy !== undefined;
+	return {
+		...finding,
+		severity: "information",
+		...(fix && fixable ? { notFixed: CACHED_NOT_FIXED } : {}),
+	};
+}
+
 /**
  * A tracked embed whose recipe names the vault its board moved from: a board
  * of this vault holds the board now (ADR 0051).
@@ -245,6 +269,7 @@ function trackedMissingFinding(entry: TrackedEntry, own: boolean, root: string):
 }
 
 export {
+	cachedFinding,
 	changedFinding,
 	goneBoardFinding,
 	missingFinding,

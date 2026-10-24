@@ -151,7 +151,11 @@ it is, as a binding reads its checkout. Otherwise it fetches the whole
 the person's own git credentials. A render reads the vault's configuration and
 the levels of the boards that its nodes stand for, so one board file is not
 enough. The fetch is cached in the state directory by commit. Offline with a
-cached copy, the check uses the cache and says so as information. Offline with
+cached copy, the check uses the cache and says so as information. The cache can
+be behind the default branch, and an embed can be drawn from a newer commit.
+So every finding against a cached vault is information, and `--fix` writes no
+embed from it. The answer then says that the vault came from a cache. A stale
+cache fails no check and draws no embed back to an older picture. Offline with
 no cached copy, a failed fetch is a warning that names the repository.
 
 ### Deleting a board

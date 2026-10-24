@@ -31,6 +31,7 @@ import {
 	type Redrawn,
 } from "#cli/operations/vault/embeds/embed-drawing.ts";
 import {
+	cachedFinding,
 	changedFinding,
 	goneBoardFinding,
 	missingFinding,
@@ -239,7 +240,7 @@ function moved(embed: CheckoutEmbed, from: string | null, checked: Checked): Che
  * @param run The run.
  * @returns What was found and done.
  */
-function checkInVault(
+function checkAgainst(
 	embed: CheckoutEmbed,
 	recipe: RenderRecipe,
 	reading: Extract<VaultReading, { ok: true }>,
@@ -249,6 +250,28 @@ function checkInVault(
 	return board === undefined
 		? checkGoneBoard(embed, recipe, reading, run)
 		: checkDrawn(embed, recipe, board, reading.vault, run);
+}
+
+/**
+ * Check an embed against its vault. A vault read from the cache can be behind
+ * its default branch, so what it finds is information and `--fix` writes
+ * nothing from it: an embed drawn from a newer commit is never drawn back to
+ * an older picture (ADR 0057).
+ * @param embed The embed.
+ * @param recipe Its recipe.
+ * @param reading The vault.
+ * @param run The run.
+ * @returns What was found and done.
+ */
+async function checkInVault(
+	embed: CheckoutEmbed,
+	recipe: RenderRecipe,
+	reading: Extract<VaultReading, { ok: true }>,
+	run: Run,
+): Promise<Checked> {
+	if (reading.read.source !== "cache") return checkAgainst(embed, recipe, reading, run);
+	const { findings = [] } = await checkAgainst(embed, recipe, reading, { ...run, fix: false });
+	return { findings: findings.map((finding) => cachedFinding(finding, run.fix)) };
 }
 
 /**
