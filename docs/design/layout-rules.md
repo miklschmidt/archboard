@@ -2714,3 +2714,64 @@ On the page the join stands under the card, and the drawing turns twice
 less. The 100 labels that still stand off their line enter an End terminal,
 which the flowchart also draws to its middle. The extra layouts made rendering
 the whole corpus take 161 s in place of 155 s.
+
+## 51. A first layout waits for no solve it does not need (2026-10-24, TASK-527)
+
+TASK-526.04 added Track embed route and five relationships to Archboard
+server routes. Then its first Track layout took 3970 to 4040 ms alone in
+`wide-boards.test.ts`, against the 3000 ms bound (load 1.9). The board before
+that change took 1620 ms in the same test. The added part and lines
+are drawn as their sibling routes are, so the board says no more than the code.
+
+Where the time went, timed per solve through the worker pool and per phase in
+one engine in-process:
+
+| solve                                                   | before        | after                  |
+| ------------------------------------------------------- | ------------- | ---------------------- |
+| first stackable block laid stacked, answer once laid    | 601 ms        | gone                   |
+| first stackable block laid plain, answer once laid      | 835 ms        | gone                   |
+| whole board, stacked (sent once both partials answered) | 866 + 2651 ms | 2776 ms from the start |
+| painting and bridging after the last solve              | 380 ms        | 210 ms                 |
+
+- The pool started a second worker only once the first had answered its first
+  solve, to keep from compiling the engine twice at once. A first render's
+  other solves waited behind that whole solve: 600 ms here. A worker now says
+  when its engine is loaded (about 60 ms), and the next worker starts then.
+- The stacking choice laid the first block that can stack in two partial
+  solves (TASK-512), then laid the whole board again the chosen way, which
+  laid that block a second time. Both ways now run as whole solves. Each tells
+  what the block stood at as soon as it is laid. The renderer chooses then,
+  calls the other way off, and the pool stops that worker.
+- TASK-526.04 turned the board's root from plain to stacked. Laid plain, the
+  whole solve takes 0.55 s: every wrap of the widest rank sinks a card and is
+  never routed. Laid stacked it takes 2.4 s in-process: the root laid with its
+  two remedies (550 ms), eight wraps lined up (390 ms), and three wraps routed,
+  each with both remedies (1.45 s). That is 12 routings at about 125 ms and 17
+  Graphviz runs at about 47 ms. The board before TASK-526.04, laid stacked,
+  takes 1.95 s too. No step is quadratic: routing's own time is spread over
+  crossing counts (150 ms), the column sweep (120 ms) and lane runs (45 ms).
+
+Kept: every Track drawing of the vault's current variants and of the fixtures
+is byte-identical before and after (SVG hashes). Alone, the case takes 3.01 to
+3.07 s. In a run of the whole file, as the gate runs it, it takes 2.70 s. In
+one warm process, Agent workbench (Track) lays out in 1953 ms against 2970 ms.
+Board viewer takes 1432 ms against 2599 ms, and Board persistence 984 ms
+against 1462 ms.
+
+Measured and not kept:
+
+- Choosing a wrap on its first layout and remedying only the chosen wrap, as
+  its titles are pulled down only once it is chosen. The stacked solve fell to
+  1.76 s, and the case alone to about 2.3 s. But 5 of the vault's variants drew
+  differently, and three of them read worse: Command interface TASK-472.09
+  crossed 66 lines against 58, Command dispatch TASK-368.05 two against none,
+  and Command dispatch TASK-436.12 bent more on longer lines. Blocks drew
+  byte-identically.
+- Reading lane runs once per stretch moved (`jogs.ts`) and counting parted
+  pairs only once a move is tried (`parting.ts`): about 2% of the stacked
+  solve each, within the noise.
+- Each wrap candidate of the stacked root solved side by side, one solve each
+  (simulated): the slowest finished at 1.5 to 2.2 s against 2.9 s, with nine
+  workers starting at once. It needs a protocol that tells each candidate's
+  weight and keeps the winner's solve. On a runner with few cores, the solves
+  wait for each other. Not built.
