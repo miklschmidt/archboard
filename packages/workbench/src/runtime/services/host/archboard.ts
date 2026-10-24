@@ -1,6 +1,6 @@
 import {
-	WORKHORSE_DEVELOPER_INSTRUCTIONS,
-	COORDINATOR_DEVELOPER_INSTRUCTIONS,
+	WORKHORSE_DOMAIN_INSTRUCTIONS,
+	COORDINATOR_DOMAIN_INSTRUCTIONS,
 } from "#runtime/rules/instructions/authored.ts";
 import { canonicalContext, encodeCanonicalContext } from "#runtime/rules/instructions/context.ts";
 import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "#runtime/protocol/thread-tools/manifest.ts";
@@ -29,14 +29,14 @@ const ARCHBOARD_INSTRUCTIONS: WorkbenchInstructions = Object.freeze({
 		serviceName: "archboard",
 		threadSource: "archboard",
 		role: "coordinator",
-		domainInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
+		domainInstructions: COORDINATOR_DOMAIN_INSTRUCTIONS,
 		dynamicTools: [],
 	}),
 	workhorse: createWorkbenchThreadProfile({
 		serviceName: "archboard",
 		threadSource: "archboard",
 		role: "workhorse",
-		domainInstructions: WORKHORSE_DEVELOPER_INSTRUCTIONS,
+		domainInstructions: WORKHORSE_DOMAIN_INSTRUCTIONS,
 		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
 	}),
 });

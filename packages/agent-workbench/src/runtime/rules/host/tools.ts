@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+import { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
@@ -101,3 +103,45 @@ function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dy
 }
 
 export { coordinatorDynamicTools };
+
+const RESERVED_NAMESPACES = [...coordinatorDynamicTools(), ARCHBOARD_COORDINATOR_NAMESPACE];
+/**
+ * Identify a namespace whose descriptor belongs to the workbench.
+ * @param name The namespace name.
+ * @returns Whether the name is reserved by the runtime.
+ */
+function isReservedWorkbenchNamespace(name: string): boolean {
+	return RESERVED_NAMESPACES.some((namespace) => namespace.name === name);
+}
+/**
+ * Reject a modified reserved descriptor, even when its supplied hash matches it.
+ * @param tool The declared namespace or tool.
+ */
+function assertReservedNamespace(tool: ThreadStartDynamicTool): void {
+	const canonical = RESERVED_NAMESPACES.find((namespace) => namespace.name === tool.name);
+	if (canonical !== undefined && !isDeepStrictEqual(tool, canonical))
+		throw new TypeError("A host profile cannot modify a workbench coordination namespace.");
+}
+/**
+ * Bind unique tool names and canonical reserved descriptors to the known role.
+ * @param tools The exact tool descriptors in the profile.
+ * @param role The known role, when its built-ins must be present.
+ */
+function assertWorkbenchThreadTools(
+	tools: readonly ThreadStartDynamicTool[],
+	role?: "coordinator" | "workhorse",
+): void {
+	const names = new Set<string>();
+	for (const tool of tools) {
+		if (names.has(tool.name))
+			throw new TypeError("A workbench profile cannot declare duplicate tool names.");
+		names.add(tool.name);
+		assertReservedNamespace(tool);
+	}
+	if (role === undefined) return;
+	const required =
+		role === "coordinator" ? coordinatorDynamicTools() : [ARCHBOARD_COORDINATOR_NAMESPACE];
+	if (required.some((tool) => !names.has(tool.name)))
+		throw new TypeError(`The ${role} profile lacks a required workbench coordination namespace.`);
+}
+export { assertWorkbenchThreadTools, isReservedWorkbenchNamespace };

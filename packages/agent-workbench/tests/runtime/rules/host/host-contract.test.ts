@@ -1,3 +1,5 @@
+import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
+import { CORE_ROLE_INSTRUCTIONS } from "#runtime/rules/host/authored.ts";
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import {
@@ -32,7 +34,7 @@ test("a host starts a Codex workhorse with its own identity and exact composed i
 	const params = createWorkhorseThreadStartParams("/allowed/checkout", profile);
 	expect(params.serviceName).toBe("standalone");
 	expect(params.threadSource).toBe("standalone");
-	expect(params.developerInstructions).toEndWith(domain);
+	expect(params.developerInstructions).toBe(`${CORE_ROLE_INSTRUCTIONS.workhorse}\n${domain}`);
 	expect(
 		createHash("sha256")
 			.update(params.developerInstructions ?? "")
@@ -100,4 +102,66 @@ test("application encoding accepts opaque host data while core execution validat
 			codec,
 		),
 	).toThrow();
+});
+
+function withManifest(profile: WorkbenchThreadProfile, dynamicTools: typeof profile.dynamicTools) {
+	return {
+		...profile,
+		dynamicTools,
+		manifestHash: createHash("sha256").update(JSON.stringify(dynamicTools), "utf8").digest("hex"),
+	};
+}
+
+test("self-consistent profile hashes cannot authorize changed reserved namespaces", () => {
+	for (const role of ["coordinator", "workhorse"] as const) {
+		const profile = createWorkbenchThreadProfile({
+			role,
+			serviceName: "host",
+			threadSource: "host",
+			domainInstructions: "Host instructions.\n",
+			dynamicTools: [],
+		});
+		for (const [index] of profile.dynamicTools.entries()) {
+			const changed = profile.dynamicTools.map((tool, at) =>
+				at === index ? { ...tool, description: "A host replacement descriptor." } : tool,
+			);
+			expect(() => captureThreadProfile(withManifest(profile, changed))).toThrow(TypeError);
+		}
+		expect(() =>
+			captureThreadProfile(
+				withManifest(profile, [...profile.dynamicTools, ...profile.dynamicTools]),
+				role,
+			),
+		).toThrow(TypeError);
+		expect(() => captureThreadProfile(withManifest(profile, []), role)).toThrow(TypeError);
+		expect(captureThreadProfile(profile, role)).toEqual(profile);
+	}
+});
+
+test("the known role requires its own built-in tools and rejects another role's reserved host tools", () => {
+	const workhorse = createWorkbenchThreadProfile({
+		role: "workhorse",
+		serviceName: "host",
+		threadSource: "host",
+		domainInstructions: "Host",
+		dynamicTools: [],
+	});
+	const coordinator = createWorkbenchThreadProfile({
+		role: "coordinator",
+		serviceName: "host",
+		threadSource: "host",
+		domainInstructions: "Host",
+		dynamicTools: [],
+	});
+	expect(() => captureThreadProfile(workhorse, "coordinator")).toThrow(TypeError);
+	expect(() => captureThreadProfile(coordinator, "workhorse")).toThrow(TypeError);
+	expect(() =>
+		createWorkbenchThreadProfile({
+			role: "coordinator",
+			serviceName: "host",
+			threadSource: "host",
+			domainInstructions: "Host",
+			dynamicTools: workhorse.dynamicTools,
+		}),
+	).toThrow(TypeError);
 });

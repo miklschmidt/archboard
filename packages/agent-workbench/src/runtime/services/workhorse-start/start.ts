@@ -449,7 +449,10 @@ function issueStartOperation(options: CodexWorkhorseStartOptions, paneId: string
 function createCodexWorkhorseStart(
 	starterOptions: CodexWorkhorseStartOptions,
 ): CodexWorkhorseStart {
-	const options = { ...starterOptions, profile: captureThreadProfile(starterOptions.profile) };
+	const options = {
+		...starterOptions,
+		profile: captureThreadProfile(starterOptions.profile, "workhorse"),
+	};
 	let latest = emptySnapshot();
 	let tail: Promise<void> = Promise.resolve();
 

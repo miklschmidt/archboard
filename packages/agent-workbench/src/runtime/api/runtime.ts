@@ -175,3 +175,13 @@ export {
 } from "#runtime/store/epoch/contract.ts";
 export { type EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
 export { emptyManifest } from "#runtime/store/epoch/manifest.ts";
+
+export {
+	assertWorkbenchInstructionBytes,
+	readWorkbenchInstructionDocument,
+} from "#runtime/rules/host/authored.ts";
+
+export {
+	composeWorkbenchRoleInstructions,
+	captureThreadProfile,
+} from "#runtime/rules/host/instructions.ts";
