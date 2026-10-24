@@ -10,16 +10,12 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 } from "#server/services/sessions/sessions.ts";
 import type { ServerBrowserBindingState } from "#server/services/actions/browser-gateway.ts";
-import type { ServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
-import type { ServerDynamicAuthorityAdapters } from "#server/services/dynamic-tools/authority.ts";
-import type { ServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
+import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { ServerTimelineOwner } from "#server/projections/timeline/timeline.ts";
 
 /** Everything one generation owns beyond the component graph itself. */
 interface GenerationOwners {
-	approval: ServerDynamicApprovalOwner | null;
-	authority: ServerDynamicAuthorityAdapters | null;
-	lifecycle: ServerDynamicLifecycleOwner | null;
+	domain: CodexWorkbenchDomain | null;
 	browserState: ServerBrowserBindingState;
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
@@ -205,9 +201,7 @@ function currentRealtimeGeneration(
  */
 function retire(owners: GenerationOwners): void {
 	owners.retired = true;
-	owners.approval = null;
-	owners.authority = null;
-	owners.lifecycle = null;
+	owners.domain = null;
 	owners.timeline = null;
 	owners.coordinatorTimeline = null;
 	owners.dynamicProjectionUnsubscribe = null;
@@ -222,9 +216,7 @@ function retire(owners: GenerationOwners): void {
  */
 function freshOwners(): GenerationOwners {
 	return {
-		approval: null,
-		authority: null,
-		lifecycle: null,
+		domain: null,
 		approvalProjectionInstalled: false,
 		projectionListeners: new Set(),
 		accountListeners: new Set(),

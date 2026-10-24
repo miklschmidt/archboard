@@ -10,7 +10,7 @@
 // identity leaves it as it is, linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
+import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "#runtime/services/thread-context/contract.ts";
 import type { CodexWorkhorseOperations } from "#runtime/protocol/workhorse-operations/contract.ts";
@@ -29,7 +29,7 @@ import type { CodexQueueProjectionInput } from "#server/protocol/projection/proj
 interface CodexWorkbenchWorkhorseComponents {
 	readonly workhorse: CodexWorkhorseStart;
 	/** Publishes the changes of the boards of this workhorse's checkout, as this workhorse is told. */
-	readonly semanticPublisher: SemanticContextPublisher;
+	readonly semanticPublisher: WorkbenchContextPublisher;
 	readonly semanticDelivery: CodexThreadContextController;
 	readonly queue: CodexWorkhorseQueue<OperationId>;
 	readonly operations: CodexWorkhorseOperations;

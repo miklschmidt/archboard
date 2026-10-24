@@ -166,7 +166,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		components,
 		repositoryOf: overrides.repositoryOf ?? (() => null),
 		sessions,
-		domainApprovals: null,
+		dynamicApprovals: null,
 		state,
 		timeline,
 		coordinatorTimeline: timeline,

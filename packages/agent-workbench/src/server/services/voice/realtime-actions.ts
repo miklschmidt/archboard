@@ -25,7 +25,6 @@ import {
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
 import type { CoordinatorRetirement } from "#runtime/protocol/coordinator/contract.ts";
-import type { RealtimePresentation } from "#runtime/rules/realtime/presentation-mode.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 import type {
 	CodexWorkbenchSessionComponents,
@@ -38,11 +37,13 @@ import {
 	type SessionVoiceStartTrace,
 } from "#server/services/voice/start-trace.ts";
 import {
-	forgetNarration,
-	narrationFor,
-	openNarration,
-} from "#server/projections/semantic-context/walkthrough-narration.ts";
-
+	validatePresentation,
+	presentationRecords,
+	forgetPresentation,
+	preparePresentation,
+	openedPresentation,
+	type WorkbenchVoicePresentationAdapter,
+} from "#server/services/voice/presentation.ts";
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "identity"> &
 	Pick<CodexWorkbenchSessionComponents, "coordinator" | "realtime">;
 
@@ -51,9 +52,6 @@ type RealtimeScope = Pick<
 	CodexWorkbenchTabSessionScope,
 	"claimThread" | "releaseThread" | "workhorses" | "state"
 >;
-
-/** A browser's request to start voice. */
-type RealtimeStartCommand = Parameters<BrowserRealtimeActions["start"]>[0];
 
 type ActiveRealtime = Readonly<{
 	handle: string;
@@ -242,37 +240,6 @@ function notePreconditions(
  *   undefined.
  * @returns The walkthrough to present, or null for an ordinary session.
  */
-function narrationOfStart(
-	pending: ActiveRealtime,
-	presentation: RealtimeStartCommand["presentation"],
-): RealtimePresentation | null {
-	if (presentation === undefined) {
-		return null;
-	}
-	return narrationFor(pending.browserId, presentation.walkthrough, presentation.recording ?? null);
-}
-
-/**
- * Open a narration's first step in its pane. A recording's page opens its own, so a recording
- * is asked for nothing.
- * @param presentation The walkthrough the session presents, or null.
- * @param clientId The client id of the pane it presents in.
- * @param trace Where a failure to open it is kept.
- */
-function openFirstStep(
-	presentation: RealtimePresentation | null,
-	clientId: string,
-	trace: SessionVoiceStartTrace,
-): void {
-	// Null for no narration, a language for a recording: either way nothing is opened.
-	if (presentation?.recording !== null) {
-		return;
-	}
-	openNarration(clientId).catch((error: unknown) => {
-		trace.note("narration_failed", { message: traceMessage(error) });
-	});
-}
-
 /**
  * Own one continuous realtime session for one tab session, spoken through one
  * exact browser socket binding.
@@ -281,12 +248,14 @@ function openFirstStep(
  * replaces the voiced one with, and that it no longer owns the one replaced once that unloaded;
  * the session's workhorses, and where it keeps the checkout voice is bound to.
  * @param trace Where this tab session's voice starts are kept; each start begins its own attempt.
+ * @param presentationAdapter The optional domain presentation adapter.
  * @returns The actions.
  */
 export function createServerRealtimeActions(
 	components: RealtimeComponents,
 	threads: RealtimeScope,
 	trace: SessionVoiceStartTrace = sessionVoiceStartTrace(),
+	presentationAdapter?: WorkbenchVoicePresentationAdapter,
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
@@ -462,10 +431,11 @@ export function createServerRealtimeActions(
 		 */
 		start: (command, context) =>
 			serialize(async () => {
+				validatePresentation(presentationAdapter, command.presentation);
 				trace.begin(context.paneId);
 				trace.note("requested", {
 					narration: command.presentation !== undefined,
-					recording: command.presentation?.recording !== undefined,
+					recording: presentationRecords(presentationAdapter, command.presentation),
 					offerSdpBytes: Buffer.byteLength(command.sdp),
 					replacesSession: activeRealtime !== null,
 				});
@@ -476,12 +446,14 @@ export function createServerRealtimeActions(
 				// Before the offer, which reads the binding: voice is bound to this checkout's workhorse.
 				threads.state.voiceCheckout = pending.checkout;
 				voicedCoordinator = pending.coordinatorThreadId;
-				if (voicedPane !== null) {
-					forgetNarration(voicedPane);
-				}
+				forgetPresentation(presentationAdapter, voicedPane);
 				voicedPane = pending.browserId;
 				try {
-					const presentation = narrationOfStart(pending, command.presentation);
+					const presentation = preparePresentation(
+						presentationAdapter,
+						command.presentation,
+						pending.browserId,
+					);
 					// Creating the offer subscribes the session to this pane's narration before it
 					// returns, so the first step, asked of the pane now while Codex starts the
 					// session, reaches the voice model the way every later step does. A recording's
@@ -494,7 +466,7 @@ export function createServerRealtimeActions(
 						},
 						presentation,
 					);
-					openFirstStep(presentation, pending.browserId, trace);
+					openedPresentation(presentationAdapter, presentation, pending.browserId, trace);
 					const realtimeAnswer = await answering;
 					requireActive(pending.handle, context);
 					trace.note("answered", {

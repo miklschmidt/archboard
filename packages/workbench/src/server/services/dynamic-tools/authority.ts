@@ -13,12 +13,12 @@ import {
 	type DynamicTargetAuthority,
 	type DynamicThreadAuthorityPort,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
+import type { CodexEpochStore } from "@archboard/agent-workbench/runtime";
+import type { EpochOperationRecord } from "@archboard/agent-workbench/runtime";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
-} from "#runtime/rules/thread-link/contract.ts";
+} from "@archboard/agent-workbench/runtime";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 

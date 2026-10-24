@@ -74,7 +74,6 @@ function freshState(): CodexWorkbenchTabSessionState {
 		currentCoordinatorCall: null,
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),
-		presenting: null,
 		voiceCheckout: null,
 		phase: "live",
 	};

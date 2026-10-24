@@ -104,7 +104,7 @@ interface BrowserConnections {
  * @returns The connections owner.
  */
 function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConnections {
-	const { options, identity, model, snapshotMaxBytes } = owners;
+	const { options, model, snapshotMaxBytes } = owners;
 	const states = new Map<string, ConnectionState>();
 	const pendingSettlements = new Set<Promise<void>>();
 	let publishing = false;
@@ -184,7 +184,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				);
 			}
 			try {
-				const result = projectCodexBrowserState(model, identity.identity.decoder, {
+				const result = projectCodexBrowserState(model, {
 					...projection,
 					threadLink: binding.link,
 					lease,

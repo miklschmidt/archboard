@@ -4,21 +4,25 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-} from "@archboard/workbench/runtime";
+} from "@archboard/agent-workbench/runtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
 import {
-	createCodexBrowserModel,
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/workbench/browser-contract";
+} from "@archboard/agent-workbench/realtime";
+
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState, type BrowserProjectionInput } from "@archboard/workbench/server";
+import {
+	projectCodexBrowserState,
+	type BrowserProjectionInput,
+} from "@archboard/agent-workbench/server";
 
 const LINKED_THREAD = "projection-linked-thread";
 const COORDINATOR_THREAD = "projection-coordinator-thread";
@@ -126,7 +130,6 @@ test("raw realtime transcript identities publish as canonical browser items", as
 
 		const projection = projectCodexBrowserState(
 			createCodexBrowserModel(authorities),
-			identity.decoder,
 			projectionInput({
 				adapter,
 				linkedThreadId,

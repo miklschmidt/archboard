@@ -1,3 +1,4 @@
+import type { CodexWorkbenchSessionComponents } from "@archboard/agent-workbench/server";
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
@@ -11,13 +12,12 @@ import type {
 	SettledSemanticChangeEvent,
 } from "#runtime/schemas/semantic-context-types.ts";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { canonicalSemanticCursorToken } from "#runtime/services/thread-context/event-identity.ts";
+import { canonicalSemanticCursorToken } from "@archboard/agent-workbench/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { CodexWorkbenchSessionComponents } from "#server/protocol/generation/session-contract.ts";
-import type { CodexWorkbenchWorkhorseComponents } from "#server/services/sessions/workhorses.ts";
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/agent-workbench/server";
+import type { CodexWorkbenchWorkhorseComponents } from "@archboard/agent-workbench/server";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
 import {
 	aggregateKey,
@@ -26,7 +26,7 @@ import {
 } from "#server/projections/semantic-context/board-context.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 
-type FreshBrief = ReturnType<CodexWorkbenchSessionComponents["semanticPublisher"]["freshBrief"]>;
+type FreshBrief = import("#runtime/schemas/semantic-context-types.ts").FreshSemanticBrief;
 
 /**
  * The variant a context names: the brief's, without the predecessor it is

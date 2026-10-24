@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
 import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import { parseTabSessionId, type TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import { createTabSessions } from "#server/services/panes/tab-sessions.ts";
+import { createTabSessions } from "#server/services/sessions/browser-tabs.ts";
 
 const TAB = parseTabSessionId("tab-one") as TabSessionId;
 const PAYMENTS = "/work/payments";

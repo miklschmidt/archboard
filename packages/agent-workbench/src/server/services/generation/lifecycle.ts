@@ -1,5 +1,5 @@
 import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
-import type { CodexDynamicTools } from "#runtime/protocol/dynamic-tools/contract.ts";
+import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
 import {
 	CODEX_SESSION_CONTROL,
@@ -58,7 +58,7 @@ interface CodexWorkbenchComponents {
 	readonly session: ControlledCodexSession;
 	readonly threadLink: CodexThreadLinkPort;
 	readonly approvals: CodexApprovalBroker;
-	readonly dynamicTools: CodexDynamicTools;
+	readonly dynamicTools: CodexWorkbenchDomain | null;
 	readonly sessions: CodexWorkbenchSessions;
 	readonly gateway: CodexWorkbenchGateway;
 }

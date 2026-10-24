@@ -66,7 +66,7 @@ function shutdownSteps(
 		 * Dispose the dynamic tools.
 		 * @returns Resolves once they have.
 		 */
-		() => components.dynamicTools.dispose(),
+		() => components.dynamicTools?.dispose(),
 		...(reason === "shutdown"
 			? [
 					/**
