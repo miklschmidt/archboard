@@ -43,7 +43,7 @@ type ProtocolObjectFields<
 > = {
 	[
 		Key in keyof Shape as Key extends keyof Output
-			? Pick<Output, never> extends Pick<Output, Key>
+			? object extends Pick<Output, Key>
 				? never
 				: Key
 			: never
@@ -51,7 +51,7 @@ type ProtocolObjectFields<
 } & {
 	[
 		Key in keyof Shape as Key extends keyof Output
-			? Pick<Output, never> extends Pick<Output, Key>
+			? object extends Pick<Output, Key>
 				? Key
 				: never
 			: never

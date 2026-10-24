@@ -30,6 +30,14 @@ The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.
 The workflow retains its full output as the `validation-log` artifact.
 
+Vite+ supplies the build, lint, and formatting tools.
+The two lint lanes keep their explicit JSONC policies and enter through `scripts/lint.ts`.
+Formatting uses the `fmt` block in `vite.config.ts`, with an explicit configuration path.
+`bun run check` remains the complete gate because it includes the project-scope guard and all product lanes.
+
+The tests still run under Bun. TASK-516 tracks the runtime trial before a move to `vp test`.
+The trial must prove Bun API support, `process.execPath`, and cleanup of fixture servers.
+
 A separate macOS CI job exercises the native process observer, Codex lifecycle,
 Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
 The job also runs the native sandbox refusal and repaired macOS fixture owners.

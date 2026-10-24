@@ -7,7 +7,7 @@ them as a record. The rules that lint enforces today are in `docs/agents/boundar
 
 ## Decisions
 
-- **Layout.** An app uses the area and role folders of a package (`docs/design/package-map.md`).
+- **Layout.** An app uses the area and role folders of a package (`docs/agents/boundaries.md`).
   - `apps/web/src/ui/{components,hooks,state,rules,clients,...}/<behavior>/`
   - `apps/cli/src/cli/...`, and `apps/cli/src/runtime/...` for the clipboard
   - `apps/server/src/server/...`

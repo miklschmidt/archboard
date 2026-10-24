@@ -93,8 +93,8 @@ grader, untouched.
    steps laid, from the board and vault check the CLI serves, through the
    recorder's own writer, with silence for its voice.
 6. `codex exec --json --skip-git-repo-check -C <flask> -m <author model>
--c model_reasoning_effort="high" -c approval_policy="never" -s workspace-write
--o last-message.md "<prompt>"`, its event stream retained as `author.jsonl`.
+   -c model_reasoning_effort="high" -c approval_policy="never" -s workspace-write
+   -o last-message.md "<prompt>"`, its event stream retained as `author.jsonl`.
 7. Every board read back, renders and inspections the checks asked for, every
    video they asked about (the file, the container its first bytes are, and
    the last receipt a command printed for it), the checker's report, the

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 02:27'
-updated_date: '2026-10-24 02:27'
+updated_date: '2026-10-24 02:29'
 labels: []
 dependencies: []
 references:
@@ -34,7 +34,13 @@ TASK-500 left the Vite+ conversion as follow-up work. Contributors still install
 <!-- SECTION:PLAN:BEGIN -->
 1. No architecture board is affected. The vault draws product processes and package contracts, which this tooling change preserves.
 2. Pin Vite+ 1.4.0 and its Vite core alias. Route build, development, lint, formatting, plugin types, and repository fixture subprocesses through Vite+. Keep the two lint policies and the project-scope guard.
-3. Put the format configuration and root lint entry in vite.config.ts. Preserve every rule and exclusion.
-4. Remove the completed package map after moving unique current guidance and recording the separate Bun/Vitest trial.
+3. Put the format configuration in vite.config.ts. Keep explicit JSONC lint policies because fixtures consume them and the two guarded lanes select different inventories. Vite+ also discovers the root policy for direct lint calls. Preserve every rule and exclusion.
+4. Remove the completed package map, point current guidance at boundaries and ADR 0055, and record the separate Bun/Vitest trial as TASK-516.
 5. Run focused tooling regressions, the frontend build, and the complete bun run check gate. Resolve observed failures, pause to simplify, and commit the finished change.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Bundled Oxlint adds diagnostics for noncapturing helpers and an empty mapped type. Fix these findings without suppressing rules. Bundled Oxfmt also requires whitespace updates in nine files.
+<!-- SECTION:NOTES:END -->

@@ -3,7 +3,8 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
-The history of the move is in `docs/design/package-map.md` and `docs/design/apps-migration.md`.
+The app migration history is in `docs/design/apps-migration.md`.
+`tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
 ## Layout
 

@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createHash } from "node:crypto";
@@ -73,6 +73,28 @@ function rendererBuild(): Plugin {
 }
 
 export default defineConfig({
+	// Board files retain their store serializer. Agent and generated files retain their owners.
+	fmt: {
+		ignorePatterns: [
+			".archboard/vault/**/*.semantic.json",
+			"examples/**/*.semantic.json",
+			".claude/**",
+			"dist/**",
+			"node_modules/**",
+			"backlog/**",
+			"packages/codex-app-server/src/shared/protocol/generated/**",
+		],
+		useTabs: true,
+		printWidth: 100,
+		quoteStyle: "double",
+		semicolons: "always",
+		trailingComma: "all",
+		endOfLine: "lf",
+		sortTailwindcss: {
+			functions: ["cn"],
+			preserveDuplicates: true,
+		},
+	},
 	root: join(repositoryRoot, "apps", "web"),
 	plugins: [react(), tailwindcss(), rendererBuild()],
 	build: {
