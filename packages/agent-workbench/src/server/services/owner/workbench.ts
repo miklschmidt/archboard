@@ -12,6 +12,7 @@ import type { BrowserConnectionInstance } from "#server/protocol/gateway/contrac
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
 import {
+	CODEX_WORKBENCH_OWNER,
 	installProductionCodexWorkbench,
 	type CodexWorkbenchOwner,
 } from "#server/services/generation/workbench.ts";
@@ -105,7 +106,6 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	const processOptions = captureProcessOptions(options.process);
 	for (const directory of [storage.ownerDirectory, storage.coordinatorDirectory])
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
-	const generations = createGenerationOwnerStore();
 	const leaseLedger = options.browserLeaseLedger ?? { sessions: new Map() };
 	let current: CodexWorkbenchDomainScope | null = null;
 	let owner: CodexWorkbenchOwner | null = null;
@@ -200,38 +200,41 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 		 * Configure the internal generation graph from captured installation inputs.
 		 * @returns The internal installation.
 		 */
-		installation: () => ({
-			process: {
-				...processOptions,
-				workingDirectory: storage.coordinatorDirectory,
-				storage: {
-					rootDirectory: storage.root,
-					ownerDirectory: storage.ownerDirectory,
-					codexHome: storage.codexHome,
-					sqliteHome: storage.sqliteHome,
+		installation: () => {
+			const generations = createGenerationOwnerStore();
+			return {
+				process: {
+					...processOptions,
+					workingDirectory: storage.coordinatorDirectory,
+					storage: {
+						rootDirectory: storage.root,
+						ownerDirectory: storage.ownerDirectory,
+						codexHome: storage.codexHome,
+						sqliteHome: storage.sqliteHome,
+					},
 				},
-			},
-			/**
-			 * Build this exact generation from its captured process and storage.
-			 * @param input The exact process generation.
-			 * @returns Its component bindings.
-			 */
-			bindings: (input) =>
-				createProductionBindings({
-					server,
-					storage,
-					input,
-					owners: generations.for(input),
-					leaseLedger,
-				}),
-			/**
-			 * Bind readiness, context installation, and retirement to this generation.
-			 * @param input The exact process generation.
-			 * @returns Its lifecycle hooks.
-			 */
-			hooks: (input) =>
-				createProductionHooks({ server, storage, input, owners: generations.for(input) }),
-		}),
+				/**
+				 * Build this exact generation from its captured process and storage.
+				 * @param input The exact process generation.
+				 * @returns Its component bindings.
+				 */
+				bindings: (input) =>
+					createProductionBindings({
+						server,
+						storage,
+						input,
+						owners: generations.for(input),
+						leaseLedger,
+					}),
+				/**
+				 * Bind readiness, context installation, and retirement to this generation.
+				 * @param input The exact process generation.
+				 * @returns Its lifecycle hooks.
+				 */
+				hooks: (input) =>
+					createProductionHooks({ server, storage, input, owners: generations.for(input) }),
+			};
+		},
 	});
 	/**
 	 * Require the private process owner created by startup.
@@ -267,7 +270,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 		 */
 		snapshot: () =>
 			owner?.snapshot() ?? {
-				owner: "archboard-server-codex-workbench" as const,
+				owner: CODEX_WORKBENCH_OWNER,
 				state: "idle" as const,
 				generation: 0,
 				childPid: null,
