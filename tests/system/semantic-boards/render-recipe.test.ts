@@ -3,7 +3,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe";
+import {
+	readRenderRecipe,
+	recipeRenderRequest,
+	type RenderRecipe,
+} from "@archboard/renderer/recipe";
 import { vaultUrl } from "../support/http.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -116,30 +120,13 @@ function recipeOf(bytes: Uint8Array): RenderRecipe {
 
 /**
  * The render route's query that draws a recipe again, as the embeds check
- * (TASK-526.03) asks for it: the variant, the view and the variant drawn
- * against by id, and every drawing choice. The route finds a board by name,
- * so the board is the one that holds the recipe's id; here it has kept its name.
+ * asks for it. The route finds a board by name, so the board is the one that
+ * holds the recipe's id; here it has kept its name.
  * @param recipe The recipe.
  * @returns The query.
  */
 function requestOf(recipe: RenderRecipe): URLSearchParams {
-	const query = new URLSearchParams({
-		board: recipe.board.name,
-		theme: recipe.theme,
-		fonts: "embedded",
-	});
-	if (recipe.variant !== "current") query.set("variant", recipe.variant.id);
-	if (recipe.view !== "overview") query.set("view", recipe.view.id);
-	if (recipe.comparison === "off") query.set("comparison", "off");
-	else if (recipe.comparison !== "on") query.set("against", recipe.comparison.against);
-	if (recipe.layout !== null) query.set("layout", recipe.layout);
-	if (recipe.title === true) query.set("titled", "on");
-	else if (recipe.title !== null) query.set("title", recipe.title);
-	if (recipe.legend !== null) {
-		query.set("legend", recipe.legend.layout);
-		if (recipe.legend.alone) query.set("legendOnly", "on");
-	}
-	return query;
+	return new URLSearchParams({ board: recipe.board.name, ...recipeRenderRequest(recipe) });
 }
 
 /**
