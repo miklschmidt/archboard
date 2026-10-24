@@ -57,3 +57,38 @@ test("a failed required block solve cancels the speculative solves through the h
 		installRendererHost(host);
 	}
 });
+
+test("a stacking way that fails calls the other way off through the host", async () => {
+	diagramTextWidth("Warm", { family: "Inter", weight: 400 }, 12);
+	const host = rendererHost();
+	const failure = new Error("The stacked way failed");
+	const plain: AbortSignal[] = [];
+	const content = orderedFixture({
+		nodes: [
+			{ id: "one", name: "One", kind: "service" },
+			{ id: "two", name: "Two", kind: "service" },
+		],
+		edges: [{ id: "call", from: "one", to: "two", kind: "call", label: "Call" }],
+	});
+	installRendererHost({
+		...host,
+		solve: (graph, _options, signal) => {
+			const stacking = graph.layoutOptions?.["archboard.blocks.stacking"];
+			if (stacking === "true") return Promise.reject(failure);
+			if (stacking === "false" && signal !== undefined) plain.push(signal);
+			return new Promise((_resolve, reject) => {
+				signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+			});
+		},
+	});
+	try {
+		const outcome = await renderArchitecture({ content, layout: "track", theme: "light" }).catch(
+			(error: unknown) => error,
+		);
+		expect(outcome).toBe(failure);
+		expect(plain).toHaveLength(1);
+		expect(plain[0]!.aborted).toBe(true);
+	} finally {
+		installRendererHost(host);
+	}
+});

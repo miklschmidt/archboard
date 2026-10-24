@@ -198,7 +198,7 @@ function stackedWay(graph: ElkNode, nesting: Nesting, way: Way): StackedWay {
  * second time on the way to the drawing (Archboard server routes, Track,
  * 3.5 s against 2.6 s, TASK-527), and waiting for both whole layouts waited
  * for a drawing that nobody will read (TASK-512). The way called off stops
- * where it stands. A board with no block that can stack is drawn by the
+ * where it stands, and so does either way once the other failed. A board with no block that can stack is drawn by the
  * solves as they answer.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
@@ -230,6 +230,8 @@ async function stackedSolved(
 		return drawingOf(await kept.answer);
 	} finally {
 		signal.removeEventListener("abort", off);
+		// A way that failed leaves the other to nobody: it is called off too.
+		off();
 	}
 }
 
