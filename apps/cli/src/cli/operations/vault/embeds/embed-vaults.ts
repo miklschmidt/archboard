@@ -103,9 +103,11 @@ async function remoteVault(repo: string, signal: AbortSignal): Promise<FoundVaul
 	}
 	const { commit, fetchFailed } = fetched;
 	if (fetched.vault === undefined) {
-		return unavailable(
-			`The default branch of ${repo}, at ${commit.slice(0, 9)}, holds no ${VAULT_DIRECTORY}, so the embed was not checked.`,
-		);
+		const read =
+			fetchFailed === undefined
+				? `The default branch of ${repo}, at ${commit.slice(0, 9)},`
+				: `Fetching the vault of ${repo} failed (${fetchFailed}), and the newest cached commit, ${commit.slice(0, 9)},`;
+		return unavailable(`${read} holds no ${VAULT_DIRECTORY}, so the embed was not checked.`);
 	}
 	const read: EmbedVault =
 		fetchFailed === undefined

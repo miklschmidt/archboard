@@ -16,8 +16,9 @@ import { z } from "zod";
  * - `EMBED_SOURCE_MISSING` (warning): the board, its variant or its view is
  *   gone, or what the recipe names draws nothing now.
  * - `EMBED_VAULT_UNAVAILABLE` (information): the vault the recipe names cannot
- *   be read: it is in no repository, its identity names no remote, the default
- *   branch holds no vault, or the server refuses it. The embed was not checked.
+ *   be read: it is in no repository, its registered checkout holds none, its
+ *   identity names no remote, the commit fetched or cached holds no vault, or
+ *   the server refuses it. The embed was not checked.
  * - `EMBED_VAULT_FETCH_FAILED` (warning): no checkout on this machine holds the
  *   vault, fetching it failed and no copy is cached, so the embed was not checked.
  * - `EMBED_RECIPE_UNREADABLE` (warning): the file carries a recipe that cannot
