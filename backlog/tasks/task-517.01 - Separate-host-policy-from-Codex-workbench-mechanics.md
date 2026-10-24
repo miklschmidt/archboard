@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 12:47'
+updated_date: '2026-10-24 13:22'
 labels: []
 dependencies: []
 parent_task_id: TASK-517
@@ -51,6 +51,8 @@ SDK environment checkpoint 78c87705e passed 51 focused environment, storage, and
 After the initial gate failure, every remaining normal lane ran. System tests passed 257 cases and repository owners passed 142 cases. The complete canonical browser inventory then passed all 19 owners with the installed system Chromium. TASK-518 records the corrected browser prerequisite. TASK-519 owns the reproduced renderer timing failure before the next full gate.
 
 The reproduced renderer timing failure is repaired in e77643cbe under TASK-519. The final focused timing is 2938.28 ms against the unchanged limit below 3000 ms, with byte-identical solver outputs. A fresh complete gate now decides whether this delivery can close.
+
+Independent SDK review found and repaired PATH delimiter/sparse-entry admission and one-time capture of host environment getter values. Commit 0fa3af984 preserves validated values. All 19 focused environment/process/storage tests, scoped lint, and formatting passed. Parent final gate will cover this later review fix.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

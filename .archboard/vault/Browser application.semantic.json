@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 133,
+	"version": 134,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-24T13:19:25.930Z",
+	"updatedAt": "2026-10-24T13:21:04.938Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -39,7 +39,8 @@
 					"xsn0RvSi",
 					"G4NHQC25",
 					"aG0rP4SX",
-					"t5Wy06ua"
+					"t5Wy06ua",
+					"HaOwgfOs"
 				],
 				"edges": [],
 				"flows": []
