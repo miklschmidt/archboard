@@ -1,5 +1,6 @@
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
+import initCore from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type { RendererHost } from "#shared/rules/render/host.ts";
 import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
@@ -20,10 +21,14 @@ let initFailure = false;
 self.addEventListener("message", (event: MessageEvent<Request>) => {
 	const request = event.data;
 	if ("cmd" in request) {
-		ready = loadLayoutEngine(async () => {
-			const [viz] = await Promise.all([instance(), AvoidLib.load(request.wasmUrl)]);
-			return [viz, AvoidLib.getInstance()];
-		});
+		// The core loads first, outside the engine's load (ADR 0057). Its glue
+		// fetches its WebAssembly beside it, as the build serves it.
+		ready = initCore().then(() =>
+			loadLayoutEngine(async () => {
+				const [viz] = await Promise.all([instance(), AvoidLib.load(request.wasmUrl)]);
+				return [viz, AvoidLib.getInstance()];
+			}),
+		);
 		// The pool starts its next worker once this one says its engine is loaded.
 		void ready.then(
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin

@@ -31,6 +31,11 @@ docs/design/generated/*.png
 # Exact-version Codex app-server bindings are reproducible derived output.
 packages/codex-app-server/src/shared/protocol/generated/
 
+# The renderer core's build and its glue are derived from packages/renderer/crates
+# by `bun run build:core` (ADR 0057); cargo's own output goes to target/.
+packages/renderer/src/shared/protocol/generated/
+/target/
+
 # The consumer skill's generated JSON Schemas and portable INSTALL.md copy.
 # `bun install` and every install of the skill regenerate them from the Zod
 # authorities (`bun run generate:skill-artifacts`); the authored skill is

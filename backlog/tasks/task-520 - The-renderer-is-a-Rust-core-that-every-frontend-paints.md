@@ -1,9 +1,11 @@
 ---
 id: TASK-520
 title: The renderer is a Rust core that every frontend paints
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-24 12:53'
+updated_date: '2026-10-24 12:55'
 labels:
   - renderer
   - performance
