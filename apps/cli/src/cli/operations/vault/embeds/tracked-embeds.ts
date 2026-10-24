@@ -155,6 +155,17 @@ function trackedFinding(
 }
 
 /**
+ * Whether the check reads an embed as one that its boards track: its recipe
+ * cannot be read, or it names one of those boards.
+ * @param embed The embed.
+ * @param boards The ids of the boards that track its file.
+ * @returns Whether the check reads it.
+ */
+function readAsTracked(embed: CheckoutEmbed, boards: ReadonlySet<string> | undefined): boolean {
+	return !embed.recipe.ok || boards?.has(embed.recipe.recipe.board.id) === true;
+}
+
+/**
  * The tracked embeds of other repositories that the check reads, each file
  * once: an embed whose recipe names a board that tracks it, or one whose
  * recipe cannot be read.
@@ -170,14 +181,14 @@ function foreignEmbeds(
 	ownRepo: string | undefined,
 	tracking: ReadonlyMap<string, ReadonlySet<string>>,
 ): CheckoutEmbed[] {
-	const seen = new Set<string>();
-	return tracked.flatMap(({ repo, path }) => {
-		const key = fileKey(repo, path);
+	const once = new Map(
+		tracked
+			.filter(({ repo }) => repo !== ownRepo)
+			.map((entry) => [fileKey(entry.repo, entry.path), entry] as const),
+	);
+	return [...once].flatMap(([key, { repo, path }]) => {
 		const embed = files.get(repo)?.embeds.get(path);
-		if (repo === ownRepo || embed === undefined || seen.has(key)) return [];
-		seen.add(key);
-		const read = !embed.recipe.ok || tracking.get(key)?.has(embed.recipe.recipe.board.id) === true;
-		return read ? [embed] : [];
+		return embed !== undefined && readAsTracked(embed, tracking.get(key)) ? [embed] : [];
 	});
 }
 
