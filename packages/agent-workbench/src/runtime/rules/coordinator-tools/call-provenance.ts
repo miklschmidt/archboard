@@ -97,9 +97,8 @@ function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 	}
 }
 
-/** What a checkout is, in the words of the coordinator's board context. */
-const CHECKOUT_MEANING =
-	"A checkout is the directory that holds a board's vault: the repository your board context names for the board.";
+/** What a checkout is under the host's admission policy. */
+const CHECKOUT_MEANING = "A checkout is a working directory that the host application permits.";
 
 /**
  * Why a workhorse tool found no ready workhorse, and what the coordinator can do next. A
