@@ -86,8 +86,10 @@ function polygonShadow(polygon: Polygon, radius: number, reach: number, palette:
 }
 
 /**
- * Eight adjoining patches of one rounded shadow, with matching values at every seam.
- * The card covers their empty center; the sides and corners fade to zero.
+ * Nine adjoining patches of one rounded shadow, with matching values at every seam.
+ * The center is as strong as the inner edge of every side, so a card seen through,
+ * as one that recedes is, shows its shadow whole under it and no seam where a patch
+ * ends. The sides and corners fade to zero.
  * @param box The block that casts it.
  * @param radius The block's corner radius.
  * @param reach The distance below and to the right of the block.
@@ -108,27 +110,24 @@ function smoothShadow(box: Box, radius: number, reach: number): string {
 		{ "pointer-events": "none" },
 		lines(
 			ys.flatMap((top, row) =>
-				xs.flatMap((left, column) => {
-					if (row === 1 && column === 1) return [];
-					return [
-						tag("rect", {
-							x: coord(left),
-							y: coord(top),
-							width: coord(widths[column]!),
-							height: coord(heights[row]!),
-							fill: `url(#ab-shadow-${row}${column})`,
-						}),
-					];
-				}),
+				xs.map((left, column) =>
+					tag("rect", {
+						x: coord(left),
+						y: coord(top),
+						width: coord(widths[column]!),
+						height: coord(heights[row]!),
+						fill: `url(#ab-shadow-${row}${column})`,
+					}),
+				),
 			),
 		),
 	);
 }
 
 /**
- * Shared side and corner gradients for all shadow sizes.
+ * Shared side, corner and center paints for all shadow sizes.
  * @param palette The theme's colors.
- * @returns Eight gradients, each defined once in the SVG.
+ * @returns Nine gradients, each defined once in the SVG.
  */
 function shadowDefinitions(palette: Palette): string {
 	const ink = shadowInk(palette);
@@ -158,6 +157,7 @@ function shadowDefinitions(palette: Palette): string {
 		...sides.map(({ id, ...geometry }) =>
 			wrap("linearGradient", { id: `ab-shadow-${id}`, ...geometry }, stops),
 		),
+		wrap("linearGradient", { id: "ab-shadow-11" }, tag("stop", { "stop-color": ink })),
 	]);
 }
 
