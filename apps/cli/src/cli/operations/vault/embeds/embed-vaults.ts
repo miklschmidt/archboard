@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { listSemanticBoardsOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { normalizeBoardKey } from "@archboard/board/address";
 import type { checkoutsReadFrom } from "@archboard/code-binding/resolution";
 
 /** A board as its vault lists it. */
@@ -31,15 +32,6 @@ type VaultReading =
 type ReadCheckouts = ReturnType<typeof checkoutsReadFrom>;
 
 /**
- * A board name in the one spelling two names are compared in, as the vault compares them.
- * @param name The name.
- * @returns Its comparable form.
- */
-function comparable(name: string): string {
-	return name.trim().normalize("NFC").toLowerCase();
-}
-
-/**
  * The board of a vault that goes by a name now.
  * @param reading The vault.
  * @param name The name.
@@ -49,7 +41,8 @@ function boardNamed(
 	reading: Extract<VaultReading, { ok: true }>,
 	name: string,
 ): ListedBoard | undefined {
-	return reading.boards.find((board) => comparable(board.name) === comparable(name));
+	const key = normalizeBoardKey(name);
+	return reading.boards.find((board) => normalizeBoardKey(board.name) === key);
 }
 
 /**
