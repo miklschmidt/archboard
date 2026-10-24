@@ -4,6 +4,7 @@ title: archboard check keeps the board renders that documents embed current
 status: To Do
 assignee: []
 created_date: '2026-10-24T15:33:00Z'
+updated_date: '2026-10-24T23:58:00Z'
 labels:
   - cli
   - renderer
@@ -27,5 +28,11 @@ Documentation sites embed board pictures, often from a vault in another reposito
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Every subtask is Done
-- [ ] #2 A code change that makes an embedded picture outdated is reported by `archboard check` in the repository that holds the embed, and `archboard check --fix` draws it again
+- [x] #2 A code change that makes an embedded picture outdated is reported by `archboard check` in the repository that holds the embed, and `archboard check --fix` draws it again
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Criterion 2, as decided in the design interview, is two checks in sequence: the code check warns that a code change made a board stale (check code), and once the board is corrected, the embeds check in the repository that holds the embed reports it outdated and --fix draws it again (tests/system/semantic-boards/embeds-check.test.ts, embeds-without-vault.test.ts, tracked-embeds.test.ts). archboard check runs both. No test drives both steps from one source edit. The parent stays open while TASK-526.07 criterion 3 waits for the owner.
+<!-- SECTION:NOTES:END -->

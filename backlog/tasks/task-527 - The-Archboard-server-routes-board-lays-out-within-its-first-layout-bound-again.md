@@ -1,11 +1,11 @@
 ---
 id: TASK-527
 title: The Archboard server routes board lays out within its first-layout bound again
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T19:57:00Z'
-updated_date: '2026-10-24T20:59:00Z'
+updated_date: '2026-10-24T23:58:00Z'
 labels:
   - renderer
 dependencies: []
@@ -25,8 +25,8 @@ After TASK-526.04 was adopted on 2026-10-24, the current variant of the dogfood 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The Archboard server routes (track) case of wide-boards.test.ts passes its first-layout bound alone and inside bun run check
-- [ ] #2 The bound itself and every other assertion of the test are unchanged
-- [ ] #3 The board still draws what the code does: archboard check code reports no new finding on it
+- [x] #2 The bound itself and every other assertion of the test are unchanged
+- [x] #3 The board still draws what the code does: archboard check code reports no new finding on it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,4 +51,12 @@ Measured and not kept: (1) choosing a wrap on its first layout and remedying onl
 The board is unchanged: Track embed route and its five relationships are drawn exactly as its sibling routes (mounts, write envelope, store under lease, requires a vault, CLI call), so drawing less would make the board say less than the code. archboard check code: the board's four RELATIONSHIP_UNDRAWN warnings name Repository routes, Browser, Codex workbench and Semantic board store, none Track embed route; this task changed no board. No board proposal: Engine pool, Layout engine and Bun host keep their roles (Semantic renderer, Renderer layout boards).
 
 Gate at f7171a2a2: bun run check exit 0 (test:modules 4929 pass 1 skip 0 fail; test:system 281 pass; test:repository 136 pass; serial browser 19 of 19 files), load 2.6 to 2.8. Afterwards the case alone: 3036, 3080, 3037 ms (load 2.0). AC #1 holds inside the gate (2.70 s in the whole-file run) but not alone; the parent must decide between a non-exact wrap choice, side-by-side wrap solves, or accepting the cold-alone overrun.
+
+2026-10-25: the owner said not to work on render timings further. A Rust rewrite of the layout engine runs in parallel and cuts these layouts to fractions of a second, and another agent's load on this machine makes the timings unmeasurable here (load average 6.6). Alone at that load, wide-boards.test.ts passed 39 of 40 cases, Archboard server routes (track) included; Archboard server routes (blocks) timed out at 20 s. Criterion 1 stays unchecked, because it cannot be measured on this machine now. No bound was changed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A layout worker says ready once its engine is loaded, so the pool's workers start side by side, and both stacking ways run as whole solves that tell their stood mid-solve, so the renderer chooses then and stops the dropped way's worker. Every Track drawing stays byte-identical. The first Track layout of Archboard server routes went from about 4.0 s to about 3.0 s, and other boards got faster (Board viewer 2.6 s to 1.4 s). Not met: criterion 1 is not shown alone, and the Blocks layout of the same board times out at 20 s under load. The owner closed the timing work, because the Rust engine rewrite replaces this engine.
+<!-- SECTION:FINAL_SUMMARY:END -->

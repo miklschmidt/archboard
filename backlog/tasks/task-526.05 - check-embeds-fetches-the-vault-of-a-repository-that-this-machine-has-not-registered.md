@@ -3,11 +3,11 @@ id: TASK-526.05
 title: >-
   check embeds fetches the vault of a repository that this machine has not
   registered
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T19:57:00Z'
+updated_date: '2026-10-24T23:58:00Z'
 labels:
   - cli
   - code-check
@@ -30,10 +30,10 @@ Documentation repositories often embed boards from a vault in another repository
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For an unregistered repository, the check fetches the .archboard/vault directory of the default branch shallow and sparse with the person git credentials
-- [ ] #2 A fetched vault is cached in the state directory by commit and read again from the cache
-- [ ] #3 Offline with a cached copy, the check uses it and reports that as information
-- [ ] #4 Offline with no cached copy, the check reports a warning that names the repository
+- [x] #1 For an unregistered repository, the check fetches the .archboard/vault directory of the default branch shallow and sparse with the person git credentials
+- [x] #2 A fetched vault is cached in the state directory by commit and read again from the cache
+- [x] #3 Offline with a cached copy, the check uses it and reports that as information
+- [x] #4 Offline with no cached copy, the check reports a warning that names the repository
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,4 +89,12 @@ Follow-ups after the merge:
 - Proposals: Command interface@TASK-526.05 gains the description of Vault check. Command dispatch@TASK-526.05 (new) adds the branch of Addressing a vault where a command that runs without a vault runs in the checkout.
 
 Code check diff (check code with and without --variant TASK-526.05): the same 40 finding lines. No finding is new, and none is cleared.
+
+Closing evidence: tests/system/semantic-boards/embeds-fetch.test.ts owns criteria 1 to 4 (shallow and sparse, cached commit read again with ls-remote and no clone, offline with cache EMBED_VAULT_CACHED as information, offline without cache EMBED_VAULT_FETCH_FAILED as a warning naming the repository).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+check embeds fetches the .archboard/vault directory of an unregistered repository's default branch: ls-remote HEAD, a shallow blobless clone and a sparse checkout, with no credential prompt and a process-group timeout. The copy lands by atomic rename in the state directory by commit and is read again from there. Offline, a cached copy is used and said as information, and every finding against it is information that --fix does not write; with no copy, the warning EMBED_VAULT_FETCH_FAILED names the repository.
+<!-- SECTION:FINAL_SUMMARY:END -->
