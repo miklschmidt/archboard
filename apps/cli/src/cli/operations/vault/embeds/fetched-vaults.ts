@@ -112,21 +112,35 @@ async function runGit(
 		GCM_INTERACTIVE: "never",
 	};
 	for (const name of REPOSITORY_VARIABLES) delete env[name];
+	signal.throwIfAborted();
+	// Git runs in a process group of its own, and the whole group is ended: a
+	// helper such as git-remote-https outlives a signal to Git alone, and it
+	// holds Git's output open on a connection that never answers.
 	const child = Bun.spawn(["git", ...args], {
 		cwd,
 		stdin: "ignore",
 		stdout: "pipe",
 		stderr: "pipe",
 		env,
-		signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
+		detached: true,
 	});
+	const ended = AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
+	/** End Git and every helper it started. */
+	const end = (): void => {
+		try {
+			process.kill(-child.pid, "SIGKILL");
+		} catch {
+			// The group has already ended.
+		}
+	};
+	ended.addEventListener("abort", end, { once: true });
 	const [stdout, stderr, exitCode] = await Promise.all([
 		new Response(child.stdout).text(),
 		new Response(child.stderr).text(),
 		child.exited,
-	]);
+	]).finally(() => ended.removeEventListener("abort", end));
 	signal.throwIfAborted();
-	if (child.signalCode !== null) {
+	if (ended.aborted) {
 		return { ok: false, stdout, failure: `git ${args[0]} did not answer in ${timeoutMs} ms` };
 	}
 	// Git's first fatal line says what went wrong; the lines after it give advice.

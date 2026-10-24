@@ -96,17 +96,17 @@ function publish(message: string): string {
 	return git(models, "rev-parse", "HEAD");
 }
 
-/** The environment of a check whose remotes are the local bare repositories, or none at all. */
+/** The environment of a check whose remotes are below a base address: the local bare repositories, or none at all. */
 function reaching(remotes: string, stateHome = state): Record<string, string> {
 	return {
 		XDG_STATE_HOME: stateHome,
 		GIT_CONFIG_COUNT: "1",
-		GIT_CONFIG_KEY_0: `url.file://${remotes}/.insteadOf`,
+		GIT_CONFIG_KEY_0: `url.${remotes}/.insteadOf`,
 		GIT_CONFIG_VALUE_0: "https://github.com/",
 	};
 }
-const online = reaching(path.join(root, "remotes"));
-const offline = reaching(path.join(root, "unreachable"));
+const online = reaching(`file://${path.join(root, "remotes")}`);
+const offline = reaching(`file://${path.join(root, "unreachable")}`);
 
 /** What a test reads of the embeds part. */
 interface EmbedsPart {
@@ -256,7 +256,7 @@ describe("check embeds with a vault of an unregistered repository", () => {
 		"offline with no cached copy is a warning that names the repository",
 		() => {
 			const empty = path.join(root, "empty-state");
-			const { part } = checkEmbeds(reaching(path.join(root, "unreachable"), empty), 1);
+			const { part } = checkEmbeds(reaching(`file://${path.join(root, "unreachable")}`, empty), 1);
 			expect(part.vaults).toEqual([]);
 			expect(part.findings).toEqual([
 				expect.objectContaining({
@@ -306,6 +306,42 @@ describe("check embeds with a vault of an unregistered repository", () => {
 				"docs/linked.svg": "EMBED_VAULT_UNAVAILABLE",
 				"docs/orders.svg": "EMBED_SOURCE_MISSING",
 			});
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
+
+	test(
+		"a cancelled check ends its Git and the helpers that hold the remote's connection",
+		async () => {
+			const opened = Promise.withResolvers<void>();
+			const closed = Promise.withResolvers<void>();
+			// A remote that takes the connection and never answers.
+			const silent = Bun.listen({
+				hostname: "127.0.0.1",
+				port: 0,
+				socket: { data() {}, open: () => opened.resolve(), close: () => closed.resolve() },
+			});
+			try {
+				const check = Bun.spawn([path.join(repoRoot, "bin", "archboard"), "check", "embeds"], {
+					cwd: docs,
+					stdin: "ignore",
+					stdout: "ignore",
+					stderr: "ignore",
+					env: {
+						...process.env,
+						ARCHBOARD_REPOS: server.registry,
+						ARCHBOARD_URL: server.base,
+						ARCHBOARD_NO_AUTOSTART: "1",
+						...reaching(`http://127.0.0.1:${silent.port}`, path.join(root, "silent-state")),
+					},
+				});
+				await opened.promise;
+				check.kill("SIGINT");
+				await closed.promise;
+				await check.exited;
+			} finally {
+				silent.stop(true);
+			}
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
