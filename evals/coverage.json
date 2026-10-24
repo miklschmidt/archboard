@@ -91,7 +91,7 @@
 				},
 				{
 					"path": "semantic render --theme auto",
-					"expectedUse": "one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark",
+					"expectedUse": "the default of semantic render: one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark and is dark by default",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/renderer/tests/runtime/operations/architecture/theme.test.ts owns the declared tokens; packages/renderer/tests/runtime/services/rasterizer/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
@@ -104,8 +104,8 @@
 					"owner": "packages/renderer/tests/runtime/operations/export/export-title.test.ts owns the band and the moved picture on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
 				},
 				{
-					"path": "semantic render/rasterize --legend and --legend-only",
-					"expectedUse": "draw the key of an exported picture under or beside it, or alone; --legend-only needs --legend",
+					"path": "semantic render/rasterize --legend, --no-legend and --legend-only",
+					"expectedUse": "draw the key of an exported picture under it by default or beside it, none with --no-legend, or alone with --legend-only",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/renderer/tests/runtime/operations/export/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"

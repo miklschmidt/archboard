@@ -59,7 +59,7 @@ about how it was drawn. The recipe holds:
 - the variant by id, or "current" for a render that named no variant, so that
   the render follows an adoption
 - the view by id, the variant drawn against, and the drawing choices: theme,
-  layout, legend and title
+  layout, legend and title, and for a PNG its scale and region
 - a fingerprint of what the renderer was given: the drawn variant, the view
   and the vault's presentation policy
 - a hash of the picture as drawn, without the recipe
@@ -73,9 +73,10 @@ embed checkable. A file without a recipe is not an embed. SVGO removes
 `<metadata>` by default, so the documentation says to keep it.
 
 A render on stdout carries the recipe too, so stdout and `--out` give the same
-bytes. An SVG render defaults to `--theme auto` and a horizontal legend, and
-`--no-legend` turns the legend off. A PNG cannot follow the reader's colour
-scheme, so `rasterize` defaults to `dark`.
+bytes. An SVG render defaults to `--theme auto`. A PNG cannot follow the
+reader's colour scheme, so `rasterize` defaults to `dark`. Both `render` and
+`rasterize` draw a horizontal legend by default, and `--no-legend` turns the
+legend off.
 
 ### An embed and when it is outdated
 

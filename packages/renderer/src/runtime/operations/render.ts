@@ -13,13 +13,17 @@ import {
 	type SemanticViewRenderRequest,
 } from "#shared/protocol/render-request.ts";
 import {
-	renderBoard as renderBoardIn,
+	drawBoard,
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
+	type DrawnInput,
 } from "#shared/rules/render/board.ts";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
+import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
 import { installBunHost } from "#runtime/services/bun-host.ts";
+import { boardRecipe, type RecipeVault } from "#runtime/operations/recipe/board-recipe.ts";
+import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**
  * A semantic architecture in, one self-contained SVG plus its geometry out.
@@ -56,15 +60,46 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
  * @param board The board, as read.
  * @param choices The variant, view, theme and faces asked for.
  * @param policy The vault's presentation policy.
+ * @param recipe For a board render that stands alone, the vault its recipe names; the SVG then
+ * carries its render recipe (ADR 0057).
+ * @param recipe.vault The vault.
  * @returns The answer, or which name the board does not have.
  */
 async function renderBoard(
 	board: SemanticBoard,
 	choices: BoardRenderChoices,
 	policy: SemanticPolicy,
+	recipe?: { readonly vault: RecipeVault },
 ): Promise<BoardRenderOutcome> {
 	installBunHost();
-	return renderBoardIn(board, choices, policy);
+	const drawing = await drawBoard(board, choices, policy);
+	if (!drawing.ok) return drawing;
+	const reply =
+		recipe === undefined
+			? drawing.reply
+			: carryingRecipe(board, choices, drawing.reply, drawing.input, recipe.vault);
+	return { ok: true, reply };
+}
+
+/**
+ * A drawn answer whose SVG carries its render recipe.
+ * @param board The board, as read.
+ * @param choices What the render asked for.
+ * @param reply What the render answered.
+ * @param input What the picture was drawn from.
+ * @param vault The vault the recipe names.
+ * @returns The answer, its SVG carrying the recipe; an answer with no picture as it was.
+ */
+function carryingRecipe(
+	board: SemanticBoard,
+	choices: BoardRenderChoices,
+	reply: SemanticRenderReply,
+	input: DrawnInput,
+	vault: RecipeVault,
+): SemanticRenderReply {
+	if (!wasDrawn(reply)) return reply;
+	const recipe = boardRecipe(board, choices, reply, input, vault);
+	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }
 
 /**

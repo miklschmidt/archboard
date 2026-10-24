@@ -20,13 +20,16 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
-	TITLE_OPTION,
-	TitleOptionSchema,
+} from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	drawnLegend,
 	LEGEND_OPTIONS,
-	LEGEND_ONLY_REFUSAL,
 	LegendInputSchema,
 	legendStated,
-} from "#cli/operations/semantic/input/semantic-input.ts";
+	NO_LEGEND_REFUSAL,
+	TITLE_OPTION,
+	TitleOptionSchema,
+} from "#cli/operations/semantic/draw/framing-options.ts";
 import {
 	AGAINST_NO_COMPARISON_REFUSAL,
 	AGAINST_OPTION,
@@ -35,13 +38,17 @@ import {
 } from "#cli/operations/semantic/draw/drawn-against.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
+import {
+	recipeOfPicture,
+	vaultRepositoryUnknownRefusal,
+} from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const RenderInputSchema = z
 	.object({
 		name: z.string(),
 		variant: SelectorSchema.optional(),
 		view: SelectorSchema.optional(),
-		theme: StandaloneThemeSchema.default("light"),
+		theme: StandaloneThemeSchema.default("auto"),
 		layout: LayoutEngineSchema.optional(),
 		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
@@ -49,8 +56,21 @@ const RenderInputSchema = z
 		...LegendInputSchema,
 		out: z.string().optional(),
 	})
-	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL);
+
+const recipeUnavailableRefusal = {
+	code: "RENDER_RECIPE_UNAVAILABLE",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"The server's SVG carries no render recipe, or one that cannot be read, as a server that started before the recipe existed draws; nothing was written. Run `archboard restart`, then try again.",
+};
+
+/** A server's picture without the recipe that every board render carries (ADR 0057). */
+class RecipeUnavailableError extends Error {
+	readonly code = recipeUnavailableRefusal.code;
+}
 
 const SemanticRenderResultSchema = z.object({
 	success: z.literal(true),
@@ -90,13 +110,15 @@ const semanticRenderContract = defineCommand({
 	summary: "Draw a semantic board as SVG",
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
+		"routing belong to the renderer. Without --out, stdout carries the same SVG as --out, including its accessibility metadata and its render recipe, which names the board, variant and view by id and the drawing choices. " +
 		"With --out, the receipt names every node, edge, flow and step the picture draws and the counts of the marks " +
 		"its key shows; semantic views lists that for every view at once. " +
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
 		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
 		"leaving out the Planned frame. " +
-		"Use semantic rasterize --clipboard for PNG and HTML clipboard output.",
+		"Use semantic rasterize --clipboard for PNG and HTML clipboard output. " +
+		"A picture is refused with RENDER_RECIPE_UNAVAILABLE when the server's SVG carries no recipe (restart the server), " +
+		"and with VAULT_REPOSITORY_UNKNOWN when Git does not say which repository holds the vault.",
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
@@ -153,7 +175,7 @@ const semanticRenderContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: StandaloneThemeSchema.options,
-			default: "light",
+			default: "auto",
 			description:
 				"Which ground to draw on; auto carries both and follows the reader's colour scheme, as an image, a background or inline",
 		},
@@ -182,7 +204,8 @@ const semanticRenderContract = defineCommand({
 				id: "stdout",
 				when: { key: "out", present: false },
 				mode: "raw",
-				description: "The standalone SVG, with embedded fonts and its accessibility metadata",
+				description:
+					"The standalone SVG, with embedded fonts, its accessibility metadata and its render recipe",
 			},
 			{
 				id: "file",
@@ -201,7 +224,12 @@ const semanticRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, viewEmptyRefusal],
+	refusals: [
+		serverRefusal,
+		viewEmptyRefusal,
+		recipeUnavailableRefusal,
+		vaultRepositoryUnknownRefusal,
+	],
 	relationships: [
 		{
 			method: "GET",
@@ -216,14 +244,21 @@ const semanticRenderContract = defineCommand({
 	 * @param context The command context.
 	 * @returns The SVG bytes or the file receipt.
 	 * @throws {Error} When the board or the view has nothing to draw.
+	 * @throws {RecipeUnavailableError} When the server's SVG carries no readable render recipe.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
 		const drawn = await renderSemanticBoardOnServer(
 			input.name,
-			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+			exportRenderRequest({
+				...input,
+				legend: drawnLegend(input),
+				against: await resolvedAgainst(input.name, input),
+			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
+		const recipe = recipeOfPicture(drawn.svg);
+		if ("problem" in recipe) throw new RecipeUnavailableError(recipe.problem);
 		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
 		const file = context.resolvePath(input.out);
 		return {

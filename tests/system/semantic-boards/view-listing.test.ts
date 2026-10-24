@@ -161,7 +161,8 @@ describe("semantic views", () => {
 			expect(names).toEqual([undefined, "Exchange", "Audit", "Everything"]);
 			for (const listed of listing.views) {
 				const view = listed.view === null ? [] : ["--view", listed.view.id];
-				const { receipt } = rendered(["--variant", DRAFT, ...view]);
+				// The listing gives the picture's size before a title or a key.
+				const { receipt } = rendered(["--variant", DRAFT, ...view, "--no-legend"]);
 				const drawn = receipt.drawn as Drawn;
 				expect(listed.drawn).toEqual({
 					nodes: drawn.nodes.length,

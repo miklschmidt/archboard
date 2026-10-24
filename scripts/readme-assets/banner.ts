@@ -129,6 +129,7 @@ async function drawProposal(server: TakeServer, theme: Theme, work: string): Pro
 		BOARD,
 		"--variant",
 		PROPOSAL,
+		"--no-legend",
 		"--theme",
 		theme,
 		"--out",
