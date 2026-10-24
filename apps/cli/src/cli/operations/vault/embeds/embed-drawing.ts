@@ -16,7 +16,7 @@ import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import type { DrawnBoard, NothingDrawn } from "@archboard/board/render-reply";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { regionWithin } from "#cli/operations/semantic/draw/rasterize.ts";
+import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
 import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import type { MissingSource } from "#cli/protocol/check/embeds-answer.ts";
 import type { TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.ts";
