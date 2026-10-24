@@ -22,7 +22,7 @@ from before this change is replaced on the first start. That is by design, and
 it means the first voice start after upgrading takes a moment longer.
 
 ```bash
-bun run build:frontend
+bun run build
 archboard stop; archboard start
 archboard browser show Archboard --pane primary
 ```

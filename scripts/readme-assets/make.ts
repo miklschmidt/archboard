@@ -225,7 +225,7 @@ async function makeAll(
 	await inOrder(needs, prove);
 	if (needs.has("chromium")) {
 		console.log("Building the frontend the takes are filmed from.");
-		await run([process.execPath, "run", "build:frontend"]);
+		await run([process.execPath, "run", "build"]);
 	}
 	const hasher = checkoutHasher(ROOT);
 	let made = manifest;
