@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 76,
+	"version": 77,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-24T16:45:40.002Z",
+	"updatedAt": "2026-10-24T17:14:14.281Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -19070,7 +19070,7 @@
 		{
 			"id": "4lZZiZuM",
 			"name": "TASK-478.01 after TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "dVTm2Et3",
 			"summary": "TASK-478.01 restated after TASK-482.07",
 			"content": {
@@ -21603,7 +21603,7 @@
 		{
 			"id": "LA43vys3",
 			"name": "TASK-526.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "4lZZiZuM",
 			"summary": "Bitmaps and videos drawn headlessly from a board, and the recipe a PNG carries",
 			"content": {
@@ -24177,7 +24177,7 @@
 			}
 		}
 	],
-	"current": "4lZZiZuM",
+	"current": "LA43vys3",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -24250,6 +24250,12 @@
 			"from": "dVTm2Et3",
 			"at": "2026-10-17T09:58:45.193Z",
 			"reason": "semantic render, rasterize and record draw against a named variant (TASK-478.01, adopted on main while TASK-482 was adopted on feat/derived-overview)"
+		},
+		{
+			"variant": "LA43vys3",
+			"from": "4lZZiZuM",
+			"at": "2026-10-24T17:14:14.281Z",
+			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
 		}
 	],
 	"shelvings": [

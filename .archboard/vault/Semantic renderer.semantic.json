@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 83,
+	"version": 85,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-24T16:45:39.780Z",
+	"updatedAt": "2026-10-24T17:14:44.591Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -20562,7 +20562,7 @@
 		{
 			"id": "MgiCUw9a",
 			"name": "TASK-496",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "vWdekWlc",
 			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
@@ -23106,7 +23106,7 @@
 		{
 			"id": "WwMsHkt1",
 			"name": "TASK-526.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "MgiCUw9a",
 			"summary": "Meaning to SVG and interaction geometry, and the recipe a board render carries",
 			"content": {
@@ -23554,7 +23554,6 @@
 						"kind": "module",
 						"responsibility": "Writes and reads the render recipe that a board render carries",
 						"description": "Fingerprints the input that the picture is drawn from, hashes the picture without the recipe, and writes the recipe into the SVG metadata element or a PNG text chunk. It reads a recipe back from the bytes of a file, for the embeds check.",
-						"parent": "0XCanbzp",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/operations/recipe"
@@ -25704,7 +25703,7 @@
 			}
 		}
 	],
-	"current": "MgiCUw9a",
+	"current": "WwMsHkt1",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -25801,6 +25800,12 @@
 			"from": "vWdekWlc",
 			"at": "2026-10-18T15:31:43.964Z",
 			"reason": "The key and the render answer count and name only the subjects the drawing placed"
+		},
+		{
+			"variant": "WwMsHkt1",
+			"from": "MgiCUw9a",
+			"at": "2026-10-24T17:14:14.024Z",
+			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 91,
+	"version": 92,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-24T16:45:40.225Z",
+	"updatedAt": "2026-10-24T17:14:14.517Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -31812,7 +31812,7 @@
 		{
 			"id": "jHge59R8",
 			"name": "TASK-509",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mrxA7iel",
 			"summary": "The route handlers, and what each one reaches",
 			"documents": [
@@ -36093,7 +36093,7 @@
 		{
 			"id": "bURuoB8l",
 			"name": "TASK-526.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "jHge59R8",
 			"summary": "The route handlers, and what each one reaches",
 			"documents": [
@@ -40372,7 +40372,7 @@
 			}
 		}
 	],
-	"current": "jHge59R8",
+	"current": "bURuoB8l",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -40469,6 +40469,12 @@
 			"from": "mrxA7iel",
 			"at": "2026-10-23T02:55:36.447Z",
 			"reason": "Correction routes check an immutable candidate and commit it through the existing write boundary"
+		},
+		{
+			"variant": "bURuoB8l",
+			"from": "jHge59R8",
+			"at": "2026-10-24T17:14:14.517Z",
+			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
 		}
 	],
 	"shelvings": [
