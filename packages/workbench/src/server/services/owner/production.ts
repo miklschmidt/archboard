@@ -48,23 +48,17 @@ function prepareCoordinatorDirectory(directory: string, sourceRoot: string): voi
  * written by one process, and a second server's child would make this one's
  * stale. The directory the coordinators work in is the server's too.
  * @param sourceRoot The checkout whose source the server runs, whose skill the coordinators read.
- * @returns Where each part of it lives.
+ * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(sourceRoot: string) {
+function createWorkbenchStorage(sourceRoot: string): CreateCodexWorkbenchOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
 	const ownerDirectory = path.join(root, "canvases", String(PORT));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
 	prepareCoordinatorDirectory(coordinatorDirectory, sourceRoot);
-	const codexHome = path.join(root, "codex-home");
 	return {
-		root,
-		codexHome,
-		sqliteHome: path.join(root, "sqlite-home"),
+		rootDirectory: root,
 		ownerDirectory,
-		coordinatorDirectory,
-		epochRoot: path.join(ownerDirectory, "epoch"),
-		configPath: path.join(codexHome, "config.toml"),
 	};
 }
 
@@ -85,7 +79,7 @@ export function createServerCodexWorkbenchInstallation(
 	const storage = createWorkbenchStorage(server.sourceRoot);
 
 	return {
-		storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
+		storage,
 		host: { instructions: server.host.instructions, allowedCheckouts: server.host.resolveCheckout },
 		extensions: {
 			contextCodec: server.host.contextCodec,
