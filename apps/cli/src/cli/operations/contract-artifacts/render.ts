@@ -67,7 +67,14 @@ function cell(value: z.infer<typeof AuditCellSchema>): string {
  */
 function format(root: string, name: string, content: string): string {
 	const formatted = Bun.spawnSync(
-		["bunx", "oxfmt", "--stdin-filepath", join(root, "docs", "design", "generated", name)],
+		[
+			join(root, "node_modules/.bin/vp"),
+			"fmt",
+			"--config",
+			join(root, "vite.config.ts"),
+			"--stdin-filepath",
+			join(root, "docs", "design", "generated", name),
+		],
 		{
 			cwd: root,
 			stdin: new TextEncoder().encode(content),

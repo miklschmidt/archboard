@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const vp = path.join(repoRoot, "node_modules/.bin/vp");
 const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.ts");
 
 interface CommandResult {
@@ -34,6 +34,10 @@ function withProject<T>(
 ): T {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-ui-policy-"));
 	try {
+		fs.writeFileSync(
+			path.join(root, "package.json"),
+			JSON.stringify({ name: "lint-fixture", private: true }),
+		);
 		fs.symlinkSync(path.join(repoRoot, "node_modules"), path.join(root, "node_modules"));
 		for (const [relative, content] of Object.entries({ ...config, ...files })) {
 			const target = path.join(root, relative);
@@ -48,7 +52,7 @@ function withProject<T>(
 
 function lint(root: string, config: string, file: string): CommandResult {
 	const result = Bun.spawnSync({
-		cmd: [oxlint, `--config=${config}`, "--disable-nested-config", "--format=default", file],
+		cmd: [vp, "lint", `--config=${config}`, "--disable-nested-config", "--format=default", file],
 		cwd: root,
 		stdout: "pipe",
 		stderr: "pipe",

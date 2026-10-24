@@ -187,7 +187,7 @@ place where the path depends on a condition:
   that run on it, in order.
 - Steps that run again for each item of a list, or until a condition holds,
   are a **loop**. Its `condition` says how long it runs: `for each variant
-the batch touches`, `until the server answers`. A count that the source
+  the batch touches`, `until the server answers`. A count that the source
   fixes on one message stays that message's `repeat`.
 
 A decision has two or more alternatives, and no two have one label. An

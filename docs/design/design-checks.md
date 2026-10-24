@@ -1580,7 +1580,7 @@ vault, with the table naming clangd or turning `c` off.
 What clangd does:
 
 - It refuses a question about a file that it has not opened (`trying to get
-AST for non-added document`), so the row opens each file. A definition
+  AST for non-added document`), so the row opens each file. A definition
   request sent at once after `didOpen` waits until clangd has parsed the file:
   on Redis `db.c` the answer came 80 ms after the open, after the preamble of
   `server.h`. So no settle request is needed for the parse.
@@ -1642,7 +1642,7 @@ the checkout:
   neither file. There is no flag that turns off only the project's file.
   `-fplugin=` added through `.clangd` loaded no plugin either.
 - A repeated flag is allowed, and the last one wins: `--log=error
---log=verbose` logged verbosely. So the check adds its flags after the
+  --log=verbose` logged verbosely. So the check adds its flags after the
   `args` of an entry, and they win.
 - On NixOS only the compiler wrapper knows where the C and C++ standard
   headers are. Without `--query-driver`, clangd parsed leveldb's

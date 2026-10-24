@@ -2129,7 +2129,7 @@ spots, and two rules no test owned.
   Board persistence's evened settlement ran its teal `a migrated document`
   11 px from two unrelated lines for 377 px; it now keeps the plain
   settlement, where the teal, `the links out of every board` and `check the
-vault` all read cleanly. The cost is a page as wide as the base's (3781 px
+  vault` all read cleanly. The cost is a page as wide as the base's (3781 px
   against the evened 2901), four hooks where the evened settlement had one
   (the base eleven), and Read and validate's two lines leaving its left side
   18 px on one stroke before they part. No other drawing changes. Counted in
@@ -2140,7 +2140,7 @@ vault` all read cleanly. The cost is a page as wide as the base's (3781 px
   `route-requests.ts` `centredLines`, `label-centring.ts`): where moving
   every reserved label onto its cards' channel is refused, one card's lines'
   labels move alone. Board rasterizer's `One browser, two uses` drops `spawn,
-read the port, stop the group` straight into Chromium executable's top.
+  read the port, stop the group` straight into Chromium executable's top.
   Board persistence's `the links out of every board` is not cured this way:
   its label's row moves other lines into a hook and a crowded label.
 
@@ -2163,7 +2163,7 @@ corner rule no test owned.
   stroke they share can be their trunk, only where they meet one card at one
   place, within half a lane; runs nearer than 2.5 px, under two ordinary
   lines' widths, are one stroke. Board persistence's `take the new name's
-lease` rode 2.2 px beside the trunk into Former names from a different pin
+  lease` rode 2.2 px beside the trunk into Former names from a different pin
   of Place the file, and Read and validate's two lines left its side 30 px
   apart and shared 34 px of stroke; both were uncounted and are now a stack
   every chooser sees. No drawing changes: every cure the passes find brings
@@ -2236,7 +2236,7 @@ board without the region saw one.
   cards is as wide as its Graphviz ranks and the lanes beside a region's
   clearance pushed the next one along its container's wall (Recording a
   walkthrough, `a line parted from another keeps off its container's
-wall`).
+  wall`).
 - **A container** drawn as a block of its own keeps the region's inset more
   on its sides and below, and its header holds the caption band
   (`place.ts` `insetsOf`, `tree.ts` `add`). Drawn inline, its cluster keeps

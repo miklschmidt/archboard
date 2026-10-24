@@ -379,18 +379,16 @@ const turnsAsWithout = {
 	"Command interface": commandInterface,
 	"Reading a board": readingABoard,
 };
+async function turns(content: VariantContent): Promise<Map<string, number>> {
+	const picture = await drawn(content, "track");
+	return new Map([...routePoints(picture.svg)].map(([id, points]) => [id, turnsOf(points)]));
+}
+
 test.each(Object.keys(turnsAsWithout))(
 	"%s: the track engine turns no line more than without its regions round one card",
 	async (board) => {
 		const content = orderedFixture(turnsAsWithout[board as keyof typeof turnsAsWithout]);
 		for (const e of content.edges) Object.assign(e, { emphasis: "normal", traffic: undefined });
-		const turns = async (drawnBoard: VariantContent): Promise<Map<string, number>> =>
-			new Map(
-				[...routePoints((await drawn(drawnBoard, "track")).svg)].map(([id, points]) => [
-					id,
-					turnsOf(points),
-				]),
-			);
 		const [grouped, plain] = await Promise.all([turns(content), turns(ungrouped(content))]);
 		for (const [id, count] of grouped) expect(count, id).toBeLessThanOrEqual(plain.get(id)!);
 	},

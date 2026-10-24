@@ -1,12 +1,10 @@
 // The typed surface every Archboard rule is written against.
 //
-// Oxlint 1.80 publishes its plugin contract (rule, context, visitor and AST
-// node types) only through the `RuleTester` class of `oxlint/plugins-dev`;
-// nothing exports `Rule` or `Context` by name. Every type below is derived
-// from that class so an Oxlint bump that changes the contract fails the type
-// check here instead of at lint time. The AST is Oxlint's own ESTree shape
+// Every rule type below derives from the bundled `RuleTester` contract, so
+// a Vite+ update that changes the contract fails the type check here instead
+// of at lint time. The AST is Oxlint's own ESTree shape
 // (nodes carry `parent`, TypeScript nodes are present), not `@types/estree`.
-import type { RuleTester } from "oxlint/plugins-dev";
+import type { RuleTester } from "vite-plus/lint/plugins-dev";
 
 type Rule = Parameters<RuleTester["run"]>[1];
 type RuleCreate = NonNullable<Rule["create"]>;

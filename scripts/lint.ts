@@ -9,7 +9,8 @@ const repository = process.cwd();
 const toolDirectory = resolve(import.meta.dir, "../node_modules/.bin");
 const argumentsFromCaller = process.argv.slice(2);
 const command = [
-	join(toolDirectory, "oxlint"),
+	join(toolDirectory, "vp"),
+	"lint",
 	...argumentsFromCaller,
 	"--tsconfig",
 	join(repository, "tsconfig.json"),
