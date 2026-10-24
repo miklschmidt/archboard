@@ -66,6 +66,7 @@ function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			examples: contract.examples,
 			parameters: contract.parameters,
 			shared: contract.shared,
+			runsWithoutVault: contract.runsWithoutVault === true,
 			input: {
 				schema: jsonSchema(contract.input.ingress, "input"),
 				stages: (contract.input.stages ?? []).map((stage) => ({
@@ -95,7 +96,7 @@ function introspectContracts(entries: readonly RegistryContractEntry[]) {
 function introspectAnswerFields() {
 	return {
 		vault: {
-			when: "Every JSON object answer of a command whose shared options include directory (-C)",
+			when: "Every JSON object answer of a command whose shared options include directory (-C), except one whose contract runsWithoutVault and that runs in a Git checkout that holds no vault",
 			schema: jsonSchema(AnsweredVaultSchema),
 		},
 	};

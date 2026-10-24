@@ -182,6 +182,12 @@ async function renderCliContractArtifacts(root: string) {
 			"",
 			`Prerequisites: ${contract.prerequisites.join(", ") || "none"}. Effects: ${contract.effects.join(", ") || "none"}.`,
 			"",
+			...(contract.runsWithoutVault
+				? [
+						"Runs without a vault in a Git checkout that holds none, and its answer then names no vault.",
+						"",
+					]
+				: []),
 			"REST relationships:",
 			"",
 			...contract.relationships.map(
