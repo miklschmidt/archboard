@@ -5,9 +5,9 @@ status: accepted
 # A board opens on its overview, and relationships and calls are drawn apart
 
 Amended by the owner on 2026-10-24 (TASK-513, TASK-514). A line that joins
-several relationships stacks their labels, one block for each distinct label in
-board order, with a rule between two blocks, and a relationship with no label
-adds none. It keeps the id, the
+several relationships stacks their labels, one chip for each distinct label in
+board order, as a lone label stands on one, with the ground between two chips.
+A relationship with no label adds none. It keeps the id, the
 order and the kind of the decision below, and it has no description, emphasis,
 traffic or anchor, because each of those is a fact about one of the
 relationships. The tip over the line and the inspector name its drawn ends and

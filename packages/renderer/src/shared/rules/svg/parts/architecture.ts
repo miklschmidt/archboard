@@ -4,7 +4,7 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
 import type { DiagramAtlas } from "@archboard/board/render-reply";
 import type { DrawingEdge, DrawingNode, PaintedDrawing } from "#shared/rules/render/drawing.ts";
-import { ARCHITECTURE_LABEL_PADDING_X, DIAGRAM_MARGIN } from "#shared/constants/spacing.ts";
+import { DIAGRAM_MARGIN } from "#shared/constants/spacing.ts";
 import { PILL_RADIUS, SLAB_RADIUS } from "#shared/constants/design.ts";
 import { canvasFor, coord, inflate, union, type Box } from "#shared/rules/geometry.ts";
 import type { Palette } from "#shared/rules/svg/page/theme.ts";
@@ -28,7 +28,7 @@ import { colourId } from "#shared/rules/svg/page/colour.ts";
 import { shifted } from "#shared/rules/svg/page/document.ts";
 import { lines, tag, wrap } from "#shared/rules/svg/page/primitives.ts";
 import { junctionMarks } from "#shared/rules/svg/lines/junctions.ts";
-import { across, shadowUnder, slab, slabSeat, slabShadow } from "#shared/rules/svg/parts/slab.ts";
+import { shadowUnder, slab, slabSeat, slabShadow } from "#shared/rules/svg/parts/slab.ts";
 import { paintTraffic } from "#shared/rules/svg/lines/traffic.ts";
 import {
 	endsInPort,
@@ -238,13 +238,16 @@ function paintEdgeWords(
 			? ""
 			: lines([
 					slabSeat(label.box, PILL_RADIUS),
-					// A removed label's ghost; a label's shadow lies under the lines (`labelShadow`).
-					standing === "removed"
-						? slabShadow(label.box, PILL_RADIUS, "chip", palette, standing)
-						: "",
-					slab(label.box, labelLook(palette), palette, standing),
+					...chipsOf(label).map((chip) =>
+						lines([
+							// A removed label's ghost; a label's shadow lies under the lines (`labelShadow`).
+							standing === "removed"
+								? slabShadow(chip, PILL_RADIUS, "chip", palette, standing)
+								: "",
+							slab(chip, labelLook(palette), palette, standing),
+						]),
+					),
 					paintTextRuns(label.measured.runs, label.box, standingPalette(palette, standing)),
-					...stackRules(label.box, label.measured.rules, palette),
 				]);
 	return pill === "" && badge === ""
 		? ""
@@ -256,21 +259,16 @@ function paintEdgeWords(
 }
 
 /**
- * The rules between the labels a joined line stacks (ADR 0052), in the ink of
- * the plate's own edge, inside its padding.
- * @param box The plate.
- * @param rules How far below its top each rule runs.
- * @param palette The selected theme.
- * @returns One line for each rule.
+ * The chips a label stands on, where the picture puts them: one for a label,
+ * one for each relationship a joined line stacks (ADR 0052).
+ * @param label The label's box and its measured chips.
+ * @param label.box Where the label stands.
+ * @param label.measured Its measured chips.
+ * @returns Each chip's box.
  */
-function stackRules(box: Box, rules: readonly number[], palette: Palette): string[] {
-	const inside = {
-		...box,
-		x: box.x + ARCHITECTURE_LABEL_PADDING_X,
-		width: box.width - 2 * ARCHITECTURE_LABEL_PADDING_X,
-	};
-	const paint = { stroke: labelLook(palette).edge, "stroke-width": 1 };
-	return rules.map((y) => across(inside, box.y + y, paint));
+function chipsOf(label: NonNullable<DrawingEdge["label"]>): Box[] {
+	const { box, measured } = label;
+	return measured.chips.map(({ y, height }) => ({ ...box, y: box.y + y, height }));
 }
 
 /**
@@ -289,7 +287,11 @@ function labelShadow(
 ): string {
 	return routed.label === undefined
 		? ""
-		: shadowUnder(routed.edge.id, routed.label.box, PILL_RADIUS, "chip", palette, standing);
+		: lines(
+				chipsOf(routed.label).map((chip) =>
+					shadowUnder(routed.edge.id, chip, PILL_RADIUS, "chip", palette, standing),
+				),
+			);
 }
 
 /**

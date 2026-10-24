@@ -80,7 +80,10 @@ test("a hop keeps a card's or a label's clearance from it, bulging away where it
 	const edges = [
 		{
 			...plain.edges[0]!,
-			label: { box: label, measured: { width: 30, height: 8, runs: [], rules: [] } },
+			label: {
+				box: label,
+				measured: { width: 30, height: 8, runs: [], chips: [{ y: 0, height: 8 }] },
+			},
 		},
 		plain.edges[1]!,
 	];

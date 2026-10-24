@@ -1,5 +1,5 @@
 // A line of the overview that joins several relationships stacks their labels,
-// one block for each (ADR 0052). A reader must tell where one relationship's
+// one chip for each (ADR 0052). A reader must tell where one relationship's
 // words end and the next begin, also when one of them wraps.
 
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -7,6 +7,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { drawnTexts, labelPlates } from "#tests/runtime/support/drawn-text.ts";
+import { PALETTE } from "#shared/rules/svg/page/theme.ts";
 
 test.each(LayoutEngineSchema.options)(
 	"stacked labels are set apart by more than the lines of one label (%s)",
@@ -38,11 +39,12 @@ test.each(LayoutEngineSchema.options)(
 		// The plate holds every line.
 		const plate = labelPlates(drawing.svg).get("e1")!;
 		expect(last.y).toBeLessThan(plate.y + plate.height);
-		// A rule across the plate, in the gap, sets the two labels apart.
-		const above = lines.at(-2)!.y;
-		const rules = [...drawing.svg.matchAll(/<line\b[^>]*\by1="([\d.-]+)"[^>]*\by2="([\d.-]+)"/g)]
-			.map(([, y1, y2]) => [Number(y1), Number(y2)] as const)
-			.filter(([y1, y2]) => y1 === y2 && y1 > above && y1 < last.y - last.size);
-		expect(rules).toHaveLength(1);
+		// Each relationship's words stand on a chip of their own, as a lone label's do.
+		const group = drawing.svg
+			.split('data-semantic-id="e1"')
+			.find((chunk) => chunk.includes('data-semantic-part="label"'))!;
+		const words = group.slice(0, group.indexOf("</g>"));
+		expect(words.split(`style="fill:${PALETTE.pill}"`).length - 1).toBe(2);
+		expect(words).not.toContain("<line");
 	},
 );
