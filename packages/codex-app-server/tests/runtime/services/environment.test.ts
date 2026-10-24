@@ -86,4 +86,30 @@ describe("Codex child environment", () => {
 			);
 		}
 	});
+
+	test("reads each host value once and copies only the validated value", () => {
+		let reads = 0;
+		const child = buildCodexChildEnvironment({
+			...roots,
+			ambient: {},
+			hostEnvironment: {
+				get APP_ENDPOINT() {
+					reads += 1;
+					return reads === 1 ? "http://host.invalid" : "bad\0value";
+				},
+			},
+		});
+		expect(child["APP_ENDPOINT"]).toBe("http://host.invalid");
+		expect(reads).toBe(1);
+	});
+
+	test("rejects PATH prefixes that introduce additional or empty search entries", () => {
+		const sparse: string[] = [];
+		sparse[1] = "/host/bin";
+		for (const pathPrefixes of [[`/host/bin${path.delimiter}relative`], sparse]) {
+			expect(() => buildCodexChildEnvironment({ ...roots, ambient: {}, pathPrefixes })).toThrow(
+				CodexEnvironmentError,
+			);
+		}
+	});
 });

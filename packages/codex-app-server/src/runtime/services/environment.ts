@@ -148,16 +148,17 @@ function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChi
  * @returns The validated host additions.
  */
 function hostAdditions(additions: CodexChildEnvironment = {}): CodexChildEnvironment {
-	for (const [key, value] of Object.entries(additions)) {
-		if (key.length === 0 || key.includes("=") || key.includes("\0")) {
-			throw new CodexEnvironmentError(
-				"Host environment keys must be nonempty and contain no equals sign or NUL byte.",
-				key,
-			);
-		}
-		requireEnvironmentValue(value, key);
-	}
-	return additions;
+	return Object.fromEntries(
+		Object.entries(additions).map(([key, value]) => {
+			if (key.length === 0 || key.includes("=") || key.includes("\0")) {
+				throw new CodexEnvironmentError(
+					"Host environment keys must be nonempty and contain no equals sign or NUL byte.",
+					key,
+				);
+			}
+			return [key, requireEnvironmentValue(value, key)];
+		}),
+	);
 }
 
 /**
@@ -166,7 +167,13 @@ function hostAdditions(additions: CodexChildEnvironment = {}): CodexChildEnviron
  * @param directories - Absolute directories in precedence order.
  */
 function prependPath(child: Record<string, string>, directories: readonly string[] = []): void {
-	const prefixes = directories.map((prefix) => requirePath(prefix, "PATH prefix"));
+	const prefixes = Array.from(directories, (prefix) => {
+		const directory = requirePath(prefix, "PATH prefix");
+		if (directory.includes(path.delimiter)) {
+			throw new CodexEnvironmentError("Each PATH prefix must name one absolute directory.", "PATH");
+		}
+		return directory;
+	});
 	if (prefixes.length > 0) {
 		child["PATH"] = [...prefixes, ...(child["PATH"] === undefined ? [] : [child["PATH"]])].join(
 			path.delimiter,
