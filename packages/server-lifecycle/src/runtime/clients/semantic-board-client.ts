@@ -22,7 +22,11 @@ import {
 	currentWriteSession,
 	requestJson,
 } from "#runtime/clients/server-client.ts";
-import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/commands";
+import {
+	BoardDiscardAnswerSchema,
+	BoardMoveAnswerSchema,
+	type BoardMoveAnswer,
+} from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,
@@ -416,33 +420,29 @@ export {
 	suggestHistoricalCommitsOnServer,
 };
 
-const DiscardReplySchema = z.object({
-	success: z.literal(true),
-	discarded: z.object({ board: z.string(), version: z.int() }),
-});
-
 /**
  * Delete a board, every variant of it, under its lease.
  *
  * It states what it is doing and which session asked the way every write does,
  * because it is one: a person watching the board is told why it went. A board
- * changed since the version stated is refused and kept.
+ * changed since the version stated is refused and kept, and so is a board that
+ * a node on another board of the vault opens.
  * @param board The board name.
  * @param expectedVersion The version the caller read the board at; the one this invocation
  *   was told when absent.
- * @returns The board that went, and the version it was at when it did.
+ * @returns The board that went, the version it was at when it did, and the embeds it tracked.
  */
 async function discardSemanticBoardOnServer(
 	board: string,
 	expectedVersion?: number,
-): Promise<z.infer<typeof DiscardReplySchema>["discarded"]> {
+): Promise<z.infer<typeof BoardDiscardAnswerSchema>["discarded"]> {
 	const path = withWriterClaims("/api/semantic-boards/discard", expectedVersion);
 	const reply = await requestJson<unknown>(path, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ board, ...statedSession() }),
 	});
-	return DiscardReplySchema.parse(reply).discarded;
+	return BoardDiscardAnswerSchema.parse(reply).discarded;
 }
 
 export {

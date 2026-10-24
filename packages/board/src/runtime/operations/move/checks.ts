@@ -2,16 +2,22 @@
 // of the two vaults it has to rewrite. Every question here reads the two
 // vaults as they are on disk, without a lease and never migrating a board:
 // `move.ts` asks them inside the leases it holds, and reads each board it
-// rewrites again under that board's own lease.
+// rewrites again under that board's own lease. A delete asks the same
+// question of its one vault, which drill-downs open the board, and refuses
+// rather than rewrites (ADR 0057).
 
 import fs from "node:fs";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { normalizeBoardKey } from "#runtime/store/address.ts";
+import type { BoardOpener } from "#shared/protocol/board-discard.ts";
 import type { SemanticBoard } from "#shared/schemas/board-document.ts";
+import { acceptsContentEdits } from "#runtime/operations/check/content-checks.ts";
 import { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
 import { resolveSemanticBoard } from "#runtime/store/former-names.ts";
 import { listSemanticBoards } from "#runtime/operations/read/listing.ts";
 import type { SemanticBoardLocation } from "#runtime/store/location.ts";
 import {
+	inboundRewrite,
 	rewriteDrillDowns,
 	type DrillRewrite,
 	type MoveIdentities,
@@ -149,7 +155,7 @@ function takenInTarget(
 		other?.id === board.id
 			? `The vault ${target} already has a copy of this board as "${location.name}" at version ` +
 					`${other.version}, which was written or renamed after it came there, and the move would ` +
-					"write over it or leave two copies. Discard the copy you do not want first. Nothing " +
+					"write over it or leave two copies. Delete the copy you do not want with `archboard semantic delete` first. Nothing " +
 					"was written."
 			: `The vault ${target} already has the board "${location.name}", which answers to ` +
 					`"${board.name}" or to a name the board had before. A name opens one board, so the move ` +
@@ -201,6 +207,36 @@ function boardsDrillingIn(
 }
 
 /**
+ * Every node on another board of a vault whose drill-down opens a board: by
+ * its name or a former name, naming no repository or the vault's own. Only
+ * the variants that take content edits are read, current and drafts, because
+ * those are the drill-downs somebody can remove or point elsewhere; one on
+ * history or a shelved proposal stays as it was written (ADR 0030). A board in
+ * another repository's vault that opens the board cannot be seen from here.
+ * @param vault The vault.
+ * @param key The board's key.
+ * @returns Each node, board by board in key order.
+ */
+function drillDownsOpening(vault: string, key: string): BoardOpener[] {
+	// With no target identity, the inbound rewrite answers each drill-down that
+	// opens the board with itself, so what it "rewrote" is what opens the board.
+	const opens = inboundRewrite(
+		{ source: vaultIdentity(vault), target: undefined },
+		opensBoard(vault, key),
+	);
+	return listSemanticBoards(vault).flatMap((location) => {
+		const board = location.key === key ? null : boardAt(location.file);
+		if (board === null) return [];
+		const editable = { ...board, variants: board.variants.filter(acceptsContentEdits) };
+		return rewriteDrillDowns(editable, opens).rewritten.map(({ variant, node }) => ({
+			board: board.name,
+			variant,
+			node,
+		}));
+	});
+}
+
+/**
  * Refuse a move that needs a drill-down into an untracked vault: it has no
  * identity, so no board in another vault can name it (ADR 0049).
  * @param command The two vaults.
@@ -240,6 +276,7 @@ export {
 	type MoveVaults,
 	boardAt,
 	boardsDrillingIn,
+	drillDownsOpening,
 	opensBoard,
 	sameRepositoryRefusal,
 	takenInTarget,

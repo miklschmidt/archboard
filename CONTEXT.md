@@ -485,7 +485,7 @@ controls, written to a video file with the voice explaining it. The page moves
 to the next step once the voice finishes the one on screen, and keeps a talk.
 The video's picture is then rendered from the talk, frame by frame. A board made
 only to be recorded can be discarded once its recording is written
-(`--discard`). Nothing else deletes a board.
+(`--discard`). The one other command that deletes a board is `semantic delete`.
 _Avoid_: playback, autoplay, screencast, export
 
 **Talk**:
