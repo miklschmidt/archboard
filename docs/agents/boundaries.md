@@ -564,7 +564,7 @@ The `workbench` package (`@archboard/workbench`) owns the Archboard agent integr
 It consumes `agent-workbench` and retains board context, vault admission, domain tools, narration, pane services, and the visual shell.
 It adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
 
-`./browser-contract` holds Archboard route and presentation contracts alongside the shared browser model.
+`./browser-contract` holds Archboard conversation routes and presentation contracts.
 Archboard validates its walkthrough and recording payload before narration starts.
 `./semantic-context` publishes board context for coordinators and workhorses.
 Its board schemas, brief builder, and catalogue formatting stay in this integration.
