@@ -63,6 +63,7 @@ import {
 	requireTrackable,
 	TRACK_NEEDS_OUT,
 	TRACK_OPTION,
+	TRACK_RELATIONSHIP,
 	TrackedReceiptSchema,
 	trackedField,
 	trackHasOut,
@@ -392,6 +393,7 @@ const semanticRasterizeContract = defineCommand({
 			cardinality: "one",
 			description: "Draw the variant",
 		},
+		TRACK_RELATIONSHIP,
 	],
 	/**
 	 * Draw the board and rasterize it.

@@ -21,7 +21,11 @@ import {
 import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { listRegistry, repoIdentityAt, repoRootOf } from "@archboard/workspace/checkouts";
-import { CliUsageError, type CommandContext } from "#cli/protocol/contract/contract.ts";
+import {
+	CliUsageError,
+	type CommandContext,
+	type RestRelationship,
+} from "#cli/protocol/contract/contract.ts";
 import { gitOutput } from "#cli/clients/git/git-output.ts";
 
 /** What a render to a file says it tracked: the embed and the board's version after it. */
@@ -201,6 +205,14 @@ const TRACK_OPTION = {
 		"List the file on the board as a tracked embed, { repo, path }, through a board write that needs --doing; the file must be in a Git checkout that does not ignore it. Needs --out",
 } as const;
 
+/** The board write a drawing command makes with `--track`. */
+const TRACK_RELATIONSHIP: RestRelationship = {
+	method: "POST",
+	path: "/api/semantic-boards/track-embed",
+	cardinality: "conditional",
+	description: "With --track, list the file on the board",
+};
+
 /** The refinement of an input that tracks only a file. */
 const TRACK_NEEDS_OUT = {
 	message: "--track lists a file on the board, so it needs --out.",
@@ -226,6 +238,7 @@ export {
 	requireTrackable,
 	TRACK_NEEDS_OUT,
 	TRACK_OPTION,
+	TRACK_RELATIONSHIP,
 	TrackedReceiptSchema,
 	trackedField,
 	trackHasOut,

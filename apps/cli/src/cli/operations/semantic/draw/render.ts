@@ -52,6 +52,7 @@ import {
 	requireTrackable,
 	TRACK_NEEDS_OUT,
 	TRACK_OPTION,
+	TRACK_RELATIONSHIP,
 	TrackedReceiptSchema,
 	trackedField,
 	trackHasOut,
@@ -266,12 +267,7 @@ const semanticRenderContract = defineCommand({
 			cardinality: "one",
 			description: "Draw the variant",
 		},
-		{
-			method: "POST",
-			path: "/api/semantic-boards/track-embed",
-			cardinality: "conditional",
-			description: "With --track, list the file on the board",
-		},
+		TRACK_RELATIONSHIP,
 	],
 	/**
 	 * Draw the board.
