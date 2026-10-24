@@ -1,11 +1,11 @@
 ---
 id: TASK-517.02
 title: Extract the shared workbench server and browser interfaces
-status: To Do
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 11:40'
+updated_date: '2026-10-24 12:47'
 labels: []
 dependencies:
   - TASK-517.01
@@ -40,4 +40,6 @@ This delivery contributes package and browser separation to the parent proposals
 6. Update package layers and documentation without weakening dependency direction, browser safety, lint, or type rules.
 7. Run the relevant behavior and package-contract owners, simplify the interface, and commit with Refs: TASK-517.02.
 The parent owns board adoption, the complete gate, review, and final acceptance evidence.
+
+Implementation split: the backend implementer owns reusable runtime and server code, the mixed generation/session contracts, and Archboard backend wiring. The parent owns all shared browser contracts, media clients, UI callers, package manifests, dependency policies, and ownership docs. The exact source map is /tmp/task517.01-host-separation-handoff.json. Shared realtime contracts move once to the new canonical owner.
 <!-- SECTION:PLAN:END -->

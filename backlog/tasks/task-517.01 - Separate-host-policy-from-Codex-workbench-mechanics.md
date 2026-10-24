@@ -1,11 +1,11 @@
 ---
 id: TASK-517.01
 title: Separate host policy from Codex workbench mechanics
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 12:36'
+updated_date: '2026-10-24 12:47'
 labels: []
 dependencies: []
 parent_task_id: TASK-517
@@ -22,9 +22,9 @@ The current workbench requires Archboard context and instructions throughout its
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Role instructions, context events, domain tools, and checkout access enter through explicit host contracts.
-- [ ] #2 Reusable mechanics preserve exact generation checks, unknown delivery outcomes, approval ownership, and coordinator retirement.
-- [ ] #3 Archboard supplies board context, catalogues, narration, and domain instructions through its integration.
+- [x] #1 Role instructions, context events, domain tools, and checkout access enter through explicit host contracts.
+- [x] #2 Reusable mechanics preserve exact generation checks, unknown delivery outcomes, approval ownership, and coordinator retirement.
+- [x] #3 Archboard supplies board context, catalogues, narration, and domain instructions through its integration.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,3 +52,9 @@ After the initial gate failure, every remaining normal lane ran. System tests pa
 
 The reproduced renderer timing failure is repaired in e77643cbe under TASK-519. The final focused timing is 2938.28 ms against the unchanged limit below 3000 ms, with byte-identical solver outputs. A fresh complete gate now decides whether this delivery can close.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Separated host instructions, context conversion, checkout admission, and voice policy from reusable execution mechanics. Moved board semantic publishing out of the Codex SDK. SDK setup now accepts explicit host environment inputs. All 827 focused backend cases passed. The complete gate exited 0 at 3af12506e with 4909 module, 257 system, 142 repository, and 19 browser owners passing. TASK-518 and TASK-519 record the gate repairs. Parent TASK-517 retains the architecture proposals for package extraction and final adoption.
+<!-- SECTION:FINAL_SUMMARY:END -->

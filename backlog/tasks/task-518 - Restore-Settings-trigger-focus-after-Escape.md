@@ -1,11 +1,11 @@
 ---
 id: TASK-518
 title: Restore Chromium prerequisites for the browser gate
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 12:15'
-updated_date: '2026-10-24 12:19'
+updated_date: '2026-10-24 12:47'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ The TASK-517.01 browser gate and focused shell owner fail before opening the pag
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The configured Chromium executable starts successfully with all required shared libraries.
-- [ ] #2 The existing shell-layout owner runs with its original keyboard and focus assertions and no temporary diagnostics.
-- [ ] #3 The browser inventory and complete normal gate pass without timeout or lint rule changes.
+- [x] #1 The configured Chromium executable starts successfully with all required shared libraries.
+- [x] #2 The existing shell-layout owner runs with its original keyboard and focus assertions and no temporary diagnostics.
+- [x] #3 The browser inventory and complete normal gate pass without timeout or lint rule changes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,3 +48,9 @@ This machine is NixOS. A Playwright cache executable lacks its shared-library cl
 
 All 19 canonical browser owners passed with exit 0 using /run/current-system/sw/bin/chromium for both browser variables. The shell owner passed its original Settings assertions. No product or test change was required. Evidence: /tmp/task518-browser-inventory.log and /tmp/task518-browser-inventory.exit. The complete gate awaits the renderer timing repair.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Selected the installed system Chromium wrapper for browser validation. The prior Playwright cache binary lacked NixOS libraries. No product or test changes were needed. All 19 browser owners passed, and the complete gate exited 0 at 3af12506e. Evidence: /tmp/task518-browser-inventory.log and /tmp/task517.01-check-repaired.log.
+<!-- SECTION:FINAL_SUMMARY:END -->
