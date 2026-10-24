@@ -20,13 +20,16 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
-	TITLE_OPTION,
-	TitleOptionSchema,
+} from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	drawnLegend,
 	LEGEND_OPTIONS,
-	LEGEND_ONLY_REFUSAL,
 	LegendInputSchema,
 	legendStated,
-} from "#cli/operations/semantic/input/semantic-input.ts";
+	NO_LEGEND_REFUSAL,
+	TITLE_OPTION,
+	TitleOptionSchema,
+} from "#cli/operations/semantic/draw/framing-options.ts";
 import {
 	AGAINST_NO_COMPARISON_REFUSAL,
 	AGAINST_OPTION,
@@ -41,7 +44,7 @@ const RenderInputSchema = z
 		name: z.string(),
 		variant: SelectorSchema.optional(),
 		view: SelectorSchema.optional(),
-		theme: StandaloneThemeSchema.default("light"),
+		theme: StandaloneThemeSchema.default("auto"),
 		layout: LayoutEngineSchema.optional(),
 		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
@@ -49,7 +52,7 @@ const RenderInputSchema = z
 		...LegendInputSchema,
 		out: z.string().optional(),
 	})
-	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL);
 
 const SemanticRenderResultSchema = z.object({
@@ -90,7 +93,7 @@ const semanticRenderContract = defineCommand({
 	summary: "Draw a semantic board as SVG",
 	description:
 		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
+		"routing belong to the renderer. Without --out, stdout carries the same SVG as --out, including its accessibility metadata and its render recipe, which names the board, variant and view by id and the drawing choices. " +
 		"With --out, the receipt names every node, edge, flow and step the picture draws and the counts of the marks " +
 		"its key shows; semantic views lists that for every view at once. " +
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
@@ -153,7 +156,7 @@ const semanticRenderContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: StandaloneThemeSchema.options,
-			default: "light",
+			default: "auto",
 			description:
 				"Which ground to draw on; auto carries both and follows the reader's colour scheme, as an image, a background or inline",
 		},
@@ -182,7 +185,8 @@ const semanticRenderContract = defineCommand({
 				id: "stdout",
 				when: { key: "out", present: false },
 				mode: "raw",
-				description: "The standalone SVG, with embedded fonts and its accessibility metadata",
+				description:
+					"The standalone SVG, with embedded fonts, its accessibility metadata and its render recipe",
 			},
 			{
 				id: "file",
@@ -221,7 +225,11 @@ const semanticRenderContract = defineCommand({
 		await context.require("server", "semantic render");
 		const drawn = await renderSemanticBoardOnServer(
 			input.name,
-			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+			exportRenderRequest({
+				...input,
+				legend: drawnLegend(input),
+				against: await resolvedAgainst(input.name, input),
+			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
 		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };

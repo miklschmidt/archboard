@@ -71,6 +71,9 @@ function optionDescription(parameter: OptionParameter): string {
  */
 function optionFor(parameter: OptionParameter, projection: Projection): Option {
 	const option = new Option(optionFlags(parameter), optionDescription(parameter));
+	// A `--no-x` flag is a flag of its own, read by its presence. Commander would
+	// otherwise store it as `x: false` and overwrite the value of a `--x` option.
+	option.negate = false;
 	if (parameter.occurrences === "append") {
 		option.argParser(collect);
 	}

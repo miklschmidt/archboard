@@ -434,16 +434,28 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 	if (board === null) {
 		return;
 	}
-	const outcome = await renderBoard(
-		board,
-		stated.how,
-		readSemanticBoardConfiguration(vault).configuration,
-	);
+	const policy = readSemanticBoardConfiguration(vault).configuration;
+	const recipe = standsAlone(stated.how)
+		? { vault: { repo: vaultIdentity(vault) ?? null } }
+		: undefined;
+	const outcome = await renderBoard(board, stated.how, policy, recipe);
 	if (!outcome.ok) {
 		res.status(404).json({ success: false, code: outcome.code, error: outcome.error });
 		return;
 	}
 	res.json(outcome.reply);
+}
+
+/**
+ * Whether a render is a board render: a document in a theme of its own with
+ * its faces embedded, which a file keeps without a server behind it. Such a
+ * render carries its render recipe (ADR 0057). A pane's picture and a picture
+ * that links its faces carry none.
+ * @param how What the request selects.
+ * @returns True when the render stands alone.
+ */
+function standsAlone(how: RenderChoices): boolean {
+	return how.theme !== undefined && how.fonts === "embedded";
 }
 
 /**
