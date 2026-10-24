@@ -350,7 +350,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "b9219a23122af457ac8b28a91b6360adf548b439cfa04580931e030843aaf420"
 		},
 		{
 			"name": "module-interfaces",
