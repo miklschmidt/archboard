@@ -1,11 +1,11 @@
 ---
 id: TASK-519
 title: Keep Board viewer Track layout within its existing timing contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 12:17'
-updated_date: '2026-10-24 12:36'
+updated_date: '2026-10-24 12:47'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ The TASK-517.01 full gate recorded Board viewer Track layout at 3082.46 ms again
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The existing Board viewer Track owner passes its unchanged timing and picture-correctness assertions.
-- [ ] #2 The optimization preserves route choices and refreshes any prepared endpoint data when accepted routes move stations.
-- [ ] #3 Focused renderer owners and the complete normal gate pass without threshold or assertion changes.
+- [x] #1 The existing Board viewer Track owner passes its unchanged timing and picture-correctness assertions.
+- [x] #2 The optimization preserves route choices and refreshes any prepared endpoint data when accepted routes move stations.
+- [x] #3 Focused renderer owners and the complete normal gate pass without threshold or assertion changes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,3 +45,9 @@ No architecture board is affected. The route-search mechanism and its drawn resp
 <!-- SECTION:NOTES:BEGIN -->
 Renderer repair committed as e77643cbeed538c0f0d45c5cad72129a96ada174. The unchanged normal-environment Board viewer Track owner passed at 2944.31 ms, 2955.06 ms after extraction, and 2938.28 ms final. Earlier focused baselines were 3902.23 and 3886.03 ms, with a fresh same-slot baseline of 3648.66 ms. All six solver result JSON documents remained byte-identical. All 263 relevant tests passed with 47730 assertions. Both type projects, lint, formatting, and whitespace checks passed. No thresholds, assertions, clocks, or policies changed. Full gate remains pending. Evidence: /tmp/task519-correctness-final.log and /tmp/task519-wide-final-3.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed repeated preparation and crossing work in Track routing. The focused owner passed at 2938.28 ms with unchanged assertions. All six measured solver outputs remained byte-identical. The complete gate passed, with Board viewer Track at 2227.62 ms. Evidence: e77643cbe and /tmp/task517.01-check-repaired.log.
+<!-- SECTION:FINAL_SUMMARY:END -->
