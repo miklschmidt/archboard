@@ -87,7 +87,7 @@ function spelledFromHome(home: string, absolute: string): string {
  * it, so a talk it would refuse fails the fixture rather than the author.
  * @param fixture What the fixture asks for.
  * @param board The board, as `semantic show` served it.
- * @param policy The vault check, as `archboard check` served it.
+ * @param policy The vault check, as `archboard check semantics` served it.
  * @returns The talk and its voice.
  * @throws {Error} When the board has no such variant or walkthrough.
  */
