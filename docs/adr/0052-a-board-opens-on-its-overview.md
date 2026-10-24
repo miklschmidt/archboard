@@ -4,6 +4,16 @@ status: accepted
 
 # A board opens on its overview, and relationships and calls are drawn apart
 
+Amended by the owner on 2026-10-24 (TASK-513). A line that joins several
+relationships has a label that says how many it joins, such as "5
+relationships". It keeps the id, the order and the kind of the decision below,
+and it has no description, emphasis, traffic or anchor, because each of those
+is a fact about one of the relationships. A reader who picks the line sees its
+drawn ends and every relationship that it joins. An agent is told that the
+person picked every one of them. On Device Trust Library a line of five calls
+and a line of one call were drawn alike, and picking the line of five named
+only its first call. Everything else stands.
+
 Decided with the owner on 2026-10-15. This decision supersedes one clause of
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):
 "Do not add size-driven refusal, automatic partitioning, or a density policy
@@ -38,7 +48,7 @@ author:
   a card. A
   relationship to a hidden part is drawn to the closed card that holds it. All
   relationships from one drawn part to another become one line. A line that
-  joins several relationships has no label. Its kind is the kind that most of
+  joins several relationships has no label (amended above). Its kind is the kind that most of
   them have, and the first one in board order breaks a tie. A relationship
   between two parts inside one closed card is not drawn. A relationship
   between a container and a part that it holds is not drawn either, because
