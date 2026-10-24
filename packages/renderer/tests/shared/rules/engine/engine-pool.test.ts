@@ -362,6 +362,44 @@ test("a heard solve tells its caller what it found, and called off while a worke
 	expect(await next).toEqual({ id: "next!" });
 });
 
+test("a stopped heard solve lets its caller call off queued speculation before the next solve starts", async () => {
+	const workers: HeldWorker[] = [];
+	const started = Promise.withResolvers<void>();
+	const solve = createEnginePool(() => {
+		const worker = new HeldWorker();
+		const send = worker.postMessage.bind(worker);
+		/**
+		 * Observe dispatch resuming without a wall clock wait.
+		 * @param message The solve sent to the worker.
+		 */
+		worker.postMessage = (message) => {
+			send(message);
+			if (message.graph.id === "needed") started.resolve();
+		};
+		workers.push(worker);
+		return worker;
+	}, 1);
+	const heardCalling = new AbortController();
+	const speculation = new AbortController();
+	const heard = solve({ id: "heard" }, {}, heardCalling.signal, () => undefined).catch(
+		(error: unknown) => error,
+	);
+	const obsolete = solve({ id: "obsolete" }, {}, speculation.signal).catch(
+		(error: unknown) => error,
+	);
+	const needed = solve({ id: "needed" }, {});
+	// The caller calls off every solve it no longer reads, one after another.
+	heardCalling.abort();
+	speculation.abort();
+	expect(workers.flatMap(sentTo)).toEqual(["heard"]);
+	expect(await heard).toBe(heardCalling.signal.reason);
+	expect(await obsolete).toBe(speculation.signal.reason);
+	await started.promise;
+	expect(workers.flatMap(sentTo)).toEqual(["heard", "needed"]);
+	workers.at(-1)!.answer(0, { data: { id: "needed!" } });
+	expect(await needed).toEqual({ id: "needed!" });
+});
+
 test("a heard solve that answers is answered, and calling it off afterwards stops nothing", async () => {
 	const { solve, workers } = heldPool(1);
 	const calling = new AbortController();

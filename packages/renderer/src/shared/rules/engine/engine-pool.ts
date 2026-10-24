@@ -263,7 +263,8 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		engine.solving = undefined;
 		engine.worker.terminate?.();
 		solving.pending.reject(solving.pending.signal?.reason);
-		dispatch();
+		// Its caller is calling solves off: let it finish before queued speculation starts.
+		dispatchAfter(solving.pending);
 	}
 
 	/**
