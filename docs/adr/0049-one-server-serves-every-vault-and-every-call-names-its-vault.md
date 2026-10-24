@@ -7,6 +7,11 @@ status: accepted
 Decided with the owner on 2026-10-14. The migration is planned in the Backlog
 document doc-002, "One Archboard server for every vault".
 
+Amended by TASK-526.01 (2026-10-24): the code check is `archboard check code`,
+also run by `archboard check` and `archboard check all`.
+[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
+decides the split.
+
 Until this decision, one Archboard server served one vault. When it started, it
 read the vault from `ARCHBOARD_VAULT` once. The owner keeps the boards of
 several repositories in each repository's `.archboard/vault`, and keeps meta

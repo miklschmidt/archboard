@@ -60,7 +60,7 @@ Record each repair and the passing gate result before closing the original task.
 1. Inspect each proposal against the code as built. The code check reads most
    of it ([ADR 0046](../../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)),
    and you read the rest.
-   - Run `archboard check --code --variant TASK-123`. It reads the draft
+   - Run `archboard check code --variant TASK-123`. It reads the draft
      of that name on every board that has one, and the current variant on every
      other board, so one run covers every proposal of the task. A restated
      proposal (`TASK-123 after TASK-122`) has a name of its own: the run for
@@ -74,7 +74,7 @@ Record each repair and the passing gate result before closing the original task.
      the run with the same run without `--variant`:
      ```bash
      findings() {
-       archboard check --code "$@" 2>&1 >/dev/null |
+       archboard check code "$@" 2>&1 >/dev/null |
          sed -n -E '/^(warning|information): [A-Z_]+:/p' |
          sed -E 's/:variants\.[^.]+\./:/' | sort
      }
@@ -223,9 +223,11 @@ Record each repair and the passing gate result before closing the original task.
    Shelve the old proposal with that reason, run steps 1 and 3 on the new one by
    its own name, and adopt it.
    Use `--force` only to drop the change of the other task on purpose.
-6. Run `archboard check`.
+6. Run `archboard check semantics`. The full `archboard check` also runs the
+   code check, and the dogfood vault's own findings make it exit 1, so its exit
+   status does not show a diagnostic of the task.
    Done: it reports no diagnostics. Commit the vault files with the closing.
-7. Run `archboard check --code` and read `behind` (ADR 0045). It lists,
+7. Run `archboard check code` and read `behind` (ADR 0045). It lists,
    for each board and each part, the commits to bound files after the
    board's current variant last changed. An adoption moves that point, so
    your adopted boards read clean. Read every other board that your task's

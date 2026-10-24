@@ -11,7 +11,7 @@ directions:
   with its `id`, its fields and that anchor. Bind each planned part to the
   file that now implements it.
 - **Proposed but not built**: a relationship whose code you cannot find, a
-  part in `namedNotChanged`, and a `check --code --variant` warning that the
+  part in `namedNotChanged`, and a `check code --variant` warning that the
   run without `--variant` lacks.
 - **Built but not proposed**: a part in `changedNotNamed`, a
   `RELATIONSHIP_UNDRAWN` warning, and code the diff adds that no part binds.

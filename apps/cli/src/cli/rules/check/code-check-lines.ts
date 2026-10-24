@@ -1,4 +1,4 @@
-// The lines `archboard check --code` writes beside its JSON answer: each
+// The lines `archboard check code` writes beside its JSON answer: each
 // finding as a diagnostic line with the evidence it rests on, what the code
 // check skipped, one line for each reason with a count, and how far each board
 // is behind its code, per board and per part (ADR 0045, ADR 0046).

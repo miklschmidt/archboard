@@ -1,6 +1,6 @@
 # Set up a language server for a repository
 
-If `archboard check --code` says `language-server-missing` for a repository that
+If `archboard check code` says `language-server-missing` for a repository that
 you work in, read this file. If you want the check to resolve the uses that only
 a language server can place, read it too. The check matches a name by its
 spelling. A language server (a program that knows where code defines a name)
@@ -78,7 +78,7 @@ of your shell.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
    `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C.
-6. Run `archboard check --code`. Read the answer for the language, as the next
+6. Run `archboard check code`. Read the answer for the language, as the next
    section says.
 7. If you use clangd and the `.gitignore` of the repository does not list `.cache/`,
    add it. clangd keeps its index in `.cache/clangd/index`. The `.cache`
@@ -122,7 +122,7 @@ reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift,
 names the project.
 
 The check has no time limit. Cancel the command to stop waiting. The output
-starts with the time for each check, and JSON carries those times in `timings`.
+starts with the time for each step, and JSON carries those times in `code.timings`.
 
 If the answer says `language-server-failed`, the server did not start or stopped. The check keeps no output of the server. Run
 the command in the repository to read its output.

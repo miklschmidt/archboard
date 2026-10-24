@@ -15,6 +15,14 @@ section on hotspots and change coupling gives the reasons.
 TASK-448 amended this ADR on 2026-10-07. Locality and footprint now use bound
 declarations when the code-facts adapters resolve them.
 
+Amended by TASK-526.01 (2026-10-24): behind is read by
+`archboard check code`, and by `archboard check` and `archboard check all`,
+which run the code check. The plain `archboard check` is now
+`archboard check semantics`, the check that the canvases poll. Behind stays
+information and never fails the check.
+[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
+decides the split.
+
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
 board last changed. A footprint says what a branch changed, against what its

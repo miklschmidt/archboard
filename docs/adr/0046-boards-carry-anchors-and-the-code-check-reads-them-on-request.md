@@ -272,6 +272,17 @@ include startup, indexing, questions and cleanup, but exclude idle time between
 questions. Code and history run together, so their times overlap. TASK-429 is
 archived because a first index longer than 30 seconds no longer fails the pass.
 
+Amended by TASK-526.01 (2026-10-24): `archboard check code` runs the code check,
+and `archboard check` and `archboard check all` run it after the semantics
+check. The option that once asked for the code check is removed, with no alias,
+and what this ADR calls the plain check is now `archboard check semantics`.
+`--variant`, `--every-draft` and `--plan` belong to `check code`, `check` and
+`check all`. The answer holds one part for each check, and `check code` fills
+only the code part. The route that the panes poll stays the semantics check, so
+a pane never starts a pass. The other decisions of this ADR hold.
+[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
+decides the split.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an

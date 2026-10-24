@@ -65,7 +65,7 @@ check reads it. Historical and shelved variants are records, and the check
 never reads them. `--variant <name>` reads the draft of that name on every
 board that has one (ADR 0046).
 
-`archboard check --code` runs the check on a route of its own, and never inside
+`archboard check code` runs the check on a route of its own, and never inside
 the check that canvases poll. A finding has the shape of a vault diagnostic,
 with the evidence that it rests on: its kind, and whether it is resolved or a
 candidate (ADR 0046).
@@ -194,9 +194,9 @@ wait was 14 to 16 ms in the same check. The grammars load once per process. Over
 and TSX files of `src`, parsing took 1,220 ms and reading the facts from the
 trees 1,612 ms.
 
-The real `archboard check --code` also runs the plain check and behind. It
-took 1,582 ms on its first run after a server restart, and 1,141 ms on the
-second run.
+The real check of that time (the semantics check first, then the code check and
+behind) took 1,582 ms on its first run after a server restart, and 1,141 ms on
+the second run.
 
 #### Reading Flask through the Python adapter
 
@@ -1370,7 +1370,7 @@ answer can change a finding, the second row:
   through a value that a part holds. On the dogfood vault it found none, and
   it cost 3 to 5 s of every pass.
 
-The first build's real `archboard check --code` took 9,083 ms on its first
+The first build's real code check took 9,083 ms on its first
 run after a restart. Five later runs took 4,743 to 7,141 ms. Before
 TASK-367.13, a warm run took about 1,400 ms.
 

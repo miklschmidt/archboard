@@ -1,4 +1,10 @@
-import { checkContract, semanticConfigContract } from "#cli/operations/vault/vault.ts";
+import {
+	checkAllContract,
+	checkCodeContract,
+	checkContract,
+	checkSemanticsContract,
+	semanticConfigContract,
+} from "#cli/operations/vault/vault.ts";
 import { statusContract } from "#cli/operations/server/status.ts";
 import { restartContract, startContract, stopContract } from "#cli/operations/server/server.ts";
 import {
@@ -54,7 +60,17 @@ import { registryOf } from "#cli/rules/routing/registry.ts";
 // The one command table: every top-level command and its subcommands. What each is
 // called and what it accepts is its contract's; dispatch, the registry and help live in rules/routing/.
 const COMMANDS: Record<string, CommandRoute> = {
-	check: { owner: contract(checkContract, "apps/cli/src/cli/operations/vault/vault.ts") },
+	check: {
+		owner: contract(checkContract, "apps/cli/src/cli/operations/vault/vault.ts"),
+		children: {
+			all: child(contract(checkAllContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			semantics: child(
+				contract(checkSemanticsContract, "apps/cli/src/cli/operations/vault/vault.ts"),
+			),
+			code: child(contract(checkCodeContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+		},
+		bare: { kind: "default", child: "all", withLeadingOptions: true },
+	},
 	start: {
 		owner: contract(startContract, "apps/cli/src/cli/operations/server/server.ts"),
 	},

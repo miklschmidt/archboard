@@ -130,10 +130,11 @@ recipe names.
     ([variants](references/variants.md)); on a board nobody has built, against
     the draft it came from. The current variant, and the first draft of a board
     nobody has built, have nothing to compare against: say so instead.
-16. **Run `archboard check`** after a vocabulary edit or an answer that
+16. **Run `archboard check semantics`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)), and
-    `archboard check --code` after a write that adds or changes an anchor or a
-    binding's `symbol` ([Verification](#essentials)).
+    `archboard check code` after a write that adds or changes an anchor or a
+    binding's `symbol` ([Verification](#essentials)). `archboard check` runs
+    both.
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a view a later reading wants, the correction
     the picture showed you.
@@ -256,9 +257,10 @@ recipe names.
   containment count. A self call or presentation membership does not count.
   Add the missing connection, move the node to a board where it connects, or
   delete it.
-  The check has no time limit. Cancel the command to stop waiting. Its output
-  starts with the time for each check, and JSON carries those times in `timings`.
-  `archboard check --code` holds every anchor and bound `symbol` of each
+  The check has no time limit. Cancel the command to stop waiting. The lines of
+  each check start with its times, and the JSON part of each check carries those
+  times in its `timings`.
+  `archboard check code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk, or to the code of the branch or
   commit that its binding names when the checkout does not have it out. That
   code is read from Git without a checkout, in every check (anchors, bound
