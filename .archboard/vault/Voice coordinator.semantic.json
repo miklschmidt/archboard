@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 78,
+	"version": 79,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T11:45:43.671Z",
+	"updatedAt": "2026-10-24T13:19:26.319Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -21220,7 +21220,8 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/protocol/host/contract.ts"
+							"path": "packages/agent-workbench/src/runtime/rules/host/instructions.ts",
+							"symbol": "createWorkbenchThreadProfile"
 						}
 					}
 				],
@@ -21848,7 +21849,12 @@
 						"to": "En8mB6jo",
 						"kind": "dependency",
 						"label": "provide Archboard role policy",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/host/archboard.ts",
+							"symbol": "createWorkbenchThreadProfile"
+						}
 					},
 					{
 						"id": "X6q6P132",
@@ -21857,7 +21863,12 @@
 						"to": "En8mB6jo",
 						"kind": "dependency",
 						"label": "read composed coordinator instructions",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator/model.ts",
+							"symbol": "WorkbenchThreadProfile"
+						}
 					}
 				],
 				"flows": [

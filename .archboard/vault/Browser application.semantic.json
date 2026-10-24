@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 132,
+	"version": 133,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-24T11:40:03.784Z",
+	"updatedAt": "2026-10-24T13:19:25.930Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -22926,7 +22926,7 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/ui/clients/transport"
+							"path": "packages/agent-workbench/src/ui/clients/transport"
 						}
 					},
 					{
@@ -23409,16 +23409,17 @@
 					{
 						"id": "HaOwgfOs",
 						"order": 54000,
-						"name": "Realtime media",
+						"name": "Browser media owner",
 						"kind": "module",
-						"responsibility": "Capture microphone audio, negotiate playback, meter output, and release each voice run",
+						"responsibility": "Bind the shared transport to microphone capture, voice playback, metering, and cleanup",
 						"parent": "W0EmXnR9",
 						"groups": [
 							"voice"
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/ui/clients/realtime"
+							"path": "packages/agent-workbench/src/ui/clients/media/media-owner.ts",
+							"symbol": "createBrowserWorkbenchMediaOwner"
 						}
 					}
 				],
@@ -23711,7 +23712,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+							"path": "packages/agent-workbench/src/ui/clients/transport/socket-run.ts",
 							"symbol": "send"
 						}
 					},
@@ -24324,7 +24325,26 @@
 						"to": "HaOwgfOs",
 						"kind": "call",
 						"label": "control the shared browser voice lifecycle",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/state/voice-session/session.ts",
+							"symbol": "start"
+						}
+					},
+					{
+						"id": "cwSIvbl4",
+						"order": 68000,
+						"from": "HaOwgfOs",
+						"to": "941UBxya",
+						"kind": "call",
+						"label": "voice commands on exact leases and session handles",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/ui/clients/media/realtime.ts",
+							"symbol": "command"
+						}
 					}
 				],
 				"flows": [
