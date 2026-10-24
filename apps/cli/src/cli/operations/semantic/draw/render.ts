@@ -38,6 +38,7 @@ import {
 } from "#cli/operations/semantic/draw/drawn-against.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
+import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const RenderInputSchema = z
 	.object({
@@ -54,6 +55,19 @@ const RenderInputSchema = z
 	})
 	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL);
+
+const recipeUnavailableRefusal = {
+	code: "RENDER_RECIPE_UNAVAILABLE",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"The server's SVG carries no render recipe, or one that cannot be read, as a server that started before the recipe existed draws; nothing was written. Run `archboard restart`, then try again.",
+};
+
+/** A server's picture without the recipe that every board render carries (ADR 0057). */
+class RecipeUnavailableError extends Error {
+	readonly code = recipeUnavailableRefusal.code;
+}
 
 const SemanticRenderResultSchema = z.object({
 	success: z.literal(true),
@@ -99,7 +113,8 @@ const semanticRenderContract = defineCommand({
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
 		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
 		"leaving out the Planned frame. " +
-		"Use semantic rasterize --clipboard for PNG and HTML clipboard output.",
+		"Use semantic rasterize --clipboard for PNG and HTML clipboard output. " +
+		"A picture is refused with RENDER_RECIPE_UNAVAILABLE when the server's SVG carries no recipe (restart the server).",
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
@@ -205,7 +220,7 @@ const semanticRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, viewEmptyRefusal],
+	refusals: [serverRefusal, viewEmptyRefusal, recipeUnavailableRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -220,6 +235,7 @@ const semanticRenderContract = defineCommand({
 	 * @param context The command context.
 	 * @returns The SVG bytes or the file receipt.
 	 * @throws {Error} When the board or the view has nothing to draw.
+	 * @throws {RecipeUnavailableError} When the server's SVG carries no readable render recipe.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
@@ -232,6 +248,8 @@ const semanticRenderContract = defineCommand({
 			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
+		const recipe = recipeOfPicture(drawn.svg);
+		if ("problem" in recipe) throw new RecipeUnavailableError(recipe.problem);
 		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
 		const file = context.resolvePath(input.out);
 		return {

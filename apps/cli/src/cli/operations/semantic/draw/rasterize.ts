@@ -23,7 +23,7 @@ import {
 	SemanticRasterReceiptSchema,
 	type SemanticRasterPageSize,
 } from "@archboard/renderer/rasterizer";
-import { embedRecipeInPng, readRenderRecipe } from "@archboard/renderer/recipe";
+import { embedRecipeInPng, type RenderRecipe } from "@archboard/renderer/recipe";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { refuseNothingDrawn, viewEmptyRefusal } from "#cli/rules/semantic/draw/nothing-drawn.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
@@ -52,6 +52,7 @@ import {
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { copyImageToClipboard } from "#cli/operations/semantic/draw/image-clipboard.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
+import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -189,34 +190,19 @@ async function captureBoard(
 }
 
 /**
- * The bitmap with the recipe of the SVG it was drawn from, and the scale and
- * region that drew it from that SVG, so every PNG this command gives out,
- * on stdout, in a file or on the clipboard, carries one recipe (ADR 0057).
- * @param png The captured bitmap.
- * @param svg The SVG it was captured from, which carries its recipe.
+ * The recipe of the SVG the bitmap is drawn from, and the scale and region that
+ * draw it from that SVG, so every PNG this command gives out, on stdout, in a
+ * file or on the clipboard, carries one recipe (ADR 0057). Read before any
+ * browser starts: a picture without one is refused.
+ * @param svg The SVG the server drew, which carries its recipe.
  * @param input The bitmap's scale and region.
- * @returns The bitmap that carries the recipe.
- * @throws {SemanticRasterError} When the SVG carries no recipe to give it.
+ * @returns The recipe the bitmap carries.
+ * @throws {SemanticRasterError} When the SVG carries no recipe to give.
  */
-function carryingRecipe(
-	png: Uint8Array,
-	svg: string,
-	input: z.infer<typeof RasterizeInputSchema>,
-): Uint8Array {
-	const read = readRenderRecipe(Buffer.from(svg, "utf8"));
-	if (read.kind !== "recipe") {
-		throw new SemanticRasterError(
-			"RASTER_FAILED",
-			read.kind === "absent"
-				? "The server's picture carries no render recipe to give the bitmap. A server that started " +
-						"before this checkout's source changed draws none: run `archboard restart`, then try again."
-				: `The server's picture carries a render recipe that cannot be read: ${read.problem}.`,
-		);
-	}
-	return embedRecipeInPng(png, {
-		...read.recipe,
-		raster: { scale: input.scale, region: input.region ?? null },
-	});
+function bitmapRecipe(svg: string, input: z.infer<typeof RasterizeInputSchema>): RenderRecipe {
+	const read = recipeOfPicture(svg);
+	if ("problem" in read) throw new SemanticRasterError("RASTER_FAILED", read.problem);
+	return { ...read.recipe, raster: { scale: input.scale, region: input.region ?? null } };
 }
 
 const semanticRasterizeContract = defineCommand({
@@ -416,8 +402,9 @@ const semanticRasterizeContract = defineCommand({
 			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
+		const recipe = bitmapRecipe(drawn.svg, input);
 		const capture = await captureBoard(drawn, input, context.signal);
-		const png = carryingRecipe(capture.png, drawn.svg, input);
+		const png = embedRecipeInPng(capture.png, recipe);
 		if (!input.clipboard && input.out === undefined) return { result: png };
 		const receipt = {
 			success: true as const,
