@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: 2026-10-24 14:33
-updated_date: '2026-10-24T14:53:00Z'
+updated_date: '2026-10-24T14:54:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -37,4 +37,6 @@ Visual inspection shows that the board now has more saved states than the timeli
 
 <!-- SECTION:NOTES:BEGIN -->
 The reduced lossless clip is 7,431,990 bytes. Its diagram remains readable, but current history names overlap because each stop renders a fixed 420px label. The original tracked thumbnail had six stops. The current board has more saved states. The next change limits labels to the selected stop while preserving every dot and state transition.
+
+Parent browser QA at 1440x180 supplies fourteen history stops. All fourteen dots remain, and exactly one name is visible. The active name, date, and reason fit without overlap. Screenshot: /tmp/task523-timeline-qa.png. The real history producer is running before final clip inspection.
 <!-- SECTION:NOTES:END -->

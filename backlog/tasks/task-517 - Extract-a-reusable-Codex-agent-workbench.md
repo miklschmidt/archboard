@@ -4,8 +4,8 @@ title: Extract a reusable Codex agent workbench
 status: In Progress
 assignee:
   - '@codex'
-created_date: '2026-10-24 11:37'
-updated_date: '2026-10-24 14:38'
+created_date: 2026-10-24 11:37
+updated_date: '2026-10-24T14:54:00Z'
 labels: []
 dependencies: []
 references:
@@ -72,4 +72,6 @@ Final footprints read against main at 71180e211, with every proposal still based
 The parent inspected all seven proposal captures and corrected their prose about independent host storage and application/package counts. Every added or changed relationship now carries a source anchor. The final draft code comparison introduces no warning. The removal sweep found no obsolete SDK semantic-context imports, required Archboard process fields, or moved runtime/browser paths outside historical specifications. The authored-contract reference now distinguishes recorded Archboard profiles from current core-plus-host composition. Controlled QA host and private Codex child were stopped. README refresh uses generated local artifacts only; attachments and four Codex assets remain owner actions because this task does not publish or spend model usage on README recordings.
 
 After the final prose correction, the Archboard footprint adds Codex home to namedNotChanged. This is an intentional documentation correction: the existing storage owner already accepts host-owned roots and needs no code change. The new example supplies its own root through the shared factory. The unchanged storage binding remains correct. Workspace packages is now named by its corrected description, so only the independent TASK-519 renderer repair remains changedNotNamed on Archboard.
+
+The .03 complete gate at 74751d397 passes lint, formatting, both type projects, both browser builds, and all 4,940 module tests (one skip). Ten system cases fail before exercising behavior because a controlled fixture insertion point changed. All remaining lanes ran: 149 repository cases and all 19 browser owners pass. TASK-525 owns the fixture repair, followed by another complete gate. The cause is fixture source matching, not old application wiring.
 <!-- SECTION:NOTES:END -->
