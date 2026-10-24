@@ -1,11 +1,11 @@
 ---
 id: TASK-517.03
 title: Prove the reusable workbench in an independent app
-status: In Progress
+status: Done
 assignee:
   - '@codex'
-created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 14:29'
+created_date: 2026-10-24 11:38
+updated_date: '2026-10-24T15:08:00Z'
 labels: []
 dependencies:
   - TASK-517.02
@@ -23,9 +23,9 @@ A minimal second consumer demonstrates that the extraction works without Archboa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The app starts from public interfaces without an Archboard server, board, or vault.
-- [ ] #2 Fast controlled tests exercise conversation, live voice negotiation, workhorse completion, approval handling, session isolation, and distinct stop actions.
-- [ ] #3 Usage documentation names the host inputs and startup requirements, and the complete normal gate passes.
+- [x] #1 The app starts from public interfaces without an Archboard server, board, or vault.
+- [x] #2 Fast controlled tests exercise conversation, live voice negotiation, workhorse completion, approval handling, session isolation, and distinct stop actions.
+- [x] #3 Usage documentation names the host inputs and startup requirements, and the complete normal gate passes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ The backend implementer owns only the new example server, controlled backend tes
 Independent backend dc8075788 uses only the public shared factory. Parent browser uses the public transport and media owners, with separate stop actions and exact displayed approval intent. Three fast rendered cases pass, including retained drafts on failed delivery. Both type projects, scoped lint, build, and 28 repository policy cases pass. Manual controlled browser QA at 1920x1080 delivered text, settled the offered command approval, interrupted work, retained the tab conversation on reload, and recovered microphone denial through Reconnect. Live microphone audio remains outside controlled evidence. New backend and public-interface boundary reviews are active before the final full gate.
 
 Scoped backend and host/core boundary reviews completed. Reviewer commit 4d3b01c5c fixes malformed upgrade targets and shutdown while Codex initialization is pending. The expanded process owner passes two cases and 47 assertions, including refusal of replaced sockets and shutdown with active voice and sockets. No unresolved review findings remain. Parent browser review removed internal approval hashes, named microphone recovery, removed an unused convenience operation, and kept control availability tied to the live connection. No core compatibility paths or new dependencies were needed.
+
+The complete repaired gate at 33aa81f0f exits 0 in 534 seconds: all 13 stages, 4,940 module cases (one skip), 261 system cases, 149 repository cases, and 28 browser cases across 19 owners. TASK-525 repairs the fixture insertion revealed by the first gate. The example uses no Archboard server, board, or vault. Its actual process proof passes two cases and 47 assertions, and parent rendered/browser QA covers controls, approval delivery, refresh/reconnect, independent stops, and microphone denial. The README records live microphone/audio acceptance as a limit of controlled SDP evidence.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added an independent localhost browser app around the public server, transport, and media interfaces. It supplies private state, instructions, and one admitted checkout without Archboard concepts. Controlled process and rendered cases cover conversation, approvals, isolation, voice negotiation, workhorse completion, and separate stops. Parallel fixing reviews and the full normal gate pass. Live microphone playback and model speech require an account and hardware acceptance.
+<!-- SECTION:FINAL_SUMMARY:END -->
