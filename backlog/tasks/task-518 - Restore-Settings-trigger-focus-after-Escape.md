@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 12:15'
-updated_date: '2026-10-24 12:17'
+updated_date: '2026-10-24 12:19'
 labels: []
 dependencies: []
 references:
@@ -45,4 +45,6 @@ No architecture board is affected. This is a local test environment prerequisite
 The failure chain names Chromium exit 127 and libgbm.so.1 missing. Both agent-browser open and cleanup close fail for this same prerequisite. No Settings dialog behavior ran. Temporary diagnostics were removed and the original shell-layout file restored.
 
 This machine is NixOS. A Playwright cache executable lacks its shared-library closure. Existing system Chromium is available at /run/current-system/sw/bin/chromium, so no installation is needed. Validation will use the installed wrapper for both browser executable variables.
+
+All 19 canonical browser owners passed with exit 0 using /run/current-system/sw/bin/chromium for both browser variables. The shell owner passed its original Settings assertions. No product or test change was required. Evidence: /tmp/task518-browser-inventory.log and /tmp/task518-browser-inventory.exit. The complete gate awaits the renderer timing repair.
 <!-- SECTION:NOTES:END -->
