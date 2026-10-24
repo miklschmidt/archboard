@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 123,
+	"version": 125,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T16:08:16.460Z",
+	"updatedAt": "2026-10-24T16:19:20.505Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -44762,7 +44762,7 @@
 			"name": "TASK-526.01",
 			"lifecycle": "draft",
 			"parent": "wJUCTDTj",
-			"summary": "archboard check runs every check, with one subcommand for each",
+			"summary": "CLI application modules and its command groups",
 			"content": {
 				"nodes": [
 					{
@@ -44924,7 +44924,15 @@
 						"order": 12000,
 						"name": "Vault check",
 						"kind": "module",
-						"responsibility": "check, check all, check semantics and check code, and semantic config: each check fills its own part of one answer, and the vault's vocabulary and everything wrong with its boards"
+						"responsibility": "check with its subcommands all, semantics and code, and semantic config: each check fills its own part of one answer, and the vault's vocabulary and everything wrong with its boards",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"checks"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/vault.ts"
+						}
 					},
 					{
 						"id": "qBnro8cs",
