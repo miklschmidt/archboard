@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 98,
+	"version": 99,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-24T19:37:31.082Z",
+	"updatedAt": "2026-10-24T20:14:24.413Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -40374,7 +40374,7 @@
 		{
 			"id": "HygCzh3o",
 			"name": "TASK-526.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "bURuoB8l",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"documents": [
@@ -44741,7 +44741,7 @@
 		{
 			"id": "MFjeX8GB",
 			"name": "TASK-526.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "HygCzh3o",
 			"summary": "semantic delete removes a board",
 			"documents": [
@@ -49106,7 +49106,7 @@
 			}
 		}
 	],
-	"current": "HygCzh3o",
+	"current": "MFjeX8GB",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -49215,6 +49215,12 @@
 			"from": "bURuoB8l",
 			"at": "2026-10-24T19:19:28.889Z",
 			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "MFjeX8GB",
+			"from": "HygCzh3o",
+			"at": "2026-10-24T20:14:24.413Z",
+			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
 		}
 	],
 	"shelvings": [

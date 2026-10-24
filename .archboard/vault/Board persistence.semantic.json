@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 97,
+	"version": 98,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-24T19:38:45.960Z",
+	"updatedAt": "2026-10-24T20:14:23.918Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -34904,7 +34904,7 @@
 		{
 			"id": "JY01vdHt",
 			"name": "TASK-526.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "IcCJumNs",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"documents": [
@@ -39154,7 +39154,7 @@
 		{
 			"id": "5jMVnOIW",
 			"name": "TASK-526.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "JY01vdHt",
 			"summary": "semantic delete removes a board",
 			"documents": [
@@ -43529,7 +43529,7 @@
 			}
 		}
 	],
-	"current": "JY01vdHt",
+	"current": "5jMVnOIW",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -43632,6 +43632,12 @@
 			"from": "IcCJumNs",
 			"at": "2026-10-24T19:19:28.641Z",
 			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "5jMVnOIW",
+			"from": "JY01vdHt",
+			"at": "2026-10-24T20:14:23.918Z",
+			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
 		}
 	],
 	"shelvings": [
