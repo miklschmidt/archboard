@@ -111,7 +111,10 @@ function productionFiles(name: string): Record<string, string> {
 	return Object.fromEntries(
 		fs
 			.readdirSync(src, { recursive: true, encoding: "utf8" })
-			.filter((file) => /\.tsx?$/.test(file))
+			.filter(
+				(file) =>
+					/\.tsx?$/.test(file) && !file.split(path.sep).some((part) => SKIPPED_TREES.has(part)),
+			)
 			.map((file) => [file, fs.readFileSync(path.join(src, file), "utf8")]),
 	);
 }

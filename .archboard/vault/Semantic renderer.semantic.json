@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 81,
+	"version": 84,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-24T13:24:19.288Z",
+	"updatedAt": "2026-10-24T13:52:47.561Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -20562,7 +20562,7 @@
 		{
 			"id": "MgiCUw9a",
 			"name": "TASK-496",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "vWdekWlc",
 			"summary": "Meaning to SVG and interaction geometry",
 			"content": {
@@ -23106,9 +23106,9 @@
 		{
 			"id": "QPs9TuDM",
 			"name": "TASK-520.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "MgiCUw9a",
-			"summary": "The renderer core is a Rust build that both layout workers load",
+			"summary": "Meaning to SVG and interaction geometry",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -24665,20 +24665,6 @@
 						}
 					},
 					{
-						"id": "qaPcWknR",
-						"order": 76000,
-						"from": "wskEBeIy",
-						"to": "5BllJ1RL",
-						"kind": "call",
-						"label": "start a Web Worker for each engine slot",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/renderer/src/ui/state/browser-renderer.ts",
-							"symbol": "startLayoutWorker"
-						}
-					},
-					{
 						"id": "addRmScK",
 						"order": 77000,
 						"from": "5BllJ1RL",
@@ -25772,7 +25758,7 @@
 			}
 		}
 	],
-	"current": "MgiCUw9a",
+	"current": "QPs9TuDM",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -25869,6 +25855,12 @@
 			"from": "vWdekWlc",
 			"at": "2026-10-18T15:31:43.964Z",
 			"reason": "The key and the render answer count and name only the subjects the drawing placed"
+		},
+		{
+			"variant": "QPs9TuDM",
+			"from": "MgiCUw9a",
+			"at": "2026-10-24T13:52:41.543Z",
+			"reason": "TASK-520.01 added the Rust renderer core, built to WebAssembly, which both layout workers load before the layout engine"
 		}
 	],
 	"shelvings": [

@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 13:24'
+updated_date: '2026-10-24 13:53'
 labels:
   - renderer
   - tooling
@@ -28,12 +28,12 @@ Every later step of TASK-520 needs Rust code that Bun and the browser load. ADR 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `nix develop` gives cargo, the wasm32-unknown-unknown target, a wasm-bindgen CLI of the same version as the crate's wasm-bindgen dependency, and Bun
-- [ ] #2 One bun script builds the core to WASM from a Cargo workspace whose crates live in packages/renderer, and the build output is ignored by Git
-- [ ] #3 The renderer package loads the core under Bun and in a browser worker from the same WASM file, and a test calls the core in each place
-- [ ] #4 A host refuses a build whose recorded source hash differs from the core sources in its checkout, and the refusal names the build command
+- [x] #1 `nix develop` gives cargo, the wasm32-unknown-unknown target, a wasm-bindgen CLI of the same version as the crate's wasm-bindgen dependency, and Bun
+- [x] #2 One bun script builds the core to WASM from a Cargo workspace whose crates live in packages/renderer, and the build output is ignored by Git
+- [x] #3 The renderer package loads the core under Bun and in a browser worker from the same WASM file, and a test calls the core in each place
+- [x] #4 A host refuses a build whose recorded source hash differs from the core sources in its checkout, and the refusal names the build command
 - [ ] #5 CI runs the complete gate inside the Nix dev shell
-- [ ] #6 ADR 0014, INSTALL.md, TESTING.md and the agent rules say how to build the core
+- [x] #6 ADR 0014, INSTALL.md, TESTING.md and the agent rules say how to build the core
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,3 +49,17 @@ Every later step of TASK-520 needs Rust code that Bun and the browser load. ADR 
 8. ADR 0014 amendment, ADR 0057 workspace sentence, INSTALL.md, TESTING.md, AGENTS.md and the agent rules.
 Board proposal: Semantic renderer@TASK-520.01 (Renderer core, Core loader, Bun layout worker, Browser layout worker).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Verification, 2026-10-24:
+- nix develop gives Bun 1.4.3, cargo and rustc 1.99.0, lld and wasm-bindgen 0.2.129; the crate pins wasm-bindgen =0.2.129. nixpkgs Rust builds wasm32-unknown-unknown without an overlay, but links it with lld, so the shell carries lld.
+- bun run build:core builds packages/renderer/crates/wasm into packages/renderer/src/shared/protocol/generated/core (ignored, like the Codex bindings; git check-ignore confirms it and /target/). A second run keeps the build without cargo.
+- Bun: packages/renderer/tests/runtime/services/core.test.ts loads the build and reads its hash, and holds the CORE_BUILD_STALE refusal. A stale core (a changed Rust comment) made scripts/engine-gallery.ts fail with the refusal, which names bun run build:core.
+- Browser: the first browser run failed: loadLayoutEngine counts the WebAssembly memories made during its load and expects exactly Graphviz and libavoid. Both workers now load the core before the engine. The browser lane then passed, with pictures drawn in the tab by workers that initialize the core.
+- The core load costs about 1.3 ms per worker (0.24 ms hash, 1.1 ms instantiate).
+- Gate: bun run check inside nix develop passed to the end on the third run. Run 1 failed tests/system/repository-policy/package-api.test.ts, which parsed the generated .d.ts glue: productionFiles now skips the generated trees that the same file already skips elsewhere. Run 2 failed wide-boards.test.ts by 10 ms over its 3000 ms first-layout bound under load. It passed three times alone and in runs 1 and 3, so no repair task.
+- Board: Semantic renderer@TASK-520.01 adopted at version 83. archboard check --code showed no finding added by the proposal. The footprint against 1c6759c19 named all four new parts as changed and nothing changed but unnamed. The vault check then flagged Browser application -> Browser layout worker as drawn by nesting already, so that relationship was removed (version 84). The Archboard board is behind on packages/renderer, but it draws packages and their layers, and the crates and the loader live inside the renderer package, so it stays right. The Rust file of Renderer core has no code-facts adapter, so the check reads it as text.
+- Not verified: criterion 5. .github/workflows/ci.yml installs Nix and runs install and the gate inside nix develop, but no CI run has happened, because nothing was pushed.
+<!-- SECTION:NOTES:END -->
