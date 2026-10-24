@@ -84,6 +84,29 @@ function embedRecipeInSvg(svg: string, recipe: RenderRecipe): string {
 	return `${svg.slice(0, end)}${element}\n${svg.slice(end)}`;
 }
 
+/** The recipe element in three parts: its start tag, its text and its end tag. */
+const RECIPE_ELEMENT_PARTS = new RegExp(
+	`(<(?:[\\w.-]+:)?${LOCAL_NAME}\\b[^>]*>)[\\s\\S]*?(</(?:[\\w.-]+:)?${LOCAL_NAME}\\s*>)`,
+	"u",
+);
+
+/**
+ * The SVG with another recipe in the element that holds its recipe. Only the
+ * element's text changes, so whatever a post-processor did to the rest of the
+ * document stays as it did it.
+ * @param svg A document that carries a recipe.
+ * @param recipe The recipe it carries from now on.
+ * @returns The document.
+ * @throws {Error} When the document carries no recipe element.
+ */
+function replaceRecipeInSvg(svg: string, recipe: RenderRecipe): string {
+	if (!RECIPE_ELEMENT_PARTS.test(svg)) throw new Error("The document carries no render recipe.");
+	return svg.replace(
+		RECIPE_ELEMENT_PARTS,
+		(_whole, start: string, end: string) => `${start}${escapeText(JSON.stringify(recipe))}${end}`,
+	);
+}
+
 /**
  * The recipe text an SVG carries.
  * @param svg The document.
@@ -94,4 +117,4 @@ function svgRecipeText(svg: string): string | undefined {
 	return found === undefined ? undefined : decodeText(found).trim();
 }
 
-export { embedRecipeInSvg, svgRecipeText };
+export { embedRecipeInSvg, replaceRecipeInSvg, svgRecipeText };

@@ -40,6 +40,8 @@ import {
 
 /** One board in the vault's semantic listing. */
 const SemanticBoardEntrySchema = z.object({
+	/** The board's id; absent for a board the server could not read. */
+	id: z.string().optional(),
 	name: z.string(),
 	key: z.string(),
 	level: SemanticBoardLevelSchema.optional(),
@@ -167,11 +169,16 @@ async function postSemantic(
 }
 
 /**
- * Every semantic board the server's vault holds.
+ * Every semantic board a vault holds.
+ * @param vault The vault to list, when it is not the one this invocation names.
  * @returns The boards, by name.
  */
-async function listSemanticBoardsOnServer(): Promise<SemanticBoardListing> {
-	return ListingReplySchema.parse(await requestJson<unknown>("/api/semantic-boards"));
+async function listSemanticBoardsOnServer(vault?: string): Promise<SemanticBoardListing> {
+	const path =
+		vault === undefined
+			? "/api/semantic-boards"
+			: `/api/semantic-boards?${new URLSearchParams({ vault })}`;
+	return ListingReplySchema.parse(await requestJson<unknown>(path));
 }
 
 /**
@@ -201,6 +208,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options.titled Draws the names of what is drawn above the picture, when no words are given.
  * @param options.legend How the legend is laid out beside the picture.
  * @param options.legendOnly Draws the legend without the picture.
+ * @param vault The vault that holds the board, when it is not the one this invocation names.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
 async function renderSemanticBoardOnServer(
@@ -218,9 +226,11 @@ async function renderSemanticBoardOnServer(
 		legend?: LegendLayout;
 		legendOnly?: "on";
 	} = {},
+	vault?: string,
 ): Promise<SemanticRenderReply> {
 	const query = new URLSearchParams({ board });
 	for (const [name, value] of Object.entries(options)) query.set(name, value);
+	if (vault !== undefined) query.set("vault", vault);
 	return SemanticRenderReplySchema.parse(
 		await requestJson<unknown>(`/api/semantic-boards/render?${query.toString()}`),
 	);

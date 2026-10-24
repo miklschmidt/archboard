@@ -60,16 +60,32 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 	return framed;
 }
 
+/** The keyword that starts the recipe's chunk, with the zero that ends it. */
+const RECIPE_KEYWORD = Buffer.from(`${RENDER_RECIPE_MARK}\0`, "latin1");
+
 /**
- * The PNG with its recipe in an iTXt chunk right after the header.
- * @param png The bitmap the rasterizer captured.
+ * Whether a chunk is the one that carries the recipe.
+ * @param one The chunk.
+ * @returns True for an iTXt chunk under the recipe's keyword.
+ */
+function isRecipeChunk(one: Chunk): boolean {
+	return (
+		one.type === ITXT &&
+		Buffer.from(one.data.subarray(0, RECIPE_KEYWORD.length)).equals(RECIPE_KEYWORD)
+	);
+}
+
+/**
+ * The PNG with its recipe in an iTXt chunk right after the header. A recipe
+ * the PNG carried already is left out, so the bitmap carries one recipe.
+ * @param png The bitmap the rasterizer captured, or one that carries a recipe.
  * @param recipe Its recipe.
  * @returns The bitmap that carries it.
  * @throws {Error} When the bytes are not a PNG.
  */
 function embedRecipeInPng(png: Uint8Array, recipe: RenderRecipe): Uint8Array {
 	readPngDimensions(png);
-	const header = chunksOf(png)[0];
+	const [header, ...rest] = chunksOf(png);
 	if (header === undefined) throw new Error("The capture is not a PNG file.");
 	// Keyword, then no compression, no language tag and no translated keyword.
 	const data = Buffer.concat([
@@ -77,7 +93,13 @@ function embedRecipeInPng(png: Uint8Array, recipe: RenderRecipe): Uint8Array {
 		Buffer.from([0, 0, 0, 0, 0]),
 		Buffer.from(JSON.stringify(recipe), "utf8"),
 	]);
-	return Buffer.concat([png.subarray(0, header.end), chunk(ITXT, data), png.subarray(header.end)]);
+	const end = rest.at(-1)?.end ?? header.end;
+	return Buffer.concat([
+		png.subarray(0, header.end),
+		chunk(ITXT, data),
+		...rest.filter((one) => !isRecipeChunk(one)).map((one) => png.subarray(one.start, one.end)),
+		png.subarray(end),
+	]);
 }
 
 /**
@@ -87,12 +109,9 @@ function embedRecipeInPng(png: Uint8Array, recipe: RenderRecipe): Uint8Array {
  * @throws {Error} When the chunk that carries it cannot be read.
  */
 function pngRecipeText(png: Uint8Array): string | undefined {
-	const mark = Buffer.from(`${RENDER_RECIPE_MARK}\0`, "latin1");
-	const found = chunksOf(png).find(
-		(one) => one.type === ITXT && Buffer.from(one.data.subarray(0, mark.length)).equals(mark),
-	);
+	const found = chunksOf(png).find(isRecipeChunk);
 	if (found === undefined) return undefined;
-	const rest = found.data.subarray(mark.length);
+	const rest = found.data.subarray(RECIPE_KEYWORD.length);
 	if (rest[0] !== 0) throw new Error("The recipe's text chunk is compressed.");
 	// The flag and method, then the language tag and the translated keyword, each ended by a zero.
 	const language = rest.indexOf(0, 2);

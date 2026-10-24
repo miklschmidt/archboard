@@ -16,15 +16,12 @@ import {
 	RASTER_MIN_SCALE,
 	SemanticRasterError,
 	createSemanticRasterizer,
-	type PageRegion,
 	type Capture,
 } from "@archboard/renderer/rasterizer";
-import {
-	SemanticRasterReceiptSchema,
-	type SemanticRasterPageSize,
-} from "@archboard/renderer/rasterizer";
+import { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
 import { embedRecipeInPng, type RenderRecipe } from "@archboard/renderer/recipe";
-import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
+import { defineCommand } from "#cli/protocol/contract/contract.ts";
+import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
 import { refuseNothingDrawn, viewEmptyRefusal } from "#cli/rules/semantic/draw/nothing-drawn.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
 import {
@@ -120,27 +117,6 @@ const rasterFailedRefusal = {
 		"The browser did not produce the bitmap the diagram asks for, or the server's picture carried no " +
 		"render recipe for it; nothing was written.",
 };
-
-/**
- * The requested region, refused when it reaches outside the page: a tile
- * that is partly ground would be a picture of nothing anybody asked for.
- * @param region What was asked for, if anything.
- * @param page The diagram's page.
- * @returns The region, or undefined for the whole page.
- * @throws {CliUsageError} When the region leaves the page.
- */
-function regionWithin(
-	region: PageRegion | undefined,
-	page: SemanticRasterPageSize,
-): PageRegion | undefined {
-	if (region === undefined) return undefined;
-	if (region.x + region.width > page.width || region.y + region.height > page.height) {
-		throw new CliUsageError(
-			`--region ${region.x},${region.y},${region.width},${region.height} reaches outside the ${page.width}×${page.height} diagram.`,
-		);
-	}
-	return region;
-}
 
 /**
  * Identify the picture whose accessibility metadata is copied with it.

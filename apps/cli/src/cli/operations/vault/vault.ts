@@ -8,6 +8,9 @@ import {
 } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
+import { embedsCheckLines } from "#cli/rules/check/embed-state.ts";
+import { EmbedsPartSchema, type EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
+import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import {
@@ -67,8 +70,12 @@ async function codeCheckOnServer(
 	);
 }
 
+/** What the embeds check reads: `--fix`. */
+const FixInputSchema = z.object({ fix: z.boolean().optional() });
+type FixInput = z.output<typeof FixInputSchema>;
+
 /** One draft and every draft are two readings, so `--variant` and `--every-draft` exclude each other. */
-const CodeCheckRequestSchema = CodeCheckInputSchema.refine(
+const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape).refine(
 	(input) => input.everyDraft !== true || input.variant === undefined,
 	"--every-draft reads every draft, and --variant one name: use one of them",
 );
@@ -111,11 +118,12 @@ type SemanticsPart = z.output<typeof SemanticsPartSchema>;
 
 /**
  * One part for each check. A command fills the parts of the checks it ran and
- * leaves the others out. The embeds check adds its part here (ADR 0057).
+ * leaves the others out (ADR 0057).
  */
 const CheckAnswerSchema = z.object({
 	semantics: SemanticsPartSchema.optional(),
 	code: CodeCheckAnswerSchema.optional(),
+	embeds: EmbedsPartSchema.optional(),
 });
 type CheckAnswer = z.output<typeof CheckAnswerSchema>;
 
@@ -132,19 +140,29 @@ async function semanticsCheckOnServer(signal: AbortSignal): Promise<SemanticsPar
 
 /**
  * Whether a part makes the command exit 1: the semantics check has a diagnostic,
- * or the code check a warning. Information, behind included, never does.
+ * or the code check or the embeds check a warning. Information, behind
+ * included, never does.
  * @param answer The parts that ran.
  * @returns True when the command exits 1.
  */
 function failsCheck(answer: CheckAnswer): boolean {
 	return (
-		(answer.semantics?.diagnostics.length ?? 0) > 0 ||
-		(answer.code?.findings.some((finding) => finding.severity === "warning") ?? false)
+		(answer.semantics?.diagnostics.length ?? 0) > 0 || warns(answer.code) || warns(answer.embeds)
 	);
 }
 
-/** Which checks a command runs. They run, and print, in the order semantics, code. */
-type CheckName = "semantics" | "code";
+/**
+ * Whether a part that reports findings has a warning.
+ * @param part The part, when its check ran.
+ * @param part.findings Its findings.
+ * @returns True when one finding is a warning.
+ */
+function warns(part: { readonly findings: readonly { severity: string }[] } | undefined): boolean {
+	return part?.findings.some((finding) => finding.severity === "warning") ?? false;
+}
+
+/** Which checks a command runs. They run, and print, in the order semantics, code, embeds. */
+type CheckName = "semantics" | "code" | "embeds";
 
 /**
  * The lines of a command's stderr: for each part that ran, its times, then its
@@ -153,27 +171,40 @@ type CheckName = "semantics" | "code";
  * @returns The lines, in the order of the parts.
  */
 function checkLines(answer: CheckAnswer): string[] {
-	const { semantics, code } = answer;
+	const { semantics, code, embeds } = answer;
 	return [
 		...(semantics === undefined
 			? []
 			: [...semantics.timings.map(timingLine), ...semantics.diagnostics.map(diagnosticLine)]),
 		...(code === undefined ? [] : code.timings.map(timingLine)),
 		...codeCheckLines(code),
+		...embedsCheckLines(embeds),
 	];
+}
+
+/**
+ * The embeds check of the vault the command found.
+ * @param fix Whether to draw the outdated embeds again.
+ * @param context Runtime prerequisites and the vault.
+ * @returns The embeds part.
+ * @throws {Error} When the command found no vault, which a check command always does.
+ */
+async function embedsCheck(fix: boolean, context: CommandContext): Promise<EmbedsPart> {
+	if (context.vault === null) throw new Error("The embeds check reads the vault a command finds.");
+	return checkEmbeds(context.vault.path, { fix, signal: context.signal });
 }
 
 /**
  * Run the named checks and gather what the command answers: one part for each,
  * the exit status, and the lines for stderr.
  * @param checks The checks to run.
- * @param reading What the code check reads, when it runs.
+ * @param reading What the code check reads, when it runs, and whether the embeds check fixes.
  * @param context Runtime prerequisites.
  * @returns Check results and a failure exit when issues remain.
  */
 async function runChecks(
 	checks: readonly CheckName[],
-	reading: CodeCheckInput,
+	reading: CodeCheckInput & FixInput,
 	context: CommandContext,
 ): Promise<CommandExecution<CheckAnswer>> {
 	await context.require("server", "check");
@@ -183,7 +214,10 @@ async function runChecks(
 	const code = checks.includes("code")
 		? await codeCheckOnServer(reading, context.signal)
 		: undefined;
-	const answer = { semantics, code };
+	const embeds = checks.includes("embeds")
+		? await embedsCheck(reading.fix === true, context)
+		: undefined;
+	const answer = { semantics, code, embeds };
 	return {
 		result: answer,
 		...(failsCheck(answer) ? { outcome: "issues" } : {}),
@@ -227,6 +261,16 @@ const codeCheckParameters = [
 	},
 ] as const;
 
+/** The option of the embeds check, which `check`, `check all` and `check embeds` read. */
+const fixParameter = {
+	kind: "option",
+	key: "fix",
+	spellings: ["--fix"],
+	value: "none",
+	description:
+		"Draw each outdated embed of this checkout again from its own recipe and rewrite its file, write the new recipe of an embed whose picture is current, and point a recipe that asks for the current variant and the overview or Everything at the board that now holds its deleted board's name. A PNG needs Chromium to be drawn again. The answer lists every file it rewrote",
+} as const;
+
 const codeCheckStages = [
 	{
 		name: "code-check-variant",
@@ -243,7 +287,7 @@ const checkOutput = {
 			id: "json",
 			when: {},
 			mode: "json" as const,
-			description: "One part for each check that ran: semantics, code",
+			description: "One part for each check that ran: semantics, code, embeds",
 			presentation: ["diagnostics", "result"] as const,
 		},
 	],
@@ -259,9 +303,28 @@ const checkOutcomes = [
 		id: "issues",
 		exit: 1,
 		description:
-			"The semantics check has a diagnostic or a warning, or the code check a warning. Information never changes the exit status",
+			"The semantics check has a diagnostic or a warning, or the code check or the embeds check a warning. Information never changes the exit status",
 		stream: "stdout-and-stderr",
 		presentation: ["diagnostics", "result"],
+	},
+] as const;
+
+/** What the embeds check reports, as `check embeds` and every command that runs it says. */
+const EMBEDS_CHECK =
+	"The embeds check reads each file that Git tracks in the checkout that holds the vault and that is an SVG document or a PNG carrying a render recipe; a file Git ignores, a file without a recipe and an SVG inside an HTML, Markdown or MDX page are no embed. It finds the vault the recipe names by its repository identity, this checkout's own or the chosen registered checkout of another, and the board by id, so a renamed board is still found; it draws the recipe again through the server and compares. A changed fingerprint and picture is EMBED_OUTDATED, a warning: the board changed. A changed picture alone is EMBED_RENDERER_CHANGED, information. A changed fingerprint alone is current. A board, variant or view that is gone, or a recipe that now draws nothing, is EMBED_SOURCE_MISSING, a warning that names the commit that removed a board when the vault's history has it and the board that holds its name now. A recipe that cannot be read is EMBED_RECIPE_UNREADABLE, a warning. A vault that no checkout on this machine holds, or one in no repository, is EMBED_VAULT_UNAVAILABLE, information, and the embed is not checked. A PNG compares by its SVG's digest, without a browser.";
+
+const embedsRelationships = [
+	{
+		method: "GET",
+		path: "/api/semantic-boards",
+		cardinality: "conditional",
+		description: "Each vault an embed's recipe names, listed once, to find its board by id",
+	},
+	{
+		method: "GET",
+		path: "/api/semantic-boards/render",
+		cardinality: "conditional",
+		description: "Each embed drawn again from its recipe",
 	},
 ] as const;
 
@@ -281,9 +344,14 @@ const codeRoute = {
 const checkContract = defineCommand({
 	path: ["check"],
 	shared: [],
-	summary: "Run every check of the vault: semantics, then code",
+	summary: "Run every check of the vault: semantics, code, then embeds",
 	description: "Routes the check subcommands. Without one, `check` runs `check all`.",
-	examples: ["archboard check", "archboard check semantics", "archboard check code"],
+	examples: [
+		"archboard check",
+		"archboard check semantics",
+		"archboard check code",
+		"archboard check embeds",
+	],
 	parameters: [
 		{
 			kind: "positional",
@@ -321,38 +389,69 @@ const checkContract = defineCommand({
 	 * @returns Never; the usage error is the whole behaviour.
 	 */
 	async handler() {
-		throw new CliUsageError("check needs a subcommand: all, semantics, or code");
+		throw new CliUsageError("check needs a subcommand: all, semantics, code, or embeds");
 	},
 });
 
 const checkAllContract = defineCommand({
 	path: ["check", "all"],
 	shared: ["url", "directory"],
-	summary: "Run every check of the vault: semantics, then code",
+	summary: "Run every check of the vault: semantics, code, then embeds",
 	description:
-		"Runs the semantics check and then the code check, and answers with one part for each (ADR 0057). Exit 1 means the semantics check has a diagnostic or a warning, or the code check a warning; information never changes the exit status; no board is changed. --variant, --every-draft and --plan name what the code check reads, as `check code` describes.",
+		"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). Exit 1 means the semantics check has a diagnostic or a warning, or the code check or the embeds check a warning; information never changes the exit status; no board is changed. --variant, --every-draft and --plan name what the code check reads, as `check code` describes, and --fix draws outdated embeds again, as `check embeds` describes; the other checks still run and report.",
 	examples: [
 		"archboard check",
 		"archboard check all --variant TASK-123",
 		"archboard check --every-draft",
+		"archboard check --fix",
 	],
-	parameters: codeCheckParameters,
-	input: { ingress: CodeCheckInputSchema, stages: codeCheckStages },
+	parameters: [...codeCheckParameters, fixParameter],
+	input: { ingress: CodeCheckInputSchema.extend(FixInputSchema.shape), stages: codeCheckStages },
 	result: CheckAnswerSchema,
 	output: checkOutput,
 	prerequisites: ["server"],
-	effects: ["read"],
+	effects: ["read", "local-write"],
 	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
-	relationships: [semanticsRoute, codeRoute],
+	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	outcomes: checkOutcomes,
 	/**
 	 * Run every check.
-	 * @param input What the code check reads.
+	 * @param input What the code check reads, and whether the embeds check fixes.
 	 * @param context Runtime prerequisites.
-	 * @returns Both parts, and a failure exit when issues remain.
+	 * @returns One part for each check, and a failure exit when issues remain.
 	 */
 	async handler(input, context) {
-		return runChecks(["semantics", "code"], context.parse(CodeCheckRequestSchema, input), context);
+		return runChecks(
+			["semantics", "code", "embeds"],
+			context.parse(CodeCheckRequestSchema, input),
+			context,
+		);
+	},
+});
+
+const checkEmbedsContract = defineCommand({
+	path: ["check", "embeds"],
+	shared: ["url", "directory"],
+	summary: "Check the board renders that this checkout's documents embed",
+	description: `${EMBEDS_CHECK} --fix draws each outdated embed of this checkout again and rewrites its whole file, a PNG through Chromium at its recipe's scale and region (without Chromium the PNG stays reported, with why it was not fixed), writes only the new recipe of an embed whose picture is current, and points a recipe that asks for the current variant and the overview or Everything at the board that now holds its deleted board's name; the answer's fixed lists each file it rewrote and each re-pointing with the old and the new board. --fix writes no file outside this checkout. Exit 1 means a warning remains; information never changes the exit status; no board is changed.`,
+	examples: ["archboard check embeds", "archboard check embeds --fix"],
+	parameters: [fixParameter],
+	input: { ingress: FixInputSchema },
+	result: CheckAnswerSchema,
+	output: checkOutput,
+	prerequisites: ["server"],
+	effects: ["read", "local-write"],
+	refusals: [serverRefusal],
+	relationships: embedsRelationships,
+	outcomes: checkOutcomes,
+	/**
+	 * Run the embeds check.
+	 * @param input Whether it fixes.
+	 * @param context Runtime prerequisites.
+	 * @returns The embeds part, and a failure exit when a warning remains.
+	 */
+	async handler(input, context) {
+		return runChecks(["embeds"], input, context);
 	},
 });
 
@@ -465,5 +564,6 @@ export {
 	checkAllContract,
 	checkSemanticsContract,
 	checkCodeContract,
+	checkEmbedsContract,
 	semanticConfigContract,
 };
