@@ -201,16 +201,19 @@ const CACHED_NOT_FIXED =
 /**
  * A finding against a vault read from the cache. The cache can be behind the
  * default branch, so the finding is information, and `--fix` says why it left
- * the embed as it was (ADR 0057).
+ * the embed as it was, when it would have rewritten it from a fetched vault
+ * (ADR 0057).
  * @param finding The finding against the cached vault.
  * @param fix Whether the run was asked to fix.
+ * @param repointable Whether `--fix` can point the recipe at the board that
+ * holds its deleted board's name.
  * @returns The information.
  */
-function cachedFinding(finding: EmbedFinding, fix: boolean): EmbedFinding {
+function cachedFinding(finding: EmbedFinding, fix: boolean, repointable: boolean): EmbedFinding {
 	const fixable =
 		finding.code === "EMBED_OUTDATED" ||
 		finding.code === "EMBED_RENDERER_CHANGED" ||
-		finding.nameHeldBy !== undefined;
+		(finding.nameHeldBy !== undefined && repointable);
 	return {
 		...finding,
 		severity: "information",

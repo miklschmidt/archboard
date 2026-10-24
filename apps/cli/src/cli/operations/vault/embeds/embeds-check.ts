@@ -275,7 +275,8 @@ async function checkInVault(
 ): Promise<Checked> {
 	if (reading.read.source !== "cache") return checkAgainst(embed, recipe, reading, run);
 	const { findings = [] } = await checkAgainst(embed, recipe, reading, { ...run, fix: false });
-	return { findings: findings.map((finding) => cachedFinding(finding, run.fix)) };
+	const repointable = isRepointable(recipe);
+	return { findings: findings.map((finding) => cachedFinding(finding, run.fix, repointable)) };
 }
 
 /**
