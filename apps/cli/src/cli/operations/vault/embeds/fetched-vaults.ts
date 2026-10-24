@@ -183,10 +183,21 @@ function fetchSteps(
 	const network = VAULT_FETCH_TIMEOUT_MS;
 	const local = GIT_COMMAND_TIMEOUT_MS;
 	return [
+		// A symbolic link that the remote commits is checked out as a file that
+		// holds its target, so no file of the vault leads out of the cache.
 		{
 			cwd: cache,
 			timeoutMs: network,
-			args: ["clone", "--quiet", "--depth=1", "--filter=blob:none", "--no-checkout", url, incoming],
+			args: [
+				"clone",
+				"--quiet",
+				"--config=core.symlinks=false",
+				"--depth=1",
+				"--filter=blob:none",
+				"--no-checkout",
+				url,
+				incoming,
+			],
 		},
 		{
 			cwd: incoming,

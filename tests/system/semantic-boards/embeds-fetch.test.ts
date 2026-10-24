@@ -161,6 +161,7 @@ beforeAll(async () => {
 		}),
 	});
 	fs.writeFileSync(path.join(models, "README.md"), "Outside the vault, so never fetched.\n");
+	fs.symlinkSync(os.tmpdir(), path.join(models, ".archboard", "vault", "outside"));
 	first = publish("draw the orders board");
 	fs.mkdirSync(path.join(docs, "docs"));
 	cli(models, ["semantic", "render", "orders", "--out", path.join(docs, "docs", "orders.svg")], {
@@ -189,6 +190,10 @@ describe("check embeds with a vault of an unregistered repository", () => {
 				fs.existsSync(path.join(checkout, ".archboard", "vault", "orders.semantic.json")),
 			).toBe(true);
 			expect(fs.existsSync(path.join(checkout, "README.md"))).toBe(false);
+			// A link the remote commits leads nowhere out of the cache.
+			expect(fs.lstatSync(path.join(checkout, ".archboard", "vault", "outside")).isFile()).toBe(
+				true,
+			);
 			expect(git(checkout, "rev-parse", "--is-shallow-repository")).toBe("true");
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
