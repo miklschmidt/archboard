@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 12:19'
+updated_date: '2026-10-24 12:36'
 labels: []
 dependencies: []
 parent_task_id: TASK-517
@@ -49,4 +49,6 @@ Parent changed package exports so the Archboard semantic publisher belongs to wo
 SDK environment checkpoint 78c87705e passed 51 focused environment, storage, and process cases. Scoped lint and formatting passed. Browser types passed. The concurrent host extraction still owns the remaining source type error. The parent updated ownership documentation and TASK-517 proposal bindings for the semantic publisher. Current variants retain the prior paths until the parent adopts the completed proposals.
 
 After the initial gate failure, every remaining normal lane ran. System tests passed 257 cases and repository owners passed 142 cases. The complete canonical browser inventory then passed all 19 owners with the installed system Chromium. TASK-518 records the corrected browser prerequisite. TASK-519 owns the reproduced renderer timing failure before the next full gate.
+
+The reproduced renderer timing failure is repaired in e77643cbe under TASK-519. The final focused timing is 2938.28 ms against the unchanged limit below 3000 ms, with byte-identical solver outputs. A fresh complete gate now decides whether this delivery can close.
 <!-- SECTION:NOTES:END -->
