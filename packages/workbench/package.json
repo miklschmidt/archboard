@@ -12,6 +12,7 @@
 	"exports": {
 		"./browser-contract": "./src/shared/api/browser-contract.ts",
 		"./runtime": "./src/runtime/api/runtime.ts",
+		"./semantic-context": "./src/runtime/api/semantic-context.ts",
 		"./server": "./src/server/api/server.ts",
 		"./panes": "./src/server/api/panes.ts",
 		"./host": "./src/server/api/host.ts",

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 11:40'
+updated_date: '2026-10-24 11:42'
 labels: []
 dependencies: []
 parent_task_id: TASK-517
@@ -40,3 +40,9 @@ This delivery contributes host separation to the parent proposals: Archboard@TAS
 7. Inspect the implementation for a smaller interface and commit the changes with Refs: TASK-517.01.
 The parent owns board adoption, the complete gate, review, and final acceptance evidence.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Parent changed package exports so the Archboard semantic publisher belongs to workbench. The SDK no longer exposes semantic-context. The host-separation implementer owns the matching source and test relocation. Canonical realtime contracts stay in workbench until TASK-517.02.
+<!-- SECTION:NOTES:END -->
