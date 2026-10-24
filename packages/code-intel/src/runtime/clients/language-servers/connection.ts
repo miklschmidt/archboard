@@ -307,15 +307,16 @@ function connect(
 		progressWaits.delete(token);
 	};
 
+	/** The process can no longer take a message. */
+	const refused = (): void => {
+		ended ??= "stopped taking messages";
+	};
+
 	/**
 	 * Write one message, or note that the process can no longer take one.
 	 * @param message The message.
 	 */
 	const write = (message: object): void => {
-		/** The process can no longer take a message. */
-		const refused = (): void => {
-			ended ??= "stopped taking messages";
-		};
 		try {
 			void Promise.resolve(child.stdin.write(framed(message))).catch(refused);
 			void Promise.resolve(child.stdin.flush()).catch(refused);
