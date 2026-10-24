@@ -11,6 +11,7 @@ export {
 	SemanticBoardLevelSchema,
 	SemanticBoardSchema,
 	SemanticVariantSchema,
+	TrackedEmbedSchema,
 	variantNamed,
 } from "#shared/schemas/board-document.ts";
 export type {
@@ -18,6 +19,7 @@ export type {
 	SemanticBoard,
 	SemanticVariant,
 	Shelving,
+	TrackedEmbed,
 } from "#shared/schemas/board-document.ts";
 export { draftRefs, nodesPinnedTo, ownRefs, refOfBinding } from "#shared/schemas/draft-ref.ts";
 export type { OwnRef } from "#shared/schemas/draft-ref.ts";
