@@ -4,6 +4,7 @@
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
 use crate::attrs;
+use crate::drawing::Emphasis;
 use crate::geometry::{Curve, Point, Rect, Segment, canvas_for, coord, curve_through, union};
 use crate::js;
 use crate::markup::{Attrs, Markup, concat, group, lines, tag, text_node};
@@ -12,7 +13,8 @@ use crate::paint::appearance::{card_look, label_look, semantic_ink, tray_look};
 use crate::paint::cards::{halo, header_anchor, paint_card, paint_header};
 use crate::paint::colour::{Share, light_dark, mixed, tinted};
 use crate::paint::design::{
-    BAND_RADIUS, CARD_THICKNESS, DIAGRAM_MARGIN, PILL_HEIGHT, PILL_RADIUS, PILL_TEXT_SIZE, SLAB_RADIUS,
+    BAND_RADIUS, CARD_THICKNESS, DIAGRAM_MARGIN, PILL_HEIGHT, PILL_RADIUS, PILL_TEXT_SIZE,
+    SLAB_RADIUS,
 };
 use crate::paint::far_card::{Words, paint_heading_views};
 use crate::paint::fonts::{PILL_FONT, font_attributes};
@@ -22,16 +24,19 @@ use crate::paint::relay::PULSE_PACE;
 use crate::paint::shadow::SHADOW_REACH;
 use crate::paint::slab::{Lift, SlabLook, ghost_face, shadow_under, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
-    HEAD_ATTRIBUTE, MEMBERS_ATTRIBUTE, PART_ATTRIBUTE, PIN_INSET, Standings, Unsettled, ghost_opacity, ink_of,
-    marked_box, standing_palette, standing_pin, standing_pin_at, subject, warning_badge, warning_on_line,
+    HEAD_ATTRIBUTE, MEMBERS_ATTRIBUTE, PART_ATTRIBUTE, PIN_INSET, Standings, Unsettled,
+    ghost_opacity, ink_of, marked_box, standing_palette, standing_pin, standing_pin_at, subject,
+    warning_badge, warning_on_line,
 };
-use crate::paint::styles::{Head, LIT_HEAD, Styles, full_line_colour, head_base, head_reach, line_colour, marker_for, stroke_width};
+use crate::paint::styles::{
+    Head, LIT_HEAD, Styles, full_line_colour, head_base, head_reach, line_colour, marker_for,
+    stroke_width,
+};
 use crate::paint::traffic::pulse_look;
 use crate::paint::tray::{floor_of, tray};
-use crate::drawing::Emphasis;
 use crate::request::{
-    MessageKind, NodeAppearance, SequenceClock, SequenceColumn, SequenceDrawing, SequenceFlow, SequenceFrame,
-    SequencePicture, SequenceStep, Standing,
+    MessageKind, NodeAppearance, SequenceClock, SequenceColumn, SequenceDrawing, SequenceFlow,
+    SequenceFrame, SequencePicture, SequenceStep, Standing,
 };
 use crate::scene::{Atlas, Item, Motion, Role, SubjectKind, TrafficMark};
 
@@ -58,8 +63,14 @@ const FRAME_PAD: f64 = 10.0;
 const FRAME_TAB_PADDING: f64 = 6.0;
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
 const BAR_SHADE: f64 = 0.4;
-const NEUTRAL_BAR: Share = Share { light: 0.5, dark: 0.25 };
-const NEUTRAL_BAR_EDGE: Share = Share { light: 0.18, dark: 0.5 };
+const NEUTRAL_BAR: Share = Share {
+    light: 0.5,
+    dark: 0.25,
+};
+const NEUTRAL_BAR_EDGE: Share = Share {
+    light: 0.18,
+    dark: 0.5,
+};
 const FRAGMENT_RADIUS: f64 = 3.0;
 const TAB_CUT: f64 = 5.0;
 const WORDS_BASELINE: f64 = 0.68;
@@ -75,7 +86,11 @@ const AIR: f64 = 1.0;
 
 /// The arrowhead a message of each kind ends in.
 fn step_head(kind: MessageKind) -> Head {
-    if kind == MessageKind::Async { Head::Open } else { Head::Filled }
+    if kind == MessageKind::Async {
+        Head::Open
+    } else {
+        Head::Filled
+    }
 }
 
 /// How far short of a message's end its arrowhead's tip stands.
@@ -118,7 +133,13 @@ fn step_path(placed: &SequenceStep) -> String {
     if placed.travel == 0 {
         return self_path(placed);
     }
-    format!("M{},{} L{},{}", coord(placed.start), coord(placed.y), coord(placed.end), coord(placed.y))
+    format!(
+        "M{},{} L{},{}",
+        coord(placed.start),
+        coord(placed.y),
+        coord(placed.end),
+        coord(placed.y)
+    )
 }
 
 /// The part of one message's line its pulses ride, and how long it is.
@@ -135,9 +156,15 @@ fn step_ride(placed: &SequenceStep) -> Option<(Curve, f64)> {
         let curve = curve_through(
             &[
                 Point { x, y: placed.y },
-                Point { x: right, y: placed.y },
+                Point {
+                    x: right,
+                    y: placed.y,
+                },
                 Point { x: right, y: low },
-                Point { x: x + arrow_standoff(kind) + cut, y: low },
+                Point {
+                    x: x + arrow_standoff(kind) + cut,
+                    y: low,
+                },
             ],
             false,
         );
@@ -151,8 +178,16 @@ fn step_ride(placed: &SequenceStep) -> Option<(Curve, f64)> {
     }
     Some((
         Curve {
-            from: Point { x: placed.start, y: placed.y },
-            segments: vec![Segment::Line { to: Point { x: placed.start + direction * length, y: placed.y } }],
+            from: Point {
+                x: placed.start,
+                y: placed.y,
+            },
+            segments: vec![Segment::Line {
+                to: Point {
+                    x: placed.start + direction * length,
+                    y: placed.y,
+                },
+            }],
         },
         length,
     ))
@@ -168,7 +203,10 @@ struct Crossing {
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
     let distance = lengths.iter().fold(0.0, |sum, length| sum + length) + PULSE_LENGTH;
-    let speed = js::js_max(clock.traffic_speed * PULSE_PACE, distance / (clock.cycle_cap_ms / 1000.0));
+    let speed = js::js_max(
+        clock.traffic_speed * PULSE_PACE,
+        distance / (clock.cycle_cap_ms / 1000.0),
+    );
     let mut along = 0.0;
     let starts = lengths
         .iter()
@@ -178,20 +216,42 @@ fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
             start
         })
         .collect();
-    Crossing { cycle: distance / speed, speed, starts }
+    Crossing {
+        cycle: distance / speed,
+        speed,
+        starts,
+    }
 }
 
 /// The pulses one message sends, each waiting its own turn on the shared clock.
-fn timed_crossings(placed: &SequenceStep, ride: &Curve, palette: &Palette, crossing: &Crossing, mark: Option<Standing>) -> Markup {
-    let look = pulse_look(full_line_colour(palette, mark), stroke_width(STEP_WEIGHT), palette);
+fn timed_crossings(
+    placed: &SequenceStep,
+    ride: &Curve,
+    palette: &Palette,
+    crossing: &Crossing,
+    mark: Option<Standing>,
+) -> Markup {
+    let look = pulse_look(
+        full_line_colour(palette, mark),
+        stroke_width(STEP_WEIGHT),
+        palette,
+    );
     lines(
         (0..placed.slot.count)
             .map(|index| {
-                let start = crossing.starts.get((placed.slot.start + index) as usize).copied().unwrap_or(0.0);
+                let start = crossing
+                    .starts
+                    .get((placed.slot.start + index) as usize)
+                    .copied()
+                    .unwrap_or(0.0);
                 vec![Item::Traffic(TrafficMark {
                     look: look.clone(),
                     route: ride.clone(),
-                    motion: Motion::Turn { speed: crossing.speed, cycle: crossing.cycle, start },
+                    motion: Motion::Turn {
+                        speed: crossing.speed,
+                        cycle: crossing.cycle,
+                        start,
+                    },
                 })]
             })
             .collect(),
@@ -200,7 +260,11 @@ fn timed_crossings(placed: &SequenceStep, ride: &Curve, palette: &Palette, cross
 
 /// How a message of a flow is marked: by its own standing, unless its whole flow was added or removed.
 fn marked_within(flow: Option<Standing>, own: Option<Standing>) -> Option<Standing> {
-    if own.is_some() && matches!(flow, Some(Standing::Added | Standing::Removed)) { Some(Standing::Unchanged) } else { own }
+    if own.is_some() && matches!(flow, Some(Standing::Added | Standing::Removed)) {
+        Some(Standing::Unchanged)
+    } else {
+        own
+    }
 }
 
 /// A standing's tint over a box.
@@ -222,7 +286,11 @@ fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette) -> Markup
 }
 
 /// The marks of every message of one flow that moved: its band and its pin.
-fn paint_row_marks(layout: &SequenceFlow, palette: &Palette, mark_of: &dyn Fn(&str) -> Option<Standing>) -> Markup {
+fn paint_row_marks(
+    layout: &SequenceFlow,
+    palette: &Palette,
+    mark_of: &dyn Fn(&str) -> Option<Standing>,
+) -> Markup {
     let frame = layout.frame;
     let rows: Vec<Rect> = layout.steps.iter().map(|placed| placed.bounds).collect();
     lines(
@@ -234,9 +302,20 @@ fn paint_row_marks(layout: &SequenceFlow, palette: &Palette, mark_of: &dyn Fn(&s
                 let standing = mark_of(&placed.step.id);
                 let row = rows[index];
                 let top = row.y;
-                let bottom = rows.get(index + 1).map_or(row.y + row.height, |next| next.y);
+                let bottom = rows
+                    .get(index + 1)
+                    .map_or(row.y + row.height, |next| next.y);
                 let middle = row.y + placed.pitch / 2.0;
-                let tint = row_tint(Rect { x: frame.x, y: top, width: frame.width, height: bottom - top }, standing, palette);
+                let tint = row_tint(
+                    Rect {
+                        x: frame.x,
+                        y: top,
+                        width: frame.width,
+                        height: bottom - top,
+                    },
+                    standing,
+                    palette,
+                );
                 if tint.is_empty() {
                     return Markup::new();
                 }
@@ -244,7 +323,10 @@ fn paint_row_marks(layout: &SequenceFlow, palette: &Palette, mark_of: &dyn Fn(&s
                     Role::RowMark,
                     None,
                     attrs! { MEMBERS_ATTRIBUTE: placed.step.id.as_str(), "pointer-events": "none" },
-                    lines(vec![tint, standing_pin_at(frame.x + PIN_INSET, middle, standing, palette)]),
+                    lines(vec![
+                        tint,
+                        standing_pin_at(frame.x + PIN_INSET, middle, standing, palette),
+                    ]),
                 )
             })
             .collect(),
@@ -271,7 +353,10 @@ fn bar_look(appearance: &NodeAppearance, palette: &Palette) -> SlabLook {
         return shape(face, edge);
     }
     let card = card_look(appearance.body_color, palette);
-    shape(light_dark(&mixed(&card.face, &card.edge, BAR_SHADE), &card.face), card.edge)
+    shape(
+        light_dark(&mixed(&card.face, &card.edge, BAR_SHADE), &card.face),
+        card.edge,
+    )
 }
 
 /// A column's bars, reaching their corner radius past the call and the reply.
@@ -289,12 +374,24 @@ fn activation_boxes(column: &SequenceColumn) -> Vec<Rect> {
 }
 
 /// A participant's activation shadows, laid under every column and message.
-fn paint_column_shadows(column: &SequenceColumn, palette: &Palette, standing: Option<Standing>) -> Markup {
+fn paint_column_shadows(
+    column: &SequenceColumn,
+    palette: &Palette,
+    standing: Option<Standing>,
+) -> Markup {
     lines(
         activation_boxes(column)
             .into_iter()
             .map(|bar| {
-                shadow_under(&column.card.node.id, bar, ACTIVATION_RADIUS, Lift::Chip, palette, standing, Some("activation"))
+                shadow_under(
+                    &column.card.node.id,
+                    bar,
+                    ACTIVATION_RADIUS,
+                    Lift::Chip,
+                    palette,
+                    standing,
+                    Some("activation"),
+                )
             })
             .collect(),
     )
@@ -325,10 +422,16 @@ fn paint_column(
         tag("line", lifeline.clone()),
         tag(
             "line",
-            attrs! { "class": "ab-halo" }.with(lifeline).with(styles.halo()).set("stroke-width", LIT_LIFELINE_WIDTH),
+            attrs! { "class": "ab-halo" }
+                .with(lifeline)
+                .with(styles.halo())
+                .set("stroke-width", LIT_LIFELINE_WIDTH),
         ),
     ];
-    parts.extend(bars.iter().map(|bar| slab(*bar, &look, palette, None, None)));
+    parts.extend(
+        bars.iter()
+            .map(|bar| slab(*bar, &look, palette, None, None)),
+    );
     parts.extend(bars.iter().map(|bar| {
         tag(
             "rect",
@@ -352,13 +455,23 @@ fn paint_column(
 }
 
 /// The frame around one flow, with the flow's name and summary on it.
-fn paint_frame(ctx: &Ctx, layout: &SequenceFlow, palette: &Palette, standing: Option<Standing>, unsettled: bool) -> Markup {
+fn paint_frame(
+    ctx: &Ctx,
+    layout: &SequenceFlow,
+    palette: &Palette,
+    standing: Option<Standing>,
+    unsettled: bool,
+) -> Markup {
     let styles = Styles::of(palette);
     let frame = layout.frame;
     let header = layout.header;
     let ghosted = (standing == Some(Standing::Removed)).then_some(Standing::Removed);
     let look = tray_look(layout.slab, palette, 0.0);
-    let plate = Rect { y: layout.slab.y, height: layout.slab.height - CARD_THICKNESS, ..header };
+    let plate = Rect {
+        y: layout.slab.y,
+        height: layout.slab.height - CARD_THICKNESS,
+        ..header
+    };
     let flow = &layout.flow;
     group(
         Role::Frame,
@@ -399,21 +512,35 @@ fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palet
         "width": coord(floor.width),
         "height": coord(card.height + HEAD_REACH + SHADOW_REACH),
     };
-    let face = if standing == Some(Standing::Removed) { ghost_face(palette) } else { attrs! { "fill": palette.tray_floor } };
+    let face = if standing == Some(Standing::Removed) {
+        ghost_face(palette)
+    } else {
+        attrs! { "fill": palette.tray_floor }
+    };
     group(
         Role::HeadShade,
         None,
         attrs! { "class": HEAD_SHADE_CLASS, "visibility": "hidden" },
         lines(vec![
             tag("rect", shape.clone().set("fill", palette.background)),
-            group(Role::Marks, None, attrs! { MEMBERS_ATTRIBUTE: layout.flow.id.as_str() }, tag("rect", shape.with(face))),
+            group(
+                Role::Marks,
+                None,
+                attrs! { MEMBERS_ATTRIBUTE: layout.flow.id.as_str() },
+                tag("rect", shape.with(face)),
+            ),
         ]),
     )
 }
 
 /// The tab a decision's or loop's operator stands in.
 fn tab_path(frame: &SequenceFrame, ink: &str, face: &str) -> Markup {
-    let Rect { x, y, width, height } = frame.tab;
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = frame.tab;
     let d = format!(
         "M {} {} H {} V {} L {} {} H {} Z",
         coord(x),
@@ -424,7 +551,10 @@ fn tab_path(frame: &SequenceFrame, ink: &str, face: &str) -> Markup {
         coord(y + height),
         coord(x)
     );
-    tag("path", attrs! { "d": d, "fill": face, "stroke": ink, "stroke-width": 1.0 })
+    tag(
+        "path",
+        attrs! { "d": d, "fill": face, "stroke": ink, "stroke-width": 1.0 },
+    )
 }
 
 /// The words of one row of a frame, left aligned at a height.
@@ -462,7 +592,13 @@ fn paint_guards(frame: &SequenceFrame, ink: &str, words: &str) -> Markup {
                             },
                         ),
                     },
-                    row_words(rect.x + FRAME_PAD, guard.top, FRAME_GUARD_HEIGHT, &format!("[{}]", guard.label), words),
+                    row_words(
+                        rect.x + FRAME_PAD,
+                        guard.top,
+                        FRAME_GUARD_HEIGHT,
+                        &format!("[{}]", guard.label),
+                        words,
+                    ),
                 ])
             })
             .collect(),
@@ -470,7 +606,12 @@ fn paint_guards(frame: &SequenceFrame, ink: &str, words: &str) -> Markup {
 }
 
 /// One decision's or loop's frame.
-fn paint_fragment(frame: &SequenceFrame, palette: &Palette, standing: Option<Standing>, unsettled: bool) -> Markup {
+fn paint_fragment(
+    frame: &SequenceFrame,
+    palette: &Palette,
+    standing: Option<Standing>,
+    unsettled: bool,
+) -> Markup {
     let rect = frame.bounds;
     let tab = frame.tab;
     let ink = ink_of(standing, palette).unwrap_or(palette.edge);
@@ -492,17 +633,46 @@ fn paint_fragment(frame: &SequenceFrame, palette: &Palette, standing: Option<Sta
         subject(SubjectKind::Step, &frame.step.id, standing),
         attrs! { "opacity": ghost_opacity(standing) },
         lines(vec![
-            tag("rect", outline.clone().set("fill", "none").set("stroke", ink).set("stroke-width", 1.0)),
             tag(
                 "rect",
-                attrs! { "class": "ab-halo" }.with(outline).set("stroke-width", 2.0).with(Styles::of(palette).halo()),
+                outline
+                    .clone()
+                    .set("fill", "none")
+                    .set("stroke", ink)
+                    .set("stroke-width", 1.0),
+            ),
+            tag(
+                "rect",
+                attrs! { "class": "ab-halo" }
+                    .with(outline)
+                    .set("stroke-width", 2.0)
+                    .with(Styles::of(palette).halo()),
             ),
             tab_path(frame, ink, palette.pill),
-            row_words(tab.x + FRAME_TAB_PADDING, tab.y, FRAME_HEAD_HEIGHT, operator, words),
-            row_words(tab.x + tab.width + FRAME_TAB_PADDING, tab.y, FRAME_HEAD_HEIGHT, &frame.words, words),
+            row_words(
+                tab.x + FRAME_TAB_PADDING,
+                tab.y,
+                FRAME_HEAD_HEIGHT,
+                operator,
+                words,
+            ),
+            row_words(
+                tab.x + tab.width + FRAME_TAB_PADDING,
+                tab.y,
+                FRAME_HEAD_HEIGHT,
+                &frame.words,
+                words,
+            ),
             paint_guards(frame, ink, words),
             standing_pin_at(mark_x, rect.y + PIN_INSET, standing, palette),
-            warning_badge(Rect { width: rect.width - MARK_SPACING, ..rect }, unsettled, palette),
+            warning_badge(
+                Rect {
+                    width: rect.width - MARK_SPACING,
+                    ..rect
+                },
+                unsettled,
+                palette,
+            ),
         ]),
     )
 }
@@ -519,7 +689,13 @@ fn rect_of(rect: Rect) -> Attrs {
 }
 
 /// One message's label, a line at a time, each centred, on a chip.
-fn paint_label(placed: &SequenceStep, rect: Rect, palette: &Palette, standing: Option<Standing>, mark: Option<Standing>) -> Markup {
+fn paint_label(
+    placed: &SequenceStep,
+    rect: Rect,
+    palette: &Palette,
+    standing: Option<Standing>,
+    mark: Option<Standing>,
+) -> Markup {
     let words = standing_palette(palette, standing);
     let styles = Styles::of(&words);
     let plate = if standing == Some(Standing::Removed) {
@@ -529,7 +705,10 @@ fn paint_label(placed: &SequenceStep, rect: Rect, palette: &Palette, standing: O
             row_tint(rect, mark, palette),
         ])
     } else {
-        concat(vec![slab_seat(rect, PILL_RADIUS), slab(rect, &label_look(palette), palette, None, None)])
+        concat(vec![
+            slab_seat(rect, PILL_RADIUS),
+            slab(rect, &label_look(palette), palette, None, None),
+        ])
     };
     let rule = tag(
         "rect",
@@ -585,7 +764,13 @@ fn paint_note(placed: &SequenceStep, palette: &Palette, mark: Option<Standing>) 
 }
 
 /// What one message says, on the layer above every run.
-fn paint_step_words(placed: &SequenceStep, palette: &Palette, standing: Option<Standing>, mark: Option<Standing>, unsettled: bool) -> Markup {
+fn paint_step_words(
+    placed: &SequenceStep,
+    palette: &Palette,
+    standing: Option<Standing>,
+    mark: Option<Standing>,
+    unsettled: bool,
+) -> Markup {
     let plate = placed.label_box;
     group(
         Role::Label,
@@ -594,13 +779,26 @@ fn paint_step_words(placed: &SequenceStep, palette: &Palette, standing: Option<S
         lines(vec![
             paint_label(placed, plate, palette, standing, mark),
             paint_note(placed, palette, mark),
-            warning_on_line(Some(Point { x: plate.x, y: plate.y + plate.height / 2.0 }), unsettled, palette),
+            warning_on_line(
+                Some(Point {
+                    x: plate.x,
+                    y: plate.y + plate.height / 2.0,
+                }),
+                unsettled,
+                palette,
+            ),
         ]),
     )
 }
 
 /// One message: a glow a viewer can light up, the line itself, and its pulses.
-fn paint_step(placed: &SequenceStep, palette: &Palette, standing: Option<Standing>, mark: Option<Standing>, crossing: &Crossing) -> Markup {
+fn paint_step(
+    placed: &SequenceStep,
+    palette: &Palette,
+    standing: Option<Standing>,
+    mark: Option<Standing>,
+    crossing: &Crossing,
+) -> Markup {
     let styles = Styles::of(palette);
     let path = step_path(placed);
     let ride = step_ride(placed);
@@ -651,7 +849,10 @@ fn paint_step(placed: &SequenceStep, palette: &Palette, standing: Option<Standin
 
 /// The appearance of a participant.
 fn appearance_of<'a>(picture: &'a SequencePicture, id: &str) -> &'a NodeAppearance {
-    picture.appearances.get(id).unwrap_or_else(|| panic!("no appearance for {id}"))
+    picture
+        .appearances
+        .get(id)
+        .unwrap_or_else(|| panic!("no appearance for {id}"))
 }
 
 /// One flow, painted: everything it draws, and the words that go above every flow's runs.
@@ -667,11 +868,19 @@ fn paint_flow(
     let flow_standing = standings.of(&layout.flow.id);
     let mark_of = |id: &str| marked_within(flow_standing, standings.of(id));
     let mut body = vec![
-        paint_frame(ctx, layout, palette, flow_standing, unsettled.of(&layout.flow.id)),
+        paint_frame(
+            ctx,
+            layout,
+            palette,
+            flow_standing,
+            unsettled.of(&layout.flow.id),
+        ),
         paint_row_marks(layout, palette, &mark_of),
     ];
     body.extend(
-        layout.columns.iter().map(|column| paint_column_shadows(column, palette, standings.of(&column.card.node.id))),
+        layout.columns.iter().map(|column| {
+            paint_column_shadows(column, palette, standings.of(&column.card.node.id))
+        }),
     );
     body.extend(layout.steps.iter().map(|placed| {
         shadow_under(
@@ -686,25 +895,52 @@ fn paint_flow(
     }));
     body.extend(layout.columns.iter().map(|column| {
         let id = &column.card.node.id;
-        paint_column(column, layout, palette, appearance_of(picture, id), standings.of(id))
+        paint_column(
+            column,
+            layout,
+            palette,
+            appearance_of(picture, id),
+            standings.of(id),
+        )
     }));
     let mut head = vec![head_shade(layout, flow_standing, palette)];
     head.extend(layout.columns.iter().map(|column| {
         let card = &column.card;
-        shadow_under(&card.node.id, card.bounds, SLAB_RADIUS, Lift::Card, palette, standings.of(&card.node.id), None)
+        shadow_under(
+            &card.node.id,
+            card.bounds,
+            SLAB_RADIUS,
+            Lift::Card,
+            palette,
+            standings.of(&card.node.id),
+            None,
+        )
     }));
     head.extend(layout.columns.iter().map(|column| {
         let id = &column.card.node.id;
-        paint_card(ctx, &column.card, palette, standings.of(id), unsettled.of(id), appearance_of(picture, id))
+        paint_card(
+            ctx,
+            &column.card,
+            palette,
+            standings.of(id),
+            unsettled.of(id),
+            appearance_of(picture, id),
+        )
     }));
-    body.push(group(Role::FlowHead, None, attrs! { HEAD_ATTRIBUTE: layout.flow.id.as_str() }, lines(head)));
-    body.extend(
-        layout
-            .frames
-            .iter()
-            .rev()
-            .map(|frame| paint_fragment(frame, palette, mark_of(&frame.step.id), unsettled.of(&frame.step.id))),
-    );
+    body.push(group(
+        Role::FlowHead,
+        None,
+        attrs! { HEAD_ATTRIBUTE: layout.flow.id.as_str() },
+        lines(head),
+    ));
+    body.extend(layout.frames.iter().rev().map(|frame| {
+        paint_fragment(
+            frame,
+            palette,
+            mark_of(&frame.step.id),
+            unsettled.of(&frame.step.id),
+        )
+    }));
     body.push(group(
         Role::Messages,
         None,
@@ -714,7 +950,13 @@ fn paint_flow(
                 .steps
                 .iter()
                 .map(|placed| {
-                    paint_step(placed, palette, standings.of(&placed.step.id), mark_of(&placed.step.id), crossing)
+                    paint_step(
+                        placed,
+                        palette,
+                        standings.of(&placed.step.id),
+                        mark_of(&placed.step.id),
+                        crossing,
+                    )
                 })
                 .collect(),
         ),
@@ -725,7 +967,13 @@ fn paint_flow(
             .iter()
             .map(|placed| {
                 let id = &placed.step.id;
-                paint_step_words(placed, palette, standings.of(id), mark_of(id), unsettled.of(id))
+                paint_step_words(
+                    placed,
+                    palette,
+                    standings.of(id),
+                    mark_of(id),
+                    unsettled.of(id),
+                )
             })
             .collect(),
     );
@@ -766,7 +1014,12 @@ pub fn paint_sequence(
             let card = column.card.bounds;
             columns.push((
                 column.card.node.id.as_str(),
-                Rect { x: card.x, y: card.y, width: card.width, height: flow.lifeline_bottom - card.y },
+                Rect {
+                    x: card.x,
+                    y: card.y,
+                    width: card.width,
+                    height: flow.lifeline_bottom - card.y,
+                },
             ));
         }
         for placed in &flow.steps {
@@ -780,7 +1033,13 @@ pub fn paint_sequence(
     let marked: Vec<Rect> = laid
         .flows
         .iter()
-        .map(|flow| marked_box(flow.frame, page_standings.of(&flow.flow.id), unsettled.of(&flow.flow.id)))
+        .map(|flow| {
+            marked_box(
+                flow.frame,
+                page_standings.of(&flow.flow.id),
+                unsettled.of(&flow.flow.id),
+            )
+        })
         .collect();
     let canvas = canvas_for(laid.width, laid.height, union(marked), DIAGRAM_MARGIN);
     let mut parts: Vec<Markup> = Vec::new();

@@ -30,7 +30,10 @@ const ELLIPSIS: &str = "…";
 impl<'host> Measurer<'host> {
     /// A measurer over the host's measure.
     pub fn new(host: &'host dyn Measure) -> Self {
-        Measurer { host, known: RefCell::new(HashMap::new()) }
+        Measurer {
+            host,
+            known: RefCell::new(HashMap::new()),
+        }
     }
 
     /// The width of one line.

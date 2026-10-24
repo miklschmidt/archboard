@@ -33,7 +33,11 @@ fn arrow(direction: DrillDirection) -> &'static str {
 pub fn corner_drill_mark(rect: Rect, direction: DrillDirection, ink: &str, scale: f64) -> Markup {
     let cx = rect.x + rect.width - DRILL_MARK_INSET;
     let cy = rect.y + DRILL_MARK_INSET;
-    let scaled = if scale == 1.0 { String::new() } else { format!(" scale({})", coord(scale)) };
+    let scaled = if scale == 1.0 {
+        String::new()
+    } else {
+        format!(" scale({})", coord(scale))
+    };
     group(
         Role::DrillMark,
         None,

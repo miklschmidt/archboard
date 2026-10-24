@@ -4,16 +4,17 @@
 // the picture's own symbols (TASK-383, docs/design/pane-sidebar-hierarchy.md):
 // each node kind, each relationship kind, the two things a line says beside
 // its kind, and the marks a comparison puts on what it changed. The page's
-// sidebar and an exported picture's legend (TASK-468) both read it here, from
-// the drawn document, so the two keys cannot list different things. The
-// renderer writes what a subject is drawn as onto the subject's group
-// (`appearanceAttributes`, and a line's kind on its group), and this reads it
-// back without a DOM, so it runs wherever the renderer runs.
+// sidebar reads it here, from the drawn document. An exported picture's legend
+// (TASK-468) is drawn by the renderer core, which reads its own scene by the
+// same rules (`crates/archboard-scene/src/paint/export.rs`), and the export
+// legend tests hold the two keys to the same entries. The core writes what a
+// subject is drawn as onto the subject's group, and this reads it back without
+// a DOM, so it runs wherever the renderer runs.
 //
 // Nothing here interprets the architecture: a picture that draws a subject a
 // certain way is read as drawing it that way, whatever policy drew it.
 
-import type { SubjectStanding } from "#shared/rules/svg/parts/standing.ts";
+import type { SubjectStanding } from "#shared/protocol/render-request.ts";
 
 /** The attribute naming the subject a group of the picture draws. */
 const SUBJECT = "data-semantic-id";

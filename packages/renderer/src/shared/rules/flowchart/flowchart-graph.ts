@@ -18,9 +18,10 @@
 
 import type { FlowMessage, FlowStep, SemanticFlow } from "@archboard/board/flow";
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
+import type * as Core from "#shared/protocol/generated/core/types.ts";
 
-/** What a node of the graph is drawn as when it is not a box. */
-type FlowchartShape = "decision" | "loop" | "start" | "end";
+/** What a node of the graph is drawn as when it is not a box: the core paints it so. */
+type FlowchartShape = Core.FlowchartShape;
 
 /** A flow's flowchart, as an architecture the track engine lays out. */
 interface FlowchartGraph {

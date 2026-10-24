@@ -40,8 +40,14 @@ fn light_corner(color: PaletteColor) -> f64 {
     }
 }
 
-const FRAME: Tone = Tone { light: ToneStep::new(0.78, 0.875), dark: ToneStep::new(0.47, 0.6) };
-const WORDS: Tone = Tone { light: ToneStep::new(0.98, 0.15), dark: ToneStep::new(0.16, 0.2) };
+const FRAME: Tone = Tone {
+    light: ToneStep::new(0.78, 0.875),
+    dark: ToneStep::new(0.47, 0.6),
+};
+const WORDS: Tone = Tone {
+    light: ToneStep::new(0.98, 0.15),
+    dark: ToneStep::new(0.16, 0.2),
+};
 const FRAME_WIDTH: f64 = 3.0;
 const BRACKET_WIDTH: f64 = 6.0;
 const ARM: f64 = 28.0;
@@ -71,19 +77,42 @@ struct Crossing {
 }
 
 fn tab_path(rect: Rect, corner: Corner) -> String {
-    let Rect { x, y, width, height } = rect;
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = rect;
     let shared = js::min([BAND_RADIUS, width / 2.0, height / 2.0]);
     let own = js::min([TAB_RADIUS, width / 2.0, height / 2.0]);
     let foot = y + height;
-    let at = |inward: f64| coord(if corner == Corner::Start { x + inward } else { x + width - inward });
+    let at = |inward: f64| {
+        coord(if corner == Corner::Start {
+            x + inward
+        } else {
+            x + width - inward
+        })
+    };
     let sweep = if corner == Corner::Start { 1 } else { 0 };
     [
         format!("M{},{}", at(0.0), coord(foot)),
         format!("V{}", coord(y + shared)),
-        format!("A{},{} 0 0 {sweep} {},{}", coord(shared), coord(shared), at(shared), coord(y)),
+        format!(
+            "A{},{} 0 0 {sweep} {},{}",
+            coord(shared),
+            coord(shared),
+            at(shared),
+            coord(y)
+        ),
         format!("H{}", at(width)),
         format!("V{}", coord(foot - own)),
-        format!("A{},{} 0 0 {sweep} {},{}", coord(own), coord(own), at(width - own), coord(foot)),
+        format!(
+            "A{},{} 0 0 {sweep} {},{}",
+            coord(own),
+            coord(own),
+            at(width - own),
+            coord(foot)
+        ),
         "Z".to_owned(),
     ]
     .join(" ")
@@ -95,30 +124,72 @@ fn tab_box(region: &DrawingRegion, run: &TextRun, corner: Corner, grown: f64) ->
     let caption = region.caption.bounds;
     let margin = caption.x + run.x - rect.x;
     let width = js::js_min(rect.width, margin * (1.0 + grown) + run.width);
-    let x = if corner == Corner::Start { rect.x } else { rect.x + rect.width - width };
-    (Rect { x, y: rect.y, width, height: caption.y + caption.height - rect.y }, x - rect.x)
+    let x = if corner == Corner::Start {
+        rect.x
+    } else {
+        rect.x + rect.width - width
+    };
+    (
+        Rect {
+            x,
+            y: rect.y,
+            width,
+            height: caption.y + caption.height - rect.y,
+        },
+        x - rect.x,
+    )
 }
 
 fn group_colours(color: Option<PaletteColor>, palette: &Palette) -> GroupColours {
     let ink = semantic_ink(color).unwrap_or_else(|| palette.muted.to_owned());
     let lightness = color.map_or(0.635, light_corner);
-    let corner = held_tone(&ink, Held { least: lightness, most: lightness, dark: DARK_CORNER });
+    let corner = held_tone(
+        &ink,
+        Held {
+            least: lightness,
+            most: lightness,
+            dark: DARK_CORNER,
+        },
+    );
     let frame = toned(&ink, FRAME);
     if color == Some(PaletteColor::Yellow) {
-        GroupColours { corner: ink, tab: token("--primary"), frame, words: token("--primary-foreground") }
+        GroupColours {
+            corner: ink,
+            tab: token("--primary"),
+            frame,
+            words: token("--primary-foreground"),
+        }
     } else {
-        GroupColours { tab: corner.clone(), corner, frame, words: toned(&ink, WORDS) }
+        GroupColours {
+            tab: corner.clone(),
+            corner,
+            frame,
+            words: toned(&ink, WORDS),
+        }
     }
 }
 
-fn caption_tab(region: &DrawingRegion, run: &TextRun, corner: Corner, grown: f64, colours: &GroupColours, palette: &Palette) -> Markup {
+fn caption_tab(
+    region: &DrawingRegion,
+    run: &TextRun,
+    corner: Corner,
+    grown: f64,
+    colours: &GroupColours,
+    palette: &Palette,
+) -> Markup {
     let (rect, shift) = tab_box(region, run, corner, grown);
     let caption = region.caption.bounds;
     lines(vec![
-        tag("path", attrs! { "d": tab_path(rect, corner), "fill": colours.tab.as_str() }),
+        tag(
+            "path",
+            attrs! { "d": tab_path(rect, corner), "fill": colours.tab.as_str() },
+        ),
         paint_text_runs(
             std::slice::from_ref(run),
-            Rect { x: caption.x + shift, ..caption },
+            Rect {
+                x: caption.x + shift,
+                ..caption
+            },
             palette,
             Some(&colours.words),
         ),
@@ -149,7 +220,12 @@ fn brackets(rect: Rect, ink: &str) -> Markup {
     let right = rect.x + rect.width - inset;
     let top = rect.y + inset;
     let bottom = rect.y + rect.height - inset;
-    let corners = [(left, top, 1.0, 1.0), (right, top, -1.0, 1.0), (right, bottom, -1.0, -1.0), (left, bottom, 1.0, -1.0)];
+    let corners = [
+        (left, top, 1.0, 1.0),
+        (right, top, -1.0, 1.0),
+        (right, bottom, -1.0, -1.0),
+        (left, bottom, 1.0, -1.0),
+    ];
     lines(
         corners
             .iter()
@@ -188,7 +264,9 @@ fn crossings_of(region: &DrawingRegion, routes: &[&Curve]) -> Vec<Crossing> {
                 points.push(*first);
                 points.push(*second);
             }
-            if js::min(points.iter().map(|point| point.y)) >= bottom || js::max(points.iter().map(|point| point.y)) <= top {
+            if js::min(points.iter().map(|point| point.y)) >= bottom
+                || js::max(points.iter().map(|point| point.y)) <= top
+            {
                 continue;
             }
             crossings.push(Crossing {
@@ -201,12 +279,18 @@ fn crossings_of(region: &DrawingRegion, routes: &[&Curve]) -> Vec<Crossing> {
 }
 
 fn clear_of(rect: Rect, crossings: &[Crossing]) -> bool {
-    crossings.iter().all(|crossing| crossing.right < rect.x - ROUTE_ROOM || crossing.left > rect.x + rect.width + ROUTE_ROOM)
+    crossings.iter().all(|crossing| {
+        crossing.right < rect.x - ROUTE_ROOM || crossing.left > rect.x + rect.width + ROUTE_ROOM
+    })
 }
 
 fn corner_of(region: &DrawingRegion, run: &TextRun, crossings: &[Crossing]) -> Corner {
     let blocked = |corner| !clear_of(tab_box(region, run, corner, 1.0).0, crossings);
-    if blocked(Corner::Start) && !blocked(Corner::End) { Corner::End } else { Corner::Start }
+    if blocked(Corner::Start) && !blocked(Corner::End) {
+        Corner::End
+    } else {
+        Corner::Start
+    }
 }
 
 fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[Crossing]) -> f64 {
@@ -214,10 +298,16 @@ fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[
     let near = tab_box(region, run, corner, 1.0).0;
     if corner == Corner::Start {
         let words = near.x + near.width;
-        let stops = crossings.iter().filter(|crossing| crossing.left > words).map(|crossing| crossing.left - ROUTE_ROOM);
+        let stops = crossings
+            .iter()
+            .filter(|crossing| crossing.left > words)
+            .map(|crossing| crossing.left - ROUTE_ROOM);
         return js::min(std::iter::once(rect.x + rect.width).chain(stops)) - rect.x;
     }
-    let stops = crossings.iter().filter(|crossing| crossing.right < near.x).map(|crossing| crossing.right + ROUTE_ROOM);
+    let stops = crossings
+        .iter()
+        .filter(|crossing| crossing.right < near.x)
+        .map(|crossing| crossing.right + ROUTE_ROOM);
     rect.x + rect.width - js::max(std::iter::once(rect.x).chain(stops))
 }
 
@@ -250,7 +340,14 @@ fn far_caption(
         y: caption.height / 2.0 + size * 0.35,
         ..run.clone()
     };
-    far_layer(caption_tab(region, &grown, corner, size / run.font_size, colours, palette))
+    far_layer(caption_tab(
+        region,
+        &grown,
+        corner,
+        size / run.font_size,
+        colours,
+        palette,
+    ))
 }
 
 /// One group's region: its frame and its corner brackets, and its caption on its tab, near and far.
@@ -289,7 +386,9 @@ pub fn paint_region(
                 None => Markup::new(),
                 Some(run) => concat(vec![
                     near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
-                    far_caption(ctx, region, run, far_size, corner, &crossings, &colours, palette),
+                    far_caption(
+                        ctx, region, run, far_size, corner, &crossings, &colours, palette,
+                    ),
                 ]),
             },
         ]),

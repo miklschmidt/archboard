@@ -3,6 +3,8 @@
 
 use wasm_bindgen::prelude::*;
 
+mod scene;
+
 /// The hash of the core sources this build was made from, as
 /// `scripts/build-core.ts` recorded it. A host compares it with the sources in
 /// its checkout and refuses a build made from other sources. A build made

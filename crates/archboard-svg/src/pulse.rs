@@ -70,9 +70,15 @@ struct Defined {
 /// The clip that keeps the light of a piece inside the box of its mask.
 fn clip_of(leg: &Leg, core: f64) -> Defined {
     let [x, y, width, height] = box_of(leg, core);
-    let rect = markup_of(&tag("rect", attrs! { "x": x, "y": y, "width": width, "height": height }));
+    let rect = markup_of(&tag(
+        "rect",
+        attrs! { "x": x, "y": y, "width": width, "height": height },
+    ));
     let id = format!("ab-clip-{}", short_hash(&rect));
-    Defined { markup: format!("<clipPath id=\"{id}\">{rect}</clipPath>"), id }
+    Defined {
+        markup: format!("<clipPath id=\"{id}\">{rect}</clipPath>"),
+        id,
+    }
 }
 
 /// The mask that lets a beam through only where a piece of the route is.
@@ -95,10 +101,14 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
             ))
         })
         .collect();
-    let markup =
-        format!("maskUnits=\"userSpaceOnUse\" x=\"{x}\" y=\"{y}\" width=\"{width}\" height=\"{height}\">{layers}");
+    let markup = format!(
+        "maskUnits=\"userSpaceOnUse\" x=\"{x}\" y=\"{y}\" width=\"{width}\" height=\"{height}\">{layers}"
+    );
     let id = format!("ab-mask-{}", short_hash(&markup));
-    Defined { markup: format!("<mask id=\"{id}\" {markup}</mask>"), id }
+    Defined {
+        markup: format!("<mask id=\"{id}\" {markup}</mask>"),
+        id,
+    }
 }
 
 /// The gradient a pulse is painted with, along one axis, its front at the far end.
@@ -118,7 +128,11 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
     if tail >= 1.0 {
         for step in 0..TAIL_STEPS {
             let share = f64::from(step) / f64::from(TAIL_STEPS);
-            stops.push_str(&stop(reach - tail * share, &look.head, TAIL_LIGHT * js::pow(share, TAIL_CURVE)));
+            stops.push_str(&stop(
+                reach - tail * share,
+                &look.head,
+                TAIL_LIGHT * js::pow(share, TAIL_CURVE),
+            ));
         }
     }
     stops.push_str(&stop(FRONT + HEAD, &look.head, TAIL_LIGHT));
@@ -128,10 +142,17 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
         plain(span, 4),
-        if repeat { " spreadMethod=\"repeat\"" } else { "" }
+        if repeat {
+            " spreadMethod=\"repeat\""
+        } else {
+            ""
+        }
     );
     let id = format!("ab-beam-{}", short_hash(&markup));
-    Defined { markup: format!("<linearGradient id=\"{id}\" {markup}</linearGradient>"), id }
+    Defined {
+        markup: format!("<linearGradient id=\"{id}\" {markup}</linearGradient>"),
+        id,
+    }
 }
 
 /// A duration as a SMIL timecount: decimal, never with an exponent.
@@ -163,7 +184,11 @@ struct Bar<'a> {
 
 /// One piece of a pulse: the mask, the clip inside it, and the bar that slides behind them.
 fn leg_markup(leg: &Leg, bar: &Bar) -> String {
-    let shift = if bar.shift == 0.0 { String::new() } else { format!(" translate({} 0)", plain(bar.shift, 2)) };
+    let shift = if bar.shift == 0.0 {
+        String::new()
+    } else {
+        format!(" translate({} 0)", plain(bar.shift, 2))
+    };
     let slide = wrap(
         "g",
         attrs! { "transform": format!("{}{shift}", leg.frame) },
@@ -182,7 +207,11 @@ fn leg_markup(leg: &Leg, bar: &Bar) -> String {
     markup_of(&wrap(
         "g",
         attrs! { "mask": format!("url(#{})", bar.mask) },
-        wrap("g", attrs! { "clip-path": format!("url(#{})", bar.clip) }, slide),
+        wrap(
+            "g",
+            attrs! { "clip-path": format!("url(#{})", bar.clip) },
+            slide,
+        ),
     ))
 }
 
@@ -204,7 +233,14 @@ fn pulse_group(gradient: &Defined, pieces: &[(Defined, Defined, String)], out: &
 }
 
 /// A line's traffic: a steady train of pulses `spacing` apart flying at `speed`.
-fn steady_pulses(look: &PulseLook, legs: &[Leg], speed: f64, spacing: f64, phase: f64, out: &mut String) {
+fn steady_pulses(
+    look: &PulseLook,
+    legs: &[Leg],
+    speed: f64,
+    spacing: f64,
+    phase: f64,
+    out: &mut String,
+) {
     let period = round_coord(spacing);
     let core = pulse_breadth(look.line_width);
     let gradient = gradient_of(look, period, tail_for(period), true);
@@ -267,7 +303,14 @@ fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Markup {
 }
 
 /// A message's pulse: one that crosses its line once in every turn of the clock.
-fn turn_pulse(look: &PulseLook, legs: &[Leg], speed: f64, cycle: f64, start: f64, out: &mut String) {
+fn turn_pulse(
+    look: &PulseLook,
+    legs: &[Leg],
+    speed: f64,
+    cycle: f64,
+    start: f64,
+    out: &mut String,
+) {
     let core = pulse_breadth(look.line_width);
     let span = FRONT + HEAD + TAIL;
     let gradient = gradient_of(look, span, TAIL, false);
@@ -300,7 +343,15 @@ fn turn_pulse(look: &PulseLook, legs: &[Leg], speed: f64, cycle: f64, start: f64
 pub fn write_traffic(mark: &TrafficMark, out: &mut String) {
     let legs = legs_of(&mark.route);
     match mark.motion {
-        Motion::Steady { speed, spacing, phase } => steady_pulses(&mark.look, &legs, speed, spacing, phase, out),
-        Motion::Turn { speed, cycle, start } => turn_pulse(&mark.look, &legs, speed, cycle, start, out),
+        Motion::Steady {
+            speed,
+            spacing,
+            phase,
+        } => steady_pulses(&mark.look, &legs, speed, spacing, phase, out),
+        Motion::Turn {
+            speed,
+            cycle,
+            start,
+        } => turn_pulse(&mark.look, &legs, speed, cycle, start, out),
     }
 }

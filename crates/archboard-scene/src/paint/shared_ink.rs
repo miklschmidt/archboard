@@ -68,9 +68,13 @@ fn straight_runs(edges: &[Edge]) -> Vec<Run> {
     let mut runs = Vec::new();
     for (edge_index, edge) in edges.iter().enumerate() {
         for (segment_index, segment) in edge.curve.segments.iter().enumerate() {
-            let Segment::Line { to } = segment else { continue };
+            let Segment::Line { to } = segment else {
+                continue;
+            };
             let from = segment_start(&edge.curve, segment_index);
-            let Some(axis) = straight_axis(from, *to) else { continue };
+            let Some(axis) = straight_axis(from, *to) else {
+                continue;
+            };
             runs.push(Run {
                 edge_index,
                 from,
@@ -96,7 +100,9 @@ fn extent_of(run: &Run) -> (f64, f64) {
 
 /// Whether two runs of different routes lie on one drawn line.
 fn on_line(a: &Run, b: &Run) -> bool {
-    a.edge_index != b.edge_index && a.axis == b.axis && (fixed_of(a) - fixed_of(b)).abs() <= SHARED_INK
+    a.edge_index != b.edge_index
+        && a.axis == b.axis
+        && (fixed_of(a) - fixed_of(b)).abs() <= SHARED_INK
 }
 
 /// Whether two runs are one drawn line: on one line, and relationships of one kind.
@@ -135,7 +141,9 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
     let (low, high) = extent_of(run);
     let mut stretches: Vec<(f64, f64)> = runs
         .iter()
-        .filter(|other| same_ink(edges, run, other) && outranks(edges, other.edge_index, run.edge_index))
+        .filter(|other| {
+            same_ink(edges, run, other) && outranks(edges, other.edge_index, run.edge_index)
+        })
         .filter_map(|other| {
             let (their_low, their_high) = extent_of(other);
             let from = js::js_max(low, their_low);
@@ -143,12 +151,18 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
             (to - from > SHARED_INK).then_some((from, to))
         })
         .collect();
-    stretches.sort_by(|a, b| (a.0 - b.0).partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal));
+    stretches.sort_by(|a, b| {
+        (a.0 - b.0)
+            .partial_cmp(&0.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     merged_stretches(&stretches)
         .into_iter()
         .map(|(from, to)| Curve {
             from: with_axis(run.from, run.axis, from),
-            segments: vec![Segment::Line { to: with_axis(run.from, run.axis, to) }],
+            segments: vec![Segment::Line {
+                to: with_axis(run.from, run.axis, to),
+            }],
         })
         .collect()
 }
@@ -156,9 +170,10 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
 /// Whether two turns are the same turn drawn twice: both ends in one place.
 fn same_turn(a: &Curve, b: &Curve) -> bool {
     let ends = [a.from, a.segments[0].to()];
-    [b.from, b.segments[0].to()]
-        .iter()
-        .all(|point| ends.iter().any(|end| js::hypot(end.x - point.x, end.y - point.y) <= SHARED_INK))
+    [b.from, b.segments[0].to()].iter().all(|point| {
+        ends.iter()
+            .any(|end| js::hypot(end.x - point.x, end.y - point.y) <= SHARED_INK)
+    })
 }
 
 /// For each route's index, the stretches and turns of its ink another route draws.
@@ -168,11 +183,20 @@ pub fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
         .iter()
         .enumerate()
         .flat_map(|(edge_index, edge)| {
-            edge.curve.segments.iter().enumerate().filter_map(move |(index, segment)| {
-                matches!(segment, Segment::Cubic { .. }).then(|| {
-                    (edge_index, Curve { from: segment_start(&edge.curve, index), segments: vec![*segment] })
+            edge.curve
+                .segments
+                .iter()
+                .enumerate()
+                .filter(|(_, segment)| matches!(segment, Segment::Cubic { .. }))
+                .map(move |(index, segment)| {
+                    (
+                        edge_index,
+                        Curve {
+                            from: segment_start(&edge.curve, index),
+                            segments: vec![*segment],
+                        },
+                    )
                 })
-            })
         })
         .collect();
     let mut shared = BTreeMap::new();

@@ -35,7 +35,10 @@ fn terminal_outline(rect: Rect) -> Polygon {
         (0..=END_SIDES)
             .map(|step| {
                 let angle = from + (PI * f64::from(step)) / f64::from(END_SIDES);
-                Point { x: centre + r * libm::cos(angle), y: rect.y + r + r * libm::sin(angle) }
+                Point {
+                    x: centre + r * libm::cos(angle),
+                    y: rect.y + r + r * libm::sin(angle),
+                }
             })
             .collect()
     };
@@ -45,15 +48,26 @@ fn terminal_outline(rect: Rect) -> Polygon {
 }
 
 fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
-    let Rect { x, y, width, height } = rect;
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = rect;
     let middle = y + height / 2.0;
     match shape {
         FlowchartShape::Decision => {
             let centre = x + width / 2.0;
             vec![
                 Point { x: centre, y },
-                Point { x: x + width, y: middle },
-                Point { x: centre, y: y + height },
+                Point {
+                    x: x + width,
+                    y: middle,
+                },
+                Point {
+                    x: centre,
+                    y: y + height,
+                },
                 Point { x, y: middle },
             ]
         }
@@ -61,14 +75,26 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
             let cut = height / 2.0;
             vec![
                 Point { x: x + cut, y },
-                Point { x: x + width - cut, y },
-                Point { x: x + width, y: middle },
-                Point { x: x + width - cut, y: y + height },
-                Point { x: x + cut, y: y + height },
+                Point {
+                    x: x + width - cut,
+                    y,
+                },
+                Point {
+                    x: x + width,
+                    y: middle,
+                },
+                Point {
+                    x: x + width - cut,
+                    y: y + height,
+                },
+                Point {
+                    x: x + cut,
+                    y: y + height,
+                },
                 Point { x, y: middle },
             ]
         }
-        FlowchartShape::Terminal => terminal_outline(rect),
+        FlowchartShape::Start | FlowchartShape::End => terminal_outline(rect),
     }
 }
 
@@ -79,7 +105,7 @@ fn look_of(shape: FlowchartShape) -> SlabLook {
         lit: Some(token("--primary-top")),
         edge: token("--primary-edge"),
         thickness: CARD_THICKNESS,
-        radius: if shape == FlowchartShape::Terminal { 0.0 } else { CORNER },
+        radius: if shape.is_terminal() { 0.0 } else { CORNER },
         sheen: false,
     }
 }
@@ -93,15 +119,22 @@ pub fn flowchart_definitions() -> Markup {
             "linearGradient",
             attrs! { "id": GOLD_FACE_ID, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
             concat(vec![
-                tag("stop", attrs! { "offset": 0.0, "stop-color": token("--primary-top") }),
-                tag("stop", attrs! { "offset": 1.0, "stop-color": token("--primary-bottom") }),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.0, "stop-color": token("--primary-top") },
+                ),
+                tag(
+                    "stop",
+                    attrs! { "offset": 1.0, "stop-color": token("--primary-bottom") },
+                ),
             ]),
         ),
     )
 }
 
 fn centred_words(rect: Rect, words: &[String], fill: &str) -> Markup {
-    let top = rect.y + (rect.height - CARD_THICKNESS) / 2.0 - (words.len() as f64 * SHAPE_TEXT_LINE) / 2.0;
+    let top = rect.y + (rect.height - CARD_THICKNESS) / 2.0
+        - (words.len() as f64 * SHAPE_TEXT_LINE) / 2.0;
     concat(
         words
             .iter()
@@ -129,11 +162,16 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
         .map(|index| {
             let from = outline[index];
             let to = outline[(index + 1) % count];
-            Point { x: (from.x + to.x) / 2.0, y: (from.y + to.y) / 2.0 }
+            Point {
+                x: (from.x + to.x) / 2.0,
+                y: (from.y + to.y) / 2.0,
+            }
         })
         .collect();
     middles.iter().skip(1).fold(middles[0], |nearest, middle| {
-        if js::hypot(middle.x - corner.x, middle.y - corner.y) < js::hypot(nearest.x - corner.x, nearest.y - corner.y) {
+        if js::hypot(middle.x - corner.x, middle.y - corner.y)
+            < js::hypot(nearest.x - corner.x, nearest.y - corner.y)
+        {
             *middle
         } else {
             nearest
@@ -142,7 +180,11 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
 }
 
 fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
-    let by = if standing == Some(Standing::Removed) { OUTLINE_WIDTH / 2.0 } else { -HALO_INSET };
+    let by = if standing == Some(Standing::Removed) {
+        OUTLINE_WIDTH / 2.0
+    } else {
+        -HALO_INSET
+    };
     tag(
         "path",
         attrs! {
@@ -171,9 +213,18 @@ impl Shapes for FlowchartShapes<'_> {
             return Markup::new();
         }
         let look = look_of(shaped.shape);
-        let cast = polygon_shadow(&outline_of(shaped.shape, card.bounds), look.radius, SHADOW_REACH, self.palette);
-        let is_step = shaped.shape != FlowchartShape::Terminal;
-        shadow_group(cast, is_step.then_some(card.measured.node.id.as_str()), None)
+        let cast = polygon_shadow(
+            &outline_of(shaped.shape, card.bounds),
+            look.radius,
+            SHADOW_REACH,
+            self.palette,
+        );
+        let is_step = !shaped.shape.is_terminal();
+        shadow_group(
+            cast,
+            is_step.then_some(card.measured.node.id.as_str()),
+            None,
+        )
     }
 
     fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Markup {
@@ -182,7 +233,7 @@ impl Shapes for FlowchartShapes<'_> {
         let palette = self.palette;
         let rect = card.bounds;
         let outline = outline_of(shaped.shape, rect);
-        if shaped.shape == FlowchartShape::Terminal {
+        if shaped.shape.is_terminal() {
             return group(
                 Role::Shape,
                 None,
@@ -193,16 +244,36 @@ impl Shapes for FlowchartShapes<'_> {
                 ]),
             );
         }
-        let pin = side_near(&outline, Point { x: rect.x, y: rect.y });
-        let warning = side_near(&outline, Point { x: rect.x + rect.width, y: rect.y });
-        let ink = if standing == Some(Standing::Removed) { palette.muted.to_owned() } else { token("--primary-foreground") };
+        let pin = side_near(
+            &outline,
+            Point {
+                x: rect.x,
+                y: rect.y,
+            },
+        );
+        let warning = side_near(
+            &outline,
+            Point {
+                x: rect.x + rect.width,
+                y: rect.y,
+            },
+        );
+        let ink = if standing == Some(Standing::Removed) {
+            palette.muted.to_owned()
+        } else {
+            token("--primary-foreground")
+        };
         group(
             Role::Shape,
             subject(SubjectKind::Step, &card.measured.node.id, standing),
             attrs! {},
             lines(vec![
                 solid_seat(&outline, look.radius),
-                if standing == Some(Standing::Removed) { solid_ghost(&outline, look.radius, palette) } else { Markup::new() },
+                if standing == Some(Standing::Removed) {
+                    solid_ghost(&outline, look.radius, palette)
+                } else {
+                    Markup::new()
+                },
                 ring(&outline, look.radius, standing, palette),
                 solid_slab(&outline, &look, palette, standing),
                 centred_words(rect, &shaped.words, &ink),

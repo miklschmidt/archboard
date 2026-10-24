@@ -23,21 +23,46 @@ pub struct Face {
 /// Every face the document registers, used or not, so the stylesheet is the
 /// same shape in every render.
 pub const FACES: [Face; 4] = [
-    Face { weight: 400, css_family: SANS_CSS_FAMILY, file: "Onest-wght-v1.000.ttf" },
-    Face { weight: 500, css_family: SANS_CSS_FAMILY, file: "Onest-Medium-v1.000.ttf" },
-    Face { weight: 400, css_family: MONO_CSS_FAMILY, file: "DMMono-Regular-v1.000.ttf" },
-    Face { weight: 500, css_family: MONO_CSS_FAMILY, file: "DMMono-Medium-v1.000.ttf" },
+    Face {
+        weight: 400,
+        css_family: SANS_CSS_FAMILY,
+        file: "Onest-wght-v1.000.ttf",
+    },
+    Face {
+        weight: 500,
+        css_family: SANS_CSS_FAMILY,
+        file: "Onest-Medium-v1.000.ttf",
+    },
+    Face {
+        weight: 400,
+        css_family: MONO_CSS_FAMILY,
+        file: "DMMono-Regular-v1.000.ttf",
+    },
+    Face {
+        weight: 500,
+        css_family: MONO_CSS_FAMILY,
+        file: "DMMono-Medium-v1.000.ttf",
+    },
 ];
 
 /// Where the Archboard server serves the face files from.
 pub const FONT_URL_PREFIX: &str = "/assets/diagram-fonts";
 
 /// A card's name, and a container's or a flow's on its header slab.
-pub const CARD_TITLE_FONT: DiagramFont = DiagramFont { family: FontFamily::Sans, weight: 500 };
+pub const CARD_TITLE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
 /// What a card, a container or a flow is responsible for.
-pub const CARD_NOTE_FONT: DiagramFont = DiagramFont { family: FontFamily::Sans, weight: 400 };
+pub const CARD_NOTE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 400,
+};
 /// What a connection carries: small, technical, and on a plate.
-pub const PILL_FONT: DiagramFont = DiagramFont { family: FontFamily::Sans, weight: 500 };
+pub const PILL_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
 
 /// The family and weight attributes a piece of text carries.
 pub fn font_attributes(font: DiagramFont) -> Attrs {
@@ -45,5 +70,7 @@ pub fn font_attributes(font: DiagramFont) -> Attrs {
         FontFamily::Mono => MONO_STACK,
         FontFamily::Sans => SANS_STACK,
     };
-    Attrs::new().set("font-family", family).set("font-weight", f64::from(font.weight))
+    Attrs::new()
+        .set("font-family", family)
+        .set("font-weight", f64::from(font.weight))
 }

@@ -4,7 +4,7 @@ import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/rend
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { type StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import {
 	groupOf,
 	markShape,

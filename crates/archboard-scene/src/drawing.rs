@@ -85,6 +85,16 @@ pub struct MeasuredLabel {
     pub width: f64,
     pub height: f64,
     pub runs: Vec<TextRun>,
+    /// The chips the label stands on, from the top of its box: one for a
+    /// label, and one for each relationship a joined line stacks (ADR 0052).
+    pub chips: Vec<Chip>,
+}
+
+/// One chip of a label, by its offset from the top of the label's box.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
+pub struct Chip {
+    pub y: f64,
+    pub height: f64,
 }
 
 /// One card or containing frame, in the final drawing coordinate space.
@@ -104,6 +114,17 @@ pub struct PlacedLabel {
     #[ts(rename = "box")]
     pub bounds: Rect,
     pub measured: MeasuredLabel,
+}
+
+impl PlacedLabel {
+    /// Each chip's box, where the picture puts it.
+    pub fn chips(&self) -> impl Iterator<Item = Rect> + '_ {
+        self.measured.chips.iter().map(|chip| Rect {
+            y: self.bounds.y + chip.y,
+            height: chip.height,
+            ..self.bounds
+        })
+    }
 }
 
 /// A group's region: the cards one group places inside one container, gathered and captioned.

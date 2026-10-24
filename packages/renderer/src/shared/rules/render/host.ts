@@ -1,10 +1,13 @@
 // What the renderer asks of the place it runs in.
 //
 // The renderer is the same code under Bun (the CLI, the rasterizer, the
-// Archboard server's render route) and in a browser tab (TASK-247). Four things
-// differ between those places, and only four, so they arrive as a host
+// Archboard server's render route) and in a browser tab (TASK-247). Five things
+// differ between those places, and only five, so they arrive as a host
 // installed once before the first picture:
 //
+//   the renderer core, which paints every picture (ADR 0057): under Bun the
+//     build of this checkout's sources, refused when it is stale; in a browser
+//     the build the page serves
 //   the layout engine: a pool of workers, Bun Workers on the server and Web
 //     Workers in the browser, each solving one graph at a time
 //   the theme colours a document that stands alone carries: parsed from
@@ -24,12 +27,22 @@
 
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { DiagramTheme } from "@archboard/board/render-reply";
+import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+
+/** What the renderer asks of the core. */
+type CorePainter = Pick<typeof CoreBuild, "paintDocument" | "paintScene">;
 
 /** Every theme colour by theme and custom property name. */
 type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>>>>;
 
 /** The place the renderer runs in. */
 interface RendererHost {
+	/**
+	 * The renderer core, loaded once and ready to paint.
+	 * @returns The core.
+	 * @throws {Error} When the host has no core to paint with.
+	 */
+	readonly core: () => CorePainter;
 	/**
 	 * Solve one graph with the layout engine, for the engine its options name
 	 * as their {@link SOLVE_STAGE}. The engine solves a copy
@@ -101,34 +114,4 @@ function rendererHost(): RendererHost {
 	return installed;
 }
 
-/**
- * A theme colour, resolved to a literal a standalone SVG can carry.
- * @param theme The theme.
- * @param name The CSS colour custom property.
- * @returns The colour.
- * @throws {Error} When the host has no theme colours, or the theme does not define the property.
- */
-function themeColor(theme: DiagramTheme, name: string): string {
-	const colors = rendererHost().themeColors;
-	if (colors === undefined) {
-		throw new Error(
-			"This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme.",
-		);
-	}
-	const color = colors[theme][name];
-	if (color === undefined) {
-		throw new Error(
-			`Missing ${theme} theme color ${name}. Define it in packages/renderer/assets/theme.css.`,
-		);
-	}
-	return color;
-}
-
-export {
-	installRendererHost,
-	SOLVE_STAGE,
-	rendererHost,
-	themeColor,
-	type RendererHost,
-	type ThemeColors,
-};
+export { installRendererHost, SOLVE_STAGE, rendererHost, type RendererHost, type ThemeColors };

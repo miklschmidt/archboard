@@ -3,7 +3,8 @@
 // The same renderer core the CLI and the Archboard server's render route run
 // (`shared/rules/render`), with this page as its host: the
 // browser's own canvas measures text, in the diagram faces loaded into the
-// page; a pool of Web Workers runs the layout engine. It holds no theme
+// page; a pool of Web Workers runs the layout engine; the renderer core this
+// page serves paints, on the page's own thread. It holds no theme
 // colours: a picture drawn here paints with the page's own colour tokens, so it
 // takes whichever theme the page is in (TASK-346). What is drawn comes from the
 // board the page read from the server and holds as a read-only cache (ADR 0023),
@@ -19,6 +20,7 @@ import {
 	type BoardRenderOutcome,
 } from "#shared/rules/render/board.ts";
 import { installRendererHost, SOLVE_STAGE, type RendererHost } from "#shared/rules/render/host.ts";
+import initCore, * as core from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import { loadDiagramFaces } from "#ui/state/diagram-faces.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
 import {
@@ -48,6 +50,19 @@ function startLayoutWorker(avoidWasmUrl: string): EngineWorker {
 }
 
 let started: Promise<void> | undefined;
+
+/** The renderer core, once its glue fetched and started its WebAssembly. */
+let loaded: typeof core | undefined;
+
+/**
+ * The renderer core, which this page loads before it paints its first picture.
+ * @returns The core.
+ * @throws {Error} When the page asks for a picture before the core is loaded.
+ */
+function loadedCore(): typeof core {
+	if (loaded === undefined) throw new Error("The renderer core is not loaded yet.");
+	return loaded;
+}
 
 /** Two boxes and an edge: the least a layout can be, to start an engine on. */
 const WARM_UP_GRAPH: Parameters<RendererHost["solve"]>[0] = {
@@ -80,12 +95,16 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 		() => startLayoutWorker(setup.avoidWasmUrl),
 		workerCeiling(navigator.hardwareConcurrency),
 	);
+	// The core's glue fetches its WebAssembly beside it, as the build serves it,
+	// and is ready before the first picture is painted.
+	const painter = initCore().then(() => (loaded = core));
 	installRendererHost({
+		core: loadedCore,
 		solve,
 		fontBase64: noEmbeddedFaces,
 		iconPaths: loadedIconPaths,
 	});
-	started = loadDiagramFaces();
+	started = Promise.all([loadDiagramFaces(), painter]).then(() => undefined);
 	// Start one engine now, while the page boots and reads the board, rather
 	// than when the first picture needs it: a worker's first solve initializes
 	// both engines, and a trivial graph pays that cost here.

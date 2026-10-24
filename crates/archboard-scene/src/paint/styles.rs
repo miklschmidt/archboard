@@ -8,7 +8,8 @@ use crate::markup::Attrs;
 use crate::paint::appearance::semantic_ink;
 use crate::paint::colour::{Share, tinted};
 use crate::paint::design::{
-    LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_TEXT_SIZE,
+    LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_SIZE,
+    PILL_TEXT_SIZE,
 };
 use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT, PILL_FONT, font_attributes};
 use crate::paint::palette::Palette;
@@ -91,7 +92,11 @@ pub fn head_base(head: Head) -> f64 {
 
 /// The ink a line and its arrowhead are drawn in.
 pub fn line_colour(palette: &Palette, standing: Option<Standing>) -> String {
-    drawn_ink(full_line_colour(palette, standing), palette, Emphasis::Normal)
+    drawn_ink(
+        full_line_colour(palette, standing),
+        palette,
+        Emphasis::Normal,
+    )
 }
 
 /// The colour a line stands for at full strength: the standing's, or the neutral ink.
@@ -99,13 +104,26 @@ pub fn full_line_colour(palette: &Palette, standing: Option<Standing>) -> &'stat
     ink_of(standing, palette).unwrap_or(palette.edge)
 }
 
-const REMOVED_STRENGTH: Share = Share { light: 0.85, dark: 1.0 };
-const MUTED_STRENGTH: Share = Share { light: 0.7, dark: 0.6 };
-const LINE_STRENGTH: Share = Share { light: LINE_STRENGTH_LIGHT, dark: LINE_STRENGTH_DARK };
+const REMOVED_STRENGTH: Share = Share {
+    light: 0.85,
+    dark: 1.0,
+};
+const MUTED_STRENGTH: Share = Share {
+    light: 0.7,
+    dark: 0.6,
+};
+const LINE_STRENGTH: Share = Share {
+    light: LINE_STRENGTH_LIGHT,
+    dark: LINE_STRENGTH_DARK,
+};
 
 /// A colour as a line of one weight carries it: a muted line's with some of the page mixed in.
 pub fn quietened(ink: &str, palette: &Palette, weight: Emphasis) -> String {
-    if weight == Emphasis::Muted { tinted(palette.background, Some(ink), MUTED_STRENGTH) } else { ink.to_owned() }
+    if weight == Emphasis::Muted {
+        tinted(palette.background, Some(ink), MUTED_STRENGTH)
+    } else {
+        ink.to_owned()
+    }
 }
 
 /// The colour a line is drawn in, from the colour it stands for.
@@ -113,12 +131,20 @@ pub fn drawn_ink(ink: &str, palette: &Palette, weight: Emphasis) -> String {
     if ink == palette.standing_removed {
         return tinted(palette.background, Some(ink), REMOVED_STRENGTH);
     }
-    let line = if ink == palette.edge { ink.to_owned() } else { tinted(palette.background, Some(ink), LINE_STRENGTH) };
+    let line = if ink == palette.edge {
+        ink.to_owned()
+    } else {
+        tinted(palette.background, Some(ink), LINE_STRENGTH)
+    };
     quietened(&line, palette, weight)
 }
 
 /// The colour a relationship stands for at full strength.
-pub fn relationship_ink(palette: &Palette, standing: Option<Standing>, appearance: &LineAppearance) -> String {
+pub fn relationship_ink(
+    palette: &Palette,
+    standing: Option<Standing>,
+    appearance: &LineAppearance,
+) -> String {
     ink_of(standing, palette)
         .map(str::to_owned)
         .or_else(|| semantic_ink(appearance.color))
@@ -175,11 +201,13 @@ impl<'p> Styles<'p> {
 
     /// A flow's heading, set as a container's header is.
     pub fn header_name(&self) -> Attrs {
-        attrs! { "font-size": PART_TITLE_SIZE, "fill": self.palette.foreground }.with(font_attributes(CARD_TITLE_FONT))
+        attrs! { "font-size": PART_TITLE_SIZE, "fill": self.palette.foreground }
+            .with(font_attributes(CARD_TITLE_FONT))
     }
 
     pub fn header_note(&self) -> Attrs {
-        attrs! { "font-size": PART_NOTE_SIZE, "fill": self.palette.muted }.with(font_attributes(CARD_NOTE_FONT))
+        attrs! { "font-size": PART_NOTE_SIZE, "fill": self.palette.muted }
+            .with(font_attributes(CARD_NOTE_FONT))
     }
 
     pub fn title(&self) -> Attrs {
@@ -187,11 +215,13 @@ impl<'p> Styles<'p> {
     }
 
     pub fn note(&self) -> Attrs {
-        attrs! { "font-size": NOTE_SIZE, "fill": self.palette.muted }.with(font_attributes(CARD_NOTE_FONT))
+        attrs! { "font-size": NOTE_SIZE, "fill": self.palette.muted }
+            .with(font_attributes(CARD_NOTE_FONT))
     }
 
     pub fn pill_text(&self) -> Attrs {
-        attrs! { "font-size": PILL_TEXT_SIZE, "fill": self.palette.pill_text }.with(font_attributes(PILL_FONT))
+        attrs! { "font-size": PILL_TEXT_SIZE, "fill": self.palette.pill_text }
+            .with(font_attributes(PILL_FONT))
     }
 
     pub fn halo(&self) -> Attrs {

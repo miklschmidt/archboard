@@ -24,13 +24,28 @@ fn icon_markup(paths: &[String], ink: &str) -> Markup {
             "aria-hidden": "true",
             "class": "remixicon ",
         },
-        concat(paths.iter().map(|d| wrap("path", attrs! { "d": d }, Markup::new())).collect()),
+        concat(
+            paths
+                .iter()
+                .map(|d| wrap("path", attrs! { "d": d }, Markup::new()))
+                .collect(),
+        ),
     )
 }
 
 /// A configured icon, centred inside its type chip.
-pub fn glyph_group(icon: &str, cx: f64, cy: f64, ink: &str, icons: &BTreeMap<String, Vec<String>>) -> Markup {
-    let paths = icons.get(icon).or_else(|| icons.get(FALLBACK_ICON)).map(Vec::as_slice).unwrap_or(&[]);
+pub fn glyph_group(
+    icon: &str,
+    cx: f64,
+    cy: f64,
+    ink: &str,
+    icons: &BTreeMap<String, Vec<String>>,
+) -> Markup {
+    let paths = icons
+        .get(icon)
+        .or_else(|| icons.get(FALLBACK_ICON))
+        .map(Vec::as_slice)
+        .unwrap_or(&[]);
     group(
         Role::Icon,
         None,

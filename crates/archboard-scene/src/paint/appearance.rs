@@ -9,7 +9,8 @@ use crate::js;
 use crate::markup::{Attrs, Markup, concat, tag};
 use crate::paint::colour::{Inked, Share, Tone, ToneStep, inked_over, mixed, tinted, toned};
 use crate::paint::design::{
-    CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS, SLAB_RADIUS,
+    CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
+    SLAB_RADIUS,
 };
 use crate::paint::icons::glyph_group;
 use crate::paint::palette::{Palette, token};
@@ -23,7 +24,10 @@ pub fn semantic_ink(color: Option<PaletteColor>) -> Option<String> {
 }
 
 const DARK_FACE: ToneStep = ToneStep::new(0.31, 0.4);
-const CARD_EDGE: Tone = Tone { light: ToneStep::new(0.78, 0.8), dark: ToneStep::new(0.212, 0.45) };
+const CARD_EDGE: Tone = Tone {
+    light: ToneStep::new(0.78, 0.8),
+    dark: ToneStep::new(0.212, 0.45),
+};
 
 /// A grouped card's face on the light ground, by colour: its lightness and its chroma.
 fn light_face(color: PaletteColor) -> (f64, f64) {
@@ -32,7 +36,9 @@ fn light_face(color: PaletteColor) -> (f64, f64) {
         PaletteColor::Orange => (0.89, 0.057),
         PaletteColor::Amber => (0.89, 0.069),
         PaletteColor::Yellow => (0.92, 0.055),
-        PaletteColor::Lime | PaletteColor::Green | PaletteColor::Emerald | PaletteColor::Teal => (0.92, 0.07),
+        PaletteColor::Lime | PaletteColor::Green | PaletteColor::Emerald | PaletteColor::Teal => {
+            (0.92, 0.07)
+        }
         PaletteColor::Cyan => (0.89, 0.07),
         PaletteColor::Sky => (0.89, 0.055),
         PaletteColor::Blue => (0.89, 0.049),
@@ -50,17 +56,42 @@ fn face_in(color: PaletteColor) -> String {
     let (lightness, chroma) = light_face(color);
     toned(
         &token(&format!("--semantic-{}", color.as_str())),
-        Tone { light: ToneStep { lightness, chroma: 1.0, cap: chroma }, dark: DARK_FACE },
+        Tone {
+            light: ToneStep {
+                lightness,
+                chroma: 1.0,
+                cap: chroma,
+            },
+            dark: DARK_FACE,
+        },
     )
 }
 
-const TRAY_SINK: Share = Share { light: 0.4, dark: 0.4 };
-const TRAY_SINK_MAX: Share = Share { light: 0.8, dark: 0.8 };
-const TOP_WALL: Share = Share { light: 0.8, dark: 0.45 };
-const SIDE_WALL: Share = Share { light: 0.4, dark: 0.28 };
+const TRAY_SINK: Share = Share {
+    light: 0.4,
+    dark: 0.4,
+};
+const TRAY_SINK_MAX: Share = Share {
+    light: 0.8,
+    dark: 0.8,
+};
+const TOP_WALL: Share = Share {
+    light: 0.8,
+    dark: 0.45,
+};
+const SIDE_WALL: Share = Share {
+    light: 0.4,
+    dark: 0.28,
+};
 const LABEL_EDGE: f64 = 0.6;
-const CHIP_FACE: Inked = Inked { light: ToneStep::new(0.955, 0.17), dark: 0.2 };
-const CHIP_EDGE: Inked = Inked { light: ToneStep::new(0.78, 0.5), dark: 0.2 };
+const CHIP_FACE: Inked = Inked {
+    light: ToneStep::new(0.955, 0.17),
+    dark: 0.2,
+};
+const CHIP_EDGE: Inked = Inked {
+    light: ToneStep::new(0.78, 0.5),
+    dark: 0.2,
+};
 
 /// A card's slab: its face tinted and its front edge toned by its group.
 pub fn card_look(body_color: Option<PaletteColor>, palette: &Palette) -> SlabLook {
@@ -68,7 +99,10 @@ pub fn card_look(body_color: Option<PaletteColor>, palette: &Palette) -> SlabLoo
         face: body_color.map_or_else(|| palette.slab_face.to_owned(), face_in),
         ground: Some(palette.slab_face.to_owned()),
         lit: None,
-        edge: semantic_ink(body_color).map_or_else(|| palette.slab_edge.to_owned(), |ink| toned(&ink, CARD_EDGE)),
+        edge: semantic_ink(body_color).map_or_else(
+            || palette.slab_edge.to_owned(),
+            |ink| toned(&ink, CARD_EDGE),
+        ),
         thickness: CARD_THICKNESS,
         radius: SLAB_RADIUS,
         sheen: true,
@@ -100,7 +134,11 @@ fn floor_at(depth: f64, palette: &Palette) -> String {
 /// A container's tray: a neutral well with a header slab made of what holds it.
 pub fn tray_look(header: Rect, palette: &Palette, depth: f64) -> TrayLook {
     let floor = floor_at(depth, palette);
-    let ground = if depth == 0.0 { palette.background.to_owned() } else { floor_at(depth - 1.0, palette) };
+    let ground = if depth == 0.0 {
+        palette.background.to_owned()
+    } else {
+        floor_at(depth - 1.0, palette)
+    };
     TrayLook {
         top_wall: tinted(&floor, Some(palette.slab_deep), TOP_WALL),
         side_wall: tinted(&floor, Some(palette.slab_deep), SIDE_WALL),
@@ -141,7 +179,12 @@ pub fn type_chip(
     icons: &BTreeMap<String, Vec<String>>,
 ) -> Markup {
     let ink = semantic_ink(appearance.type_color).unwrap_or_else(|| palette.glyph.to_owned());
-    let rect = Rect { x, y, width: ICON_CHIP_SIZE, height: ICON_CHIP_SIZE };
+    let rect = Rect {
+        x,
+        y,
+        width: ICON_CHIP_SIZE,
+        height: ICON_CHIP_SIZE,
+    };
     let glyph = glyph_group(
         &appearance.icon,
         x + ICON_CHIP_SIZE / 2.0,
@@ -179,5 +222,8 @@ pub fn chip_tile(rect: Rect, ink: &str, palette: &Palette) -> Markup {
         radius: ICON_CHIP_RADIUS,
         sheen: true,
     };
-    concat(vec![slab_shadow(rect, ICON_CHIP_RADIUS, Lift::Chip, palette, None), slab(rect, &look, palette, None, None)])
+    concat(vec![
+        slab_shadow(rect, ICON_CHIP_RADIUS, Lift::Chip, palette, None),
+        slab(rect, &look, palette, None, None),
+    ])
 }

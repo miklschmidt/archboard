@@ -19,8 +19,14 @@ use crate::scene::{Item, Motion, PulseLook, Role, TrafficMark};
 /// The air between the base of an arrowhead and the pulse that sinks into it.
 const AIR: f64 = 1.0;
 
-const BODY_LIGHT: Share = Share { light: 0.65, dark: 0.5 };
-const HOT_LIGHT: Share = Share { light: 0.9, dark: 0.8 };
+const BODY_LIGHT: Share = Share {
+    light: 0.65,
+    dark: 0.5,
+};
+const HOT_LIGHT: Share = Share {
+    light: 0.9,
+    dark: 0.8,
+};
 
 /// How a pulse on a line is drawn: its relationship's colour at full strength
 /// with white mixed in, and more of it in the front.
@@ -54,10 +60,19 @@ pub struct TrafficLine<'a> {
 }
 
 /// A board's traffic: each line's in a layer of its own, by relationship id.
-pub fn paint_traffic(lines: &[TrafficLine], cards: &[(String, Rect)], palette: &Palette) -> HashMap<String, Markup> {
+pub fn paint_traffic(
+    lines: &[TrafficLine],
+    cards: &[(String, Rect)],
+    palette: &Palette,
+) -> HashMap<String, Markup> {
     let rides: HashMap<&str, Option<(Curve, f64)>> = lines
         .iter()
-        .map(|line| (line.routed.edge.id.as_str(), ride_of(&line.into, line.head_reach)))
+        .map(|line| {
+            (
+                line.routed.edge.id.as_str(),
+                ride_of(&line.into, line.head_reach),
+            )
+        })
         .collect();
     let lanes: Vec<Lane> = lines
         .iter()
@@ -71,7 +86,10 @@ pub fn paint_traffic(lines: &[TrafficLine], cards: &[(String, Rect)], palette: &
                 start: routed.curve.from,
                 end: routed.curve.end(),
                 length: route_length(&routed.curve),
-                ride: rides.get(routed.edge.id.as_str()).and_then(|ride| ride.as_ref()).map_or(0.0, |ride| ride.1),
+                ride: rides
+                    .get(routed.edge.id.as_str())
+                    .and_then(|ride| ride.as_ref())
+                    .map_or(0.0, |ride| ride.1),
             }
         })
         .collect();
@@ -92,11 +110,23 @@ pub fn paint_traffic(lines: &[TrafficLine], cards: &[(String, Rect)], palette: &
                 (Some((curve, _)), Some(rhythm)) => vec![Item::Traffic(TrafficMark {
                     look: pulse_look(&line.ink, line.line_width, palette),
                     route: curve.clone(),
-                    motion: Motion::Steady { speed: rhythm.speed, spacing: rhythm.spacing, phase: rhythm.phase },
+                    motion: Motion::Steady {
+                        speed: rhythm.speed,
+                        spacing: rhythm.spacing,
+                        phase: rhythm.phase,
+                    },
                 })],
                 _ => Markup::new(),
             };
-            (id.to_owned(), group(Role::Traffic, None, attrs! { TRAFFIC_ATTRIBUTE: id }, pulses))
+            (
+                id.to_owned(),
+                group(
+                    Role::Traffic,
+                    None,
+                    attrs! { TRAFFIC_ATTRIBUTE: id },
+                    pulses,
+                ),
+            )
         })
         .collect()
 }

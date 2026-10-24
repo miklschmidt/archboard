@@ -137,7 +137,7 @@ pub struct Group {
     #[ts(optional)]
     pub subject: Option<Subject>,
     /// Its attributes besides its subject's, in the order they are written.
-    #[ts(type = "ReadonlyArray<[string, Value]>")]
+    #[ts(type = "Array<[string, Value]>")]
     pub attrs: Vec<(&'static str, Value)>,
     pub children: Vec<Item>,
 }
@@ -148,7 +148,7 @@ pub struct Element {
     /// Its SVG name.
     #[ts(type = "string")]
     pub name: &'static str,
-    #[ts(type = "ReadonlyArray<[string, Value]>")]
+    #[ts(type = "Array<[string, Value]>")]
     pub attrs: Vec<(&'static str, Value)>,
     pub children: Vec<Item>,
     /// Whether it is written as one empty-element tag.
@@ -173,7 +173,11 @@ pub struct PulseLook {
 pub enum Motion {
     /// A steady train: pulses `spacing` apart flying at `speed`, one `phase`
     /// along the route at time zero.
-    Steady { speed: f64, spacing: f64, phase: f64 },
+    Steady {
+        speed: f64,
+        spacing: f64,
+        phase: f64,
+    },
     /// One pulse a turn of a clock `cycle` seconds long, leaving the route's
     /// start `start` seconds into it and flying at `speed`.
     Turn { speed: f64, cycle: f64, start: f64 },
@@ -195,7 +199,9 @@ pub enum Item {
     Group(Group),
     Element(Element),
     /// Words, inside a text element.
-    Text { text: String },
+    Text {
+        text: String,
+    },
     /// A line break between two things, where the document has one.
     Break,
     Traffic(TrafficMark),
@@ -252,4 +258,29 @@ pub struct Scene {
     pub definitions: Vec<Item>,
     pub body: Vec<Item>,
     pub atlas: Atlas,
+    /// Every subject the drawing placed, legend and title aside: what a key counts.
+    pub placed: Vec<String>,
+}
+
+/// A picture written as a document: what the core answers its host.
+#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct PaintedDocument {
+    /// The whole SVG document.
+    pub svg: String,
+    /// The page width, in the document's own units.
+    pub width: f64,
+    /// The page height, in the document's own units.
+    pub height: f64,
+    /// Where every subject the renderer drew ended up.
+    pub atlas: Atlas,
+    /// Every subject the drawing placed, by id: what its key counts the marks
+    /// of, and what an answer says the picture draws. A legend drawn alone keys
+    /// the drawing it leaves out, so these are still that drawing's.
+    pub placed: Vec<String>,
+    /// Which way an architecture reads (ADR 0032). A sequence reads one way and
+    /// says nothing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub reading_direction: Option<ReadingDirection>,
 }
