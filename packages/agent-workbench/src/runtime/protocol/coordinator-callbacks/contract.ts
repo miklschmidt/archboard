@@ -446,10 +446,6 @@ interface CoordinatorCallbacks {
 	readonly dispose: () => void;
 }
 
-interface CoordinatorCallbacksRetainedState {
-	current: CoordinatorCallbacks | null;
-}
-
 interface CoordinatorCallbackClassification {
 	readonly captured: CoordinatorCallbackLinkCorrelation;
 	readonly live: ThreadLinkClassification;
@@ -490,6 +486,5 @@ export {
 	type CoordinatorCallbackOptions,
 	type CoordinatorCallbackHistory,
 	type CoordinatorCallbacks,
-	type CoordinatorCallbacksRetainedState,
 	type CoordinatorCallbackClassification,
 };

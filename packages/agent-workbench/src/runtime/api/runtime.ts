@@ -11,7 +11,6 @@ export {
 	type CoordinatorCallbackDeliveryPath,
 	type CoordinatorCallbackDeliveryReason,
 	type CoordinatorCallbackHistory,
-	type CoordinatorCallbackHostDelivery,
 	type CoordinatorCallbackHostPolicy,
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackMutationResult,
@@ -24,7 +23,6 @@ export {
 	type CoordinatorCallbackTurnPort,
 	type CoordinatorCallbackTurnResult,
 	type CoordinatorCallbacks,
-	type CoordinatorCallbacksRetainedState,
 	type CoordinatorHostCallbackSource,
 	type CoordinatorOperationCallback,
 	type CoordinatorPaneNews,
@@ -32,7 +30,6 @@ export {
 	type CoordinatorSemanticCallbackData,
 	type CoordinatorSemanticSubject,
 	type CoordinatorWorkhorseNewsCallback,
-	type SemanticCallbackSource,
 	type WorkhorseNewsSituation,
 	type WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -83,29 +80,20 @@ export {
 export { COORDINATOR_CAPABILITY_POLICY } from "#runtime/protocol/coordinator/contract.ts";
 export {
 	type WorkbenchContextEvent,
-	type WorkbenchContextFreshness,
 	type WorkbenchContextPublisher,
 	type WorkbenchContextSource,
-	type WorkbenchVoiceInput,
 	type WorkbenchVoicePolicy,
 } from "#runtime/protocol/host/context-source.ts";
 export {
 	type WorkbenchContextCodec,
 	type WorkbenchExecutionContext,
 } from "#runtime/protocol/host/context.ts";
-export {
-	type WorkbenchInstructions,
-	type WorkbenchThreadProfile,
-} from "#runtime/protocol/host/instructions.ts";
+export { type WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
 export { type SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
 export { type WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operations/contract.ts";
 export { coordinatorCallbackCoalescingKey } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 export { type ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
-export {
-	WorkbenchExecutionContextSchema,
-	captureExecutionContext,
-} from "#runtime/rules/host/context.ts";
-export { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
+
 export { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
 export { createTextUserInput } from "#runtime/rules/host/text-input.ts";
 export {
@@ -133,7 +121,6 @@ export {
 	CALLBACK_BUFFER_LIMIT,
 	coordinatorCallbackKey,
 	createCodexCoordinatorCallbacks,
-	installCodexCoordinatorCallbacks,
 	normalizeCoordinatorCallback,
 } from "#runtime/services/coordinator-callbacks/callbacks.ts";
 export { createCoordinatorCallbackRealtimePort } from "#runtime/services/coordinator-callbacks/realtime.ts";
@@ -181,7 +168,4 @@ export {
 	readWorkbenchInstructionDocument,
 } from "#runtime/rules/host/authored.ts";
 
-export {
-	composeWorkbenchRoleInstructions,
-	captureThreadProfile,
-} from "#runtime/rules/host/instructions.ts";
+export { composeWorkbenchRoleInstructions } from "#runtime/rules/host/instructions.ts";

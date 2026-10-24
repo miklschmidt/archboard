@@ -24,7 +24,6 @@ import type {
 	CoordinatorCallbackDeliveryReason,
 	CoordinatorCallbackOptions,
 	CoordinatorCallbacks,
-	CoordinatorCallbacksRetainedState,
 	CoordinatorCallbackSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
@@ -527,25 +526,6 @@ export function createCodexCoordinatorCallbacks(
 			}
 		},
 	});
-}
-
-/**
- * Install the callbacks module once for a server: a second install returns the module already
- * retained, so two callers can never subscribe two modules to the same sources.
- * @param retained - Where the server keeps its module.
- * @param options - The module options, used only on the first install.
- * @returns The retained module.
- */
-export function installCodexCoordinatorCallbacks(
-	retained: CoordinatorCallbacksRetainedState,
-	options: CoordinatorCallbackOptions,
-): CoordinatorCallbacks {
-	if (retained.current !== null) {
-		return retained.current;
-	}
-	const callbacks = createCodexCoordinatorCallbacks(options);
-	retained.current = callbacks;
-	return callbacks;
 }
 
 export {

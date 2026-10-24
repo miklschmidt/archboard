@@ -6,7 +6,6 @@ import type {
 	CoordinatorCallbackSource,
 	CoordinatorCallbackOptions,
 	CoordinatorCallbacks,
-	CoordinatorCallbacksRetainedState,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { callbackSource } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import { createArchboardCallbackPolicy } from "#runtime/services/coordinator-callbacks/deliver.ts";
@@ -40,22 +39,9 @@ function createArchboardCoordinatorCallbacks(
 	});
 }
 
-/**
- * Install one Archboard adapter over the retained runtime owner.
- * @param retained The retained callback owner.
- * @param options The domain sources and runtime authorities.
- * @returns The retained callback owner.
- */
-function installCodexCoordinatorCallbacks(
-	retained: CoordinatorCallbacksRetainedState,
-	options: CoordinatorCallbackOptions,
-): CoordinatorCallbacks {
-	return (retained.current ??= createArchboardCoordinatorCallbacks(options));
-}
 export {
 	createArchboardCoordinatorCallbacks,
 	createArchboardCoordinatorCallbacks as createCodexCoordinatorCallbacks,
-	installCodexCoordinatorCallbacks,
 	createArchboardCallbackPolicy,
 	CALLBACK_BUFFER_LIMIT,
 };
