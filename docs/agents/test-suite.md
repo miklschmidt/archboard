@@ -25,7 +25,7 @@ native lanes in this order:
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
-`lint:policy` includes `lint:css`, which applies the shared import boundaries to authored CSS.
+`lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.
 The workflow retains its full output as the `validation-log` artifact.
@@ -37,7 +37,10 @@ The two lint policies retain their JSONC files and the project guard in `scripts
 
 Validation tasks cache successful results from declared source and fixture paths.
 The cache also fingerprints dependency metadata and the environment that affects validation.
-Tests restore no fixture files. The frontend build restores its generated bundle on a cache hit.
+The repository lane fingerprints Git's tracked entries because its owners discover tracked files.
+Validation tasks declare their inputs and restore no fixture files.
+This keeps Vite+ file tracing out of sandboxed Chromium and out of measured tests. The frontend build restores its generated bundle on a cache hit.
+Its source fingerprint travels with the bundle, so checkout and restoration times do not mark valid output as stale.
 Pipeline tasks resolve their children on every call, and fix commands bypass the cache.
 Use `bunx vp run --no-cache check:all` when you need a fresh run of every stage.
 

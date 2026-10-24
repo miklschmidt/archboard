@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 02:27'
-updated_date: '2026-10-24 02:51'
+updated_date: '2026-10-24 03:21'
 labels: []
 dependencies: []
 references:
@@ -32,11 +32,11 @@ TASK-500 left the Vite+ conversion as follow-up work. Contributors still install
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Pin Vite+ 1.4.0 and its Vite core alias. Build, lint, formatting, plugin types, and fixture subprocesses use the bundled tools. Preserve both lint policies and the project-scope guard.
-2. Put ordered pipelines and cached validation tasks in vite.config.ts. Keep short package scripts for the main commands. Automatic file tracking, lock metadata, and relevant environment values form cache inputs. Validation restores no fixture files, builds restore dist/frontend, and fix commands bypass caching.
-3. Remove duplicate script aliases after active legacy gate runs finish. Use one browser inventory and one capacity inventory. Run both compiler projects through the existing process runner. Update restart to call build. Command interface@TASK-515 is the affected board proposal.
-4. Remove the completed package map. Current guidance lives in boundaries and ADR 0055. TASK-516 retains the separate Bun/Vitest trial. Sweep live command references.
-5. Prove cache hits, invalidation, and frontend output restoration. Run the complete bun run check gate, inspect the proposal and footprint, adopt the proposal, pause to simplify, and commit the finished change.
+1. Pin Vite+ 1.4.0 and its Vite core alias. Use bundled build, lint, formatting, plugin types, and fixture subprocesses. Preserve both lint policies and the project-scope guard.
+2. Put ordered pipelines and cached leaves in vite.config.ts. Declare Bun source, fixture, lock, and environment inputs explicitly, with no file tracing or restored fixture outputs. Keep the build cache and its content fingerprint together. Fix commands bypass caching.
+3. Keep short package scripts, one browser inventory, and one capacity inventory. Run both compiler projects through the existing process runner. Restart calls build. Adopted proposal: Command interface@TASK-515.
+4. Remove package-map.md, preserve current guidance in boundaries and ADR 0055, retain the separate Bun/Vitest trial as TASK-516, and update live command references. CI sets up Vite+ and retains task results.
+5. TASK-515.01 repairs the observed tracer, fixture-isolation, and restored-build failures without weakening owners or limits. Require a complete passing gate and an unchanged cached repeat before closing both tasks. Inspect the final result for simplification and commit it.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
