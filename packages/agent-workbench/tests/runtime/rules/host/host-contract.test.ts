@@ -138,6 +138,30 @@ test("self-consistent profile hashes cannot authorize changed reserved namespace
 	}
 });
 
+test("self-consistent instruction hashes cannot replace the known role's core instructions", () => {
+	for (const role of ["coordinator", "workhorse"] as const) {
+		const profile = createWorkbenchThreadProfile({
+			role,
+			serviceName: "host",
+			threadSource: "host",
+			domainInstructions: "Host instructions.\n",
+			dynamicTools: [],
+		});
+		const otherRole = role === "coordinator" ? "workhorse" : "coordinator";
+		for (const text of [
+			"Host instructions.\n",
+			`${CORE_ROLE_INSTRUCTIONS[role].slice(1)}\nHost instructions.\n`,
+			`${CORE_ROLE_INSTRUCTIONS[otherRole]}\nHost instructions.\n`,
+		]) {
+			const instructions = {
+				text,
+				sha256: createHash("sha256").update(text, "utf8").digest("hex"),
+			};
+			expect(() => captureThreadProfile({ ...profile, instructions }, role)).toThrow(TypeError);
+		}
+	}
+});
+
 test("the known role requires its own built-in tools and rejects another role's reserved host tools", () => {
 	const workhorse = createWorkbenchThreadProfile({
 		role: "workhorse",
@@ -155,6 +179,17 @@ test("the known role requires its own built-in tools and rejects another role's 
 	});
 	expect(() => captureThreadProfile(workhorse, "coordinator")).toThrow(TypeError);
 	expect(() => captureThreadProfile(coordinator, "workhorse")).toThrow(TypeError);
+	for (const [profile, role] of [
+		[workhorse, "workhorse"],
+		[coordinator, "coordinator"],
+	] as const) {
+		expect(() =>
+			captureThreadProfile(
+				withManifest(profile, [...workhorse.dynamicTools, ...coordinator.dynamicTools]),
+				role,
+			),
+		).toThrow(TypeError);
+	}
 	expect(() =>
 		createWorkbenchThreadProfile({
 			role: "coordinator",
