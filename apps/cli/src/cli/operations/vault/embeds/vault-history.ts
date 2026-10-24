@@ -38,8 +38,6 @@ async function removals(
 		signal,
 	);
 	if (log === undefined) return [];
-	const named = (file: string) =>
-		normalizeBoardKey(path.basename(file, BOARD_FILE_SUFFIX)) === normalizeBoardKey(name);
 	return log
 		.toString("utf8")
 		.split("\x1e")
@@ -48,13 +46,26 @@ async function removals(
 			// The commit's line ends at a line break, and each status and file after it at a zero.
 			const [head = "", ...changes] = entry.split(/\0\n?/u);
 			const [commit = "", subject = ""] = head.split("\x1f");
-			const files: string[] = [];
-			for (let at = 0; at + 1 < changes.length; at += 2) {
-				const [status, file = ""] = [changes[at], changes[at + 1]];
-				if (file.endsWith(BOARD_FILE_SUFFIX) && (status === "D" || named(file))) files.push(file);
-			}
-			return { commit: { commit, subject: subject.trim() }, files };
+			return { commit: { commit, subject: subject.trim() }, files: removalFiles(changes, name) };
 		});
+}
+
+/**
+ * The board files of one commit that can have removed a board: each one it
+ * deleted, and the file of the board's name when it changed it.
+ * @param changes Each change's status and then its file.
+ * @param name The board's name.
+ * @returns The files.
+ */
+function removalFiles(changes: readonly string[], name: string): string[] {
+	const key = normalizeBoardKey(name);
+	const files: string[] = [];
+	for (let at = 0; at + 1 < changes.length; at += 2) {
+		const [status, file = ""] = [changes[at], changes[at + 1]];
+		const named = normalizeBoardKey(path.basename(file, BOARD_FILE_SUFFIX)) === key;
+		if (file.endsWith(BOARD_FILE_SUFFIX) && (status === "D" || named)) files.push(file);
+	}
+	return files;
 }
 
 /**
