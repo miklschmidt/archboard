@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24T14:52:00Z'
+updated_date: '2026-10-24T14:54:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -29,3 +30,9 @@ The TASK-517.03 complete gate reports ten system failures before lifecycle scena
 <!-- SECTION:PLAN:BEGIN -->
 No architecture board changes: repair the test fixture integration only. Reproduce the failing owners and identify the exact changed insertion point. Keep all scenarios, assertions, guards, and timeouts. Use the smallest compatible fixture repair, run affected owners and scoped checks, simplify, and commit. The parent reruns the complete normal gate.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Commit 848efe4cb changes only the controlled lifecycle helper. It now matches the ordinaryOnly condition added by dc8075788 and preserves that condition in the extended item list. Every drift guard, assertion, and timeout stays intact. Ten affected cases and 54 related query, queue, and spoken-approval cases pass. Source/test lint, both type projects, and formatting pass. Full gate remains parent-owned.
+<!-- SECTION:NOTES:END -->
