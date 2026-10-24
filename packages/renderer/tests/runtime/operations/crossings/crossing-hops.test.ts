@@ -2,6 +2,8 @@
 // route geometry.
 import { expect, test } from "bun:test";
 import type { bridgeCrossings } from "#shared/rules/layout/routes/crossings.ts";
+import { curveBounds } from "#shared/rules/layout/routes/curves.ts";
+import { sharedInk } from "#shared/rules/layout/routes/drawn-lines.ts";
 import { bridged, drawing } from "#tests/runtime/support/fixed-routes.ts";
 
 // Every engine: a line that turned just past a crossing was cut beneath the
@@ -161,4 +163,41 @@ test("a crossing with room on both lines hops, centred, and every hop bulges the
 	expect(result.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
 	expect(result.bridges[0]!.curve.segments[0]!.to).toEqual({ x: 50, y: 43 });
 	expect(bulgeOneWay(result.bridges)).toBe(true);
+});
+
+// Blocks: a line crossed a trunk of joined lines, and only the route that drew
+// the trunk's ink hopped it. The others ran straight under the arc, so their
+// traffic rode through the crossing instead of over it.
+test("every route of a trunk hops with it, and the trunk draws each hop once", () => {
+	const result = bridged(
+		drawing([
+			[
+				{ x: 100, y: 0 },
+				{ x: 100, y: 100 },
+			],
+			[
+				{ x: 0, y: 50 },
+				{ x: 200, y: 50 },
+			],
+			// The same line one unit lower, run the other way.
+			[
+				{ x: 200, y: 51 },
+				{ x: 0, y: 51 },
+			],
+		]),
+	);
+	expect(result.bridges).toHaveLength(1);
+	expect(result.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
+	const crest = curveBounds(result.bridges[0]!.curve).y;
+	for (const [index, line] of [
+		[1, 50],
+		[2, 51],
+	] as const) {
+		const { curve } = result.edges[index]!;
+		expect(curveBounds(curve).y, `route ${index}`).toBe(crest + line - 50);
+		expect(curve.segments.at(-1)!.to.y, `route ${index}`).toBe(line);
+	}
+	// The route that does not draw the trunk hides its own arc under the drawer's.
+	const hidden = sharedInk(result.edges).get(2) ?? [];
+	expect(hidden.some((piece) => curveBounds(piece).y <= crest + 1)).toBe(true);
 });

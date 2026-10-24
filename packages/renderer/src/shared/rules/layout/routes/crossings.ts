@@ -51,6 +51,7 @@ import {
 } from "#shared/rules/layout/routes/crossing-clusters.ts";
 import { unfoldCrossings } from "#shared/rules/layout/routes/folded-crossings.ts";
 import {
+	carried,
 	crestAlong,
 	crowded,
 	HOP_MARGIN,
@@ -195,8 +196,18 @@ function stand(state: Settling, rise: Rise, curve: Curve): void {
 		idsOf(edges, sidesOf(rise.cluster, crossing)[1]),
 	);
 	state.bridges.push({ edgeId: edges[run.edgeIndex]!.edge.id, under: [...new Set(under)], curve });
-	const replacement = state.replacements[run.edgeIndex]!;
-	replacement.set(run.segmentIndex, [...(replacement.get(run.segmentIndex) ?? []), curve]);
+	// Every route of the trunk hops with its drawer: `crestAlong` found each
+	// one that reaches the crest holding all of it.
+	const members = new Set(
+		rise.crossings.flatMap((crossing) => sidesOf(rise.cluster, crossing)[0].members),
+	);
+	for (const member of members) {
+		const replacement = state.replacements[member.edgeIndex]!;
+		replacement.set(member.segmentIndex, [
+			...(replacement.get(member.segmentIndex) ?? []),
+			carried(curve, run, member),
+		]);
+	}
 	state.hops.push({ curve, axis: run.axis });
 }
 

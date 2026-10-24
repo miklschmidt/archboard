@@ -452,7 +452,7 @@ function sameTurn(a: Turn, b: Turn): boolean {
  * The pieces of each route's ink that another route draws: where routes of one
  * kind lie on one line, the heaviest (then the earliest) draws it once, so a
  * trunk shows one stroke, one dash pattern and one arrowhead.
- * @param edges The routes, before any hop is drawn.
+ * @param edges The routes, hops included: every route of a trunk hops as its drawer does.
  * @returns For each route's index, the stretches and turns of its ink another route draws.
  */
 function sharedInk(edges: readonly DrawingEdge[]): ReadonlyMap<number, readonly Curve[]> {
@@ -490,6 +490,7 @@ function sharedInk(edges: readonly DrawingEdge[]): ReadonlyMap<number, readonly 
 }
 
 export {
+	across,
 	along,
 	drawnCrossings,
 	joinNear,
