@@ -160,11 +160,17 @@ legend. It is not the command line: it holds no output path, and it names a
 variant or a view by id, not by the name somebody typed.
 _Avoid_: render request, render settings, command, export options
 
-**Tracked render**:
-A Board render that its Board lists, so that the Board's side knows where the
-picture is embedded, also in another repository. Somebody asks for each one: no
-Board render is tracked by default.
-_Avoid_: artifact, export, embed, subscription
+**Embed**:
+A Board render that a repository keeps under Git, so that a document can show
+it. It carries its Render recipe, and the embeds check keeps it current. A
+render on stdout, on the clipboard or in a folder that Git ignores is no embed.
+_Avoid_: artifact, export, tracked render, asset
+
+**Tracked embed**:
+An Embed that its Board lists, so that the Board's side knows where the picture
+is shown, also in another repository. Somebody asks for each one: no Embed is
+tracked by default.
+_Avoid_: tracked render, subscription, registered embed
 
 ### Meaning
 
@@ -682,6 +688,12 @@ Reading a vault's boards against the vault's own configuration: the board
 families, the vocabulary that the boards use, and the configuration itself. It
 reads no code and no Git, and it is the check that canvases poll.
 _Avoid_: plain check, board check, vault check, lint
+
+**Embeds check**:
+Reading the Embeds of a repository against the boards they draw, in this vault
+or in another repository's vault. It says which Embed is outdated or lost its
+board, and it can draw each outdated one again.
+_Avoid_: artifact check, render check, docs check
 
 **Code check**:
 Reading, on request, the code and the infrastructure that the bindings and
