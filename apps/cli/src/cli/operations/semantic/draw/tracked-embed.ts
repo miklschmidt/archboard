@@ -21,7 +21,7 @@ import {
 import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { listRegistry, repoIdentityAt, repoRootOf } from "@archboard/workspace/checkouts";
-import type { CommandContext } from "#cli/protocol/contract/contract.ts";
+import { CliUsageError, type CommandContext } from "#cli/protocol/contract/contract.ts";
 import { gitOutput } from "#cli/clients/git/git-output.ts";
 
 /** What a render to a file says it tracked: the embed and the board's version after it. */
@@ -74,15 +74,27 @@ function outsideRefusal(file: string, why: string): TrackRefusedError {
 }
 
 /**
- * A file's path with every directory that exists resolved to its real path,
- * so a link above the file cannot make the tracked path name another place.
+ * The file to be written, through the real path of its directory, so a link
+ * above the file cannot make the tracked path name another place. A board
+ * cannot forget an embed it lists, so a file that cannot be written is refused
+ * here, before the board lists it.
  * @param file The file, absolute.
- * @returns The same file through real directories.
+ * @returns The same file through its real directory.
+ * @throws {CliUsageError} When the file's directory does not exist, or the file is a directory.
  */
 function realFile(file: string): string {
-	let dir = path.dirname(file);
-	while (!fs.existsSync(dir) && path.dirname(dir) !== dir) dir = path.dirname(dir);
-	return path.join(fs.realpathSync.native(dir), path.relative(dir, file));
+	const dir = path.dirname(file);
+	if (fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() !== true) {
+		throw new CliUsageError(
+			`--track cannot list ${file}, because the directory ${dir} does not exist. Create it, or name a file in a directory that exists. Nothing was drawn or written.`,
+		);
+	}
+	if (fs.statSync(file, { throwIfNoEntry: false })?.isDirectory() === true) {
+		throw new CliUsageError(
+			`--track cannot list ${file}, because it is a directory. Name the file to write. Nothing was drawn or written.`,
+		);
+	}
+	return path.join(fs.realpathSync.native(dir), path.basename(file));
 }
 
 /**
@@ -94,14 +106,12 @@ function realFile(file: string): string {
  * @throws {TrackRefusedError} When no checkout holds the file, or Git ignores it.
  */
 async function embedOfFile(file: string, signal: AbortSignal): Promise<TrackedEmbed> {
-	const top = await repoRootOf(path.dirname(file), { signal });
+	const real = realFile(file);
+	const top = await repoRootOf(path.dirname(real), { signal });
 	if (top === undefined) throw outsideRefusal(file, "is in no Git checkout");
+	// The checkout of the file's real directory holds it, so the path from its root goes down.
 	const root = fs.realpathSync.native(top);
-	const relative = path.relative(root, realFile(file));
-	if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-		throw outsideRefusal(file, `is outside the checkout ${root}`);
-	}
-	const repoPath = relative.split(path.sep).join("/");
+	const repoPath = path.relative(root, real).split(path.sep).join("/");
 	if ((await gitOutput(root, ["check-ignore", "-q", "--", repoPath], signal)) !== undefined) {
 		throw outsideRefusal(file, `is ignored by Git in ${root}`);
 	}
