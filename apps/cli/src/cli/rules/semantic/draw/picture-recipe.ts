@@ -4,6 +4,15 @@
 
 import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe";
 
+/** The refusal of a server that cannot say which repository holds the vault, as a command declares it. */
+const vaultRepositoryUnknownRefusal = {
+	code: "VAULT_REPOSITORY_UNKNOWN",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"Git did not say whether a repository holds the vault (it timed out or failed), so the render's recipe cannot name the vault's repository. Nothing was drawn; try again.",
+};
+
 /**
  * The recipe in the server's picture, or why it gives none.
  * @param svg The standalone SVG the server drew.
@@ -23,4 +32,4 @@ function recipeOfPicture(
 	};
 }
 
-export { recipeOfPicture };
+export { recipeOfPicture, vaultRepositoryUnknownRefusal };

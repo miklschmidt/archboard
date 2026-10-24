@@ -85,6 +85,14 @@ function pictureWithoutRecipe(): Response {
 	});
 }
 
+/** The server's answer when Git did not say which repository holds the vault. */
+function gitDidNotAnswer(): Response {
+	return Response.json(
+		{ success: false, code: "VAULT_REPOSITORY_UNKNOWN", error: "Git did not answer in time." },
+		{ status: 500 },
+	);
+}
+
 /**
  * Run the CLI and capture what it wrote and how it exited.
  * @param argv The arguments.
@@ -153,3 +161,18 @@ test("semantic rasterize refuses a server picture without a recipe before it giv
 	expect(exited).toBe(refusal);
 	expect(stdout).toBe("");
 });
+
+for (const [command, contract] of [
+	["render", semanticRenderContract],
+	["rasterize", semanticRasterizeContract],
+] as const) {
+	test(`semantic ${command} refuses when the server's Git did not say which repository holds the vault`, async () => {
+		answer = gitDidNotAnswer;
+		const refusal = declaredExit(contract.refusals, "VAULT_REPOSITORY_UNKNOWN");
+		const { exited, stdout, stderr } = await run(["semantic", command, "Endpoint Gateway"]);
+		expect(exited).toBe(refusal);
+		expect(exited).not.toBe(0);
+		expect(stdout).toBe("");
+		expect(stderr).not.toBe("");
+	});
+}

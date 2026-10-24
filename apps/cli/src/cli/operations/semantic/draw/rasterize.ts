@@ -52,7 +52,10 @@ import {
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { copyImageToClipboard } from "#cli/operations/semantic/draw/image-clipboard.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
-import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
+import {
+	recipeOfPicture,
+	vaultRepositoryUnknownRefusal,
+} from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -362,6 +365,7 @@ const semanticRasterizeContract = defineCommand({
 		rasterizerUnavailableRefusal,
 		rasterBoundsRefusal,
 		rasterFailedRefusal,
+		vaultRepositoryUnknownRefusal,
 		{
 			code: "CLIPBOARD_UNAVAILABLE",
 			exit: 4,

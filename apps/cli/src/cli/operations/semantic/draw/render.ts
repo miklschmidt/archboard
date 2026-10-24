@@ -38,7 +38,10 @@ import {
 } from "#cli/operations/semantic/draw/drawn-against.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
-import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
+import {
+	recipeOfPicture,
+	vaultRepositoryUnknownRefusal,
+} from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const RenderInputSchema = z
 	.object({
@@ -114,7 +117,8 @@ const semanticRenderContract = defineCommand({
 		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
 		"leaving out the Planned frame. " +
 		"Use semantic rasterize --clipboard for PNG and HTML clipboard output. " +
-		"A picture is refused with RENDER_RECIPE_UNAVAILABLE when the server's SVG carries no recipe (restart the server).",
+		"A picture is refused with RENDER_RECIPE_UNAVAILABLE when the server's SVG carries no recipe (restart the server), " +
+		"and with VAULT_REPOSITORY_UNKNOWN when Git does not say which repository holds the vault.",
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
@@ -220,7 +224,12 @@ const semanticRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, viewEmptyRefusal, recipeUnavailableRefusal],
+	refusals: [
+		serverRefusal,
+		viewEmptyRefusal,
+		recipeUnavailableRefusal,
+		vaultRepositoryUnknownRefusal,
+	],
 	relationships: [
 		{
 			method: "GET",
