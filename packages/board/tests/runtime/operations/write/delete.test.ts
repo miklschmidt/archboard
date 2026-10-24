@@ -1,11 +1,11 @@
 // What a delete refuses and answers (ADR 0057, TASK-526.06), at the store: it
 // is refused while a node on a current or draft variant of another board of the
-// vault opens the board, by its name or a former name, and the refusal names
-// each node; its answer lists the board's tracked embeds; and the board's name
+// vault opens the board, by its name or a former name, naming no repository or
+// the vault's own, and the refusal names each node; its answer lists the board's tracked embeds; and the board's name
 // and former names are free for a new board afterwards.
 
 import { afterAll, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeSemanticBoard } from "#runtime/operations/write/write.ts";
@@ -23,11 +23,21 @@ import { discardSemanticBoard } from "#runtime/operations/write/discard.ts";
 import { readSemanticBoard } from "#runtime/operations/read/read.ts";
 import { BoardCreateInputSchema, VariantEditInputSchema } from "#shared/protocol/board-input.ts";
 
-const vault = mkdtempSync(join(tmpdir(), "archboard-delete-"));
+// The vault of a checkout, so a drill-down can name the vault's own repository.
+const OWN = "github.com/acme/ledger";
+const root = mkdtempSync(join(tmpdir(), "archboard-delete-"));
+const vault = join(root, ".archboard", "vault");
+mkdirSync(vault, { recursive: true });
+for (const args of [
+	["init", "-q"],
+	["remote", "add", "origin", `https://${OWN}.git`],
+]) {
+	expect(Bun.spawnSync(["git", ...args], { cwd: root }).exitCode).toBe(0);
+}
 const writer = { kind: "agent" as const, reason: "deleting a board" };
 
 afterAll(() => {
-	rmSync(vault, { recursive: true, force: true });
+	rmSync(root, { recursive: true, force: true });
 });
 
 /**
@@ -104,6 +114,8 @@ test("a board that a current or draft node of another board opens is refused, na
 		{ name: "Web", kind: "app" },
 		opening("Ledger", "Ledger", "github.com/else/where"),
 	]);
+	// The vault's own repository is this vault.
+	await made("Treasury", [{ name: "Cash", kind: "app" }, opening("Books", "Ledger", OWN)]);
 	await change("Platform", branchVariantTransition({ name: "Planned" }));
 	await change(
 		"Platform",
@@ -120,6 +132,7 @@ test("a board that a current or draft node of another board opens is refused, na
 	expect(refused.outcome === "rejected" && refused.openedBy).toEqual([
 		expect.objectContaining({ board: "Payments", variant: variantId("Payments", "Initial") }),
 		expect.objectContaining({ board: "Platform", variant: variantId("Platform", "Planned") }),
+		expect.objectContaining({ board: "Treasury", variant: variantId("Treasury", "Initial") }),
 	]);
 	expect(existsSync(locateSemanticBoard("General ledger", vault).file)).toBeTrue();
 });
