@@ -16,6 +16,7 @@ import {
 	seenIn,
 } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -97,7 +98,12 @@ async function architecture(
 	theme: DiagramTheme = "light",
 ): Promise<RenderedDiagram> {
 	return seenIn(
-		await renderArchitecture({ content: CONTENT, standing: STANDING, unsettled }),
+		await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: CONTENT,
+			standing: STANDING,
+			unsettled,
+		}),
 		theme,
 	);
 }
@@ -108,7 +114,14 @@ async function architecture(
  * @returns The rendered picture.
  */
 function sequence(unsettled: readonly string[] = []): RenderedDiagram {
-	return seenIn(renderDataFlow({ content: CONTENT, standing: STANDING, unsettled }));
+	return seenIn(
+		renderDataFlow({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: CONTENT,
+			standing: STANDING,
+			unsettled,
+		}),
+	);
 }
 
 /**
@@ -273,7 +286,9 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		const drawn = await architecture();
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
-		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
+		const plain = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+		);
 		expect(line(subject(drawn, "edge", "moved")).ink).not.toBe(
 			line(subject(plain, "edge", "moved")).ink,
 		);
@@ -285,14 +300,20 @@ describe("a relationship is drawn in one colour from end to end", () => {
 	test("a relationship nothing happened to is drawn in the ink of its weight", async () => {
 		const marked = line(subject(await architecture(), "edge", "same"));
 		const plain = line(
-			subject(seenIn(await renderArchitecture({ content: CONTENT })), "edge", "same"),
+			subject(
+				seenIn(await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT })),
+				"edge",
+				"same",
+			),
 		);
 		expect(marked.ink).toBe(plain.ink);
 		expect(marked.head).toBe(plain.head);
 	});
 
 	test("the standing takes the colour and leaves the dash and the weight alone", async () => {
-		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
+		const plain = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+		);
 		const markedDrawing = await architecture();
 		for (const id of ["moved", "new", "gone", "same"]) {
 			const marked = LINE.exec(subject(markedDrawing, "edge", id).markup)![0];
@@ -347,7 +368,11 @@ describe("the words a relationship carries are on top of every dot", () => {
 describe("what nobody has decided is said in its own corner", () => {
 	test("an unlabelled return carries its warning on the route", async () => {
 		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
-		const drawn = await renderArchitecture({ content, unsettled: ["same"] });
+		const drawn = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			unsettled: ["same"],
+		});
 		const badge = badges(drawn).get("same")!;
 		const shift = bodyShift(drawn.svg);
 		const routes = routePoints(drawn.svg);

@@ -4,6 +4,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { across, along, breadth, depth } from "#tests/runtime/support/drawn-reading.ts";
 import { routePoints, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(LayoutEngineSchema.options)(
 	"a skip a proposal adds beside its own chain is still drawn beside that chain (%s)",
@@ -27,7 +28,12 @@ test.each(LayoutEngineSchema.options)(
 				{ id: "skip", from: "source", to: "target", kind: "data", label: "complete drawing" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 
 		const points = routePoints(drawing.svg).get("skip")!;
 		// The card it skips stays on one side of it: the skip runs beside that

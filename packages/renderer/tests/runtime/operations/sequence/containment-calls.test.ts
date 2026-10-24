@@ -7,6 +7,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { measureArchitecture } from "#runtime/operations/measure.ts";
 import { routePoints, distanceToFrame, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const application = orderedFixture({
 	nodes: [
@@ -86,7 +87,11 @@ test.each([
 ])(
 	"a frame's call into its own part leaves its title divider and stays inside in %s",
 	async (_, content: VariantContent) => {
-		const drawing = await renderArchitecture({ content, theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+		});
 		const app = drawing.atlas.nodes["app"]!;
 		const part = drawing.atlas.nodes["dispatch"]!;
 		const route = routePoints(drawing.svg).get("d")!;
@@ -115,7 +120,11 @@ test("a part's call up to its own frame ends at the title divider", async () => 
 		],
 		edges: [{ id: "up", from: "hook", to: "app", kind: "call", label: "registers" }],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const app = drawing.atlas.nodes["app"]!;
 	const part = drawing.atlas.nodes["hook"]!;
 	const route = routePoints(drawing.svg).get("up")!;

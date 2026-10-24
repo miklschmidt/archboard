@@ -22,6 +22,7 @@ import {
 } from "#tests/runtime/support/sequence-fixture.ts";
 import { colourIn, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * One architecture, as its own contract reads it.
@@ -99,7 +100,12 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  * @returns The rendered architecture.
  */
 function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
-	return renderArchitecture({ content: PROPOSAL, standing, layout });
+	return renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: PROPOSAL,
+		standing,
+		layout,
+	});
 }
 
 describe("a picture nobody stated a standing for", () => {
@@ -136,9 +142,15 @@ describe("a picture nobody stated a standing for", () => {
 				{ id: "e6", from: "gw", to: "legacy", kind: "call", order: 6000 },
 			].map((edge) => Object.assign({}, edge, { emphasis: "normal" })),
 		});
-		const plain = arrangementOf(await renderArchitecture({ content: shared }));
+		const plain = arrangementOf(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: shared }),
+		);
 		const compared = arrangementOf(
-			await renderArchitecture({ content: shared, standing: STANDING }),
+			await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: shared,
+				standing: STANDING,
+			}),
 		);
 		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);

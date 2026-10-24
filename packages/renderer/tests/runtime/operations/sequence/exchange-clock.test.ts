@@ -13,6 +13,7 @@ import {
 	pulsesOn,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
 const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;
@@ -88,6 +89,7 @@ describe("an exchange is told on one clock", () => {
 		// are the same thing happening twice.
 		const svg = (
 			await renderSemanticView({
+				policy: DEFAULT_SEMANTIC_POLICY,
 				content: TWO_FLOWS,
 				grammar: "sequence",
 				theme: "light",
@@ -111,6 +113,7 @@ describe("an exchange is told on one clock", () => {
 			kind: index % 2 === 0 ? "sync" : "return",
 		}));
 		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: variant({
 				nodes: SAMPLE.nodes,
 				flows: [{ id: "long", name: "Long", participants: ["api", "store"], steps }],

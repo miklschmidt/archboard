@@ -10,6 +10,7 @@ import {
 	registeredFaces,
 	spanFits,
 } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -71,7 +72,12 @@ function cardBox(rendered: RenderedDiagram, id: string): DiagramBox {
 
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(`${grammar} preserves explicit and wrapped responsibility lines within measured cards`, async () => {
-		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
+		const rendered = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar,
+			content,
+			theme: "light",
+		});
 		const faces = registeredFaces(rendered.svg);
 		const texts = drawnTexts(rendered.svg);
 		for (const id of ["api", "store"]) {
@@ -120,6 +126,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 		const responsibility = "W".repeat(200);
 		const updatedApi = { ...content.nodes.find((node) => node.id === "api")!, responsibility };
 		const rendered = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			grammar,
 			theme: "light",
 			content: {
@@ -142,7 +149,12 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[])
 	test(`${grammar}, seen from far away, draws each card's name larger, with the start of what it is responsible for`, async () => {
-		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
+		const rendered = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar,
+			content,
+			theme: "light",
+		});
 		const faces = registeredFaces(rendered.svg);
 		const near = drawnTexts(rendered.svg);
 		const far = drawnTexts(rendered.svg, "far");

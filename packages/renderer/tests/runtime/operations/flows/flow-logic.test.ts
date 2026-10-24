@@ -5,6 +5,7 @@ import { renderSemanticView } from "#runtime/operations/render.ts";
 import { SemanticRenderError } from "#shared/protocol/render-request.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** One edit: a decision on the lease, its "no" side writing each variant in a loop. */
 const BRANCHING: VariantContent = orderedFixture({
@@ -75,6 +76,7 @@ const bottom = (box: DiagramBox): number => box.y + box.height;
 describe("a flow's logic in the sequence view", () => {
 	test("a decision and a loop are frames around exactly the steps they hold", async () => {
 		const { atlas } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: BRANCHING,
 			grammar: "sequence",
 			theme: "light",
@@ -92,6 +94,7 @@ describe("a flow's logic in the sequence view", () => {
 
 	test("a frame says what it decides or repeats, and each alternative's label", async () => {
 		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: BRANCHING,
 			grammar: "sequence",
 			theme: "light",
@@ -115,6 +118,7 @@ describe("a flow's logic in the sequence view", () => {
 describe("the flowchart view", () => {
 	test("a decision branches below itself and every alternative rejoins at the step after it", async () => {
 		const { atlas } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: BRANCHING,
 			grammar: "flowchart",
 			theme: "light",
@@ -134,6 +138,7 @@ describe("the flowchart view", () => {
 
 	test("only the flow and its steps are subjects: the lines and terminals belong to the picture", async () => {
 		const { atlas } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: BRANCHING,
 			grammar: "flowchart",
 			theme: "light",
@@ -147,6 +152,7 @@ describe("the flowchart view", () => {
 
 	test("each line out of a decision is labelled with its answer, and a loop's with repeat and done", async () => {
 		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: BRANCHING,
 			grammar: "flowchart",
 			theme: "light",
@@ -158,6 +164,7 @@ describe("the flowchart view", () => {
 	test("content with no flow has no flowchart", async () => {
 		const plain = orderedFixture({ nodes: [{ id: "a", name: "A", kind: "service" }] });
 		const refused = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: plain,
 			grammar: "flowchart",
 			theme: "light",

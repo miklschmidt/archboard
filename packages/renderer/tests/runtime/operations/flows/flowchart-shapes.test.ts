@@ -29,6 +29,7 @@ import {
 	type DrawnGroup,
 } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** A decision whose question wraps onto two lines, and a loop, between steps. */
 const FLOW: VariantContent = orderedFixture({
@@ -83,7 +84,13 @@ function drawn(request: {
 	standing?: Record<string, "added" | "removed" | "changed">;
 	unsettled?: string[];
 }) {
-	return renderSemanticView({ content: FLOW, grammar: "flowchart", theme: "light", ...request });
+	return renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: FLOW,
+		grammar: "flowchart",
+		theme: "light",
+		...request,
+	});
 }
 
 /**

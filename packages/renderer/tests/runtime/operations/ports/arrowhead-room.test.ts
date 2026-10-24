@@ -20,6 +20,7 @@ import reachTheWorkhorse from "#tests/runtime/support/fixtures/board-changes-rea
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import oneWriteLands from "#tests/runtime/support/fixtures/one-write-lands.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** A point of the drawing. */
 interface Point {
@@ -79,7 +80,12 @@ test.each(LayoutEngineSchema.options)(
 	"every arrowhead fits the straight run that every line keeps before its end (%s)",
 	async (layout) => {
 		for (const content of BOARDS) {
-			const { svg } = await renderArchitecture({ content, theme: "light", layout });
+			const { svg } = await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				theme: "light",
+				layout,
+			});
 			const reaches = markerReaches(svg);
 			const lines = [
 				...svg.matchAll(/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),

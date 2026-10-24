@@ -22,7 +22,7 @@
 // so that the fewest lines cross, a loop's line back up included, and the
 // second layout asks for the points in that order.
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
 import type { DiagramAtlas } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
@@ -476,7 +476,7 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 			"this content has no flow, so there is no flowchart to draw",
 		);
 	}
-	const policy = flowchartPolicy(request.policy ?? DEFAULT_SEMANTIC_POLICY);
+	const policy = flowchartPolicy(request.policy);
 	const graph = flowchartOf(told.flows, told.nodes);
 	const { measure, words } = measured(graph, policy);
 	const laid = await laidOut(graph.content, measure);

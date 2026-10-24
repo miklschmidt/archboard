@@ -97,7 +97,11 @@ async function atlasOf(
 }
 
 test("a container's entry point takes its first row and its hidden parts sit below it", async () => {
-	const { atlas } = await renderArchitecture({ content: orderedFixture(service), theme: "light" });
+	const { atlas } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: orderedFixture(service),
+		theme: "light",
+	});
 	expect(standsBelow(atlas, "client", "api")).toBe(true);
 	expect(standsBelow(atlas, "api", "job")).toBe(true);
 	expect(standsBelow(atlas, "api", "core")).toBe(true);

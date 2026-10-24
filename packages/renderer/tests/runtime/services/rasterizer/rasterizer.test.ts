@@ -14,6 +14,7 @@ import {
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/rasterizer/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // The rasterizer is held to what it promises about the bitmap: real pixels of
 // the renderer's own picture, exactly the diagram's size at the stated scale,
@@ -98,7 +99,13 @@ function draw(
 	content: VariantContent,
 	grammar: "architecture" | "sequence" = "architecture",
 ): Promise<RenderedDiagram> {
-	return renderSemanticView({ content, theme: "light", fonts: "embedded", grammar });
+	return renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		fonts: "embedded",
+		grammar,
+	});
 }
 
 /**

@@ -7,6 +7,7 @@ import { Window } from "happy-dom";
 
 import { renderDataFlow } from "#runtime/operations/render.ts";
 import { SEQUENCE } from "#tests/runtime/support/sequence-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * One numerical attribute of a painted shape.
@@ -21,7 +22,7 @@ function numberOf(element: { getAttribute(name: string): string | null }, name: 
 test.each(["light", "dark"] as const)(
 	"no sequence shadow is painted over a lifeline or message (%s)",
 	(theme) => {
-		const rendered = renderDataFlow({ content: SEQUENCE, theme });
+		const rendered = renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: SEQUENCE, theme });
 		const window = new Window();
 		const document = new window.DOMParser().parseFromString(rendered.svg, "image/svg+xml");
 		const elements = [...document.querySelectorAll("*")];
@@ -73,7 +74,7 @@ test.each(["light", "dark"] as const)(
 );
 
 test("a sequence reserves only seven more units per flow and keeps the lifeline dash phase", () => {
-	const rendered = renderDataFlow({ content: SEQUENCE });
+	const rendered = renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: SEQUENCE });
 	// The same public fixture measured 379 units before the 6-unit gap grew.
 	expect(rendered.height).toBe(386);
 	const window = new Window();
