@@ -4,7 +4,9 @@
 // branch, shallow and sparse, with the person's own Git: their credential
 // helpers, and their `url.<base>.insteadOf` rules, which also turn the HTTPS
 // address into SSH for a person who prefers it. Git never prompts, so a CI run
-// that has no credentials fails the fetch instead of waiting.
+// that has no credentials fails the fetch instead of waiting. Git reads no
+// repository that the environment names, such as the one of a hook that runs
+// the check.
 //
 // The cache is in the state directory, one checkout per commit:
 // `<state>/fetched-vaults/<identity>/<commit>/.archboard/vault`, the layout the
@@ -27,6 +29,7 @@ import {
 } from "@archboard/timing";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { gitEnvironment } from "#cli/clients/git/git-environment.ts";
 
 /** Where the vault of a repository identity was found, or why it was not. */
 type FetchedVault =
@@ -53,22 +56,6 @@ const INCOMING_PREFIX = ".incoming-";
 
 /** A commit's name, which is the name of its directory in the cache. */
 const COMMIT_NAME = /^[\da-f]{40}(?:[\da-f]{24})?$/u;
-
-/**
- * Variables that point Git at a repository. A check run from a Git hook has
- * them set for the person's own repository, and the cache's commands must not
- * act on it.
- */
-const REPOSITORY_VARIABLES = [
-	"GIT_DIR",
-	"GIT_WORK_TREE",
-	"GIT_INDEX_FILE",
-	"GIT_OBJECT_DIRECTORY",
-	"GIT_ALTERNATE_OBJECT_DIRECTORIES",
-	"GIT_COMMON_DIR",
-	"GIT_NAMESPACE",
-	"GIT_PREFIX",
-];
 
 /**
  * Where an identity that names a host and a path on it, such as
@@ -119,12 +106,10 @@ async function runGit(
 	signal: AbortSignal,
 	timeoutMs: number,
 ): Promise<GitRun> {
-	const env: Record<string, string | undefined> = {
-		...process.env,
+	const env = gitEnvironment({
 		GIT_TERMINAL_PROMPT: "0",
 		GCM_INTERACTIVE: "never",
-	};
-	for (const name of REPOSITORY_VARIABLES) delete env[name];
+	});
 	signal.throwIfAborted();
 	// Git runs in a process group of its own, and the whole group is ended: a
 	// helper such as git-remote-https outlives a signal to Git alone, and it

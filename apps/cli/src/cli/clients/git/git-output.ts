@@ -1,7 +1,9 @@
 // One read-only Git command and its output, for a command that reads what a
-// checkout tracks or what its history holds.
+// checkout tracks or what its history holds. Git reads the repository of the
+// directory it runs in, never one that the environment names.
 
 import { GIT_COMMAND_TIMEOUT_MS } from "@archboard/timing";
+import { gitEnvironment } from "#cli/clients/git/git-environment.ts";
 
 /**
  * Run one Git command that only reads, to its end.
@@ -22,7 +24,7 @@ async function gitOutput(
 		stdout: "pipe",
 		stderr: "ignore",
 		// A reading must not take the index lock that `git status` refreshes.
-		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+		env: gitEnvironment({ GIT_OPTIONAL_LOCKS: "0" }),
 		signal: AbortSignal.any([signal, AbortSignal.timeout(GIT_COMMAND_TIMEOUT_MS)]),
 	});
 	const [stdout, exitCode] = await Promise.all([
