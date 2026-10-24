@@ -146,3 +146,61 @@ test("a clean startup failure releases the stage for one later retry", async () 
 	await application.shutdown();
 	expect(events).toEqual(["start:1", "shutdown:1", "start:2", "shutdown:2"]);
 });
+
+for (const failurePoint of ["installation", "install"] as const) {
+	test(`a synchronous ${failurePoint} failure permits a later preparation`, async () => {
+		let attempts = 0;
+		let shutdowns = 0;
+		const failure = new Error("installation failed");
+		const application = createServerCodexWorkbenchApplication({
+			installation: () => {
+				attempts++;
+				if (failurePoint === "installation" && attempts === 1) throw failure;
+				return {} as never;
+			},
+			module: {
+				installProductionCodexWorkbench: () => {
+					if (failurePoint === "install" && attempts === 1) throw failure;
+					return {
+						start: async () => ({ state: "ready" }) as never,
+						shutdown: async () => void shutdowns++ as never,
+					} as never;
+				},
+			},
+		});
+
+		await expect(application.prepare()).rejects.toBe(failure);
+		await application.prepare();
+		await application.shutdown();
+		expect(attempts).toBe(2);
+		expect(shutdowns).toBe(1);
+	});
+}
+
+test("preparation refuses installation while an empty shutdown is in flight", async () => {
+	let installs = 0;
+	let shutdowns = 0;
+	const application = createServerCodexWorkbenchApplication({
+		installation: () => ({}) as never,
+		module: {
+			installProductionCodexWorkbench: () => {
+				installs++;
+				return {
+					start: async () => ({ state: "ready" }) as never,
+					shutdown: async () => void shutdowns++ as never,
+				} as never;
+			},
+		},
+	});
+
+	for (const previousInstalls of [0, 1]) {
+		const stopping = application.shutdown();
+		await expect(application.prepare()).rejects.toBeInstanceOf(Error);
+		expect(installs).toBe(previousInstalls);
+		await stopping;
+		await application.prepare();
+		await application.shutdown();
+	}
+	expect(installs).toBe(2);
+	expect(shutdowns).toBe(2);
+});
