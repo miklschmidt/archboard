@@ -677,6 +677,12 @@ commit, big commit
 
 ### Evidence
 
+**Semantics check**:
+Reading a vault's boards against the vault's own configuration: the board
+families, the vocabulary that the boards use, and the configuration itself. It
+reads no code and no Git, and it is the check that canvases poll.
+_Avoid_: plain check, board check, vault check, lint
+
 **Code check**:
 Reading, on request, the code and the infrastructure that the bindings and
 anchors of a board name. It reports findings on the current variant or on a
