@@ -122,7 +122,7 @@ reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift,
 names the project.
 
 The check has no time limit. Cancel the command to stop waiting. The output
-starts with the time for each check, and JSON carries those times in `timings`.
+starts with the time for each step, and JSON carries those times in `code.timings`.
 
 If the answer says `language-server-failed`, the server did not start or stopped. The check keeps no output of the server. Run
 the command in the repository to read its output.

@@ -223,9 +223,9 @@ Record each repair and the passing gate result before closing the original task.
    Shelve the old proposal with that reason, run steps 1 and 3 on the new one by
    its own name, and adopt it.
    Use `--force` only to drop the change of the other task on purpose.
-6. Run `archboard check semantics`. The full `archboard check` runs the code
-   check too, and the exit status 1 of the dogfood vault's own findings would
-   hide a diagnostic of the task.
+6. Run `archboard check semantics`. The full `archboard check` also runs the
+   code check, and the dogfood vault's own findings make it exit 1, so its exit
+   status does not show a diagnostic of the task.
    Done: it reports no diagnostics. Commit the vault files with the closing.
 7. Run `archboard check code` and read `behind` (ADR 0045). It lists,
    for each board and each part, the commits to bound files after the

@@ -129,7 +129,7 @@ Each command prints its answer as JSON on stdout and one sentence on stderr.
 The three writes take the board to versions 1, 2 and 3. `compare` reports the
 queue and its two relationships as added. `check` runs every check: the
 semantics check of the vault and the code check. It exits 0 when the
-configuration and every board are valid and no binding or anchor is broken.
+configuration and every board are valid and the code check has no warning.
 
 The board is the file `payments.semantic.json` in the vault. It holds the
 current variant and every proposal. Write it only through the CLI.

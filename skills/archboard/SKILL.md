@@ -257,8 +257,8 @@ recipe names.
   containment count. A self call or presentation membership does not count.
   Add the missing connection, move the node to a board where it connects, or
   delete it.
-  The check has no time limit. Cancel the command to stop waiting. Its output
-  starts with the time for each check, and the JSON of each part carries those
+  The check has no time limit. Cancel the command to stop waiting. The lines of
+  each check start with its times, and the JSON part of each check carries those
   times in its `timings`.
   `archboard check code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk, or to the code of the branch or
