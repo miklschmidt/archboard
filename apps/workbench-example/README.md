@@ -44,11 +44,13 @@ Sign in through the browser controls when the account needs authentication.
 The workhorse runs inside the admitted checkout and reads that checkout's agent instructions and Codex configuration.
 The coordinator runs in the private state directory.
 
-The browser offers text messages, a new conversation, account controls, approval responses, and live voice.
+The browser offers text messages, account controls, approval responses, and live voice.
 Stop voice ends the voice session while the workhorse continues its work.
 Stop work interrupts the current workhorse while voice stays active.
 The shared workbench owns command identity, approvals, and uncertain delivery outcomes.
 The example forwards its browser requests to that same implementation.
+It can decline broader permission and structured data requests. It does not grant them.
+If the browser denies microphone access, allow access and select Reconnect.
 
 The host inputs are the checkout, state directory, listener port, browser build directory, and Codex executable.
 By default, the server serves `dist/workbench-example/index.html`, `app.js`, and `app.css` from this repository.

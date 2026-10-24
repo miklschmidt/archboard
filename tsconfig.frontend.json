@@ -9,7 +9,7 @@
 		"packages/*/src/ui/**/*.tsx",
 		"apps/*/src/ui/**/*.ts",
 		"apps/*/src/ui/**/*.tsx",
-		"apps/web/src/main.tsx"
+		"apps/*/src/main.tsx"
 	],
 	"exclude": ["node_modules", "dist"]
 }

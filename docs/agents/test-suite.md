@@ -3,7 +3,7 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and builds the frontend, then runs four normal
+`bun run test` type-checks and builds both browser applications, then runs four normal
 native lanes in this order:
 
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
