@@ -13,4 +13,14 @@
  */
 const VAULT_FETCH_TIMEOUT_MS = 60_000;
 
-export { VAULT_FETCH_TIMEOUT_MS };
+/**
+ * Age past which a fetch's `.incoming-` directory in the cache was left by a
+ * check that was killed, and is removed. It pulls against the longest fetch
+ * still running: two network commands of VAULT_FETCH_TIMEOUT_MS and three
+ * local ones of GIT_COMMAND_TIMEOUT_MS, each shorter than a network one. A
+ * directory is never younger than its last change, so one this old is no
+ * running fetch's.
+ */
+const FETCH_INCOMING_STALE_MS = 3 * VAULT_FETCH_TIMEOUT_MS;
+
+export { FETCH_INCOMING_STALE_MS, VAULT_FETCH_TIMEOUT_MS };

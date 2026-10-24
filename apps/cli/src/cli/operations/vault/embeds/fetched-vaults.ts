@@ -20,7 +20,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { GIT_COMMAND_TIMEOUT_MS, VAULT_FETCH_TIMEOUT_MS } from "@archboard/timing";
+import {
+	FETCH_INCOMING_STALE_MS,
+	GIT_COMMAND_TIMEOUT_MS,
+	VAULT_FETCH_TIMEOUT_MS,
+} from "@archboard/timing";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
@@ -43,6 +47,9 @@ type FetchedVault =
 
 /** One segment of an identity that can be a directory and a part of a URL. */
 const IDENTITY_SEGMENT = /^[\w.-]+$/u;
+
+/** The name a fetch's own directory has until it lands under its commit. */
+const INCOMING_PREFIX = ".incoming-";
 
 /** A commit's name, which is the name of its directory in the cache. */
 const COMMIT_NAME = /^[\da-f]{40}(?:[\da-f]{24})?$/u;
@@ -234,7 +241,7 @@ async function fetchInto(
 	url: string,
 	signal: AbortSignal,
 ): Promise<{ commit: string } | { failure: string }> {
-	const incoming = path.join(cache, `.incoming-${randomUUID()}`);
+	const incoming = path.join(cache, `${INCOMING_PREFIX}${randomUUID()}`);
 	try {
 		let last: GitRun | undefined;
 		for (const step of fetchSteps(cache, incoming, url)) {
@@ -253,7 +260,8 @@ async function fetchInto(
 
 /**
  * Put a fetched checkout in the cache under its commit, and remove the older
- * commits of the identity. A commit another run put there first stays.
+ * commits of the identity and what a killed fetch left. A commit another run
+ * put there first stays.
  * @param incoming The fetched checkout.
  * @param target The commit's directory.
  */
@@ -265,8 +273,24 @@ function land(incoming: string, target: string): void {
 	}
 	const now = new Date();
 	fs.utimesSync(target, now, now);
-	for (const commit of cachedCommits(path.dirname(target))) {
+	const cache = path.dirname(target);
+	for (const commit of cachedCommits(cache)) {
 		if (commit.directory !== target) fs.rmSync(commit.directory, { recursive: true, force: true });
+	}
+	removeKilledFetches(cache, now.getTime());
+}
+
+/**
+ * Remove the directories of fetches that a killed check left, and none that a
+ * running fetch still writes.
+ * @param cache The identity's cache directory.
+ * @param now The time in milliseconds.
+ */
+function removeKilledFetches(cache: string, now: number): void {
+	for (const name of fs.readdirSync(cache).filter((one) => one.startsWith(INCOMING_PREFIX))) {
+		const left = path.join(cache, name);
+		const changed = fs.statSync(left, { throwIfNoEntry: false })?.mtimeMs ?? now;
+		if (now - changed > FETCH_INCOMING_STALE_MS) fs.rmSync(left, { recursive: true, force: true });
 	}
 }
 
@@ -279,9 +303,11 @@ function cachedCommits(cache: string): { commit: string; directory: string }[] {
 	const names = fs.existsSync(cache) ? fs.readdirSync(cache) : [];
 	return names
 		.filter((name) => COMMIT_NAME.test(name))
-		.map((commit) => {
+		.flatMap((commit) => {
 			const directory = path.join(cache, commit);
-			return { commit, directory, at: fs.statSync(directory).mtimeMs };
+			// Another check can remove an older commit while this one lists them.
+			const at = fs.statSync(directory, { throwIfNoEntry: false })?.mtimeMs;
+			return at === undefined ? [] : [{ commit, directory, at }];
 		})
 		.toSorted((a, b) => b.at - a.at)
 		.map(({ commit, directory }) => ({ commit, directory }));

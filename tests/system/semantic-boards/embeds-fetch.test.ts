@@ -222,9 +222,15 @@ describe("check embeds with a vault of an unregistered repository", () => {
 	);
 
 	test(
-		"fetches the commit the default branch moved to, and keeps only it in the cache",
+		"fetches the commit the default branch moved to, and keeps only it and running fetches in the cache",
 		() => {
 			const moved = publishEdit("Keeps every order for a year");
+			// What a killed check left, and what a running one is writing.
+			const left = path.join(path.dirname(cached(first)), ".incoming-killed");
+			const running = path.join(path.dirname(cached(first)), ".incoming-running");
+			fs.mkdirSync(left);
+			fs.mkdirSync(running);
+			fs.utimesSync(left, new Date(0), new Date(0));
 			const { part } = checkEmbeds(online, 1);
 			expect(part.vaults).toEqual([{ source: "fetched", repo: MODELS, commit: moved }]);
 			expect(part.findings.map((one) => [one.file, one.code])).toEqual([
@@ -232,6 +238,8 @@ describe("check embeds with a vault of an unregistered repository", () => {
 			]);
 			expect(fs.existsSync(cached(moved))).toBe(true);
 			expect(fs.existsSync(cached(first))).toBe(false);
+			expect([fs.existsSync(left), fs.existsSync(running)]).toEqual([false, true]);
+			fs.rmSync(running, { recursive: true });
 			checkEmbeds(online, 0, ["--fix"]);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,

@@ -586,7 +586,7 @@ export { LOCALITY_DEFAULT_PERIOD_MS } from "#shared/constants/history-lens.ts";
 
 // ── Code check (ADR 0046) and embeds check (ADR 0057) ───────────────────
 export { LANGUAGE_SERVER_STOP_MS } from "#shared/constants/code-check.ts";
-export { VAULT_FETCH_TIMEOUT_MS } from "#shared/constants/embeds-check.ts";
+export { FETCH_INCOMING_STALE_MS, VAULT_FETCH_TIMEOUT_MS } from "#shared/constants/embeds-check.ts";
 
 export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
 export { CODEX_GROUP_FREEZE_MS } from "#shared/constants/codex-group-freeze.ts";
