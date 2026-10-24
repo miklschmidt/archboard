@@ -251,8 +251,12 @@ beforeAll(async () => {
 	git(shop, "rm", "-q", "src/coupons.ts");
 	commit(shop, "delete the coupons");
 	write(shop, { "src/a.ts": "4\n" });
-	writeBoard(board(2, [], "a draft edit"));
-	commit(shop, "edit the draft and a.ts");
+	// A tracked embed is the board's, not the current variant's (ADR 0057).
+	writeBoard({
+		...board(2, [], "a draft edit"),
+		trackedEmbeds: [{ repo: OTHER, path: "docs/shop.svg" }],
+	});
+	commit(shop, "edit the draft and a.ts, and track an embed");
 	write(
 		shop,
 		Object.fromEntries([
@@ -270,12 +274,12 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a board is behind by the commits to each part's bound files after its last change, and a draft edit is no change", async () => {
+test("a board is behind by the commits to each part's bound files after its last change, and a draft edit or a tracked embed is no change", async () => {
 	const answer = await behind(board(2, [], "a draft edit"));
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: subjects["created"] });
 	expect(partSubjects(answer, "pA")).toEqual([
 		"a large commit",
-		"edit the draft and a.ts",
+		"edit the draft and a.ts, and track an embed",
 		"change a.ts",
 	]);
 	if (!("commits" in answer)) throw new Error("the last change was not found");

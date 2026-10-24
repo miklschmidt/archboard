@@ -46,13 +46,30 @@ import {
 	againstAgreesWithComparison,
 	resolvedAgainst,
 } from "#cli/operations/semantic/draw/drawn-against.ts";
-import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
+import {
+	boardHeldRefusal,
+	claimRevokedRefusal,
+	doingRefusal,
+	serverRefusal,
+} from "#cli/protocol/contract/refusals.ts";
 import { copyImageToClipboard } from "#cli/operations/semantic/draw/image-clipboard.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
 import {
 	recipeOfPicture,
 	vaultRepositoryUnknownRefusal,
 } from "#cli/rules/semantic/draw/picture-recipe.ts";
+import {
+	plannedFile,
+	requireTrackable,
+	TRACK_NEEDS_OUT,
+	TRACK_OPTION,
+	TRACK_RELATIONSHIP,
+	TrackedReceiptSchema,
+	trackedField,
+	trackHasOut,
+	trackOutsideCheckoutRefusal,
+	trackVaultUnregisteredRefusal,
+} from "#cli/operations/semantic/draw/tracked-embed.ts";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -81,13 +98,20 @@ const RasterizeInputSchema = z
 			.optional(),
 		out: z.string().optional(),
 		clipboard: z.boolean().default(false),
+		track: z.boolean().default(false),
 	})
+	.refine(trackHasOut, TRACK_NEEDS_OUT)
 	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL)
 	.refine((input) => !input.clipboard || input.out === undefined, {
 		message: "Use either --clipboard or --out, not both.",
 		path: ["clipboard"],
 	});
+
+/** The receipt of a PNG written to a file, with what --track listed. */
+const FileResultSchema = SemanticRasterReceiptSchema.extend({
+	tracked: TrackedReceiptSchema.optional(),
+});
 
 const ClipboardResultSchema = SemanticRasterReceiptSchema.omit({ file: true }).extend({
 	clipboard: z.object({
@@ -186,7 +210,7 @@ function bitmapRecipe(svg: string, input: z.infer<typeof RasterizeInputSchema>):
 
 const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
-	shared: ["url", "directory"],
+	shared: ["url", "directory", "doing"],
 	summary: "Draw a semantic board as PNG, headlessly, at native scale",
 	description:
 		"Draws the same picture `semantic render` draws and rasterizes it in a private headless Chromium: " +
@@ -196,6 +220,7 @@ const semanticRasterizeContract = defineCommand({
 		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
 		"Without --out or --clipboard, stdout carries PNG bytes. Each PNG carries the render recipe of its SVG, with the scale and region, in a text chunk. " +
 		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
+		"With --out and --track, the board lists the file as a tracked embed before the file is written, as `semantic render --track` describes. " +
 		"Use --no-comparison to hide comparison marks and removed subjects. " +
 		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
 		"leaving out the Planned frame.",
@@ -296,10 +321,11 @@ const semanticRasterizeContract = defineCommand({
 			description:
 				"Draw only this rectangle of the diagram's page, in diagram pixels: a native-detail tile of a large diagram, never the diagram itself",
 		},
+		TRACK_OPTION,
 	],
 	input: { ingress: RasterizeInputSchema },
 	result: z.union([
-		SemanticRasterReceiptSchema,
+		FileResultSchema,
 		ClipboardResultSchema,
 		z.instanceof(Uint8Array<ArrayBufferLike>).meta({ description: "The PNG image as bytes." }),
 	]),
@@ -334,7 +360,7 @@ const semanticRasterizeContract = defineCommand({
 			input.clipboard ? "clipboard" : input.out === undefined ? "stdout" : "file",
 	},
 	prerequisites: ["server"],
-	effects: ["read", "local-write"],
+	effects: ["read", "local-write", "server-state-write"],
 	refusals: [
 		serverRefusal,
 		viewEmptyRefusal,
@@ -342,6 +368,11 @@ const semanticRasterizeContract = defineCommand({
 		rasterBoundsRefusal,
 		rasterFailedRefusal,
 		vaultRepositoryUnknownRefusal,
+		trackOutsideCheckoutRefusal,
+		trackVaultUnregisteredRefusal,
+		doingRefusal,
+		boardHeldRefusal,
+		claimRevokedRefusal,
 		{
 			code: "CLIPBOARD_UNAVAILABLE",
 			exit: 4,
@@ -362,6 +393,7 @@ const semanticRasterizeContract = defineCommand({
 			cardinality: "one",
 			description: "Draw the variant",
 		},
+		TRACK_RELATIONSHIP,
 	],
 	/**
 	 * Draw the board and rasterize it.
@@ -373,6 +405,7 @@ const semanticRasterizeContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic rasterize");
+		const planned = await plannedFile(input, context);
 		const drawn = await renderSemanticBoardOnServer(
 			input.name,
 			exportRenderRequest({
@@ -383,6 +416,7 @@ const semanticRasterizeContract = defineCommand({
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
 		const recipe = bitmapRecipe(drawn.svg, input);
+		requireTrackable(planned, recipe);
 		const capture = await captureBoard(drawn, input, context.signal);
 		const png = embedRecipeInPng(capture.png, recipe);
 		if (!input.clipboard && input.out === undefined) return { result: png };
@@ -408,10 +442,10 @@ const semanticRasterizeContract = defineCommand({
 				motion: "paused-at-start" as const,
 			},
 		};
-		if (input.out !== undefined) {
-			const file = context.resolvePath(input.out);
+		if (planned.file !== undefined) {
+			const { file } = planned;
 			return {
-				result: { ...receipt, file },
+				result: { ...receipt, file, ...(await trackedField(input.name, planned)) },
 				pendingArtifact: { path: file, content: png, encoding: "binary" as const },
 			};
 		}

@@ -13,6 +13,11 @@ import { gitOutput } from "#cli/clients/git/git-output.ts";
 interface CheckoutEmbed {
 	/** The file as Git names it in the checkout. */
 	readonly file: string;
+	/**
+	 * The repository identity of a tracked embed of another repository, read
+	 * from that repository's checkout; absent for a file of the vault's checkout.
+	 */
+	readonly repo?: string;
 	/** The file on disk. */
 	readonly path: string;
 	readonly bytes: Uint8Array;
@@ -117,14 +122,21 @@ function embedAt(checkout: string, file: string): CheckoutEmbed | undefined {
 }
 
 /**
- * Every embed of a checkout.
+ * Every embed of a checkout, or only those among some files.
  * @param checkout The checkout's root.
  * @param signal Cancels the listing.
+ * @param only The files to read, as Git names them; every candidate when absent.
  * @returns The embeds, in Git's order.
  */
-async function checkoutEmbeds(checkout: string, signal: AbortSignal): Promise<CheckoutEmbed[]> {
+async function checkoutEmbeds(
+	checkout: string,
+	signal: AbortSignal,
+	only?: ReadonlySet<string>,
+): Promise<CheckoutEmbed[]> {
 	const root = fs.realpathSync(checkout);
-	return (await candidateFiles(checkout, signal)).flatMap((file) => embedAt(root, file) ?? []);
+	return (await candidateFiles(checkout, signal)).flatMap((file) =>
+		only === undefined || only.has(file) ? (embedAt(root, file) ?? []) : [],
+	);
 }
 
 export { checkoutEmbeds, type CheckoutEmbed };

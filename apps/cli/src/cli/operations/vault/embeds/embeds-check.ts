@@ -1,18 +1,23 @@
 // The embeds check (ADR 0057): every embed of the checkout that holds the
-// vault, drawn again from its own recipe and compared with what it keeps.
+// vault, and every tracked embed of the vault's boards, drawn again from its
+// own recipe and compared with what it keeps.
 //
 // A recipe names its vault by repository identity and its board by id, so the
-// board is the one that holds the id now, whatever it is called. The picture
-// is drawn again by the server's render route with the recipe's choices; a PNG
-// compares by its SVG's digest, so only `--fix` needs a browser. `--fix`
-// writes only the embeds of this checkout, each whole, and the answer names
-// every file it rewrote and every recipe it pointed at another board.
+// board is the one that holds the id now, whatever it is called. A tracked
+// embed whose board this vault holds is read against this vault, whichever
+// repository its recipe names: after a move (ADR 0051) the recipe still names
+// the old one, and the check says so. The picture is drawn again by the
+// server's render route with the recipe's choices; a PNG compares by its SVG's
+// digest, so only `--fix` needs a browser. `--fix` writes the embeds of this
+// checkout and the tracked embeds in a registered checkout of another
+// repository, each whole, and the answer names every file it rewrote and every
+// recipe it pointed at another board.
 
 import fs from "node:fs";
 import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { repoRootOf } from "@archboard/workspace/checkouts";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import { checkoutsReadFrom } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type { EmbedFinding, EmbedFix, EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
@@ -29,6 +34,7 @@ import {
 	changedFinding,
 	goneBoardFinding,
 	missingFinding,
+	movedFinding,
 	unavailableFinding,
 	unreadableFinding,
 } from "#cli/operations/vault/embeds/embed-findings.ts";
@@ -42,11 +48,19 @@ import {
 	checkoutEmbeds,
 	type CheckoutEmbed,
 } from "#cli/operations/vault/embeds/checkout-embeds.ts";
+import {
+	fileKey,
+	foreignEmbeds,
+	trackedEmbedsOf,
+	trackedFiles,
+	trackedFinding,
+	trackingBoards,
+} from "#cli/operations/vault/embeds/tracked-embeds.ts";
 import { removingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
 
-/** What checking one embed found: a finding, a file `--fix` rewrote, or neither. */
+/** What checking one embed found: its findings, a file `--fix` rewrote, or neither. */
 interface Checked {
-	readonly finding?: EmbedFinding;
+	readonly findings?: readonly EmbedFinding[];
 	readonly fix?: EmbedFix;
 }
 
@@ -56,6 +70,19 @@ interface Run {
 	readonly signal: AbortSignal;
 	readonly vault: (repo: string | null) => Promise<VaultReading>;
 	readonly bitmaps: Bitmaps;
+	/** The repository identity of the checkout that holds the vault. */
+	readonly ownRepo: string | undefined;
+	/** The ids of the vault's boards that track each file, by `fileKey`. */
+	readonly tracking: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
+/**
+ * Where a file `--fix` rewrote is, as the answer names it.
+ * @param embed The embed.
+ * @returns Its file, and its repository when it is another's.
+ */
+function fixedFile(embed: CheckoutEmbed): Pick<EmbedFix, "file" | "embedRepo"> {
+	return { file: embed.file, ...(embed.repo === undefined ? {} : { embedRepo: embed.repo }) };
 }
 
 /**
@@ -104,18 +131,22 @@ async function checkGoneBoard(
 	if (run.fix && repointable) {
 		notFixed = await repoint(embed, recipe, holder, reading.vault, run.bitmaps);
 		if (notFixed === undefined) {
-			return { fix: { action: "re-pointed", file: embed.file, from: recipe.board, to: holder } };
+			return {
+				fix: { action: "re-pointed", ...fixedFile(embed), from: recipe.board, to: holder },
+			};
 		}
 	}
 	const removedIn = await removingCommit(reading.vault, recipe.board, run.signal);
 	return {
-		finding: goneBoardFinding(embed, recipe.board, {
-			holder,
-			removedIn,
-			repointable,
-			notFixed,
-			unreadable: reading.unreadable,
-		}),
+		findings: [
+			goneBoardFinding(embed, recipe.board, {
+				holder,
+				removedIn,
+				repointable,
+				notFixed,
+				unreadable: reading.unreadable,
+			}),
+		],
 	};
 }
 
@@ -137,10 +168,10 @@ async function redraw(
 ): Promise<Checked> {
 	const notFixed = run.fix ? await writeRedrawn(embed, redrawn, run.bitmaps) : undefined;
 	if (!run.fix || notFixed !== undefined) {
-		return { finding: changedFinding(embed, standing, board, notFixed) };
+		return { findings: [changedFinding(embed, standing, board, notFixed)] };
 	}
 	const code = standing === "outdated" ? "EMBED_OUTDATED" : "EMBED_RENDERER_CHANGED";
-	return { fix: { action: "drawn", file: embed.file, code } };
+	return { fix: { action: "drawn", ...fixedFile(embed), code } };
 }
 
 /**
@@ -160,12 +191,64 @@ async function checkDrawn(
 	run: Run,
 ): Promise<Checked> {
 	const redrawn = await drawAgain(recipe, board.name, vault);
-	if (!redrawn.ok) return { finding: missingFinding(embed, redrawn.missing, board) };
+	if (!redrawn.ok) return { findings: [missingFinding(embed, redrawn.missing, board)] };
 	const standing = embedStanding(recipe, redrawn.recipe);
 	if (standing === "current" || (standing === "recipe-stale" && !run.fix)) return {};
 	if (standing !== "recipe-stale") return redraw(embed, standing, redrawn, board, run);
 	refreshRecipe(embed, recipe, redrawn.recipe);
-	return { fix: { action: "recipe", file: embed.file } };
+	return { fix: { action: "recipe", ...fixedFile(embed) } };
+}
+
+/**
+ * The repository of this vault, when a board of this vault tracks an embed and
+ * holds the board its recipe names: then the vault is this one, whichever
+ * repository the recipe names.
+ * @param embed The embed.
+ * @param recipe Its recipe.
+ * @param run The run.
+ * @returns The repository identity of this vault's checkout, or undefined.
+ */
+function heldIn(embed: CheckoutEmbed, recipe: RenderRecipe, run: Run): string | undefined {
+	const repo = embed.repo ?? run.ownRepo;
+	const boards = repo === undefined ? undefined : run.tracking.get(fileKey(repo, embed.file));
+	return boards?.has(recipe.board.id) === true ? run.ownRepo : undefined;
+}
+
+/**
+ * What checking an embed whose recipe names the vault its board moved from
+ * found: the finding that says so, or the rewrite that `--fix` made, which
+ * writes the recipe of this vault whether it drew the picture again or not.
+ * @param embed The embed.
+ * @param from The repository the recipe names.
+ * @param checked What checking it against this vault found.
+ * @returns The same, with the move said.
+ */
+function moved(embed: CheckoutEmbed, from: string | null, checked: Checked): Checked {
+	const { fix } = checked;
+	if (fix !== undefined && fix.action !== "re-pointed") {
+		return { ...checked, fix: { ...fix, movedFrom: from } };
+	}
+	return { ...checked, findings: [...(checked.findings ?? []), movedFinding(embed, from)] };
+}
+
+/**
+ * Check an embed against the vault that holds its board, or held it.
+ * @param embed The embed.
+ * @param recipe Its recipe.
+ * @param reading The vault.
+ * @param run The run.
+ * @returns What was found and done.
+ */
+function checkInVault(
+	embed: CheckoutEmbed,
+	recipe: RenderRecipe,
+	reading: Extract<VaultReading, { ok: true }>,
+	run: Run,
+): Promise<Checked> {
+	const board = reading.byId.get(recipe.board.id);
+	return board === undefined
+		? checkGoneBoard(embed, recipe, reading, run)
+		: checkDrawn(embed, recipe, board, reading.vault, run);
 }
 
 /**
@@ -175,14 +258,17 @@ async function checkDrawn(
  * @returns What was found and done.
  */
 async function checkEmbed(embed: CheckoutEmbed, run: Run): Promise<Checked> {
-	if (!embed.recipe.ok) return { finding: unreadableFinding(embed, embed.recipe.problem) };
+	if (!embed.recipe.ok) return { findings: [unreadableFinding(embed, embed.recipe.problem)] };
 	const { recipe } = embed.recipe;
-	const reading = await run.vault(recipe.vault.repo);
-	if (!reading.ok) return { finding: unavailableFinding(embed, recipe.vault.repo, reading.reason) };
-	const board = reading.byId.get(recipe.board.id);
-	return board === undefined
-		? checkGoneBoard(embed, recipe, reading, run)
-		: checkDrawn(embed, recipe, board, reading.vault, run);
+	const here = heldIn(embed, recipe, run);
+	const reading = await run.vault(here ?? recipe.vault.repo);
+	if (!reading.ok) {
+		return { findings: [unavailableFinding(embed, recipe.vault.repo, reading.reason)] };
+	}
+	const checked = await checkInVault(embed, recipe, reading, run);
+	return here !== undefined && recipe.vault.repo !== here
+		? moved(embed, recipe.vault.repo, checked)
+		: checked;
 }
 
 /**
@@ -201,8 +287,10 @@ function stoppedAfter(error: unknown, fixed: readonly EmbedFix[]): unknown {
 }
 
 /**
- * Check every embed, one render at a time in the order Git lists them.
- * @param embeds The embeds.
+ * Check every embed of the checkout, in the order Git lists them, then every
+ * tracked embed of another repository, in the order the boards list them, one
+ * render at a time.
+ * @param embeds The embeds, in that order.
  * @param run The run.
  * @returns What each one found and did.
  * @throws {Error} What stopped the run, naming each file `--fix` rewrote before it.
@@ -211,7 +299,7 @@ async function checkInOrder(embeds: readonly CheckoutEmbed[], run: Run): Promise
 	const checked: Checked[] = [];
 	try {
 		for (const embed of embeds) {
-			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order Git lists the files
+			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order of the embeds
 			checked.push(await checkEmbed(embed, run));
 		}
 	} catch (error) {
@@ -236,7 +324,8 @@ async function checkoutRoot(vault: string, signal: AbortSignal): Promise<string 
 }
 
 /**
- * Run the embeds check over the checkout that holds a vault.
+ * Run the embeds check over the checkout that holds a vault and the tracked
+ * embeds of its boards.
  * @param vault The vault the command found.
  * @param options What the run does.
  * @param options.fix Whether to draw outdated embeds again and write their files.
@@ -250,14 +339,30 @@ async function checkEmbeds(
 	options: { readonly fix: boolean; readonly signal: AbortSignal },
 ): Promise<EmbedsPart> {
 	const root = await checkoutRoot(vault, options.signal);
-	if (root === undefined) return { checkout: null, embeds: [], findings: [], fixed: [] };
+	if (root === undefined) {
+		return { checkout: null, embeds: [], tracked: [], findings: [], fixed: [] };
+	}
 	const embeds = await checkoutEmbeds(root, options.signal);
+	const tracked = await trackedEmbedsOf(vault);
+	const checkouts = checkoutsReadFrom(vault);
 	const run: Run = {
 		...options,
-		vault: vaultReader(checkoutsReadFrom(vault)),
+		vault: vaultReader(checkouts),
 		bitmaps: bitmapsFor(options.signal),
+		ownRepo: vaultIdentity(vault),
+		tracking: trackingBoards(tracked),
 	};
-	const checked = await checkInOrder(embeds, run).catch(async (error: unknown) => {
+	const files = await trackedFiles(
+		tracked,
+		{ repo: run.ownRepo, root, embeds },
+		checkouts,
+		options.signal,
+	);
+	const trackedFindings = tracked.flatMap(
+		(entry) => trackedFinding(entry, files.get(entry.repo), entry.repo === run.ownRepo) ?? [],
+	);
+	const foreign = foreignEmbeds(tracked, files, run.ownRepo, run.tracking);
+	const checked = await checkInOrder([...embeds, ...foreign], run).catch(async (error: unknown) => {
 		await run.bitmaps.stop().catch(() => undefined);
 		throw error;
 	});
@@ -268,7 +373,8 @@ async function checkEmbeds(
 	return {
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
-		findings: checked.flatMap((one) => (one.finding === undefined ? [] : [one.finding])),
+		tracked: tracked.map(({ board, repo, path }) => ({ board, repo, path })),
+		findings: [...checked.flatMap((one) => one.findings ?? []), ...trackedFindings],
 		fixed,
 	};
 }
