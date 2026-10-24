@@ -17,7 +17,6 @@ import {
 	moveStretch,
 	notched,
 	stretchBeyond,
-	xAt,
 	type Place,
 } from "#shared/rules/track/routes/jogs.ts";
 import type { Scene } from "#shared/rules/track/scene/scene.ts";
@@ -60,11 +59,13 @@ function collinear(leaving: Net, entering: Net): boolean {
  * @returns True when they share an end.
  */
 function meetAtOnePoint(one: Net, other: Net): boolean {
-	return (["top", "bottom"] as const).some(
-		(end) =>
-			one[end].item !== undefined &&
-			one[end].item === other[end].item &&
-			Math.abs(xAt(one, end) - xAt(other, end)) <= STRAIGHT,
+	return (
+		(one.top.item !== undefined &&
+			one.top.item === other.top.item &&
+			Math.abs(one.topX - other.topX) <= STRAIGHT) ||
+		(one.bottom.item !== undefined &&
+			one.bottom.item === other.bottom.item &&
+			Math.abs(one.bottomX - other.bottomX) <= STRAIGHT)
 	);
 }
 
@@ -75,10 +76,36 @@ function meetAtOnePoint(one: Net, other: Net): boolean {
  */
 function collinearPairs(nets: readonly Net[]): number {
 	let count = 0;
-	for (const channel of byChannel(nets, (net) => net).values())
-		for (const leaving of channel)
-			for (const entering of channel) if (collinear(leaving, entering)) count += 1;
+	for (const channel of byChannel(nets, (net) => net).values()) {
+		const entering = channel.toSorted((one, other) => one.bottomX - other.bottomX);
+		for (const leaving of channel) {
+			const start = firstNear(entering, leaving.topX);
+			for (
+				let at = start;
+				at < entering.length && entering[at]!.bottomX - leaving.topX < LANE;
+				at += 1
+			)
+				if (collinear(leaving, entering[at]!)) count += 1;
+		}
+	}
 	return count;
+}
+
+/**
+ * Find the first lower endpoint within a lane to the left of an x.
+ * @param entering Nets sorted by their lower endpoint.
+ * @param x The leaving endpoint.
+ * @returns The first candidate's index.
+ */
+function firstNear(entering: readonly Net[], x: number): number {
+	let start = 0;
+	let end = entering.length;
+	while (start < end) {
+		const middle = (start + end) >>> 1;
+		if (x - entering[middle]!.bottomX >= LANE) start = middle + 1;
+		else end = middle;
+	}
+	return start;
 }
 
 /**
@@ -110,9 +137,13 @@ function byChannel<Item>(items: readonly Item[], netOf: (item: Item) => Net): Ma
 function swapped(nets: readonly Net[]): number {
 	let count = 0;
 	for (const channel of byChannel(nets, (net) => net).values())
-		for (const one of channel)
-			for (const other of channel)
-				if ((one.topX - other.topX) * (one.bottomX - other.bottomX) < 0) count += 1;
+		for (let index = 0; index < channel.length; index += 1) {
+			const one = channel[index]!;
+			for (let next = index + 1; next < channel.length; next += 1) {
+				const other = channel[next]!;
+				if ((one.topX - other.topX) * (one.bottomX - other.bottomX) < 0) count += 2;
+			}
+		}
 	return count;
 }
 

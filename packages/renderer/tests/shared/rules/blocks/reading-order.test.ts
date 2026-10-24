@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 import { REFERENCE_PANE } from "#shared/constants/shell-geometry.ts";
-import { readsBetter, takes, type Weighed } from "#shared/rules/track/scene/score.ts";
+import { crossingsOf, readsBetter, takes, type Weighed } from "#shared/rules/track/scene/score.ts";
 import { weighedPlaced } from "#shared/rules/blocks/tree/weighing.ts";
 
 /** A layout that fits the reference pane at full scale and reads cleanly. */
@@ -126,4 +126,29 @@ test("a line run away from its ends round the picture reads worse than a crossin
 	expect(looping.crossings).toBe(0);
 	expect(readsBetter(hopping, looping)).toBe(true);
 	expect(readsBetter(looping, hopping)).toBe(false);
+});
+
+// Crossings on shared trunks count once. Ends and their one-point clearance
+// do not cross, and a line's own runs never count against each other.
+test("route crossing scores retain shared places, strict ends and line identity", () => {
+	const across = [
+		{ x: 0, y: 0 },
+		{ x: 20, y: 0 },
+	];
+	const uprights = [0, 1, 1.01, 10, 10.1, 19, 20].map((x) => [
+		{ x, y: -5 },
+		{ x, y: 5 },
+	]);
+	expect(crossingsOf([across, across.toReversed(), ...uprights])).toBe(2);
+	expect(
+		crossingsOf([
+			[
+				{ x: 0, y: 0 },
+				{ x: 20, y: 0 },
+				{ x: 20, y: 20 },
+				{ x: 10, y: 20 },
+				{ x: 10, y: -20 },
+			],
+		]),
+	).toBe(0);
 });
