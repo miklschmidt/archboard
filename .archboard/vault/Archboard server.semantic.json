@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 288,
+	"version": 289,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-24T14:30:22.936Z",
+	"updatedAt": "2026-10-24T14:32:10.294Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -116242,7 +116242,12 @@
 						"to": "MYbmjfIR",
 						"kind": "call",
 						"label": "start and stop the shared workbench with host policy",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "createCodexWorkbench"
+						}
 					},
 					{
 						"id": "7plLLcKh",

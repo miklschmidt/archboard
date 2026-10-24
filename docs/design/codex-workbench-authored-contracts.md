@@ -6,10 +6,22 @@
 
 **Owner:** TASK-143.01.17
 
-This document freezes the authored inputs that an implementation worker must
-not invent. Source modules load, hash, validate, and dispatch these contracts.
-Changing prose, order, schemas, limits, or result tags is a product/agent-policy
-change and requires a new review.
+This document records the reviewed inputs for TASK-143.01.17 and later policy changes.
+Source modules load, hash, validate, and dispatch the current contracts.
+The source files are the authority for their exact bytes.
+
+TASK-517 splits the shared protocol from Archboard policy.
+The shared role instructions and tools live in `packages/agent-workbench/src/runtime/rules/host`.
+Archboard supplies its domain instructions through `packages/workbench/src/runtime/services/host/archboard.ts`.
+The shared factory captures both inputs and hashes the exact composed instruction text and tool array.
+Hosts cannot replace the core role instructions or reserved tools.
+The literal profiles below record the earlier Archboard composition, rather than a separate implementation path.
+
+TASK-517 also makes the Codex process environment an explicit host input.
+The SDK copies its ambient allowlist, then applies `hostEnvironment` and `pathPrefixes`.
+It assigns the protected Codex storage roots last.
+Archboard supplies its server URL, autostart refusal, and CLI directory through those inputs.
+The independent example supplies none of them.
 
 ## Byte rules
 
@@ -1210,12 +1222,12 @@ Operation and pagination semantics are exact:
 ## `archboard_coordinator` manifest
 
 The workhorse is started with a second namespace beside `archboard_app`,
-`packages/workbench/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
+`packages/agent-workbench/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
 Archboard server loads and pins by its digest (TASK-321). It has one tool,
 `tell_coordinator`, that takes one `message` of 1 to 2048 characters. The
-manifest hash that a workhorse start records is the SHA-256 of the compact JSON
-`{"app":"<archboard_app digest>","coordinator":"<archboard_coordinator digest>"}`.
-A change to either manifest therefore changes it.
+manifest hash that a workhorse start records is the SHA-256 of its exact composed tool array.
+The host profile supplies the domain tools, and the core adds the coordinator namespace.
+A change to either input changes the manifest hash.
 
 A call is answered with one `inputText` item in plain prose. An invalid call
 answers `success: false` and sends nothing. Every other answer is
