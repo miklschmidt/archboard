@@ -152,6 +152,7 @@ const PNG = Buffer.concat([
 interface EmbedsPart {
 	checkout: string | null;
 	embeds: string[];
+	vaults: { source: string; repo: string }[];
 	findings: {
 		severity: string;
 		code: string;
@@ -336,6 +337,11 @@ describe("check embeds", () => {
 				nameHeldBy: { id: idOf("new queue") },
 			});
 			expect(part.fixed).toEqual([]);
+			// Each registered checkout's vault is read as it holds it, never fetched.
+			expect(part.vaults).toEqual([
+				{ source: "checkout", repo: "github.com/example/docs" },
+				{ source: "checkout", repo: "github.com/example/models" },
+			]);
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
