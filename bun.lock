@@ -88,6 +88,10 @@
       "name": "@archboard-app/web",
       "version": "0.0.0",
     },
+    "apps/workbench-example": {
+      "name": "@archboard-app/workbench-example",
+      "version": "0.0.0",
+    },
     "packages/agent-workbench": {
       "name": "@archboard/agent-workbench",
       "version": "0.0.0",
@@ -167,6 +171,8 @@
     "@archboard-app/server": ["@archboard-app/server@workspace:apps/server"],
 
     "@archboard-app/web": ["@archboard-app/web@workspace:apps/web"],
+
+    "@archboard-app/workbench-example": ["@archboard-app/workbench-example@workspace:apps/workbench-example"],
 
     "@archboard/agent-workbench": ["@archboard/agent-workbench@workspace:packages/agent-workbench"],
 

@@ -13,7 +13,7 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 
 ```text
 packages/<name>/   # a library that owns one behavior. See Packages.
-apps/<name>/       # a process entry that nothing imports: cli, server, web. See Apps.
+apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
 vite.config.ts     # the build host of the browser app
@@ -28,7 +28,8 @@ A package can also hold files and folders outside these areas, such as `src/type
 Each area has role folders, and a role folder has one folder for each behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
 React ownership, read [frontend.md](frontend.md).
 
-The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`.
+The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,
+and the server and browser entries of `apps/workbench-example`.
 Do not add implementation to them.
 
 ## Import rules
@@ -606,8 +607,8 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
   an error whoever owns the importing file.
 - **An app has areas and role folders like a package.** `apps/web/src/ui/<role>/<behavior>/`,
   `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
-  `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`; the last counts as
-  browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
+  `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`, and
+  `apps/workbench-example/src/{server.ts,main.tsx}`. Both `main.tsx` entries count as browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
   source are refused. An app also refuses a folder of `src/` that is no area.
 - **A package or an app has no `lib/` folder.** Name the role of the folder.
 - **Tests** follow `apps/<name>/tests/` like a package's. Its `ui/` folder is held to the UI lint
@@ -760,3 +761,23 @@ formatting, type checking, and all four normal native test lanes. Explicit
 `test:opt-in:*` package commands own capacity, test tooling, unsupported
 topologies, and browser performance outside that normal gate. `bun run fix`
 applies safe Oxlint fixes and formats the repository.
+
+### `apps/workbench-example`
+
+`apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
+The server admits one checkout and keeps private state in the supplied directory.
+It reads only public SDK and agent-workbench entries.
+Its server forwards exact socket identities through the shared factory browser ingress.
+Its browser uses the shared transport and media owner.
+The two stop controls keep voice and workhorse lifetimes separate.
+
+`src/server.ts` and `src/main.tsx` are thin process and browser entries.
+`src/shared/protocol/application.ts` owns the configuration response and socket path.
+`src/server/` owns HTTP, socket registration, startup, and cleanup.
+`src/ui/` owns the page, action presentation, and its connection client.
+`scripts/build-workbench-example.ts` generates the three browser assets under ignored `dist/workbench-example`.
+The normal gate builds those assets before it runs product tests.
+
+App-owned DOM tests cover controls and draft recovery.
+The process owner in `tests/system/server-state/workbench-example.test.ts` starts the actual app with the controlled Codex executable.
+It covers approval delivery, tab isolation, voice negotiation, workhorse completion, independent stops, and cleanup.

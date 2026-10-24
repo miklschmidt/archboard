@@ -21,7 +21,7 @@ const packagesRoot = path.join(repoRoot, "packages");
 const appsRoot = path.join(repoRoot, "apps");
 
 // The agreed layer order of ADR 0055 and docs/agents/boundaries.md. A package
-// imports only a lower layer. Nothing imports an app, and the three apps share
+// imports only a lower layer. Nothing imports an app, and the apps share
 // the top layer. App ids include their prefix to distinguish them from packages.
 const LAYERS: Record<string, number> = {
 	timing: 0,
@@ -44,6 +44,7 @@ const LAYERS: Record<string, number> = {
 	"apps/cli": 8,
 	"apps/server": 8,
 	"apps/web": 8,
+	"apps/workbench-example": 8,
 };
 
 interface Edge {
@@ -190,7 +191,9 @@ describe("the package graph", () => {
 	test("the apps share layer 8 above every package, and the graph does not need them to exist", () => {
 		const appLayers = Object.entries(LAYERS).filter(([id]) => id.startsWith("apps/"));
 		const packageLayers = Object.entries(LAYERS).filter(([id]) => !id.startsWith("apps/"));
-		expect(appLayers.map(([id]) => id)).toEqual(["apps/cli", "apps/server", "apps/web"]);
+		expect(new Set(appLayers.map(([id]) => id))).toEqual(
+			new Set(appDirectories().map(({ id }) => id)),
+		);
 		expect(new Set(appLayers.map(([, layer]) => layer))).toEqual(new Set([8]));
 		expect(Math.max(...packageLayers.map(([, layer]) => layer))).toBeLessThan(8);
 		expect(appDirectories(path.join(appsRoot, "missing"))).toEqual([]);
@@ -307,7 +310,7 @@ function browserViolations(roots: string[], graphOwners: Owner[]): string[] {
 			const relative = path.relative(owner.directory, target);
 			if (
 				/^src\/(?:runtime|server|cli)\//.test(relative) ||
-				(owner.id.startsWith("apps/") && owner.id !== "apps/web")
+				(owner.id.startsWith("apps/") && ownerOfFile(file, graphOwners)?.id !== owner.id)
 			) {
 				violations.push(`${chain.join(" -> ")} imports ${specifier} (${owner.id}/${relative})`);
 			} else if (/\.(?:[cm]?[jt]sx?|css)$/.test(target) && fs.existsSync(target))
@@ -343,7 +346,9 @@ describe("the resolved package graph", () => {
 
 	test("the web entry and every browser-safe package export reach only browser code", () => {
 		const roots = [
-			path.join(appsRoot, "web/src/main.tsx"),
+			...appDirectories()
+				.map(({ directory }) => path.join(directory, "src/main.tsx"))
+				.filter(fs.existsSync),
 			...packages.flatMap(({ directory, exports }) =>
 				Object.values(exports)
 					.filter(
