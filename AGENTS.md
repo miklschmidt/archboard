@@ -104,6 +104,9 @@ rules that will not stop you:
   instead of being ignored. Inside a git
   checkout only `<root>/.archboard/vault` counts. A checkout without one is
   refused with `VAULT_NOT_FOUND` (exit 2), and nothing above the root is used.
+  The one exception is `check`, `check all` and `check embeds`: in a checkout
+  without a vault they run the embeds check alone, name no vault in the answer,
+  and say in `skipped` that the semantics and code checks did not run.
   Outside any checkout the nearest enclosing `<dir>/.archboard/vault` counts.
   `-C` is a shared option of the commands that call a vault. It stands before
   or after the command name. It changes only where the vault is found:

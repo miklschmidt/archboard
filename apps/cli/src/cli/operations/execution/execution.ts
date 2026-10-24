@@ -129,13 +129,19 @@ function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
  * twice starts the server once.
  * @param signal - The abort signal the command runs under.
  * @param vault - The vault the command addressed, when it found one.
+ * @param checkout - The checkout without a vault that the command runs in, when it runs in one.
  * @returns The context handed to the handler.
  */
-function createCommandContext(signal: AbortSignal, vault: AnsweredVault | null): CommandContext {
+function createCommandContext(
+	signal: AbortSignal,
+	vault: AnsweredVault | null,
+	checkout: string | null,
+): CommandContext {
 	const prerequisiteCache = new Map<string, Promise<void>>();
 	return {
 		signal,
 		vault,
+		checkout,
 		/**
 		 * Ensures a prerequisite, at most once per command run.
 		 * @param prerequisite - What the command needs running.
@@ -270,15 +276,17 @@ function publishExecution(
  * @param argv - The arguments after the command path.
  * @param signal - The abort signal the command runs under.
  * @param vault - The vault the command addressed, when it found one.
+ * @param checkout - The checkout without a vault that the command runs in, when it runs in one.
  */
 export async function executeCommand(
 	contract: AnyCommandContract,
 	argv: readonly string[],
 	signal: AbortSignal = new AbortController().signal,
 	vault: AnsweredVault | null = null,
+	checkout: string | null = null,
 ): Promise<void> {
 	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
-	const execution = await contract.handler(input, createCommandContext(signal, vault));
+	const execution = await contract.handler(input, createCommandContext(signal, vault, checkout));
 	publishExecution(contract, input, execution, vault);
 }

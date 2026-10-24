@@ -9,8 +9,8 @@ import {
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/rules/check/embed-state.ts";
-import { EmbedsPartSchema, type EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
-import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
+import { EmbedsPartSchema } from "#cli/protocol/check/embeds-answer.ts";
+import { checkEmbedsOf } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 const output = {
 	cases: [
@@ -124,6 +125,13 @@ const CheckAnswerSchema = z.object({
 	semantics: SemanticsPartSchema.optional(),
 	code: CodeCheckAnswerSchema.optional(),
 	embeds: EmbedsPartSchema.optional(),
+	/**
+	 * The checks that read a vault and did not run, and why: the command ran in
+	 * a Git checkout that holds no vault, where only the embeds check runs.
+	 */
+	skipped: z
+		.object({ checks: z.array(z.enum(["semantics", "code"])), message: z.string() })
+		.optional(),
 });
 type CheckAnswer = z.output<typeof CheckAnswerSchema>;
 
@@ -165,14 +173,34 @@ function warns(part: { readonly findings: readonly { severity: string }[] } | un
 type CheckName = "semantics" | "code" | "embeds";
 
 /**
+ * The checks that read a vault, which a command that runs in a Git checkout
+ * without one leaves out, and why.
+ * @param checks The checks the command runs.
+ * @param checkout The checkout without a vault, or null when the command found a vault.
+ * @returns What the answer says it left out, or undefined when it left out nothing.
+ */
+function skippedWithoutVault(
+	checks: readonly CheckName[],
+	checkout: string | null,
+): CheckAnswer["skipped"] {
+	const skipped = checks.filter((check): check is "semantics" | "code" => check !== "embeds");
+	if (checkout === null || skipped.length === 0) return undefined;
+	return {
+		checks: skipped,
+		message: `${checkout} holds no ${VAULT_DIRECTORY}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
+	};
+}
+
+/**
  * The lines of a command's stderr: for each part that ran, its times, then its
  * diagnostics or findings.
  * @param answer The parts that ran.
  * @returns The lines, in the order of the parts.
  */
 function checkLines(answer: CheckAnswer): string[] {
-	const { semantics, code, embeds } = answer;
+	const { semantics, code, embeds, skipped } = answer;
 	return [
+		...(skipped === undefined ? [] : [`skipped: ${skipped.checks.join(", ")}: ${skipped.message}`]),
 		...(semantics === undefined
 			? []
 			: [...semantics.timings.map(timingLine), ...semantics.diagnostics.map(diagnosticLine)]),
@@ -180,18 +208,6 @@ function checkLines(answer: CheckAnswer): string[] {
 		...codeCheckLines(code),
 		...embedsCheckLines(embeds),
 	];
-}
-
-/**
- * The embeds check of the vault the command found.
- * @param fix Whether to draw the outdated embeds again.
- * @param context Runtime prerequisites and the vault.
- * @returns The embeds part.
- * @throws {Error} When the command found no vault, which a check command always does.
- */
-async function embedsCheck(fix: boolean, context: CommandContext): Promise<EmbedsPart> {
-	if (context.vault === null) throw new Error("The embeds check reads the vault a command finds.");
-	return checkEmbeds(context.vault.path, { fix, signal: context.signal });
 }
 
 /**
@@ -208,16 +224,17 @@ async function runChecks(
 	context: CommandContext,
 ): Promise<CommandExecution<CheckAnswer>> {
 	await context.require("server", "check");
-	const semantics = checks.includes("semantics")
+	const skipped = skippedWithoutVault(checks, context.checkout);
+	// In a checkout without a vault, only the embeds check runs.
+	const ran = context.checkout === null ? checks : checks.filter((check) => check === "embeds");
+	const semantics = ran.includes("semantics")
 		? await semanticsCheckOnServer(context.signal)
 		: undefined;
-	const code = checks.includes("code")
-		? await codeCheckOnServer(reading, context.signal)
+	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
+	const embeds = ran.includes("embeds")
+		? await checkEmbedsOf(context, reading.fix === true)
 		: undefined;
-	const embeds = checks.includes("embeds")
-		? await embedsCheck(reading.fix === true, context)
-		: undefined;
-	const answer = { semantics, code, embeds };
+	const answer = { semantics, code, embeds, skipped };
 	return {
 		result: answer,
 		...(failsCheck(answer) ? { outcome: "issues" } : {}),
@@ -311,7 +328,7 @@ const checkOutcomes = [
 
 /** What the embeds check reports, as `check embeds` and every command that runs it says. */
 const EMBEDS_CHECK =
-	"The embeds check reads each file that Git tracks in the checkout that holds the vault and that is an SVG document or a PNG carrying a render recipe; a file Git ignores, a file without a recipe and an SVG inside an HTML, Markdown or MDX page are no embed. It finds the vault the recipe names by its repository identity, this checkout's own or the chosen registered checkout of another, read as it is; a repository with no registered checkout has the .archboard/vault directory of its default branch fetched shallow and sparse from https://<identity> with your own Git credentials and url.insteadOf rules, never prompting, and cached by commit in the state directory, which is read again while the branch has not moved. The answer's vaults lists each vault read with its source: checkout, fetched with its commit, or cache, EMBED_VAULT_CACHED, information: the fetch failed and the newest cached commit was read; it can be behind the default branch, so every finding against it is information and --fix writes no embed from it, naming why in notFixed. A fetch that fails with no copy cached is EMBED_VAULT_FETCH_FAILED, a warning that names the repository. A shallow fetch has no history, so a gone board of a fetched vault names no removing commit. It finds the board by id, so a renamed board is still found; it draws the recipe again through the server and compares. A changed fingerprint and picture is EMBED_OUTDATED, a warning: the board changed. A changed picture alone is EMBED_RENDERER_CHANGED, information. A changed fingerprint alone is current. A board, variant or view that is gone, or a recipe that now draws nothing, is EMBED_SOURCE_MISSING, a warning that names the commit that removed a board when the vault's history has it and the board that holds its name now. A recipe that cannot be read is EMBED_RECIPE_UNREADABLE, a warning. A vault in no repository, a registered checkout without a vault, an identity that names no remote, a fetched or cached commit without a vault, or a vault the server refuses is EMBED_VAULT_UNAVAILABLE, information, and the embed is not checked. A PNG compares by its SVG's digest, without a browser. It also reads each tracked embed that the vault's boards list (semantic render --track): one of this repository among the checkout's embeds, and one of another repository in the working tree of that repository's chosen registered checkout, with the same rules; the answer's tracked lists them all. A finding about a file of another repository names it with embedRepo and is information whatever its code, because a warning would fail the vault's pull request until that repository draws the file again, which it can do only after the merge. A tracked embed whose board this vault holds is checked against this vault; when its recipe names another repository, as after a move, it is EMBED_VAULT_MOVED, a warning in this checkout. A tracked embed in a repository that no checkout on this machine holds is EMBED_TRACKED_UNREACHABLE, and one that is gone, untracked by Git in the checkout it is read in or of another board's recipe is EMBED_TRACKED_MISSING, both information.";
+	"The embeds check reads each file that Git tracks in the checkout that holds the vault, or in a Git checkout that holds no vault, such as a documentation repository that embeds the boards of another repository's vault, and that is an SVG document or a PNG carrying a render recipe; a file Git ignores, a file without a recipe and an SVG inside an HTML, Markdown or MDX page are no embed. It finds the vault the recipe names by its repository identity, this checkout's own or the chosen registered checkout of another, read as it is; a repository with no registered checkout has the .archboard/vault directory of its default branch fetched shallow and sparse from https://<identity> with your own Git credentials and url.insteadOf rules, never prompting, and cached by commit in the state directory, which is read again while the branch has not moved. The answer's vaults lists each vault read with its source: checkout, fetched with its commit, or cache, EMBED_VAULT_CACHED, information: the fetch failed and the newest cached commit was read; it can be behind the default branch, so every finding against it is information and --fix writes no embed from it, naming why in notFixed. A fetch that fails with no copy cached is EMBED_VAULT_FETCH_FAILED, a warning that names the repository. A shallow fetch has no history, so a gone board of a fetched vault names no removing commit. It finds the board by id, so a renamed board is still found; it draws the recipe again through the server and compares. A changed fingerprint and picture is EMBED_OUTDATED, a warning: the board changed. A changed picture alone is EMBED_RENDERER_CHANGED, information. A changed fingerprint alone is current. A board, variant or view that is gone, or a recipe that now draws nothing, is EMBED_SOURCE_MISSING, a warning that names the commit that removed a board when the vault's history has it and the board that holds its name now. A recipe that cannot be read is EMBED_RECIPE_UNREADABLE, a warning. A vault in no repository, a registered checkout without a vault, an identity that names no remote, a fetched or cached commit without a vault, or a vault the server refuses is EMBED_VAULT_UNAVAILABLE, information, and the embed is not checked. A PNG compares by its SVG's digest, without a browser. It also reads each tracked embed that the vault's boards list (semantic render --track): one of this repository among the checkout's embeds, and one of another repository in the working tree of that repository's chosen registered checkout, with the same rules; the answer's tracked lists them all. A finding about a file of another repository names it with embedRepo and is information whatever its code, because a warning would fail the vault's pull request until that repository draws the file again, which it can do only after the merge. A tracked embed whose board this vault holds is checked against this vault; when its recipe names another repository, as after a move, it is EMBED_VAULT_MOVED, a warning in this checkout. A tracked embed in a repository that no checkout on this machine holds is EMBED_TRACKED_UNREACHABLE, and one that is gone, untracked by Git in the checkout it is read in or of another board's recipe is EMBED_TRACKED_MISSING, both information.";
 
 const embedsRelationships = [
 	{
@@ -397,9 +414,10 @@ const checkContract = defineCommand({
 const checkAllContract = defineCommand({
 	path: ["check", "all"],
 	shared: ["url", "directory"],
+	runsWithoutVault: true,
 	summary: "Run every check of the vault: semantics, code, then embeds",
 	description:
-		"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). Exit 1 means the semantics check has a diagnostic or a warning, or the code check or the embeds check a warning; information never changes the exit status; no board is changed. --variant, --every-draft and --plan name what the code check reads, as `check code` describes, and --fix draws outdated embeds again, as `check embeds` describes; the other checks still run and report.",
+		"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). Exit 1 means the semantics check has a diagnostic or a warning, or the code check or the embeds check a warning; information never changes the exit status; no board is changed. --variant, --every-draft and --plan name what the code check reads, as `check code` describes, and --fix draws outdated embeds again, as `check embeds` describes; the other checks still run and report. In a Git checkout that holds no vault, such as a documentation repository that embeds the boards of another repository's vault, only the embeds check runs: the answer's skipped names the semantics and code checks and why, it names no vault, and the exit status comes from the embeds check alone.",
 	examples: [
 		"archboard check",
 		"archboard check all --variant TASK-123",
@@ -433,6 +451,7 @@ const checkAllContract = defineCommand({
 const checkEmbedsContract = defineCommand({
 	path: ["check", "embeds"],
 	shared: ["url", "directory"],
+	runsWithoutVault: true,
 	summary: "Check the board renders that this checkout's documents embed",
 	description: `${EMBEDS_CHECK} --fix draws each outdated embed of this checkout again and rewrites its whole file, a PNG through Chromium at its recipe's scale and region (without Chromium the PNG stays reported, with why it was not fixed), writes only the new recipe of an embed whose picture is current, or of a tracked embed whose recipe names the repository its board moved from, and points a recipe that asks for the current variant and the overview or Everything at the board that now holds its deleted board's name; the answer's fixed lists each file it rewrote and each re-pointing with the old and the new board. --fix draws a tracked embed of another repository again only in the chosen registered checkout of that repository, and writes no other file outside this checkout; the findings name each tracked embed it could not reach. Exit 1 means a warning remains; information never changes the exit status; no board is changed.`,
 	examples: ["archboard check embeds", "archboard check embeds --fix"],

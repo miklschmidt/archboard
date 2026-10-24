@@ -1,6 +1,8 @@
 // The embeds check (ADR 0057): every embed of the checkout that holds the
 // vault, and every tracked embed of the vault's boards, drawn again from its
-// own recipe and compared with what it keeps.
+// own recipe and compared with what it keeps. In a checkout that holds no
+// vault, such as a documentation repository that embeds the boards of
+// another repository's vault, it reads the embeds of that checkout alone.
 //
 // A recipe names its vault by repository identity and its board by id, so the
 // board is the one that holds the id now, whatever it is called. A tracked
@@ -21,6 +23,7 @@ import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolu
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type { EmbedFinding, EmbedFix, EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
+import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import { embedStanding, fixLine, isRepointable } from "#cli/rules/check/embed-state.ts";
 import {
 	bitmapsFor,
@@ -38,6 +41,7 @@ import {
 	movedFinding,
 	unavailableFinding,
 	unreadableFinding,
+	type TrackedEntry,
 } from "#cli/operations/vault/embeds/embed-findings.ts";
 import {
 	boardNamed,
@@ -348,10 +352,42 @@ async function checkoutRoot(vault: string, signal: AbortSignal): Promise<string 
 	return root !== undefined && fs.realpathSync.native(root) === holder ? holder : undefined;
 }
 
+/** Where the check runs: the vault a command found, or a Git checkout that holds no vault. */
+type EmbedsAt = { readonly vault: string } | { readonly checkout: string };
+
+/** The embeds part of a vault in no Git checkout: no file of it can be an embed. */
+const NO_CHECKOUT: EmbedsPart = {
+	checkout: null,
+	embeds: [],
+	tracked: [],
+	vaults: [],
+	findings: [],
+	fixed: [],
+};
+
+/**
+ * The tracked embeds of the vault's boards, and the files of each repository
+ * they name.
+ * @param vault The vault, or null in a checkout without one, whose boards track nothing.
+ * @param own The checkout the check runs in.
+ * @param checkouts The checkouts identities resolve in.
+ * @param signal Cancels the listings.
+ * @returns The tracked embeds and their files.
+ */
+async function trackedOf(
+	vault: string | null,
+	own: Parameters<typeof trackedFiles>[1],
+	checkouts: ReturnType<typeof checkoutsReadFrom>,
+	signal: AbortSignal,
+): Promise<{ tracked: TrackedEntry[]; files: Awaited<ReturnType<typeof trackedFiles>> }> {
+	const tracked = vault === null ? [] : await trackedEmbedsOf(vault);
+	return { tracked, files: await trackedFiles(tracked, own, checkouts, signal) };
+}
+
 /**
  * Run the embeds check over the checkout that holds a vault and the tracked
- * embeds of its boards.
- * @param vault The vault the command found.
+ * embeds of its boards, or over a checkout that holds no vault.
+ * @param at The vault the command found, or the checkout without one.
  * @param options What the run does.
  * @param options.fix Whether to draw outdated embeds again and write their files.
  * @param options.signal Cancels it.
@@ -360,30 +396,29 @@ async function checkoutRoot(vault: string, signal: AbortSignal): Promise<string 
  * naming each file `--fix` rewrote.
  */
 async function checkEmbeds(
-	vault: string,
+	at: EmbedsAt,
 	options: { readonly fix: boolean; readonly signal: AbortSignal },
 ): Promise<EmbedsPart> {
-	const root = await checkoutRoot(vault, options.signal);
-	if (root === undefined) {
-		return { checkout: null, embeds: [], tracked: [], vaults: [], findings: [], fixed: [] };
-	}
+	const vault = "vault" in at ? at.vault : null;
+	const root = "checkout" in at ? at.checkout : await checkoutRoot(at.vault, options.signal);
+	if (root === undefined) return NO_CHECKOUT;
 	const embeds = await checkoutEmbeds(root, options.signal);
-	const tracked = await trackedEmbedsOf(vault);
 	const checkouts = checkoutsReadFrom(vault);
 	const vaults = vaultReader(checkouts, options.signal);
+	const ownRepo = vault === null ? undefined : vaultIdentity(vault);
+	const { tracked, files } = await trackedOf(
+		vault,
+		{ repo: ownRepo, root, embeds },
+		checkouts,
+		options.signal,
+	);
 	const run: Run = {
 		...options,
 		vault: vaults.read,
 		bitmaps: bitmapsFor(options.signal),
-		ownRepo: vaultIdentity(vault),
+		ownRepo,
 		tracking: trackingBoards(tracked),
 	};
-	const files = await trackedFiles(
-		tracked,
-		{ repo: run.ownRepo, root, embeds },
-		checkouts,
-		options.signal,
-	);
 	const trackedFindings = tracked.flatMap(
 		(entry) => trackedFinding(entry, files.get(entry.repo), entry.repo === run.ownRepo) ?? [],
 	);
@@ -406,4 +441,22 @@ async function checkEmbeds(
 	};
 }
 
-export { checkEmbeds };
+/**
+ * The embeds check of what a command addressed: the vault it found, or the
+ * Git checkout without a vault that it runs in.
+ * @param context What the command addressed, and its signal.
+ * @param fix Whether to draw the outdated embeds again.
+ * @returns The embeds part.
+ * @throws {Error} When the command addressed neither, which a check command never does.
+ */
+function checkEmbedsOf(
+	context: Pick<CommandContext, "vault" | "checkout" | "signal">,
+	fix: boolean,
+): Promise<EmbedsPart> {
+	const options = { fix, signal: context.signal };
+	if (context.vault !== null) return checkEmbeds({ vault: context.vault.path }, options);
+	if (context.checkout !== null) return checkEmbeds({ checkout: context.checkout }, options);
+	throw new Error("The embeds check reads the vault or the checkout a command finds.");
+}
+
+export { checkEmbeds, checkEmbedsOf };

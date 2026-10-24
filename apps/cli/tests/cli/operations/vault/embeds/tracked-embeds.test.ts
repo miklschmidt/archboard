@@ -123,7 +123,7 @@ test("a tracked file of another repository is read only as an embed of a board t
 	expect(spawnSync("git", ["add", "docs/shared.svg"], { cwd: docs }).status).toBe(0);
 	await declareDirectory(docs);
 
-	const part = await checkEmbeds(vault, { fix: false, signal: AbortSignal.timeout(10_000) });
+	const part = await checkEmbeds({ vault }, { fix: false, signal: AbortSignal.timeout(10_000) });
 	expect(rendered).toEqual(["ledger"]);
 	expect(
 		part.findings.map((one) => `${one.code} ${one.embedRepo}:${one.file} ${one.board?.name}`),

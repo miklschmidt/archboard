@@ -42,6 +42,16 @@ Information never changes the exit status. `--variant`, `--every-draft` and
 With `check --fix`, the other checks still run and report. The flag `--code`
 is removed, with no alias.
 
+A documentation repository that embeds the boards of another repository's
+vault often has no vault of its own. In a Git checkout without a vault,
+`check`, `check all` and `check embeds` therefore run the embeds check alone,
+over the embeds of that checkout. The check finds the vault of each embed by
+its recipe, as everywhere else. The answer names no vault. Its `skipped` part
+says that the semantics and code checks did not run, and why, and stderr says
+it too. The exit status comes from the embeds check alone. `check semantics`
+and `check code` read a vault, so they are refused there with
+`VAULT_NOT_FOUND`, as every other command is (ADR 0049).
+
 The route that every open pane polls stays the semantics check. A pane never
 starts a language server or a fetch.
 

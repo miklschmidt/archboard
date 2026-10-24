@@ -81,7 +81,7 @@ test("an embed of a board its vault cannot read names the unreadable boards", as
 		`<svg xmlns="http://www.w3.org/2000/svg"><metadata><archboard:render-recipe>${JSON.stringify(recipe)}</archboard:render-recipe></metadata></svg>`,
 	);
 	git("add", "orders.svg");
-	const part = await checkEmbeds(vault, { fix: true, signal: AbortSignal.timeout(10_000) });
+	const part = await checkEmbeds({ vault }, { fix: true, signal: AbortSignal.timeout(10_000) });
 	expect(part.embeds).toEqual(["orders.svg"]);
 	expect(part.fixed).toEqual([]);
 	expect(part.findings).toMatchObject([

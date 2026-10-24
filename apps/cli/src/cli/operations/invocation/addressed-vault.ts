@@ -19,6 +19,18 @@ import {
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
 	readonly code: VaultNotFound["code"] = "VAULT_NOT_FOUND";
+	/** The root of the Git checkout that holds no vault, when the search was in one. */
+	readonly checkoutWithoutVault: string | undefined;
+
+	/**
+	 * A search that found no vault.
+	 * @param finding - What the search found instead.
+	 */
+	constructor(finding: VaultNotFound) {
+		super(finding.message);
+		this.checkoutWithoutVault =
+			finding.reason === "checkout-without-vault" ? finding.checkoutRoot : undefined;
+	}
 }
 
 /**
@@ -123,7 +135,7 @@ async function findVaultOf(directory: string, option: string): Promise<AnsweredV
 async function foundAndRegistered(search: Omit<VaultSearch, "cwd">): Promise<AnsweredVault> {
 	const finding = await findVault({ ...search, cwd: process.cwd() });
 	if (!finding.ok) {
-		throw new VaultNotFoundError(finding.message);
+		throw new VaultNotFoundError(finding);
 	}
 	const { found } = finding;
 	const answer = await register(found);
