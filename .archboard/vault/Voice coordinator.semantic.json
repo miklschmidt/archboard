@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 84,
+	"version": 86,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-24T14:30:20.435Z",
+	"updatedAt": "2026-10-24T15:05:47.700Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -12571,7 +12571,7 @@
 		{
 			"id": "O1N446cC",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ULsRmZ5N",
 			"summary": "Voice coordinator: its exchanges as flows with decisions and loops, read as sequences and flowcharts",
 			"content": {
@@ -20883,7 +20883,7 @@
 		{
 			"id": "pSOJWmg9",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "O1N446cC",
 			"summary": "Voice session identity, coordinator lifecycle, ordered workhorse context, and spoken approvals",
 			"documents": [
@@ -21853,20 +21853,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/agent-workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
 							"symbol": "respondOnce"
-						}
-					},
-					{
-						"id": "8rTikupw",
-						"order": 43000,
-						"from": "YVc05dVh",
-						"to": "En8mB6jo",
-						"kind": "dependency",
-						"label": "compose built-in role and approval rules",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench/src/runtime/rules/host/instructions.ts",
-							"symbol": "CORE_ROLE_INSTRUCTIONS"
 						}
 					},
 					{
@@ -23720,7 +23706,7 @@
 			}
 		}
 	],
-	"current": "O1N446cC",
+	"current": "pSOJWmg9",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -23799,6 +23785,12 @@
 			"from": "ULsRmZ5N",
 			"at": "2026-10-16T02:58:40.399Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "pSOJWmg9",
+			"from": "O1N446cC",
+			"at": "2026-10-24T15:04:48.138Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [

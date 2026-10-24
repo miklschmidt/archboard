@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 116,
+	"version": 118,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T14:32:38.967Z",
+	"updatedAt": "2026-10-24T15:05:47.271Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -117,7 +117,8 @@
 					"Uz2qReYK",
 					"YxDrzJtI",
 					"tlC2W839",
-					"byMaoUe0"
+					"byMaoUe0",
+					"k9hxdLjq"
 				],
 				"edges": [],
 				"flows": []
@@ -18572,7 +18573,7 @@
 		{
 			"id": "qdsrL4tY",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "dyxcGXHr",
 			"summary": "Calls move into flows: typed message, board change, conversation start, delegation, news, tab session end",
 			"content": {
@@ -33763,7 +33764,7 @@
 		{
 			"id": "UbtMvySf",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "qdsrL4tY",
 			"summary": "Shared Codex lifecycle, browser commands, coordinator, checkout workhorses, and Archboard host integration",
 			"documents": [
@@ -34378,6 +34379,7 @@
 						"name": "Workbench interface",
 						"kind": "module",
 						"responsibility": "Start shared Codex sessions and own their connections, lifecycle, and state through one host contract",
+						"parent": "wkvnbMs8",
 						"groups": [
 							"agent"
 						],
@@ -37613,7 +37615,7 @@
 			}
 		}
 	],
-	"current": "qdsrL4tY",
+	"current": "UbtMvySf",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -37680,6 +37682,12 @@
 			"from": "dyxcGXHr",
 			"at": "2026-10-16T02:58:34.418Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "UbtMvySf",
+			"from": "qdsrL4tY",
+			"at": "2026-10-24T15:04:47.714Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 136,
+	"version": 137,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-24T14:30:22.226Z",
+	"updatedAt": "2026-10-24T15:04:49.319Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -16040,7 +16040,7 @@
 		{
 			"id": "6C82GLIe",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "jdZ1lIVr",
 			"summary": "Calls move into flows: showing a board, hearing a change, restoring the workspace, messages and Talk, recording, replay, moving a board",
 			"content": {
@@ -22690,7 +22690,7 @@
 		{
 			"id": "HdKXEgPD",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "6C82GLIe",
 			"summary": "The Archboard viewer, workspace state, and shared Codex browser transport and voice media",
 			"documents": [
@@ -26063,7 +26063,7 @@
 			}
 		}
 	],
-	"current": "6C82GLIe",
+	"current": "HdKXEgPD",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -26148,6 +26148,12 @@
 			"from": "jdZ1lIVr",
 			"at": "2026-10-16T02:58:37.075Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "HdKXEgPD",
+			"from": "6C82GLIe",
+			"at": "2026-10-24T15:04:49.319Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [

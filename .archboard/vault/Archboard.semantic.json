@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 79,
+	"version": 80,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T14:32:38.548Z",
+	"updatedAt": "2026-10-24T15:04:47.294Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -5882,7 +5882,7 @@
 		{
 			"id": "3M2UsnnM",
 			"name": "TASK-500.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "PcvERJa4",
 			"summary": "The processes that run, what they keep, and the workspace packages their code is built from, layer by layer",
 			"content": {
@@ -9222,7 +9222,7 @@
 		{
 			"id": "baipCbd7",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "3M2UsnnM",
 			"summary": "Archboard applications and packages, including the reusable Codex workbench and its independent example",
 			"documents": [
@@ -11132,7 +11132,7 @@
 			}
 		}
 	],
-	"current": "3M2UsnnM",
+	"current": "baipCbd7",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
@@ -11205,6 +11205,12 @@
 			"from": "PcvERJa4",
 			"at": "2026-10-19T22:59:46.264Z",
 			"reason": "TASK-500.06: the source is sixteen workspace packages in nine layers under three apps; the board draws them, with the direct imports between packages"
+		},
+		{
+			"variant": "baipCbd7",
+			"from": "3M2UsnnM",
+			"at": "2026-10-24T15:04:47.294Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [
