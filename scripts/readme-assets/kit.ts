@@ -29,7 +29,13 @@ export {
 	type Producer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-export { readBoard, startServer, type TakeServer, type TrackedVault } from "./server.ts";
+export {
+	readBoard,
+	startCheckoutServer,
+	startServer,
+	type TakeServer,
+	type TrackedVault,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+} from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 export { ffmpeg, inOrder, pyftsubsetCommand, run, scratch, scratchRoot } from "./tools.ts";

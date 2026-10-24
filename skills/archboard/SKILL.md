@@ -135,7 +135,8 @@ recipe names.
     `archboard check code` after a write that adds or changes an anchor or a
     binding's `symbol` ([Verification](#essentials)). `archboard check` runs
     both, and `check embeds`, which says which board pictures that the
-    repository keeps are outdated.
+    repository keeps are outdated; `archboard check --fix` draws them again
+    ([a picture in documentation](references/sequences-views-walkthroughs.md#a-picture-in-documentation-that-stays-current)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a view a later reading wants, the correction
     the picture showed you.
@@ -247,7 +248,10 @@ recipe names.
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
-  temporary directory, never into the checkout you are describing.
+  temporary directory, never into the checkout you are describing. A picture
+  that a document embeds is drawn into its Git checkout with `--track`, so its
+  board lists it, and committed, so `archboard check` there says when it is outdated
+  ([a picture in documentation](references/sequences-views-walkthroughs.md#a-picture-in-documentation-that-stays-current)).
   On macOS, Chromium commands detect the host sandbox before starting a browser.
   If startup reports a macOS sandbox, request approved execution outside it for
   the same command. In Codex, use `sandbox_permissions="require_escalated"`.
@@ -612,7 +616,8 @@ are what a branch of one needs on top of it.
   repository that you work in, read it. It configures a language server, and it
   says what a configured server runs and which TypeScript the check runs.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
-  view scopes and grammars, message kinds, decisions and loops, repeat/note, walkthrough beats and
+  view scopes and grammars, message kinds, decisions and loops, repeat/note, a
+  picture in documentation that `archboard check` keeps current, walkthrough beats and
   their identity, recording a walkthrough to a narrated video, and rendering a
   recording's kept talk again.
 - [variants](references/variants.md): the documents a variant draws, what a

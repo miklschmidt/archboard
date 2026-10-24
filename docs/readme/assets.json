@@ -182,7 +182,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "e3c2a96c06079d9b4341cf77dea44529581dd3474947c77fab7659e428efa42a"
 		},
 		{
 			"name": "newcomer",
@@ -309,7 +309,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "e3c2a96c06079d9b4341cf77dea44529581dd3474947c77fab7659e428efa42a"
 		},
 		{
 			"name": "architecture",
@@ -317,18 +317,8 @@
 			"codex": false,
 			"command": "bun run readme:assets architecture",
 			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
-			"sources": [
-				".archboard/vault/Archboard.semantic.json",
-				".archboard/vault/.archboard/config.yaml",
-				"packages/renderer/src",
-				"packages/board/src/shared",
-				"packages/code-binding/src/shared",
-				"packages/renderer/assets/theme.css",
-				"packages/timing/src",
-				"packages/renderer/assets/fonts",
-				"scripts/readme-assets/svg.ts"
-			],
-			"hash": "74181c75367f1b5162b9534e40aa2143dad86e8ebc09b9c3e0e29440b09eca84"
+			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
+			"hash": "c5de20b3cf677cd7e0ed79424d68dcd6bcffeeeab23e38168320bb6e9892f55b"
 		},
 		{
 			"name": "code-evidence",
@@ -360,7 +350,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "b9219a23122af457ac8b28a91b6360adf548b439cfa04580931e030843aaf420"
 		},
 		{
 			"name": "module-interfaces",
