@@ -13,6 +13,7 @@ import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
@@ -40,6 +41,7 @@ for (const file of fs
 
 // Warm the engine and the measurement caches once, on a board measured nowhere below.
 await renderArchitecture({
+	policy: DEFAULT_SEMANTIC_POLICY,
 	content: orderedFixture({
 		nodes: ["warm-a", "warm-b", "warm-c"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
@@ -57,12 +59,16 @@ for (const item of items) {
 	// A layout is remembered by its content, so only the first render lays
 	// it out; the rest are the same picture painted again, in the other theme.
 	const started = performance.now();
-	await renderArchitecture({ content, theme: "light" });
+	await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" });
 	const first = performance.now() - started;
 	const again: number[] = [];
 	for (let run = 1; run < runs; run += 1) {
 		const repeated = performance.now();
-		await renderArchitecture({ content, theme: run % 2 === 0 ? "light" : "dark" });
+		await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: run % 2 === 0 ? "light" : "dark",
+		});
 		again.push(performance.now() - repeated);
 	}
 	const median = again.toSorted((a, b) => a - b)[Math.floor(again.length / 2)] ?? 0;

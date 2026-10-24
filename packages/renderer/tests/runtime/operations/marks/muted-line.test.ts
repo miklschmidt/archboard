@@ -18,6 +18,7 @@ import {
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
 import { themeColor } from "#runtime/store/theme/source.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** A default and a muted line, neutral and coloured, the muted ones with traffic. */
 const CONTENT = orderedFixture({
@@ -65,7 +66,10 @@ function pulseInks(svg: string, id: string): string[] {
 test.each(THEMES)(
 	"a muted line is as wide as a default one and quieter by its ink (%s)",
 	async (theme) => {
-		const { svg } = seenIn(await renderArchitecture({ content: CONTENT }), theme);
+		const { svg } = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			theme,
+		);
 		const page = themeColor(theme, "--background");
 		for (const [loud, soft] of [
 			["plain", "quiet"],

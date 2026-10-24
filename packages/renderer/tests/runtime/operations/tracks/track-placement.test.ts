@@ -11,7 +11,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { LAYOUT_ASPECT } from "#shared/constants/shell-geometry.ts";
 import {
 	corridorPoints,
@@ -59,7 +59,12 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 			})),
 		),
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	for (const [to, from] of Object.entries(feeds)) {
 		const [one, other] = from.map((id) => centre(drawing.atlas.nodes[id]!));
 		expect(Math.abs(centre(drawing.atlas.nodes[to]!) - (one! + other!) / 2)).toBeLessThan(1);
@@ -157,7 +162,12 @@ test("a line leaving a container stands its label below the container", async ()
 			{ id: "bx", from: "b", to: "x", kind: "call", label: "reads the model too" },
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const frame = drawing.atlas.nodes["lib"]!;
 	const label = routeLabels(drawing.svg).get("ax")!;
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);

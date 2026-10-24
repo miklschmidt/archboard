@@ -22,6 +22,7 @@ import {
 	drawnSequence,
 	subject,
 } from "#tests/runtime/support/sequence-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * The ink a start tag is filled with, as an attribute or in its style.
@@ -195,7 +196,9 @@ describe("a stated standing on a sequence", () => {
 		 * @returns The group.
 		 */
 		const wordsOf = (standing: StatedStandings) =>
-			subjectGroups(renderDataFlow({ content: noted, standing }).svg)
+			subjectGroups(
+				renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: noted, standing }).svg,
+			)
 				.filter((group) => group.kind === "step" && group.id === "s3")
 				.find((group) => group.markup.includes("<text"))!;
 		const words = wordsOf(SEQUENCE_STANDING);

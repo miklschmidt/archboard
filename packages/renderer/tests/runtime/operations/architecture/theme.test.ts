@@ -2,6 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -42,7 +43,11 @@ function namedTokens(svg: string): Set<string> {
 }
 
 test("a page's picture is one picture for both themes, and names only the page's tokens", async () => {
-	const { svg } = await renderArchitecture({ content, standing: { edge: "added" } });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		standing: { edge: "added" },
+	});
 	expect(rootDeclarations(svg).size).toBe(0);
 	const named = namedTokens(svg);
 	expect(named.size).toBeGreaterThan(0);
@@ -56,7 +61,12 @@ test("a page's picture is one picture for both themes, and names only the page's
 
 test("a document that stands alone carries its theme's value of every token it names", async () => {
 	for (const theme of ["light", "dark"] as const) {
-		const { svg } = await renderArchitecture({ content, theme, standing: { edge: "added" } });
+		const { svg } = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme,
+			standing: { edge: "added" },
+		});
 		const declared = rootDeclarations(svg);
 		expect(declared.get("color-scheme")).toBe(theme);
 		// The root declares the tokens, so they are read from what it holds.
@@ -79,7 +89,12 @@ function body(svg: string): string {
 }
 
 test("a document drawn auto carries both themes, and the reader's colour scheme chooses", async () => {
-	const { svg } = await renderArchitecture({ content, theme: "auto", standing: { edge: "added" } });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "auto",
+		standing: { edge: "added" },
+	});
 	const declared = rootDeclarations(svg);
 	expect(declared.get("color-scheme")).toBe("light dark");
 	const named = namedTokens(body(svg));
@@ -91,6 +106,7 @@ test("a document drawn auto carries both themes, and the reader's colour scheme 
 	}
 	// The drawing itself is the one the two grounds draw: only the root's declarations differ.
 	const { svg: lightSvg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
 		standing: { edge: "added" },

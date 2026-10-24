@@ -11,6 +11,7 @@ import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramGrammar } from "@archboard/board/views";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -171,7 +172,12 @@ const PARTS: readonly (readonly [DiagramGrammar, string, "card" | "header"])[] =
 describe("a part's near and far views", () => {
 	for (const [grammar, id, part] of PARTS) {
 		test(`${grammar} ${id}: one chip both views share, drawn near unless the picture is far, and words that move to where the other view's words start`, async () => {
-			const rendered = await renderSemanticView({ grammar, content, theme: "light" });
+			const rendered = await renderSemanticView({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				grammar,
+				content,
+				theme: "light",
+			});
 			const views = viewsOf(rendered.svg, id, part);
 
 			// One chip, outside both views, so it moves as one element.
@@ -215,6 +221,7 @@ describe("a part's near and far views", () => {
 			],
 		});
 		const rendered = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			grammar: "architecture",
 			content: tall,
 			theme: "light",
@@ -224,7 +231,12 @@ describe("a part's near and far views", () => {
 	});
 
 	test("sequence save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {
-		const rendered = await renderSemanticView({ grammar: "sequence", content, theme: "light" });
+		const rendered = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar: "sequence",
+			content,
+			theme: "light",
+		});
 		const views = viewsOf(rendered.svg, "save", "flow");
 		expect(views.chips).toHaveLength(0);
 		expect(views.words).toHaveLength(2);
@@ -238,7 +250,12 @@ describe("a part's near and far views", () => {
 	});
 
 	test("the stylesheet moves the chip and the words only while the picture is far, and not for a reader who asked for less motion", async () => {
-		const { svg } = await renderSemanticView({ grammar: "architecture", content, theme: "light" });
+		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar: "architecture",
+			content,
+			theme: "light",
+		});
 		const sheet = /<style>([^]*?)<\/style>/u.exec(svg)?.[1] ?? "";
 		expect(sheet).toContain(".ab-chip{transform:var(--near);");
 		expect(sheet).toContain(".is-far .ab-chip{transform:var(--far)}");
@@ -251,7 +268,12 @@ describe("a part's near and far views", () => {
 	});
 
 	test("the two views fade over one span with one easing, so the words never fade out together, and a view hides only after it has faded", async () => {
-		const { svg } = await renderSemanticView({ grammar: "architecture", content, theme: "light" });
+		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar: "architecture",
+			content,
+			theme: "light",
+		});
 		const sheet = /<style>([^]*?)<\/style>/u.exec(svg)?.[1] ?? "";
 		/**
 		 * One rule's transitions, by property.
@@ -284,7 +306,12 @@ describe("a part's near and far views", () => {
 	});
 
 	test("a picture that stands alone in one theme sets no theme colour for the places of its chips", async () => {
-		const { svg } = await renderSemanticView({ grammar: "architecture", content, theme: "dark" });
+		const { svg } = await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			grammar: "architecture",
+			content,
+			theme: "dark",
+		});
 		const root = /<svg[^>]*style="([^"]*)"/u.exec(svg)?.[1] ?? "";
 		expect(root).toContain("color-scheme:dark");
 		expect(root).not.toMatch(/--(near|far|away):/u);

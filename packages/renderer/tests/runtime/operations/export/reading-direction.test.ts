@@ -8,6 +8,7 @@ import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is
@@ -38,7 +39,11 @@ const CHAIN = orderedFixture({
 
 describe("architecture diagrams read top to bottom", () => {
 	test("a wide fan stays below its source, and the document records downward reading", async () => {
-		const drawing = await renderArchitecture({ content: fan(16), theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: fan(16),
+			theme: "light",
+		});
 		expect(drawing.readingDirection).toBe("down");
 		expect(readingOf(drawing)).toBe("down");
 		// Width no longer rotates a fan into a column beside its source.
@@ -64,14 +69,22 @@ describe("architecture diagrams read top to bottom", () => {
 				label: `request ${index + 1}`,
 			})),
 		});
-		const drawing = await renderArchitecture({ content, theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+		});
 		expect(drawing.readingDirection).toBe("down");
 		expect(labelsOffRuns(drawing)).toEqual([]);
 		expect(routesThroughCards(drawing, content)).toEqual([]);
 	});
 
 	test("a short chain reads down the page", async () => {
-		const drawing = await renderArchitecture({ content: CHAIN, theme: "light" });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: CHAIN,
+			theme: "light",
+		});
 		expect(fitIn(drawing)).toBe(1);
 		expect(drawing.readingDirection).toBe("down");
 		expect(readingOf(drawing)).toBe("down");
@@ -79,8 +92,8 @@ describe("architecture diagrams read top to bottom", () => {
 
 	test("geometry is the same on every render", async () => {
 		const [one, other] = await Promise.all([
-			renderArchitecture({ content: fan(16), theme: "light" }),
-			renderArchitecture({ content: fan(16), theme: "dark" }),
+			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: fan(16), theme: "light" }),
+			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: fan(16), theme: "dark" }),
 		]);
 		expect(one.readingDirection).toBe(other.readingDirection);
 		expect(one.atlas).toEqual(other.atlas);
@@ -121,7 +134,12 @@ test.each(
 	"a long chain preserves reading order and clear routes (%s, framed: %s)",
 	async (layout, framed) => {
 		const content = pipeline(12, framed);
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const direction = readingOf(drawing);
 		expect(direction).toBe("down");
 		for (let index = 1; index < 12; index++) {

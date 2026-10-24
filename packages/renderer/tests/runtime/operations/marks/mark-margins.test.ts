@@ -9,6 +9,7 @@ import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.t
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * How near the page's top and left edges any pin reaches, and how much room
@@ -42,6 +43,7 @@ function margins(drawing: RenderedDiagram): {
 
 test("a pin on a subject at the page's edge keeps the page's margin", async () => {
 	const architecture = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture({
 			nodes: [
 				{ id: "a", name: "Board store", kind: "module" },
@@ -53,6 +55,7 @@ test("a pin on a subject at the page's edge keeps the page's margin", async () =
 		standing: { a: "added" },
 	});
 	const sequence = renderDataFlow({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture({
 			nodes: [
 				{ id: "web", name: "Operator Console", kind: "ui" },

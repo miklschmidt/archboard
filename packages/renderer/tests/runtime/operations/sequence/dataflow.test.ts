@@ -12,6 +12,9 @@ import {
 	spanFits,
 } from "#tests/runtime/support/drawn-text.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+const policy = DEFAULT_SEMANTIC_POLICY;
 
 /**
  * One variant, as its own contract reads it.
@@ -78,7 +81,7 @@ const SAMPLE: VariantContent = variant({
  * @returns The rendered sequence.
  */
 function render(content: VariantContent = SAMPLE, theme: DiagramTheme = "light"): RenderedDiagram {
-	return renderDataFlow({ content, theme });
+	return renderDataFlow({ policy, content, theme });
 }
 
 /**
@@ -188,11 +191,13 @@ describe("renderDataFlow", () => {
 
 	test("two grammars draw the same identities as two different pictures", async () => {
 		const sequence = await renderSemanticView({
+			policy,
 			content: SAMPLE,
 			grammar: "sequence",
 			theme: "light",
 		});
 		const architecture = await renderSemanticView({
+			policy,
 			content: SAMPLE,
 			grammar: "architecture",
 			theme: "light",
@@ -437,8 +442,8 @@ describe("renderDataFlow", () => {
 	});
 
 	test("an embedded render carries its faces instead of pointing at them", () => {
-		const linked = renderDataFlow({ content: SAMPLE, theme: "light" });
-		const embedded = renderDataFlow({ content: SAMPLE, theme: "light", fonts: "embedded" });
+		const linked = renderDataFlow({ policy, content: SAMPLE, theme: "light" });
+		const embedded = renderDataFlow({ policy, content: SAMPLE, theme: "light", fonts: "embedded" });
 
 		expect(linked.svg).toContain('url("/assets/diagram-fonts/');
 		expect(embedded.svg).not.toContain("/assets/diagram-fonts/");

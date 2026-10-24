@@ -13,7 +13,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import {
 	corridorPoints,
@@ -62,14 +62,24 @@ function doublesBack(points: readonly DrawnPoint[]): boolean {
 }
 
 test("a fan wider than the page wraps its targets into rows", async () => {
-	const drawing = await renderArchitecture({ content: fan, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: fan,
+		theme: "light",
+		layout: "track",
+	});
 	const targets = TARGETS.map((id) => drawing.atlas.nodes[id]!);
 	expect(new Set(targets.map(({ y }) => y)).size).toBeGreaterThan(1);
 	expect(drawing.width).toBeLessThan(targets.reduce((sum, { width }) => sum + width, 0));
 });
 
 test("a line to its label runs without a hook", async () => {
-	const drawing = await renderArchitecture({ content: fan, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: fan,
+		theme: "light",
+		layout: "track",
+	});
 	const routes = routePoints(drawing.svg);
 	expect(routes.size).toBe(TARGETS.length);
 	for (const [id, points] of routes) expect(doublesBack(points), id).toBe(false);
@@ -86,7 +96,12 @@ test("a long chain folds into columns whose first cards stand on one line", asyn
 			kind: "call",
 		})),
 	});
-	const drawing = await renderArchitecture({ content: chain, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: chain,
+		theme: "light",
+		layout: "track",
+	});
 	const cards = stages.map((id) => drawing.atlas.nodes[id]!);
 	const columns = [...new Set(cards.map(({ x }) => x))].toSorted((one, other) => one - other);
 	expect(columns.length).toBeGreaterThan(1);
@@ -115,7 +130,12 @@ test.each(["track", "blocks"] as const)(
 			],
 			edges: [],
 		});
-		const drawing = await renderArchitecture({ content: portfolio, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: portfolio,
+			theme: "light",
+			layout,
+		});
 		const cards = apps.map((id) => drawing.atlas.nodes[id]!);
 		const rows = new Set(cards.map(({ y }) => y));
 		const columns = new Set(cards.map(({ x }) => x));
@@ -134,7 +154,12 @@ test.each(["track", "blocks"] as const)(
 // crossed a band of other labels on its way and aimed at the container's middle.
 test("a line into a wide container stays between its ends and its label", async () => {
 	const pool = orderedFixture(containerDetour);
-	const drawing = await renderArchitecture({ content: pool, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: pool,
+		theme: "light",
+		layout: "track",
+	});
 	const labels = routeLabels(drawing.svg);
 	for (const [id, points] of corridorPoints(drawing.svg)) {
 		const label = labels.get(id)!;
@@ -163,7 +188,12 @@ test("a tall board of containers folds into columns that each hold a container w
 				: []),
 		]),
 	});
-	const drawing = await renderArchitecture({ content: tall, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: tall,
+		theme: "light",
+		layout: "track",
+	});
 	const frames = stages.map((stage) => drawing.atlas.nodes[`f${stage}`]!);
 	// Folded: some container stands beside another rather than under it.
 	expect(new Set(frames.map(({ x }) => x)).size).toBeGreaterThan(1);
@@ -192,7 +222,12 @@ test("containers side by side keep an inset between their borders", async () => 
 		]),
 		edges: sides.map((side) => ({ id: side, from: `${side}a`, to: `${side}b`, kind: "call" })),
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const [one, other] = sides
 		.map((side) => drawing.atlas.nodes[side]!)
 		.toSorted((a, b) => a.x - b.x);
@@ -205,7 +240,12 @@ test("containers side by side keep an inset between their borders", async () => 
 // late row across an empty strip.
 test("a wrapped rank stands each lowered card under one of its row above", async () => {
 	const content = orderedFixture(sunkWrap);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const rank = content.edges.filter(({ from }) => from === "hub").map(({ to }) => to);
 	const parentOf = new Map(content.nodes.map(({ id, parent }) => [id, parent]));
 	const box = (id: string) => drawing.atlas.nodes[id]!;
@@ -245,7 +285,12 @@ test("two joined cards stacked on one centre take one width", async () => {
 		],
 		edges: [{ id: "e", from: "a", to: "b", kind: "call", label: "requests" }],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const [upper, lower] = [drawing.atlas.nodes["a"]!, drawing.atlas.nodes["b"]!];
 	expect(upper.x).toBeCloseTo(lower.x, 2);
 	expect(upper.x + upper.width).toBeCloseTo(lower.x + lower.width, 2);
@@ -272,7 +317,12 @@ test("a wrap into three rows or more keeps its columns", async () => {
 			{ id: `out${index}`, from: id, to: "sink", kind: "call", label: "operation" },
 		]),
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const boxes = commands.map((id) => drawing.atlas.nodes[id]!).toSorted((a, b) => a.y - b.y);
 	// Cards that share some height stand in one row.
 	const rows: (typeof boxes)[] = [];
@@ -309,7 +359,12 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 			{ id: "s", from: "hub", to: "short", kind: "call", label: "shelve a proposal" },
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const [tall, short] = [drawing.atlas.nodes["tall"]!, drawing.atlas.nodes["short"]!];
 	expect(tall.height).toBeGreaterThan(short.height);
 	expect(short.y).toBe(tall.y);

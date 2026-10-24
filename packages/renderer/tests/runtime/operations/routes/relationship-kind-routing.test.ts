@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(LayoutEngineSchema.options)(
 	"different relationship kinds use distinct ports and tracks while one kind shares its port (%s)",
@@ -15,7 +16,12 @@ test.each(LayoutEngineSchema.options)(
 				{ id: "data", from: "a", to: "b", kind: "data" },
 			],
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const routes = corridorPoints(drawing.svg);
 		const call = routes.get("call1")!;
 		const shared = routes.get("call2")!;

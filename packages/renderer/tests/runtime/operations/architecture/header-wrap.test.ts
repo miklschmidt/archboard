@@ -17,6 +17,7 @@ import {
 	registeredFaces,
 	type DrawnText,
 } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** The type chip a slab keeps left of its words, and the gap between them. */
 const CHIP_AND_GAP = 24 + ARCHITECTURE_ICON_GAP;
@@ -68,7 +69,12 @@ function linesAt(
 test.each(LayoutEngineSchema.options)(
 	"a wide container's header wraps at its slab and is as tall as its words (%s)",
 	async (layout) => {
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const frame = drawing.atlas.nodes["plan"]!;
 		const notes = drawnTexts(drawing.svg).filter(
 			({ subject, size }) => subject.id === "plan" && size === NOTE_SIZE,

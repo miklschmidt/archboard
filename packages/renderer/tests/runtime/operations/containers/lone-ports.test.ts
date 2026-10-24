@@ -10,7 +10,7 @@
 
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { LABEL_ROUTE_CLEARANCE } from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
@@ -148,7 +148,12 @@ function runsOf(points: readonly DrawnPoint[]) {
 // Blocks still runs two of this board's lines a part-lane apart.
 test("no line runs a part-lane beside another", async () => {
 	const content = orderedFixture(readingABoard);
-	const drawn = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawn = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const lines = [...routePoints(drawn.svg)].map(
 		([id, points]) => [id, runsOf(cornersOf(points))] as const,
 	);

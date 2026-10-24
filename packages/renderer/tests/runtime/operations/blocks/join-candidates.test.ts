@@ -6,6 +6,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { diagramTextWidth, renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(["active", "queued", "cancelling", "failed"] as const)(
 	"a later join turn reuses an obsolete %s candidate according to its host outcome",
@@ -101,7 +102,12 @@ test.each(["active", "queued", "cancelling", "failed"] as const)(
 			},
 		});
 		try {
-			const rendering = renderArchitecture({ content, layout: "blocks", theme: "light" });
+			const rendering = renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				layout: "blocks",
+				theme: "light",
+			});
 			const outcome = rendering.catch((error: unknown) => error);
 			await reached.promise;
 			// Let the resolved two-apart candidate advance selection before

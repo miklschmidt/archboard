@@ -21,6 +21,7 @@ import {
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/rasterizer/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/services/rasterizer/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // The shared Chromium starts cold in beforeAll.
 setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
@@ -52,6 +53,7 @@ let drawn: RenderedDiagram;
 
 beforeAll(async () => {
 	drawn = await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: CONTENT,
 		theme: "auto",
 		fonts: "embedded",

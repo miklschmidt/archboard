@@ -10,6 +10,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import sharedSpan from "#tests/runtime/support/fixtures/shared-span.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;
@@ -18,7 +19,12 @@ test.each(LayoutEngineSchema.options)(
 	"a line between stacked cards with a shared span leaves neither by its side (%s)",
 	async (layout) => {
 		const content = orderedFixture(sharedSpan);
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const cards = new Map(
 			Object.entries(drawing.atlas.nodes).filter(([id]) => !(id in drawing.atlas.regions)),
 		);

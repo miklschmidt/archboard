@@ -5,7 +5,11 @@
 // when both turn into it from the cards on either side.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema, type SemanticPolicy } from "@archboard/board/policy";
+import {
+	SemanticPolicySchema,
+	type SemanticPolicy,
+	DEFAULT_SEMANTIC_POLICY,
+} from "@archboard/board/policy";
 import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
@@ -71,7 +75,12 @@ async function stackedPairs(
 	layout: LayoutEngineName,
 	options: { readonly policy?: SemanticPolicy } = {},
 ): Promise<string[]> {
-	const drawn = await renderArchitecture({ content, theme: "light", layout, ...options });
+	const drawn = await renderArchitecture({
+		content,
+		theme: "light",
+		layout,
+		policy: options.policy ?? DEFAULT_SEMANTIC_POLICY,
+	});
 	const routes = corridorPoints(drawn.svg);
 	const edges = content.edges;
 	return edges.flatMap((one, index) =>
