@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:37'
-updated_date: '2026-10-24 11:40'
+updated_date: '2026-10-24 14:31'
 labels: []
 dependencies: []
 references:
@@ -63,3 +63,9 @@ Private storage and the Codex executable are explicit installation inputs.
 Browser media uses a separate browser-safe entry. The existing Archboard visual shell stays in the integration.
 The independent app uses its own private storage and a permitted checkout without a vault.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Final footprints read against main at 71180e211, with every proposal still based on its current parent. No part-only namedNotChanged deviations remain. Codex workhorse names two unchanged domain tool parts only through changed relationships, which is expected. ChangedNotNamed internal changes: Archboard Workspace packages is its directory aggregate; renderer changes belong to TASK-519. Agent workbench Codex process forwards explicit host environment in 78c87705e without changing lifecycle responsibility; Thread tool calls changes imports in 7e5287f0f; Board-change delivery retains Archboard matching while generic delivery moves in dec053209/7e5287f0f. Browser application Application composition and Recording pace change type imports only in 816b6d79c; Agent setup, Walkthrough recording, Pane composition, and Recording voice source use canonical shared interfaces in 5b1b58472/751fdfedd. Their host responsibilities and diagram relationships stay true. Archboard server Semantic context input uses relocated local types and matching helpers in dec053209/b2c7508b9 without changing its board-to-host projection responsibility. New code warnings from the proposals are cleared. Remaining added EXPOSED_UNUSED information describes pre-existing private helper exports within moved runtime folders, rather than public package entry exports. Public entries were pruned to real outside callers.
+<!-- SECTION:NOTES:END -->

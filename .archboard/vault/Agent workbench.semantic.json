@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 114,
+	"version": 115,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T14:29:54.916Z",
+	"updatedAt": "2026-10-24T14:32:09.769Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -35518,7 +35518,12 @@
 						"to": "k9hxdLjq",
 						"kind": "call",
 						"label": "create the shared workbench with Archboard policy",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "createCodexWorkbench"
+						}
 					},
 					{
 						"id": "JAa1keHs",

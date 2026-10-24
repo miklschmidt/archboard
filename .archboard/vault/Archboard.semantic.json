@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 77,
+	"version": 78,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T14:29:54.461Z",
+	"updatedAt": "2026-10-24T14:32:09.344Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -10556,7 +10556,12 @@
 						"to": "lU0khwR0",
 						"kind": "dependency",
 						"label": "supply Archboard policy to shared agent sessions",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "createCodexWorkbench"
+						}
 					},
 					{
 						"id": "8AmcrRb6",
@@ -10565,7 +10570,12 @@
 						"to": "vEVm326r",
 						"kind": "dependency",
 						"label": "own Codex threads and negotiate realtime voice",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/generation/workbench.ts",
+							"symbol": "createCodexProcess"
+						}
 					},
 					{
 						"id": "lwujMzjf",
