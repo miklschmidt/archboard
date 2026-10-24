@@ -12,11 +12,13 @@ import { curveBoxes } from "#shared/rules/layout/routes/curve-clearance.ts";
 import {
 	curveBounds,
 	pathOf,
+	reversed,
 	segmentStart,
 	type Curve,
 	type Segment,
 } from "#shared/rules/layout/routes/curves.ts";
 import {
+	across,
 	lineRuns,
 	onRun,
 	overlaps,
@@ -109,6 +111,44 @@ function hump(run: Run, first: number, last: number, bulge: Bulge): Curve {
 		to: onRun(run, last + reach),
 	});
 	return { from: onRun(run, first - reach), segments };
+}
+
+/**
+ * A hop as another run of its drawn line draws it: moved across onto that run,
+ * and read backwards where that run goes the other way. Every route of a trunk
+ * hops as its drawer does, so its pulses ride over the crossing with the ink.
+ * @param curve The hop on the drawer's run.
+ * @param drawer The run it stands on.
+ * @param member Another run of the line, holding all of the hop.
+ * @returns The hop on that run.
+ */
+function carried(curve: Curve, drawer: Run, member: Run): Curve {
+	const side = across(drawer.axis);
+	const shift = member.from[side] - drawer.from[side];
+	/**
+	 * Move a point of the hop across onto the other run.
+	 * @param point The point.
+	 * @returns The point moved.
+	 */
+	const moved = (point: Point): Point => ({ ...point, [side]: point[side] + shift });
+	const onMember: Curve = {
+		from: moved(curve.from),
+		segments: curve.segments.map((segment) =>
+			segment.kind === "line"
+				? { kind: "line", to: moved(segment.to) }
+				: {
+						kind: "cubic",
+						first: moved(segment.first),
+						second: moved(segment.second),
+						to: moved(segment.to),
+					},
+		),
+	};
+	const { axis } = drawer;
+	const sameWay =
+		Math.sign(member.to[axis] - member.from[axis]) ===
+		Math.sign(drawer.to[axis] - drawer.from[axis]);
+	return sameWay ? onMember : reversed(onMember);
 }
 
 /**
@@ -357,6 +397,7 @@ function replaceRuns(
 }
 
 export {
+	carried,
 	crestAlong,
 	crowded,
 	HOP_MARGIN,

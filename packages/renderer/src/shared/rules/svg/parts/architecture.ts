@@ -381,7 +381,7 @@ function paintArchitecture(
 	const { edges, bridges } = drawing.bridged;
 	const { definitions, masks } = crossingMasks(edges, [
 		...crossingCutouts(edges, bridges),
-		...trunkCutouts(drawing.edges),
+		...trunkCutouts(edges),
 		// A removed relationship's label is drawn see-through, as its line is.
 		...labelCutouts(
 			edges,

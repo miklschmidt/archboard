@@ -177,12 +177,13 @@ function shadowPaintAt(tag: string, point: { x: number; y: number }, svg: string
 		"u",
 	).exec(svg)![1]!;
 	const stops = [...definition.matchAll(/<stop [^>]*>/gu)].map(([stop]) => ({
-		offset: Number(/offset="([\d.]+)"/u.exec(stop)![1]),
+		offset: Number(/offset="([\d.]+)"/u.exec(stop)?.[1] ?? 0),
 		paint: paintOf(stop.replace("stop-color=", "fill=").replace("stop-opacity=", "fill-opacity=")),
 	}));
 	const box = boxOf(tag);
 	const t = (point.y - box.y) / box.height;
-	const after = stops.findIndex(({ offset }) => offset >= t);
+	const reached = stops.findIndex(({ offset }) => offset >= t);
+	const after = reached === -1 ? stops.length - 1 : reached;
 	const low = stops[Math.max(0, after - 1)]!;
 	const high = stops[after]!;
 	const fraction = high.offset === low.offset ? 0 : (t - low.offset) / (high.offset - low.offset);
@@ -274,8 +275,10 @@ test.each(["light", "dark"] as const)(
 
 // At ten times magnification each sample is one screen pixel. A hard
 // silhouette layer would introduce an alpha jump instead of a continuous fade.
+// The samples start under the card's middle: a card that recedes is seen
+// through, and a hole in its shadow there showed as a band along its edges.
 test.each(["light", "dark"] as const)(
-	"a shadow fades continuously to zero at 10x (%s)",
+	"a shadow fades continuously from under the card to zero at 10x (%s)",
 	async (theme: DiagramTheme) => {
 		const drawing = await renderArchitecture({
 			content: orderedFixture({
@@ -288,8 +291,10 @@ test.each(["light", "dark"] as const)(
 		const box = drawing.atlas.nodes["card"]!;
 		const shadow = /<g class="ab-shadow" data-members="card"[^>]*>([\s\S]*?)<\/g>/u.exec(svg)![1]!;
 		const patches = [...shadow.matchAll(/<rect [^>]*>/gu)].map(([tag]) => tag);
-		const samples = Array.from({ length: 121 }, (_, index) => {
-			const point = { x: box.x + box.width / 2, y: box.y + box.height + index / 10 };
+		const top = box.y + box.height / 2;
+		const reach = box.height / 2 + 12;
+		const samples = Array.from({ length: Math.round(reach * 10) + 1 }, (_, index) => {
+			const point = { x: box.x + box.width / 2, y: top + index / 10 };
 			const patch = patches.find((tag) => {
 				const bounds = boxOf(tag);
 				return (

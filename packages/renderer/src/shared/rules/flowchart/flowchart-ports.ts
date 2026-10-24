@@ -25,6 +25,7 @@ import type { Box, Point } from "#shared/rules/geometry.ts";
 import {
 	EPSILON,
 	curveThrough,
+	reversed,
 	segmentStart,
 	verticesOf,
 	type Curve,
@@ -204,23 +205,6 @@ function fromMiddle(curve: Curve, box: Box, end: "leaves" | "arrives"): Curve {
 	if (turned === undefined) return curve;
 	const head = curveThrough(turned, true);
 	return { from: head.from, segments: [...head.segments, ...rest] };
-}
-
-/**
- * A line read backwards: the same pieces, from its end to its start.
- * @param curve The line.
- * @returns The line reversed.
- */
-function reversed(curve: Curve): Curve {
-	const segments = curve.segments
-		.map((segment, index): Segment => {
-			const to = segmentStart(curve, index);
-			return segment.kind === "line"
-				? { kind: "line", to }
-				: { kind: "cubic", first: segment.second, second: segment.first, to };
-		})
-		.toReversed();
-	return { from: curve.segments.at(-1)?.to ?? curve.from, segments };
 }
 
 /**
