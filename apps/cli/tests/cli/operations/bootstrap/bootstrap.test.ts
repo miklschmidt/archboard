@@ -1,7 +1,7 @@
 // The arguments the bootstrap hands to routing: a `-C <dir>` written before the
 // command name reads as one written after it, on either side of a `--url`
 // (ADR 0049). "Fix with Codex" asks an agent for `archboard -C <vault> --url
-// <url> check`, so that spelling has to reach `check`.
+// <url> check semantics`, so that spelling has to reach `check`.
 
 import { expect, test } from "bun:test";
 import { applyCliBootstrap } from "#cli/operations/bootstrap/bootstrap.ts";
