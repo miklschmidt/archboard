@@ -248,7 +248,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await reveal(page, PARTNERS);
 		await pinInspector(page);
 		await terminal.command(`archboard semantic locality "${fixture.board}"`);
-		const locality = LocalityReplySchema.parse(
+		const locality = LocalityReplySchema.extend({ vault: z.unknown() }).parse(
 			await server.cli(["semantic", "locality", fixture.board]),
 		);
 		const pair = locality.coupling.find(
@@ -278,7 +278,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await terminal.command(
 			`archboard semantic footprint "${fixture.board}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
 		);
-		const footprint = FootprintReplySchema.parse(
+		const footprint = FootprintReplySchema.extend({ vault: z.unknown() }).parse(
 			await server.cli([
 				"semantic",
 				"footprint",

@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 14:34'
+updated_date: '2026-10-24 14:37'
 labels: []
 dependencies: []
 priority: medium
@@ -28,4 +29,12 @@ The required README refresh stops before git-history can select Validate order. 
 
 <!-- SECTION:PLAN:BEGIN -->
 No architecture board changes: this repairs the existing demonstration address. Add the existing viewA=Everything address only to the history scene. Keep the interface scenes on the overview. Regenerate git-history, inspect its frames and thumbnail, and run the complete normal gate with TASK-517.
+
+The next real producer run reaches the inspector but exposes a second adapter mismatch: CLI responses carry vault metadata that the strict code-intel result schemas do not declare. Extend only the consumer response envelope with the known vault field. Keep validation of every analysis result field strict, then regenerate the affected demonstrations.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Opening Everything fixes the missing nested subject. The second run fails at LocalityReplySchema with unrecognized key vault. Footprint uses the same strict library schema against a CLI envelope and requires the same explicit envelope field.
+<!-- SECTION:NOTES:END -->
