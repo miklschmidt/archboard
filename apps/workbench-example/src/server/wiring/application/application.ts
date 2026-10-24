@@ -54,9 +54,14 @@ function profile(role: "coordinator" | "workhorse", domainInstructions: string) 
  * Start one localhost application around the public Codex workbench factory.
  * @param options The admitted host inputs.
  * @param onFatal The application lifetime's failure handler.
+ * @param signal Stops owned resources even while Codex startup is pending.
  * @returns The listener URL and idempotent application shutdown.
  */
-export async function startExample(options: ExampleOptions, onFatal: (error: unknown) => void) {
+export async function startExample(
+	options: ExampleOptions,
+	onFatal: (error: unknown) => void,
+	signal: AbortSignal,
+) {
 	requireAssets(options.browserDirectory);
 	const executablePath = verifyCodexExecutable(
 		options.codex ?? resolveProjectCodexExecutable(),
@@ -124,6 +129,7 @@ export async function startExample(options: ExampleOptions, onFatal: (error: unk
 	 */
 	const shutdown = (): Promise<void> =>
 		(stopping ??= (async () => {
+			signal.removeEventListener("abort", abort);
 			const closed = new Promise<void>((resolve, reject) => {
 				server.close((error) =>
 					error && "code" in error && error.code !== "ERR_SERVER_NOT_RUNNING"
@@ -141,8 +147,15 @@ export async function startExample(options: ExampleOptions, onFatal: (error: unk
 				}
 			}
 		})());
+	/** Stop the private child without waiting for startup readiness. */
+	const abort = (): void => {
+		void shutdown().catch(onFatal);
+	};
+	signal.addEventListener("abort", abort, { once: true });
 	try {
+		signal.throwIfAborted();
 		const status = await workbench.start();
+		signal.throwIfAborted();
 		if (!status.ready)
 			throw new Error(
 				`Codex did not become ready: ${JSON.stringify(status.failure)}. Restart the example server.`,
@@ -163,6 +176,7 @@ export async function startExample(options: ExampleOptions, onFatal: (error: unk
 		return { url: origin, shutdown };
 	} catch (error) {
 		await shutdown();
+		signal.throwIfAborted();
 		throw error;
 	}
 }

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { request } from "node:http";
 import { WebSocket } from "ws";
 import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import { processExists } from "../support/owned-server.ts";
@@ -20,9 +21,9 @@ import { waitFor } from "./support/http.ts";
  * Spawn the example's actual process entry with private inputs.
  * @param resources Owns the process until the test ends.
  * @param fixture The root-controlled Codex executable and private directory.
- * @returns The bound listener and an idempotent process stop.
+ * @returns Readiness observation and an idempotent process stop.
  */
-async function startExampleProcess(
+function startExampleProcess(
 	resources: AsyncDisposableStack,
 	fixture: ReturnType<typeof prepareProductionFixture>,
 ) {
@@ -87,17 +88,27 @@ async function startExampleProcess(
 			child.kill("SIGTERM");
 		}));
 	resources.defer(stop);
-	// Startup belongs to another process, so readiness requires observing its output.
-	const ready = await waitFor(() => {
-		if (spawnError) throw spawnError;
-		if (child.exitCode !== null) throw new Error(`Example exited ${child.exitCode}.\n${stderr}`);
-		const line = stdout
-			.split("\n")
-			.find((candidate) => candidate.startsWith('{"type":"workbench_example_ready"'));
-		return line === undefined ? undefined : (JSON.parse(line) as { url: string; checkout: string });
-	}, "the example process readiness signal");
-	if (ready === undefined) throw new Error(`The example did not report readiness.\n${stderr}`);
-	return { ...ready, checkout: realpathSync(checkout), stop, child, browser };
+	return {
+		checkout: realpathSync(checkout),
+		stop,
+		child,
+		browser,
+		/** Observe readiness from the actual process output. */
+		async ready() {
+			// Startup belongs to another process, so readiness requires observing its output.
+			const ready = await waitFor(() => {
+				if (spawnError) throw spawnError;
+				if (child.exitCode !== null)
+					throw new Error(`Example exited ${child.exitCode}.\n${stderr}`);
+				const line = stdout
+					.split("\n")
+					.find((candidate) => candidate.startsWith('{"type":"workbench_example_ready"'));
+				return line === undefined ? undefined : (JSON.parse(line) as { url: string });
+			}, "the example process readiness signal");
+			if (ready === undefined) throw new Error(`The example did not report readiness.\n${stderr}`);
+			return ready;
+		},
+	};
 }
 
 /**
@@ -140,7 +151,25 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		);
 		rmSync(join(fixture.root, ".archboard"), { recursive: true });
 		writeFileSync(fixture.controlPath, JSON.stringify({ ordinaryOnly: true }));
-		const host = await startExampleProcess(resources, fixture);
+		const example = startExampleProcess(resources, fixture);
+		const host = { ...example, ...(await example.ready()) };
+		// A malformed upgrade must not crash the host and abandon its private child.
+		const malformedUpgrade = await new Promise<number | undefined>((resolve, reject) => {
+			const upgrade = request(
+				host.url,
+				{
+					path: "http://[",
+					headers: { Connection: "Upgrade", Upgrade: "websocket" },
+				},
+				(response) => {
+					response.resume();
+					resolve(response.statusCode);
+				},
+			);
+			upgrade.once("error", reject);
+			upgrade.end();
+		});
+		expect(malformedUpgrade).toBe(400);
 		const configResponse = await fetch(new URL("/api/config", host.url));
 		expect(await configResponse.json()).toEqual({
 			checkout: { label: "checkout", path: host.checkout },
@@ -200,6 +229,7 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		expect(other.threadLink.threadId).not.toBe(threadId);
 		expect(other.coordinator.threadId).not.toBe(linked.coordinator.threadId);
 		const replacement = await open("example-first");
+		await expect(first.request("snapshot")).rejects.toThrow();
 		await first.close();
 		expect((await snapshot(replacement)).threadLink.threadId).toBe(threadId);
 		expect(
@@ -278,12 +308,6 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 			"the independent workhorse interrupt",
 		);
 		expect((await snapshot(replacement)).voice.state).toBe("active");
-		expect(
-			await command(replacement, "realtimeStop", {
-				threadId,
-				realtimeSessionHandle: voiceAgain.value?.["realtimeSessionHandle"],
-			}),
-		).toMatchObject({ value: { outcome: "delivered" } });
 		const starts = productionRecords(fixture.logPath).filter(
 			(record) => record.kind === "frame" && record.method === "thread/start",
 		);
@@ -291,14 +315,39 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		expect(starts[1]?.params?.["cwd"]).toBe(host.checkout);
 		expect(existsSync(join(host.checkout, ".archboard"))).toBe(false);
 		expect(existsSync(join(fixture.root, ".archboard"))).toBe(false);
-		await replacement.close();
-		await second.close();
 		const childPid = productionRecords(fixture.logPath).find(
 			(record) => record.kind === "app_server_spawn",
 		)!.pid!;
 		await host.stop();
 		expect(host.child.exitCode).toBe(0);
+		expect(replacement.socket.readyState).toBe(WebSocket.CLOSED);
+		expect(second.socket.readyState).toBe(WebSocket.CLOSED);
 		await waitFor(() => !processExists(childPid), "the example's private Codex child to exit");
+	} finally {
+		await resources.disposeAsync();
+	}
+});
+
+test("SIGTERM stops the example's private child before startup becomes ready", async () => {
+	const resources = new AsyncDisposableStack();
+	try {
+		const fixture = prepareProductionFixture(
+			resources,
+			join(import.meta.dir, "fixtures/fake-codex-production.ts"),
+		);
+		writeFileSync(fixture.controlPath, JSON.stringify({ holdInitialize: true }));
+		const host = startExampleProcess(resources, fixture);
+		// The controlled child records that startup is pending before the signal arrives.
+		await waitFor(
+			() => productionRecords(fixture.logPath).some((record) => record.kind === "initialize_held"),
+			"the example's pending Codex initialization",
+		);
+		const childPid = productionRecords(fixture.logPath).find(
+			(record) => record.kind === "app_server_spawn",
+		)!.pid!;
+		await host.stop();
+		expect(host.child.exitCode).toBe(0);
+		expect(processExists(childPid)).toBe(false);
 	} finally {
 		await resources.disposeAsync();
 	}

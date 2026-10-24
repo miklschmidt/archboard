@@ -64,8 +64,12 @@ export function attachBrowserSockets(
 ) {
 	const sockets = new WebSocketServer({ noServer: true });
 	server.on("upgrade", (request, socket, head) => {
-		const url = new URL(request.url ?? "/", origin);
-		const surface = registration(url);
+		let surface: ReturnType<typeof registration> = null;
+		try {
+			surface = registration(new URL(request.url ?? "/", origin));
+		} catch {
+			// Malformed request targets are refused before the socket enters the workbench.
+		}
 		if (!sameOrigin(request.headers.host, request.headers.origin, origin) || surface === null) {
 			socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
 			return;

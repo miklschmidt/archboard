@@ -5,10 +5,10 @@ import { startExample } from "#server/wiring/application/application.ts";
 export async function runExample(): Promise<void> {
 	const options = exampleOptions(process.argv);
 	let application: Awaited<ReturnType<typeof startExample>> | undefined;
-	const state = { ending: false };
-	/** Release the application when startup settles. */
+	const lifetime = new AbortController();
+	/** Stop startup and release the application. */
 	const stop = async (): Promise<void> => {
-		state.ending = true;
+		lifetime.abort();
 		await application?.shutdown();
 	};
 	/** Request shutdown without interrupting resource cleanup. */
@@ -30,8 +30,8 @@ export async function runExample(): Promise<void> {
 	process.on("SIGINT", signal);
 	process.on("SIGTERM", signal);
 	try {
-		application = await startExample(options, fatal);
-		if (state.ending) await application.shutdown();
+		application = await startExample(options, fatal, lifetime.signal);
+		if (lifetime.signal.aborted) await application.shutdown();
 		else
 			console.log(
 				JSON.stringify({
@@ -43,6 +43,6 @@ export async function runExample(): Promise<void> {
 	} catch (error) {
 		process.off("SIGINT", signal);
 		process.off("SIGTERM", signal);
-		throw error;
+		if (!lifetime.signal.aborted || error !== lifetime.signal.reason) throw error;
 	}
 }
