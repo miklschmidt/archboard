@@ -14,6 +14,7 @@ import { renderBoard } from "#runtime/operations/render.ts";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { embedRecipeInPng } from "#runtime/operations/recipe/png-recipe.ts";
 import { readRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
+import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 import { EXPORT_BOARD } from "#tests/runtime/support/export-board.ts";
 
@@ -122,6 +123,24 @@ test("a recipe stays readable after a serializer renames its prefix and escapes 
 			(_whole, open: string, text: string) => `${open}${text.replaceAll('"', "&quot;")}`,
 		);
 	expect(recipeIn(Buffer.from(rewritten, "utf8"))).toEqual(recipeIn(Buffer.from(carried, "utf8")));
+});
+
+test("a recipe's text reads back as written whichever way a serializer spells its characters", async () => {
+	const recipe: RenderRecipe = {
+		...recipeIn(Buffer.from(await drawnSvg(true), "utf8")),
+		board: { id: EXPORT_BOARD.id, name: "R&D <core> &lt; ]]>" },
+	};
+	const carried = embedRecipeInSvg("<svg><g/>\n</svg>", recipe);
+	const json = JSON.stringify(recipe);
+	const spellings = [
+		carried,
+		carried.replaceAll("&amp;", "&#38;").replaceAll("&lt;", "&#x3C;"),
+		carried.replace(
+			/(<archboard:render-recipe[^>]*>)[^<]*/u,
+			(_whole, open: string) => `${open}<![CDATA[${json.replaceAll("]]>", "]]]]><![CDATA[>")}]]>`,
+		),
+	];
+	for (const spelled of spellings) expect(recipeIn(Buffer.from(spelled, "utf8"))).toEqual(recipe);
 });
 
 test("a PNG carries the recipe in a text chunk after its header, and stays a valid PNG", async () => {

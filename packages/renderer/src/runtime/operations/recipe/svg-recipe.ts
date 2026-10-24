@@ -34,26 +34,35 @@ function escapeText(text: string): string {
 	return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+/** The five entities XML predefines, by name. */
+const NAMED_ENTITIES: Readonly<Record<string, string>> = {
+	lt: "<",
+	gt: ">",
+	quot: '"',
+	apos: "'",
+	amp: "&",
+};
+
+/** A character section, a character reference, or a predefined entity. */
+const ESCAPE = /<!\[CDATA\[([\s\S]*?)\]\]>|&#x([0-9a-fA-F]+);|&#(\d+);|&(lt|gt|quot|apos|amp);/gu;
+
 /**
  * Element content as text, with the entities and character sections that any
- * XML serializer may write.
+ * XML serializer may write, each read once, so text a reference spells is
+ * never read as another reference.
  * @param content The element content.
  * @returns The text.
  */
 function decodeText(content: string): string {
-	return content
-		.replaceAll(/<!\[CDATA\[([\s\S]*?)\]\]>/gu, (_whole, data: string) => escapeText(data))
-		.replaceAll(/&#x([0-9a-f]+);/giu, (_whole, hex: string) =>
-			String.fromCodePoint(Number.parseInt(hex, 16)),
-		)
-		.replaceAll(/&#(\d+);/gu, (_whole, decimal: string) =>
-			String.fromCodePoint(Number.parseInt(decimal, 10)),
-		)
-		.replaceAll("&lt;", "<")
-		.replaceAll("&gt;", ">")
-		.replaceAll("&quot;", '"')
-		.replaceAll("&apos;", "'")
-		.replaceAll("&amp;", "&");
+	return content.replaceAll(
+		ESCAPE,
+		(_whole, data?: string, hex?: string, decimal?: string, named?: string) => {
+			if (data !== undefined) return data;
+			if (hex !== undefined) return String.fromCodePoint(Number.parseInt(hex, 16));
+			if (decimal !== undefined) return String.fromCodePoint(Number.parseInt(decimal, 10));
+			return NAMED_ENTITIES[named ?? ""] ?? "";
+		},
+	);
 }
 
 /**
