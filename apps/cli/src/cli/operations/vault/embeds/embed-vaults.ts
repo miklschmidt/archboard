@@ -25,6 +25,12 @@ type VaultReading =
 			readonly vault: string;
 			readonly byId: ReadonlyMap<string, ListedBoard>;
 			readonly boards: readonly ListedBoard[];
+			/**
+			 * The names of the boards the vault lists and could not read. The
+			 * listing names no id for them, so any of them can be the board an
+			 * embed names.
+			 */
+			readonly unreadable: readonly string[];
 	  }
 	| { readonly ok: false; readonly reason: string };
 
@@ -94,6 +100,7 @@ async function readVault(repo: string | null, checkouts: ReadCheckouts): Promise
 		vault: found.vault,
 		byId: new Map(boards.map((board) => [board.id, board])),
 		boards,
+		unreadable: listing.boards.flatMap((board) => (board.id === undefined ? [board.name] : [])),
 	};
 }
 

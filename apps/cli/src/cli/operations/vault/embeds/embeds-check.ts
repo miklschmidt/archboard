@@ -104,7 +104,13 @@ async function checkGoneBoard(
 	}
 	const removedIn = await removingCommit(reading.vault, recipe.board, run.signal);
 	return {
-		finding: goneBoardFinding(embed, recipe.board, { holder, removedIn, repointable, notFixed }),
+		finding: goneBoardFinding(embed, recipe.board, {
+			holder,
+			removedIn,
+			repointable,
+			notFixed,
+			unreadable: reading.unreadable,
+		}),
 	};
 }
 

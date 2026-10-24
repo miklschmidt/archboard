@@ -95,6 +95,8 @@ interface GoneBoard {
 	readonly repointable: boolean;
 	/** Why `--fix` did not, when it tried. */
 	readonly notFixed: string | undefined;
+	/** The boards the vault could not read, any of which can be this one. */
+	readonly unreadable: readonly string[];
 }
 
 /**
@@ -111,6 +113,20 @@ function holderSentence(gone: GoneBoard): string {
 }
 
 /**
+ * The words that say the board is gone, or that no board the vault can read
+ * has its id while the vault holds boards it cannot read.
+ * @param board The board as the recipe names it.
+ * @param unreadable The boards the vault cannot read.
+ * @returns The sentence.
+ */
+function goneSentence(board: ListedBoard, unreadable: readonly string[]): string {
+	if (unreadable.length === 0)
+		return `The board "${board.name}" (${board.id}) is gone from its vault.`;
+	const names = unreadable.map((name) => `"${name}"`).join(", ");
+	return `No board that its vault can read has the id of "${board.name}" (${board.id}), and the vault cannot read ${names}, which can be it. \`archboard check semantics\` says what is wrong with each.`;
+}
+
+/**
  * An embed whose board is gone from its vault.
  * @param embed The embed.
  * @param board The board as the recipe names it.
@@ -118,7 +134,7 @@ function holderSentence(gone: GoneBoard): string {
  * @returns The warning.
  */
 function goneBoardFinding(embed: TrackedEmbed, board: ListedBoard, gone: GoneBoard): EmbedFinding {
-	const { holder, removedIn, notFixed } = gone;
+	const { holder, removedIn, notFixed, unreadable } = gone;
 	const removed =
 		removedIn === undefined
 			? ""
@@ -127,7 +143,8 @@ function goneBoardFinding(embed: TrackedEmbed, board: ListedBoard, gone: GoneBoa
 		severity: "warning",
 		code: "EMBED_SOURCE_MISSING",
 		missing: "board",
-		message: `The board "${board.name}" (${board.id}) is gone from its vault.${removed}${holderSentence(gone)}`,
+		message: `${goneSentence(board, unreadable)}${removed}${holderSentence(gone)}`,
+		...(unreadable.length === 0 ? {} : { unreadableBoards: [...unreadable] }),
 		...(removedIn === undefined ? {} : { removedIn }),
 		...(holder === undefined ? {} : { nameHeldBy: holder }),
 		...(notFixed === undefined ? {} : { notFixed }),

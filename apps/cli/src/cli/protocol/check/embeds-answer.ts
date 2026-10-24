@@ -49,6 +49,11 @@ const EmbedFindingSchema = z.object({
 	removedIn: z.object({ commit: z.string(), subject: z.string() }).optional(),
 	/** For a board that is gone: the board that holds its name now. */
 	nameHeldBy: EmbedBoardSchema.optional(),
+	/**
+	 * For a board that is gone: the boards its vault lists and cannot read,
+	 * any of which can be the board, because the listing names no id for them.
+	 */
+	unreadableBoards: z.array(z.string()).optional(),
 	/** For `EMBED_VAULT_UNAVAILABLE`: the repository identity the recipe names, or null for none. */
 	repo: z.string().nullable().optional(),
 	/** Why `--fix` left the embed as it was, when it was asked to fix it. */
