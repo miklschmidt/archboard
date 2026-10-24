@@ -273,42 +273,13 @@ interface SemanticContextInput {
 	readonly staleReasons?: readonly string[];
 }
 
-interface SemanticBoard {
-	readonly key: string;
-	readonly name: string;
-	readonly vault: string;
-	readonly file: string;
-}
-
-interface SemanticPane {
-	readonly paneId: string;
-	readonly focused: boolean;
-}
-
-interface SemanticThreadLink {
-	readonly state: SemanticThreadLinkState;
-	readonly reason: string | null;
-}
-
-interface SemanticWorkhorse {
-	readonly threadId: ThreadId | null;
-	readonly turnId: TurnId | null;
-}
-
-interface SemanticCoordinator {
-	readonly threadId: ThreadId | null;
-	readonly realtimeSessionId: RealtimeSessionId | null;
-}
-
-interface SemanticChild {
-	readonly id: ChildId | null;
-	readonly epoch: ChildEpoch | null;
-}
-
-interface SemanticClaim {
-	readonly holder: SemanticClaimHolder;
-	readonly doing: string | null;
-}
+type SemanticBoard = Pick<SemanticBoardInput, "key" | "name" | "vault" | "file">;
+type SemanticPane = Pick<SemanticPaneInput, "paneId" | "focused">;
+type SemanticThreadLink = SemanticThreadLinkInput;
+type SemanticWorkhorse = SemanticWorkhorseInput;
+type SemanticCoordinator = SemanticCoordinatorInput;
+type SemanticChild = SemanticChildInput;
+type SemanticClaim = SemanticClaimInput;
 
 type SemanticSubject = SemanticSubjectInput;
 type SemanticVariantIdentity = SemanticVariantInput;
@@ -319,18 +290,7 @@ type SemanticReconciliation = SemanticReconciliationInput;
 type SemanticSelection = SemanticSelectionInput;
 
 /** The architecture block as a brief carries it, after bounding and fitting. */
-interface SemanticArchitecture {
-	readonly variant: SemanticVariantIdentity | null;
-	readonly view: SemanticViewIdentity | null;
-	readonly selection: SemanticSelection;
-	readonly differences: {
-		readonly added: number;
-		readonly removed: number;
-		readonly changed: number;
-		readonly subjects: readonly SemanticDifference[];
-	} | null;
-	readonly reconciliation: SemanticReconciliation;
-}
+type SemanticArchitecture = SemanticArchitectureInput;
 
 interface SemanticFreshness {
 	readonly capturedAtMs: number;
