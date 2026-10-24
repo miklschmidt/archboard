@@ -7,7 +7,7 @@ import type { CodexCoordinator } from "#runtime/protocol/coordinator/contract.ts
 import type { CodexSpokenApprovalGate } from "#runtime/protocol/spoken-approval/contract.ts";
 import type { CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
 import type { ThreadUnload } from "#runtime/operations/thread-unload/unload.ts";
 import type {
 	CodexTransport,
@@ -162,6 +162,7 @@ interface CreateCodexWorkbenchSessionsOptions {
 	readonly endApprovals: TabSessionEnding["endApprovals"];
 	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */
 	readonly shownConversationOf: (id: TabSessionId) => string | null;
+	readonly resolveCheckout: (named: string) => string | null;
 	/** Build one session's coordinator and voice. */
 	readonly build: (scope: CodexWorkbenchTabSessionScope) => BuiltTabSession;
 	/** Build one workhorse of a session. */

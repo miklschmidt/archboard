@@ -44,6 +44,7 @@ describe("owned roots with incomplete history metadata", () => {
 			const row = createdRoot(fixture);
 			const result = await classifyCodexThreadLink(
 				{
+					threadSource: "archboard",
 					epoch: fixture.store,
 					session: {
 						threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
@@ -64,6 +65,7 @@ describe("owned roots with incomplete history metadata", () => {
 			for (const canAcceptDirectInput of [false, null]) {
 				const result = await classifyCodexThreadLink(
 					{
+						threadSource: "archboard",
 						epoch: fixture.store,
 						session: {
 							threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
@@ -94,7 +96,7 @@ describe("owned roots with incomplete history metadata", () => {
 				},
 			};
 			const result = await classifyCodexThreadLink(
-				{ session: sessionFixture, epoch: fixture.store },
+				{ threadSource: "archboard", session: sessionFixture, epoch: fixture.store },
 				fixture.target,
 			);
 			expect(result.link.state).toBe("executable");
@@ -121,6 +123,7 @@ describe("owned roots with incomplete history metadata", () => {
 			]) {
 				const result = await classifyCodexThreadLink(
 					{
+						threadSource: "archboard",
 						epoch: fixture.store,
 						session: {
 							threadListPage: async () => threadPage([]),
@@ -145,6 +148,7 @@ describe("owned roots with incomplete history metadata", () => {
 				let loadedReads = 0;
 				const result = await classifyCodexThreadLink(
 					{
+						threadSource: "archboard",
 						epoch: {
 							snapshot: () => fixture.store.snapshot(),
 							assertCurrent: (request) => {
@@ -205,6 +209,7 @@ describe("owned roots with incomplete history metadata", () => {
 							: fixture.target;
 					const result = await classifyCodexThreadLink(
 						{
+							threadSource: "archboard",
 							epoch: fixture.store,
 							session: {
 								threadListPage: async () => threadPage([]),

@@ -167,6 +167,7 @@ describe("codex thread-link pane bindings", () => {
 				},
 			};
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				session: onePageSession(fixture),
 				epoch,
 			});
@@ -188,6 +189,7 @@ describe("codex thread-link pane bindings", () => {
 			const row = thread(fixture.authority, "target");
 			let listPass = 0;
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,
@@ -216,6 +218,7 @@ describe("codex thread-link pane bindings", () => {
 			const row = thread(fixture.authority, "target");
 			let listPass = 0;
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,
@@ -261,7 +264,11 @@ describe("codex thread-link pane bindings", () => {
 					return fixture.store.assertCurrent(request);
 				},
 			};
-			const port = createCodexThreadLink({ session: onePageSession(fixture), epoch });
+			const port = createCodexThreadLink({
+				threadSource: "archboard",
+				session: onePageSession(fixture),
+				epoch,
+			});
 
 			await expectConflict(port.classifyAndBind("pane-a", null, fixture.target));
 			expect(port.snapshot("pane-a").link.state).toBe("unbound");
@@ -298,7 +305,7 @@ describe("codex thread-link pane bindings", () => {
 				clear: () => undefined,
 			};
 			const options = Object.assign(
-				{ session: onePageSession(fixture), epoch: fixture.store },
+				{ session: onePageSession(fixture), epoch: fixture.store, threadSource: "archboard" },
 				{ binding: unchecked },
 			);
 			const port = createCodexThreadLink(options);
@@ -316,6 +323,7 @@ describe("codex thread-link pane bindings", () => {
 		await withFixture(async (fixture) => {
 			const replacement = createIdentityAuthority();
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -333,6 +341,7 @@ describe("codex thread-link pane bindings", () => {
 		await withFixture(async (fixture) => {
 			const replacement = createIdentityAuthority();
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -391,6 +400,7 @@ describe("codex thread-link pane bindings", () => {
 	test("requires a fresh token to clear and prevents a second null-CAS writer", async () => {
 		await withFixture(async (fixture) => {
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -408,6 +418,7 @@ describe("codex thread-link pane bindings", () => {
 	test("exposes one frozen port without an unchecked binding injection", async () => {
 		await withFixture(async (fixture) => {
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});

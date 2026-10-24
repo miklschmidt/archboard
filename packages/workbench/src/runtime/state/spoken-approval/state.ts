@@ -1,5 +1,8 @@
 import type { ApprovalBinding, ApprovalSettlement } from "#runtime/services/approvals/contract.ts";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {
 	RealtimeCorrelation,
@@ -47,7 +50,8 @@ interface ActiveSlot {
 	readonly classifier: {
 		readonly operationId: string;
 		readonly clientUserMessageId: string;
-		readonly context: ArchboardContext;
+		readonly context: WorkbenchExecutionContext;
+		readonly contextCodec: WorkbenchContextCodec;
 	};
 	readonly baselineRecordKeys: ReadonlySet<string>;
 	phase: LiveGateState | TerminalGateState;

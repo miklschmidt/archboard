@@ -171,6 +171,7 @@ function createCoordinatorStarter(
 		const startParams = createCoordinatorThreadStartParams(
 			options.workingDirectory,
 			selection.configuredServiceTier,
+			options.profile,
 		);
 		hooks.setSnapshot(
 			startingSnapshot(
@@ -240,7 +241,7 @@ function createCoordinatorStarter(
 		const settings = coordinatorSettings(configured, notificationOutcome.settings);
 		let review: CoordinatorReviewHashes;
 		try {
-			review = reviewedCoordinatorHashes(hashCoordinatorSettings(settings));
+			review = reviewedCoordinatorHashes(hashCoordinatorSettings(settings), options.profile);
 		} catch (error) {
 			markUnknown(transaction, "coordinator review hashes drifted after start", startedThreadId);
 			hooks.setPersistence(null);
@@ -319,7 +320,12 @@ function createCoordinatorStarter(
 			};
 		}
 		try {
-			assertStartedResponse(started, options.workingDirectory, selection.configuredServiceTier);
+			assertStartedResponse(
+				started,
+				options.workingDirectory,
+				selection.configuredServiceTier,
+				options.profile.threadSource,
+			);
 			return { ok: true, started, startedThreadId: started.thread.id };
 		} catch (error) {
 			const threadId = startedThreadIdOrNull(started);

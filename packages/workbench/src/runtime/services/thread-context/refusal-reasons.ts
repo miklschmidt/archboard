@@ -1,9 +1,7 @@
 import { CodexEpochError } from "#runtime/store/epoch/contract.ts";
 import { ADDITIONAL_CONTEXT_POLICY } from "#runtime/rules/instructions/context-policy.ts";
-import type {
-	SemanticCursor,
-	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
+type SemanticCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
 import {
 	CodexThreadLinkError,
 	type ThreadLinkReasonCode,
@@ -172,7 +170,7 @@ function targetLinkReason(link: ThreadLinkSnapshot, target: DeliveryTarget): Rea
  * @param event - The settled semantic change.
  * @returns The refusal reason, or null when the event's link is executable.
  */
-function eventLinkReason(event: SettledSemanticChangeEvent): Reason | null {
+function eventLinkReason(event: WorkbenchContextEvent): Reason | null {
 	if (event.threadLink.state === "executable") {
 		return null;
 	}
@@ -195,7 +193,7 @@ function eventLinkReason(event: SettledSemanticChangeEvent): Reason | null {
  * @param event - The settled semantic change.
  * @returns The refusal reason, or null when the change qualifies.
  */
-function eventShapeReason(event: SettledSemanticChangeEvent): Reason | null {
+function eventShapeReason(event: WorkbenchContextEvent): Reason | null {
 	if (event.source !== "settled_change") {
 		return "invalid_event";
 	}
@@ -237,7 +235,7 @@ function eventShapeReason(event: SettledSemanticChangeEvent): Reason | null {
  * @returns The refusal reason, or null when the change is somebody else's.
  */
 function ownSessionReason(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	sessionAuthors: readonly string[],
 ): Reason | null {
 	const by = event.change.by;
@@ -271,10 +269,7 @@ function cursorReason(
  * @param cursor - The event's cursor.
  * @returns `invalid_event` on any disagreement, otherwise null.
  */
-function changeRecordReason(
-	event: SettledSemanticChangeEvent,
-	cursor: SemanticCursor,
-): Reason | null {
+function changeRecordReason(event: WorkbenchContextEvent, cursor: SemanticCursor): Reason | null {
 	if (
 		event.change.feedId !== event.feedId ||
 		event.change.cursor.feedId !== cursor.feedId ||
@@ -292,7 +287,7 @@ function changeRecordReason(
  * @param feedId - The feed this delivery port is fixed to.
  * @returns The refusal reason, or null when the event is well formed.
  */
-function eventFormReason(event: SettledSemanticChangeEvent, feedId: string): Reason | null {
+function eventFormReason(event: WorkbenchContextEvent, feedId: string): Reason | null {
 	const shape = eventShapeReason(event);
 	if (shape !== null) {
 		return shape;
@@ -316,7 +311,7 @@ function eventFormReason(event: SettledSemanticChangeEvent, feedId: string): Rea
  * @param event - The settled semantic change.
  * @returns The refusal reason, or null when the event's context is usable.
  */
-function eventContextReason(event: SettledSemanticChangeEvent): Reason | null {
+function eventContextReason(event: WorkbenchContextEvent): Reason | null {
 	if (event.staleness.state !== "current" || event.freshness.state !== "fresh") {
 		return "stale_event";
 	}
@@ -336,7 +331,7 @@ interface ProvenEvent {
  * @param event - The settled semantic change.
  * @returns The proven identities, or null when any of them is missing.
  */
-function provenEvent(event: SettledSemanticChangeEvent): ProvenEvent | null {
+function provenEvent(event: WorkbenchContextEvent): ProvenEvent | null {
 	if (event.child.id === null || event.child.epoch === null) {
 		return null;
 	}
@@ -386,7 +381,7 @@ function eventTargetReason(
  * @returns The refusal reason, or null when the event may proceed.
  */
 function eventReason(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: CodexThreadContextDeliveryOptions,
 	lastSequence: number,
 ): Reason | null {
@@ -405,7 +400,7 @@ function eventReason(
  * @returns The refusal reason, or null when the target is proven.
  */
 function targetReason(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	target: CodexThreadContextTarget,
 	lastSequence: number,
 ): Reason | null {

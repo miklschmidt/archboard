@@ -1,10 +1,17 @@
+import {
+	ARCHBOARD_INSTRUCTIONS,
+	ARCHBOARD_CONTEXT_CODEC,
+} from "#runtime/services/host/archboard.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
+import { checkoutNamedBy } from "#server/services/host/archboard-checkouts.ts";
+import { createArchboardCoordinatorContextSource } from "#server/services/host/archboard-context-source.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { codexWiring, resetCodexWorkbenchWiring } from "#server/services/owner/wiring-hooks.ts";
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import { workbenchFeedFor } from "#server/services/sessions/feed.ts";
 
-import type { SettledChangeSourceEvent } from "@archboard/codex-app-server/semantic-context";
+import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,
@@ -14,7 +21,7 @@ import type { CodexWorkbenchTabSession } from "#server/protocol/generation/sessi
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import { createServerCodexBrowserSocketOwner } from "#server/services/browser-socket/socket.ts";
 import type { createServerCodexWorkbenchApplication } from "#server/services/owner/application.ts";
-import type { CodexWorkbenchServer } from "#server/services/owner/production.ts";
+import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
 import {
 	canonicalContextFromBrief,
 	fullInputFor,
@@ -52,7 +59,7 @@ import {
 	semanticOwners,
 } from "#server/services/sessions/panes.ts";
 
-type OperationAuthority = Parameters<CodexWorkbenchServer["contextForOperation"]>[0];
+type OperationAuthority = Parameters<ArchboardWorkbenchServer["contextForOperation"]>[0];
 
 /**
  * Whether a pane's thread link still names exactly the authority an
@@ -147,7 +154,7 @@ function installBrowserGateway(
  * server's sockets.
  * @returns The server.
  */
-function createCodexWorkbenchServer(): CodexWorkbenchServer {
+function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
@@ -169,7 +176,57 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		return { components: active, session: active.sessions.require(tabSessionId) };
 	};
 
-	return {
+	const integration: ArchboardWorkbenchServer = {
+		host: {
+			instructions: ARCHBOARD_INSTRUCTIONS,
+			contextCodec: ARCHBOARD_CONTEXT_CODEC,
+			resolveCheckout: checkoutNamedBy,
+			/**
+			 * Read context for the exact operation and execution authority supplied by the core.
+			 * @param authority The core-owned operation authority.
+			 * @param operation The pending operation identity.
+			 * @returns The canonical context of this exact operation.
+			 */
+			contextForOperation: (authority, operation) =>
+				integration.contextForOperation(authority, operation),
+			/**
+			 * Build this tab session’s Archboard voice policy.
+			 * @param tabSessionId The tab session that owns this policy.
+			 * @returns The Archboard voice policy for this session.
+			 */
+			voiceFor: (tabSessionId) => createArchboardVoicePolicy(narrationChangesOf(tabSessionId)),
+			/**
+			 * Publish complete domain snapshots for this tab session.
+			 * @param tabSessionId The tab session that owns this policy.
+			 * @returns The context source for this session.
+			 */
+			coordinatorContextFor: (tabSessionId) =>
+				createArchboardCoordinatorContextSource({
+					/**
+					 * Read the vault of the pane that presents this session.
+					 * @returns The presenting vault, or null with no open pane.
+					 */
+					vault: () => {
+						const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
+						return session === undefined ? null : (presentingPaneOf(session)?.vault ?? null);
+					},
+					/**
+					 * Subscribe to host context changes and return the subscription cleanup.
+					 * @param listener Receives domain changes.
+					 * @returns The cleanup that ends the subscriptions.
+					 */
+					subscribe: (listener) => {
+						const publisher = liveSession(tabSessionId).session.components.semanticPublisher;
+						const stops = [
+							publisher.subscribePaneFocus(listener),
+							publisher.subscribePaneSelection(listener),
+						];
+						return () => {
+							for (const stop of stops) stop();
+						};
+					},
+				}),
+		},
 		sourceRoot,
 		/**
 		 * Record which process group the Codex app-server runs in, for the startup protocol.
@@ -422,6 +479,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			logger.error("Fatal Codex workbench fault:", error);
 		},
 	};
+	return integration;
 }
 
 let codexApplication: ReturnType<typeof createServerCodexWorkbenchApplication> | null = null;
@@ -463,7 +521,7 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 		 * @returns The installation.
 		 */
 		installation: () =>
-			productionModule.createServerCodexWorkbenchInstallation(createCodexWorkbenchServer()),
+			productionModule.createServerCodexWorkbenchInstallation(createArchboardWorkbenchServer()),
 	});
 	codexApplication = application;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */

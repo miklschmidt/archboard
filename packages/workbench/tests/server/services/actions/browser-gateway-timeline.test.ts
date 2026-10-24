@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { expect, test } from "bun:test";
 
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
@@ -105,6 +106,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const fixture = createCodexWorkbenchGenerationFixture([]);
 	const coordinator = fixture.sessionComponents.coordinator;
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity: authorities.identity,
 		transport: fixture.components.transport,
 		session: fixture.components.session,
@@ -164,6 +166,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		budget,
 		leaseLedger: { sessions: new Map() },
 		process: () => runningProcessFacts(),
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
 		onAccountNotification: () => () => undefined,
@@ -234,6 +237,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 	};
 	const fixture = createCodexWorkbenchGenerationFixture([]);
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity: authorities.identity,
 		transport: fixture.components.transport,
 		session: fixture.components.session,
@@ -275,6 +279,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		budget: createServerBrowserProjectionBudget(),
 		leaseLedger: { sessions: new Map() },
 		process: () => runningProcessFacts(),
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
 		onAccountNotification: () => () => undefined,

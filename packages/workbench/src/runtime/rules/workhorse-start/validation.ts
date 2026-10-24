@@ -1,3 +1,4 @@
+import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import type { EpochExecutionProof } from "#runtime/store/epoch/contract.ts";
 import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
 import type {
@@ -13,12 +14,9 @@ import type {
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,
-	WORKHORSE_INSTRUCTION_HASH,
-	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_OPERATION_KIND,
 	WORKHORSE_RPC,
 	WORKHORSE_THREAD_SOURCE,
-	WORKHORSE_THREAD_SOURCE_TAG,
 } from "#runtime/rules/workhorse-start/model.ts";
 import type {
 	CodexWorkhorseStartOptions,
@@ -26,7 +24,7 @@ import type {
 	WorkhorseStartResponse,
 	WorkhorseThread,
 } from "#runtime/protocol/workhorse-start/contract.ts";
-import { cloneAndFreeze } from "#runtime/rules/workhorse-start/immutability.ts";
+import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 
 interface ValidatedWorkhorseStart {
 	readonly thread: WorkhorseThread;
@@ -61,7 +59,7 @@ function startProfileMismatches(
 		"thread.cwd": response.thread.cwd !== options.checkoutRoot,
 		"thread.historyMode": response.thread.historyMode !== "paginated",
 		"thread.source": response.thread.source !== WORKHORSE_THREAD_SOURCE,
-		"thread.threadSource": response.thread.threadSource !== WORKHORSE_THREAD_SOURCE_TAG,
+		"thread.threadSource": response.thread.threadSource !== options.profile.threadSource,
 		"thread.ephemeral": response.thread.ephemeral,
 		activePermissionProfile: !Object.hasOwn(response, "activePermissionProfile"),
 	};
@@ -96,7 +94,7 @@ function validateWorkhorseStartResponse(
 		runtimeWorkspaceRoots: [...response.runtimeWorkspaceRoots],
 		historyMode: "paginated",
 		source: WORKHORSE_THREAD_SOURCE,
-		threadSource: WORKHORSE_THREAD_SOURCE_TAG,
+		threadSource: options.profile.threadSource,
 		model: response.model,
 		modelProvider: response.modelProvider,
 		serviceTier: response.serviceTier,
@@ -104,8 +102,8 @@ function validateWorkhorseStartResponse(
 		approvalsReviewer: response.approvalsReviewer,
 		sandbox: response.sandbox,
 		activePermissionProfile: response.activePermissionProfile,
-		instructionHash: WORKHORSE_INSTRUCTION_HASH,
-		manifestHash: WORKHORSE_MANIFEST_HASH,
+		instructionHash: options.profile.instructions.sha256,
+		manifestHash: options.profile.manifestHash,
 	});
 	return Object.freeze({ thread: cloneAndFreeze(response.thread), threadId, facts });
 }
@@ -117,6 +115,7 @@ interface ExpectedWorkhorseOperation {
 	readonly operationId: OperationId;
 	readonly threadId: ThreadId;
 	readonly checkoutRoot: string;
+	readonly profile: WorkbenchThreadProfile;
 	/** The operation kind the record must name. */
 	readonly kind: string;
 	/** The wire RPC the record must name. */
@@ -149,8 +148,8 @@ function isCommittedRecord(
 		record.provenance.threadId === expected.threadId,
 		record.provenance.threadSource === WORKHORSE_THREAD_SOURCE,
 		record.provenance.workspaceRoot === expected.checkoutRoot,
-		record.provenance.instructionHash === WORKHORSE_INSTRUCTION_HASH,
-		record.provenance.manifestHash === WORKHORSE_MANIFEST_HASH,
+		record.provenance.instructionHash === expected.profile.instructions.sha256,
+		record.provenance.manifestHash === expected.profile.manifestHash,
 		record.provenance.confirmedAtMs !== null,
 	];
 	return checks.every((matched) => matched);
@@ -165,6 +164,7 @@ function isCommittedRecord(
  * @param threadId - The started thread.
  * @param checkoutRoot - The checkout the workhorse was started against.
  * @returns True when the record proves the start.
+ * @param profile The host policy for this operation.
  */
 function isCommittedStartRecord(
 	record: EpochOperationRecord,
@@ -173,6 +173,7 @@ function isCommittedStartRecord(
 	operationId: OperationId,
 	threadId: ThreadId,
 	checkoutRoot: string,
+	profile: WorkbenchThreadProfile,
 ): boolean {
 	return isCommittedRecord(record, {
 		childId,
@@ -180,6 +181,7 @@ function isCommittedStartRecord(
 		operationId,
 		threadId,
 		checkoutRoot,
+		profile,
 		kind: WORKHORSE_OPERATION_KIND,
 		rpc: WORKHORSE_RPC,
 	});
@@ -194,6 +196,7 @@ function isCommittedStartRecord(
  * @param threadId - The started thread.
  * @param checkoutRoot - The checkout the workhorse was started against.
  * @returns True when the proof's record proves the start.
+ * @param profile The host policy for this operation.
  */
 function isCurrentStartProof(
 	proof: EpochExecutionProof,
@@ -202,8 +205,17 @@ function isCurrentStartProof(
 	operationId: OperationId,
 	threadId: ThreadId,
 	checkoutRoot: string,
+	profile: WorkbenchThreadProfile,
 ): boolean {
-	return isCommittedStartRecord(proof.record, childId, epoch, operationId, threadId, checkoutRoot);
+	return isCommittedStartRecord(
+		proof.record,
+		childId,
+		epoch,
+		operationId,
+		threadId,
+		checkoutRoot,
+		profile,
+	);
 }
 
 /**
@@ -215,6 +227,7 @@ function isCurrentStartProof(
  * @param threadId - The deleted thread.
  * @param checkoutRoot - The checkout the workhorse belonged to.
  * @returns True when the record proves the deletion.
+ * @param profile The host policy for this operation.
  */
 function isCommittedCleanupRecord(
 	record: EpochOperationRecord,
@@ -223,6 +236,7 @@ function isCommittedCleanupRecord(
 	operationId: OperationId,
 	threadId: ThreadId,
 	checkoutRoot: string,
+	profile: WorkbenchThreadProfile,
 ): boolean {
 	return isCommittedRecord(record, {
 		childId,
@@ -230,6 +244,7 @@ function isCommittedCleanupRecord(
 		operationId,
 		threadId,
 		checkoutRoot,
+		profile,
 		kind: WORKHORSE_CLEANUP_OPERATION_KIND,
 		rpc: WORKHORSE_CLEANUP_RPC,
 	});

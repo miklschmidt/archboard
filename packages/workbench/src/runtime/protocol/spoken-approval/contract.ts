@@ -9,7 +9,10 @@ import type {
 	DynamicServerRequest,
 	TransportServerNotification,
 } from "@archboard/codex-app-server/transport";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -68,7 +71,8 @@ interface SpokenApprovalClassifierInput {
 	readonly operationId: string;
 	/** A server-issued client message identity for the ordinary turn. */
 	readonly clientUserMessageId: string;
-	readonly context: ArchboardContext;
+	readonly context: WorkbenchExecutionContext;
+	readonly contextCodec: WorkbenchContextCodec;
 }
 
 interface SpokenApprovalArmInput {

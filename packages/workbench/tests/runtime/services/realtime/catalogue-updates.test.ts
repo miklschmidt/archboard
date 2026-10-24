@@ -91,11 +91,7 @@ test("reports a lost coordinator update once and does not retry it", async () =>
 		expect(attempts).toBe(1);
 		expect(h.session.texts).toHaveLength(0);
 		expect(
-			h.events.filter(
-				(event) =>
-					event.kind === "diagnostic" &&
-					event.message.includes("coordinator board catalogue update was not confirmed"),
-			),
+			h.events.filter((event) => event.kind === "diagnostic" && event.code === "coordinator"),
 		).toHaveLength(1);
 	} finally {
 		h.adapter.dispose();

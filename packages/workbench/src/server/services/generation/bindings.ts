@@ -1,3 +1,4 @@
+import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
 import type { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
 import type { ApprovalSnapshot } from "#runtime/services/approvals/contract.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
@@ -23,14 +24,11 @@ import {
 	createWorkhorseBindings,
 } from "#server/services/sessions/bindings.ts";
 import type { CodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
-import type {
-	CodexWorkbenchServer,
-	CodexWorkbenchStorage,
-} from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 
 /** What building one generation's bindings needs from around it. */
 interface BindingContext {
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	readonly storage: CodexWorkbenchStorage;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
@@ -84,6 +82,7 @@ function storageBindings(
 		 * @returns The thread-link binding.
 		 */
 		threadLink: (created) => ({
+			threadSource: context.server.host.instructions.workhorse.threadSource,
 			/**
 			 * The epoch now active, which a link is only valid within.
 			 * @returns The epoch, or null before one is started.
@@ -203,6 +202,7 @@ function approvalBindings(
 		 */
 		sessions: (created) => ({
 			shownConversationOf: context.server.shownConversationOf,
+			resolveCheckout: context.server.host.resolveCheckout,
 			/**
 			 * Settle every approval an ended tab session was still to answer.
 			 * @param id The tab session.

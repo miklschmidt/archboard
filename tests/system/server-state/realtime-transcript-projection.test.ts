@@ -35,6 +35,13 @@ test("raw realtime transcript identities publish as canonical browser items", as
 	}
 	const starts: SessionParams<"thread/realtime/start">[] = [];
 	const adapter = createCodexRealtimeAdapter({
+		voice: {
+			start: () => ({
+				prompt: "Test voice.",
+				delegationAckFiller: true,
+				suppressCoordinatorSpeech: false,
+			}),
+		},
 		identity,
 		currentBinding: () => ({
 			child: identity.validator.childId,
@@ -42,7 +49,7 @@ test("raw realtime transcript identities publish as canonical browser items", as
 			linkedThreadId,
 			coordinatorThreadId,
 		}),
-		boardCatalogue: {
+		coordinatorContext: {
 			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 			subscribe: () => () => {},
 		},

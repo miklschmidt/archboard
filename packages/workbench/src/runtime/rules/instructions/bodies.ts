@@ -1,3 +1,4 @@
+import { createTextUserInput } from "#runtime/rules/host/text-input.ts";
 import path from "node:path";
 import { z } from "zod";
 
@@ -195,13 +196,6 @@ function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T 
  * @param text - The prompt text.
  * @returns The validated text input item.
  */
-function createTextUserInput(text: string): TextUserInput {
-	return parseOutput(
-		TextUserInputSchema,
-		{ type: "text", text, text_elements: [] },
-		"text user input",
-	);
-}
 
 /**
  * Wrap a context as the `additionalContext` entry that rides on turn/start and turn/steer.

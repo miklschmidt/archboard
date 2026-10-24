@@ -1,10 +1,9 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, test } from "bun:test";
 
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
-	WORKHORSE_INSTRUCTION_HASH,
-	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_OPERATION_KIND,
 	WORKHORSE_RPC,
 } from "#runtime/rules/workhorse-start/model.ts";
@@ -62,8 +61,8 @@ describe("codex workhorse start transaction", () => {
 				approvalsReviewer: "user",
 				sandbox: { type: "dangerFullAccess" },
 				activePermissionProfile: { id: "archboard-default", extends: null },
-				instructionHash: WORKHORSE_INSTRUCTION_HASH,
-				manifestHash: WORKHORSE_MANIFEST_HASH,
+				instructionHash: ARCHBOARD_INSTRUCTIONS.workhorse.instructions.sha256,
+				manifestHash: ARCHBOARD_INSTRUCTIONS.workhorse.manifestHash,
 			});
 			expect(fixture.session.startParams).toHaveLength(1);
 			expect(fixture.link.targets).toHaveLength(1);

@@ -3,7 +3,10 @@ import type {
 	EpochExecutionProof,
 	EpochTransaction,
 } from "#runtime/store/epoch/contract.ts";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import type { CodexSession, SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
@@ -91,7 +94,8 @@ interface WorkhorseOperationOptions {
 	readonly currentBinding: CurrentWorkhorseOperationBinding;
 	readonly currentCoordinatorCall: CurrentWorkhorseCoordinatorCall;
 	/** Returns the fresh canonical context used by turn/start and turn/steer. */
-	readonly contextFor: (input: WorkhorseOperationContextInput) => ArchboardContext;
+	readonly contextCodec: WorkbenchContextCodec;
+	readonly contextFor: (input: WorkhorseOperationContextInput) => WorkbenchExecutionContext;
 }
 
 interface InspectWorkhorseRequest {

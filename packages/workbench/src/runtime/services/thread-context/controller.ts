@@ -1,4 +1,4 @@
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
+import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
 import { sameThreadLinkIdentity } from "#runtime/rules/thread-link/binding.ts";
 import {
 	type ThreadLinkBindingSnapshot,
@@ -122,7 +122,7 @@ function sameBinding(
  * @returns The frozen `not_delivered` outcome with no target.
  */
 function unboundOutcome(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	reason: "unbound" | "disposed",
 ): CodexThreadContextDeliveryOutcome {
 	return Object.freeze({
@@ -302,9 +302,7 @@ export function createCodexThreadContextController(
 	 * @param event - The settled semantic change.
 	 * @returns The outcome promise shared by every caller for this identity.
 	 */
-	const deliver = (
-		event: SettledSemanticChangeEvent,
-	): Promise<CodexThreadContextDeliveryOutcome> => {
+	const deliver = (event: WorkbenchContextEvent): Promise<CodexThreadContextDeliveryOutcome> => {
 		const key = eventKey(eventId(event));
 		const inFlight = pending.get(key);
 		if (inFlight !== undefined) {

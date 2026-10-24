@@ -53,11 +53,13 @@ function threadIdOrNull(response: LooseStartResponse): ThreadId | null {
  * @param workingDirectory - The directory of its own the coordinator must be in.
  * @param serviceTier - The advertised priority tier, or null.
  * @throws {CodexCoordinatorError} When any field does not match the authored profile.
+ * @param threadSource The host policy for this operation.
  */
 function assertStartedResponse(
 	response: CoordinatorStartResponse,
 	workingDirectory: string,
 	serviceTier: "priority" | null,
+	threadSource: string,
 ): void {
 	const mismatches = Object.entries({
 		"thread.id": response.thread.id.length === 0,
@@ -72,7 +74,7 @@ function assertStartedResponse(
 		"thread.cwd": response.thread.cwd !== workingDirectory,
 		"thread.historyMode": response.thread.historyMode !== "paginated",
 		"thread.source": response.thread.source !== COORDINATOR_THREAD_SOURCE,
-		"thread.threadSource": response.thread.threadSource !== "archboard",
+		"thread.threadSource": response.thread.threadSource !== threadSource,
 		"thread.ephemeral": response.thread.ephemeral,
 	})
 		.filter(([, mismatched]) => mismatched)

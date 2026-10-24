@@ -7,7 +7,7 @@ import type {
 	SemanticChangeSignificance,
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/schemas/semantic-context-types.ts";
 import type { SemanticSubjectKind } from "@archboard/board/pane-context";
 import type {
 	CodexThreadLinkClassifier,

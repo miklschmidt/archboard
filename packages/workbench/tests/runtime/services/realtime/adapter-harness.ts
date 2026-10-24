@@ -1,3 +1,5 @@
+import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { expect } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
@@ -117,11 +119,13 @@ const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
 
 const transitionFailures: string[] = [];
 function harness(
-	boardCatalogue: CodexRealtimeAdapterOptions["boardCatalogue"] = {
+	coordinatorContext: CodexRealtimeAdapterOptions["coordinatorContext"] = {
 		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 		subscribe: () => () => {},
 	},
-	presentationChanges?: CodexRealtimeAdapterOptions["presentationChanges"],
+	presentationChanges?: {
+		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;
+	},
 ): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -145,8 +149,8 @@ function harness(
 	const adapter = createCodexRealtimeAdapter({
 		session: session.port,
 		identity,
-		boardCatalogue,
-		...(presentationChanges === undefined ? {} : { presentationChanges }),
+		coordinatorContext,
+		voice: createArchboardVoicePolicy(presentationChanges?.subscribe),
 		freshSemanticBrief: () => semanticBrief(),
 		currentBinding: () => bindingState.binding,
 	});

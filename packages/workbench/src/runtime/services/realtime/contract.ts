@@ -14,11 +14,10 @@ import type {
 	ThreadId,
 } from "@archboard/codex-app-server/identity";
 import type { CodexSession, SessionNotificationHandler } from "@archboard/codex-app-server/session";
-import type { FreshSemanticBrief } from "@archboard/codex-app-server/semantic-context";
 import type {
-	RealtimePresentation,
-	RealtimePresentationChange,
-} from "#runtime/rules/realtime/presentation-mode.ts";
+	WorkbenchContextSource,
+	WorkbenchVoicePolicy,
+} from "#runtime/protocol/host/context-source.ts";
 
 interface CodexRealtimeBinding {
 	readonly child: ChildId;
@@ -32,7 +31,7 @@ interface CodexRealtimeGeneration extends CodexRealtimeBinding {
 	readonly browserCorrelationId: RealtimeCorrelationId;
 	readonly wireSessionId: RealtimeSessionId;
 	/** Byte-exact semantic context captured once for this realtime start. */
-	readonly semanticBrief: FreshSemanticBrief["brief"];
+	readonly semanticBrief: string;
 }
 
 interface CodexRealtimeAdapterOptions {
@@ -46,11 +45,9 @@ interface CodexRealtimeAdapterOptions {
 		| "threadInjectItems"
 	>;
 	readonly identity: IdentityAuthority;
-	readonly freshSemanticBrief: (wireSessionId: RealtimeSessionId) => FreshSemanticBrief["brief"];
-	readonly boardCatalogue: {
-		readonly read: () => string;
-		readonly subscribe: (onChange: () => void, onError: (error: Error) => void) => () => void;
-	};
+	readonly freshSemanticBrief: (wireSessionId: RealtimeSessionId) => string;
+	readonly coordinatorContext: WorkbenchContextSource;
+	readonly voice: WorkbenchVoicePolicy;
 	readonly currentBinding: () => CodexRealtimeBinding | null;
 	/**
 	 * Hears what a start sent and how Codex answered it, for whoever keeps a trace of voice
@@ -60,13 +57,6 @@ interface CodexRealtimeAdapterOptions {
 		stage: string,
 		detail: Readonly<Record<string, string | number | boolean | null>>,
 	) => void;
-	/**
-	 * Where a narrated walkthrough is on the user's screen: each step as it lands, the first
-	 * included, and leaving it (TASK-251). Absent where nothing presents walkthroughs.
-	 */
-	readonly presentationChanges?: {
-		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;
-	};
 }
 
 /** Server-owned protocol half; remote MediaStream attachment remains browser-local. */
@@ -75,15 +65,12 @@ interface CodexRealtimeAdapter extends Omit<RealtimeServer, "attachRemoteMedia" 
 	 * Accept the browser's offer and start the session, as an ordinary voice session or, given a
 	 * walkthrough, one started to present it (TASK-251).
 	 */
-	readonly createOffer: (
-		offer: CreateOfferSdp,
-		presentation?: RealtimePresentation | null,
-	) => Promise<AnswerSdp>;
+	readonly createOffer: (offer: CreateOfferSdp, presentation?: unknown) => Promise<AnswerSdp>;
 	readonly onNotification: SessionNotificationHandler;
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 	readonly generation: () => CodexRealtimeGeneration | null;
 	/** The walkthrough the live session presents (TASK-251), or null with none or an ordinary one. */
-	readonly presentation: () => RealtimePresentation | null;
+	readonly presentation: () => unknown;
 	readonly dispose: () => void;
 }
 

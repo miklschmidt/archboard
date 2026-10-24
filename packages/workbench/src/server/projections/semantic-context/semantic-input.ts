@@ -9,7 +9,7 @@ import type {
 	SemanticArchitectureInput,
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/schemas/semantic-context-types.ts";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { canonicalSemanticCursorToken } from "#runtime/services/thread-context/event-identity.ts";
 import type { SemanticBoard } from "@archboard/board/document";

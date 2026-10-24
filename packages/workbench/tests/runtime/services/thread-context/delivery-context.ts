@@ -5,7 +5,7 @@
 // because the two together no longer fit in one reviewed file.
 
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
+import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
 import { canonicalSemanticCursorToken } from "#runtime/services/thread-context/event-identity.ts";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 

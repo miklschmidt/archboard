@@ -1,3 +1,4 @@
+import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
 import type {
 	BrowserOwnerProjection,
 	CodexQueueProjectionInput,
@@ -339,7 +340,7 @@ function readBrowserOwnerProjection(
 			kind: "codex_voice",
 			mediaReady: context.mediaReady,
 			generation: realtimeGeneration,
-			recording: (components.realtime.presentation()?.recording ?? null) !== null,
+			recording: isArchboardRecording(components.realtime.presentation()),
 			coordinatorState: coordinator.state,
 			transcript: components.realtime.transcript(),
 		},

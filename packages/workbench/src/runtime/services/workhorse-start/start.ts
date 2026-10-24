@@ -1,3 +1,4 @@
+import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -12,8 +13,6 @@ import type {
 } from "#runtime/rules/thread-link/contract.ts";
 import { compensateAfterBindFailure } from "#runtime/services/workhorse-start/cleanup.ts";
 import {
-	WORKHORSE_INSTRUCTION_HASH,
-	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_OPERATION_KIND,
 	WORKHORSE_RPC,
 	WORKHORSE_THREAD_SOURCE,
@@ -43,7 +42,7 @@ import {
 	validateWorkhorseStartResponse,
 	type ValidatedWorkhorseStart,
 } from "#runtime/rules/workhorse-start/validation.ts";
-import { cloneAndFreeze } from "#runtime/rules/workhorse-start/immutability.ts";
+import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 
 /** The facts one start attempt runs under, fixed before any step is taken. */
 interface StartContext {
@@ -132,8 +131,8 @@ function stageStartTransaction(context: StartContext): WorkhorseStartTransaction
 			kind: WORKHORSE_OPERATION_KIND,
 			rpc: WORKHORSE_RPC,
 			workspaceRoot: options.checkoutRoot,
-			instructionHash: WORKHORSE_INSTRUCTION_HASH,
-			manifestHash: WORKHORSE_MANIFEST_HASH,
+			instructionHash: options.profile.instructions.sha256,
+			manifestHash: options.profile.manifestHash,
 			expected: epochSnapshot.cas,
 		});
 		assertTransaction(
@@ -167,7 +166,7 @@ function buildStartParams(
 	transaction: WorkhorseStartTransaction,
 ): ReturnType<typeof createWorkhorseThreadStartParams> {
 	try {
-		return createWorkhorseThreadStartParams(context.options.checkoutRoot);
+		return createWorkhorseThreadStartParams(context.options.checkoutRoot, context.options.profile);
 	} catch (error) {
 		const detail = `The workhorse start profile was not valid: ${errorMessage(error)}`;
 		if (rollback(context.options, transaction, "The workhorse start profile was not valid.")) {
@@ -296,6 +295,7 @@ function commitStart(
 		context.operationId,
 		started.threadId,
 		context.options.checkoutRoot,
+		context.options.profile,
 	);
 	if (!canonical) {
 		throw refuseAsUnknown(
@@ -335,6 +335,7 @@ function currentOwnershipProof(
 			context.operationId,
 			started.threadId,
 			context.options.checkoutRoot,
+			context.options.profile,
 		);
 	if (!canonical) {
 		throw new Error("the current workhorse ownership proof is non-canonical");
@@ -442,10 +443,13 @@ function issueStartOperation(options: CodexWorkhorseStartOptions, paneId: string
  * Build the module that starts exactly one workhorse thread per pane and keeps the snapshot of
  * what happened. Starts are serialised: a second start waits for the first, so two workhorses can
  * never be created for one pane.
- * @param options - The session, epoch store, thread-link, identity and operation authorities.
+ * @param starterOptions - The session, epoch store, thread-link, identity and operation authorities.
  * @returns The workhorse start module.
  */
-function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWorkhorseStart {
+function createCodexWorkhorseStart(
+	starterOptions: CodexWorkhorseStartOptions,
+): CodexWorkhorseStart {
+	const options = { ...starterOptions, profile: captureThreadProfile(starterOptions.profile) };
 	let latest = emptySnapshot();
 	let tail: Promise<void> = Promise.resolve();
 

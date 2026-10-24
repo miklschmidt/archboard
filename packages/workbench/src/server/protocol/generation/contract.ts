@@ -15,7 +15,7 @@ import type { CodexEpochStoreOptions } from "#runtime/store/epoch/contract.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
 import type { CodexRealtimeAdapterOptions } from "#runtime/services/realtime/contract.ts";
-import type { SemanticContextPublisherOptions } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticContextPublisherOptions } from "#runtime/schemas/semantic-context-types.ts";
 import type { CodexThreadContextControllerOptions } from "#runtime/services/thread-context/contract.ts";
 import type { CodexThreadLinkOptions } from "#runtime/rules/thread-link/thread-link.ts";
 import type {
@@ -163,7 +163,10 @@ interface ProductionCodexWorkbenchBindings {
 	>;
 	/** How the generation's tab sessions settle what an ended session was asked. */
 	readonly sessions: ComponentBuilder<
-		Pick<CreateCodexWorkbenchSessionsOptions, "endApprovals" | "shownConversationOf">
+		Pick<
+			CreateCodexWorkbenchSessionsOptions,
+			"endApprovals" | "shownConversationOf" | "resolveCheckout"
+		>
 	>;
 	/** What each component of one tab session is configured with. */
 	readonly tabSession: (

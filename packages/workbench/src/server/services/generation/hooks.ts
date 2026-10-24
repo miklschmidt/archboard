@@ -1,3 +1,4 @@
+import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
 import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
 import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
 import type {
@@ -11,17 +12,14 @@ import {
 	retire,
 	type GenerationOwners,
 } from "#server/services/generation/owners.ts";
-import type {
-	CodexWorkbenchServer,
-	CodexWorkbenchStorage,
-} from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 
 /** An empty SHA-256, which is what an effect-free epoch step hashes to. */
 const EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 /** What building one generation's hooks needs from around it. */
 interface HookContext {
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	/** Where the child keeps what it writes, and the directory it works in. */
 	readonly storage: Pick<CodexWorkbenchStorage, "coordinatorDirectory">;
 	readonly input: CodexWorkbenchGenerationInput;

@@ -12,7 +12,7 @@ import { type CoordinatorToolDispatcher } from "#runtime/protocol/coordinator-to
 import { createCodexCoordinator } from "#runtime/services/coordinator/coordinator.ts";
 import { createCodexSpokenApprovalGate } from "#runtime/services/spoken-approval/gate.ts";
 import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
-import { createSemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
+import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
 import { createCodexThreadContextController } from "#runtime/services/thread-context/controller.ts";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 import { createCodexWorkhorseOperations } from "#runtime/services/workhorse-operations/operations.ts";

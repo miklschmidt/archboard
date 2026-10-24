@@ -1,7 +1,5 @@
-import {
-	createAdditionalContext,
-	createTextUserInput,
-} from "#runtime/rules/instructions/bodies.ts";
+import { createTextUserInput } from "#runtime/rules/host/text-input.ts";
+import { createWorkbenchAdditionalContext } from "#runtime/rules/host/bodies.ts";
 import {
 	CodexWorkhorseOperationsError,
 	type SteerWorkhorseRequest,
@@ -107,7 +105,7 @@ function buildSteerParams(
 			threadId: state.binding.workhorse.threadId,
 			clientUserMessageId: state.operationIdWire,
 			input: [createTextUserInput(request.input)],
-			additionalContext: createAdditionalContext(context),
+			additionalContext: createWorkbenchAdditionalContext(context, runtime.options.contextCodec),
 			expectedTurnId: request.expectedTurnId,
 		} satisfies SteerParams;
 	} catch (error) {

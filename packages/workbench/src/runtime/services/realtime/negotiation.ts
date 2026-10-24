@@ -56,7 +56,7 @@ function settleAnswer(ops: RealtimeSessionOps, session: ActiveRealtimeSession): 
  * @param error - What the start threw.
  */
 function failStart(ops: RealtimeSessionOps, session: ActiveRealtimeSession, error: unknown): void {
-	session.stopCatalogueUpdates?.();
+	session.stopContextInputs?.();
 	if (session.answerSettled) {
 		return;
 	}
@@ -93,7 +93,7 @@ async function beginStart(
 		threadId: session.binding.coordinatorThreadId,
 		realtimeSessionId: session.wireSessionId,
 		sdp,
-		presentation: session.presentation,
+		voice: ops.options.voice.start(session.presentation),
 	});
 	ops.options.trace?.("start_sent", startSizes(params));
 	await ops.options.session.realtimeStart(params);

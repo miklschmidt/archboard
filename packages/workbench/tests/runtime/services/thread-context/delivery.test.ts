@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CodexEpochError } from "#runtime/store/epoch/contract.ts";
-import type { ThreadInjectItemsParams } from "#runtime/rules/instructions/bodies.ts";
+import type { ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
@@ -27,7 +27,7 @@ interface EncodedContextProjection {
 }
 
 function decodePayloadContext(payload: ThreadInjectItemsParams): EncodedContextProjection {
-	return JSON.parse(payload.items[0].content[0].text) as EncodedContextProjection;
+	return JSON.parse(payload.items[0]!.content[0]!.text) as EncodedContextProjection;
 }
 
 describe("codex thread context delivery", () => {

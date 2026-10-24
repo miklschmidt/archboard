@@ -261,9 +261,16 @@ async function createHarness(
 			readyState,
 		} as Generation;
 		adapter = createCodexRealtimeAdapter({
+			voice: {
+				start: () => ({
+					prompt: "Test voice.",
+					delegationAckFiller: true,
+					suppressCoordinatorSpeech: false,
+				}),
+			},
 			session,
 			identity,
-			boardCatalogue: {
+			coordinatorContext: {
 				read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 				subscribe: () => () => {},
 			},

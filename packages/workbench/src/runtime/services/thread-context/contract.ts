@@ -1,17 +1,20 @@
 import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
-import type { ThreadInjectItemsParams } from "#runtime/rules/instructions/bodies.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
+import type { ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkReasonCode,
 	ThreadLinkTarget,
 } from "#runtime/rules/thread-link/contract.ts";
-import type {
-	SemanticContextPublisher,
-	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
+type ContextPublisher = {
+	readonly subscribeSettledChange: (listener: (event: WorkbenchContextEvent) => void) => () => void;
+};
 import type {
 	ChildEpoch,
 	ChildId,
@@ -113,7 +116,7 @@ interface CodexThreadContextDeliveryOptions {
 	readonly feedId: string;
 	/** The clock used by the final synchronous freshness gate before injection. */
 	readonly now: () => number;
-	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
+	readonly publisher: ContextPublisher;
 	readonly session: Pick<CodexSession, "threadInjectItems">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "read" | "classify">;
 	readonly target: CodexThreadContextTarget;
@@ -121,14 +124,17 @@ interface CodexThreadContextDeliveryOptions {
 	readonly epoch: Pick<CodexEpochStore, "assertCurrent">;
 	readonly currentExecution: () => CodexThreadContextExecution | null;
 	/** Supplies the full canonical context; this adapter must not mint identity or proof. */
-	readonly contextForEvent: (event: SettledSemanticChangeEvent) => ArchboardContext;
+	readonly contextForEvent: (event: WorkbenchContextEvent) => WorkbenchExecutionContext;
+	readonly contextCodec: WorkbenchContextCodec;
+	readonly matchesHostContext?: (
+		event: WorkbenchContextEvent,
+		context: WorkbenchExecutionContext,
+	) => boolean;
 }
 
 interface CodexThreadContextDelivery {
 	/** Deliver an event directly, using the same once-only port as the subscription. */
-	readonly deliver: (
-		event: SettledSemanticChangeEvent,
-	) => Promise<CodexThreadContextDeliveryOutcome>;
+	readonly deliver: (event: WorkbenchContextEvent) => Promise<CodexThreadContextDeliveryOutcome>;
 	/** Settled outcomes in first-seen order. */
 	readonly inspect: () => readonly CodexThreadContextDeliveryOutcome[];
 	readonly get: (event: CodexThreadContextEventId) => CodexThreadContextDeliveryOutcome | undefined;
@@ -182,16 +188,16 @@ class CodexThreadContextControllerError extends Error {
 
 interface CodexThreadContextControllerHooks {
 	readonly contextForEvent: (
-		event: SettledSemanticChangeEvent,
+		event: WorkbenchContextEvent,
 		binding: CodexThreadContextBinding,
-	) => ArchboardContext;
+	) => WorkbenchExecutionContext;
 }
 
 interface CodexThreadContextControllerOptions extends Omit<
 	CodexThreadContextDeliveryOptions,
 	"paneId" | "target" | "contextForEvent" | "publisher"
 > {
-	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
+	readonly publisher: ContextPublisher;
 	readonly hooks: CodexThreadContextControllerHooks;
 	/**
 	 * The thread paired with the workhorse this controller serves, when the server

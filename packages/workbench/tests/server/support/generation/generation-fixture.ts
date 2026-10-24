@@ -264,6 +264,7 @@ export function createCodexWorkbenchGenerationFixture(
 		dispose: async () => void events.push("gateway:dispose"),
 	} satisfies CodexWorkbenchComponents["gateway"];
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity: identity.identity,
 		transport,
 		session,

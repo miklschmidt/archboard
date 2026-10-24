@@ -1,8 +1,13 @@
+import {
+	archboardContextEvent,
+	archboardContextMatchesEvent,
+} from "#runtime/services/host/archboard-context-match.ts";
+import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
+import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
 // What each owner of one tab session, and of each of its workhorses, is configured with: where it
 // works, what it is bound to, read at the moment it asks, and the context its operations run
 // under.
 
-import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-read";
 import {
 	createCoordinatorCallbackContextPort,
 	createCoordinatorCallbackRealtimePort,
@@ -29,17 +34,17 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 	CodexWorkbenchWorkhorseScope,
 } from "#server/services/sessions/sessions.ts";
-import type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 import {
 	readyDelegatedWorkhorse,
 	workhorseOfCheckout,
 } from "#server/services/sessions/checkouts.ts";
-import type { SemanticContextPublisherOptions } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticContextPublisherOptions } from "#runtime/schemas/semantic-context-types.ts";
 
 /** What building one tab session's bindings needs from around it. */
 interface SessionBindingContext {
 	readonly scope: CodexWorkbenchTabSessionScope;
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
 	/** The directory of its own the coordinator works in, which is no checkout (ADR 0050). */
 	readonly coordinatorDirectory: string;
@@ -50,7 +55,7 @@ interface SessionBindingContext {
 /** What building one workhorse's bindings needs from around it. */
 interface WorkhorseBindingContext {
 	readonly scope: CodexWorkbenchWorkhorseScope;
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
 }
 
@@ -79,7 +84,7 @@ interface WorkhorseOwner {
 function provenWorkhorseTarget(
 	owner: WorkhorseOwner,
 	workhorse: CodexWorkbenchWorkhorseComponents["workhorse"],
-): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
+): Parameters<ArchboardWorkbenchServer["contextForOperation"]>[0] {
 	const snapshot = workhorse.snapshot();
 	const { childId, epoch, threadId } = snapshot;
 	const target = { childId, epoch, threadId };
@@ -117,51 +122,8 @@ function voiceBindings(
 		 * @returns The realtime binding.
 		 */
 		realtime: (created) => ({
-			boardCatalogue: {
-				/**
-				 * The catalogue of the vault of the pane the session presents through.
-				 * @returns The byte-bounded JSON inventory, which names that vault.
-				 */
-				read: () => readBoardCatalogue(server.presentingVaultFor(scope.id)),
-				/**
-				 * Watch the vault the session presents through for boards appearing and disappearing,
-				 * and follow it when a pane's report moves it into another vault.
-				 * @param onChange Receives catalogue invalidations.
-				 * @param onError Receives filesystem watch failures.
-				 * @returns Stops the watcher.
-				 */
-				subscribe: (onChange, onError) => {
-					let watched: string | null = null;
-					let unwatch: (() => void) | null = null;
-					/**
-					 * Watch the vault the session presents through now, when it is another one.
-					 * @returns Whether the watched vault changed.
-					 */
-					const follow = (): boolean => {
-						const vault = server.presentingVaultFor(scope.id);
-						if (vault === watched) return false;
-						unwatch?.();
-						watched = vault;
-						unwatch = vault === null ? null : watchBoardCatalogue(onChange, onError, vault);
-						return true;
-					};
-					follow();
-					/** A pane reported: another vault's catalogue is news. */
-					const reported = (): void => {
-						if (follow()) onChange();
-					};
-					const semantic = requireCreated(created, "semanticPublisher");
-					const stops = [
-						semantic.subscribePaneFocus(reported),
-						semantic.subscribePaneSelection(reported),
-					];
-					return () => {
-						for (const stop of stops) stop();
-						unwatch?.();
-					};
-				},
-			},
-			presentationChanges: { subscribe: server.narrationChangesFor(scope.id) },
+			coordinatorContext: server.host.coordinatorContextFor(scope.id),
+			voice: server.host.voiceFor(scope.id),
 			trace: scope.state.voiceTrace.note,
 			/**
 			 * The semantic brief a voice session opens with, read fresh and stated against that session.
@@ -205,7 +167,10 @@ function voiceBindings(
 		 * It inherits nothing: every child epoch starts its coordinators afresh (ADR 0019).
 		 * @returns The coordinator binding.
 		 */
-		coordinator: () => ({ workingDirectory: context.coordinatorDirectory }),
+		coordinator: () => ({
+			workingDirectory: context.coordinatorDirectory,
+			profile: server.host.instructions.coordinator,
+		}),
 	};
 }
 
@@ -217,7 +182,7 @@ function voiceBindings(
 function coordinatorBindings(
 	context: ScopedBindingContext,
 ): Pick<CodexWorkbenchSessionBindings, "spokenApproval" | "coordinatorTools" | "coordinatorCall"> {
-	const { shared, scope } = context;
+	const { shared, scope, server } = context;
 	const { state } = scope;
 	return {
 		/**
@@ -275,7 +240,11 @@ function coordinatorBindings(
 			 * @returns The workhorse, or null.
 			 */
 			workhorseFor: (checkout) => {
-				const workhorse = workhorseOfCheckout(scope.workhorses(), checkout);
+				const workhorse = workhorseOfCheckout(
+					scope.workhorses(),
+					checkout,
+					server.host.resolveCheckout,
+				);
 				if (workhorse === null) {
 					return null;
 				}
@@ -308,7 +277,11 @@ function coordinatorBindings(
 			 * @returns Whatever the operation produced.
 			 */
 			run: async (request, operation) => {
-				await readyDelegatedWorkhorse(request, scope.workhorse);
+				await readyDelegatedWorkhorse(
+					request,
+					scope.workhorse,
+					context.server.host.resolveCheckout,
+				);
 				state.currentCoordinatorCall = request.logicalCall;
 				try {
 					return await operation();
@@ -393,11 +366,12 @@ function callbackBindings(
 			 */
 			canvas: () => {
 				const canvas = server.canvasFor(scope.id);
-				const recording = (created.realtime?.presentation()?.recording ?? null) !== null;
+				const recording = isArchboardRecording(created.realtime?.presentation());
 				return recording ? { ...canvas, narrated: null } : canvas;
 			},
 			coordinatorContext: createCoordinatorCallbackContextPort(session),
 			coordinatorTurn: createOutcomeReportPort({
+				contextCodec: server.host.contextCodec,
 				session,
 				/**
 				 * Mint the operation identity an outcome report runs under.
@@ -418,7 +392,7 @@ function callbackBindings(
 					if (voiced === null) {
 						throw new Error("An outcome report has no workhorse voice is bound to.");
 					}
-					return server.contextForOperation(
+					return server.host.contextForOperation(
 						provenWorkhorseTarget(
 							{ tabSessionId: scope.id, checkout: voiced.checkout, key: voiced.key },
 							voiced.components.workhorse,
@@ -430,7 +404,7 @@ function callbackBindings(
 				 * Whether a recording holds the voice, which nobody hears an outcome through.
 				 * @returns True while the live session is a recording's.
 				 */
-				recording: () => (created.realtime?.presentation()?.recording ?? null) !== null,
+				recording: () => isArchboardRecording(created.realtime?.presentation()),
 			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {
@@ -483,7 +457,10 @@ function createWorkhorseBindings(
 		 * The checkout a turn of this workhorse runs in (ADR 0050).
 		 * @returns The workhorse binding.
 		 */
-		workhorse: () => ({ checkoutRoot: scope.checkout }),
+		workhorse: () => ({
+			checkoutRoot: scope.checkout,
+			profile: server.host.instructions.workhorse,
+		}),
 		/**
 		 * Where this workhorse's board news is published from: the changes of its checkout's boards
 		 * that its tab hears.
@@ -496,6 +473,18 @@ function createWorkhorseBindings(
 		 * @returns The delivery binding.
 		 */
 		semanticDelivery: (created) => ({
+			contextCodec: server.host.contextCodec,
+			/**
+			 * Compare the captured Archboard payload with the event before core authority gates allow delivery.
+			 * @param event The source event with its identity and freshness.
+			 * @param capturedContext The immutable context to compare.
+			 * @returns Whether the stated condition holds.
+			 */
+			matchesHostContext: (event, capturedContext) =>
+				archboardContextMatchesEvent(
+					archboardContextEvent(event),
+					ArchboardContextSchema.parse(capturedContext),
+				),
 			feedId: publisher.feedId,
 			/**
 			 * The coordinator paired with this workhorse.
@@ -523,7 +512,7 @@ function createWorkhorseBindings(
 				 * @param event The settled change.
 				 * @returns The context.
 				 */
-				contextForEvent: (event) => server.contextForEvent(event),
+				contextForEvent: (event) => server.contextForEvent(archboardContextEvent(event)),
 			},
 			/**
 			 * Close the epoch store, which retires the epoch itself.
@@ -560,6 +549,7 @@ function createWorkhorseBindings(
 		 * @returns The operations binding.
 		 */
 		operations: (created) => ({
+			contextCodec: server.host.contextCodec,
 			/**
 			 * The operation binding the coordinator and this workhorse share.
 			 * @returns The binding, or null while they share none.
@@ -581,7 +571,7 @@ function createWorkhorseBindings(
 			 * @returns The context.
 			 */
 			contextFor: (operation) =>
-				server.contextForOperation(
+				server.host.contextForOperation(
 					provenWorkhorseTarget(
 						{ tabSessionId: tab.id, checkout: scope.checkout, key: scope.key },
 						requireCreated(created, "workhorse"),

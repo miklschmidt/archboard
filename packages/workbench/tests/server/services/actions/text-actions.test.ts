@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
@@ -43,6 +44,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		turnInterrupt: async () => ({}) as never,
 	};
 	const actions = createServerCanonicalTextActions({
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		identity: authorities,
 		session,
 		contextForOperation: (action, operation) => {
@@ -164,6 +166,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	let observedThreadId = threadId;
 	let observedStatus = "active";
 	const actions = createServerCanonicalTextActions({
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		identity: authorities,
 		session: {
 			turnStart: async () => {
@@ -243,6 +246,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	let steerCalls = 0;
 	const actions = createServerCanonicalTextActions({
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		identity: authorities,
 		session: {
 			turnStart: async () => ({}) as never,

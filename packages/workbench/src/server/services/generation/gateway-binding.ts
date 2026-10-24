@@ -72,12 +72,19 @@ function createGatewayBinding(
 			 * @param operation The operation the command is.
 			 * @returns The context.
 			 */
+			contextCodec: server.host.contextCodec,
+			/**
+			 * Read context for the exact operation and execution authority supplied by the core.
+			 * @param commandContext The browser command lease and its exact target.
+			 * @param operation The pending operation identity.
+			 * @returns The canonical context of this exact operation.
+			 */
 			contextForOperation: (commandContext, operation) => {
 				const threadId = commandContext.link.threadId;
 				if (threadId === null) {
 					throw new Error("A browser command has no executable thread link.");
 				}
-				return server.contextForOperation(
+				return server.host.contextForOperation(
 					{
 						tabSessionId: commandContext.tabSessionId,
 						checkout: commandContext.checkout,

@@ -1,3 +1,4 @@
+import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import type {
 	CodexEpochStore,
 	EpochExecutionProof,
@@ -72,6 +73,7 @@ interface CodexWorkhorseStartOptions {
 	readonly identity: WorkhorseIdentityPort;
 	readonly operation: WorkhorseOperationPort;
 	readonly checkoutRoot: string;
+	readonly profile: WorkbenchThreadProfile;
 }
 
 type WorkhorseLifecycleState = "unbound" | "starting" | "ready" | "inspect_only" | "failed";
@@ -85,7 +87,7 @@ interface WorkhorseStartFacts {
 	readonly runtimeWorkspaceRoots: readonly string[];
 	readonly historyMode: "paginated";
 	readonly source: typeof CODEX_SESSION_THREAD_SOURCE;
-	readonly threadSource: "archboard";
+	readonly threadSource: string;
 	readonly model: string;
 	readonly modelProvider: string;
 	readonly serviceTier: string | null;

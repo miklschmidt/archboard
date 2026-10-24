@@ -1,9 +1,9 @@
 import type { DynamicWaitEvent } from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
 import { CODEX_WAIT_TARGET_POLL_MS } from "@archboard/timing";
 import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { CodexWorkbenchServer } from "#server/services/owner/production.ts";
+import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
 
-type WaitInput = Parameters<CodexWorkbenchServer["waitForTargets"]>[0];
+type WaitInput = Parameters<ArchboardWorkbenchServer["waitForTargets"]>[0];
 type TargetThreadId = WaitInput["owner"]["sortedTargetThreadIds"][number];
 
 /**

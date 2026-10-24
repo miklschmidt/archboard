@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -293,6 +294,7 @@ export function buildFixture(
 		} as unknown as ThreadLinkClassification;
 	};
 	const options: WorkhorseOperationOptions = {
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		session,
 		queue: queue as CodexWorkhorseQueue<OperationId>,
 		epoch,

@@ -1,3 +1,4 @@
+import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinator,
@@ -58,10 +59,11 @@ interface StagedCoordinator {
  * carried a voice session (TASK-301). Calls are serialised, so two of them can never start two
  * coordinators at once. Other conversations keep coordinators of their own in the same epoch
  * (TASK-373), so only the starts this module made are its evidence.
- * @param options - The session, epoch store, identity authority and durable state.
+ * @param starterOptions - The session, epoch store, identity authority and durable state.
  * @returns The coordinator module.
  */
-export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexCoordinator {
+export function createCodexCoordinator(starterOptions: CodexCoordinatorOptions): CodexCoordinator {
+	const options = { ...starterOptions, profile: captureThreadProfile(starterOptions.profile) };
 	if (options.workingDirectory.length === 0) {
 		throw new CodexCoordinatorError(
 			"invalid_input",
@@ -270,7 +272,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	 */
 	function reviewedHashes(): CoordinatorReviewHashes {
 		try {
-			return reviewedCoordinatorHashes("");
+			return reviewedCoordinatorHashes("", options.profile);
 		} catch (error) {
 			const failure = coordinatorError(
 				error,

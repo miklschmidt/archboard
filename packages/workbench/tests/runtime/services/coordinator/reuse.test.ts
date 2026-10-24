@@ -1,3 +1,4 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, test } from "bun:test";
 
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
@@ -162,6 +163,7 @@ describe("coordinator candidate reuse and replacement", () => {
 			epoch: fixtureValue.epoch,
 			identity: fixtureValue.authority,
 			workingDirectory: WORKING_DIRECTORY,
+			profile: ARCHBOARD_INSTRUCTIONS.coordinator,
 		});
 		const first = fixtureValue.coordinator;
 		fixtureValue.session.notify = (event) => {

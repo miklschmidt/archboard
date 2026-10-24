@@ -1,7 +1,5 @@
-import type {
-	SemanticCursor,
-	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
+type SemanticCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
 import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextEventId,
@@ -31,7 +29,7 @@ function eventKey(event: CodexThreadContextEventId): string {
  * @param event - The settled semantic change.
  * @returns The frozen feed identity and sequence.
  */
-function eventId(event: SettledSemanticChangeEvent): CodexThreadContextEventId {
+function eventId(event: WorkbenchContextEvent): CodexThreadContextEventId {
 	return Object.freeze({ feedId: event.feedId, sequence: event.cursor?.sequence ?? -1 });
 }
 
@@ -43,7 +41,7 @@ function eventId(event: SettledSemanticChangeEvent): CodexThreadContextEventId {
  * @returns `stale_cursor` when the identities differ, otherwise null.
  */
 function eventIdentityReason(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	expected: CodexThreadContextEventId,
 ): CodexThreadContextDeliveryReason | null {
 	const current = eventId(event);

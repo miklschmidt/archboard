@@ -1,3 +1,4 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import {
 	CODEX_PROTOCOL_VERSION,
 	type ServerNotificationPayloads,
@@ -362,6 +363,7 @@ function fixture(options: FixtureOptions = {}): Fixture {
 		epoch,
 		identity: authority,
 		workingDirectory: WORKING_DIRECTORY,
+		profile: ARCHBOARD_INSTRUCTIONS.coordinator,
 	});
 	session.notify = coordinator.onNotification;
 	return { authority, epoch, link, session, coordinator };

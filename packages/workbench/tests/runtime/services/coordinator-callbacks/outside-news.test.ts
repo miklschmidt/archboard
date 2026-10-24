@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
+import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
 import {
 	close,
 	harness,

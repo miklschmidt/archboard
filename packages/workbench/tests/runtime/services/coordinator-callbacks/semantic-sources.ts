@@ -9,7 +9,7 @@ import {
 	type SemanticContextPublisher,
 	type SettledChangeSourceEvent,
 	type SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/api/semantic-context.ts";
 import type { Identities } from "#tests/runtime/services/coordinator-callbacks/support.ts";
 
 function semanticInput(ids: Identities, active: boolean): SemanticContextInput {

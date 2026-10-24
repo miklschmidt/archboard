@@ -1,3 +1,4 @@
+import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import type {
 	CodexEpochStore,
 	EpochSnapshot,
@@ -152,6 +153,7 @@ interface CodexCoordinatorOptions {
 	readonly identity: CoordinatorIdentityPort;
 	/** The directory of its own the coordinator works in. It is no checkout (ADR 0050). */
 	readonly workingDirectory: string;
+	readonly profile: WorkbenchThreadProfile;
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 

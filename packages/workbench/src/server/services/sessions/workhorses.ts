@@ -10,7 +10,7 @@
 // identity leaves it as it is, linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { SemanticContextPublisher } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "#runtime/services/thread-context/contract.ts";
 import type { CodexWorkhorseOperations } from "#runtime/protocol/workhorse-operations/contract.ts";

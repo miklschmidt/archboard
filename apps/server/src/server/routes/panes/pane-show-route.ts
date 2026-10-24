@@ -33,7 +33,7 @@ import {
 	sendToPane,
 	semanticPaneContextFor,
 } from "@archboard/workbench/panes";
-import type { SemanticAgentSwitch } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticAgentSwitch } from "@archboard/workbench/semantic-context";
 import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { arrivedOnBoard, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
 import { movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
