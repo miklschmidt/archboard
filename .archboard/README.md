@@ -76,7 +76,7 @@ by having no upward link, which is why the breadcrumb exists.
 | Service | `Command interface`       | CLI application modules and its command groups                 |
 | Service | `Archboard server`        | Archboard server modules and the one write boundary            |
 | Service | `Browser application`     | Browser application modules                                    |
-| Service | `Agent workbench`         | Codex integration inside the server                            |
+| Service | `Agent workbench`         | Shared Codex sessions and Archboard integration                |
 | Service | `Skill evaluation`        | The harness that measures the consumer skill                   |
 | Module  | `Command dispatch`        | Dispatch and invocation lifetime                               |
 | Module  | `Archboard server routes` | The route handlers, and what each one reaches                  |
@@ -91,9 +91,8 @@ by having no upward link, which is why the breadcrumb exists.
 | Module  | `Voice coordinator`       | The separate thread voice attaches to                          |
 
 Here, service-level boards explain one application or explicitly named subsystem;
-they do not imply separate deployments. The workbench lives inside the Archboard
-server, while Codex app-server runs as its private child, and the skill
-evaluation harness is a developer tool a person starts. Module boards expand
+they do not imply separate deployments. Archboard hosts the reusable workbench in its server. Another host can use the same package.
+Codex app-server runs as the host's private child. The skill evaluation harness is a developer tool a person starts. Module boards expand
 the central implementation paths rather than inventorying every source file.
 Each board includes a short walkthrough; some also offer focused views.
 
