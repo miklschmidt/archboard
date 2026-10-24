@@ -55,15 +55,23 @@ async function withEnvironment(
 	}
 }
 
+/**
+ * A Git command in a repository, committing as a test author.
+ * @param cwd The repository.
+ * @param args Git's arguments.
+ * @returns Its exit status.
+ */
+function git(cwd: string, ...args: string[]): number | null {
+	return spawnSync(
+		"git",
+		["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args],
+		{ cwd },
+	).status;
+}
+
 test("a fetch in the environment of a receive hook fetches the vault into the cache", async () => {
 	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-fetch-hook-")));
 	const remote = path.join(root, "remotes", "owner", "models");
-	const git = (cwd: string, ...args: string[]) =>
-		spawnSync(
-			"git",
-			["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args],
-			{ cwd },
-		).status;
 	fs.mkdirSync(path.join(remote, ".archboard", "vault"), { recursive: true });
 	fs.writeFileSync(path.join(remote, ".archboard", "vault", "config.yaml"), "{}\n");
 	expect(git(remote, "init", "-q", "-b", "main")).toBe(0);
