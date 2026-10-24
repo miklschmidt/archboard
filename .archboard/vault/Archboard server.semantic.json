@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 289,
+	"version": 290,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-24T14:32:10.294Z",
+	"updatedAt": "2026-10-24T15:04:49.783Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -111530,7 +111530,7 @@
 		{
 			"id": "ikFyiS12",
 			"name": "TASK-498",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "PexyuMLv",
 			"summary": "Archboard server modules and the one write boundary",
 			"documents": [
@@ -115026,7 +115026,7 @@
 		{
 			"id": "ExVvgeF6",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "ikFyiS12",
 			"summary": "Archboard HTTP and pane services composed with the shared Codex workbench host",
 			"documents": [
@@ -118563,7 +118563,7 @@
 			}
 		}
 	],
-	"current": "ikFyiS12",
+	"current": "ExVvgeF6",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -118858,6 +118858,12 @@
 			"from": "PexyuMLv",
 			"at": "2026-10-18T16:06:04.524Z",
 			"reason": "The code check holds each variant's document references to the files at their version (ADR 0054)"
+		},
+		{
+			"variant": "ExVvgeF6",
+			"from": "ikFyiS12",
+			"at": "2026-10-24T15:04:49.783Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "wAHh0HTa",
 	"name": "Codex session",
 	"level": "module",
-	"version": 38,
+	"version": 39,
 	"createdAt": "2026-09-12T22:28:20.428Z",
-	"updatedAt": "2026-10-24T14:30:21.636Z",
+	"updatedAt": "2026-10-24T15:04:48.937Z",
 	"views": [
 		{
 			"id": "QJ4WHuKs",
@@ -2977,7 +2977,7 @@
 		{
 			"id": "dlqsT0DB",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "wGMnT2kK",
 			"summary": "Codex session: every exchange of the session as a flow with decisions, read as a sequence and a flowchart",
 			"content": {
@@ -4222,7 +4222,7 @@
 		{
 			"id": "K6xFMtAG",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "dlqsT0DB",
 			"summary": "Private Codex process environment, transport, typed requests, and shutdown",
 			"documents": [
@@ -5471,7 +5471,7 @@
 			}
 		}
 	],
-	"current": "dlqsT0DB",
+	"current": "K6xFMtAG",
 	"adoptions": [
 		{
 			"variant": "QfFFXHyU",
@@ -5508,6 +5508,12 @@
 			"from": "wGMnT2kK",
 			"at": "2026-10-16T02:58:37.420Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "K6xFMtAG",
+			"from": "dlqsT0DB",
+			"at": "2026-10-24T15:04:48.937Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	]
 }

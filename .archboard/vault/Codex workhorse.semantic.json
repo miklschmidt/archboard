@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 86,
+	"version": 87,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-24T14:30:21.047Z",
+	"updatedAt": "2026-10-24T15:04:48.555Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -7959,7 +7959,7 @@
 		{
 			"id": "VbwPSZYa",
 			"name": "TASK-482.07",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Mlc6ZywB",
 			"summary": "Calls become flows, drawn by sequence and flowchart views",
 			"content": {
@@ -15380,7 +15380,7 @@
 		{
 			"id": "wgFXEHS7",
 			"name": "TASK-517",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "VbwPSZYa",
 			"summary": "Checkout workhorse creation, commands, queues, approvals, and coordinator reporting",
 			"documents": [
@@ -17793,7 +17793,7 @@
 			}
 		}
 	],
-	"current": "VbwPSZYa",
+	"current": "wgFXEHS7",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
@@ -17854,6 +17854,12 @@
 			"from": "Mlc6ZywB",
 			"at": "2026-10-16T02:58:37.833Z",
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
+		},
+		{
+			"variant": "wgFXEHS7",
+			"from": "VbwPSZYa",
+			"at": "2026-10-24T15:04:48.555Z",
+			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
 		}
 	],
 	"shelvings": [
