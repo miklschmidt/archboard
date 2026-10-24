@@ -4,8 +4,8 @@
 // `delete.test.ts`) hold what the delete removes and refuses, a holder of the
 // board and the drill-downs that do and do not keep it; this owner holds the
 // command around it: the exit status of each refusal, the answer's tracked
-// embeds, the file gone, what a pane on the board is told, and a new board
-// taking the name afterwards.
+// embeds, the file gone and what a pane on the board is told. The store owner
+// `delete.test.ts` holds that a new board can take the freed names.
 
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -161,14 +161,5 @@ test("a delete removes the board, tells its pane, answers its tracked embeds, an
 		});
 	} finally {
 		await pane.close();
-	}
-
-	for (const name of ["Ingest", "Old ingest"]) {
-		const created = cli(
-			["semantic", "new", name, "--doing", "drawing a new board under a freed name"],
-			JSON.stringify({ level: "system", nodes: [{ name: "Stream", kind: "module" }] }),
-		);
-		expect(created.status, created.stderr).toBe(0);
-		expect(holds(name)).toBeTrue();
 	}
 }, 120_000);

@@ -155,7 +155,7 @@ function takenInTarget(
 		other?.id === board.id
 			? `The vault ${target} already has a copy of this board as "${location.name}" at version ` +
 					`${other.version}, which was written or renamed after it came there, and the move would ` +
-					"write over it or leave two copies. Discard the copy you do not want first. Nothing " +
+					"write over it or leave two copies. Delete the copy you do not want with `archboard semantic delete` first. Nothing " +
 					"was written."
 			: `The vault ${target} already has the board "${location.name}", which answers to ` +
 					`"${board.name}" or to a name the board had before. A name opens one board, so the move ` +
