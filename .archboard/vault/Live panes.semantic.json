@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 68,
+	"version": 69,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-24T15:07:15.338Z",
+	"updatedAt": "2026-10-24T15:07:39.030Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -25,7 +25,8 @@
 					"UNYvWHmE",
 					"bEBbXPKc",
 					"K385etzX",
-					"Qyu8T7UT"
+					"Qyu8T7UT",
+					"Bfh2rRfX"
 				],
 				"edges": [],
 				"flows": []
