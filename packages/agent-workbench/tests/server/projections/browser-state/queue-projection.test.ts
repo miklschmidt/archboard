@@ -137,11 +137,7 @@ function projectedQueue(
 	status: LinkStatus = "idle",
 	approvals: BrowserProjectionInput["approvals"] = [],
 ) {
-	const result = projectCodexBrowserState(
-		model,
-		identity.decoder,
-		projectionInput(queue, status, approvals),
-	);
+	const result = projectCodexBrowserState(model, projectionInput(queue, status, approvals));
 	if (result.tag !== "projected") {
 		throw new Error(`queue projection was refused: ${result.message}`);
 	}

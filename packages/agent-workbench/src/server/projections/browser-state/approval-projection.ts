@@ -457,7 +457,7 @@ function projectElicitation(
 ): BrowserApproval {
 	const { params } = request;
 	if (params.mode === "openai/userVerification") {
-		// Archboard has no verification provider, so the challenge is shown as a form nobody can
+		// This workbench has no verification provider, so the challenge is shown as a form nobody can
 		// fill: the person reads what was asked and can only turn it down.
 		return {
 			...envelope,

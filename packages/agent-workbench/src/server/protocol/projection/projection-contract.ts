@@ -1,3 +1,6 @@
+import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserSchemas } from "#shared/schemas/browser/snapshot.ts";
+
 import type {
 	BrowserAccount,
 	BrowserCommandLease,
@@ -11,14 +14,7 @@ import type {
 	BrowserVoiceContext,
 	BrowserWorkhorses,
 } from "#shared/schemas/browser/snapshot.ts";
-import type {
-	BrowserCommandId,
-	ChildEpoch,
-	ChildId,
-	OperationId,
-	ThreadId,
-	TurnId,
-} from "@archboard/codex-app-server/identity";
+import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
@@ -29,7 +25,6 @@ import type {
 	DeepReadonly,
 	ItemApprovalIdentity,
 } from "#runtime/services/approvals/contract.ts";
-import type { DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type {
 	SessionQueuedSubmission,
 	SessionResponsePayloads,
@@ -39,6 +34,12 @@ import type {
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
 import type { RealtimeTranscriptRecord } from "#shared/protocol/realtime-contract.ts";
 import type { SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
+
+/** The schemas that project and parse the browser state. */
+type BrowserProjectionModel = Pick<
+	BrowserSchemas,
+	"BrowserSnapshotSchema" | "BrowserSpokenApprovalSchema"
+>;
 
 interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";
@@ -71,13 +72,13 @@ interface CodexSettingsProjectionInput {
 }
 
 /**
- * One authoritative queued submission, with the Archboard operation that queued
- * it when Archboard queued it.
+ * One authoritative queued submission, with the operation that queued
+ * it when this workbench queued it.
  *
  * The queue port sets a submission's `clientUserMessageId` to the serialized
  * OperationId on every add it makes, so the composition root can recover the
  * operation from the authoritative list and hand it over here. A null operation
- * is a submission Archboard did not queue, and this pane has no authority to
+ * is a submission this workbench did not queue, and this pane has no authority to
  * reorder it.
  */
 interface CodexQueuedSubmissionProjectionInput extends Pick<
@@ -296,24 +297,6 @@ interface CodexVoiceProjectionInput {
 	>[];
 }
 
-interface DynamicApprovalOwnerBinding {
-	readonly commandId: BrowserCommandId;
-	readonly paneId: string;
-	readonly capturedLink: {
-		readonly threadId: ThreadId;
-		readonly childId: ChildId;
-		readonly epoch: ChildEpoch;
-	};
-}
-
-/** The dynamic owner exposes authoritative state; browser presentation is projected elsewhere. */
-type DynamicApprovalOwnerRequest = DeepReadonly<DynamicToolApprovalRequest>;
-
-interface DynamicApprovalOwnerView {
-	readonly request: DynamicApprovalOwnerRequest;
-	readonly binding: DynamicApprovalOwnerBinding;
-}
-
 interface BrowserProjectionInput {
 	readonly readiness: BrowserReadiness;
 	readonly account: BrowserAccountProjectionInput;
@@ -327,7 +310,7 @@ interface BrowserProjectionInput {
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];
 	readonly approvals: readonly ApprovalOwnerView[];
-	readonly dynamicApprovals: readonly DynamicApprovalOwnerView[];
+	readonly dynamicApprovals: readonly BrowserDynamicApproval[];
 	readonly semantic: CodexSemanticProjectionInput;
 	readonly coordinator: CodexCoordinatorProjectionInput;
 	readonly voice: CodexVoiceProjectionInput;
@@ -350,6 +333,7 @@ type BrowserProjectionResult =
 type BrowserOwnerProjection = Omit<BrowserProjectionInput, "threadLink" | "lease" | "operation">;
 
 export {
+	type BrowserProjectionModel,
 	type CodexAccountProjectionInput,
 	type BrowserAccountProjectionInput,
 	type CodexSettingsProjectionInput,
@@ -364,9 +348,6 @@ export {
 	type CodexSemanticProjectionInput,
 	type CodexCoordinatorProjectionInput,
 	type CodexVoiceProjectionInput,
-	type DynamicApprovalOwnerBinding,
-	type DynamicApprovalOwnerRequest,
-	type DynamicApprovalOwnerView,
 	type BrowserProjectionInput,
 	type BrowserProjectionResult,
 	type BrowserOwnerProjection,

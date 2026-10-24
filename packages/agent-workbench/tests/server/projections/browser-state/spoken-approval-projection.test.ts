@@ -193,7 +193,6 @@ function project(
 	const model = createCodexBrowserModel(authorities);
 	const result = projectCodexBrowserState(
 		model,
-		authorities.identity.decoder,
 		projectionInput(authorities, approval, spokenApproval, assistantAfterPrompt),
 	);
 	expect(result.tag).toBe("projected");

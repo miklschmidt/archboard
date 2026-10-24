@@ -1,4 +1,4 @@
-import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
+import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	BrowserOwnerProjection,
 	CodexQueueProjectionInput,
@@ -12,7 +12,7 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 	CodexWorkbenchWorkhorseState,
 } from "#server/services/sessions/sessions.ts";
-import type { ServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
+import type { WorkbenchDomainApprovals } from "#server/protocol/projection/domain-approvals.ts";
 import type { ServerTimelineOwner, TimelineTarget } from "#server/projections/timeline/timeline.ts";
 import { projectServerVoiceContext } from "#server/projections/browser-state/voice-context.ts";
 import {
@@ -53,7 +53,9 @@ interface ServerOwnerProjectionInput {
 	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state" | "workhorses">;
 	/** The workhorse of the shown checkout, or null while that checkout has none. */
 	readonly workhorse: Pick<CodexWorkbenchWorkhorse, "components" | "state"> | null;
-	readonly dynamicApprovals: ServerDynamicApprovalOwner;
+	readonly dynamicApprovals: WorkbenchDomainApprovals | null;
+	/** Host presentation facts for the active voice session. */
+	readonly recording?: (presentation: BrowserVoicePresentation | null) => boolean;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
 	/** Reads the voice coordinator's thread, which is not any pane's link. */
@@ -280,6 +282,15 @@ function coordinatorTarget(
 }
 
 /**
+ * Read the host's recording fact for the active voice presentation.
+ * @param input The owners and host policy.
+ * @returns True when the host identifies a recording.
+ */
+function recordingFor(input: ServerOwnerProjectionInput): boolean {
+	return input.recording?.(input.session.components.realtime.presentation()) ?? false;
+}
+
+/**
  * One complete snapshot of the workbench as one pane is shown it, read from
  * the live owners rather than from anything the adapter stored.
  * @param input The owners, the cached facts, and the pane-side owners.
@@ -293,7 +304,7 @@ function readBrowserOwnerProjection(
 	const { dynamicApprovals, state } = input;
 	const { components } = input.session;
 	if (context.lease?.state === "active") {
-		dynamicApprovals.bindLease(context.tabSessionId, context.paneId, context.lease.commandId);
+		dynamicApprovals?.bindLease(context.tabSessionId, context.paneId, context.lease.commandId);
 	}
 	const coordinator = components.coordinator.snapshot();
 	const owned = workhorsePanels(input.workhorse, context);
@@ -326,7 +337,7 @@ function readBrowserOwnerProjection(
 		queue: owned.queue,
 		settings: [...owned.settings, ...coordinatorSettings(coordinator)],
 		approvals: visibleApprovalViews(input.approvals, context.tabSessionId, context.checkout),
-		dynamicApprovals: dynamicApprovals.pending(context.tabSessionId),
+		dynamicApprovals: dynamicApprovals?.pending(context.tabSessionId) ?? [],
 		semantic: owned.semantic,
 		coordinator: {
 			kind: "codex_coordinator",
@@ -340,7 +351,7 @@ function readBrowserOwnerProjection(
 			kind: "codex_voice",
 			mediaReady: context.mediaReady,
 			generation: realtimeGeneration,
-			recording: isArchboardRecording(components.realtime.presentation()),
+			recording: recordingFor(input),
 			coordinatorState: coordinator.state,
 			transcript: components.realtime.transcript(),
 		},

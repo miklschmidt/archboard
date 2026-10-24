@@ -5,9 +5,9 @@ import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
-import { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+import { createCodexWaitGraph } from "@archboard/agent-workbench/runtime";
 import { createServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
-import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+import { parseTabSessionId } from "@archboard/agent-workbench/server";
 
 /** The tab session every dynamic caller here belongs to. */
 const TAB_SESSION = parseTabSessionId("tab-one")!;
