@@ -1,4 +1,4 @@
-import { createTextUserInput } from "#runtime/rules/host/text-input.ts";
+import { createTextUserInput } from "@archboard/agent-workbench/runtime";
 import path from "node:path";
 import { z } from "zod";
 

@@ -1,6 +1,6 @@
-import type { EpochExecutionProof } from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
-import type { ThreadLinkEpochProof } from "#runtime/rules/thread-link/contract.ts";
+import type { EpochExecutionProof } from "@archboard/agent-workbench/runtime";
+import type { EpochOperationRecord } from "@archboard/agent-workbench/runtime";
+import type { ThreadLinkEpochProof } from "@archboard/agent-workbench/runtime";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,

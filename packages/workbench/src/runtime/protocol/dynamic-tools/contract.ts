@@ -2,7 +2,7 @@ import type {
 	CodexEpochStore,
 	EpochExecutionProof,
 	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
+} from "@archboard/agent-workbench/runtime";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { CodexSession, SessionThread } from "@archboard/codex-app-server/session";
 import type {
@@ -10,8 +10,8 @@ import type {
 	ThreadLinkClassification,
 	ThreadLinkSource,
 	ThreadLinkTarget,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { CodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+} from "@archboard/agent-workbench/runtime";
+import type { CodexWaitGraph } from "@archboard/agent-workbench/runtime";
 import type {
 	CodexTransport,
 	DynamicServerRequest,

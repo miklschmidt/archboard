@@ -4,12 +4,12 @@ import {
 } from "#runtime/rules/instructions/authored.ts";
 import { canonicalContext, encodeCanonicalContext } from "#runtime/rules/instructions/context.ts";
 import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "#runtime/protocol/thread-tools/manifest.ts";
-import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
+import { createWorkbenchThreadProfile } from "@archboard/agent-workbench/runtime";
 import type {
 	WorkbenchContextCodec,
 	WorkbenchExecutionContext,
-} from "#runtime/protocol/host/context.ts";
-import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
+} from "@archboard/agent-workbench/runtime";
+import type { WorkbenchInstructions } from "@archboard/agent-workbench/runtime";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
 
 const ARCHBOARD_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({

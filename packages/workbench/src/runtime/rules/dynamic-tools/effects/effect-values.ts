@@ -3,7 +3,7 @@ import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
 	type DynamicApprovalCanonicalEffect,
-} from "#shared/schemas/dynamic-approval/approval.ts";
+} from "@archboard/agent-workbench/contract";
 import {
 	CodexDynamicToolsError,
 	type DynamicApprovalIdentity,

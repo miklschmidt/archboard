@@ -9,21 +9,21 @@ import {
 	ARCHBOARD_WORKHORSE_TOOL_NAMES,
 	assertCanonicalManifest,
 	verifyCoordinatorManifestIntegrity,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	CODEX_QUEUE_OPERATION_CONTRACTS,
 	CODEX_QUEUE_PARAMETER_SCHEMAS,
 	CODEX_QUEUE_PROTOCOL,
-} from "#runtime/protocol/coordinator-tool-contract/queue-operations.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
-} from "#runtime/protocol/coordinator-tool-contract/contracts.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
 	DynamicToolEnvelopeSchema,
 	DynamicToolResponseSchema,
-} from "#runtime/protocol/coordinator-tool-contract/dynamic-tool-envelopes.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	InspectWorkhorseResultSchema,
 	DelegateToWorkhorseResultSchema,
@@ -32,7 +32,7 @@ import {
 	SteerWorkhorseResultSchema,
 	StopWorkhorsesResultSchema,
 	parseCoordinatorToolResult,
-} from "#runtime/protocol/coordinator-tool-contract/tool-results.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	ManageWorkhorseQueueInputSchema,
 	QueueAddInputSchema,
@@ -44,7 +44,7 @@ import {
 	parseCoordinatorToolInput,
 	VOICE_TOOL_INPUT_SCHEMAS,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
+} from "@archboard/agent-workbench/runtime";
 import {
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,

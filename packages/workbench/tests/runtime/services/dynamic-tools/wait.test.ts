@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 
-import { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+import { createCodexWaitGraph } from "@archboard/agent-workbench/runtime";
 import { decodeDynamicCursor, encodeDynamicCursor } from "#runtime/rules/dynamic-tools/cursors.ts";
 import { waitForDynamicThreads } from "#runtime/services/dynamic-tools/wait.ts";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 } from "#runtime/protocol/thread-tools/manifest.ts";
-import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkClassification } from "@archboard/agent-workbench/runtime";
 import {
 	optionsFor,
 	requestFor,

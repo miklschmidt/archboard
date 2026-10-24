@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
-} from "#runtime/rules/instructions/context-policy.ts";
+} from "@archboard/agent-workbench/runtime";
 import { DiagramGrammarSchema } from "@archboard/board/views";
 import { VariantLifecycleSchema } from "@archboard/board/document";
 import { ReconciliationKindSchema } from "@archboard/board/reconciliation";

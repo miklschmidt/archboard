@@ -5,7 +5,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,
@@ -19,12 +19,12 @@ import {
 } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
+import { createCodexRealtimeAdapter } from "@archboard/agent-workbench/runtime";
 import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeAdapterOptions,
 	type CodexRealtimeBinding,
-} from "#runtime/services/realtime/contract.ts";
+} from "@archboard/agent-workbench/runtime";
 import { recordReducerCheckedEvents } from "#tests/runtime/services/realtime/state-test-support.ts";
 
 type TimelinePage = Awaited<ReturnType<CodexRealtimeAdapterOptions["session"]["timelineListPage"]>>;
