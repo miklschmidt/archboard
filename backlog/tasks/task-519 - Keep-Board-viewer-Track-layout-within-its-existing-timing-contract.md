@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 12:17'
-updated_date: '2026-10-24 12:17'
+updated_date: '2026-10-24 12:36'
 labels: []
 dependencies: []
 references:
@@ -39,3 +39,9 @@ No architecture board is affected. The route-search mechanism and its drawn resp
 5. Simplify the result and commit the fix with Refs: TASK-519.
 6. Require the complete normal gate before marking this repair done.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Renderer repair committed as e77643cbeed538c0f0d45c5cad72129a96ada174. The unchanged normal-environment Board viewer Track owner passed at 2944.31 ms, 2955.06 ms after extraction, and 2938.28 ms final. Earlier focused baselines were 3902.23 and 3886.03 ms, with a fresh same-slot baseline of 3648.66 ms. All six solver result JSON documents remained byte-identical. All 263 relevant tests passed with 47730 assertions. Both type projects, lint, formatting, and whitespace checks passed. No thresholds, assertions, clocks, or policies changed. Full gate remains pending. Evidence: /tmp/task519-correctness-final.log and /tmp/task519-wide-final-3.log.
+<!-- SECTION:NOTES:END -->
