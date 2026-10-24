@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 75,
+	"version": 76,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T11:45:41.608Z",
+	"updatedAt": "2026-10-24T13:33:13.397Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -10531,7 +10531,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/rules/coordinator-tools/validation.ts",
+							"path": "packages/agent-workbench/src/runtime/rules/coordinator-tools/validation.ts",
 							"symbol": "logicalToolCallKey"
 						}
 					},
