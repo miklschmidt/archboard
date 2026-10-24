@@ -87,7 +87,7 @@ const environment = {
 process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 process.env["ARCHBOARD_REPOS"] = path.join(root, "repos.json");
 // Imported only now, because the CLI reads where its server is as it loads.
-const [{ checkEmbeds }, client, { declareDirectory }] = await Promise.all([
+const [{ checkEmbedsAt }, client, { declareDirectory }] = await Promise.all([
 	import("#cli/operations/vault/embeds/embeds-check.ts"),
 	import("@archboard/server-lifecycle/server-client"),
 	import("@archboard/workspace/checkouts"),
@@ -123,7 +123,7 @@ test("a tracked file of another repository is read only as an embed of a board t
 	expect(spawnSync("git", ["add", "docs/shared.svg"], { cwd: docs }).status).toBe(0);
 	await declareDirectory(docs);
 
-	const part = await checkEmbeds({ vault }, { fix: false, signal: AbortSignal.timeout(10_000) });
+	const part = await checkEmbedsAt({ vault }, { fix: false, signal: AbortSignal.timeout(10_000) });
 	expect(rendered).toEqual(["ledger"]);
 	expect(
 		part.findings.map((one) => `${one.code} ${one.embedRepo}:${one.file} ${one.board?.name}`),

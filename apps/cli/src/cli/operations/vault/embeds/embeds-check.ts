@@ -395,7 +395,7 @@ async function trackedOf(
  * @throws {Error} When the browser that drew PNGs again did not stop cleanly,
  * naming each file `--fix` rewrote.
  */
-async function checkEmbeds(
+async function checkEmbedsAt(
 	at: EmbedsAt,
 	options: { readonly fix: boolean; readonly signal: AbortSignal },
 ): Promise<EmbedsPart> {
@@ -449,14 +449,14 @@ async function checkEmbeds(
  * @returns The embeds part.
  * @throws {Error} When the command addressed neither, which a check command never does.
  */
-function checkEmbedsOf(
+function checkEmbeds(
 	context: Pick<CommandContext, "vault" | "checkout" | "signal">,
 	fix: boolean,
 ): Promise<EmbedsPart> {
 	const options = { fix, signal: context.signal };
-	if (context.vault !== null) return checkEmbeds({ vault: context.vault.path }, options);
-	if (context.checkout !== null) return checkEmbeds({ checkout: context.checkout }, options);
+	if (context.vault !== null) return checkEmbedsAt({ vault: context.vault.path }, options);
+	if (context.checkout !== null) return checkEmbedsAt({ checkout: context.checkout }, options);
 	throw new Error("The embeds check reads the vault or the checkout a command finds.");
 }
 
-export { checkEmbeds, checkEmbedsOf };
+export { checkEmbeds, checkEmbedsAt };

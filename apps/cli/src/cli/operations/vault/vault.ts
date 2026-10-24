@@ -10,7 +10,7 @@ import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/rules/check/embed-state.ts";
 import { EmbedsPartSchema } from "#cli/protocol/check/embeds-answer.ts";
-import { checkEmbedsOf } from "#cli/operations/vault/embeds/embeds-check.ts";
+import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import {
@@ -232,7 +232,7 @@ async function runChecks(
 		: undefined;
 	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
 	const embeds = ran.includes("embeds")
-		? await checkEmbedsOf(context, reading.fix === true)
+		? await checkEmbeds(context, reading.fix === true)
 		: undefined;
 	const answer = { semantics, code, embeds, skipped };
 	return {

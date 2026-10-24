@@ -55,7 +55,7 @@ const environment = {
 process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 process.env["ARCHBOARD_REPOS"] = path.join(root, "repos.json");
 // Imported only now, because the CLI reads where its server is as it loads.
-const [{ checkEmbeds }, client] = await Promise.all([
+const [{ checkEmbedsAt }, client] = await Promise.all([
 	import("#cli/operations/vault/embeds/embeds-check.ts"),
 	import("@archboard/server-lifecycle/server-client"),
 ]);
@@ -81,7 +81,7 @@ test("an embed of a board its vault cannot read names the unreadable boards", as
 		`<svg xmlns="http://www.w3.org/2000/svg"><metadata><archboard:render-recipe>${JSON.stringify(recipe)}</archboard:render-recipe></metadata></svg>`,
 	);
 	git("add", "orders.svg");
-	const part = await checkEmbeds({ vault }, { fix: true, signal: AbortSignal.timeout(10_000) });
+	const part = await checkEmbedsAt({ vault }, { fix: true, signal: AbortSignal.timeout(10_000) });
 	expect(part.embeds).toEqual(["orders.svg"]);
 	expect(part.fixed).toEqual([]);
 	expect(part.findings).toMatchObject([
