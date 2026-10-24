@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T16:08:00Z'
+updated_date: '2026-10-24T16:19:00Z'
 labels:
   - cli
   - code-check
@@ -48,3 +48,15 @@ The plain `archboard check` never runs the code check, so people and CI skip it,
 4. Docs: ADR 0045, 0046, 0054 Amended by notes; CONTEXT.md Code check; every doc, skill, help text and evals row that names check --code; docs/design/cli-command-audit.json check entry; skills artifacts regenerate.
 5. Close: gate (bun run check), code check diff procedure with the new check code --variant, footprint, correct proposal to what was built. Do not adopt.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Base: this worktree started from a commit that lacked ADR 0057 and the TASK-526 tasks (they sit on feat/check-export-artifacts), so I merged that branch into this one before starting.
+Design: check is a namespace route with the bare default all (withLeadingOptions, as repo does), children all, semantics, code. The answer is {semantics, code}; semantics holds the vault check plus its timings, code is the code check answer unchanged. The embeds part and --fix are not added: TASK-526.03 adds a third optional part to CheckAnswerSchema and a CheckName in runChecks (apps/cli/src/cli/operations/vault/vault.ts), and --fix to check all and check embeds. Until then --fix is refused as an unknown option.
+Consumers of the old answer shape changed with it: packages/skills runs/vault.ts (the eval harness reads check semantics now), tests/system/cli/drill-down-repository.test.ts, tests/system/cli/vault-checkout.test.ts, scripts/readme-assets/evidence.ts.
+The server route /api/vault/check is untouched and still the only semantics check; no server code changed, only two comments.
+Outside the scope fence: apps/server comments, packages/board and packages/code-intel comments and the schema description that said check --code (text only); the vault board Archboard server routes still has a relationship labelled check --code (belongs to the TASK-526.02 worker's boards, not changed here); ADR 0057 was formatted by oxfmt because fmt:check failed on it.
+Footprint read against base 89ecc5bc8~1 for Command interface@TASK-526.01: Command catalogue (run.ts) and Commands changed and were not named: the commit adds the check subcommands to the table, the part's job is unchanged, so no proposal change. Request transport is named only by a relationship (normal). The code check diff (check code vs check code --variant TASK-526.01) is empty.
+README assets: bun run readme:check lists stale assets; code-evidence types the old command and needs a refresh by a person (bun run readme:assets code-evidence); the others were stale from earlier commits.
+<!-- SECTION:NOTES:END -->
