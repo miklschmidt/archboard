@@ -150,8 +150,27 @@ _Avoid_: view command, board command, pane command
 **Board render**:
 An image of one named Board drawn without a live Pane: an SVG from the renderer,
 or a PNG drawn in a private headless browser. It never attaches to a browser
-session.
-_Avoid_: screenshot, pane export
+session. It carries its Render recipe, so it can be drawn again and compared.
+_Avoid_: screenshot, pane export, artifact, export
+
+**Render recipe**:
+What a Board render records about how it was drawn: the Board, the variant or
+"current", the view, the comparison, and the drawing choices such as theme and
+legend. It is not the command line: it holds no output path, and it names a
+variant or a view by id, not by the name somebody typed.
+_Avoid_: render request, render settings, command, export options
+
+**Embed**:
+A Board render that a repository keeps under Git, so that a document can show
+it. It carries its Render recipe, and the embeds check keeps it current. A
+render on stdout, on the clipboard or in a folder that Git ignores is no embed.
+_Avoid_: artifact, export, tracked render, asset
+
+**Tracked embed**:
+An Embed that its Board lists, so that the Board's side knows where the picture
+is shown, also in another repository. Somebody asks for each one: no Embed is
+tracked by default.
+_Avoid_: tracked render, subscription, registered embed
 
 ### Meaning
 
@@ -663,6 +682,18 @@ _Avoid_: sweep (the archboard-dev pass after a removal or a rename), bulk
 commit, big commit
 
 ### Evidence
+
+**Semantics check**:
+Reading a vault's boards against the vault's own configuration: the board
+families, the vocabulary that the boards use, and the configuration itself. It
+reads no code and no Git, and it is the check that canvases poll.
+_Avoid_: plain check, board check, vault check, lint
+
+**Embeds check**:
+Reading the Embeds of a repository against the boards they draw, in this vault
+or in another repository's vault. It says which Embed is outdated or lost its
+board, and it can draw each outdated one again.
+_Avoid_: artifact check, render check, docs check
 
 **Code check**:
 Reading, on request, the code and the infrastructure that the bindings and
