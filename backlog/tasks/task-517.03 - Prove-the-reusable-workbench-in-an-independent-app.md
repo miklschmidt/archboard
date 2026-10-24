@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 14:28'
+updated_date: '2026-10-24 14:29'
 labels: []
 dependencies:
   - TASK-517.02
@@ -48,4 +48,6 @@ The backend implementer owns only the new example server, controlled backend tes
 
 <!-- SECTION:NOTES:BEGIN -->
 Independent backend dc8075788 uses only the public shared factory. Parent browser uses the public transport and media owners, with separate stop actions and exact displayed approval intent. Three fast rendered cases pass, including retained drafts on failed delivery. Both type projects, scoped lint, build, and 28 repository policy cases pass. Manual controlled browser QA at 1920x1080 delivered text, settled the offered command approval, interrupted work, retained the tab conversation on reload, and recovered microphone denial through Reconnect. Live microphone audio remains outside controlled evidence. New backend and public-interface boundary reviews are active before the final full gate.
+
+Scoped backend and host/core boundary reviews completed. Reviewer commit 4d3b01c5c fixes malformed upgrade targets and shutdown while Codex initialization is pending. The expanded process owner passes two cases and 47 assertions, including refusal of replaced sockets and shutdown with active voice and sockets. No unresolved review findings remain. Parent browser review removed internal approval hashes, named microphone recovery, removed an unused convenience operation, and kept control availability tied to the live connection. No core compatibility paths or new dependencies were needed.
 <!-- SECTION:NOTES:END -->

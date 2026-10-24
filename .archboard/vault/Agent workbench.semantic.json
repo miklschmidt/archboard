@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 113,
+	"version": 114,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T13:43:31.320Z",
+	"updatedAt": "2026-10-24T14:29:54.916Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -33765,7 +33765,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "qdsrL4tY",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Shared Codex lifecycle, browser commands, coordinator, checkout workhorses, and Archboard host integration",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",

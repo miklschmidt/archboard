@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 76,
+	"version": 77,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T13:33:13.397Z",
+	"updatedAt": "2026-10-24T14:29:54.461Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -9224,7 +9224,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "3M2UsnnM",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "Archboard applications and packages, including the reusable Codex workbench and its independent example",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -10574,7 +10574,26 @@
 						"to": "lU0khwR0",
 						"kind": "dependency",
 						"label": "start sessions with its own policy and checkouts",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/workbench-example/src/server/wiring/application/application.ts",
+							"symbol": "createCodexWorkbench"
+						}
+					},
+					{
+						"id": "qfPcK2he",
+						"order": 64000,
+						"from": "xssnUgIk",
+						"to": "vEVm326r",
+						"kind": "dependency",
+						"label": "resolve and verify the pinned Codex executable",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/workbench-example/src/server/wiring/application/application.ts",
+							"symbol": "verifyCodexExecutable"
+						}
 					}
 				],
 				"flows": [

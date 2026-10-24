@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 135,
+	"version": 136,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-24T13:34:44.795Z",
+	"updatedAt": "2026-10-24T14:30:22.226Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -22692,7 +22692,7 @@
 			"name": "TASK-517",
 			"lifecycle": "draft",
 			"parent": "6C82GLIe",
-			"summary": "Reuse the Codex workbench in independent applications",
+			"summary": "The Archboard viewer, workspace state, and shared Codex browser transport and voice media",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
