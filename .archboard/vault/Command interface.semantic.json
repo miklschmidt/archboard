@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 135,
+	"version": 136,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T19:23:49.777Z",
+	"updatedAt": "2026-10-24T19:38:56.185Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -55469,6 +55469,7 @@
 						"name": "Vault check",
 						"kind": "module",
 						"responsibility": "check with its subcommands all, semantics and code, and semantic config: each check fills its own part of one answer, and the vault's vocabulary and everything wrong with its boards",
+						"description": "In a Git checkout that holds no vault, check, check all and check embeds run the embeds check alone, and the answer's skipped says why the semantics and code checks did not run.",
 						"parent": "bLpk2XKU",
 						"groups": [
 							"checks"
