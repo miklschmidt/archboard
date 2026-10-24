@@ -96,7 +96,8 @@ export function createServerCodexWorkbenchInstallation(
 			executablePath,
 			workingDirectory: storage.coordinatorDirectory,
 			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
-			archboardServer: { url: serverUrl(), binDirectory: path.join(server.sourceRoot, "bin") },
+			hostEnvironment: { ARCHBOARD_URL: serverUrl(), ARCHBOARD_NO_AUTOSTART: "1" },
+			pathPrefixes: [path.join(server.sourceRoot, "bin")],
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 		/**

@@ -9,7 +9,7 @@ import type { Readable, Writable } from "node:stream";
 import type { BoundedCodexDiagnostics } from "#runtime/services/diagnostics.ts";
 import type {
 	CodexAmbientEnvironment,
-	CodexArchboardServer,
+	CodexChildEnvironmentInput,
 } from "#runtime/services/environment.ts";
 import type { VerifiedCodexExecutable } from "#runtime/services/executable.ts";
 import type {
@@ -140,13 +140,14 @@ type CodexProcessStorageInput =
 			readonly sqliteHome: string;
 	  });
 
-interface CodexProcessOptions {
+interface CodexProcessOptions extends Pick<
+	CodexChildEnvironmentInput,
+	"hostEnvironment" | "pathPrefixes"
+> {
 	readonly executablePath: string;
 	/** The directory the app-server child runs in: the coordinator's own, which is no checkout. */
 	readonly workingDirectory: string;
 	readonly storage: CodexProcessStorageInput;
-	/** The Archboard server the child's threads reach when they run `archboard`. */
-	readonly archboardServer: CodexArchboardServer;
 	/** Publish each exact group identity to an outer cleanup owner before readiness. */
 	readonly onGroupOwned?: (identity: CodexProcessGroupIdentity) => void;
 	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */

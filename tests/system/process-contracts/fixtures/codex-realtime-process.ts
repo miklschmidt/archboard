@@ -210,7 +210,6 @@ async function createHarness(
 		),
 		workingDirectory: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
-		archboardServer: { url: "http://127.0.0.1:3000", binDirectory: "/opt/archboard/bin" },
 	});
 	const generations: Generation[] = [];
 	const events: RealtimeSemanticEvent[] = [];
