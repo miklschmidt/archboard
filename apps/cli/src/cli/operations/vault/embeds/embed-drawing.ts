@@ -26,11 +26,11 @@ type Redrawn =
 	| { readonly ok: false; readonly missing: MissingSource };
 
 /** The server's refusal codes that say what a recipe names is gone. */
-const MISSING_BY_CODE: Readonly<Record<string, Exclude<MissingSource, "picture">>> = {
-	BOARD_MISSING: "board",
-	UNKNOWN_VARIANT: "variant",
-	UNKNOWN_VIEW: "view",
-};
+const MISSING_BY_CODE: ReadonlyMap<string, Exclude<MissingSource, "picture">> = new Map([
+	["BOARD_MISSING", "board"],
+	["UNKNOWN_VARIANT", "variant"],
+	["UNKNOWN_VIEW", "view"],
+]);
 
 /** The browser that draws PNGs again, for one run of the check. */
 interface Bitmaps {
@@ -87,7 +87,7 @@ function bitmapsFor(signal: AbortSignal): Bitmaps {
  * @throws {unknown} The error itself, for any other refusal.
  */
 function refusedAsMissing(error: unknown): { readonly missing: MissingSource } {
-	const missing = MISSING_BY_CODE[(isRecord(error) && stringAt(error, "code")) || ""];
+	const missing = MISSING_BY_CODE.get((isRecord(error) && stringAt(error, "code")) || "");
 	if (missing === undefined) throw error;
 	return { missing };
 }
