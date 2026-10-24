@@ -142,6 +142,7 @@ beforeAll(async () => {
 		ensureSemanticVaultConfiguration(vaultIn(holder));
 	}
 	fs.mkdirSync(path.join(docs, "docs"), { recursive: true });
+	fs.mkdirSync(path.join(docs, "build"), { recursive: true });
 	fs.mkdirSync(outside, { recursive: true });
 	fs.writeFileSync(path.join(docs, ".gitignore"), "build/\n");
 	server = await startOwnedServer({
@@ -177,7 +178,12 @@ describe("tracked embeds", () => {
 			cli(loose, ["semantic", "render", "loose", "--out", path.join(docs, "loose.svg"), ...TRACK], {
 				status: 2,
 			});
-			for (const file of [svg, path.join(outside, "orders.svg"), path.join(docs, "loose.svg")]) {
+			for (const file of [
+				svg,
+				path.join(outside, "orders.svg"),
+				path.join(docs, "build", "orders.svg"),
+				path.join(docs, "loose.svg"),
+			]) {
 				expect(fs.existsSync(file), file).toBe(false);
 			}
 			expect(shown(models, "orders").version).toBe(before);
