@@ -1,0 +1,21 @@
+[package]
+name = "archboard-scene"
+description = "The renderer core's drawing contract, its scene, and the painter that turns a drawing into a scene"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The deterministic software libm: the same transcendental results on every
+# target, so a native build draws the bytes of the WASM build (ADR 0057).
+libm = "0.2"
+# Number::toString of ECMAScript: the oracle pictures spelt their numbers so.
+ryu-js = "1"
+serde = { version = "1", features = ["derive"] }
+# The TypeScript types of the contract and the scene are generated from these
+# Rust types (src/bin/export-types.rs).
+ts-rs = "12"
+
+[dev-dependencies]
+serde_json = "1"
