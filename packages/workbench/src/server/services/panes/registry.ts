@@ -208,6 +208,19 @@ function sendBoardlessToPane(clientId: string, message: WebSocketMessage): boole
 }
 
 /**
+ * The boards on screen, as the aggregates their panes show, each in the
+ * vault its pane belongs to.
+ * @returns Their vaults and keys.
+ */
+function watchedBoards(): WatchedBoard[] {
+	return [...paneBoards].flatMap(([clientId, key]) => {
+		const vault = paneVaults.get(clientId);
+		const board = aggregateOf(key);
+		return vault === undefined || board === null ? [] : [{ vault, board }];
+	});
+}
+
+/**
  * Watch the lock files of the boards on screen, while there is a screen.
  *
  * The lock broadcast reaches the panes of this server. A second server over
@@ -223,18 +236,7 @@ function sendBoardlessToPane(clientId: string, message: WebSocketMessage): boole
  * looking at and by no other.
  */
 function syncLockWatch(): void {
-	/**
-	 * The boards on screen, as the aggregates their panes show, each in the
-	 * vault its pane belongs to.
-	 * @returns Their vaults and keys.
-	 */
-	const boards = (): WatchedBoard[] =>
-		[...paneBoards].flatMap(([clientId, key]) => {
-			const vault = paneVaults.get(clientId);
-			const board = aggregateOf(key);
-			return vault === undefined || board === null ? [] : [{ vault, board }];
-		});
-	watchBoardLocks(clients.size > 0 ? { boards } : null);
+	watchBoardLocks(clients.size > 0 ? { boards: watchedBoards } : null);
 }
 
 /**
