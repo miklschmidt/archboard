@@ -90,6 +90,9 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(existsSync(join(fixture.root, ".archboard"))).toBe(false);
 		await workbench.shutdown();
 		expect(workbench.snapshot()).toMatchObject({ ready: false, childPid: null });
+		expect(await workbench.start()).toMatchObject({ ready: true });
+		expect(workbench.sessions()).toHaveLength(0);
+		await workbench.shutdown();
 	} finally {
 		await resources.disposeAsync();
 	}
