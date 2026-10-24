@@ -184,17 +184,18 @@ test("unstarted planned scenarios stay visible without comparison conclusions", 
 	expect(report.scenarios[0]?.tokenChangePercent).toBeNull();
 });
 
+const judged = (score: number | null, missed: number): RunVerdict => ({
+	...verdict,
+	behaviouralCompleteness: score,
+	unprompted: Array.from({ length: missed }, (_, index) => ({
+		feature: CATALOGUE_ROWS[index % CATALOGUE_ROWS.length] ?? "traffic",
+		verdict: "missed" as const,
+		evidence: "boards/",
+		reason: "left out",
+	})),
+});
+
 test("what the skill added unprompted is scored, its misses counted, and a drop is a regression", () => {
-	const judged = (score: number | null, missed: number): RunVerdict => ({
-		...verdict,
-		behaviouralCompleteness: score,
-		unprompted: Array.from({ length: missed }, (_, index) => ({
-			feature: CATALOGUE_ROWS[index % CATALOGUE_ROWS.length] ?? "traffic",
-			verdict: "missed" as const,
-			evidence: "boards/",
-			reason: "left out",
-		})),
-	});
 	const unjudged = buildReport([record(), record({ arm: "candidate" })], null).scenarios[0];
 	expect(unjudged?.candidate.meanBehaviouralCompleteness).toBeNull();
 	expect(unjudged?.candidate.missedUnprompted).toBe(0);

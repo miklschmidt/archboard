@@ -310,12 +310,13 @@ test("a named plan JSON declares the remote module's addresses and joins them by
 	).toEqual([["pS", "pV", "infra/plan.json", 1]]);
 });
 
+const refused = async (named: string) =>
+	!(await check.readPlans(vault, [named], new AbortController().signal)).ok;
+
 test("the check never reads state, variable files or .terraform, never runs terraform or tofu, and never quotes a value", async () => {
 	const answers = JSON.stringify([withoutPlan, withPlan]);
 	for (const secret of SECRETS) expect(answers).not.toContain(secret);
 	expect(existsSync(ran)).toBe(false);
-	const refused = async (named: string) =>
-		!(await check.readPlans(vault, [named], new AbortController().signal)).ok;
 	writeFileSync(join(scratch, "elsewhere.json"), JSON.stringify(PLAN));
 	// Inside the checkout as named, outside it once its link resolves.
 	symlinkSync(join(scratch, "elsewhere.json"), join(shop, "infra", "linked.json"));

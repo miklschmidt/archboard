@@ -46,25 +46,26 @@ interface ArtifactFixture {
 	[Symbol.dispose](): void;
 }
 
+const git = (args: readonly string[]): ArtifactSpawn => {
+	const command = ["git", ...args];
+	const result = spawnSync(command[0]!, command.slice(1), {
+		cwd: checkoutRoot,
+		encoding: "utf8",
+	});
+	return spawnSchema.parse({
+		command,
+		cwd: checkoutRoot,
+		status: result.status,
+		signal: result.signal,
+		stdout: result.stdout,
+		stderr: result.stderr,
+	});
+};
+
 function createArtifactFixture(): ArtifactFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-contract-artifacts-"));
 	const first = join(root, "first");
 	const second = join(root, "second");
-	const git = (args: readonly string[]): ArtifactSpawn => {
-		const command = ["git", ...args];
-		const result = spawnSync(command[0]!, command.slice(1), {
-			cwd: checkoutRoot,
-			encoding: "utf8",
-		});
-		return spawnSchema.parse({
-			command,
-			cwd: checkoutRoot,
-			status: result.status,
-			signal: result.signal,
-			stdout: result.stdout,
-			stderr: result.stderr,
-		});
-	};
 	const dispose = () => rmSync(root, { recursive: true, force: true });
 	return {
 		root,

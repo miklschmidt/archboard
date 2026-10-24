@@ -183,11 +183,12 @@ test("with a compilation database, clangd places a use whose include leads only 
 	]);
 });
 
+const read = (id: string) => {
+	const undrawn = finding("RELATIONSHIP_UNDRAWN", id);
+	return [undrawn?.severity, undrawn?.evidence?.map((piece) => piece.resolution)];
+};
+
 test("a declaration clangd names, whose header's source file does not define it, stays as code facts read it", () => {
-	const read = (id: string) => {
-		const undrawn = finding("RELATIONSHIP_UNDRAWN", id);
-		return [undrawn?.severity, undrawn?.evidence?.map((piece) => piece.resolution)];
-	};
 	expect(read("pL")).toEqual(["information", ["candidate"]]);
 	expect(read("pL")).toEqual(read("qL"));
 });

@@ -204,18 +204,18 @@ describe("a listed board's links", () => {
 	});
 });
 
-describe("a listed board's description", () => {
-	/**
-	 * What the listing says for a current variant with this summary.
-	 * @param summary The summary, if any.
-	 * @returns The listed description.
-	 */
-	const described = (summary?: string) =>
-		listedBoard(LOCATION, {
-			ok: true,
-			board: board([{ id: "v1", lifecycle: "current", ...(summary ? { summary } : {}) }], "v1"),
-		}).description;
+/**
+ * What the listing says for a current variant with this summary.
+ * @param summary The summary, if any.
+ * @returns The listed description.
+ */
+const described = (summary?: string) =>
+	listedBoard(LOCATION, {
+		ok: true,
+		board: board([{ id: "v1", lifecycle: "current", ...(summary ? { summary } : {}) }], "v1"),
+	}).description;
 
+describe("a listed board's description", () => {
 	test("is the summary's first sentence on one line, bounded, or null", () => {
 		expect(described("Serves   boards\nto panes. Owns every write.")).toBe(
 			"Serves boards to panes.",

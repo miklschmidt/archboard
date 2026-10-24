@@ -210,18 +210,19 @@ test("suggestion uses the historical state's supersession time", async () => {
 	expect(suggest.mock.calls[0]![2]).toBe(at);
 });
 
+/**
+ * Ask for suggestions about one variant.
+ * @param variant The variant name.
+ * @returns The refusal code.
+ */
+const refusal = async (variant: string) => {
+	const query = new URLSearchParams({ vault, board: "Example", variant });
+	const response = await fetch(`${base}/api/semantic-boards/correct-suggest?${query}`);
+	expect(response.status).toBe(422);
+	return ((await response.json()) as { code: string }).code;
+};
+
 test("suggestion tells an unknown variant from one that is not historical", async () => {
-	/**
-	 * Ask for suggestions about one variant.
-	 * @param variant The variant name.
-	 * @returns The refusal code.
-	 */
-	const refusal = async (variant: string) => {
-		const query = new URLSearchParams({ vault, board: "Example", variant });
-		const response = await fetch(`${base}/api/semantic-boards/correct-suggest?${query}`);
-		expect(response.status).toBe(422);
-		return ((await response.json()) as { code: string }).code;
-	};
 	expect(await refusal("Missing")).toBe("UNKNOWN_VARIANT");
 	expect(await refusal("Implemented")).toBe("VARIANT_NOT_HISTORICAL");
 	expect(suggest).not.toHaveBeenCalled();

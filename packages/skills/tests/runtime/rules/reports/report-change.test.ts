@@ -277,17 +277,18 @@ test("a row that cannot be compared says which precondition failed", () => {
 	expect(unopened?.change).toEqual({ assessed: false, reason: "pictures-not-judged" });
 });
 
+const answer = (...features: string[]): RunVerdict => ({
+	...verdict,
+	features: features.map((feature) => ({
+		feature,
+		verdict: "pass" as const,
+		evidence: "board",
+		reason: "seen",
+	})),
+});
+
 test("what counts as answering off the checklist is one rule, and it needs both halves", () => {
 	const expected = [{ feature: "a" }, { feature: "b" }];
-	const answer = (...features: string[]): RunVerdict => ({
-		...verdict,
-		features: features.map((feature) => ({
-			feature,
-			verdict: "pass" as const,
-			evidence: "board",
-			reason: "seen",
-		})),
-	});
 	expect(checklistStanding(expected, answer("a", "b"))).toBe("answered");
 	// Only skipped: still an answer about these features, and a fair failure.
 	expect(checklistStanding(expected, answer("a"))).toBe("answered");
