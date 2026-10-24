@@ -153,6 +153,22 @@ or a PNG drawn in a private headless browser. It never attaches to a browser
 session.
 _Avoid_: screenshot, pane export
 
+**Renderer core**:
+The Rust crate that measures, lays out and paints a Board. Bun and the browser
+load it as WebAssembly, and a native frontend links it (ADR 0057).
+_Avoid_: engine (that is a layout engine), WASM module
+
+**Paint list**:
+The ordered, positioned list of what a picture is made of: shapes, glyph runs,
+and the marks that a painter animates. The renderer core answers it, and each
+group in it names its subject and role. It holds no interaction state.
+_Avoid_: scene, scene graph, display list, render tree
+
+**Painter**:
+What turns a Paint list into what a frontend shows. The SVG painter is part of
+the renderer core. A native frontend paints the list itself.
+_Avoid_: rasterizer (that makes a PNG from SVG), backend
+
 ### Meaning
 
 **Vault vocabulary**:
