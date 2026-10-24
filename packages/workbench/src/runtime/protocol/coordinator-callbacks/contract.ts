@@ -56,6 +56,3 @@ export type CoordinatorCallbacks = Omit<CoreCallbacks, "enqueue" | "get"> & {
 	readonly enqueue: (event: CoordinatorCallbackSource) => ReturnType<CoreCallbacks["enqueue"]>;
 	readonly get: (event: CoordinatorCallbackSource) => ReturnType<CoreCallbacks["get"]>;
 };
-export interface CoordinatorCallbacksRetainedState {
-	current: CoordinatorCallbacks | null;
-}
