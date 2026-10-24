@@ -13,7 +13,8 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // registered repository's vault (ADR 0057). `archboard check` there runs the
 // embeds check alone: it says that the semantics and code checks did not run
 // and why, reports the embed that a board edit made outdated, and `--fix`
-// draws it again. The checks that read a vault stay refused there.
+// draws it again. That the checks that read a vault stay refused there is
+// owned by apps/cli/tests/cli/operations/invocation/runs-without-vault.test.ts.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-no-vault-")));
@@ -147,15 +148,6 @@ describe("the check in a checkout without a vault", () => {
 			]);
 			expect(fs.readFileSync(embed)).not.toEqual(before);
 			cli(docs, ["check", "embeds"]);
-		},
-		TEST_WALL_CLOCK_BUDGET_MS,
-	);
-
-	test(
-		"the checks that read a vault stay refused there",
-		() => {
-			// VAULT_NOT_FOUND exits 2.
-			for (const check of ["semantics", "code"]) cli(docs, ["check", check], { status: 2 });
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
