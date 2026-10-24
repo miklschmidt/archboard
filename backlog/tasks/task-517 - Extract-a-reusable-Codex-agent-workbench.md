@@ -1,11 +1,11 @@
 ---
 id: TASK-517
 title: Extract a reusable Codex agent workbench
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: 2026-10-24 11:37
-updated_date: '2026-10-24T15:08:00Z'
+updated_date: '2026-10-24T15:09:00Z'
 labels: []
 dependencies: []
 references:
@@ -26,11 +26,11 @@ The owner wants a second application to use the same live voice, coordinator, an
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Archboard and a second minimal application use one shared Codex workbench implementation through public server and browser interfaces.
-- [ ] #2 The second application starts without an Archboard server, board, or vault and supports voice, conversation, checkout workhorses, and approval handling.
-- [ ] #3 The reusable implementation owns lifecycle, queues, routing, transcript recovery, and approval authority. Its host supplies domain instructions, context events, tools, and allowed checkouts.
-- [ ] #4 Exact session identity, unknown delivery outcomes, spoken approval settlement, coordinator retirement, and independent voice and workhorse stop behavior retain meaningful behavior coverage.
-- [ ] #5 The complete bun run check gate passes, reviewers commit fixes, and the affected architecture boards describe the implementation.
+- [x] #1 Archboard and a second minimal application use one shared Codex workbench implementation through public server and browser interfaces.
+- [x] #2 The second application starts without an Archboard server, board, or vault and supports voice, conversation, checkout workhorses, and approval handling.
+- [x] #3 The reusable implementation owns lifecycle, queues, routing, transcript recovery, and approval authority. Its host supplies domain instructions, context events, tools, and allowed checkouts.
+- [x] #4 Exact session identity, unknown delivery outcomes, spoken approval settlement, coordinator retirement, and independent voice and workhorse stop behavior retain meaningful behavior coverage.
+- [x] #5 The complete bun run check gate passes, reviewers commit fixes, and the affected architecture boards describe the implementation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,4 +78,12 @@ After the final prose correction, the Archboard footprint adds Codex home to nam
 The .03 complete gate at 74751d397 passes lint, formatting, both type projects, both browser builds, and all 4,940 module tests (one skip). Ten system cases fail before exercising behavior because a controlled fixture insertion point changed. All remaining lanes ran: 149 repository cases and all 19 browser owners pass. TASK-525 owns the fixture repair, followed by another complete gate. The cause is fixture source matching, not old application wiring.
 
 The complete repaired gate at 33aa81f0f passes all 13 stages in 534 seconds: 5,378 passes, one skip, no failures, lint zero warnings. The eight adopted boards pass archboard check with zero diagnostics. The first seven adoptions exposed two visual diagnostics, corrected before closure: Workbench interface now nests under Child ownership, and Shared instruction policy no longer draws a redundant line to its own part. The post-adoption sweep discovered Live panes tab ownership, now drawn as a pane adapter plus core tab sessions. Its footprint against main names both changed parts, has no namedNotChanged entries, and adds no code finding. Its other changedNotNamed parts change imports in b2c7508b9/dec053209, retaining their behavior. Board rasterizer Recording page and Recording pace change only shared type imports in 751fdfedd/816b6d79c. Their descriptions remain true. Remaining global code findings are pre-existing and outside this extraction; introduced warnings are zero.
+
+Post-adoption document validation passes: architecture asset generation, 149 repository tests, and formatting. The final regular board check has zero diagnostics. All non-Codex README assets are current. Four owner-run assets remain stale because this task does not spend model usage on recordings: bun run readme:assets explainer pr-walkthrough newcomer ask. Refreshed animated clips remain under /tmp/nix-shell.SqUKhs/archboard-readme-assets/attachments; no attachment or package was published. Existing README attachment URLs remain. Live microphone capture, audible playback, and model speech still require account/hardware acceptance. Controlled SDP negotiation, browser permission failure/recovery, and independent stop behavior passed. Existing aggregate Vite chunk size and libavoid initialization messages remain outside the changed contract and did not fail any gate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Extracted packages/agent-workbench as the one Codex implementation for voice, coordinators, checkout workhorses, queues, recovery, browser command authority, and approvals. Archboard retains its domain instructions, boards, panes, tools, narration, and shell. apps/workbench-example runs the same public factory and browser owners with private state and no board, vault, or Archboard server. gpt-6.1-sol implementers and fixing reviewers worked in the dedicated feat/reusable-codex-workbench checkout. Exact identity, unknown outcomes, spoken settlement, retirement, and independent stops retain behavior coverage. The complete 13-stage gate passes with 5,378 tests and one skip. Eight affected boards are adopted and the vault check has zero diagnostics. Repairs TASK-518, TASK-519, TASK-521, TASK-522, TASK-523, TASK-524, and TASK-525 are closed. Live audio acceptance and four Codex README recordings remain owner actions. All work is committed locally. Nothing was pushed or published.
+<!-- SECTION:FINAL_SUMMARY:END -->
