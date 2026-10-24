@@ -149,7 +149,7 @@ describe("the overview a board opens on", () => {
 		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: "queue" });
 	});
 
-	test("labels a joined line with how many relationships it joins, not with one of their labels", () => {
+	test("stacks the labels of a joined line's relationships, each once, in board order", () => {
 		const calls = content({
 			nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
 			edges: [
@@ -165,12 +165,11 @@ describe("the overview a board opens on", () => {
 					anchor: { repo: "shop", path: "router.ts", symbol: "post" },
 				},
 				{ id: "e2", from: "au", to: "ld", kind: "call", label: "records" },
-				{ id: "e3", from: "gw", to: "ld", kind: "call", label: "retries" },
+				{ id: "e3", from: "gw", to: "ld", kind: "call" },
+				{ id: "e4", from: "au", to: "ld", kind: "call", label: "posts" },
 			],
 		});
 		const [line] = scopedContent(calls, { kind: "overview" }).edges;
-		expect(line?.label).toMatch(/\b3\b/);
-		expect(calls.edges.map((edge) => edge.label)).not.toContain(line?.label);
 		// What only the first relationship says is not said of the line.
 		expect(line).toEqual({
 			id: "e1",
@@ -178,9 +177,20 @@ describe("the overview a board opens on", () => {
 			from: "pl",
 			to: "ld",
 			kind: "call",
-			label: line!.label!,
+			label: "posts\nrecords",
 			emphasis: "normal",
 		});
+	});
+
+	test("draws a joined line of unlabelled relationships without a label", () => {
+		const bare = content({
+			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],
+			edges: [
+				{ id: "e1", from: "rt", to: "ld", kind: "call" },
+				{ id: "e2", from: "gw", to: "ld", kind: "call" },
+			],
+		});
+		expect(scopedContent(bare, { kind: "overview" }).edges[0]?.label).toBeUndefined();
 	});
 
 	test("names the relationships each joined line stands for, as they were stated", () => {

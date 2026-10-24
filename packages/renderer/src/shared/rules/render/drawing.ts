@@ -45,6 +45,8 @@ interface MeasuredLabel {
 	readonly width: number;
 	readonly height: number;
 	readonly runs: readonly TextRun[];
+	/** How far below the plate's top each rule between stacked labels runs (ADR 0052). */
+	readonly rules: readonly number[];
 }
 
 /** How a relationship's line is drawn, as the vault's policy says, where crossings are settled. */

@@ -4,15 +4,18 @@ status: accepted
 
 # A board opens on its overview, and relationships and calls are drawn apart
 
-Amended by the owner on 2026-10-24 (TASK-513). A line that joins several
-relationships has a label that says how many it joins, such as "5
-relationships". It keeps the id, the order and the kind of the decision below,
-and it has no description, emphasis, traffic or anchor, because each of those
-is a fact about one of the relationships. A reader who picks the line sees its
-drawn ends and every relationship that it joins. An agent is told that the
-person picked every one of them. On Device Trust Library a line of five calls
-and a line of one call were drawn alike, and picking the line of five named
-only its first call. Everything else stands.
+Amended by the owner on 2026-10-24 (TASK-513, TASK-514). A line that joins
+several relationships stacks their labels, one block for each distinct label in
+board order, with a rule between two blocks, and a relationship with no label
+adds none. It keeps the id, the
+order and the kind of the decision below, and it has no description, emphasis,
+traffic or anchor, because each of those is a fact about one of the
+relationships. The tip over the line and the inspector name its drawn ends and
+every relationship that it joins, each with its own ends. An agent is told that
+the person picked every one of them. On Device Trust Library a line of five
+calls had no label, and its tip and inspector named only its first call. A
+count label ("5 relationships") was tried first and told a reader too little.
+Everything else stands.
 
 Decided with the owner on 2026-10-15. This decision supersedes one clause of
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):
