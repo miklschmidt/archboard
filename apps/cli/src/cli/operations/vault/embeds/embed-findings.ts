@@ -5,7 +5,7 @@
 import type { EmbedFinding, MissingSource } from "#cli/protocol/check/embeds-answer.ts";
 import type { ListedBoard } from "#cli/operations/vault/embeds/embed-vaults.ts";
 import type { RemovingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
-import type { TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.ts";
+import type { CheckoutEmbed } from "#cli/operations/vault/embeds/checkout-embeds.ts";
 
 /**
  * A finding about one embed, with the board its recipe names when it can be read.
@@ -14,7 +14,7 @@ import type { TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.t
  * @returns The finding.
  */
 function findingOn(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	finding: Omit<EmbedFinding, "file" | "board">,
 ): EmbedFinding {
 	return {
@@ -30,7 +30,7 @@ function findingOn(
  * @param problem What is wrong with the recipe.
  * @returns The warning.
  */
-function unreadableFinding(embed: TrackedEmbed, problem: string): EmbedFinding {
+function unreadableFinding(embed: CheckoutEmbed, problem: string): EmbedFinding {
 	return findingOn(embed, {
 		severity: "warning",
 		code: "EMBED_RECIPE_UNREADABLE",
@@ -46,7 +46,7 @@ function unreadableFinding(embed: TrackedEmbed, problem: string): EmbedFinding {
  * @returns The information.
  */
 function unavailableFinding(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	repo: string | null,
 	reason: string,
 ): EmbedFinding {
@@ -67,7 +67,7 @@ function unavailableFinding(
  * @returns The warning.
  */
 function missingFinding(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	missing: MissingSource,
 	board: ListedBoard,
 ): EmbedFinding {
@@ -133,7 +133,7 @@ function goneSentence(board: ListedBoard, unreadable: readonly string[]): string
  * @param gone What the check learned about it.
  * @returns The warning.
  */
-function goneBoardFinding(embed: TrackedEmbed, board: ListedBoard, gone: GoneBoard): EmbedFinding {
+function goneBoardFinding(embed: CheckoutEmbed, board: ListedBoard, gone: GoneBoard): EmbedFinding {
 	const { holder, removedIn, notFixed, unreadable } = gone;
 	const removed =
 		removedIn === undefined
@@ -160,7 +160,7 @@ function goneBoardFinding(embed: TrackedEmbed, board: ListedBoard, gone: GoneBoa
  * @returns A warning for a board that says something new, information for a renderer.
  */
 function changedFinding(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	standing: "outdated" | "renderer-changed",
 	board: ListedBoard,
 	notFixed: string | undefined,

@@ -38,7 +38,10 @@ import {
 	type ListedBoard,
 	type VaultReading,
 } from "#cli/operations/vault/embeds/embed-vaults.ts";
-import { trackedEmbeds, type TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.ts";
+import {
+	checkoutEmbeds,
+	type CheckoutEmbed,
+} from "#cli/operations/vault/embeds/checkout-embeds.ts";
 import { removingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
 
 /** What checking one embed found: a finding, a file `--fix` rewrote, or neither. */
@@ -66,7 +69,7 @@ interface Run {
  * @returns Nothing when it was written, or why it was not.
  */
 async function repoint(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	recipe: RenderRecipe,
 	holder: ListedBoard,
 	vault: string,
@@ -90,7 +93,7 @@ async function repoint(
  * @returns What was found and done.
  */
 async function checkGoneBoard(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	recipe: RenderRecipe,
 	reading: Extract<VaultReading, { ok: true }>,
 	run: Run,
@@ -126,7 +129,7 @@ async function checkGoneBoard(
  * @returns What was found and done.
  */
 async function redraw(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	standing: "outdated" | "renderer-changed",
 	redrawn: Extract<Redrawn, { ok: true }>,
 	board: ListedBoard,
@@ -150,7 +153,7 @@ async function redraw(
  * @returns What was found and done.
  */
 async function checkDrawn(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	recipe: RenderRecipe,
 	board: ListedBoard,
 	vault: string,
@@ -171,7 +174,7 @@ async function checkDrawn(
  * @param run The run.
  * @returns What was found and done.
  */
-async function checkEmbed(embed: TrackedEmbed, run: Run): Promise<Checked> {
+async function checkEmbed(embed: CheckoutEmbed, run: Run): Promise<Checked> {
 	if (!embed.recipe.ok) return { finding: unreadableFinding(embed, embed.recipe.problem) };
 	const { recipe } = embed.recipe;
 	const reading = await run.vault(recipe.vault.repo);
@@ -204,7 +207,7 @@ function stoppedAfter(error: unknown, fixed: readonly EmbedFix[]): unknown {
  * @returns What each one found and did.
  * @throws {Error} What stopped the run, naming each file `--fix` rewrote before it.
  */
-async function checkInOrder(embeds: readonly TrackedEmbed[], run: Run): Promise<Checked[]> {
+async function checkInOrder(embeds: readonly CheckoutEmbed[], run: Run): Promise<Checked[]> {
 	const checked: Checked[] = [];
 	try {
 		for (const embed of embeds) {
@@ -248,7 +251,7 @@ async function checkEmbeds(
 ): Promise<EmbedsPart> {
 	const root = await checkoutRoot(vault, options.signal);
 	if (root === undefined) return { checkout: null, embeds: [], findings: [], fixed: [] };
-	const embeds = await trackedEmbeds(root, options.signal);
+	const embeds = await checkoutEmbeds(root, options.signal);
 	const run: Run = {
 		...options,
 		vault: vaultReader(checkoutsReadFrom(vault)),

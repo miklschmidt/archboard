@@ -19,7 +19,7 @@ import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
 import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import type { MissingSource } from "#cli/protocol/check/embeds-answer.ts";
-import type { TrackedEmbed } from "#cli/operations/vault/embeds/tracked-embeds.ts";
+import type { CheckoutEmbed } from "#cli/operations/vault/embeds/checkout-embeds.ts";
 
 /** A recipe drawn again, or what of what it names is gone. */
 type Redrawn =
@@ -124,7 +124,7 @@ async function drawAgain(recipe: RenderRecipe, board: string, vault: string): Pr
  * @returns Nothing when it was written, or why it was not.
  */
 async function writePng(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	redrawn: Extract<Redrawn, { ok: true }>,
 	bitmaps: Bitmaps,
 ): Promise<string | undefined> {
@@ -147,7 +147,7 @@ async function writePng(
  * @returns Nothing when it was written, or why it was not.
  */
 async function writeRedrawn(
-	embed: TrackedEmbed,
+	embed: CheckoutEmbed,
 	redrawn: Extract<Redrawn, { ok: true }>,
 	bitmaps: Bitmaps,
 ): Promise<string | undefined> {
@@ -163,7 +163,7 @@ async function writeRedrawn(
  * @param kept The recipe it carries.
  * @param fresh The recipe of the same choices drawn now.
  */
-function refreshRecipe(embed: TrackedEmbed, kept: RenderRecipe, fresh: RenderRecipe): void {
+function refreshRecipe(embed: CheckoutEmbed, kept: RenderRecipe, fresh: RenderRecipe): void {
 	const recipe = kept.raster === undefined ? fresh : { ...fresh, raster: kept.raster };
 	writeFileAtomic(embed.path, Buffer.from(replaceRenderRecipe(embed.bytes, recipe)));
 }

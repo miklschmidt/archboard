@@ -10,7 +10,7 @@ import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe"
 import { gitOutput } from "#cli/clients/git/git-output.ts";
 
 /** One tracked file that carries a render recipe, readable or not. */
-interface TrackedEmbed {
+interface CheckoutEmbed {
 	/** The file as Git names it in the checkout. */
 	readonly file: string;
 	/** The file on disk. */
@@ -78,15 +78,18 @@ async function candidateFiles(checkout: string, signal: AbortSignal): Promise<st
 
 /**
  * The bytes of a tracked file, when it is on disk: a file deleted and not yet
- * committed is tracked and is not there. A symbolic link is no embed: Git
- * tracks the link and not what it points at, and `--fix` would write a file
- * in its place.
- * @param file The file.
+ * committed is tracked and is not there. A file reached through a symbolic
+ * link is no embed, whether the link is the file or a directory above it: Git
+ * tracks the link and not what it points at, the target can be outside the
+ * checkout, and `--fix` would write there.
+ * @param file The file, joined to the checkout's real root.
  * @returns Its bytes, or undefined when it is not a file of its own on disk.
  */
 function bytesOf(file: string): Uint8Array | undefined {
 	try {
-		return fs.lstatSync(file).isFile() ? fs.readFileSync(file) : undefined;
+		return fs.realpathSync(file) === file && fs.statSync(file).isFile()
+			? fs.readFileSync(file)
+			: undefined;
 	} catch {
 		return undefined;
 	}
@@ -99,7 +102,7 @@ function bytesOf(file: string): Uint8Array | undefined {
  * @returns The embed, or undefined for a file that is not on disk, is no SVG
  * document or PNG, or carries no recipe.
  */
-function embedAt(checkout: string, file: string): TrackedEmbed | undefined {
+function embedAt(checkout: string, file: string): CheckoutEmbed | undefined {
 	const at = path.join(checkout, file);
 	const bytes = bytesOf(at);
 	const kind = bytes === undefined ? null : embedKind(file, bytes);
@@ -119,8 +122,9 @@ function embedAt(checkout: string, file: string): TrackedEmbed | undefined {
  * @param signal Cancels the listing.
  * @returns The embeds, in Git's order.
  */
-async function trackedEmbeds(checkout: string, signal: AbortSignal): Promise<TrackedEmbed[]> {
-	return (await candidateFiles(checkout, signal)).flatMap((file) => embedAt(checkout, file) ?? []);
+async function checkoutEmbeds(checkout: string, signal: AbortSignal): Promise<CheckoutEmbed[]> {
+	const root = fs.realpathSync(checkout);
+	return (await candidateFiles(checkout, signal)).flatMap((file) => embedAt(root, file) ?? []);
 }
 
-export { trackedEmbeds, type TrackedEmbed };
+export { checkoutEmbeds, type CheckoutEmbed };
