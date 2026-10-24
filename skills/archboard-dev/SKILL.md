@@ -255,7 +255,8 @@ owner's Codex usage: list them in the report for a person to run.
 `docs/agents/readme-assets.md` says how each asset is made.
 The `architecture` SVGs are tracked embeds of the `Archboard` board, so
 `archboard check` warns `EMBED_OUTDATED` on them after a change to what its
-overview draws. Draw them again with `bun run readme:assets architecture`,
+overview draws, and names `EMBED_RENDERER_CHANGED` as information after a
+renderer change. Draw them again with `bun run readme:assets architecture`,
 which cuts their faces, rather than with `check --fix`, which writes the full
 render.
 
