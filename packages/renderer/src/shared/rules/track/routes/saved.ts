@@ -1,11 +1,11 @@
 import { runOf, type Station, type Chain } from "#shared/rules/track/routes/chains.ts";
 import type { Net } from "#shared/rules/track/channels/channels.ts";
-import type { Scene } from "#shared/rules/track/scene/scene.ts";
+import type { Item, Scene } from "#shared/rules/track/scene/scene.ts";
 
 /** What a stretch's move changes, to put back when part of it cannot move. */
 interface Saved {
 	readonly lanes: Map<Station, number>;
-	readonly boxes: Map<Station, Station["item"]>;
+	readonly boxes: Map<Item, Item["box"]>;
 	readonly nets: readonly Net[];
 	readonly ends: Float64Array;
 }
@@ -28,7 +28,7 @@ function save(
 	const boxes = new Map(
 		stations
 			.filter(({ kind, item }) => kind === "label" || scene.slides.has(item!))
-			.map((station) => [station, { ...station.item! }] as const),
+			.map(({ item }) => [item!, item!.box] as const),
 	);
 	const ends = new Float64Array(2 * nets.length);
 	for (let index = 0; index < nets.length; index += 1) {
@@ -59,7 +59,7 @@ function savedLanes(chains: readonly Chain[], stations: readonly Station[]): Map
  */
 function restore(saved: Saved): void {
 	for (const [lane, x] of saved.lanes) lane.x = x;
-	for (const [station, item] of saved.boxes) station.item!.box = item!.box;
+	for (const [item, box] of saved.boxes) item.box = box;
 	for (let index = 0; index < saved.nets.length; index += 1) {
 		const net = saved.nets[index]!;
 		net.topX = saved.ends[2 * index]!;
