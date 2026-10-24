@@ -8,7 +8,12 @@ use crate::paint::fonts::font_attributes;
 use crate::paint::palette::Palette;
 
 /// Measured lines, unchanged in content, font and placement.
-pub fn paint_text_runs(runs: &[TextRun], rect: Rect, palette: &Palette, fill: Option<&str>) -> Markup {
+pub fn paint_text_runs(
+    runs: &[TextRun],
+    rect: Rect,
+    palette: &Palette,
+    fill: Option<&str>,
+) -> Markup {
     lines(
         runs.iter()
             .map(|run| {

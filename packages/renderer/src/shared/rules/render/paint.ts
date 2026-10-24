@@ -1,0 +1,127 @@
+// The hand-off to the renderer core (ADR 0057): a render's drawing, laid out
+// here, goes to the core as one paint request, and the core answers the
+// picture as one SVG document with its atlas.
+//
+// The core paints, but this host still measures text: the core asks the
+// canvas of the place that draws for every width it needs, in the faces the
+// document names (TASK-247), until it shapes text itself (TASK-520.07).
+
+import type { PaletteColor, SemanticPolicy } from "@archboard/board/policy";
+import { FAR_VIEW_SWAP_MS } from "@archboard/timing";
+import type { TextMeasure } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+import type {
+	DocumentRequest,
+	NodeAppearance,
+	PageRequest,
+	PaintRequest,
+	PaintedDocument,
+} from "#shared/protocol/generated/core/types.ts";
+import type { DiagramRenderRequest } from "#shared/protocol/render-request.ts";
+import { rendererHost } from "#shared/rules/render/host.ts";
+import { OWN_ICONS } from "#shared/rules/render/icons.ts";
+import { base64Of, FACES } from "#shared/rules/text/fonts.ts";
+import { measure } from "#shared/rules/text/text.ts";
+
+/** The host's canvas, measuring for the core. */
+const MEASURE: TextMeasure = { width };
+
+/**
+ * How wide a run of text is, as the host's canvas draws it.
+ * @param text The text.
+ * @param family Its font family.
+ * @param weight Its font weight.
+ * @param size Its font size.
+ * @returns Its width.
+ */
+function width(
+	text: string,
+	family: Parameters<TextMeasure["width"]>[1],
+	weight: Parameters<TextMeasure["width"]>[2],
+	size: number,
+): number {
+	return measure(text, { family, weight }, size);
+}
+
+/**
+ * What a picture's document says about itself, and what it needs from this host.
+ * @param request What the render asks for.
+ * @param name What the picture is of.
+ * @param description A longer description, when there is one.
+ * @returns The document's part of a paint request.
+ */
+function documentRequest(
+	request: DiagramRenderRequest,
+	name: string,
+	description: string | undefined,
+): DocumentRequest {
+	const fonts = request.fonts ?? "linked";
+	return {
+		name,
+		description,
+		fonts,
+		farViewSwapMs: FAR_VIEW_SWAP_MS,
+		fontData:
+			fonts === "embedded"
+				? Object.fromEntries(FACES.map(({ file }) => [file, base64Of(file)]))
+				: undefined,
+		theme: request.theme,
+		themeColors: request.theme === undefined ? undefined : rendererHost().themeColors,
+	};
+}
+
+/**
+ * The comparison a picture is read against, and the page around it.
+ * @param request What the render asks for.
+ * @param plain Whether the picture leaves out its comparison's marks.
+ * @returns The page's part of a paint request.
+ */
+function pageRequest(request: DiagramRenderRequest, plain: boolean): PageRequest {
+	return {
+		standing: request.standing,
+		plain,
+		unsettled: request.unsettled ?? [],
+		unbuilt: request.unbuilt === true,
+		frame: request.frame,
+	};
+}
+
+/**
+ * The path data of every icon a picture can draw that this host has: each
+ * icon its appearances name, and the renderer's own.
+ * @param appearances The picture's node appearances.
+ * @returns Each icon's paths, by export name.
+ */
+function iconsFor(appearances: Iterable<NodeAppearance>): Record<string, readonly string[]> {
+	const host = rendererHost();
+	const names = new Set([...OWN_ICONS, ...[...appearances].map(({ icon }) => icon)]);
+	const icons: Record<string, readonly string[]> = {};
+	for (const name of names) {
+		const paths = host.iconPaths(name);
+		if (paths !== undefined) icons[name] = paths;
+	}
+	return icons;
+}
+
+/**
+ * Each group's colour, for a group that has one.
+ * @param policy The vault's presentation policy.
+ * @returns The colours, by group id.
+ */
+function groupColours(policy: SemanticPolicy): Record<string, PaletteColor> {
+	return Object.fromEntries(Object.entries(policy.groups).map(([id, { color }]) => [id, color]));
+}
+
+/**
+ * One picture, painted by the core and written as an SVG document.
+ * @param request Everything the picture is painted from.
+ * @returns The document, its size, its atlas and what it placed.
+ */
+function paintDocument(request: PaintRequest): PaintedDocument {
+	const core = rendererHost().core();
+	// The core writes what its Rust `PaintedDocument` type says, and the type
+	// here is generated from it.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	return JSON.parse(core.paintDocument(JSON.stringify(request), MEASURE)) as PaintedDocument;
+}
+
+export { documentRequest, groupColours, iconsFor, pageRequest, paintDocument };

@@ -6,6 +6,9 @@ version = 4
 name = "archboard-renderer-wasm"
 version = "0.0.0"
 dependencies = [
+ "archboard-scene",
+ "archboard-svg",
+ "serde_json",
  "wasm-bindgen",
 ]
 

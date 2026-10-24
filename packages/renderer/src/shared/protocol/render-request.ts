@@ -1,18 +1,21 @@
 // What a render asks for, and what it answers: shared by every grammar's
 // render, so the architecture, the sequence and the flowchart read one request.
 
+import type { ChangeKind } from "@archboard/board/comparison";
 import type { SemanticPolicy } from "@archboard/board/policy";
-import type {
-	DiagramAtlas,
-	FontSource,
-	LayoutEngineName,
-	StandaloneTheme,
-} from "@archboard/board/render-reply";
+import type { FontSource, LayoutEngineName, StandaloneTheme } from "@archboard/board/render-reply";
 import type { DiagramGrammar } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
-import type { ReadingDirection } from "#shared/rules/render/drawing.ts";
-import type { ExportFrame } from "#shared/rules/svg/page/export-frame.ts";
-import type { StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import type { ExportFrame, PaintedDocument } from "#shared/protocol/generated/core/types.ts";
+
+/** How one subject stands against the variant it is compared with. */
+type SubjectStanding = ChangeKind;
+
+/**
+ * What every subject of a picture states, by the id the board gave it. An id
+ * the map does not mention stands unchanged.
+ */
+type StatedStandings = Readonly<Record<string, SubjectStanding>>;
 
 /** Why some content could not be drawn. */
 type RenderErrorCode = "NOTHING_TO_RENDER";
@@ -129,34 +132,15 @@ interface SemanticViewRenderRequest extends DiagramRenderRequest {
 	readonly grammar: DiagramGrammar;
 }
 
-/** One drawn diagram, in either grammar. */
-interface RenderedDiagram {
-	/** The whole SVG document. */
-	readonly svg: string;
-	/** The page width, in the document's own units. */
-	readonly width: number;
-	/** The page height, in the document's own units. */
-	readonly height: number;
-	/** Where every subject the renderer drew ended up. */
-	readonly atlas: DiagramAtlas;
-	/**
-	 * Every subject the drawing placed, by id: what its key counts the marks
-	 * of, and what an answer says the picture draws. A legend drawn alone keys
-	 * the drawing it leaves out, so these are still that drawing's.
-	 */
-	readonly placed: readonly string[];
-	/**
-	 * Which way an architecture reads: down the page or left to right, the
-	 * renderer's choice for the content being drawn
-	 * (ADR 0032). A sequence reads one way and says nothing.
-	 */
-	readonly readingDirection?: ReadingDirection | undefined;
-}
+/** One drawn diagram, in any grammar: the document the renderer core wrote. */
+type RenderedDiagram = PaintedDocument;
 
 export {
 	type DiagramRenderRequest,
 	type SemanticViewRenderRequest,
 	type RenderedDiagram,
 	type RenderErrorCode,
+	type StatedStandings,
+	type SubjectStanding,
 	SemanticRenderError,
 };

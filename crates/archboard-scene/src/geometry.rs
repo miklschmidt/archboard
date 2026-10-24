@@ -100,7 +100,12 @@ pub fn covering(a: Rect, b: Rect) -> Rect {
     let top = js::js_min(a.y, b.y);
     let right = js::js_max(a.x + a.width, b.x + b.width);
     let bottom = js::js_max(a.y + a.height, b.y + b.height);
-    Rect { x: left, y: top, width: right - left, height: bottom - top }
+    Rect {
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top,
+    }
 }
 
 /// A box grown by the same amount on every side.
@@ -115,16 +120,21 @@ pub fn inflate(rect: Rect, by: f64) -> Rect {
 
 /// The smallest box containing all of them, or nothing when there are none.
 pub fn union(boxes: impl IntoIterator<Item = Rect>) -> Option<Rect> {
-    boxes
-        .into_iter()
-        .fold(None, |grown, rect| Some(grown.map_or(rect, |held| covering(held, rect))))
+    boxes.into_iter().fold(None, |grown, rect| {
+        Some(grown.map_or(rect, |held| covering(held, rect)))
+    })
 }
 
 /// A canvas big enough for everything that was drawn, never smaller than the
 /// size the layout asked for, and the whole-unit shift the drawing needs.
 pub fn canvas_for(laid_width: f64, laid_height: f64, drawn: Option<Rect>, margin: f64) -> Canvas {
     let Some(drawn) = drawn else {
-        return Canvas { width: laid_width, height: laid_height, shift_x: 0.0, shift_y: 0.0 };
+        return Canvas {
+            width: laid_width,
+            height: laid_height,
+            shift_x: 0.0,
+            shift_y: 0.0,
+        };
     };
     let shift_x = js::js_max(0.0, margin - drawn.x).ceil();
     let shift_y = js::js_max(0.0, margin - drawn.y).ceil();
@@ -141,15 +151,19 @@ pub fn segment_start(curve: &Curve, index: usize) -> Point {
     if index == 0 {
         return curve.from;
     }
-    curve.segments.get(index - 1).map_or(curve.from, Segment::to)
+    curve
+        .segments
+        .get(index - 1)
+        .map_or(curve.from, Segment::to)
 }
 
 /// The point a fraction of the way along one segment.
 pub fn point_on_segment(from: Point, segment: &Segment, t: f64) -> Point {
     match segment {
-        Segment::Line { to } => {
-            Point { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t }
-        }
+        Segment::Line { to } => Point {
+            x: from.x + (to.x - from.x) * t,
+            y: from.y + (to.y - from.y) * t,
+        },
         Segment::Cubic { first, second, to } => {
             let inverse = 1.0 - t;
             let weights = [
@@ -245,7 +259,9 @@ pub const BEND_RADIUS: f64 = 8.0;
 fn simplify(points: &[Point]) -> Vec<Point> {
     let mut kept: Vec<Point> = Vec::new();
     for point in points {
-        if kept.last().is_some_and(|last| js::hypot(last.x - point.x, last.y - point.y) < EPSILON)
+        if kept
+            .last()
+            .is_some_and(|last| js::hypot(last.x - point.x, last.y - point.y) < EPSILON)
         {
             continue;
         }
@@ -264,7 +280,13 @@ fn collinear(a: Point, b: Point, c: Point) -> bool {
 }
 
 /// A bend through a corner, and the straight run up to it from where the route is.
-fn bend_through(previous: Point, vertex: Point, next: Point, start: Point, fitted: bool) -> Vec<Segment> {
+fn bend_through(
+    previous: Point,
+    vertex: Point,
+    next: Point,
+    start: Point,
+    fitted: bool,
+) -> Vec<Segment> {
     let in_length = js::hypot(vertex.x - previous.x, vertex.y - previous.y);
     let out_length = js::hypot(next.x - vertex.x, next.y - vertex.y);
     let radius = if fitted {
@@ -272,10 +294,22 @@ fn bend_through(previous: Point, vertex: Point, next: Point, start: Point, fitte
     } else {
         BEND_RADIUS
     };
-    let in_dir = Point { x: (vertex.x - previous.x) / in_length, y: (vertex.y - previous.y) / in_length };
-    let out_dir = Point { x: (next.x - vertex.x) / out_length, y: (next.y - vertex.y) / out_length };
-    let arrive = Point { x: vertex.x - in_dir.x * radius, y: vertex.y - in_dir.y * radius };
-    let leave = Point { x: vertex.x + out_dir.x * radius, y: vertex.y + out_dir.y * radius };
+    let in_dir = Point {
+        x: (vertex.x - previous.x) / in_length,
+        y: (vertex.y - previous.y) / in_length,
+    };
+    let out_dir = Point {
+        x: (next.x - vertex.x) / out_length,
+        y: (next.y - vertex.y) / out_length,
+    };
+    let arrive = Point {
+        x: vertex.x - in_dir.x * radius,
+        y: vertex.y - in_dir.y * radius,
+    };
+    let leave = Point {
+        x: vertex.x + out_dir.x * radius,
+        y: vertex.y + out_dir.y * radius,
+    };
     let bend = Segment::Cubic {
         first: Point {
             x: arrive.x + in_dir.x * radius * KAPPA,
@@ -302,7 +336,13 @@ pub fn curve_through(waypoints: &[Point], fitted: bool) -> Curve {
     let last = points.len().saturating_sub(1);
     for index in 1..last {
         let start = segments.last().map_or(first, Segment::to);
-        segments.extend(bend_through(points[index - 1], points[index], points[index + 1], start, fitted));
+        segments.extend(bend_through(
+            points[index - 1],
+            points[index],
+            points[index + 1],
+            start,
+            fitted,
+        ));
     }
     if let Some(end) = points.last() {
         let start = segments.last().map_or(first, Segment::to);
@@ -310,7 +350,10 @@ pub fn curve_through(waypoints: &[Point], fitted: bool) -> Curve {
             segments.push(Segment::Line { to: *end });
         }
     }
-    Curve { from: first, segments }
+    Curve {
+        from: first,
+        segments,
+    }
 }
 
 /// A route's ends and the corners its bends round, in order.
@@ -336,11 +379,19 @@ pub fn vertices_of(curve: &Curve) -> Vec<Point> {
 pub fn label_anchor_of(curve: &Curve) -> Point {
     let mut best: Option<(f64, Point)> = None;
     for (index, segment) in curve.segments.iter().enumerate() {
-        let Segment::Line { to } = segment else { continue };
+        let Segment::Line { to } = segment else {
+            continue;
+        };
         let start = segment_start(curve, index);
         let length = js::hypot(to.x - start.x, to.y - start.y);
         if best.is_none_or(|(held, _)| length > held) {
-            best = Some((length, Point { x: (start.x + to.x) / 2.0, y: (start.y + to.y) / 2.0 }));
+            best = Some((
+                length,
+                Point {
+                    x: (start.x + to.x) / 2.0,
+                    y: (start.y + to.y) / 2.0,
+                },
+            ));
         }
     }
     best.map_or_else(|| point_at(curve, 0.5), |(_, middle)| middle)
@@ -361,9 +412,16 @@ mod tests {
     #[test]
     fn bends_a_route_through_its_corners() {
         let curve = curve_through(
-            &[Point { x: 0.0, y: 0.0 }, Point { x: 100.0, y: 0.0 }, Point { x: 100.0, y: 50.0 }],
+            &[
+                Point { x: 0.0, y: 0.0 },
+                Point { x: 100.0, y: 0.0 },
+                Point { x: 100.0, y: 50.0 },
+            ],
             false,
         );
-        assert_eq!(path_of(&curve), "M0,0 L92,0 C96.42,0 100,3.58 100,8 L100,50");
+        assert_eq!(
+            path_of(&curve),
+            "M0,0 L92,0 C96.42,0 100,3.58 100,8 L100,50"
+        );
     }
 }

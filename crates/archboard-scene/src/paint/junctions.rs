@@ -57,11 +57,25 @@ fn stretches_of(route: &JoinRoute, index: usize) -> Vec<Stretch> {
         .corners
         .windows(2)
         .enumerate()
-        .filter_map(|(at, pair)| stretch_between(pair[0], pair[1], [bend(at), bend(at + 1)], index, route.width))
+        .filter_map(|(at, pair)| {
+            stretch_between(
+                pair[0],
+                pair[1],
+                [bend(at), bend(at + 1)],
+                index,
+                route.width,
+            )
+        })
         .collect()
 }
 
-fn stretch_between(a: Point, b: Point, bends: [f64; 2], route: usize, width: f64) -> Option<Stretch> {
+fn stretch_between(
+    a: Point,
+    b: Point,
+    bends: [f64; 2],
+    route: usize,
+    width: f64,
+) -> Option<Stretch> {
     let across = (a.y - b.y).abs() < ONWARD;
     if across == ((a.x - b.x).abs() < ONWARD) {
         return None;
@@ -91,7 +105,11 @@ fn stretch_ways(stretch: &Stretch, point: Point, near: f64) -> Vec<&'static str>
         return Vec::new();
     }
     let along = if stretch.across { point.x } else { point.y };
-    let (back, forth) = if stretch.across { ("left", "right") } else { ("up", "down") };
+    let (back, forth) = if stretch.across {
+        ("left", "right")
+    } else {
+        ("up", "down")
+    };
     let mut ways = Vec::new();
     if along - stretch.from > near {
         ways.push(back);
@@ -104,7 +122,10 @@ fn stretch_ways(stretch: &Stretch, point: Point, near: f64) -> Vec<&'static str>
 
 fn ways_out(stretches: &[Stretch], point: Point, near: f64) -> Vec<&'static str> {
     let mut ways: Vec<&'static str> = Vec::new();
-    for way in stretches.iter().flat_map(|stretch| stretch_ways(stretch, point, near)) {
+    for way in stretches
+        .iter()
+        .flat_map(|stretch| stretch_ways(stretch, point, near))
+    {
         if !ways.contains(&way) {
             ways.push(way);
         }
@@ -135,7 +156,13 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
         return None;
     }
     let at = (one.at + other.at) / 2.0;
-    let point = |along: f64| if one.across { Point { x: along, y: at } } else { Point { x: at, y: along } };
+    let point = |along: f64| {
+        if one.across {
+            Point { x: along, y: at }
+        } else {
+            Point { x: at, y: along }
+        }
+    };
     let middle = (from + to) / 2.0;
     let inward = |along: f64, at_from: bool| {
         js::js_min(
@@ -143,7 +170,11 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
             js::max([one, other].map(|stretch| {
                 let end = if at_from { stretch.from } else { stretch.to };
                 if (end - along).abs() <= near {
-                    if at_from { stretch.from_bend } else { stretch.to_bend }
+                    if at_from {
+                        stretch.from_bend
+                    } else {
+                        stretch.to_bend
+                    }
                 } else {
                     0.0
                 }
@@ -151,7 +182,10 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
         )
     };
     Some(Shared {
-        ends: [(point(from), point(from + inward(from, true))), (point(to), point(to - inward(to, false)))],
+        ends: [
+            (point(from), point(from + inward(from, true))),
+            (point(to), point(to - inward(to, false))),
+        ],
         near,
     })
 }
@@ -164,7 +198,14 @@ fn joins_between(one: &Stretch, other: &Stretch, by_route: &[Vec<Stretch>]) -> V
     shared
         .ends
         .iter()
-        .filter(|(end, _)| part_at(&by_route[one.route], &by_route[other.route], *end, shared.near))
+        .filter(|(end, _)| {
+            part_at(
+                &by_route[one.route],
+                &by_route[other.route],
+                *end,
+                shared.near,
+            )
+        })
         .map(|(_, parts)| Junction {
             point: *parts,
             until: None,
@@ -207,8 +248,17 @@ impl Found {
             }
             Some(&at) => {
                 let held = &self.order[at];
-                let routes = unique(held.routes.iter().copied().chain(junction.routes.iter().copied()));
-                let kept = if held.width < junction.width { junction } else { held.clone() };
+                let routes = unique(
+                    held.routes
+                        .iter()
+                        .copied()
+                        .chain(junction.routes.iter().copied()),
+                );
+                let kept = if held.width < junction.width {
+                    junction
+                } else {
+                    held.clone()
+                };
                 self.order[at] = Junction { routes, ..kept };
             }
         }
@@ -223,15 +273,25 @@ fn touching(a: &Junction, b: &Junction) -> bool {
 }
 
 fn mark_of(cluster: &[Junction]) -> Junction {
-    let heaviest = cluster.iter().skip(1).fold(&cluster[0], |best, one| if one.width > best.width { one } else { best });
+    let heaviest =
+        cluster.iter().skip(1).fold(
+            &cluster[0],
+            |best, one| if one.width > best.width { one } else { best },
+        );
     if cluster.len() == 1 {
         return heaviest.clone();
     }
     let mut ordered: Vec<&Junction> = cluster.iter().collect();
     ordered.sort_by(|a, b| {
         let dx = a.point.x - b.point.x;
-        let difference = if dx != 0.0 && !dx.is_nan() { dx } else { a.point.y - b.point.y };
-        difference.partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal)
+        let difference = if dx != 0.0 && !dx.is_nan() {
+            dx
+        } else {
+            a.point.y - b.point.y
+        };
+        difference
+            .partial_cmp(&0.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
     Junction {
         point: ordered[0].point,
@@ -246,7 +306,10 @@ fn gathered(junctions: Vec<Junction>) -> Vec<Junction> {
     let mut marks = Vec::new();
     while let Some(first) = pending.pop() {
         let mut cluster = vec![first];
-        while let Some(index) = pending.iter().position(|one| cluster.iter().any(|held| touching(held, one))) {
+        while let Some(index) = pending
+            .iter()
+            .position(|one| cluster.iter().any(|held| touching(held, one)))
+        {
             cluster.push(pending.remove(index));
         }
         marks.push(mark_of(&cluster));
@@ -255,7 +318,11 @@ fn gathered(junctions: Vec<Junction>) -> Vec<Junction> {
 }
 
 fn joins_of(routes: &[JoinRoute]) -> Vec<Junction> {
-    let by_route: Vec<Vec<Stretch>> = routes.iter().enumerate().map(|(index, route)| stretches_of(route, index)).collect();
+    let by_route: Vec<Vec<Stretch>> = routes
+        .iter()
+        .enumerate()
+        .map(|(index, route)| stretches_of(route, index))
+        .collect();
     let stretches: Vec<Stretch> = by_route.iter().flatten().copied().collect();
     let mut found = Found::default();
     for (index, one) in stretches.iter().enumerate() {
@@ -307,8 +374,12 @@ pub fn junction_marks(routes: &[&Edge], lines: &[(String, f64)]) -> Markup {
         .map(|junction| {
             let ink = lines[junction.route].0.as_str();
             let radius = mark_radius(junction.width);
-            let members =
-                junction.routes.iter().map(|at| routes[*at].edge.id.as_str()).collect::<Vec<_>>().join(" ");
+            let members = junction
+                .routes
+                .iter()
+                .map(|at| routes[*at].edge.id.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
             match junction.until {
                 None => tag(
                     "circle",
@@ -340,5 +411,113 @@ pub fn junction_marks(routes: &[&Edge], lines: &[(String, f64)]) -> Markup {
             }
         })
         .collect();
-    group(Role::Junctions, None, attrs! { "class": "ab-junctions", "pointer-events": "none" }, concat(marks))
+    group(
+        Role::Junctions,
+        None,
+        attrs! { "class": "ab-junctions", "pointer-events": "none" },
+        concat(marks),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    //! Where routes join a shared lane (TASK-337): a route that joins another's
+    //! lane is marked where it joins, even when routing nudged the two lanes a
+    //! unit apart; two routes that only share a corner they turn together, or
+    //! only the point they both end at, or lanes far enough apart to draw as
+    //! two lines, are not marked.
+
+    use super::{JoinRoute, Junction, gathered, joins_of};
+    use crate::geometry::Point;
+
+    /// A line as thick as an ordinary relationship's.
+    const WIDTH: f64 = 1.4;
+
+    fn route(corners: &[(f64, f64)]) -> JoinRoute {
+        JoinRoute {
+            corners: corners.iter().map(|&(x, y)| Point { x, y }).collect(),
+            bends: Vec::new(),
+            width: WIDTH,
+        }
+    }
+
+    /// Every place routes join, each run of nearby joins gathered into one mark.
+    fn junctions_of(routes: &[JoinRoute]) -> Vec<Junction> {
+        gathered(joins_of(routes))
+    }
+
+    fn sorted(mut routes: Vec<usize>) -> Vec<usize> {
+        routes.sort_unstable();
+        routes
+    }
+
+    #[test]
+    fn a_route_joining_another_lane_is_marked_where_it_joins_and_only_there() {
+        // Both end on one card at the bottom left. The second joins the first's
+        // lane half way down, a unit and a bit to the side, which still draws as
+        // one line; from there they run together and turn into the card together.
+        let joins = junctions_of(&[
+            route(&[(500.0, 0.0), (0.0, 0.0), (0.0, 400.0), (-40.0, 400.0)]),
+            route(&[(500.0, 200.0), (1.2, 200.0), (1.2, 400.0), (-40.0, 400.0)]),
+        ]);
+        assert_eq!(joins.len(), 1);
+        assert!((joins[0].point.x - 0.6).abs() < 0.05);
+        assert!((joins[0].point.y - 200.0).abs() < 0.05);
+        assert_eq!(sorted(joins[0].routes.clone()), [0, 1]);
+    }
+
+    // Platform Phone API: a merge dot drawn at the corner a route's bend cut,
+    // eight units from where its ink met the lane, read as a spur.
+    #[test]
+    fn a_route_turning_off_a_lane_is_marked_where_its_bend_leaves_the_lane() {
+        let mut turning = route(&[(0.0, 0.0), (0.0, 200.0), (100.0, 200.0)]);
+        turning.bends = vec![0.0, 8.0, 0.0];
+        let joins = junctions_of(&[route(&[(0.0, 0.0), (0.0, 400.0)]), turning]);
+        assert_eq!(joins.len(), 1);
+        assert_eq!(joins[0].point, Point { x: 0.0, y: 192.0 });
+    }
+
+    // Board rasterizer and Command dispatch: three branches leaving one trunk
+    // six units apart drew three overlapping dots, a lumpy blob.
+    #[test]
+    fn joins_a_few_units_apart_along_one_lane_are_marked_once_from_the_first_to_the_last() {
+        let joins = junctions_of(&[
+            route(&[(0.0, 0.0), (0.0, 400.0)]),
+            route(&[(0.0, 0.0), (0.0, 200.0), (100.0, 200.0)]),
+            route(&[(0.0, 0.0), (0.0, 206.0), (-100.0, 206.0)]),
+        ]);
+        assert_eq!(joins.len(), 1);
+        assert_eq!(joins[0].point, Point { x: 0.0, y: 200.0 });
+        assert_eq!(joins[0].until, Some(Point { x: 0.0, y: 206.0 }));
+        // One mark for the three joins stands for every route that meets along it.
+        assert_eq!(sorted(joins[0].routes.clone()), [0, 1, 2]);
+    }
+
+    #[test]
+    fn routes_that_only_arrive_at_one_point_or_run_apart_are_not_marked() {
+        // One point both end at, from different sides.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0)]),
+                route(&[(100.0, 100.0), (0.0, 100.0)])
+            ])
+            .is_empty()
+        );
+        // Two lanes far enough apart to draw as two lines.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0)]),
+                route(&[(6.0, 0.0), (6.0, 100.0)])
+            ])
+            .is_empty()
+        );
+        // One lane from end to end, corners and all.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0), (50.0, 100.0)]),
+                route(&[(1.0, 0.0), (1.0, 100.0), (51.0, 100.0)]),
+            ])
+            .is_empty()
+        );
+    }
 }

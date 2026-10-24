@@ -11,8 +11,16 @@ pub fn round(value: f64) -> f64 {
     }
     let floor = value.floor();
     // Exact: a value with a fraction is below 2^52, where this has no error.
-    let rounded = if value - floor >= 0.5 { floor + 1.0 } else { floor };
-    if rounded == 0.0 && value < 0.0 { -0.0 } else { rounded }
+    let rounded = if value - floor >= 0.5 {
+        floor + 1.0
+    } else {
+        floor
+    };
+    if rounded == 0.0 && value < 0.0 {
+        -0.0
+    } else {
+        rounded
+    }
 }
 
 /// `String(value)`: the shortest spelling that reads back as the same number,
@@ -108,35 +116,68 @@ pub fn plain_decimal(value: f64) -> String {
     } else if point as usize >= digits.len() {
         format!("{digits}{}", "0".repeat(point as usize - digits.len()))
     } else {
-        format!("{}.{}", &digits[..point as usize], &digits[point as usize..])
+        format!(
+            "{}.{}",
+            &digits[..point as usize],
+            &digits[point as usize..]
+        )
     };
     format!("{sign}{written}")
 }
 
-/// `Math.hypot(a, b)`, as JavaScriptCore computes it: each value scaled by the
-/// largest, the squares summed with Kahan's compensation.
+/// Two to a power, exactly.
+const fn power_of_two(exponent: i64) -> f64 {
+    f64::from_bits(((1023 + exponent) as u64) << 52)
+}
+
+/// `Math.hypot(a, b)` as Bun computes it on Linux, where JavaScriptCore calls
+/// the C library's `hypot`: glibc's, a square root corrected by its error.
 pub fn hypot(a: f64, b: f64) -> f64 {
-    let values = [a, b];
-    let mut max: f64 = 0.0;
-    for value in values {
-        if value.is_infinite() {
-            return f64::INFINITY;
+    /// Below this share of the larger value, the smaller adds nothing.
+    const EPS: f64 = power_of_two(-54);
+    /// Beyond these, the squares would overflow or underflow unscaled.
+    const LARGE: f64 = power_of_two(511);
+    const TINY: f64 = power_of_two(-511);
+    const SCALE: f64 = power_of_two(-600);
+    if a.is_infinite() || b.is_infinite() {
+        return f64::INFINITY;
+    }
+    if a.is_nan() || b.is_nan() {
+        return f64::NAN;
+    }
+    let (a, b) = (a.abs(), b.abs());
+    let (large, small) = if a < b { (b, a) } else { (a, b) };
+    let kernel = |ax: f64, ay: f64| {
+        let mut h = (ax * ax + ay * ay).sqrt();
+        let (t1, t2) = if h <= 2.0 * ay {
+            let delta = h - ay;
+            (ax * (2.0 * delta - ax), (delta - 2.0 * (ax - ay)) * delta)
+        } else {
+            let delta = h - ax;
+            (
+                2.0 * delta * (ax - 2.0 * ay),
+                (4.0 * delta - ay) * ay + delta * delta,
+            )
+        };
+        h -= (t1 + t2) / (2.0 * h);
+        h
+    };
+    if large > LARGE {
+        if small <= large * EPS {
+            return large + small;
         }
-        max = max.max(value.abs());
+        return kernel(large * SCALE, small * SCALE) / SCALE;
     }
-    if max == 0.0 {
-        max = 1.0;
+    if small < TINY {
+        if large >= small / EPS {
+            return large + small;
+        }
+        return kernel(large / SCALE, small / SCALE) * SCALE;
     }
-    let mut sum = 0.0;
-    let mut compensation = 0.0;
-    for value in values {
-        let scaled = value / max;
-        let summand = scaled * scaled - compensation;
-        let preliminary = sum + summand;
-        compensation = (preliminary - sum) - summand;
-        sum = preliminary;
+    if small <= large * EPS {
+        return large + small;
     }
-    sum.sqrt() * max
+    kernel(large, small)
 }
 
 /// `Math.min(...values)`: infinity for none.
@@ -222,7 +263,8 @@ pub fn is_space(character: char) -> bool {
             | '\u{0020}'
             | '\u{00A0}'
             | '\u{1680}'
-            | '\u{2000}'..='\u{200A}'
+            | '\u{2000}'
+            ..='\u{200A}'
                 | '\u{2028}'
                 | '\u{2029}'
                 | '\u{202F}'
@@ -316,7 +358,7 @@ mod tests {
     #[test]
     fn spells_locale_decimals_without_exponent() {
         assert_eq!(plain_decimal(1e-7), "0.0000001");
-        assert_eq!(plain_decimal(2.3456789012345678), "2.345678901234568");
+        assert_eq!(plain_decimal(2.345_678_901_234_568), "2.345678901234568");
         assert_eq!(plain_decimal(1e21), "1000000000000000000000");
         assert_eq!(plain_decimal(0.000001234), "0.000001234");
     }
@@ -330,10 +372,29 @@ mod tests {
     }
 
     #[test]
-    fn measures_hypotenuses_as_javascriptcore() {
-        assert_eq!(hypot(3.0, 4.0), 5.0);
-        assert_eq!(number(hypot(0.1, 0.2)), "0.223606797749979");
-        assert_eq!(number(hypot(1e-200, 1e-200)), "1.414213562373095e-200");
+    fn measures_hypotenuses_as_bun_does() {
+        // Each answered by Bun, and by neither a plain nor a compensated sum.
+        for (a, b, bun) in [
+            (
+                -0.04125701277109656,
+                0.09338635618024804,
+                0.10209384224045334,
+            ),
+            (
+                -0.11534136387768265,
+                -0.04230269221230534,
+                0.12285417367583829,
+            ),
+            (
+                0.06478591813463064,
+                -0.1430739112631762,
+                0.15705845813801395,
+            ),
+            (3.0, 4.0, 5.0),
+            (1e-200, 1e-200, 1.414213562373095e-200),
+        ] {
+            assert_eq!(hypot(a, b), bun);
+        }
     }
 
     #[test]

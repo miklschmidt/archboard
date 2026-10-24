@@ -34,7 +34,12 @@ fn written(value: f64) -> f64 {
 
 /// A move and a scale about the origin, as an attribute (no unit) or a stylesheet ("px") writes it.
 fn placed(x: f64, y: f64, scale: f64, unit: &str) -> String {
-    format!("translate({}{unit},{}{unit}) scale({})", coord(x), coord(y), js::number(scale))
+    format!(
+        "translate({}{unit},{}{unit}) scale({})",
+        coord(x),
+        coord(y),
+        js::number(scale)
+    )
 }
 
 /// A card's kind chip as one element that both views share, drawn at its near place.
@@ -77,5 +82,10 @@ pub fn near_layer(markup: Markup) -> Markup {
 
 /// What a part draws only from far away, hidden by its own attribute.
 pub fn far_layer(markup: Markup) -> Markup {
-    group(Role::FarView, None, attrs! { "class": FAR_CLASS, "display": "none" }, markup)
+    group(
+        Role::FarView,
+        None,
+        attrs! { "class": FAR_CLASS, "display": "none" },
+        markup,
+    )
 }

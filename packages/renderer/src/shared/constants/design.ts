@@ -3,12 +3,11 @@
 // Forked from PR Lens's `design.ts` and retuned for Archboard's operator shell.
 // Anything to do with a pull request — badge strips, dead bands, pulse timings —
 // is gone rather than retuned. Its parts are drawn as blocks with a visible
-// thickness (`shared/rules/svg/parts/slab.ts`): the thicknesses and the corners are here.
+// thickness (`crates/archboard-scene/src/paint/slab.rs`): the thicknesses and the corners are here.
+// The renderer core paints with its own copy of what it draws (ADR 0057); the
+// layout and measurement here read these until the core lays out too.
 
 import { ARCHITECTURE_CARD_PADDING, ARCHITECTURE_NOTE_GAP } from "#shared/constants/spacing.ts";
-
-/** The corners of a container's tray and of a group's region. */
-const BAND_RADIUS = 10;
 
 /**
  * A measured part's name and what it is responsible for: a card's, and a
@@ -51,24 +50,11 @@ const LINE_STRENGTH = { light: 1, dark: 0.8 } as const;
  */
 const CARD_RADIUS = 6;
 /**
- * How round a card is drawn: rounder than the layout's corner, which changes
- * no route. A port the layout keeps clear of its own corner stands at most a
- * quarter unit off this one's curve.
- */
-const SLAB_RADIUS = 8;
-/** How thick a card's slab is: its front edge, inside its box along its foot. */
-const CARD_THICKNESS = 4;
-/**
- * A container's tray (`shared/rules/svg/parts/tray.ts`), cut into what holds it and lit from
- * straight above: how thick its walls show, the top wall and the two side
+ * How thick a container's tray shows its walls, the top wall and the two side
  * walls alike, a step thicker than a card's front edge, so its header slab
- * stands as far from the outer edge on the top as on either side; how wide
- * the lit lip along its bottom is; and the crease below that lip, where the
- * tray meets what it is cut into.
+ * stands as far from the outer edge on the top as on either side.
  */
 const TRAY_WALL = 6;
-const TRAY_LIP = 2;
-const TRAY_CREASE = 1;
 /**
  * The floor a tray shows round its header slab, above it and at its sides: a
  * gap only just there, so the slab looks friction fit in the well with the
@@ -83,17 +69,12 @@ const HEADER_SLAB_INSET = TRAY_WALL + WELL_GAP;
  * header slab, as a card's stand on its own.
  */
 const ARCHITECTURE_HEADER_PADDING = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
-/** How thick an icon chip is: a small tile raised off the face it sits on. */
-const CHIP_THICKNESS = 1.5;
-/** How thick a relationship's label is: a tile as low as a chip, which sits on its line. */
-const PILL_THICKNESS = 2;
 /** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
 const CARD_HEIGHT_WITH_NOTE = 58;
 
 const ICON_CHIP_SIZE = 24;
 const ICON_CHIP_GAP = 10;
-const ICON_CHIP_RADIUS = 5;
 /** Below this a sequence participant's title starts a size down, to keep its room. */
 const ICON_MIN_CARD_WIDTH = 190;
 
@@ -118,10 +99,23 @@ const NOTE_SIZE = 9.5;
 const PILL_HEIGHT = 15;
 const PILL_PADDING_X = 8;
 const PILL_TEXT_SIZE = 9;
-const PILL_RADIUS = 4;
+
+/** The farthest a card's shadow reaches below its foot, which a layout keeps clear. */
+const SHADOW_REACH = 12;
+
+/**
+ * What a part keeps clear beside its name for the mark of a board it opens:
+ * the mark's ring, 6.5 units in radius, and a gap before it.
+ */
+const DRILL_MARK_ROOM = 2 * 6.5 + 8;
+
+/** A flowchart shape's words: a size and the room one line of them takes. */
+const SHAPE_TEXT = { size: 11, line: 14 } as const;
 
 export {
-	BAND_RADIUS,
+	SHADOW_REACH,
+	DRILL_MARK_ROOM,
+	SHAPE_TEXT,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
 	ARCHITECTURE_HEADER_PADDING,
@@ -130,18 +124,10 @@ export {
 	PART_NOTE,
 	TEXT_LINE_HEIGHT,
 	CARD_RADIUS,
-	SLAB_RADIUS,
-	CARD_THICKNESS,
-	TRAY_WALL,
-	TRAY_LIP,
-	TRAY_CREASE,
-	CHIP_THICKNESS,
-	PILL_THICKNESS,
 	CARD_HEIGHT,
 	CARD_HEIGHT_WITH_NOTE,
 	ICON_CHIP_SIZE,
 	ICON_CHIP_GAP,
-	ICON_CHIP_RADIUS,
 	ICON_MIN_CARD_WIDTH,
 	TITLE_SIZE,
 	TITLE_SIZE_SMALL,
@@ -151,6 +137,5 @@ export {
 	PILL_HEIGHT,
 	PILL_PADDING_X,
 	PILL_TEXT_SIZE,
-	PILL_RADIUS,
 	LINE_STRENGTH,
 };

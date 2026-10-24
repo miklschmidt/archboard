@@ -73,7 +73,16 @@ pub fn moved_all(boxes: &Boxes, dx: f64, dy: f64) -> Boxes {
         boxes
             .0
             .iter()
-            .map(|(id, rect)| (id.clone(), AtlasBox { x: round_coord(rect.x + dx), y: round_coord(rect.y + dy), ..*rect }))
+            .map(|(id, rect)| {
+                (
+                    id.clone(),
+                    AtlasBox {
+                        x: round_coord(rect.x + dx),
+                        y: round_coord(rect.y + dy),
+                        ..*rect
+                    },
+                )
+            })
             .collect(),
     )
 }
@@ -136,7 +145,12 @@ fn framed_as_planned(ctx: &Ctx, page: PaintedPage, palette: &Palette) -> Painted
     );
     PaintedPage {
         body: lines(vec![
-            group(Role::Slot, None, attrs! { "data-slot": "planned-frame" }, lines(vec![frame, clearing, label])),
+            group(
+                Role::Slot,
+                None,
+                attrs! { "data-slot": "planned-frame" },
+                lines(vec![frame, clearing, label]),
+            ),
             group(
                 Role::Move,
                 None,
@@ -152,10 +166,18 @@ fn framed_as_planned(ctx: &Ctx, page: PaintedPage, palette: &Palette) -> Painted
 
 /// The page a painting is drawn on: as painted, or framed as planned.
 pub fn page_for(ctx: &Ctx, painting: PaintedPage, palette: &Palette, unbuilt: bool) -> PaintedPage {
-    if unbuilt { framed_as_planned(ctx, painting, palette) } else { painting }
+    if unbuilt {
+        framed_as_planned(ctx, painting, palette)
+    } else {
+        painting
+    }
 }
 
 /// The accessible name, saying what the frame says when the board is planned.
 pub fn planned_title(title: &str, unbuilt: bool) -> String {
-    if unbuilt { format!("{title}. {PLANNED_LABEL}") } else { title.to_owned() }
+    if unbuilt {
+        format!("{title}. {PLANNED_LABEL}")
+    } else {
+        title.to_owned()
+    }
 }

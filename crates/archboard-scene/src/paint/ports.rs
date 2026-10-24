@@ -49,12 +49,18 @@ pub struct Ports {
 impl Ports {
     /// The slots a line runs into.
     pub fn of_edge(&self, id: &str) -> Vec<Port> {
-        self.by_edge.get(id).map(|slots| slots.iter().map(|at| self.all[*at]).collect()).unwrap_or_default()
+        self.by_edge
+            .get(id)
+            .map(|slots| slots.iter().map(|at| self.all[*at]).collect())
+            .unwrap_or_default()
     }
 
     /// The box of a card drawn whole.
     pub fn box_of(&self, id: &str) -> Option<Rect> {
-        self.boxes.iter().find(|(card, _)| card == id).map(|(_, rect)| *rect)
+        self.boxes
+            .iter()
+            .find(|(card, _)| card == id)
+            .map(|(_, rect)| *rect)
     }
 }
 
@@ -86,9 +92,17 @@ fn meetings_of(routed: &Edge, boxes: &[(String, Rect)]) -> Vec<Meeting> {
 }
 
 fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
-    let apart = neighbours.iter().map(|other| ((other - x).abs() - WEB) / 2.0);
+    let apart = neighbours
+        .iter()
+        .map(|other| ((other - x).abs() - WEB) / 2.0);
     let half = js::min(
-        [line / 2.0 + SOCKET, x - rect.x - CORNER_ROOM, rect.x + rect.width - CORNER_ROOM - x].into_iter().chain(apart),
+        [
+            line / 2.0 + SOCKET,
+            x - rect.x - CORNER_ROOM,
+            rect.x + rect.width - CORNER_ROOM - x,
+        ]
+        .into_iter()
+        .chain(apart),
     );
     (half >= line / 2.0 + 0.5).then_some(half)
 }
@@ -96,7 +110,10 @@ fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
 /// Every port of a drawing: where a line drawn whole meets the foot of a card drawn whole.
 pub fn ports_of(cards: &[Node], edges: &[Edge], drawn_whole: &dyn Fn(&str) -> bool) -> Ports {
     let mut boxes: Vec<(String, Rect)> = Vec::new();
-    for card in cards.iter().filter(|card| drawn_whole(&card.measured.node.id)) {
+    for card in cards
+        .iter()
+        .filter(|card| drawn_whole(&card.measured.node.id))
+    {
         let id = &card.measured.node.id;
         match boxes.iter_mut().find(|(held, _)| held == id) {
             Some(entry) => entry.1 = card.bounds,
@@ -110,10 +127,13 @@ pub fn ports_of(cards: &[Node], edges: &[Edge], drawn_whole: &dyn Fn(&str) -> bo
         .collect();
     let mut ports = Ports::default();
     for (card, rect) in &boxes {
-        let here: Vec<&Meeting> = meetings.iter().filter(|meeting| &meeting.card == card).collect();
+        let here: Vec<&Meeting> = meetings
+            .iter()
+            .filter(|meeting| &meeting.card == card)
+            .collect();
         let mut places: Vec<f64> = Vec::new();
         for meeting in &here {
-            if !places.iter().any(|place| *place == meeting.x) {
+            if !places.contains(&meeting.x) {
                 places.push(meeting.x);
             }
         }
@@ -121,15 +141,26 @@ pub fn ports_of(cards: &[Node], edges: &[Edge], drawn_whole: &dyn Fn(&str) -> bo
             let at: Vec<&&Meeting> = here.iter().filter(|one| one.x == *x).collect();
             let line = js::max(at.iter().map(|one| one.line));
             let others: Vec<f64> = places.iter().copied().filter(|other| other != x).collect();
-            let Some(half) = half_at(*rect, *x, line, &others) else { continue };
+            let Some(half) = half_at(*rect, *x, line, &others) else {
+                continue;
+            };
             let index = ports.all.len();
-            ports.all.push(Port { x: *x, foot: rect.y + rect.height, half, line });
+            ports.all.push(Port {
+                x: *x,
+                foot: rect.y + rect.height,
+                half,
+                line,
+            });
             match ports.by_card.iter_mut().find(|(held, _)| held == card) {
                 Some(entry) => entry.1.push(index),
                 None => ports.by_card.push((card.clone(), vec![index])),
             }
             for one in at {
-                ports.by_edge.entry(one.edge.clone()).or_default().push(index);
+                ports
+                    .by_edge
+                    .entry(one.edge.clone())
+                    .or_default()
+                    .push(index);
             }
         }
     }
@@ -139,11 +170,21 @@ pub fn ports_of(cards: &[Node], edges: &[Edge], drawn_whole: &dyn Fn(&str) -> bo
 
 fn slot_of(port: &Port) -> Rect {
     let top = port.foot - CARD_THICKNESS + LID;
-    Rect { x: port.x - port.half, y: top, width: 2.0 * port.half, height: port.foot - SILL - top }
+    Rect {
+        x: port.x - port.half,
+        y: top,
+        width: 2.0 * port.half,
+        height: port.foot - SILL - top,
+    }
 }
 
 fn outline_of(slot: Rect) -> String {
-    let Rect { x, y, width, height } = slot;
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = slot;
     let round = height / 2.0;
     let arc = format!("A{},{} 0 0 1", coord(round), coord(round));
     format!(
@@ -160,7 +201,10 @@ fn outline_of(slot: Rect) -> String {
 }
 
 fn outlined(slot: Rect, fill: &str) -> Markup {
-    tag("path", attrs! { "d": outline_of(slot), "fill": fill, "pointer-events": "none" })
+    tag(
+        "path",
+        attrs! { "d": outline_of(slot), "fill": fill, "pointer-events": "none" },
+    )
 }
 
 /// A share of a card's box, spelt finely enough.
@@ -169,11 +213,20 @@ fn share(value: f64) -> String {
 }
 
 fn hole_of(port: &Port, rect: Rect) -> String {
-    let Rect { x, y, width, height } = slot_of(port);
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = slot_of(port);
     let round = height / 2.0;
     let u = |value: f64| share((value - rect.x) / rect.width);
     let v = |value: f64| share((value - rect.y) / rect.height);
-    let arc = format!("A{},{} 0 0 1", share(round / rect.width), share(round / rect.height));
+    let arc = format!(
+        "A{},{} 0 0 1",
+        share(round / rect.width),
+        share(round / rect.height)
+    );
     let left = port.x - port.line / 2.0;
     let right = port.x + port.line / 2.0;
     format!(
@@ -194,7 +247,12 @@ fn hole_of(port: &Port, rect: Rect) -> String {
 }
 
 fn floor_of(slot: Rect) -> String {
-    let Rect { x, y, width, height } = slot;
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = slot;
     let round = height / 2.0;
     let (left, right, middle, foot) = (x, x + width, y + round, y + height);
     let arc = format!("A{},{} 0 0", coord(round), coord(round));
@@ -216,7 +274,13 @@ fn floor_of(slot: Rect) -> String {
 }
 
 /// The inside of a port, drawn in its line's group under the card.
-pub fn port_inside(port: &Port, well: bool, stroke: Attrs, width: f64, palette: &Palette) -> Markup {
+pub fn port_inside(
+    port: &Port,
+    well: bool,
+    stroke: Attrs,
+    width: f64,
+    palette: &Palette,
+) -> Markup {
     let slot = slot_of(port);
     let left = port.x - width / 2.0;
     let bottom = slot.y + slot.height;
@@ -225,9 +289,16 @@ pub fn port_inside(port: &Port, well: bool, stroke: Attrs, width: f64, palette: 
         None,
         attrs! { "class": PORT_CLASS },
         lines(vec![
-            if well { outlined(slot, &format!("url(#{WELL_ID})")) } else { Markup::new() },
             if well {
-                tag("path", attrs! { "d": floor_of(slot), "fill": palette.port_lip, "pointer-events": "none" })
+                outlined(slot, &format!("url(#{WELL_ID})"))
+            } else {
+                Markup::new()
+            },
+            if well {
+                tag(
+                    "path",
+                    attrs! { "d": floor_of(slot), "fill": palette.port_lip, "pointer-events": "none" },
+                )
             } else {
                 Markup::new()
             },
@@ -278,7 +349,11 @@ fn port_cut(ports: &[Port], rect: Rect) -> Option<Cut> {
     }
     let outline = tag("path", attrs! { "d": d, "clip-rule": "evenodd" });
     let id = format!("ab-port-{}", content_id(&markup_of(&outline)));
-    let markup = wrap("clipPath", attrs! { "id": id.as_str(), "clipPathUnits": "objectBoundingBox" }, outline);
+    let markup = wrap(
+        "clipPath",
+        attrs! { "id": id.as_str(), "clipPathUnits": "objectBoundingBox" },
+        outline,
+    );
     Some(Cut { id, markup })
 }
 
@@ -294,7 +369,10 @@ pub struct PortPlan {
 impl PortPlan {
     /// The clip a card's body is drawn through, if it has ports.
     pub fn cut_of(&self, card: &str) -> Option<&Cut> {
-        self.cuts.iter().find(|(id, _)| id == card).map(|(_, cut)| cut)
+        self.cuts
+            .iter()
+            .find(|(id, _)| id == card)
+            .map(|(_, cut)| cut)
     }
 }
 
@@ -302,8 +380,15 @@ impl PortPlan {
 pub fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
     let mut wells = HashMap::new();
     for routed in edges {
-        for index in ports.by_edge.get(&routed.edge.id).map(Vec::as_slice).unwrap_or(&[]) {
-            wells.entry(*index).or_insert_with(|| routed.edge.id.clone());
+        for index in ports
+            .by_edge
+            .get(&routed.edge.id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+        {
+            wells
+                .entry(*index)
+                .or_insert_with(|| routed.edge.id.clone());
         }
     }
     let cuts = ports
@@ -322,7 +407,10 @@ fn inside_port(point: Point, ports: &[Port]) -> Option<Point> {
     ports
         .iter()
         .any(|port| port.x == point.x && (port.foot - point.y).abs() < 0.5)
-        .then_some(Point { x: point.x, y: point.y - RIDE_IN })
+        .then_some(Point {
+            x: point.x,
+            y: point.y - RIDE_IN,
+        })
 }
 
 /// The route a line's pulses ride: on from each end that runs into a port.
@@ -337,7 +425,10 @@ pub fn ride_into(curve: &Curve, ports: &[Port]) -> Curve {
     if let Some(end) = end {
         segments.push(Segment::Line { to: end });
     }
-    Curve { from: start.unwrap_or(curve.from), segments }
+    Curve {
+        from: start.unwrap_or(curve.from),
+        segments,
+    }
 }
 
 /// Whether a route ends in a port.
@@ -352,18 +443,36 @@ pub fn port_definitions(palette: &Palette) -> Markup {
             "radialGradient",
             attrs! { "id": WELL_ID, "cx": 0.5, "cy": 0.3, "r": 0.62 },
             concat(vec![
-                tag("stop", attrs! { "offset": 0.0, "stop-color": palette.port_deep }),
-                tag("stop", attrs! { "offset": 0.45, "stop-color": palette.port_deep }),
-                tag("stop", attrs! { "offset": 1.0, "stop-color": palette.port_wall }),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.0, "stop-color": palette.port_deep },
+                ),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.45, "stop-color": palette.port_deep },
+                ),
+                tag(
+                    "stop",
+                    attrs! { "offset": 1.0, "stop-color": palette.port_wall },
+                ),
             ]),
         ),
         wrap(
             "linearGradient",
             attrs! { "id": FADE_ID, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
             concat(vec![
-                tag("stop", attrs! { "offset": 0.0, "stop-color": palette.port_deep }),
-                tag("stop", attrs! { "offset": 0.45, "stop-color": palette.port_deep, "stop-opacity": 0.8 }),
-                tag("stop", attrs! { "offset": 0.85, "stop-color": palette.port_deep, "stop-opacity": 0.0 }),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.0, "stop-color": palette.port_deep },
+                ),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.45, "stop-color": palette.port_deep, "stop-opacity": 0.8 },
+                ),
+                tag(
+                    "stop",
+                    attrs! { "offset": 0.85, "stop-color": palette.port_deep, "stop-opacity": 0.0 },
+                ),
             ]),
         ),
     ])
