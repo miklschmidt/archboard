@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 72,
+	"version": 74,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-22T03:40:07.329Z",
+	"updatedAt": "2026-10-24T11:39:57.633Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -8692,6 +8692,1889 @@
 							"path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
 							"symbol": "cn"
 						}
+					}
+				],
+				"flows": [
+					{
+						"id": "DMxZKjHM",
+						"name": "One board write",
+						"participants": [
+							"TBnOCNx2",
+							"cPOdAA3f",
+							"8XKRkSHl",
+							"6nZjwK9W"
+						],
+						"steps": [
+							{
+								"id": "LBMNkyEo",
+								"from": "TBnOCNx2",
+								"to": "cPOdAA3f",
+								"label": "POST the change with --doing and the version it read",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+									"symbol": "fetch"
+								}
+							},
+							{
+								"id": "32JoE9cj",
+								"kind": "decision",
+								"question": "What does the server's write boundary decide?",
+								"alternatives": [
+									{
+										"label": "no doing line",
+										"steps": [
+											{
+												"id": "hr750jYf",
+												"from": "cPOdAA3f",
+												"to": "TBnOCNx2",
+												"label": "Refused: say what you are doing",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "describedWrite"
+												}
+											}
+										]
+									},
+									{
+										"label": "board held",
+										"steps": [
+											{
+												"id": "NCbZuDGL",
+												"from": "cPOdAA3f",
+												"to": "TBnOCNx2",
+												"label": "BOARD_HELD (409): somebody else holds the board",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "answerRefusal"
+												}
+											}
+										]
+									},
+									{
+										"label": "version moved",
+										"steps": [
+											{
+												"id": "cKAchRAs",
+												"from": "cPOdAA3f",
+												"to": "TBnOCNx2",
+												"label": "BOARD_VERSION_CONFLICT (409): read again",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "answerRefusal"
+												}
+											}
+										]
+									},
+									{
+										"label": "content invalid",
+										"steps": [
+											{
+												"id": "bqjCXJw3",
+												"from": "cPOdAA3f",
+												"to": "TBnOCNx2",
+												"label": "INVALID_CONTENT (422): the board is untouched",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "answerRefusal"
+												}
+											}
+										]
+									},
+									{
+										"label": "accepted",
+										"steps": [
+											{
+												"id": "o1hACPLp",
+												"from": "cPOdAA3f",
+												"to": "8XKRkSHl",
+												"label": "Take the lease, commit the whole family, fsync",
+												"kind": "sync",
+												"note": "one board, one writer at a time; the answer waits for the disk",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "writeSemanticBoard"
+												}
+											},
+											{
+												"id": "FXFwDp1X",
+												"from": "8XKRkSHl",
+												"to": "cPOdAA3f",
+												"label": "Committed",
+												"kind": "return"
+											},
+											{
+												"id": "PMJmtfe5",
+												"from": "cPOdAA3f",
+												"to": "6nZjwK9W",
+												"label": "board_note: the board has a new version",
+												"kind": "async",
+												"note": "the news carries the version, not the change",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "announce"
+												}
+											},
+											{
+												"id": "fL2rIeIQ",
+												"from": "cPOdAA3f",
+												"to": "TBnOCNx2",
+												"label": "The saved family and its new version",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+													"symbol": "answerWrite"
+												}
+											},
+											{
+												"id": "6RM5T554",
+												"from": "6nZjwK9W",
+												"to": "cPOdAA3f",
+												"label": "Read the board again",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-requests/src/ui/clients/server-requests.ts",
+													"symbol": "fetch"
+												}
+											},
+											{
+												"id": "v7NX2oII",
+												"from": "cPOdAA3f",
+												"to": "6nZjwK9W",
+												"label": "The board at its new version",
+												"kind": "return"
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "C6LkFhjC",
+						"name": "One recording",
+						"participants": [
+							"TBnOCNx2",
+							"cPOdAA3f",
+							"t7W7wJHv",
+							"VgzgNAGW",
+							"nugpFSIX"
+						],
+						"steps": [
+							{
+								"id": "VmVzsgEa",
+								"from": "TBnOCNx2",
+								"to": "cPOdAA3f",
+								"label": "Read the board and the vault policy",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+									"symbol": "fetch"
+								}
+							},
+							{
+								"id": "ACwRzeh0",
+								"from": "cPOdAA3f",
+								"to": "TBnOCNx2",
+								"label": "The board and the policy",
+								"kind": "return"
+							},
+							{
+								"id": "oEtHrYfe",
+								"from": "TBnOCNx2",
+								"to": "nugpFSIX",
+								"label": "Probe its encoders",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+									"symbol": "probeFfmpeg"
+								}
+							},
+							{
+								"id": "AY9Kp1YQ",
+								"from": "nugpFSIX",
+								"to": "TBnOCNx2",
+								"label": "The encoders it offers",
+								"kind": "return"
+							},
+							{
+								"id": "M8uSAY5f",
+								"kind": "decision",
+								"question": "Does ffmpeg offer the encoders the file needs?",
+								"alternatives": [
+									{
+										"label": "one is missing",
+										"steps": [
+											{
+												"id": "z9yuZzSy",
+												"from": "TBnOCNx2",
+												"to": "TBnOCNx2",
+												"label": "Refuse with ENCODER_UNAVAILABLE; no browser starts",
+												"kind": "self"
+											}
+										]
+									},
+									{
+										"label": "all offered",
+										"steps": [
+											{
+												"id": "W2bGXkG1",
+												"from": "TBnOCNx2",
+												"to": "t7W7wJHv",
+												"label": "Launch with a silent microphone; open the recording page",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+													"symbol": "spawnChromium"
+												}
+											},
+											{
+												"id": "HatKBDdh",
+												"from": "t7W7wJHv",
+												"to": "cPOdAA3f",
+												"label": "Load the recording page",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "recordingPageUrl"
+												}
+											},
+											{
+												"id": "dwtrMDrl",
+												"from": "t7W7wJHv",
+												"to": "cPOdAA3f",
+												"label": "Voice for each step, as a recording",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+													"symbol": "WalkthroughRecorder.start"
+												}
+											},
+											{
+												"id": "VkeGIrKL",
+												"kind": "loop",
+												"condition": "until the page says the talk is finished",
+												"steps": [
+													{
+														"id": "LKviveIO",
+														"from": "TBnOCNx2",
+														"to": "t7W7wJHv",
+														"label": "Read the page's state",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+															"symbol": "finished"
+														}
+													},
+													{
+														"id": "q5Cz6Ggv",
+														"from": "t7W7wJHv",
+														"to": "TBnOCNx2",
+														"label": "Its phase and step",
+														"kind": "return"
+													}
+												]
+											},
+											{
+												"id": "UcmzIms5",
+												"from": "TBnOCNx2",
+												"to": "t7W7wJHv",
+												"label": "Take the voice and the talk",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+													"symbol": "logOf"
+												}
+											},
+											{
+												"id": "uADpbTOH",
+												"from": "t7W7wJHv",
+												"to": "TBnOCNx2",
+												"label": "The voice as a WAV file and the talk's events",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "pageHandle"
+												}
+											},
+											{
+												"id": "RsQrHuOG",
+												"from": "TBnOCNx2",
+												"to": "t7W7wJHv",
+												"label": "Stop the browser",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "talkedWith"
+												}
+											},
+											{
+												"id": "bauTjH5g",
+												"from": "TBnOCNx2",
+												"to": "VgzgNAGW",
+												"label": "Keep talk.json and voice.wav in one rename",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "writeTalk"
+												}
+											},
+											{
+												"id": "R8ISfp9y",
+												"from": "TBnOCNx2",
+												"to": "t7W7wJHv",
+												"label": "Launch a software browser and open the replay page",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "startBrowsers"
+												}
+											},
+											{
+												"id": "LP4Swc4u",
+												"from": "t7W7wJHv",
+												"to": "cPOdAA3f",
+												"label": "Load the replay page",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "replayUrl"
+												}
+											},
+											{
+												"id": "XD00k0F9",
+												"from": "TBnOCNx2",
+												"to": "nugpFSIX",
+												"label": "Start it on the frames to come and the voice",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "openVideoEncoder"
+												}
+											},
+											{
+												"id": "Fog9Lfq2",
+												"kind": "loop",
+												"condition": "for each frame of the talk",
+												"steps": [
+													{
+														"id": "40bkx02R",
+														"from": "TBnOCNx2",
+														"to": "t7W7wJHv",
+														"label": "Draw frame n and capture it as JPEG",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+															"symbol": "drawFrames"
+														}
+													},
+													{
+														"id": "lRkur17X",
+														"from": "t7W7wJHv",
+														"to": "TBnOCNx2",
+														"label": "One JPEG",
+														"kind": "return"
+													},
+													{
+														"id": "Ug0nliDL",
+														"from": "TBnOCNx2",
+														"to": "nugpFSIX",
+														"label": "Write the frame, in order",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+															"symbol": "writeFrame"
+														}
+													}
+												]
+											},
+											{
+												"id": "9kHWSFuE",
+												"from": "TBnOCNx2",
+												"to": "t7W7wJHv",
+												"label": "Stop the browser",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "stopAll"
+												}
+											},
+											{
+												"id": "sziZI8Bp",
+												"from": "TBnOCNx2",
+												"to": "nugpFSIX",
+												"label": "Finish the file",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "renderTalk"
+												}
+											},
+											{
+												"id": "aXZR9NX7",
+												"from": "nugpFSIX",
+												"to": "TBnOCNx2",
+												"label": "The video file",
+												"kind": "return"
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "SssnycS0",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "JnVoCQnm",
+								"heading": "Agents author, people read",
+								"body": "An agent states meaning through the CLI. The Archboard server checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
+								"subjects": [
+									"TBnOCNx2",
+									"9m47dJzG",
+									"cPOdAA3f",
+									"8XKRkSHl"
+								]
+							},
+							{
+								"id": "coggGU2D",
+								"heading": "The browser is a viewer",
+								"body": "A pane holds board content only as a read-only cache of what the server said, and reads again when it is told a new version exists. What it owns is the camera, the view, the walkthrough position and what somebody picked out.",
+								"subjects": [
+									"6nZjwK9W",
+									"iF6W48DS",
+									"4p2LMrOt"
+								]
+							},
+							{
+								"id": "JuKj0ZMA",
+								"heading": "Pictures are taken outside the server",
+								"body": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI keeps the talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file. replay renders a kept talk again.",
+								"subjects": [
+									"t7W7wJHv",
+									"chzSzpL4",
+									"vKDw0TwV",
+									"nugpFSIX",
+									"VgzgNAGW",
+									"FCRYdY4h",
+									"OPwTCiKt"
+								]
+							},
+							{
+								"id": "FlAhpGUe",
+								"heading": "Agent work has a lifetime of its own",
+								"body": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home that every Archboard server on this machine shares. Each browser tab has its own conversation: a workhorse that does the work, and a coordinator that voice talks to. A reload keeps the conversation. A minute after a tab closes, its conversation ends, and Codex unloads its threads once no work runs on them. When the child exits, each tab starts a new conversation with its next message. The threads author boards through the CLI, like any agent.",
+								"subjects": [
+									"xr1MHYE7",
+									"2OeapIzk",
+									"zs8yTQLI",
+									"t3P6jc5T",
+									"DcdR8rPv"
+								]
+							},
+							{
+								"id": "bnH63t0c",
+								"heading": "The skill is measured, not assumed",
+								"body": "The guidance an agent in another repository reads is held to real runs: two versions of the package, the same CLI and fixtures, real authors, and a blinded grading session. A person starts it; the gate never does.",
+								"subjects": [
+									"PxnjFfV3"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "baipCbd7",
+			"name": "TASK-517",
+			"lifecycle": "draft",
+			"parent": "3M2UsnnM",
+			"summary": "Reuse the Codex workbench in independent applications",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+				}
+			],
+			"content": {
+				"nodes": [
+					{
+						"id": "TBnOCNx2",
+						"order": 1000,
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Authors named boards: one short-lived process per command, run by the source of the archboard checkout it stands in, writing no board itself",
+						"description": "Every board operation reaches the Archboard server over HTTP and names the vault the command found, from -C or the checkout it runs in. The first command in a checkout or untracked vault that this machine does not know registers it. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add, repo use, repo forget and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "cPOdAA3f",
+						"order": 2000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Owns every board, draws every view, and answers both applications; each archboard checkout runs its own, on its own port",
+						"description": "One process for each archboard checkout, running that checkout's source: the main checkout's listens on port 3000, a linked worktree's on a port from 10000 to 19999 that its path decides. Board persistence, the renderer, the pane sockets and the agent workbench all live in it; the Codex app-server is its private child.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "6nZjwK9W",
+						"order": 3000,
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
+						"description": "It also carries voice: the Archboard server negotiates the session with Codex for the page, and the microphone and the voice then travel over the connection that negotiation opens.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8XKRkSHl",
+						"order": 4000,
+						"name": "Board vault",
+						"kind": "datastore",
+						"responsibility": "One document per board, holding every variant of it",
+						"description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023)."
+					},
+					{
+						"id": "xr1MHYE7",
+						"order": 5000,
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "Runs each browser tab's agent threads, as one private child of the Archboard server",
+						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. The child's environment names the URL of the server that started it and no vault, so that CLI talks to that server and never starts another. A thread finds each board's vault in its board context and names it with -C. Archboard's side of it is the agent workbench inside the Archboard server.",
+						"groups": [
+							"agent"
+						]
+					},
+					{
+						"id": "19855Ply",
+						"order": 6000,
+						"name": "Repository checkout",
+						"kind": "datastore",
+						"responsibility": "Every checkout known here, the one chosen for each repository that bindings resolve in, and untracked vaults; each checkout holds its configured language servers",
+						"description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. It holds every known checkout (clones, and the worktrees of its identity that git lists for a known one), each with its identity, and every registered directory outside a checkout that holds .archboard/vault, under a registry name. For each identity one checkout is chosen: the first known one, then only repo use changes it, and repo add never does. A reader that turns an identity into a directory asks code-target, which reads the chosen checkouts and so never sees the others, with one exception: a binding that names the identity of the checkout that holds the vault being read resolves in that checkout, registered or chosen or not (ADR 0049). An identity whose chosen checkout was forgotten resolves as unregistered, unless the vault stands in it. Each checkout's entry also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/runtime/store/repo-registry.ts"
+						}
+					},
+					{
+						"id": "PxnjFfV3",
+						"order": 7000,
+						"name": "Skill evaluation",
+						"kind": "service",
+						"responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts",
+						"description": "Started by a person, never by the gate: every author run and the grading session call a model.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime"
+						},
+						"drillDown": {
+							"board": "Skill evaluation",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "t7W7wJHv",
+						"order": 8000,
+						"name": "Headless Chromium",
+						"kind": "external",
+						"responsibility": "Paints an SVG and answers with the bitmap, or opens the Archboard server's page to record a walkthrough's talk or draw it frame by frame, when a command asks"
+					},
+					{
+						"id": "zs8yTQLI",
+						"order": 9000,
+						"name": "Codex home",
+						"kind": "datastore",
+						"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine",
+						"description": "An archboard-only CODEX_HOME under the state directory, readable by nobody else. One sign-in serves every server, since Codex takes several processes on one home; what a server keeps about its own child, the owner lock and the epoch ledger, sits under its port. The server fills in the config it needs (auto-review approvals, a sandbox with network access) and keeps what Codex or the user set.",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/store/storage.ts"
+						}
+					},
+					{
+						"id": "nugpFSIX",
+						"order": 10000,
+						"name": "ffmpeg",
+						"kind": "external",
+						"responsibility": "Encodes a recording's frames and voice into its video file, when a command asks",
+						"description": "Named by ARCHBOARD_FFMPEG, found on PATH, or run as nixpkgs#ffmpeg-headless through Nix. Without one, record and replay are refused before a browser starts."
+					},
+					{
+						"id": "VgzgNAGW",
+						"order": 11000,
+						"name": "Recorded talks",
+						"kind": "datastore",
+						"responsibility": "Each recording's talk: its voice, and when each step and line came, kept to render again",
+						"description": "talk.json and voice.wav, under the state directory's recordings, where the newest 10 stay, or in a directory --talk names, which is never pruned. A talk holds the board and the policy it was drawn from, so it renders again without the board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/store/talk-files.ts"
+						}
+					},
+					{
+						"id": "yEgsaWnA",
+						"order": 12000,
+						"name": "Clipboard owner",
+						"kind": "service",
+						"responsibility": "Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it",
+						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/runtime"
+						}
+					},
+					{
+						"id": "fssx6Gaq",
+						"order": 13000,
+						"name": "Workspace packages",
+						"kind": "package",
+						"responsibility": "The sixteen libraries the three apps are built from, each reached only through its exports",
+						"description": "A package owns one behavior and names its public files in package.json exports; nothing imports an app. Each package sits in a layer: the longest chain of packages it imports. A package imports only layers below its own, and packages of one layer never import each other (tests/system/repository-policy/package-graph.test.ts holds both rules). The apps share layer 8 above them all.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages"
+						}
+					},
+					{
+						"id": "wqZgAWf3",
+						"order": 14000,
+						"name": "Layer 0",
+						"kind": "other",
+						"responsibility": "Imports no other package",
+						"description": "Holds timing, diagnostics, ui-kit, server-requests. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "LRPhDIs2",
+						"order": 15000,
+						"name": "Layer 1",
+						"kind": "other",
+						"responsibility": "Imports only layer 0",
+						"description": "Holds process. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "BWgNerjJ",
+						"order": 16000,
+						"name": "Layer 2",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 1",
+						"description": "Holds workspace. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "t38bKOue",
+						"order": 17000,
+						"name": "Layer 3",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 2",
+						"description": "Holds code-binding. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "GE8BkWsJ",
+						"order": 18000,
+						"name": "Layer 4",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 3",
+						"description": "Holds board. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "aIT2jJaC",
+						"order": 19000,
+						"name": "Layer 5",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 4",
+						"description": "Holds renderer, code-intel, codex-app-server. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "TQNCxSiT",
+						"order": 20000,
+						"name": "Layer 6",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 5",
+						"description": "Holds server-lifecycle, code-opener, walkthrough. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "zjBzk8pe",
+						"order": 21000,
+						"name": "Layer 7",
+						"kind": "other",
+						"responsibility": "Imports only the layers below it, 0 to 6",
+						"description": "Holds workbench, skills. A package's layer is the longest chain of packages it imports.",
+						"parent": "fssx6Gaq"
+					},
+					{
+						"id": "sZ4chHDX",
+						"order": 22000,
+						"name": "timing",
+						"kind": "package",
+						"responsibility": "Every duration, with what it pulls against",
+						"parent": "wqZgAWf3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/timing"
+						}
+					},
+					{
+						"id": "7nWcEvFx",
+						"order": 23000,
+						"name": "diagnostics",
+						"kind": "package",
+						"responsibility": "Logs a line and shows a thrown value as text",
+						"parent": "wqZgAWf3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/diagnostics"
+						}
+					},
+					{
+						"id": "l5jdGkb1",
+						"order": 24000,
+						"name": "ui-kit",
+						"kind": "package",
+						"responsibility": "Presentation parts the web app, the workbench and the code opener draw with",
+						"parent": "wqZgAWf3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/ui-kit"
+						}
+					},
+					{
+						"id": "29kIWfHH",
+						"order": 25000,
+						"name": "server-requests",
+						"kind": "package",
+						"responsibility": "Every browser call to the server, each naming its vault",
+						"parent": "wqZgAWf3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-requests"
+						}
+					},
+					{
+						"id": "Biz0M6Ld",
+						"order": 26000,
+						"name": "process",
+						"kind": "package",
+						"responsibility": "Owns a child process group and ends it",
+						"parent": "LRPhDIs2",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/process"
+						}
+					},
+					{
+						"id": "tdKalihR",
+						"order": 27000,
+						"name": "workspace",
+						"kind": "package",
+						"responsibility": "Where a vault, a checkout and the state directory are, and the atomic write",
+						"parent": "BWgNerjJ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace"
+						}
+					},
+					{
+						"id": "w9zvoSFD",
+						"order": 28000,
+						"name": "code-binding",
+						"kind": "package",
+						"responsibility": "A node's code binding and where its path lives in a checkout",
+						"parent": "t38bKOue",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-binding"
+						}
+					},
+					{
+						"id": "DmbKboxU",
+						"order": 29000,
+						"name": "board",
+						"kind": "package",
+						"responsibility": "The board document and its one reader and writer",
+						"parent": "GE8BkWsJ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board"
+						}
+					},
+					{
+						"id": "OHywsFXm",
+						"order": 30000,
+						"name": "renderer",
+						"kind": "package",
+						"responsibility": "Draws a board as a picture, in the browser or under Bun",
+						"parent": "aIT2jJaC",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer"
+						}
+					},
+					{
+						"id": "6HYaX0mK",
+						"order": 31000,
+						"name": "code-intel",
+						"kind": "package",
+						"responsibility": "What the code says about a board: the code check, its facts and the history lens",
+						"parent": "aIT2jJaC",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel"
+						}
+					},
+					{
+						"id": "vEVm326r",
+						"order": 32000,
+						"name": "codex-app-server",
+						"kind": "package",
+						"responsibility": "One private Codex app-server session over stdio",
+						"parent": "aIT2jJaC",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server"
+						}
+					},
+					{
+						"id": "doujM3ih",
+						"order": 33000,
+						"name": "server-lifecycle",
+						"kind": "package",
+						"responsibility": "Starts, finds, restarts and stops the server, and the client that calls it",
+						"parent": "TQNCxSiT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle"
+						}
+					},
+					{
+						"id": "7hdbqGFn",
+						"order": 34000,
+						"name": "code-opener",
+						"kind": "package",
+						"responsibility": "Opens the code that a node binds",
+						"parent": "TQNCxSiT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener"
+						}
+					},
+					{
+						"id": "5zIYNuw1",
+						"order": 35000,
+						"name": "walkthrough",
+						"kind": "package",
+						"responsibility": "Records a narrated walkthrough and renders its talk again",
+						"parent": "TQNCxSiT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough"
+						}
+					},
+					{
+						"id": "sw4oFps0",
+						"order": 36000,
+						"name": "workbench",
+						"kind": "package",
+						"responsibility": "Archboard integration: board context, domain tools, narration, pane routing, and the visual workbench shell",
+						"parent": "zjBzk8pe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench"
+						}
+					},
+					{
+						"id": "LDqRcaY1",
+						"order": 37000,
+						"name": "skills",
+						"kind": "package",
+						"responsibility": "Ships the agent skills and evaluates them, when a person starts it",
+						"parent": "zjBzk8pe",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills"
+						}
+					},
+					{
+						"id": "lU0khwR0",
+						"order": 38000,
+						"name": "agent-workbench",
+						"kind": "package",
+						"responsibility": "Reusable Codex sessions with voice, a coordinator, checkout workhorses, and host-supplied application policy",
+						"parent": "TQNCxSiT",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench"
+						}
+					},
+					{
+						"id": "xssnUgIk",
+						"order": 39000,
+						"name": "Workbench example",
+						"kind": "service",
+						"responsibility": "An independent application that uses the shared workbench without a board or vault",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/workbench-example"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "9m47dJzG",
+						"order": 1000,
+						"from": "TBnOCNx2",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "semantic commands, on its own checkout's port",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "iF6W48DS",
+						"order": 2000,
+						"from": "6nZjwK9W",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "views and controls",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-requests/src/ui/clients/server-requests.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "mjjIPV4U",
+						"order": 3000,
+						"from": "cPOdAA3f",
+						"to": "8XKRkSHl",
+						"kind": "data",
+						"label": "read / commit",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "4p2LMrOt",
+						"order": 4000,
+						"from": "cPOdAA3f",
+						"to": "6nZjwK9W",
+						"kind": "event",
+						"label": "board and agent news",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+							"symbol": "announceDoing"
+						}
+					},
+					{
+						"id": "2OeapIzk",
+						"order": 5000,
+						"from": "cPOdAA3f",
+						"to": "xr1MHYE7",
+						"kind": "rpc",
+						"label": "private stdio session",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+							"symbol": "CODEX_APP_SERVER_ARGUMENTS"
+						}
+					},
+					{
+						"id": "oK9fPKdv",
+						"order": 6000,
+						"from": "cPOdAA3f",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "resolve in the vault's checkout or the chosen one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "chzSzpL4",
+						"order": 7000,
+						"from": "TBnOCNx2",
+						"to": "t7W7wJHv",
+						"kind": "call",
+						"label": "photograph a board, record a talk, draw its frames",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+							"symbol": "spawnChromium"
+						}
+					},
+					{
+						"id": "xKVVomRU",
+						"order": 8000,
+						"from": "PxnjFfV3",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "the CLI under test",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/processes/archboard.ts",
+							"symbol": "archboard"
+						}
+					},
+					{
+						"id": "SoK3eMhj",
+						"order": 9000,
+						"from": "PxnjFfV3",
+						"to": "cPOdAA3f",
+						"kind": "call",
+						"label": "one per run, on its own port",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/processes/server.ts",
+							"symbol": "startServer"
+						}
+					},
+					{
+						"id": "vKDw0TwV",
+						"order": 10000,
+						"from": "t7W7wJHv",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "the recording and replay pages",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "pageUrl"
+						}
+					},
+					{
+						"id": "pxP5bkpx",
+						"order": 11000,
+						"from": "cPOdAA3f",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "prepare, write its config",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+							"symbol": "prepareCodexStorage"
+						}
+					},
+					{
+						"id": "t3P6jc5T",
+						"order": 12000,
+						"from": "xr1MHYE7",
+						"to": "zs8yTQLI",
+						"kind": "data",
+						"label": "sign-in, config, threads",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/environment.ts",
+							"symbol": "buildCodexChildEnvironment"
+						}
+					},
+					{
+						"id": "DcdR8rPv",
+						"order": 13000,
+						"from": "xr1MHYE7",
+						"to": "TBnOCNx2",
+						"kind": "call",
+						"label": "a thread's board commands",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/environment.ts",
+							"symbol": "buildCodexChildEnvironment"
+						}
+					},
+					{
+						"id": "J5WjwmUn",
+						"order": 14000,
+						"from": "TBnOCNx2",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "register its checkout; choose and forget checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/repo/repo.ts",
+							"symbol": "declareDirectory"
+						}
+					},
+					{
+						"id": "FCRYdY4h",
+						"order": 15000,
+						"from": "TBnOCNx2",
+						"to": "nugpFSIX",
+						"kind": "call",
+						"label": "encode the frames and the voice",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+							"symbol": "spawn"
+						}
+					},
+					{
+						"id": "OPwTCiKt",
+						"order": 16000,
+						"from": "TBnOCNx2",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "keep a talk; read one to render again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "writeTalk"
+						}
+					},
+					{
+						"id": "RwZDQDsa",
+						"order": 17000,
+						"from": "PxnjFfV3",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "a fixture's talk, read back to replay",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/replay.ts",
+							"symbol": "readTalk"
+						}
+					},
+					{
+						"id": "sp1HWQNm",
+						"order": 18000,
+						"from": "TBnOCNx2",
+						"to": "yEgsaWnA",
+						"kind": "call",
+						"label": "copy PNG and HTML together",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts",
+							"symbol": "fork"
+						}
+					},
+					{
+						"id": "wImHhbk7",
+						"order": 19000,
+						"from": "TBnOCNx2",
+						"to": "fssx6Gaq",
+						"kind": "dependency",
+						"label": "imports packages through their exports",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts",
+							"symbol": "handOff"
+						}
+					},
+					{
+						"id": "mm4DLsd2",
+						"order": 20000,
+						"from": "cPOdAA3f",
+						"to": "fssx6Gaq",
+						"kind": "dependency",
+						"label": "imports packages through their exports",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server.ts",
+							"symbol": "isMainModule"
+						}
+					},
+					{
+						"id": "0ri6Svab",
+						"order": 21000,
+						"from": "6nZjwK9W",
+						"to": "fssx6Gaq",
+						"kind": "dependency",
+						"label": "imports packages through their exports",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/main.tsx",
+							"symbol": "learnServedVault"
+						}
+					},
+					{
+						"id": "H6GBSJO0",
+						"order": 22000,
+						"from": "Biz0M6Ld",
+						"to": "7nWcEvFx",
+						"kind": "dependency",
+						"label": "error text",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/process/src/runtime/processes/group.ts",
+							"symbol": "errorCode"
+						}
+					},
+					{
+						"id": "7eSdILxB",
+						"order": 23000,
+						"from": "Biz0M6Ld",
+						"to": "sZ4chHDX",
+						"kind": "dependency",
+						"label": "cleanup durations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/process/src/runtime/processes/group-cleanup.ts",
+							"symbol": "CODEX_GROUP_FREEZE_MS"
+						}
+					},
+					{
+						"id": "VqSf4PHA",
+						"order": 24000,
+						"from": "tdKalihR",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "git in its own process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/runtime/clients/git-command.ts",
+							"symbol": "captureDetachedProcessGroup"
+						}
+					},
+					{
+						"id": "Ggbqp1CU",
+						"order": 25000,
+						"from": "w9zvoSFD",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "the chosen checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "I2n1uZLa",
+						"order": 26000,
+						"from": "DmbKboxU",
+						"to": "w9zvoSFD",
+						"kind": "dependency",
+						"label": "binding and anchor schemas",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/content.ts",
+							"symbol": "CodeBindingSchema"
+						}
+					},
+					{
+						"id": "fVxcoo6Q",
+						"order": 27000,
+						"from": "6HYaX0mK",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "the boards to check",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+							"symbol": "currentVariant"
+						}
+					},
+					{
+						"id": "DikCBbRe",
+						"order": 28000,
+						"from": "vEVm326r",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "board schemas for briefs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/schemas/semantic-architecture-input.ts",
+							"symbol": "DiagramGrammarSchema"
+						}
+					},
+					{
+						"id": "8j8wv5FT",
+						"order": 29000,
+						"from": "OHywsFXm",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "the board document",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/render/board.ts",
+							"symbol": "addressedVariant"
+						}
+					},
+					{
+						"id": "3WdQR8x7",
+						"order": 30000,
+						"from": "7hdbqGFn",
+						"to": "6HYaX0mK",
+						"kind": "dependency",
+						"label": "the line of a bound symbol",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/projections/symbol-line.ts",
+							"symbol": "createCodeFacts"
+						}
+					},
+					{
+						"id": "FZXXXyDz",
+						"order": 31000,
+						"from": "7hdbqGFn",
+						"to": "29kIWfHH",
+						"kind": "dependency",
+						"label": "opener requests",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
+							"symbol": "mutation"
+						}
+					},
+					{
+						"id": "MAtwLWd8",
+						"order": 32000,
+						"from": "7hdbqGFn",
+						"to": "l5jdGkb1",
+						"kind": "dependency",
+						"label": "settings controls",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/ui/components/RepositoryField.tsx",
+							"symbol": "Badge"
+						}
+					},
+					{
+						"id": "z5LT96h1",
+						"order": 33000,
+						"from": "doujM3ih",
+						"to": "vEVm326r",
+						"kind": "dependency",
+						"label": "the Codex executable",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+							"symbol": "resolveProjectCodexExecutable"
+						}
+					},
+					{
+						"id": "zSvgwAHH",
+						"order": 34000,
+						"from": "5zIYNuw1",
+						"to": "OHywsFXm",
+						"kind": "dependency",
+						"label": "headless Chromium",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+							"symbol": "launchHeadlessChromium"
+						}
+					},
+					{
+						"id": "U1k5hdA7",
+						"order": 35000,
+						"from": "LDqRcaY1",
+						"to": "5zIYNuw1",
+						"kind": "dependency",
+						"label": "where a run keeps its talks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/vault.ts",
+							"symbol": "askedTalkPlace"
+						}
+					},
+					{
+						"id": "YHDPy2Y1",
+						"order": 36000,
+						"from": "sw4oFps0",
+						"to": "doujM3ih",
+						"kind": "dependency",
+						"label": "server ownership",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "serverStartupOwnershipRecord"
+						}
+					},
+					{
+						"id": "vBJQnNd2",
+						"order": 37000,
+						"from": "sw4oFps0",
+						"to": "5zIYNuw1",
+						"kind": "dependency",
+						"label": "narrated walkthroughs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/realtime/presentation-mode.ts",
+							"symbol": "languageName"
+						}
+					},
+					{
+						"id": "yRl53uvR",
+						"order": 38000,
+						"from": "sw4oFps0",
+						"to": "l5jdGkb1",
+						"kind": "dependency",
+						"label": "dock and voice parts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
+							"symbol": "cn"
+						}
+					},
+					{
+						"id": "fDI8NrtW",
+						"order": 39000,
+						"from": "DmbKboxU",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "find vaults through the chosen checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/bound-vaults.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "0SFK7vbb",
+						"order": 40000,
+						"from": "w9zvoSFD",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "resolve bindings through the chosen checkouts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "7YCu9h8P",
+						"order": 41000,
+						"from": "tdKalihR",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "list the known repositories",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/server/projections/repository-listing.ts",
+							"symbol": "listRegistry"
+						}
+					},
+					{
+						"id": "SGwsCHPo",
+						"order": 42000,
+						"from": "5zIYNuw1",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "keep the recorded talk and voice",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "writeTalk"
+						}
+					},
+					{
+						"id": "f9xJZD6m",
+						"order": 43000,
+						"from": "vEVm326r",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own the Codex process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "NSENtfOa",
+						"order": 44000,
+						"from": "OHywsFXm",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own the Chromium process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "q7GKxqKL",
+						"order": 45000,
+						"from": "doujM3ih",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "observe and stop the server process",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+							"symbol": "readProcessObservation"
+						}
+					},
+					{
+						"id": "VJXR3kbp",
+						"order": 46000,
+						"from": "LDqRcaY1",
+						"to": "Biz0M6Ld",
+						"kind": "dependency",
+						"label": "own each evaluation process group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/processes/process.ts",
+							"symbol": "createCodexProcessGroupOperations"
+						}
+					},
+					{
+						"id": "gnnoRaHy",
+						"order": 47000,
+						"from": "DmbKboxU",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "durable board file operations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
+							"symbol": "unlinkDurably"
+						}
+					},
+					{
+						"id": "LLVzjl11",
+						"order": 48000,
+						"from": "7hdbqGFn",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate and persist opener configuration",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/store/configuration.ts",
+							"symbol": "stateDir"
+						}
+					},
+					{
+						"id": "WJFn6A3p",
+						"order": 49000,
+						"from": "doujM3ih",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate the server pidfile",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+							"symbol": "stateDir"
+						}
+					},
+					{
+						"id": "hRBLvJyD",
+						"order": 50000,
+						"from": "sw4oFps0",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "name the checkout in board context",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+							"symbol": "checkoutOfVault"
+						}
+					},
+					{
+						"id": "K7yg89u4",
+						"order": 51000,
+						"from": "6HYaX0mK",
+						"to": "w9zvoSFD",
+						"kind": "dependency",
+						"label": "select the source files of a binding",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts",
+							"symbol": "filesOfBinding"
+						}
+					},
+					{
+						"id": "rzta8x5j",
+						"order": 52000,
+						"from": "7hdbqGFn",
+						"to": "w9zvoSFD",
+						"kind": "dependency",
+						"label": "interpret and validate opener selections",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/projections/planning.ts",
+							"symbol": "OpenerSelectionSchema"
+						}
+					},
+					{
+						"id": "q1ENQYcO",
+						"order": 53000,
+						"from": "7hdbqGFn",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "read the canonical node binding",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/routes/code-opener.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "o56610zg",
+						"order": 54000,
+						"from": "doujM3ih",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "read the board protocol schemas",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "SemanticBoardLevelSchema"
+						}
+					},
+					{
+						"id": "wSGdfYDg",
+						"order": 55000,
+						"from": "LDqRcaY1",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "build evaluation board fixtures",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/laying.ts",
+							"symbol": "branchVariantTransition"
+						}
+					},
+					{
+						"id": "iaq6pG14",
+						"order": 56000,
+						"from": "5zIYNuw1",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "keep board and rendering schemas in a talk",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/shared/protocol/talk.ts",
+							"symbol": "LayoutEngineSchema"
+						}
+					},
+					{
+						"id": "xEGElQkc",
+						"order": 57000,
+						"from": "sw4oFps0",
+						"to": "DmbKboxU",
+						"kind": "dependency",
+						"label": "interpret selected board subjects",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/coordinator-callbacks/encoding.ts",
+							"symbol": "SemanticSubjectKindSchema"
+						}
+					},
+					{
+						"id": "LYFH1rhE",
+						"order": 58000,
+						"from": "LDqRcaY1",
+						"to": "OHywsFXm",
+						"kind": "dependency",
+						"label": "interpret rasterization receipts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/operations/runs/captures.ts",
+							"symbol": "SemanticRasterReceiptSchema"
+						}
+					},
+					{
+						"id": "Gh6v3DzI",
+						"order": 59000,
+						"from": "sw4oFps0",
+						"to": "vEVm326r",
+						"kind": "dependency",
+						"label": "correlate tool calls with the private session",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/coordinator-tools/validation.ts",
+							"symbol": "logicalToolCallKey"
+						}
+					},
+					{
+						"id": "YBT0ys2i",
+						"order": 60000,
+						"from": "5zIYNuw1",
+						"to": "tdKalihR",
+						"kind": "dependency",
+						"label": "locate the recorded talks in state storage",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/store/talk-files.ts",
+							"symbol": "stateDir"
+						}
+					},
+					{
+						"id": "hfMj0fMk",
+						"order": 61000,
+						"from": "sw4oFps0",
+						"to": "lU0khwR0",
+						"kind": "dependency",
+						"label": "supply Archboard policy to shared agent sessions",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8AmcrRb6",
+						"order": 62000,
+						"from": "lU0khwR0",
+						"to": "vEVm326r",
+						"kind": "dependency",
+						"label": "own Codex threads and negotiate realtime voice",
+						"emphasis": "normal"
+					},
+					{
+						"id": "lwujMzjf",
+						"order": 63000,
+						"from": "xssnUgIk",
+						"to": "lU0khwR0",
+						"kind": "dependency",
+						"label": "start sessions with its own policy and checkouts",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [

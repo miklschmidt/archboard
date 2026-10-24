@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 106,
+	"version": 108,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-22T03:21:16.032Z",
+	"updatedAt": "2026-10-24T11:39:58.936Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -32951,6 +32951,3764 @@
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/workbench/src/server/services/sessions/factories.ts",
 													"symbol": "recordDelegations"
+												}
+											}
+										]
+									},
+									{
+										"label": "not delivered",
+										"steps": [
+											{
+												"id": "SI9fdgc3",
+												"from": "tlC2W839",
+												"to": "Uz2qReYK",
+												"label": "roll the operation back",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"symbol": "recordSettlement"
+												}
+											}
+										]
+									},
+									{
+										"label": "outcome unknown",
+										"steps": [
+											{
+												"id": "gaZ3sdUV",
+												"from": "tlC2W839",
+												"to": "Uz2qReYK",
+												"label": "mark the outcome unknown; inspect before retrying",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"symbol": "settleDurable"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "4gO8EfCB",
+								"from": "tlC2W839",
+								"to": "Fg9dkGj3",
+								"label": "queued or started with its id, or the stated outcome",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+									"symbol": "createDelegate"
+								}
+							}
+						]
+					},
+					{
+						"id": "Va4NV3BO",
+						"name": "Workhorse news reaches the coordinator",
+						"participants": [
+							"iay14AUl",
+							"08zJvPJq",
+							"byMaoUe0",
+							"jylkTBp7"
+						],
+						"steps": [
+							{
+								"id": "8ZkL9esb",
+								"from": "iay14AUl",
+								"to": "08zJvPJq",
+								"label": "a workhorse notification, or a tell_coordinator call",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+									"symbol": "onServerRequest"
+								}
+							},
+							{
+								"id": "oYxjfBC4",
+								"from": "08zJvPJq",
+								"to": "08zJvPJq",
+								"label": "write the news as one sentence",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"symbol": "clearForDelivery"
+								}
+							},
+							{
+								"id": "viuikmqC",
+								"from": "08zJvPJq",
+								"to": "byMaoUe0",
+								"label": "classify the workhorse the news names",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"symbol": "classifyForDelivery"
+								}
+							},
+							{
+								"id": "4MtOLLU8",
+								"from": "byMaoUe0",
+								"to": "08zJvPJq",
+								"label": "the link and its status",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"symbol": "classifyForDelivery"
+								}
+							},
+							{
+								"id": "AJ7nOXRH",
+								"kind": "decision",
+								"question": "Does the workhorse link still stand?",
+								"alternatives": [
+									{
+										"label": "stale",
+										"steps": [
+											{
+												"id": "57e03cLI",
+												"from": "08zJvPJq",
+												"to": "08zJvPJq",
+												"label": "record: not delivered, stale_link",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+													"symbol": "refuseBeforeAttempt"
+												}
+											}
+										]
+									},
+									{
+										"label": "stands",
+										"steps": [
+											{
+												"id": "bHw3soI9",
+												"kind": "decision",
+												"question": "Is voice live?",
+												"alternatives": [
+													{
+														"label": "no voice session",
+														"steps": [
+															{
+																"id": "b9pIP9sM",
+																"from": "08zJvPJq",
+																"to": "08zJvPJq",
+																"label": "record only: voice_inactive",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																	"symbol": "recordOnly"
+																}
+															}
+														]
+													},
+													{
+														"label": "live",
+														"steps": [
+															{
+																"id": "vaJwQJYG",
+																"kind": "decision",
+																"question": "Does a recording hold the voice?",
+																"alternatives": [
+																	{
+																		"label": "recording",
+																		"steps": [
+																			{
+																				"id": "S5mhjyrc",
+																				"from": "08zJvPJq",
+																				"to": "08zJvPJq",
+																				"label": "record only: nothing is sent",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																					"symbol": "deliverThroughCoordinatorTurn"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "free",
+																		"steps": [
+																			{
+																				"id": "NDdGebjG",
+																				"from": "08zJvPJq",
+																				"to": "jylkTBp7",
+																				"label": "turn/start: the news as one sentence for the coordinator",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																					"symbol": "deliverThroughCoordinatorTurn"
+																				}
+																			},
+																			{
+																				"id": "dW4yunYz",
+																				"from": "jylkTBp7",
+																				"to": "08zJvPJq",
+																				"label": "started, or joined to the running turn",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																					"symbol": "deliverThroughCoordinatorTurn"
+																				}
+																			},
+																			{
+																				"id": "IMH0YVkJ",
+																				"from": "08zJvPJq",
+																				"to": "08zJvPJq",
+																				"label": "check the link and generation again; settle the delivery",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																					"symbol": "turnDelivery"
+																				}
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "fNauRzDy",
+						"name": "A user's change reaches the voice",
+						"participants": [
+							"42Ws0Eeo",
+							"08zJvPJq",
+							"byMaoUe0",
+							"jylkTBp7"
+						],
+						"steps": [
+							{
+								"id": "7AB9nJWu",
+								"from": "42Ws0Eeo",
+								"to": "08zJvPJq",
+								"label": "the user's change, focus or selection",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+									"symbol": "subscribeSettledChange"
+								}
+							},
+							{
+								"id": "TVUgmii8",
+								"from": "08zJvPJq",
+								"to": "byMaoUe0",
+								"label": "classify the workhorse the callback names",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"symbol": "classifyForDelivery"
+								}
+							},
+							{
+								"id": "EVYIPZnO",
+								"from": "byMaoUe0",
+								"to": "08zJvPJq",
+								"label": "the link and its status",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"symbol": "classifyForDelivery"
+								}
+							},
+							{
+								"id": "FRvrsZ1V",
+								"kind": "decision",
+								"question": "Does the workhorse link still stand?",
+								"alternatives": [
+									{
+										"label": "stale",
+										"steps": [
+											{
+												"id": "PifdA8W4",
+												"from": "08zJvPJq",
+												"to": "08zJvPJq",
+												"label": "record: not delivered, stale_link",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+													"symbol": "refuseBeforeAttempt"
+												}
+											}
+										]
+									},
+									{
+										"label": "stands",
+										"steps": [
+											{
+												"id": "dvRKQxJy",
+												"kind": "decision",
+												"question": "Is voice live, and is there news to tell?",
+												"alternatives": [
+													{
+														"label": "no",
+														"steps": [
+															{
+																"id": "WQicCfIG",
+																"from": "08zJvPJq",
+																"to": "08zJvPJq",
+																"label": "record only: voice_inactive",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																	"symbol": "recordOnly"
+																}
+															}
+														]
+													},
+													{
+														"label": "yes",
+														"steps": [
+															{
+																"id": "G8YI5GS1",
+																"kind": "decision",
+																"question": "Who made the change?",
+																"alternatives": [
+																	{
+																		"label": "an agent",
+																		"steps": [
+																			{
+																				"id": "F9RaXSMN",
+																				"from": "08zJvPJq",
+																				"to": "jylkTBp7",
+																				"label": "thread/inject_items: the change, into the coordinator",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "createCoordinatorCallbackContextPort"
+																				}
+																			},
+																			{
+																				"id": "iglMXOFu",
+																				"from": "jylkTBp7",
+																				"to": "08zJvPJq",
+																				"label": "injected",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "createCoordinatorCallbackContextPort"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "the user",
+																		"steps": []
+																	}
+																]
+															},
+															{
+																"id": "qZMl8hNQ",
+																"kind": "decision",
+																"question": "Does the change stop the board being narrated?",
+																"alternatives": [
+																	{
+																		"label": "yes: speak it",
+																		"steps": [
+																			{
+																				"id": "1ZladZHv",
+																				"from": "08zJvPJq",
+																				"to": "jylkTBp7",
+																				"label": "append the sentence as speech",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendSpeech"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "no: add it as context",
+																		"steps": [
+																			{
+																				"id": "XARWKQ1a",
+																				"from": "08zJvPJq",
+																				"to": "jylkTBp7",
+																				"label": "append the sentence as developer context",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendText"
+																				}
+																			}
+																		]
+																	}
+																]
+															},
+															{
+																"id": "VS1mOJb6",
+																"from": "jylkTBp7",
+																"to": "08zJvPJq",
+																"label": "accepted, rejected, or lost",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+																	"symbol": "createCoordinatorCallbackRealtimePort"
+																}
+															},
+															{
+																"id": "xbsGMJXs",
+																"from": "08zJvPJq",
+																"to": "08zJvPJq",
+																"label": "check the voice generation still stands; settle the delivery",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+																	"symbol": "deliverThroughVoice"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "gBoH41j4",
+						"name": "A tab session ends",
+						"participants": [
+							"tzyaOHwF",
+							"hCKEBd5f",
+							"u2LFaG7R",
+							"iay14AUl",
+							"QGVPyMwG",
+							"YxDrzJtI",
+							"jylkTBp7"
+						],
+						"steps": [
+							{
+								"id": "EPxYqowm",
+								"from": "tzyaOHwF",
+								"to": "hCKEBd5f",
+								"label": "a socket closes and its tab is forgotten",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+									"symbol": "forgetTabSession"
+								}
+							},
+							{
+								"id": "lecI5v9m",
+								"kind": "decision",
+								"question": "Is another pane of the tab still open?",
+								"alternatives": [
+									{
+										"label": "another pane remains",
+										"steps": []
+									},
+									{
+										"label": "the last pane went",
+										"steps": [
+											{
+												"id": "XwJOc75W",
+												"from": "hCKEBd5f",
+												"to": "hCKEBd5f",
+												"label": "start the 60 s grace",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+													"symbol": "createTabSessions"
+												}
+											},
+											{
+												"id": "HOYVTUuk",
+												"kind": "decision",
+												"question": "Does a pane of the tab come back within the grace?",
+												"alternatives": [
+													{
+														"label": "a pane returns",
+														"steps": [
+															{
+																"id": "r9HIC4rX",
+																"from": "tzyaOHwF",
+																"to": "hCKEBd5f",
+																"label": "a new socket names its tab",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+																	"symbol": "noteTabSession"
+																}
+															},
+															{
+																"id": "klMm3Plr",
+																"from": "hCKEBd5f",
+																"to": "hCKEBd5f",
+																"label": "cancel the grace; the conversation and its approvals stay",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+																	"symbol": "createTabSessions"
+																}
+															}
+														]
+													},
+													{
+														"label": "none returns",
+														"steps": [
+															{
+																"id": "xurALtuO",
+																"from": "hCKEBd5f",
+																"to": "u2LFaG7R",
+																"label": "forget the ended tab's lease",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+																	"symbol": "endSession"
+																}
+															},
+															{
+																"id": "gKTRZtJY",
+																"from": "hCKEBd5f",
+																"to": "iay14AUl",
+																"label": "end the session",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+																	"symbol": "end"
+																}
+															},
+															{
+																"id": "Gd0FTlt7",
+																"from": "iay14AUl",
+																"to": "QGVPyMwG",
+																"label": "cancel the session's pending approvals",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+																	"symbol": "endApprovals"
+																}
+															},
+															{
+																"id": "X8eddH7g",
+																"kind": "loop",
+																"condition": "for each thread the session started",
+																"steps": [
+																	{
+																		"id": "ygvVgPmW",
+																		"from": "iay14AUl",
+																		"to": "YxDrzJtI",
+																		"label": "unload the thread",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+																			"symbol": "unload"
+																		}
+																	},
+																	{
+																		"id": "no7ohqrK",
+																		"from": "YxDrzJtI",
+																		"to": "jylkTBp7",
+																		"label": "thread/read: its status",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+																			"symbol": "threadRead"
+																		}
+																	},
+																	{
+																		"id": "Bk3nNoD1",
+																		"from": "jylkTBp7",
+																		"to": "YxDrzJtI",
+																		"label": "the status",
+																		"kind": "return",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+																			"symbol": "threadRead"
+																		}
+																	},
+																	{
+																		"id": "mYd28Aaw",
+																		"kind": "decision",
+																		"question": "Is a turn running on the thread?",
+																		"alternatives": [
+																			{
+																				"label": "a turn runs",
+																				"steps": [
+																					{
+																						"id": "riwuuVmJ",
+																						"from": "YxDrzJtI",
+																						"to": "YxDrzJtI",
+																						"label": "wait for the turn to end before unsubscribing",
+																						"kind": "self",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+																							"symbol": "settle"
+																						}
+																					}
+																				]
+																			},
+																			{
+																				"label": "idle",
+																				"steps": [
+																					{
+																						"id": "aIu6MegS",
+																						"from": "YxDrzJtI",
+																						"to": "jylkTBp7",
+																						"label": "thread/unsubscribe, so Codex unloads it",
+																						"kind": "sync",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+																							"symbol": "threadUnsubscribe"
+																						}
+																					},
+																					{
+																						"id": "Tw1Brh0R",
+																						"from": "jylkTBp7",
+																						"to": "YxDrzJtI",
+																						"label": "unsubscribed",
+																						"kind": "return",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+																							"symbol": "threadUnsubscribe"
+																						}
+																					}
+																				]
+																			}
+																		]
+																	},
+																	{
+																		"id": "DxbVPPyv",
+																		"from": "YxDrzJtI",
+																		"to": "iay14AUl",
+																		"label": "how the unload ended",
+																		"kind": "return",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+																			"symbol": "unload"
+																		}
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "sIsqpJmw",
+						"name": "One bound workbench generation",
+						"beats": [
+							{
+								"id": "mOYZ6CRi",
+								"heading": "A private child, composed once",
+								"body": "The workbench proves the executable and prepares an Archboard-only Codex home that every Archboard server on the machine shares, so one sign-in serves them all; it fills in the auto-review defaults its config.toml lacks and keeps what Codex or a person set. The owner lock and epoch ledger are the server's own. Then it starts the child and builds one generation's parts in the order they depend on each other.",
+								"subjects": [
+									"skyIeErO",
+									"9diqPrFw",
+									"giL6EI28"
+								],
+								"view": "kwp3Wsiz"
+							},
+							{
+								"id": "9y7kbjzD",
+								"heading": "Only reviewed methods reach the wire",
+								"body": "The session publishes the methods that have been reviewed against the pinned contract, and the transport carries one framed object at a time each way. A reply that does not decode is a refusal, not a guess.",
+								"subjects": [
+									"jylkTBp7",
+									"FxzIjbIO",
+									"tp4aDqct"
+								],
+								"view": "ASLOMTIS"
+							},
+							{
+								"id": "9Ee1KNBg",
+								"heading": "A tab holds one coordinator and a workhorse for each checkout",
+								"body": "Each browser tab is a tab session with its own lease and its own coordinator. A pane's first message or Talk starts its conversation: the coordinator first, then the workhorse of the checkout that pane shows, which that checkout's link then names. The pane that holds the lease sends its typed message straight to that workhorse as a turn or a steer, and edits that thread's queue. A pane that moves to another checkout reaches the workhorse there instead. The coordinator's work goes through the four operations, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+								"subjects": [
+									"byMaoUe0",
+									"iay14AUl",
+									"kEF4DfR4",
+									"JHbKEH3A",
+									"b9yFBXHz",
+									"NxCpSlMJ",
+									"nRRQSBu7",
+									"GoJ2PW76",
+									"u2LFaG7R",
+									"Qh7VZ9MQ",
+									"EZEiVlsE",
+									"tlC2W839",
+									"rOBpux5i",
+									"Uz2qReYK"
+								],
+								"view": "3t0DNOAT"
+							},
+							{
+								"id": "ISHYhZ6k",
+								"heading": "Voice is a separate thread that works in no checkout",
+								"body": "Each tab session has its own coordinator, a thread with its own model and settings, started with the tab's first message or Talk. It runs in a directory of its own that holds no vault, so every command it runs names its checkout with -C. It is the voice model's subconscious: it reads the boards, follows the workhorses and decides what the voice model says, and it runs only while voice is live. It does bounded work itself and routes anything sustained to the workhorse of the checkout it names, starting that workhorse when there is none. Two tabs can talk at the same time, each to its own coordinator.",
+								"subjects": [
+									"Fg9dkGj3",
+									"ZQxB1ZaK",
+									"mhknqBOz",
+									"rOgOf2bo"
+								],
+								"view": "aeBxrmvQ"
+							},
+							{
+								"id": "mvh59frt",
+								"heading": "The coordinator hears the workhorse at once",
+								"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while a recording holds the voice, nothing is sent.",
+								"subjects": [
+									"08zJvPJq",
+									"NztvEtjX",
+									"biUWQZMB",
+									"Fg9dkGj3"
+								],
+								"view": "aeBxrmvQ"
+							},
+							{
+								"id": "RS10vddw",
+								"heading": "Board changes reach each workhorse quietly",
+								"body": "A settled change a user made goes into the history of the workhorse whose checkout holds the board, as one developer message, after the child, epoch, that workhorse's link and cursor are checked again. It starts no turn. Each delivery settles once as delivered, not delivered or unknown, and is never retried.",
+								"subjects": [
+									"42Ws0Eeo",
+									"GOADij5y",
+									"RkhHgrhb",
+									"UmUjUWRv"
+								],
+								"view": "tliaNnOp"
+							},
+							{
+								"id": "HdGCnvev",
+								"heading": "Each thread belongs to one tab session",
+								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, and an approval goes to the panes of that session (a workhorse's to those of its checkout), so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
+								"subjects": [
+									"iay14AUl",
+									"xPCxyO70",
+									"NztvEtjX",
+									"9kvKfu7U",
+									"IxtTYfQ6",
+									"YrKMY0LM"
+								],
+								"view": "3t0DNOAT"
+							},
+							{
+								"id": "XARzanTh",
+								"heading": "A tab session ends 60 seconds after its last pane closes",
+								"body": "Every pane names its tab when its socket opens. When no pane of the tab comes back for 60 seconds, the session ends: its lease and link go, its pending approvals are cancelled, voice and board news stop, and each of its threads is unsubscribed once no turn runs on it, so Codex unloads it. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
+								"subjects": [
+									"hCKEBd5f",
+									"egDoJ9fH",
+									"f4o4iE3G",
+									"02ywpfgL",
+									"ELaAYJKS",
+									"YxDrzJtI",
+									"AoYD3SWj",
+									"jcfXg6TV"
+								],
+								"view": "3t0DNOAT"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "UbtMvySf",
+			"name": "TASK-517",
+			"lifecycle": "draft",
+			"parent": "qdsrL4tY",
+			"summary": "Reuse the Codex workbench in independent applications",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+				}
+			],
+			"content": {
+				"nodes": [
+					{
+						"id": "skyIeErO",
+						"order": 2000,
+						"name": "Generation composition",
+						"kind": "module",
+						"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
+						"description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory. The factories (codex-workbench-factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed.",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/generation/workbench.ts"
+						}
+					},
+					{
+						"id": "u2LFaG7R",
+						"order": 3000,
+						"name": "Browser gateway",
+						"kind": "module",
+						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every pane of a tab is carried out by the workhorse of the checkout the tab shows",
+						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every pane of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the panes that show its checkout have shown it, and a coordinator's once every pane of the tab has.",
+						"parent": "i5AuDn9L",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/gateway"
+						}
+					},
+					{
+						"id": "9diqPrFw",
+						"order": 4000,
+						"name": "Codex process",
+						"kind": "module",
+						"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child in the coordinator's directory and reaps its group",
+						"description": "One Archboard-only CODEX_HOME and SQLite home under the state directory serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child runs in the coordinator's directory under the server's state directory, which is no checkout and holds no vault, only a link to the server's archboard skill: the coordinator thread works there, so a command it runs without -C is refused, while each workhorse thread works in its own checkout. The child's environment is a short allow-list plus the server's own URL, with auto-start off and the server's bin directory first on PATH: a thread's archboard is the server's own source in whichever checkout the thread works in, and it never starts another server. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline.",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes"
+						}
+					},
+					{
+						"id": "FxzIjbIO",
+						"order": 5000,
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+						"description": "The versioned wire contract it decodes against lives beside it in codex-protocol. A dynamic tool call reaches the owner registered for its namespace and manifest digest: the thread tools, the coordinator tools, or tell_coordinator.",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/clients"
+						}
+					},
+					{
+						"id": "jylkTBp7",
+						"order": 6000,
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "One initialized session and the reviewed methods it will send",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "byMaoUe0",
+						"order": 7000,
+						"name": "Thread link",
+						"kind": "module",
+						"responsibility": "Which workhorse each tab session and checkout is bound to, made by the first message or Talk of the pane's checkout: the binding, and the refusal when two disagree",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/rules/thread-link"
+						}
+					},
+					{
+						"id": "2ffhMTdn",
+						"order": 8000,
+						"name": "Workhorse queue",
+						"kind": "module",
+						"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-queue"
+						}
+					},
+					{
+						"id": "Fg9dkGj3",
+						"order": 9000,
+						"name": "Voice coordinator",
+						"kind": "module",
+						"responsibility": "The separate fast thread each tab session's voice attaches to, started with the tab's first message or Talk: the voice model's subconscious, which routes sustained work to a named checkout's workhorse",
+						"parent": "3vO7eN8L",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "giL6EI28",
+						"order": 10000,
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home",
+						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are each tab session's coordinator and one workhorse for each checkout, and every thread runs in its auto-review mode. Nothing here describes its internals."
+					},
+					{
+						"id": "tzyaOHwF",
+						"order": 11000,
+						"name": "Browser pane",
+						"kind": "service",
+						"responsibility": "The pane a user works in: it names its tab session, holds the tab's lease, sends commands and draws the published state",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/ui"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "Uz2qReYK",
+						"order": 12000,
+						"name": "Epoch ledger",
+						"kind": "module",
+						"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/store/epoch"
+						}
+					},
+					{
+						"id": "tlC2W839",
+						"order": 13000,
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "The four things the coordinator may ask of the workhorse of a checkout it names, one at a time: delegate, steer, inspect, manage its queue; each workhorse has its own",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/operations.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ZQxB1ZaK",
+						"order": 14000,
+						"name": "Realtime voice",
+						"kind": "module",
+						"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
+						"description": "Archboard never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
+						"parent": "3vO7eN8L",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/realtime"
+						}
+					},
+					{
+						"id": "QGVPyMwG",
+						"order": 15000,
+						"name": "Approvals",
+						"kind": "module",
+						"responsibility": "Every approval the child raises: staged, published to the tab session whose thread asked, answered exactly once, settled",
+						"description": "An approval from a thread that no live tab session owns is cancelled when it arrives. A reload within the grace keeps a tab session's pending approvals, and the end of the session cancels them. A workhorse's approval is shown to the panes of its tab that show its checkout, and the coordinator's to every pane of its tab session.",
+						"parent": "i5AuDn9L",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/approvals"
+						}
+					},
+					{
+						"id": "DNQTPTxE",
+						"order": 16000,
+						"name": "Thread tool calls",
+						"kind": "module",
+						"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
+						"description": "A creation, fork or message runs only once the user approves it in a pane of the calling thread's tab session, under the generation that may act. A thread it creates or forks works in the checkout of its caller.",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/operations/dynamic-tools"
+						}
+					},
+					{
+						"id": "08zJvPJq",
+						"order": 17000,
+						"name": "Coordinator callbacks",
+						"kind": "module",
+						"responsibility": "While voice is live, workhorse news for the coordinator, naming the checkout of its workhorse, and pane news for the voice model, each once and in order",
+						"parent": "3vO7eN8L",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/coordinator-callbacks"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "RkhHgrhb",
+						"order": 18000,
+						"name": "Board-change delivery",
+						"kind": "module",
+						"responsibility": "Tells each workhorse what a user changed on the boards of its checkout: one quiet developer message, settled once",
+						"description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/thread-context"
+						}
+					},
+					{
+						"id": "42Ws0Eeo",
+						"order": 19000,
+						"name": "Semantic context",
+						"kind": "module",
+						"responsibility": "One per tab session for voice and one per workhorse for the boards of its checkout: turns the panes' gestures and every settled board change into briefs and events",
+						"description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. The voice side hears the board changes of the vaults its tab session's panes are in, and a workhorse hears only those of the vaults in its own checkout, so it is told about the boards it works on.",
+						"parent": "Fvl3uDPi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/operations/semantic-context-publisher.ts"
+						}
+					},
+					{
+						"id": "iay14AUl",
+						"order": 20000,
+						"name": "Tab sessions",
+						"kind": "module",
+						"responsibility": "What each browser tab owns: its coordinator and voice, and one workhorse for each checkout it works in, found by the thread a notification or tool call names",
+						"description": "One record per tab session, opened when a pane socket of the tab connects and built by codex-workbench-session-factories.ts. The coordinator, voice, spoken approval, coordinator tools and callbacks are the tab's; the workhorses are built on first use, one for each checkout. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet, and a workhorse thread belongs to its workhorse. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. It notes the conversation shown when each coordinator turn starts and the work each workhorse's operations give. When a session ends, every link is cleared, its approvals are cancelled, its voice and board news stop, and its threads are unsubscribed once no turn runs on them.",
+						"parent": "Akuz1a3J",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/sessions/sessions.ts"
+						}
+					},
+					{
+						"id": "hCKEBd5f",
+						"order": 21000,
+						"name": "Tab session presence",
+						"kind": "module",
+						"responsibility": "Knows which browser tab each pane on screen belongs to, which checkout's conversation the tab shows, and ends a tab session when no pane of it comes back within 60 seconds",
+						"description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. The shown checkout is pinned on the first read to the checkout of the tab's focused pane, else of the pane that asked, and only the person's own act in the page changes it, through the activation route: an agent's browser show never does, so the dock never moves while somebody types. It ends with the tab.",
+						"parent": "Akuz1a3J",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+						}
+					},
+					{
+						"id": "JHbKEH3A",
+						"order": 22000,
+						"name": "Conversation start",
+						"kind": "module",
+						"responsibility": "Starts a conversation on a pane's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then board news to it",
+						"description": "A coordinator that cannot start refuses the message or Talk with its reason, and no workhorse starts. New conversation replaces the workhorse of the shown checkout only and keeps the tab's coordinator, which speaks for every workhorse of the tab. The old workhorse thread is given up and Codex unloads it once no turn runs on it. A delegation to a checkout whose workhorse has no thread that can run turns starts that thread the same way, but leaves the coordinator alone: it is running the turn that gives the work.",
+						"parent": "i5AuDn9L",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/actions/thread-links.ts"
+						}
+					},
+					{
+						"id": "6Jjha6LN",
+						"order": 23000,
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+						"parent": "Fvl3uDPi",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-start"
+						}
+					},
+					{
+						"id": "YxDrzJtI",
+						"order": 24000,
+						"name": "Thread unload",
+						"kind": "module",
+						"responsibility": "Unsubscribes a thread once no turn and no voice session runs on it, so Codex unloads it",
+						"description": "It reads the thread's status first, then follows the child's notifications until the thread is idle and its voice session has closed. The thread keeps its history on disk either way. The module is reached through createCodexThreadUnload from its root; the returned unload method implements this responsibility.",
+						"parent": "wkvnbMs8",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/operations/thread-unload"
+						}
+					},
+					{
+						"id": "kEF4DfR4",
+						"order": 25000,
+						"name": "Session workhorses",
+						"kind": "module",
+						"responsibility": "One workhorse for each checkout of a tab session: its starter, board news, queue, operations and link actions, built on first use",
+						"description": "A workhorse works in its checkout, the directory that holds its vault, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, not to the repository identity, so a new chosen checkout leaves it linked. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses interrupts that turn for one checkout or for every workhorse of the tab. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice.",
+						"parent": "Fvl3uDPi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/sessions/workhorses.ts"
+						}
+					},
+					{
+						"id": "rOgOf2bo",
+						"order": 26000,
+						"name": "Workhorse checkouts",
+						"kind": "module",
+						"responsibility": "Names the checkout a coordinator call gives work to, and starts that checkout's workhorse when a delegation finds none",
+						"description": "The checkout a path names is the directory that holds the vault the path resolves to, by real path and in the layout the server serves: a directory that holds a .archboard/vault, or the directory that holds a vault the path is. So a checkout reached through a link, and a vault that is itself a link, name the checkout of the pane in it; a vault whose link leads out of the layout names none. Of the coordinator's tools only a delegation starts a workhorse; the other three refuse a checkout that has none. A workhorse that cannot be built or started, because its tab has gone, leaves the delegation to refuse, so the coordinator's turn is always answered.",
+						"parent": "Fvl3uDPi",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/sessions/checkouts.ts"
+						}
+					},
+					{
+						"id": "ME7EbWl8",
+						"order": 27000,
+						"name": "Workhorse list",
+						"kind": "module",
+						"responsibility": "Lists the tab session's live workhorses by repository and checkout, with the shown one and a mark for each that waits for an approval or for the person",
+						"description": "The shown checkout is listed even before its first message, as not live, because a typed message goes there. A workhorse is live once its start has a thread. The list is bounded so a snapshot always fits the browser contract, and it is read into the owner projection that every pane of the tab receives.",
+						"parent": "i5AuDn9L",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/projections/browser-state/workhorse-list.ts"
+						}
+					},
+					{
+						"id": "qTmIytbT",
+						"order": 28000,
+						"name": "Coordinator turn homes",
+						"kind": "module",
+						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
+						"description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
+						"parent": "Akuz1a3J",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/sessions/delegations.ts"
+						}
+					},
+					{
+						"id": "wkvnbMs8",
+						"order": 29000,
+						"name": "Child ownership",
+						"kind": "module",
+						"responsibility": "Owns the private Codex child and what outlives each generation of it: the process, the transport, the protocol session, the ledger of which generation owns a thread, and unloading idle threads"
+					},
+					{
+						"id": "Akuz1a3J",
+						"order": 30000,
+						"name": "Per-tab sessions",
+						"kind": "module",
+						"responsibility": "Gives each browser tab its own session: finds the session a call names, knows which tab each pane belongs to, ends a tab no pane returns to, and remembers where each coordinator turn is shown"
+					},
+					{
+						"id": "i5AuDn9L",
+						"order": 31000,
+						"name": "Pane conversations",
+						"kind": "module",
+						"responsibility": "What a pane sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the dock's list of workhorses, and the approvals raised to the person"
+					},
+					{
+						"id": "Fvl3uDPi",
+						"order": 32000,
+						"name": "Workhorses",
+						"kind": "module",
+						"responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and board news, built per tab session on first use, with its tool calls and the context of what changed"
+					},
+					{
+						"id": "3vO7eN8L",
+						"order": 33000,
+						"name": "Voice",
+						"kind": "module",
+						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+					},
+					{
+						"id": "ui4leDPl",
+						"order": 34000,
+						"name": "Command admission",
+						"kind": "module",
+						"responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/operations/command/command-admission.ts"
+						}
+					},
+					{
+						"id": "dEfJJFtS",
+						"order": 35000,
+						"name": "Command dispatch",
+						"kind": "module",
+						"responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/operations/command/command-dispatch.ts"
+						}
+					},
+					{
+						"id": "62UzyaBR",
+						"order": 36000,
+						"name": "Typed message actions",
+						"kind": "module",
+						"responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/services/actions/text-actions.ts"
+						}
+					},
+					{
+						"id": "7XZtb0wb",
+						"order": 37000,
+						"name": "Turn execution",
+						"kind": "module",
+						"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/operations/workhorse-operations"
+						}
+					},
+					{
+						"id": "75E6lJHK",
+						"order": 38000,
+						"name": "Operation validation",
+						"kind": "module",
+						"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/validation.ts"
+						}
+					},
+					{
+						"id": "8CuNvBuG",
+						"order": 39000,
+						"name": "Operation lifecycle",
+						"kind": "module",
+						"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/services/workhorse-operations/events.ts"
+						}
+					},
+					{
+						"id": "iLWBCObu",
+						"order": 40000,
+						"name": "Operations contract",
+						"kind": "module",
+						"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+						"parent": "tlC2W839",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/protocol/workhorse-operations/contract.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "SsiEBdik",
+						"order": 41000,
+						"name": "Start contract",
+						"kind": "module",
+						"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+						"parent": "6Jjha6LN",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/runtime/protocol/workhorse-start/contract.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8DmvR3O6",
+						"order": 42000,
+						"name": "Browser message publication",
+						"kind": "module",
+						"responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
+						"parent": "u2LFaG7R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/operations/command/browser-command.ts"
+						}
+					},
+					{
+						"id": "yyFS6UVO",
+						"order": 43000,
+						"name": "Application policy",
+						"kind": "module",
+						"responsibility": "Archboard supplies domain instructions, context, tools, and admitted checkouts through the host contract",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts"
+						}
+					},
+					{
+						"id": "k9hxdLjq",
+						"order": 44000,
+						"name": "Workbench interface",
+						"kind": "module",
+						"responsibility": "Start shared Codex sessions and own their connections, lifecycle, and state through one host contract",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/agent-workbench/src/server/api/server.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "hwJPR59O",
+						"order": 1000,
+						"from": "skyIeErO",
+						"to": "9diqPrFw",
+						"kind": "call",
+						"label": "start a generation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/workbench.ts",
+							"symbol": "createCodexProcess"
+						}
+					},
+					{
+						"id": "9GaG5ItC",
+						"order": 2000,
+						"from": "9diqPrFw",
+						"to": "giL6EI28",
+						"kind": "call",
+						"label": "spawn the child in the coordinator directory",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+							"symbol": "spawnChild"
+						}
+					},
+					{
+						"id": "FZnS78FX",
+						"order": 3000,
+						"from": "jylkTBp7",
+						"to": "FxzIjbIO",
+						"kind": "rpc",
+						"label": "one JSON-RPC request per method",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "request"
+						}
+					},
+					{
+						"id": "3vlSu8a3",
+						"order": 4000,
+						"from": "FxzIjbIO",
+						"to": "giL6EI28",
+						"kind": "rpc",
+						"label": "JSON-RPC over stdio",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+							"symbol": "createFrameWriter"
+						}
+					},
+					{
+						"id": "b9HU99hH",
+						"order": 6000,
+						"from": "2ffhMTdn",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/queue/add, update, reorder, delete, start",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+							"symbol": "queueAdd"
+						}
+					},
+					{
+						"id": "XAd3chIR",
+						"order": 7000,
+						"from": "Fg9dkGj3",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/start and settings for the coordinator",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+							"symbol": "threadStart"
+						}
+					},
+					{
+						"id": "3C7aLx0q",
+						"order": 8000,
+						"from": "u2LFaG7R",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "the link of this tab session and the shown checkout",
+						"description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
+							"symbol": "readWorkhorseBinding"
+						}
+					},
+					{
+						"id": "Qh7VZ9MQ",
+						"order": 9000,
+						"from": "62UzyaBR",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "a typed message: turn/start or turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+							"symbol": "turnStart"
+						}
+					},
+					{
+						"id": "Lo6Q7GDB",
+						"order": 10000,
+						"from": "tzyaOHwF",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "lease, commands, snapshots",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/gateway/gateway.ts",
+							"symbol": "connect"
+						}
+					},
+					{
+						"id": "nw9nYSMn",
+						"order": 11000,
+						"from": "skyIeErO",
+						"to": "u2LFaG7R",
+						"kind": "call",
+						"label": "bind the gateway to this generation",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/factories.ts",
+							"symbol": "createCodexWorkbenchGateway"
+						}
+					},
+					{
+						"id": "2wlebJ2T",
+						"order": 12000,
+						"from": "8DmvR3O6",
+						"to": "tzyaOHwF",
+						"kind": "event",
+						"label": "publish deltas or replacement snapshots",
+						"description": "publishConnection emits the changed delta to connection listeners, or a replacement snapshot when the delta exceeds the wire budget. The socket subscriber carries these messages to the pane.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/gateway/gateway-connections.ts",
+							"symbol": "emit"
+						}
+					},
+					{
+						"id": "uK6QAuru",
+						"order": 13000,
+						"from": "7XZtb0wb",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "queue a delegation behind the running turn",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "add"
+						}
+					},
+					{
+						"id": "NeJ30W7X",
+						"order": 14000,
+						"from": "75E6lJHK",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "classify both linked threads through the thread-link port",
+						"description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/validation.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "2ed6AqSF",
+						"order": 15000,
+						"from": "8CuNvBuG",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "stage, commit or roll back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+							"symbol": "stageOperation"
+						}
+					},
+					{
+						"id": "mhknqBOz",
+						"order": 16000,
+						"from": "Fg9dkGj3",
+						"to": "7XZtb0wb",
+						"kind": "call",
+						"label": "delegate, steer, inspect, queue in the named checkout",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+							"symbol": "delegate"
+						}
+					},
+					{
+						"id": "TFjDY5zE",
+						"order": 17000,
+						"from": "ZQxB1ZaK",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/realtime/start, append, stop",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+							"symbol": "realtimeStart"
+						}
+					},
+					{
+						"id": "YOaSBuBr",
+						"order": 18000,
+						"from": "QGVPyMwG",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "an approval, to the panes of its tab session or its checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/approvals/broker.ts",
+							"symbol": "onChange"
+						}
+					},
+					{
+						"id": "aoHKAkWD",
+						"order": 19000,
+						"from": "FxzIjbIO",
+						"to": "DNQTPTxE",
+						"kind": "event",
+						"label": "a tool call from a thread",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-dispatch.ts",
+							"symbol": "ownsPendingReverseRequest"
+						}
+					},
+					{
+						"id": "mxl6bmYW",
+						"order": 20000,
+						"from": "DNQTPTxE",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "the generation that may act",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+							"symbol": "stageOperation"
+						}
+					},
+					{
+						"id": "EZEiVlsE",
+						"order": 21000,
+						"from": "u2LFaG7R",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "edit the queue of the shown checkout's workhorse",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+							"symbol": "add"
+						}
+					},
+					{
+						"id": "rOBpux5i",
+						"order": 22000,
+						"from": "7XZtb0wb",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "turn/start when idle, turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+							"symbol": "turnStart"
+						}
+					},
+					{
+						"id": "NztvEtjX",
+						"order": 23000,
+						"from": "iay14AUl",
+						"to": "08zJvPJq",
+						"kind": "event",
+						"label": "workhorse notifications, tell_coordinator calls",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "onServerRequest"
+						}
+					},
+					{
+						"id": "biUWQZMB",
+						"order": 24000,
+						"from": "08zJvPJq",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "news as a coordinator turn/start; pane news appended",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+							"symbol": "realtimeAppendText"
+						}
+					},
+					{
+						"id": "Tqxin6z5",
+						"order": 25000,
+						"from": "42Ws0Eeo",
+						"to": "08zJvPJq",
+						"kind": "event",
+						"label": "the user's changes, focus and selection",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+							"symbol": "subscribeSettledChange"
+						}
+					},
+					{
+						"id": "7LxiPZOi",
+						"order": 26000,
+						"from": "42Ws0Eeo",
+						"to": "RkhHgrhb",
+						"kind": "event",
+						"label": "a settled board change",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/thread-context/controller.ts",
+							"symbol": "subscribeSettledChange"
+						}
+					},
+					{
+						"id": "8g1SNngD",
+						"order": 27000,
+						"from": "RkhHgrhb",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/inject_items into the workhorse",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+							"symbol": "threadInjectItems"
+						}
+					},
+					{
+						"id": "jbxp553Z",
+						"order": 28000,
+						"from": "RkhHgrhb",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "check the link of its checkout's workhorse again",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+							"symbol": "read"
+						}
+					},
+					{
+						"id": "xPCxyO70",
+						"order": 29000,
+						"from": "FxzIjbIO",
+						"to": "iay14AUl",
+						"kind": "event",
+						"label": "notifications and tool calls, routed by thread",
+						"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "onNotification"
+						}
+					},
+					{
+						"id": "9kvKfu7U",
+						"order": 30000,
+						"from": "iay14AUl",
+						"to": "Fg9dkGj3",
+						"kind": "event",
+						"label": "its coordinator's notifications and tool calls",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "onNotification"
+						}
+					},
+					{
+						"id": "89ivSTaM",
+						"order": 31000,
+						"from": "u2LFaG7R",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the tab session of this connection",
+						"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+							"symbol": "require"
+						}
+					},
+					{
+						"id": "IxtTYfQ6",
+						"order": 32000,
+						"from": "DNQTPTxE",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the calling thread's tab session",
+						"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/authority-classification.ts",
+							"symbol": "resolveExactLogicalCaller"
+						}
+					},
+					{
+						"id": "egDoJ9fH",
+						"order": 33000,
+						"from": "tzyaOHwF",
+						"to": "hCKEBd5f",
+						"kind": "event",
+						"label": "each socket names its tab, and its close forgets it",
+						"description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+							"symbol": "noteTabSession"
+						}
+					},
+					{
+						"id": "f4o4iE3G",
+						"order": 34000,
+						"from": "hCKEBd5f",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "end a tab no pane came back to in 60 s",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+							"symbol": "end"
+						}
+					},
+					{
+						"id": "jcfXg6TV",
+						"order": 35000,
+						"from": "YxDrzJtI",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/read, then thread/unsubscribe once idle",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+							"symbol": "threadUnsubscribe"
+						}
+					},
+					{
+						"id": "ELaAYJKS",
+						"order": 36000,
+						"from": "iay14AUl",
+						"to": "QGVPyMwG",
+						"kind": "call",
+						"label": "cancel an ended session's approvals",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "endApprovals"
+						}
+					},
+					{
+						"id": "PqSkt9px",
+						"order": 37000,
+						"from": "skyIeErO",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "one store per child, dropped when it exits",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/factories.ts",
+							"symbol": "createCodexWorkbenchSessions"
+						}
+					},
+					{
+						"id": "02ywpfgL",
+						"order": 38000,
+						"from": "hCKEBd5f",
+						"to": "u2LFaG7R",
+						"kind": "call",
+						"label": "forget the ended tab's lease",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+							"symbol": "endSession"
+						}
+					},
+					{
+						"id": "AoYD3SWj",
+						"order": 39000,
+						"from": "iay14AUl",
+						"to": "YxDrzJtI",
+						"kind": "call",
+						"label": "unload an ended tab's threads",
+						"description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "unload"
+						}
+					},
+					{
+						"id": "uQcYd3Nh",
+						"order": 40000,
+						"from": "Fg9dkGj3",
+						"to": "YxDrzJtI",
+						"kind": "call",
+						"label": "unload a replaced coordinator",
+						"description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator/coordinator.ts",
+							"symbol": "unload"
+						}
+					},
+					{
+						"id": "YrKMY0LM",
+						"order": 41000,
+						"from": "QGVPyMwG",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the live tab session that holds the asking thread",
+						"description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/bindings.ts",
+							"symbol": "forThread"
+						}
+					},
+					{
+						"id": "b9yFBXHz",
+						"order": 42000,
+						"from": "dEfJJFtS",
+						"to": "JHbKEH3A",
+						"kind": "call",
+						"label": "create, on the tab's first message or Talk",
+						"description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
+							"symbol": "create"
+						}
+					},
+					{
+						"id": "NxCpSlMJ",
+						"order": 43000,
+						"from": "JHbKEH3A",
+						"to": "Fg9dkGj3",
+						"kind": "call",
+						"label": "make the tab coordinator ready first, keep it after",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"symbol": "ensure"
+						}
+					},
+					{
+						"id": "nRRQSBu7",
+						"order": 44000,
+						"from": "JHbKEH3A",
+						"to": "6Jjha6LN",
+						"kind": "call",
+						"label": "then start the workhorse of the shown checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"symbol": "start"
+						}
+					},
+					{
+						"id": "ukZDYnKd",
+						"order": 45000,
+						"from": "JHbKEH3A",
+						"to": "RkhHgrhb",
+						"kind": "call",
+						"label": "move board news to the new workhorse",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"symbol": "compareAndSwap"
+						}
+					},
+					{
+						"id": "ZGfdJlmG",
+						"order": 46000,
+						"from": "JHbKEH3A",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "claim its threads, retire the old workhorse",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"symbol": "claimThread"
+						}
+					},
+					{
+						"id": "GoJ2PW76",
+						"order": 47000,
+						"from": "6Jjha6LN",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "classify and bind the checkout's link",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"symbol": "classifyAndBind"
+						}
+					},
+					{
+						"id": "MZtuHuMT",
+						"order": 48000,
+						"from": "6Jjha6LN",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/start for the workhorse",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"symbol": "threadStart"
+						}
+					},
+					{
+						"id": "5gcxxoqv",
+						"order": 49000,
+						"from": "QGVPyMwG",
+						"to": "FxzIjbIO",
+						"kind": "rpc",
+						"label": "answer an approval request",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/approvals/settlement.ts",
+							"symbol": "respond"
+						}
+					},
+					{
+						"id": "7Hqt9ysu",
+						"order": 50000,
+						"from": "skyIeErO",
+						"to": "FxzIjbIO",
+						"kind": "call",
+						"label": "the transport a restarted child rejoins",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/workbench.ts",
+							"symbol": "createCodexTransport"
+						}
+					},
+					{
+						"id": "zOHsZyzc",
+						"order": 51000,
+						"from": "DNQTPTxE",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/start, fork and turn/start for a tool call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
+							"symbol": "threadStart"
+						}
+					},
+					{
+						"id": "yhm3JUJQ",
+						"order": 52000,
+						"from": "byMaoUe0",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/read and thread/list to classify a link",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
+							"symbol": "threadRead"
+						}
+					},
+					{
+						"id": "NasuLye5",
+						"order": 53000,
+						"from": "08zJvPJq",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "check the link of the workhorse the news names",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "zEsrkAfC",
+						"order": 54000,
+						"from": "RkhHgrhb",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "only while its generation is current",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+							"symbol": "assertCurrent"
+						}
+					},
+					{
+						"id": "mAyzTmDD",
+						"order": 55000,
+						"from": "byMaoUe0",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "prove the linked thread current",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/rules/thread-link/durable-evidence.ts",
+							"symbol": "assertCurrent"
+						}
+					},
+					{
+						"id": "9V9fQDIT",
+						"order": 56000,
+						"from": "tlC2W839",
+						"to": "08zJvPJq",
+						"kind": "event",
+						"label": "a delegation's outcome",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+							"symbol": "subscribe"
+						}
+					},
+					{
+						"id": "ENHiJpTb",
+						"order": 57000,
+						"from": "u2LFaG7R",
+						"to": "kEF4DfR4",
+						"kind": "call",
+						"label": "the workhorse of the shown checkout, built on first use",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+							"symbol": "workhorse"
+						}
+					},
+					{
+						"id": "wMqJn1nW",
+						"order": 58000,
+						"from": "iay14AUl",
+						"to": "kEF4DfR4",
+						"kind": "call",
+						"label": "build one workhorse for each checkout, on first use",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "freshWorkhorseState"
+						}
+					},
+					{
+						"id": "Ikp3Fwwc",
+						"order": 59000,
+						"from": "iay14AUl",
+						"to": "rOgOf2bo",
+						"kind": "call",
+						"label": "a delegation starts the named checkout's workhorse first",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/bindings.ts",
+							"symbol": "readyDelegatedWorkhorse"
+						}
+					},
+					{
+						"id": "PfZvhB8I",
+						"order": 60000,
+						"from": "rOgOf2bo",
+						"to": "kEF4DfR4",
+						"kind": "call",
+						"label": "start its thread when it has none that can run turns",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/checkouts.ts",
+							"symbol": "ensureStarted"
+						}
+					},
+					{
+						"id": "j1PGjoTR",
+						"order": 61000,
+						"from": "kEF4DfR4",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "turn/interrupt the turn each stopped workhorse runs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"symbol": "turnInterrupt"
+						}
+					},
+					{
+						"id": "Z9keuZ46",
+						"order": 62000,
+						"from": "kEF4DfR4",
+						"to": "2ffhMTdn",
+						"kind": "dependency",
+						"label": "its own queue",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"symbol": "CodexWorkhorseQueue"
+						}
+					},
+					{
+						"id": "uoktRrXw",
+						"order": 63000,
+						"from": "kEF4DfR4",
+						"to": "iLWBCObu",
+						"kind": "dependency",
+						"label": "the workhorse operations port",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"symbol": "CodexWorkhorseOperations"
+						}
+					},
+					{
+						"id": "bso90XCw",
+						"order": 64000,
+						"from": "kEF4DfR4",
+						"to": "RkhHgrhb",
+						"kind": "dependency",
+						"label": "its own board news",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"symbol": "CodexThreadContextController"
+						}
+					},
+					{
+						"id": "QczS1Qpk",
+						"order": 65000,
+						"from": "kEF4DfR4",
+						"to": "SsiEBdik",
+						"kind": "dependency",
+						"label": "the workhorse starter port",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/workhorses.ts",
+							"symbol": "CodexWorkhorseStart"
+						}
+					},
+					{
+						"id": "99za8lFO",
+						"order": 66000,
+						"from": "tzyaOHwF",
+						"to": "hCKEBd5f",
+						"kind": "http",
+						"label": "the person activated a checkout (/api/panes/conversation)",
+						"description": "A focus, a board the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/shown-conversation-route.ts",
+							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "fVScKEoP",
+						"order": 67000,
+						"from": "u2LFaG7R",
+						"to": "hCKEBd5f",
+						"kind": "call",
+						"label": "the checkout the pane's tab shows, pinned on first read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/gateway-binding.ts",
+							"symbol": "shownCheckoutOf"
+						}
+					},
+					{
+						"id": "EVC1aGxx",
+						"order": 68000,
+						"from": "hCKEBd5f",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "the shown conversation changed: present the panes again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/gateway-binding.ts",
+							"symbol": "onShownChange"
+						}
+					},
+					{
+						"id": "kUptUGCI",
+						"order": 69000,
+						"from": "u2LFaG7R",
+						"to": "ME7EbWl8",
+						"kind": "call",
+						"label": "the tab's live workhorses, for the dock's list",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/browser-state/owner-projection.ts",
+							"symbol": "readWorkhorseList"
+						}
+					},
+					{
+						"id": "95g4rJnq",
+						"order": 70000,
+						"from": "ME7EbWl8",
+						"to": "QGVPyMwG",
+						"kind": "call",
+						"label": "which workhorse waits for an approval or an answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/browser-state/workhorse-list.ts",
+							"symbol": "inspect"
+						}
+					},
+					{
+						"id": "vScn8k62",
+						"order": 71000,
+						"from": "u2LFaG7R",
+						"to": "qTmIytbT",
+						"kind": "call",
+						"label": "the coordinator turns the shown conversation keeps",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/browser-state/owner-projection.ts",
+							"symbol": "coordinatorTurnsShownIn"
+						}
+					},
+					{
+						"id": "eSE4XLJl",
+						"order": 72000,
+						"from": "iay14AUl",
+						"to": "qTmIytbT",
+						"kind": "call",
+						"label": "note a turn's start and the work its operations give",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "noteCoordinatorTurnStart"
+						}
+					},
+					{
+						"id": "azMem83I",
+						"order": 73000,
+						"from": "iay14AUl",
+						"to": "hCKEBd5f",
+						"kind": "call",
+						"label": "the conversation shown when a coordinator turn starts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/sessions/sessions.ts",
+							"symbol": "shownConversationOf"
+						}
+					},
+					{
+						"id": "ITcuqCHT",
+						"order": 74000,
+						"from": "Fg9dkGj3",
+						"to": "kEF4DfR4",
+						"kind": "call",
+						"label": "stop_workhorses: stop every running workhorse of the tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+							"symbol": "stopWork"
+						}
+					},
+					{
+						"id": "dOVhNk7R",
+						"order": 75000,
+						"from": "JHbKEH3A",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "read the pane's link before starting anything",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+							"symbol": "assertBrowserLinkStands"
+						}
+					},
+					{
+						"id": "o63C7KPd",
+						"order": 76000,
+						"from": "6Jjha6LN",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "stage, commit or roll back the start",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"symbol": "stageOperation"
+						}
+					},
+					{
+						"id": "aLUB44Jp",
+						"order": 77000,
+						"from": "7XZtb0wb",
+						"to": "75E6lJHK",
+						"kind": "call",
+						"label": "classify and recheck the captured links",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "classify"
+						}
+					},
+					{
+						"id": "0ULeTEej",
+						"order": 78000,
+						"from": "7XZtb0wb",
+						"to": "8CuNvBuG",
+						"kind": "call",
+						"label": "stage and follow the operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+							"symbol": "stage"
+						}
+					},
+					{
+						"id": "34fI1JB6",
+						"order": 79000,
+						"from": "yyFS6UVO",
+						"to": "k9hxdLjq",
+						"kind": "call",
+						"label": "create the shared workbench with Archboard policy",
+						"emphasis": "normal"
+					},
+					{
+						"id": "JAa1keHs",
+						"order": 80000,
+						"from": "k9hxdLjq",
+						"to": "skyIeErO",
+						"kind": "call",
+						"label": "compose and own the shared generation",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [
+					{
+						"id": "tp4aDqct",
+						"name": "A typed message from a pane",
+						"participants": [
+							"tzyaOHwF",
+							"u2LFaG7R",
+							"jylkTBp7",
+							"FxzIjbIO",
+							"giL6EI28"
+						],
+						"steps": [
+							{
+								"id": "x54ozhG5",
+								"from": "tzyaOHwF",
+								"to": "u2LFaG7R",
+								"label": "start or steer command",
+								"kind": "sync",
+								"note": "the pane sends it over its socket with the command lease it holds",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+									"symbol": "createCommandExecutor"
+								}
+							},
+							{
+								"id": "vX55DDYV",
+								"from": "u2LFaG7R",
+								"to": "u2LFaG7R",
+								"label": "check the lease, the readiness and the link target",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/operations/command/command-admission.ts",
+									"symbol": "createCommandAdmission"
+								}
+							},
+							{
+								"id": "GWqxwew7",
+								"kind": "decision",
+								"question": "Does the pane hold the lease, on a link that stands?",
+								"alternatives": [
+									{
+										"label": "refused",
+										"steps": [
+											{
+												"id": "yklBpneG",
+												"from": "u2LFaG7R",
+												"to": "tzyaOHwF",
+												"label": "refusal: lease transferred, link changed, not ready",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+													"symbol": "createCommandExecutor"
+												}
+											}
+										]
+									},
+									{
+										"label": "admitted",
+										"steps": [
+											{
+												"id": "xOXRZp1z",
+												"from": "u2LFaG7R",
+												"to": "jylkTBp7",
+												"label": "thread/read: is the workhorse idle or active?",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+													"symbol": "threadRead"
+												}
+											},
+											{
+												"id": "1R2ZA4zt",
+												"from": "jylkTBp7",
+												"to": "FxzIjbIO",
+												"label": "request thread/read",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/codex-app-server/src/runtime/services/session.ts",
+													"symbol": "requestDecoded"
+												}
+											},
+											{
+												"id": "tRcBpEcU",
+												"from": "FxzIjbIO",
+												"to": "giL6EI28",
+												"label": "JSON-RPC frame over stdio",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+													"symbol": "createFrameWriter"
+												}
+											},
+											{
+												"id": "cZXGs8Br",
+												"from": "giL6EI28",
+												"to": "FxzIjbIO",
+												"label": "the thread and its status",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+													"symbol": "settleDelivered"
+												}
+											},
+											{
+												"id": "iKOHetA7",
+												"from": "FxzIjbIO",
+												"to": "jylkTBp7",
+												"label": "decoded response",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/codex-app-server/src/runtime/services/session.ts",
+													"symbol": "requestDecoded"
+												}
+											},
+											{
+												"id": "cgdkpjde",
+												"from": "jylkTBp7",
+												"to": "u2LFaG7R",
+												"label": "thread status",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+													"symbol": "threadRead"
+												}
+											},
+											{
+												"id": "zUwAs98f",
+												"kind": "decision",
+												"question": "Does the thread's status fit the command?",
+												"alternatives": [
+													{
+														"label": "does not fit",
+														"steps": [
+															{
+																"id": "naaTp5r2",
+																"from": "u2LFaG7R",
+																"to": "tzyaOHwF",
+																"label": "not delivered: wrong status for a start or a steer",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+																	"symbol": "createServerCanonicalTextActions"
+																}
+															}
+														]
+													},
+													{
+														"label": "fits",
+														"steps": [
+															{
+																"id": "ENQkDXpX",
+																"from": "u2LFaG7R",
+																"to": "jylkTBp7",
+																"label": "turn/start when idle, turn/steer when active, with context",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+																	"symbol": "turnStart"
+																}
+															},
+															{
+																"id": "gQjSjv1d",
+																"from": "jylkTBp7",
+																"to": "FxzIjbIO",
+																"label": "request turn/start or turn/steer",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-app-server/src/runtime/services/session.ts",
+																	"symbol": "requestDecoded"
+																}
+															},
+															{
+																"id": "6LnEoErP",
+																"from": "FxzIjbIO",
+																"to": "giL6EI28",
+																"label": "JSON-RPC frame over stdio",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+																	"symbol": "createFrameWriter"
+																}
+															},
+															{
+																"id": "VBIITwQ7",
+																"from": "giL6EI28",
+																"to": "FxzIjbIO",
+																"label": "turn accepted",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+																	"symbol": "settleDelivered"
+																}
+															},
+															{
+																"id": "YcjArnsa",
+																"from": "FxzIjbIO",
+																"to": "jylkTBp7",
+																"label": "decoded response",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-app-server/src/runtime/services/session.ts",
+																	"symbol": "requestDecoded"
+																}
+															},
+															{
+																"id": "NRJDQHKx",
+																"from": "jylkTBp7",
+																"to": "u2LFaG7R",
+																"label": "the turn that started",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/actions/text-actions.ts",
+																	"symbol": "turnStart"
+																}
+															},
+															{
+																"id": "A77VyCZH",
+																"from": "u2LFaG7R",
+																"to": "tzyaOHwF",
+																"label": "delivered, with the new snapshot",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/gateway/gateway-execution.ts",
+																	"symbol": "createCommandExecutor"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "UmUjUWRv",
+						"name": "A board change reaches a workhorse",
+						"participants": [
+							"42Ws0Eeo",
+							"RkhHgrhb",
+							"byMaoUe0",
+							"Uz2qReYK",
+							"jylkTBp7",
+							"giL6EI28"
+						],
+						"steps": [
+							{
+								"id": "GOADij5y",
+								"from": "42Ws0Eeo",
+								"to": "RkhHgrhb",
+								"label": "a settled change a user made",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/thread-context/controller.ts",
+									"symbol": "subscribeSettledChange"
+								}
+							},
+							{
+								"id": "g4uGo1cl",
+								"kind": "decision",
+								"question": "Did this change already arrive?",
+								"alternatives": [
+									{
+										"label": "seen",
+										"steps": [
+											{
+												"id": "ZCjFYzD4",
+												"from": "RkhHgrhb",
+												"to": "RkhHgrhb",
+												"label": "answer with the outcome it has: never a second attempt",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+													"symbol": "createDelivery"
+												}
+											}
+										]
+									},
+									{
+										"label": "first time",
+										"steps": [
+											{
+												"id": "Z5eTxMhD",
+												"from": "RkhHgrhb",
+												"to": "RkhHgrhb",
+												"label": "check the change, the target's generation and the child",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+													"symbol": "preflightReason"
+												}
+											},
+											{
+												"id": "KHG58q0G",
+												"from": "RkhHgrhb",
+												"to": "byMaoUe0",
+												"label": "read the pane's link",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+													"symbol": "readInitialBinding"
+												}
+											},
+											{
+												"id": "y6OM3MGZ",
+												"from": "byMaoUe0",
+												"to": "RkhHgrhb",
+												"label": "the link",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+													"symbol": "readInitialBinding"
+												}
+											},
+											{
+												"id": "5d0dKhn0",
+												"from": "RkhHgrhb",
+												"to": "RkhHgrhb",
+												"label": "build the context message; it must be exactly the change",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+													"symbol": "buildPayload"
+												}
+											},
+											{
+												"id": "kd4mX8NF",
+												"kind": "decision",
+												"question": "Do the change, the target and the link pass?",
+												"alternatives": [
+													{
+														"label": "refused",
+														"steps": [
+															{
+																"id": "OshkRAyY",
+																"from": "RkhHgrhb",
+																"to": "RkhHgrhb",
+																"label": "settle not_delivered with the reason",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																	"symbol": "refused"
+																}
+															}
+														]
+													},
+													{
+														"label": "pass",
+														"steps": [
+															{
+																"id": "r3CfeCjp",
+																"from": "RkhHgrhb",
+																"to": "byMaoUe0",
+																"label": "classify the target thread",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																	"symbol": "classifyTarget"
+																}
+															},
+															{
+																"id": "dNtMDeU5",
+																"from": "byMaoUe0",
+																"to": "jylkTBp7",
+																"label": "thread/read and thread/list",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
+																	"symbol": "threadRead"
+																}
+															},
+															{
+																"id": "XW6xH1dn",
+																"from": "jylkTBp7",
+																"to": "byMaoUe0",
+																"label": "the thread",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
+																	"symbol": "threadRead"
+																}
+															},
+															{
+																"id": "BCSwWJMl",
+																"from": "byMaoUe0",
+																"to": "Uz2qReYK",
+																"label": "prove the linked thread current",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/rules/thread-link/durable-evidence.ts",
+																	"symbol": "assertCurrent"
+																}
+															},
+															{
+																"id": "YhUAVOHz",
+																"from": "byMaoUe0",
+																"to": "RkhHgrhb",
+																"label": "the classification and its proof",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																	"symbol": "classifyTarget"
+																}
+															},
+															{
+																"id": "tpTCvjE7",
+																"from": "RkhHgrhb",
+																"to": "byMaoUe0",
+																"label": "read the link again",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+																	"symbol": "currentBinding"
+																}
+															},
+															{
+																"id": "zgVYoZ7A",
+																"from": "byMaoUe0",
+																"to": "RkhHgrhb",
+																"label": "the link, to compare with the first read",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+																	"symbol": "currentBinding"
+																}
+															},
+															{
+																"id": "5Sakb5sK",
+																"from": "RkhHgrhb",
+																"to": "Uz2qReYK",
+																"label": "is its generation still current?",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+																	"symbol": "assertCurrent"
+																}
+															},
+															{
+																"id": "mucB2idw",
+																"from": "Uz2qReYK",
+																"to": "RkhHgrhb",
+																"label": "current, or why not",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+																	"symbol": "epochAuthorityReason"
+																}
+															},
+															{
+																"id": "LIWajs3K",
+																"from": "RkhHgrhb",
+																"to": "RkhHgrhb",
+																"label": "is the change still fresh, and the newest of the feed?",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+																	"symbol": "finalFreshnessReason"
+																}
+															},
+															{
+																"id": "DKK3VoZ7",
+																"kind": "decision",
+																"question": "Does the final guard hold?",
+																"alternatives": [
+																	{
+																		"label": "refused",
+																		"steps": [
+																			{
+																				"id": "V8QRxedt",
+																				"from": "RkhHgrhb",
+																				"to": "RkhHgrhb",
+																				"label": "settle not_delivered with the reason",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																					"symbol": "refused"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "holds",
+																		"steps": [
+																			{
+																				"id": "7OP4graL",
+																				"from": "RkhHgrhb",
+																				"to": "jylkTBp7",
+																				"label": "thread/inject_items, once",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																					"symbol": "attemptInjection"
+																				}
+																			},
+																			{
+																				"id": "cvG5Sh5Q",
+																				"from": "jylkTBp7",
+																				"to": "giL6EI28",
+																				"label": "thread/inject_items over the transport",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-app-server/src/runtime/services/session.ts",
+																					"symbol": "requestDecoded"
+																				}
+																			},
+																			{
+																				"id": "DSobstio",
+																				"from": "giL6EI28",
+																				"to": "jylkTBp7",
+																				"label": "items added",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-app-server/src/runtime/services/session.ts",
+																					"symbol": "requestDecoded"
+																				}
+																			},
+																			{
+																				"id": "t3Mzaqjp",
+																				"from": "jylkTBp7",
+																				"to": "RkhHgrhb",
+																				"label": "accepted, or rejected",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																					"symbol": "attemptInjection"
+																				}
+																			},
+																			{
+																				"id": "3CO7rPlU",
+																				"kind": "decision",
+																				"question": "What came of the attempt?",
+																				"alternatives": [
+																					{
+																						"label": "accepted, authority intact",
+																						"steps": [
+																							{
+																								"id": "7kzgOHCn",
+																								"from": "RkhHgrhb",
+																								"to": "RkhHgrhb",
+																								"label": "settle delivered",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																									"symbol": "settleAfterAttempt"
+																								}
+																							}
+																						]
+																					},
+																					{
+																						"label": "rejected before the child",
+																						"steps": [
+																							{
+																								"id": "KH6Xx1vQ",
+																								"from": "RkhHgrhb",
+																								"to": "RkhHgrhb",
+																								"label": "settle not_delivered: session_rejected",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																									"symbol": "attemptInjection"
+																								}
+																							}
+																						]
+																					},
+																					{
+																						"label": "response lost or authority changed",
+																						"steps": [
+																							{
+																								"id": "VuK5bUkd",
+																								"from": "RkhHgrhb",
+																								"to": "RkhHgrhb",
+																								"label": "settle outcome_unknown, never retried",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+																									"symbol": "settleAfterAttempt"
+																								}
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "eUWhXhf8",
+						"name": "A conversation starts",
+						"participants": [
+							"u2LFaG7R",
+							"JHbKEH3A",
+							"byMaoUe0",
+							"Fg9dkGj3",
+							"6Jjha6LN",
+							"Uz2qReYK",
+							"jylkTBp7",
+							"RkhHgrhb"
+						],
+						"steps": [
+							{
+								"id": "0kiuqwaZ",
+								"from": "u2LFaG7R",
+								"to": "JHbKEH3A",
+								"label": "create, on the tab's first message or Talk",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/operations/command/command-dispatch.ts",
+									"symbol": "create"
+								}
+							},
+							{
+								"id": "K2Z6m4Kt",
+								"from": "JHbKEH3A",
+								"to": "byMaoUe0",
+								"label": "read the pane's link",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+									"symbol": "assertBrowserLinkStands"
+								}
+							},
+							{
+								"id": "hJnLOKdi",
+								"from": "byMaoUe0",
+								"to": "JHbKEH3A",
+								"label": "the link and its revision",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+									"symbol": "assertBrowserLinkStands"
+								}
+							},
+							{
+								"id": "P0Fzpn7K",
+								"kind": "decision",
+								"question": "Did the link change while the command waited?",
+								"alternatives": [
+									{
+										"label": "changed",
+										"steps": [
+											{
+												"id": "9aFZDX9K",
+												"from": "JHbKEH3A",
+												"to": "u2LFaG7R",
+												"label": "refused: read the link again",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+													"symbol": "assertBrowserLinkStands"
+												}
+											}
+										]
+									},
+									{
+										"label": "stands",
+										"steps": [
+											{
+												"id": "QUlsrjSJ",
+												"from": "JHbKEH3A",
+												"to": "Fg9dkGj3",
+												"label": "ensure the tab's coordinator is ready first",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+													"symbol": "readyCoordinator"
+												}
+											},
+											{
+												"id": "Qg3JAQcN",
+												"from": "Fg9dkGj3",
+												"to": "JHbKEH3A",
+												"label": "ready, or the reason it is not",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+													"symbol": "readyCoordinator"
+												}
+											},
+											{
+												"id": "c8PFrTUK",
+												"kind": "decision",
+												"question": "Is the coordinator ready?",
+												"alternatives": [
+													{
+														"label": "not ready",
+														"steps": [
+															{
+																"id": "8bwk9KsR",
+																"from": "JHbKEH3A",
+																"to": "u2LFaG7R",
+																"label": "refused with the coordinator's reason",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+																	"symbol": "readyCoordinator"
+																}
+															}
+														]
+													},
+													{
+														"label": "ready",
+														"steps": [
+															{
+																"id": "z0RMSQnC",
+																"from": "JHbKEH3A",
+																"to": "6Jjha6LN",
+																"label": "start the workhorse of the shown checkout",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+																	"symbol": "startWorkhorseThread"
+																}
+															},
+															{
+																"id": "F0LUIBNz",
+																"from": "6Jjha6LN",
+																"to": "Uz2qReYK",
+																"label": "stage the start",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																	"symbol": "stageStartTransaction"
+																}
+															},
+															{
+																"id": "dnN8hskU",
+																"from": "6Jjha6LN",
+																"to": "jylkTBp7",
+																"label": "thread/start for the workhorse",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																	"symbol": "startWorkhorseThread"
+																}
+															},
+															{
+																"id": "ytDk3gXP",
+																"from": "jylkTBp7",
+																"to": "6Jjha6LN",
+																"label": "the new thread, or why it failed",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																	"symbol": "startWorkhorseThread"
+																}
+															},
+															{
+																"id": "TrzOSnzr",
+																"kind": "decision",
+																"question": "What came of thread/start?",
+																"alternatives": [
+																	{
+																		"label": "not delivered",
+																		"steps": [
+																			{
+																				"id": "Y71UzjES",
+																				"from": "6Jjha6LN",
+																				"to": "Uz2qReYK",
+																				"label": "roll the staged start back",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "refuseStartFailure"
+																				}
+																			},
+																			{
+																				"id": "4gMlBhdU",
+																				"from": "6Jjha6LN",
+																				"to": "JHbKEH3A",
+																				"label": "failed: no thread, no link",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "execute"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "outcome unknown",
+																		"steps": [
+																			{
+																				"id": "2ddysNmH",
+																				"from": "6Jjha6LN",
+																				"to": "Uz2qReYK",
+																				"label": "mark the outcome unknown; never retried",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "refuseStartFailure"
+																				}
+																			},
+																			{
+																				"id": "OAhpEmrO",
+																				"from": "6Jjha6LN",
+																				"to": "JHbKEH3A",
+																				"label": "unknown: no link",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "execute"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "answered",
+																		"steps": [
+																			{
+																				"id": "KOAZ6Rsl",
+																				"from": "6Jjha6LN",
+																				"to": "Uz2qReYK",
+																				"label": "commit the thread's ownership",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "commitStart"
+																				}
+																			},
+																			{
+																				"id": "cQbogRR1",
+																				"from": "6Jjha6LN",
+																				"to": "byMaoUe0",
+																				"label": "classify and bind the checkout's link",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "bindWorkhorse"
+																				}
+																			},
+																			{
+																				"id": "mx0TU9CU",
+																				"from": "byMaoUe0",
+																				"to": "6Jjha6LN",
+																				"label": "the executable link",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "bindWorkhorse"
+																				}
+																			},
+																			{
+																				"id": "bKzE2rye",
+																				"from": "6Jjha6LN",
+																				"to": "JHbKEH3A",
+																				"label": "ready, with the bound link",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+																					"symbol": "execute"
+																				}
+																			},
+																			{
+																				"id": "UhMLF2rJ",
+																				"from": "JHbKEH3A",
+																				"to": "RkhHgrhb",
+																				"label": "move board news to the new workhorse",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+																					"symbol": "replaceThreadContextBinding"
+																				}
+																			},
+																			{
+																				"id": "nAN9hREo",
+																				"from": "JHbKEH3A",
+																				"to": "u2LFaG7R",
+																				"label": "delivered",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/workbench/src/server/services/actions/thread-links.ts",
+																					"symbol": "createServerThreadLinkActions"
+																				}
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "ILeym7Ex",
+						"name": "The coordinator delegates work",
+						"participants": [
+							"Fg9dkGj3",
+							"tlC2W839",
+							"byMaoUe0",
+							"Uz2qReYK",
+							"2ffhMTdn",
+							"jylkTBp7"
+						],
+						"steps": [
+							{
+								"id": "YdByOgc3",
+								"from": "Fg9dkGj3",
+								"to": "tlC2W839",
+								"label": "delegate_to_workhorse, naming the checkout",
+								"kind": "sync",
+								"note": "the tab session starts the named checkout's workhorse first when it has none",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+									"symbol": "delegate"
+								}
+							},
+							{
+								"id": "Xz7MNyau",
+								"from": "tlC2W839",
+								"to": "byMaoUe0",
+								"label": "classify the workhorse: idle or active",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+									"symbol": "runDelegate"
+								}
+							},
+							{
+								"id": "ru4CZMmp",
+								"from": "byMaoUe0",
+								"to": "tlC2W839",
+								"label": "the link and its status",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+									"symbol": "runDelegate"
+								}
+							},
+							{
+								"id": "ITQoQ4n9",
+								"kind": "decision",
+								"question": "Is the workhorse running a turn?",
+								"alternatives": [
+									{
+										"label": "active: queue behind it",
+										"steps": [
+											{
+												"id": "YUOuX6sS",
+												"from": "tlC2W839",
+												"to": "Uz2qReYK",
+												"label": "stage the delegation",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+													"symbol": "stageOperation"
+												}
+											},
+											{
+												"id": "Zls5gmvd",
+												"from": "tlC2W839",
+												"to": "byMaoUe0",
+												"label": "classify again: it must still be active",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"symbol": "addQueuedDelegate"
+												}
+											},
+											{
+												"id": "QtntCtHB",
+												"from": "byMaoUe0",
+												"to": "tlC2W839",
+												"label": "still active",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"symbol": "addQueuedDelegate"
+												}
+											},
+											{
+												"id": "JB1wgnUm",
+												"from": "tlC2W839",
+												"to": "2ffhMTdn",
+												"label": "add the prompt to the queue",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"symbol": "add"
+												}
+											},
+											{
+												"id": "sBz74tl0",
+												"from": "2ffhMTdn",
+												"to": "jylkTBp7",
+												"label": "thread/queue/add",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"symbol": "queueAdd"
+												}
+											},
+											{
+												"id": "MItmWVo5",
+												"from": "jylkTBp7",
+												"to": "2ffhMTdn",
+												"label": "the queue",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+													"symbol": "queueAdd"
+												}
+											},
+											{
+												"id": "8VO0EfNc",
+												"from": "2ffhMTdn",
+												"to": "tlC2W839",
+												"label": "the queued submission",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+													"symbol": "addQueuedDelegate"
+												}
+											}
+										]
+									},
+									{
+										"label": "idle: start a turn",
+										"steps": [
+											{
+												"id": "MTOxSeB0",
+												"from": "tlC2W839",
+												"to": "Uz2qReYK",
+												"label": "stage the delegation",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+													"symbol": "stageOperation"
+												}
+											},
+											{
+												"id": "vWndz6h6",
+												"from": "tlC2W839",
+												"to": "byMaoUe0",
+												"label": "classify again: it must still be idle",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"symbol": "assertIdleForDelegate"
+												}
+											},
+											{
+												"id": "5Ci8GL7J",
+												"from": "byMaoUe0",
+												"to": "tlC2W839",
+												"label": "still idle",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"symbol": "assertIdleForDelegate"
+												}
+											},
+											{
+												"id": "1BwEndY0",
+												"from": "tlC2W839",
+												"to": "jylkTBp7",
+												"label": "turn/start with the board's context",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"symbol": "deliverTurnStart"
+												}
+											},
+											{
+												"id": "kghWrhPl",
+												"from": "jylkTBp7",
+												"to": "tlC2W839",
+												"label": "the turn that started",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+													"symbol": "deliverTurnStart"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "vDD2NoAE",
+								"kind": "decision",
+								"question": "What did the child answer?",
+								"alternatives": [
+									{
+										"label": "accepted",
+										"steps": [
+											{
+												"id": "HABlToF8",
+												"from": "tlC2W839",
+												"to": "Uz2qReYK",
+												"label": "commit the operation",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+													"symbol": "recordSettlement"
 												}
 											}
 										]
