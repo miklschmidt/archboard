@@ -335,7 +335,7 @@ The Archboard server reads `repos.json` again each time that the check runs. So 
 
 If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. If the Archboard server cannot find the configured command, the check says the same. The answer names the command that configures one, and the uses stay candidates.
 
-The output starts with the elapsed time for each check: the board check, code facts, each language server and the history lens. JSON carries the same times in `timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
+The code check's output starts with the elapsed time of each step: code facts, each language server and the history lens. JSON carries the same times in `code.timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
 
 If a server does not start or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
 
