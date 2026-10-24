@@ -186,25 +186,23 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 	let visibleBase = "";
 	let disposed = false;
 
+	const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (board, element) => {
+		if (board !== "system/payments") {
+			return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
+		}
+		if (element !== "node") {
+			return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
+		}
+		const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
+		return parsed.success
+			? { ok: true, binding: parsed.data }
+			: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
+	};
+
 	const start = async (): Promise<void> => {
 		const app = express();
 		app.use(createBrowserOriginGuard());
 		app.use(createCodeOpenerPreguard());
-		const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (
-			board,
-			element,
-		) => {
-			if (board !== "system/payments") {
-				return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
-			}
-			if (element !== "node") {
-				return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
-			}
-			const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
-			return parsed.success
-				? { ok: true, binding: parsed.data }
-				: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };
-		};
 		const routeDependencies: Partial<CodeOpenerRouteDependencies> | undefined =
 			options.defaultDependencies
 				? options.routeDependencies

@@ -222,6 +222,18 @@ describe("a disagreement a document has to be able to hold", () => {
 	});
 });
 
+/**
+ * One flow with the given steps.
+ * @param told The steps.
+ * @returns The content.
+ */
+const requestFlowContent = (told: readonly Record<string, unknown>[]): VariantContent =>
+	content({
+		nodes: [API, STORE],
+		edges: [WIRE],
+		flows: [{ id: "f1", name: "One request", participants: ["n1", "n2"], steps: told }],
+	});
+
 describe("a removal this proposal made", () => {
 	test("stands, and the predecessor's change to the same subject is still reported", () => {
 		const mine = content({ nodes: [API], edges: [] });
@@ -243,21 +255,10 @@ describe("a removal this proposal made", () => {
 			{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" },
 			{ id: "s2", from: "n2", to: "n1", label: "answer", kind: "return" },
 		];
-		/**
-		 * One flow with the given steps.
-		 * @param told The steps.
-		 * @returns The content.
-		 */
-		const flowing = (told: readonly Record<string, unknown>[]): VariantContent =>
-			content({
-				nodes: [API, STORE],
-				edges: [WIRE],
-				flows: [{ id: "f1", name: "One request", participants: ["n1", "n2"], steps: told }],
-			});
 		const settled = reconcileVariant({
-			base: flowing(steps),
-			mine: flowing([steps[0]!]),
-			theirs: flowing([steps[0]!, { ...steps[1]!, label: "answer at once" }]),
+			base: requestFlowContent(steps),
+			mine: requestFlowContent([steps[0]!]),
+			theirs: requestFlowContent([steps[0]!, { ...steps[1]!, label: "answer at once" }]),
 		});
 		expect(about(settled.issues, "s2")[0]).toMatchObject({
 			kind: "deleted-and-changed",
@@ -297,23 +298,11 @@ describe("two removals that between them leave nothing", () => {
 		{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" },
 		{ id: "s2", from: "n2", to: "n1", label: "answer", kind: "return" },
 	];
-	/**
-	 * One flow with the given steps.
-	 * @param told The steps.
-	 * @returns The content.
-	 */
-	const flowing = (told: readonly Record<string, unknown>[]): VariantContent =>
-		content({
-			nodes: [API, STORE],
-			edges: [WIRE],
-			flows: [{ id: "f1", name: "One request", participants: ["n1", "n2"], steps: told }],
-		});
-
 	test("are reported rather than quietly resurrecting what both sides removed", () => {
 		const settled = reconcileVariant({
-			base: flowing(STEPS),
-			mine: flowing([STEPS[0]!]),
-			theirs: flowing([STEPS[1]!]),
+			base: requestFlowContent(STEPS),
+			mine: requestFlowContent([STEPS[0]!]),
+			theirs: requestFlowContent([STEPS[1]!]),
 		});
 		expect(settled.issues.some((issue) => issue.kind === "left-empty")).toBe(true);
 		// What is kept is what this proposal told, which is coherent; the steps the
@@ -327,25 +316,13 @@ describe("two sides adding to one sequence independently", () => {
 		{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" },
 		{ id: "s2", from: "n2", to: "n1", label: "answer", kind: "return" },
 	];
-	/**
-	 * One flow with the given steps.
-	 * @param told The steps.
-	 * @returns The content.
-	 */
-	const flowing = (told: readonly Record<string, unknown>[]): VariantContent =>
-		content({
-			nodes: [API, STORE],
-			edges: [WIRE],
-			flows: [{ id: "f1", name: "One request", participants: ["n1", "n2"], steps: told }],
-		});
-
 	test("each addition lands after what it followed, not at the number it had", () => {
 		const a1 = { id: "a1", from: "n1", to: "n2", label: "look up", kind: "sync" };
 		const b1 = { id: "b1", from: "n2", to: "n1", label: "and log it", kind: "async" };
 		const settled = reconcileVariant({
-			base: flowing(STEPS),
-			mine: flowing([a1, ...STEPS]),
-			theirs: flowing([...STEPS, b1]),
+			base: requestFlowContent(STEPS),
+			mine: requestFlowContent([a1, ...STEPS]),
+			theirs: requestFlowContent([...STEPS, b1]),
 		});
 		expect(settled.content.flows[0]?.steps.map((step) => step.id)).toEqual([
 			"a1",

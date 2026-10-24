@@ -102,6 +102,11 @@ const cite = (symbol: string): { repo: string; path: string; symbol: string } =>
 	symbol,
 });
 
+const bound = (symbol: string): Record<string, unknown> => ({
+	...ORDERS,
+	binding: { repo: "github.com/acme/shop", path: "src/orders.ts", symbol },
+});
+
 describe("what is not a change to the architecture", () => {
 	test("changing only node and relationship order keeps their standing unchanged", () => {
 		const before = content({
@@ -157,10 +162,6 @@ describe("what is not a change to the architecture", () => {
 	});
 
 	test("a binding that names another symbol in the same file is a changed binding", () => {
-		const bound = (symbol: string): Record<string, unknown> => ({
-			...ORDERS,
-			binding: { repo: "github.com/acme/shop", path: "src/orders.ts", symbol },
-		});
 		const before = content({ nodes: [GATEWAY, bound("Orders.place")], edges: [WIRE] });
 		const after = content({ nodes: [GATEWAY, bound("Orders.cancel")], edges: [WIRE] });
 
@@ -325,15 +326,16 @@ describe("an ordered exchange", () => {
 		expect(after.flows[0]?.steps.map((step) => step.id)).toEqual(["s2"]);
 	});
 
+	const toldStepIds = (ids: string[]) =>
+		content({
+			nodes: [GATEWAY, ORDERS],
+			edges: [],
+			flows: [{ ...FLOW, steps: ids.map((id) => ({ id, from: "gw", to: "or", label: id })) }],
+		});
+
 	test("deleted runs stay before their next surviving baseline step through additions and reordering", () => {
-		const told = (ids: string[]) =>
-			content({
-				nodes: [GATEWAY, ORDERS],
-				edges: [],
-				flows: [{ ...FLOW, steps: ids.map((id) => ({ id, from: "gw", to: "or", label: id })) }],
-			});
-		const before = told(["call", "fitcall", "fitreply", "reply", "route", "paint", "atlas"]);
-		const after = told(["derive", "paint", "call", "measure", "reply", "newtail"]);
+		const before = toldStepIds(["call", "fitcall", "fitreply", "reply", "route", "paint", "atlas"]);
+		const after = toldStepIds(["derive", "paint", "call", "measure", "reply", "newtail"]);
 		const drawn = withRemoved(before, after, compareVariants(before, after));
 		expect(drawn.flows[0]?.steps.map((step) => step.id)).toEqual([
 			"derive",
@@ -368,29 +370,29 @@ describe("an ordered exchange", () => {
 	});
 });
 
+/**
+ * One flow told in the given order.
+ * @param steps The steps, in order.
+ * @returns The content.
+ */
+const toldSteps = (steps: readonly Record<string, unknown>[]): VariantContent =>
+	content({
+		nodes: [GATEWAY, ORDERS],
+		edges: [WIRE],
+		flows: [{ id: "f1", name: "One order", participants: ["gw", "or"], steps }],
+	});
+
 describe("where a step stands", () => {
 	const STEPS = [
 		{ id: "s1", from: "gw", to: "or", label: "place" },
 		{ id: "s2", from: "or", to: "gw", label: "accepted" },
 		{ id: "s3", from: "gw", to: "or", label: "confirm" },
 	];
-	/**
-	 * One flow told in the given order.
-	 * @param steps The steps, in order.
-	 * @returns The content.
-	 */
-	const told = (steps: readonly Record<string, unknown>[]): VariantContent =>
-		content({
-			nodes: [GATEWAY, ORDERS],
-			edges: [WIRE],
-			flows: [{ id: "f1", name: "One order", participants: ["gw", "or"], steps }],
-		});
-
 	test("adding a step does not change the steps that follow it", () => {
 		// Counting absolute positions would say that inserting one step changed
 		// every step after it, which is the opposite of what happened.
-		const before = told(STEPS);
-		const after = told([{ id: "s0", from: "gw", to: "or", label: "look up" }, ...STEPS]);
+		const before = toldSteps(STEPS);
+		const after = toldSteps([{ id: "s0", from: "gw", to: "or", label: "look up" }, ...STEPS]);
 		const comparison = compareVariants(before, after);
 		expect(comparison.steps.get("s0")?.kind).toBe("added");
 		for (const id of ["s1", "s2", "s3"]) {
@@ -399,13 +401,16 @@ describe("where a step stands", () => {
 	});
 
 	test("removing a step does not change the steps that follow it either", () => {
-		const comparison = compareVariants(told(STEPS), told([STEPS[0]!, STEPS[2]!]));
+		const comparison = compareVariants(toldSteps(STEPS), toldSteps([STEPS[0]!, STEPS[2]!]));
 		expect(comparison.steps.get("s2")?.kind).toBe("removed");
 		expect(comparison.steps.get("s3")?.kind).toBe("unchanged");
 	});
 
 	test("a genuine reorder is still a change to the steps that moved", () => {
-		const comparison = compareVariants(told(STEPS), told([STEPS[2]!, STEPS[0]!, STEPS[1]!]));
+		const comparison = compareVariants(
+			toldSteps(STEPS),
+			toldSteps([STEPS[2]!, STEPS[0]!, STEPS[1]!]),
+		);
 		expect(comparison.steps.get("s3")?.fields).toEqual([
 			{ field: "position", before: 3, after: 1 },
 		]);

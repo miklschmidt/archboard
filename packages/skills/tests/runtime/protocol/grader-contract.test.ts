@@ -195,12 +195,13 @@ test("an unprompted row is one of the catalogue's rows, and anything else is ref
 	).toThrow();
 });
 
+const onAxis = (axis: FindingAxis): RunVerdict =>
+	filed([
+		{ ...BARE, feature: "board.create", verdict: "pass", finding: null },
+		{ ...BARE, feature: "render.svg", verdict: "missing", finding: finding(axis) },
+	]);
+
 test("a feature the skill never taught fails no run; a departure or a contradicted board does", () => {
-	const onAxis = (axis: FindingAxis): RunVerdict =>
-		filed([
-			{ ...BARE, feature: "board.create", verdict: "pass", finding: null },
-			{ ...BARE, feature: "render.svg", verdict: "missing", finding: finding(axis) },
-		]);
 	expect(semanticallyCompliant(EXPECTED, onAxis("skill"))).toBe(true);
 	expect(semanticallyCompliant(EXPECTED, onAxis("conformance"))).toBe(false);
 	expect(semanticallyCompliant(EXPECTED, onAxis("truth"))).toBe(false);

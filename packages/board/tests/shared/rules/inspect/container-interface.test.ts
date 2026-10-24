@@ -263,28 +263,28 @@ describe("a relationship that ends on the container itself", () => {
 	});
 });
 
-describe("a pass-through entry point", () => {
-	/**
-	 * The pass-through entry points of a container Shop with one leaf, Route.
-	 * @param edges The relationships.
-	 * @param more More nodes of the variant.
-	 * @returns The ids.
-	 */
-	function passing(edges: unknown[], more: unknown[] = []): string[] {
-		const variant = content({
-			nodes: [
-				node("Shop"),
-				node("Client"),
-				node("Ledger"),
-				node("Route", "shop"),
-				node("Helper", "shop"),
-				...more,
-			],
-			edges,
-		});
-		return ids(interfaceOf(variant, "shop").passThrough);
-	}
+/**
+ * The pass-through entry points of a container Shop with one leaf, Route.
+ * @param edges The relationships.
+ * @param more More nodes of the variant.
+ * @returns The ids.
+ */
+function passing(edges: unknown[], more: unknown[] = []): string[] {
+	const variant = content({
+		nodes: [
+			node("Shop"),
+			node("Client"),
+			node("Ledger"),
+			node("Route", "shop"),
+			node("Helper", "shop"),
+			...more,
+		],
+		edges,
+	});
+	return ids(interfaceOf(variant, "shop").passThrough);
+}
 
+describe("a pass-through entry point", () => {
 	test("a leaf that sends one relationship of the kind it receives passes the call on", () => {
 		expect(passing([edge("client", "route"), edge("route", "ledger")])).toEqual(["route"]);
 		expect(
