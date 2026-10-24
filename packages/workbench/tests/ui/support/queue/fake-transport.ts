@@ -19,7 +19,7 @@ import type {
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportState,
 } from "#ui/state/queue/transport-port.ts";
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
 
 /** The shape the transport's own error class carries, without that class. */
 class FakeTransportError extends Error {

@@ -6,7 +6,7 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
-import type { BrowserWorkhorses } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserWorkhorses } from "@archboard/agent-workbench/contract";
 import { ToggleGroup, ToggleGroupItem } from "@archboard/ui-kit/controls";
 
 /** One workhorse as the list draws it. */

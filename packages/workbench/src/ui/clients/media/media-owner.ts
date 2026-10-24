@@ -3,10 +3,10 @@
 // elements mounted and removed with each run, and every realtime publication
 // forwarded to the owner's own subscribers.
 
-import { createRealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
-import type { RealtimeServer } from "#shared/protocol/realtime-contract.ts";
-import type { RealtimeMediaSession } from "#ui/state/realtime/session-contract.ts";
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+import { createRealtimeMediaSession } from "@archboard/agent-workbench/browser";
+import type { RealtimeServer } from "@archboard/agent-workbench/realtime";
+import type { RealtimeMediaSession } from "@archboard/agent-workbench/browser";
+import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
 import { createRealtimeServer } from "#ui/clients/media/realtime.ts";
 import type { StartOperation, VoicePresentation } from "#ui/clients/media/realtime.ts";
 import {

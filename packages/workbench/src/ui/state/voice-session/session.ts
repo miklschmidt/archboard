@@ -2,7 +2,7 @@
 // guards around it, and the projection; the media owner and the transport it
 // reads are constructed elsewhere and are never disposed here.
 
-import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
+import type { RealtimeState } from "@archboard/agent-workbench/realtime";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,

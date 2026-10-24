@@ -1,7 +1,7 @@
 // The thread link's typed inputs and outputs: the browser tab's one link to its
 // workhorse, and how one action settles.
 
-import type { BrowserThreadLink } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserThreadLink } from "@archboard/agent-workbench/contract";
 import type { LoginId, ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	ThreadLinkCommandName,

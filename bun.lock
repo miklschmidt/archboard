@@ -88,6 +88,10 @@
       "name": "@archboard-app/web",
       "version": "0.0.0",
     },
+    "packages/agent-workbench": {
+      "name": "@archboard/agent-workbench",
+      "version": "0.0.0",
+    },
     "packages/board": {
       "name": "@archboard/board",
       "version": "0.0.0",
@@ -163,6 +167,8 @@
     "@archboard-app/server": ["@archboard-app/server@workspace:apps/server"],
 
     "@archboard-app/web": ["@archboard-app/web@workspace:apps/web"],
+
+    "@archboard/agent-workbench": ["@archboard/agent-workbench@workspace:packages/agent-workbench"],
 
     "@archboard/board": ["@archboard/board@workspace:packages/board"],
 

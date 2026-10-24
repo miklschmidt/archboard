@@ -1,22 +1,22 @@
 // The media owner's published state, its options, and the pure helpers over
 // the transport snapshot it reads.
 
-import type { BrowserCommandLease } from "#shared/schemas/browser/snapshot.ts";
-import { browserRealtimeMediaSupported } from "#ui/clients/realtime/browser-environment.ts";
+import type { BrowserCommandLease } from "@archboard/agent-workbench/contract";
+import { browserRealtimeMediaSupported } from "@archboard/agent-workbench/browser";
 import type {
 	AppendOutcome,
 	RealtimeCorrelation,
 	RealtimeServer,
-} from "#shared/protocol/realtime-contract.ts";
-import type { createRealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
-import type { RealtimeMediaEnvironment } from "#ui/state/realtime/environment.ts";
-import type { RealtimeMediaSession } from "#ui/state/realtime/session-contract.ts";
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+} from "@archboard/agent-workbench/realtime";
+import type { createRealtimeMediaSession } from "@archboard/agent-workbench/browser";
+import type { RealtimeMediaEnvironment } from "@archboard/agent-workbench/browser";
+import type { RealtimeMediaSession } from "@archboard/agent-workbench/browser";
+import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
 import type { BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import type { StartOperation, VoicePresentation } from "#ui/clients/media/realtime.ts";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */

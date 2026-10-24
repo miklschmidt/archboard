@@ -7,8 +7,8 @@ import type {
 	BrowserCommandLease,
 	BrowserSnapshot,
 	BrowserThreadLink,
-} from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+} from "@archboard/agent-workbench/contract";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommandAuthority,
 	BrowserCommandDraft,

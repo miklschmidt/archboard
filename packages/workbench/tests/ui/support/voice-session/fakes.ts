@@ -2,15 +2,15 @@
 // a realtime port with its own output level source, both publishing the way
 // the real owners do.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
-import type { RealtimeCorrelation, RealtimeState } from "#shared/protocol/realtime-contract.ts";
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+} from "@archboard/agent-workbench/realtime";
+import type { RealtimeCorrelation, RealtimeState } from "@archboard/agent-workbench/realtime";
+import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
 import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
+import type { VoiceOutputLevelSource } from "@archboard/agent-workbench/browser";
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 import type {

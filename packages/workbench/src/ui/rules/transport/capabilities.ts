@@ -2,7 +2,7 @@
 // lease and pending approvals. `supportsCommand` and the dispatch guard read
 // the same predicates, so the two cannot disagree about what is answerable.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommandName,
 	BrowserWorkbenchCapabilities,

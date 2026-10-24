@@ -4,8 +4,8 @@
 // out once, against the target captured when it was made, and its result is
 // kept beside the card until the server's own record replaces it.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
 import type {
 	WorkbenchApprovalCard,
 	WorkbenchApprovalDecisionResult,

@@ -11,7 +11,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
 import { mergeConversation, projectTimelineTurns } from "#ui/rules/timeline/projection.ts";
 import { type ConversationOwner, type ConversationTurn } from "#ui/state/timeline/contract.ts";
-import type { BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
 import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,

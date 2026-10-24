@@ -7,7 +7,7 @@ import type {
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

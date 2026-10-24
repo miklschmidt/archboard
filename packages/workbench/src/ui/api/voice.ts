@@ -6,7 +6,7 @@ export type {
 	BrowserWorkbenchMediaOwner,
 	BrowserWorkbenchMediaOwnerOptions,
 } from "#ui/clients/media/media-state.ts";
-export { VOICE_OUTPUT_SPEAKING_LEVEL } from "#ui/clients/output-level/level-source.ts";
+export { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/agent-workbench/browser";
 export { OrbHost, OrbStageProvider } from "#ui/components/orb/OrbStage.tsx";
 export { VoiceSubtitles } from "#ui/components/subtitles/VoiceSubtitles.tsx";
 export { TalkControl } from "#ui/components/voice/TalkControl.tsx";

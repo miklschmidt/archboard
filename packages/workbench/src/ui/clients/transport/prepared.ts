@@ -2,7 +2,7 @@
 // once, revalidate the intent, and dispatch once. Everything is serialised
 // behind one tail so a second action cannot slip between claim and dispatch.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,

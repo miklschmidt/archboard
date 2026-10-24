@@ -4,17 +4,15 @@
 // fails with one sentence, except a recording refused over live voice
 // (TASK-304), which fails with the gateway's reason.
 
-import type {
-	BrowserCommandLease,
-	BrowserVoicePresentation,
-} from "#shared/schemas/browser/snapshot.ts";
+import { JsonValueSchema, type BrowserCommandLease } from "@archboard/agent-workbench/contract";
+import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
 import type {
 	AppendOutcome,
 	CommandOutcome,
 	CreateOfferSdp,
 	RealtimeCorrelation,
 	RealtimeServer,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import { executableThread, sameLeaseTarget } from "#ui/clients/media/media-state.ts";
 import type { BrowserAudioElementPort } from "#ui/clients/media/media-state.ts";
 import type {
@@ -161,7 +159,9 @@ async function createOffer(
 		command: "realtimeStart",
 		threadId: executableThread(run.transport),
 		sdp: offer.sdp,
-		...(operation.presentation === null ? {} : { presentation: operation.presentation }),
+		...(operation.presentation === null
+			? {}
+			: { presentation: JsonValueSchema.parse(operation.presentation) }),
 	});
 	run.requireCurrentStart(operation);
 	const answer = startAnswer(value, offer, lease);

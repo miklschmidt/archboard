@@ -1,8 +1,8 @@
 // A transport double whose published state a test moves by hand, and the
 // snapshots it moves through on the way from signed out to a conversation.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { type BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/agent-workbench/contract";
+import { type BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
 

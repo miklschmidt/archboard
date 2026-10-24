@@ -10,7 +10,7 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "#shared/protocol/gateway-envelope.ts";
+} from "@archboard/agent-workbench/contract";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -18,7 +18,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/agent-workbench/contract";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

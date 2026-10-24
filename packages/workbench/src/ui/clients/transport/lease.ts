@@ -1,7 +1,7 @@
 // Lease identity: claim, renew and release, each refusing an answer whose
 // identity moved, and the account read that shares their reconciliation.
 
-import type { BrowserCommandLease } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease } from "@archboard/agent-workbench/contract";
 import type { BrowserWorkbenchAccountReadResult } from "#ui/state/transport/contract.ts";
 import { accountReady } from "#ui/rules/transport/capabilities.ts";
 import {

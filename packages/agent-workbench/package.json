@@ -1,0 +1,19 @@
+{
+	"name": "@archboard/agent-workbench",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Reusable Codex sessions with a coordinator, checkout workhorses, approvals, conversation, and realtime voice.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./contract": "./src/shared/api/contract.ts",
+		"./realtime": "./src/shared/api/realtime.ts",
+		"./browser": "./src/ui/api/browser.ts",
+		"./runtime": "./src/runtime/api/runtime.ts",
+		"./server": "./src/server/api/server.ts"
+	}
+}

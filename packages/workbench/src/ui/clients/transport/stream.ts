@@ -6,7 +6,7 @@
 import {
 	browserSnapshotRelationshipIssues,
 	type BrowserSnapshot,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/agent-workbench/contract";
 import type {
 	BrowserWorkbenchDeltaMessage,
 	BrowserWorkbenchGatewayMessage,

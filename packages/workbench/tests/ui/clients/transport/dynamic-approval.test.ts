@@ -1,9 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { type BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/agent-workbench/contract";
+import { type BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createBrowserWorkbenchTransport } from "#ui/clients/transport/transport.ts";
 import { type BrowserCommandDraft } from "#ui/state/transport/contract.ts";

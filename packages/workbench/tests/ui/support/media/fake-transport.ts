@@ -2,11 +2,11 @@
 // commands and media-ready publications and answers realtime commands the way
 // the gateway does.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/agent-workbench/realtime";
 import {
 	mediaLease,
 	workbenchSnapshot,

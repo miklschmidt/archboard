@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "#ui/clients/output-level/level-source.ts";
+import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/agent-workbench/browser";
 import type { AgentVoiceView, VoiceStage } from "#ui/state/surfaces/contracts.ts";
 
 /** The stages in which the model's measured output can make it audible. */

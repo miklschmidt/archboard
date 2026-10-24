@@ -2,11 +2,11 @@
 // authority, so a fixture the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import type { BrowserSnapshot, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/agent-workbench/contract";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot, DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { WorkbenchApprovalsInput } from "#ui/state/approvals/contracts.ts";
 import type {
