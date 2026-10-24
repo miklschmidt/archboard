@@ -386,7 +386,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "d72087d903bc85cc98916f90554fa9fea9aa1de0bc45b80425fd875a0415a868"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		},
 		{
 			"name": "module-interfaces",
@@ -420,7 +420,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "d72087d903bc85cc98916f90554fa9fea9aa1de0bc45b80425fd875a0415a868"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		},
 		{
 			"name": "git-history",
@@ -454,7 +454,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "a789e03dcca0f808bfa21341c32b93002734c6fc2e0f84c81df70677def9187e"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		}
 	]
 }
