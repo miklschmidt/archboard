@@ -53,5 +53,5 @@ export const ARCHITECTURE_ICON_GAP = 12;
 export const ARCHITECTURE_NOTE_GAP = 2;
 export const ARCHITECTURE_LABEL_PADDING_X = 10;
 export const ARCHITECTURE_LABEL_PADDING_Y = 8;
-/** The room between two relationships' words on one stacked label, with a rule across its middle (ADR 0052). */
-export const ARCHITECTURE_LABEL_STACK_GAP = 8;
+/** The ground between two chips of one stacked label (ADR 0052). */
+export const ARCHITECTURE_LABEL_STACK_GAP = 4;

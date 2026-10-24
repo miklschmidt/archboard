@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24 02:08'
-updated_date: '2026-10-24 02:26'
+updated_date: '2026-10-24 02:31'
 labels:
   - semantic-model
   - renderer
@@ -32,7 +32,7 @@ TASK-513 labeled a joined overview line with its count ("5 relationships"). On D
 - [x] #2 A joined line whose relationships carry no label draws no label, as a single unlabelled relationship does
 - [x] #3 The tip over a joined line in the overview names the drawn ends and every joined relationship with its own ends, never one member as the line
 - [x] #4 ADR 0052 and CONTEXT.md state the stacked rule
-- [x] #5 A rule across the plate separates two stacked labels, in light and dark themes
+- [x] #5 Each stacked label stands on a chip of its own, padded as a lone label, with the ground between chips and no line across a chip, in light and dark themes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,6 +49,8 @@ TASK-513 labeled a joined overview line with its count ("5 relationships"). On D
 
 <!-- SECTION:NOTES:BEGIN -->
 Cause of the tip defect: subjectTip read the line id against the whole variant (subject-tips.ts labelTip), so it described the first member. Verified: stacked-labels render test (blocks, track), scope, tip and inspection tests fail without the change and pass with it. Device Trust Library re-rendered after archboard restart in blocks and track, light and dark: each joined line stacks its labels with a rule between them; Everything keeps the saved labels. Live pane: hovering the cAR746dp label shows the drawn ends and all five calls with their own ends. bun run check passed to completion.
+
+Owner rejected the hairline rule between stacked labels (DESIGN.md Planes Not Lines Rule). Each label now stands on its own chip (measured chips in MeasuredLabel, slab and shadow per chip in architecture.ts), with a 4-unit gap. Re-rendered in blocks and track, light and dark.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

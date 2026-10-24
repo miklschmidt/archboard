@@ -182,7 +182,10 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 	const edges = [
 		{
 			...before.edges[0]!,
-			label: { box: label, measured: { width: 60, height: 20, runs: [], rules: [] } },
+			label: {
+				box: label,
+				measured: { width: 60, height: 20, runs: [], chips: [{ y: 0, height: 20 }] },
+			},
 		},
 		before.edges[1]!,
 	];
