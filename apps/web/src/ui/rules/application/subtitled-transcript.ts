@@ -5,7 +5,7 @@
 // the page that records it. That page is a tab session of its own (TASK-373), so no other page is
 // shown its voice.
 
-import type { BrowserSnapshot } from "@archboard/workbench/browser-contract";
+import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
 import type { SubtitleSource } from "@archboard/workbench/voice";
 import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 
