@@ -239,7 +239,8 @@ async function checkoutRoot(vault: string, signal: AbortSignal): Promise<string 
  * @param options.fix Whether to draw outdated embeds again and write their files.
  * @param options.signal Cancels it.
  * @returns The embeds check's part of the answer.
- * @throws {Error} When the browser that drew PNGs again did not stop cleanly.
+ * @throws {Error} When the browser that drew PNGs again did not stop cleanly,
+ * naming each file `--fix` rewrote.
  */
 async function checkEmbeds(
 	vault: string,
@@ -257,12 +258,15 @@ async function checkEmbeds(
 		await run.bitmaps.stop().catch(() => undefined);
 		throw error;
 	});
-	await run.bitmaps.stop();
+	const fixed = checked.flatMap((one) => one.fix ?? []);
+	await run.bitmaps.stop().catch((error: unknown) => {
+		throw stoppedAfter(error, fixed);
+	});
 	return {
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
 		findings: checked.flatMap((one) => (one.finding === undefined ? [] : [one.finding])),
-		fixed: checked.flatMap((one) => (one.fix === undefined ? [] : [one.fix])),
+		fixed,
 	};
 }
 
