@@ -81,17 +81,25 @@ legend off.
 ### An embed and when it is outdated
 
 An embed is a board render that a repository keeps under Git. `check embeds`
-reads the files that Git tracks in the checkout that it runs in, and each one
-with a recipe is an embed. A render that Git ignores is no embed.
+reads the files that Git tracks in the checkout that it runs in. Each SVG
+document and each PNG with a recipe is an embed. A render that Git ignores is
+no embed. An SVG inside an HTML, Markdown or MDX page is no embed either,
+because `--fix` rewrites a whole file.
 
 The check finds the board by the recipe's `id` in the vault that the recipe
 names, draws it again from the recipe and compares:
 
-| What the check finds                                | Severity    |
-| --------------------------------------------------- | ----------- |
-| The fingerprint differs: the architecture changed   | warning     |
-| Only the picture hash differs: the renderer changed | information |
-| The board, its variant or its view is gone          | warning     |
+| What the check finds                                      | Severity    |
+| --------------------------------------------------------- | ----------- |
+| The fingerprint and the picture differ: the board changed | warning     |
+| Only the picture differs: the renderer changed            | information |
+| Only the fingerprint differs: nothing drawn changed       | none        |
+| The board, its variant or its view is gone                | warning     |
+
+The fingerprint covers the whole drawn variant, also the parts that a view
+leaves out. So an edit outside the view moves the fingerprint and leaves the
+picture as it was. Such an embed is current, and `--fix` only writes its new
+recipe.
 
 Archboard runs from a clone, so two machines can run two commits of the
 renderer. With a pure picture hash, one machine marks every embed outdated and
