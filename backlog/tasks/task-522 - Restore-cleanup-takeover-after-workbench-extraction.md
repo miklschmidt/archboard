@@ -1,11 +1,11 @@
 ---
 id: TASK-522
 title: Restore cleanup takeover after workbench extraction
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 13:53'
-updated_date: '2026-10-24 13:55'
+updated_date: '2026-10-24 14:05'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ The TASK-517.02 normal system lane failed public cleanup-error takeover before t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The observed startup failure has a reproduced cause and a scoped repair.
-- [ ] #2 Public cleanup takeover reaps the exact Codex group and outer server under the unchanged contract.
-- [ ] #3 The repaired complete gate passes before this task closes.
+- [x] #1 The observed startup failure has a reproduced cause and a scoped repair.
+- [x] #2 Public cleanup takeover reaps the exact Codex group and outer server under the unchanged contract.
+- [x] #3 The repaired complete gate passes before this task closes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,4 +38,12 @@ Reproduce the reported public startup takeover failure and inspect its retained 
 
 <!-- SECTION:NOTES:BEGIN -->
 The failure reproduced because public-codex-startup-preload.ts imported the removed workbench application module before Codex could spawn. Commit e7ac4e0be wraps the shared public createCodexWorkbench factory instead. Production code, assertions, timing contracts, and environment stay unchanged. Both startup cases and all 25 related cleanup cases pass. Scoped lint, formatting, and source types pass. Full gate remains pending.
+
+The repaired bun run check exited 0 in 559 seconds. The system lane passed all 259 cases, including public cleanup takeover. Evidence: /tmp/task517.02-check-repaired.log and matching .exit.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Updated the public startup preload to wrap the shared factory. Startup and cleanup owners pass under unchanged assertions and timing. The complete gate passes.
+<!-- SECTION:FINAL_SUMMARY:END -->

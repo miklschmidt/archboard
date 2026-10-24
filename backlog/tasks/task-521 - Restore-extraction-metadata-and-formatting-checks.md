@@ -1,11 +1,11 @@
 ---
 id: TASK-521
 title: Restore extraction metadata and formatting checks
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 13:53'
-updated_date: '2026-10-24 13:55'
+updated_date: '2026-10-24 14:05'
 labels: []
 dependencies: []
 references:
@@ -24,9 +24,9 @@ The TASK-517.02 complete gate stopped on routing.ts formatting. The repository l
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The changed routing source passes the existing formatter.
-- [ ] #2 README asset sources name canonical files and the existing repository owner passes.
-- [ ] #3 The repaired complete gate passes before this task closes.
+- [x] #1 The changed routing source passes the existing formatter.
+- [x] #2 README asset sources name canonical files and the existing repository owner passes.
+- [x] #3 The repaired complete gate passes before this task closes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,4 +39,12 @@ No architecture board is affected: the source owner move is already drawn by TAS
 
 <!-- SECTION:NOTES:BEGIN -->
 Formatted the reported routing file. Updated the three removed realtime source paths and added the extracted shared/UI owners beside retained integration sources. Narrated assets also track the moved core realtime and instruction rules. Existing generation hashes remain untouched, so readme:check can still identify stale output. The README manifest owner passes all 11 cases and focused formatting passes. Complete gate remains pending TASK-522 repair.
+
+The repaired bun run check exited 0 in 559 seconds. All 12 stages passed. Evidence: /tmp/task517.02-check-repaired.log and matching .exit.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Formatted routing and corrected README asset sources after the package move. The focused manifest owner and formatter pass. The complete gate passes with all normal lanes.
+<!-- SECTION:FINAL_SUMMARY:END -->

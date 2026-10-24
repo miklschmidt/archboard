@@ -1,11 +1,11 @@
 ---
 id: TASK-517.03
 title: Prove the reusable workbench in an independent app
-status: To Do
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 11:40'
+updated_date: '2026-10-24 14:05'
 labels: []
 dependencies:
   - TASK-517.02
@@ -40,4 +40,6 @@ This delivery contributes the independent consumer to Archboard@TASK-517 and the
 6. Run the complete normal gate and record any required live microphone acceptance as a limitation of automated evidence.
 7. Simplify the result and commit with Refs: TASK-517.03.
 The parent owns parallel review, board adoption, and final acceptance evidence.
+
+The backend implementer owns only the new example server, controlled backend tests, package manifest, and usage documentation. The parent owns the browser consumer, app-entry/layer/browser-safety policies, build integration, and final QA. The example uses a localhost HTTP/WebSocket host around createCodexWorkbench, with one admitted checkout and its own private state root. It forwards socket metadata through factory.browser.accept/handle/close and uses the same public transport/media factories in the browser. No board, vault, Archboard server, duplicated authority logic, or synthetic host callbacks. Keep account sign-in, conversation creation, text, voice, approvals, and separate voice/workhorse stops usable. Reuse the existing controlled Codex executable through an appropriate public test boundary rather than copying its protocol implementation. Add only meaningful fast contract owners, then use the complete gate and scoped fixing review before closure.
 <!-- SECTION:PLAN:END -->
