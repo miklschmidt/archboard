@@ -28,11 +28,11 @@ files after its last change. It is information and never fails the check.
 `archboard check` and `archboard check all` run every check. Each subcommand
 runs one:
 
-| Command                  | What it reads                                         |
-| ------------------------ | ----------------------------------------------------- |
+| Command                     | What it reads                                                         |
+| --------------------------- | --------------------------------------------------------------------- |
 | `archboard check semantics` | the vault's boards against its configuration (the former plain check) |
-| `archboard check code`   | the code check of ADR 0046, with behind               |
-| `archboard check embeds` | the embeds of this checkout and the tracked embeds of this vault |
+| `archboard check code`      | the code check of ADR 0046, with behind                               |
+| `archboard check embeds`    | the embeds of this checkout and the tracked embeds of this vault      |
 
 The answer has one part for each check, and a subcommand fills only its own
 part. If any part has a diagnostic or a warning, the command exits 1.
@@ -86,11 +86,11 @@ with a recipe is an embed. A render that Git ignores is no embed.
 The check finds the board by the recipe's `id` in the vault that the recipe
 names, draws it again from the recipe and compares:
 
-| What the check finds                              | Severity    |
-| ------------------------------------------------- | ----------- |
-| The fingerprint differs: the architecture changed | warning     |
+| What the check finds                                | Severity    |
+| --------------------------------------------------- | ----------- |
+| The fingerprint differs: the architecture changed   | warning     |
 | Only the picture hash differs: the renderer changed | information |
-| The board, its variant or its view is gone        | warning     |
+| The board, its variant or its view is gone          | warning     |
 
 Archboard runs from a clone, so two machines can run two commits of the
 renderer. With a pure picture hash, one machine marks every embed outdated and
