@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 129,
+	"version": 130,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T18:02:08.192Z",
+	"updatedAt": "2026-10-24T18:23:45.887Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -44760,7 +44760,7 @@
 		{
 			"id": "tEUCnc5Z",
 			"name": "TASK-526.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "wJUCTDTj",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -48215,7 +48215,7 @@
 		{
 			"id": "fkmIpH7L",
 			"name": "TASK-526.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "tEUCnc5Z",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -51722,7 +51722,7 @@
 			}
 		}
 	],
-	"current": "tEUCnc5Z",
+	"current": "fkmIpH7L",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -51873,6 +51873,12 @@
 			"from": "wJUCTDTj",
 			"at": "2026-10-24T16:39:43.011Z",
 			"reason": "archboard check runs every check, and check semantics and check code run one each (TASK-526.01)"
+		},
+		{
+			"variant": "fkmIpH7L",
+			"from": "tEUCnc5Z",
+			"at": "2026-10-24T18:23:45.887Z",
+			"reason": "archboard check embeds reports outdated embeds and --fix draws them again (TASK-526.03)"
 		}
 	],
 	"shelvings": [
