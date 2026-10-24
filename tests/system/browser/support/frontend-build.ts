@@ -1,5 +1,9 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
+import {
+	FRONTEND_INPUTS_FILE,
+	frontendInputsFingerprint,
+} from "../../../../tools/frontend-build-inputs.ts";
 
 type FrontendFreshness = "built" | "current";
 
@@ -12,44 +16,12 @@ interface FrontendBuildRequest {
 
 type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
 
-const INPUT_DIRECTORIES = ["packages", "apps"] as const;
-const INPUT_FILES = [
-	"vite.config.ts",
-	"tsconfig.frontend.json",
-	"package.json",
-	"bun.lock",
-] as const;
-
-function sourceFiles(repoRoot: string): string[] {
-	const files: string[] = [];
-	for (const relative of INPUT_DIRECTORIES) {
-		const root = join(repoRoot, relative);
-		if (!existsSync(root)) {
-			continue;
-		}
-		const queue = [root];
-		while (queue.length > 0) {
-			const directory = queue.pop();
-			if (!directory) {
-				continue;
-			}
-			for (const entry of readdirSync(directory, { withFileTypes: true })) {
-				const absolute = join(directory, entry.name);
-				if (entry.isDirectory()) {
-					queue.push(absolute);
-				} else if (entry.isFile()) {
-					files.push(absolute);
-				}
-			}
-		}
-	}
-	for (const relative of INPUT_FILES) {
-		const absolute = join(repoRoot, relative);
-		if (existsSync(absolute)) {
-			files.push(absolute);
-		}
-	}
-	return files;
+function matchingBuild(repoRoot: string): boolean {
+	const record = join(repoRoot, "dist", "frontend", FRONTEND_INPUTS_FILE);
+	return (
+		existsSync(record) &&
+		readFileSync(record, "utf8").trim() === frontendInputsFingerprint(repoRoot)
+	);
 }
 
 function buildRequest(repoRoot: string): FrontendBuildRequest {
@@ -75,26 +47,25 @@ async function ensureFreshFrontend(
 	runBuild: RunFrontendBuild,
 ): Promise<FrontendFreshness> {
 	const bundle = join(repoRoot, "dist/frontend/index.html");
-	const inputs = sourceFiles(repoRoot);
-	const newestInput = inputs.reduce((newest, file) => Math.max(newest, statSync(file).mtimeMs), 0);
-	const builtAt = existsSync(bundle) ? statSync(bundle).mtimeMs : 0;
-	let decision: FrontendFreshness = "current";
-	if (builtAt < newestInput || process.env["ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE"]) {
-		decision = "built";
-		process.stdout.write("# building frontend once for the serial browser lane\n");
-		await runBuild(buildRequest(repoRoot));
-	} else {
+	if (
+		!process.env["ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE"] &&
+		existsSync(bundle) &&
+		matchingBuild(repoRoot)
+	) {
 		process.stdout.write("# dist/frontend is current for the serial browser lane\n");
+		return "current";
 	}
+	process.stdout.write("# building frontend once for the serial browser lane\n");
+	await runBuild(buildRequest(repoRoot));
 	if (!existsSync(bundle)) {
 		throw new Error("Frontend build did not create dist/frontend/index.html.");
 	}
-	const finalBuiltAt = statSync(bundle).mtimeMs;
-	const stale = inputs.find((file) => statSync(file).mtimeMs > finalBuiltAt);
-	if (stale) {
-		throw new Error(`dist/frontend/index.html is older than ${stale}.`);
+	if (!matchingBuild(repoRoot)) {
+		throw new Error(
+			"Frontend output does not match its source inputs. Run bunx vp run --no-cache frontend.",
+		);
 	}
-	return decision;
+	return "built";
 }
 
 export {
