@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { ADDITIONAL_CONTEXT_POLICY } from "#runtime/rules/instructions/context-policy.ts";
+import { ADDITIONAL_CONTEXT_POLICY } from "@archboard/agent-workbench/runtime";
 import {
 	ArchboardContextSchema,
 	encodeCanonicalContext,

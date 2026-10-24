@@ -6,7 +6,7 @@ import type {
 	DynamicObservedTarget,
 	DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkClassification } from "@archboard/agent-workbench/runtime";
 import {
 	authorityRefusalCode,
 	epochRefusalCode,

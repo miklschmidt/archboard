@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexEpochError } from "#runtime/store/epoch/contract.ts";
-import type { ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
+import { CodexEpochError } from "@archboard/agent-workbench/runtime";
+import type { ThreadInjectItemsParams } from "@archboard/agent-workbench/runtime";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "@archboard/agent-workbench/runtime";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
 	createHarness,
