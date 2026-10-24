@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 14:34'
-updated_date: '2026-10-24 14:37'
+updated_date: '2026-10-24 14:40'
 labels: []
 dependencies: []
 priority: medium
@@ -37,4 +37,6 @@ The next real producer run reaches the inspector but exposes a second adapter mi
 
 <!-- SECTION:NOTES:BEGIN -->
 Opening Everything fixes the missing nested subject. The second run fails at LocalityReplySchema with unrecognized key vault. Footprint uses the same strict library schema against a CLI envelope and requires the same explicit envelope field.
+
+The union footprint schema does not expose object extension. Replaced both response adaptations with one small input adapter that removes only the known CLI vault field. Both library decoders retain their original strict schemas and reject every other unknown field. Source TypeScript and scoped lint pass. A direct run of the actual adapter accepts the captured proposed CLI footprint and still rejects an unexpected extra field.
 <!-- SECTION:NOTES:END -->
