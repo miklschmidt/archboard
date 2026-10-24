@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe";
+import { vaultUrl } from "../support/http.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -11,7 +12,8 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 // Every SVG `semantic render` gives out carries its render recipe (ADR 0057,
 // TASK-526.02): on stdout and in a file alike, naming the board, the variant
-// and the view by id, with the drawing choices and two digests. The
+// and the view by id, with the drawing choices and two digests. The render
+// route draws a recipe again from nothing but the recipe, to the same digests. The
 // fingerprint moves when what the picture draws moves, and a draft edit, a
 // walkthrough edit or a rename moves nothing that a render of the current
 // variant draws. The rasterize owner holds the PNG's recipe; the renderer's
@@ -110,6 +112,34 @@ function recipeOf(bytes: Uint8Array): RenderRecipe {
 	const read = readRenderRecipe(bytes);
 	if (read.kind !== "recipe") throw new Error(`No recipe: ${JSON.stringify(read)}`);
 	return read.recipe;
+}
+
+/**
+ * The render route's query that draws a recipe again, as the embeds check
+ * (TASK-526.03) asks for it: the variant, the view and the variant drawn
+ * against by id, and every drawing choice. The route finds a board by name,
+ * so the board is the one that holds the recipe's id; here it has kept its name.
+ * @param recipe The recipe.
+ * @returns The query.
+ */
+function requestOf(recipe: RenderRecipe): URLSearchParams {
+	const query = new URLSearchParams({
+		board: recipe.board.name,
+		theme: recipe.theme,
+		fonts: "embedded",
+	});
+	if (recipe.variant !== "current") query.set("variant", recipe.variant.id);
+	if (recipe.view !== "overview") query.set("view", recipe.view.id);
+	if (recipe.comparison === "off") query.set("comparison", "off");
+	else if (recipe.comparison !== "on") query.set("against", recipe.comparison.against);
+	if (recipe.layout !== null) query.set("layout", recipe.layout);
+	if (recipe.title === true) query.set("titled", "on");
+	else if (recipe.title !== null) query.set("title", recipe.title);
+	if (recipe.legend !== null) {
+		query.set("legend", recipe.legend.layout);
+		if (recipe.legend.alone) query.set("legendOnly", "on");
+	}
+	return query;
 }
 
 /**
@@ -232,6 +262,45 @@ describe("a board render's recipe", () => {
 				layout: "horizontal",
 				alone: true,
 			});
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
+
+	test(
+		"draws the same picture again through the render route from nothing but itself",
+		async () => {
+			const board = shown("ledger");
+			const recipes = [
+				rendered(["ledger"]),
+				rendered([
+					"ledger",
+					"--variant",
+					"Proposal",
+					"--view",
+					"Front",
+					"--against",
+					board.current.name,
+					"--theme",
+					"light",
+					"--layout",
+					"blocks",
+					"--title",
+					"The front door",
+					"--legend",
+					"vertical",
+				]),
+				rendered(["ledger", "--view", "Everything", "--no-comparison", "--no-legend", "--title"]),
+				rendered(["ledger", "--variant", "Proposal", "--legend-only"]),
+			];
+			for (const recipe of recipes) {
+				const reply = await fetch(
+					vaultUrl(server, `/api/semantic-boards/render?${requestOf(recipe)}`),
+				);
+				expect(reply.status).toBe(200);
+				const { svg } = (await reply.json()) as { svg: string };
+				// The same choices draw the same picture, so the new recipe is the old one, digests included.
+				expect(recipeOf(Buffer.from(svg, "utf8"))).toEqual(recipe);
+			}
 		},
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
