@@ -198,10 +198,10 @@ Let agents work on the map without wondering what they touched. When an agent **
 
 ## Pictures for docs, ADRs and pull requests
 
-Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. With `--theme auto`, one SVG shows the ground of the reader's colour scheme. `--title` and `--legend` draw a title and the key into the picture. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
+Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. One SVG shows the ground of the reader's colour scheme, and a PNG is dark unless you ask for light. The key is drawn under the picture unless you pass `--no-legend`, and `--title` draws a title above it. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
 
 ```bash
-archboard -C ~/archboard-example semantic render "Web shop" --theme auto --title --legend horizontal --out web-shop.svg
+archboard -C ~/archboard-example semantic render "Web shop" --view Everything --title --out web-shop.svg
 archboard -C ~/archboard-example semantic rasterize "Web shop" --scale 2 --out web-shop.png
 ```
 
@@ -212,16 +212,40 @@ archboard -C ~/archboard-example semantic rasterize "Web shop" --scale 2 --out w
 
 <p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the pulses on the hot path fly.</sub></p>
 
+## Diagrams that stay current in your docs
+
+A diagram in a design doc goes stale the day the code moves, and nobody notices. Draw it with `--track`, and the board keeps a list of the files that show it:
+
+```bash
+archboard semantic render Payments --out docs/payments.svg --track --doing "Drawing the payments picture for the design doc"
+```
+
+Every picture carries its recipe: the board, the variant, the view and how it was drawn. After a code change, `archboard check` follows the whole chain. The code check says that a board no longer matches the code. Your agent corrects the board. The same check then names every picture that still shows the old board:
+
+```text
+warning: EMBED_OUTDATED: docs/payments.svg: "Payments" changed what this picture shows. `archboard check embeds --fix` draws it again.
+```
+
+`archboard check --fix` draws each one again from its own recipe and lists the files it rewrote. Commit them with the change.
+
+```text
+Put a diagram of the Payments board in docs/design.md, and keep it current.
+```
+
+- **Docs in another repository**. A documentation repository needs no vault of its own. The check finds each picture's board in the repository that its recipe names, and fetches that vault when this machine has no checkout of it.
+- **Only real changes**. A draft, a walkthrough or a new name for the board leaves the picture current. A warning means the board says something new.
+- **On this page too**. The system board under [How it works](#how-it-works) is a tracked embed of this repository's own vault.
+
 ---
 
 ## How it works
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/architecture-dark.svg">
-  <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server. The server keeps the board vault and serves the browser. It also resolves code bindings and runs a private Codex app-server. The CLI copies PNG and HTML through a native clipboard helper." src="docs/readme/architecture-light.svg" width="100%">
+  <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server. The server keeps the board vault, serves the browser, reads the repository checkouts and runs a private Codex app-server. The CLI copies PNG and HTML through a native clipboard helper and encodes videos with ffmpeg. The skill evaluation runs the CLI against a server of its own." src="docs/readme/architecture-light.svg" width="100%">
 </picture>
 
-<p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>. The command <code>archboard semantic render Archboard --out archboard.svg</code> drew it.</sub></p>
+<p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>, drawn with <code>archboard semantic render Archboard --track</code>. <code>archboard check</code> in this repository says when this picture is outdated.</sub></p>
 
 1. **Your agent reads the code and writes meaning** with `archboard semantic …`: parts, containment, relationships, flows, views and walkthroughs, one JSON payload per change. The `archboard` skill teaches it how, and makes it back every claim with a line of source.
 2. **The Archboard server checks the write and stores it**. One `.semantic.json` file per board holds every variant. One writer at a time, a version check on every change, and the change is on disk before the agent hears back.
