@@ -18,7 +18,7 @@ Voice can stay live in another browser tab. The recording page is a tab of its
 own, with its own conversation and voice session (TASK-373).
 
 ```bash
-bun run build:frontend
+bun run build
 archboard stop; archboard start
 archboard semantic record Archboard --walkthrough "Read this board" --out /tmp/archboard.mp4 > /tmp/archboard.json
 ```
