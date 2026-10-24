@@ -9,7 +9,7 @@ import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserWorkbenchCommandResult,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/agent-workbench/browser";
 import type {
 	WorkbenchComposerCommandResult,
 	WorkbenchComposerController,

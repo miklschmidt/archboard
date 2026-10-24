@@ -23,7 +23,7 @@ import { SignInCard } from "#ui/components/panel/SignInCard.tsx";
 import { VoiceLines } from "#ui/components/voice/VoiceLines.tsx";
 import { AgentRuntimeProvider } from "#ui/components/runtime/AgentRuntimeProvider.tsx";
 import { Conversation } from "#ui/components/thread/Conversation.tsx";
-import type { BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
+import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 import type { DraftStore } from "#ui/state/surfaces/draft-store.ts";
 
 /** Inputs for the panel. */

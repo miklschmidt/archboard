@@ -8,15 +8,16 @@ import {
 	parseRealtimeSessionId,
 } from "@archboard/agent-workbench/realtime";
 import type { RealtimeCorrelation, RealtimeState } from "@archboard/agent-workbench/realtime";
-import type { RealtimeMediaSnapshot } from "@archboard/agent-workbench/browser";
-import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputLevelSource } from "@archboard/agent-workbench/browser";
-import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
-import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 import type {
+	RealtimeMediaSnapshot,
+	BrowserWorkbenchMediaState,
+	VoiceOutputLevelSource,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/agent-workbench/browser";
+
+import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
+import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
 /**
  * A correlation whose session and correlation ids are both the given id.

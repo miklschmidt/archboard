@@ -3,9 +3,12 @@
 // app-global beacon, the server's reconciliation, and whether this browser
 // holds any authority at all.
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+	BrowserSnapshot,
+} from "@archboard/agent-workbench/contract";
+
 import type {
 	WorkbenchApprovalBeaconEntry,
 	WorkbenchApprovalCard,

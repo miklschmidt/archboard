@@ -1,8 +1,8 @@
 // Approval fixtures for every ordinary family and every dynamic effect,
 // parsed through the closed model.
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+
 import {
 	APPROVAL_ID,
 	CHILD,

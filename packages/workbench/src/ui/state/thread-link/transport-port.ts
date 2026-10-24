@@ -10,14 +10,12 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "@archboard/agent-workbench/contract";
-import type { CodexLoginAccountParams } from "@archboard/codex-app-server/contract";
-import type {
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "@archboard/agent-workbench/contract";
+import type { CodexLoginAccountParams } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

@@ -3,14 +3,16 @@
 // and voice projections.
 
 import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
-import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
+import type {
+	BrowserWorkbenchMediaState,
+	BrowserWorkbenchState,
+} from "@archboard/agent-workbench/browser";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,
 	VoiceSessionProjectionInput,
 } from "#ui/state/voice-session/contract.ts";
 import { presentedFailure } from "#ui/rules/voice-session/failure.ts";
-import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
 
 type MediaUnavailable = Extract<BrowserWorkbenchMediaState, { readonly state: "unavailable" }>;
 

@@ -48,7 +48,7 @@ import { type WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkt
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
-} from "@archboard/workbench/controllers";
+} from "@archboard/agent-workbench/browser";
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {

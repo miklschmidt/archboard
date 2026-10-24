@@ -2,8 +2,8 @@
 // whether this browser may still decide it. An unknown outcome stays
 // unknown: nothing here reads a lost answer as either result.
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
-import type { BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+
 import type {
 	WorkbenchApprovalPhase,
 	WorkbenchApprovalStatus,

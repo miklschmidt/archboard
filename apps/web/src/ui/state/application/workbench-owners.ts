@@ -15,8 +15,8 @@ import {
 	type WorkbenchQueueController,
 	createThreadLinkController,
 	type ThreadLinkController,
-	type BrowserWorkbenchTransport,
 } from "@archboard/workbench/controllers";
+import { type BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {

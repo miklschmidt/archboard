@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { BrowserWorkbenchTransportError } from "#ui/state/transport/contract.ts";
+import { BrowserWorkbenchTransportError } from "@archboard/agent-workbench/browser";
 import { createWorkbenchComposerController } from "#ui/state/composer/controller.ts";
 import {
 	OTHER_THREAD,

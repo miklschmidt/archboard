@@ -10,8 +10,6 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "@archboard/agent-workbench/contract";
-import type {
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserReadiness,

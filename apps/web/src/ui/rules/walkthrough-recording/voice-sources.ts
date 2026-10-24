@@ -10,7 +10,7 @@ import {
 	type VoiceSessionView,
 	VOICE_OUTPUT_SPEAKING_LEVEL,
 } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
 
 import type { SpokenLine, VoiceStanding } from "#ui/rules/walkthrough-recording/pacing.ts";
 
