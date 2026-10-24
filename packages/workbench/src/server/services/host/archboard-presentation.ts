@@ -48,9 +48,10 @@ export const ARCHBOARD_VOICE_PRESENTATION: WorkbenchVoicePresentationAdapter =
 		},
 		forget: forgetNarration,
 		/**
-   * Read the recording flag from validated browser input before narration is prepared.
-   * @param input The browser presentation payload.
-   * @returns Whether this browser request records narration.
-   */
-  recording: (input) => input!==null && ArchboardVoicePresentationSchema.parse(input).recording!==undefined,
+		 * Read the recording flag from validated browser input before narration is prepared.
+		 * @param input The browser presentation payload.
+		 * @returns Whether this browser request records narration.
+		 */
+		recording: (input) =>
+			input !== null && ArchboardVoicePresentationSchema.parse(input).recording !== undefined,
 	});
