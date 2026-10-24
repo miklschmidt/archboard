@@ -179,7 +179,16 @@ const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
 	semantics: VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).optional(),
 	code: CodeCheckAnswerSchema.optional(),
+	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });
+/** The embeds part of a vault in no Git checkout: no file of it can be an embed. */
+const NO_CHECKOUT = { checkout: null, embeds: [], findings: [], fixed: [] };
+
+/** The check commands that read `--fix`, as the registry declares them. */
+const readsFix = (entry: CliRegistryEntry): boolean =>
+	entry.contract.parameters.some(
+		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--fix"),
+	);
 
 /** The check commands that read the code check's options, as the registry declares them. */
 const readsCodeOptions = (entry: CliRegistryEntry): boolean =>
@@ -191,14 +200,18 @@ const checkRoutes = () =>
 		(entry) => entry.name === "check" || entry.name.startsWith("check "),
 	);
 
-test("check and check all ask the semantics check, then the code check, and answer with one part for each", async () => {
+test("check and check all ask the semantics check, then the code check, run the embeds check, and answer with one part for each", async () => {
 	plain = clean;
 	for (const argv of [["check"], ["check", "all"]]) {
 		asked.length = 0;
 		const { stdout, stderr, exited } = await run(argv);
 		expect(exited).toBe(0);
+		// The stand-in vault is in no Git checkout, so the embeds check has no file to ask about.
 		expect(asked).toEqual([SEMANTICS_ROUTE, CODE_ROUTE]);
-		const result = PartsSchema.parse(JSON.parse(stdout));
+		const answer: unknown = JSON.parse(stdout);
+		const result = PartsSchema.parse(answer);
+		expect(Object.keys(result)).toEqual(["semantics", "code", "embeds"]);
+		expect(answer).toHaveProperty("embeds", NO_CHECKOUT);
 		expect(result.semantics?.diagnostics).toEqual([]);
 		expect(result.code).toEqual(codeCheck);
 		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["board"]);
@@ -246,6 +259,39 @@ test("check code asks only the code check and fills only its part", async () => 
 	const answer: unknown = JSON.parse(stdout);
 	expect(Object.keys(PartsSchema.parse(answer))).toEqual(["code"]);
 	expect(answer).not.toHaveProperty("semantics");
+});
+
+test("check embeds fills only its part, with or without --fix", async () => {
+	plain = warned;
+	for (const argv of [
+		["check", "embeds"],
+		["check", "embeds", "--fix"],
+	]) {
+		asked.length = 0;
+		const { stdout, exited } = await run(argv);
+		expect(exited).toBe(0);
+		expect(asked).toEqual([]);
+		const answer: unknown = JSON.parse(stdout);
+		expect(Object.keys(PartsSchema.parse(answer))).toEqual(["embeds"]);
+		expect(answer).toHaveProperty("embeds", NO_CHECKOUT);
+	}
+});
+
+test("every check subcommand that does not declare --fix refuses it before asking the server", async () => {
+	plain = clean;
+	const others = checkRoutes().filter((entry) => entry.parent === "check" && !readsFix(entry));
+	expect(others.map((entry) => entry.name).toSorted()).toEqual(["check code", "check semantics"]);
+	for (const entry of others) {
+		asked.length = 0;
+		expect((await run([...entry.name.split(" "), "--fix"])).exited, entry.name).toBe(2);
+		expect(asked).toEqual([]);
+	}
+	for (const argv of [
+		["check", "--fix"],
+		["check", "all", "--fix"],
+	]) {
+		expect((await run(argv)).exited).toBe(0);
+	}
 });
 
 test("a command that ran the semantics check fails on its diagnostic, and one that did not does not", async () => {

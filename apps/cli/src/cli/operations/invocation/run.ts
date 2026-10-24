@@ -2,6 +2,7 @@ import {
 	checkAllContract,
 	checkCodeContract,
 	checkContract,
+	checkEmbedsContract,
 	checkSemanticsContract,
 	semanticConfigContract,
 } from "#cli/operations/vault/vault.ts";
@@ -68,6 +69,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 				contract(checkSemanticsContract, "apps/cli/src/cli/operations/vault/vault.ts"),
 			),
 			code: child(contract(checkCodeContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			embeds: child(contract(checkEmbedsContract, "apps/cli/src/cli/operations/vault/vault.ts")),
 		},
 		bare: { kind: "default", child: "all", withLeadingOptions: true },
 	},
