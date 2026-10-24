@@ -219,7 +219,7 @@ function unreachableFinding(entry: TrackedEntry): EmbedFinding {
 		file: entry.path,
 		embedRepo: entry.repo,
 		board: entry.board,
-		message: `No checkout of ${entry.repo} is registered on this machine, so this embed of "${entry.board.name}" was not read. Register one with \`archboard repo add <directory>\`, or choose one with \`archboard repo use <directory>\`.`,
+		message: `No registered checkout of ${entry.repo} is on this machine, so this embed of "${entry.board.name}" was not read. Register one with \`archboard repo add <directory>\`, or choose one with \`archboard repo use <directory>\`.`,
 	};
 }
 
@@ -237,7 +237,7 @@ function trackedMissingFinding(entry: TrackedEntry, own: boolean, root: string):
 		file: entry.path,
 		...(own ? {} : { embedRepo: entry.repo }),
 		board: entry.board,
-		message: `"${entry.board.name}" tracks this file, and in ${root} it is no embed of that board: it is gone, ${own ? "Git does not track it, " : ""}or it carries no render recipe of the board. Draw it again with \`archboard semantic render --out <file> --track\`.`,
+		message: `"${entry.board.name}" tracks this file, and in ${root} it is no embed of that board: it is gone, Git does not track it, or it carries no render recipe of the board. Draw it again with \`archboard semantic render --out <file> --track\`.`,
 	};
 }
 

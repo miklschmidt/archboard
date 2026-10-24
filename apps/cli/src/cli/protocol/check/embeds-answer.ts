@@ -28,7 +28,7 @@ import { z } from "zod";
  *   holds the repository of a tracked embed, so it was not read.
  * - `EMBED_TRACKED_MISSING` (information): a board of this vault tracks a file
  *   that is no embed of that board now: it is gone, Git does not track it in
- *   this checkout, or it carries no recipe of the board.
+ *   the checkout it was read in, or it carries no recipe of the board.
  *
  * A finding about a file of another repository is information whatever its
  * code: a warning would fail the vault's pull request until that repository

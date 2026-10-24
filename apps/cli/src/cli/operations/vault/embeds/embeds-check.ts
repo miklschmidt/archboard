@@ -35,11 +35,8 @@ import {
 	goneBoardFinding,
 	missingFinding,
 	movedFinding,
-	trackedMissingFinding,
 	unavailableFinding,
-	unreachableFinding,
 	unreadableFinding,
-	type TrackedEntry,
 } from "#cli/operations/vault/embeds/embed-findings.ts";
 import {
 	boardNamed,
@@ -53,10 +50,11 @@ import {
 } from "#cli/operations/vault/embeds/checkout-embeds.ts";
 import {
 	fileKey,
-	foreignEmbed,
+	foreignEmbeds,
 	trackedEmbedsOf,
+	trackedFiles,
+	trackedFinding,
 	trackingBoards,
-	type ForeignEmbed,
 } from "#cli/operations/vault/embeds/tracked-embeds.ts";
 import { removingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
 
@@ -274,20 +272,6 @@ async function checkEmbed(embed: CheckoutEmbed, run: Run): Promise<Checked> {
 }
 
 /**
- * Check one tracked embed of another repository, or say why it was not read.
- * @param foreign The tracked embed as this machine finds it.
- * @param run The run.
- * @returns What was found and done.
- */
-async function checkForeign(foreign: ForeignEmbed, run: Run): Promise<Checked> {
-	if (foreign.kind === "unreachable") return { findings: [unreachableFinding(foreign.entry)] };
-	if (foreign.kind === "missing") {
-		return { findings: [trackedMissingFinding(foreign.entry, false, foreign.root)] };
-	}
-	return checkEmbed(foreign.embed, run);
-}
-
-/**
  * What stopped a run of the check, naming each file `--fix` rewrote before it,
  * so no rewrite and no re-pointing goes unsaid (ADR 0057).
  * @param error What stopped it.
@@ -306,26 +290,17 @@ function stoppedAfter(error: unknown, fixed: readonly EmbedFix[]): unknown {
  * Check every embed of the checkout, in the order Git lists them, then every
  * tracked embed of another repository, in the order the boards list them, one
  * render at a time.
- * @param embeds The embeds of the checkout.
- * @param foreign The tracked embeds of other repositories.
+ * @param embeds The embeds, in that order.
  * @param run The run.
  * @returns What each one found and did.
  * @throws {Error} What stopped the run, naming each file `--fix` rewrote before it.
  */
-async function checkInOrder(
-	embeds: readonly CheckoutEmbed[],
-	foreign: readonly ForeignEmbed[],
-	run: Run,
-): Promise<Checked[]> {
+async function checkInOrder(embeds: readonly CheckoutEmbed[], run: Run): Promise<Checked[]> {
 	const checked: Checked[] = [];
 	try {
 		for (const embed of embeds) {
-			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order Git lists the files
+			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order of the embeds
 			checked.push(await checkEmbed(embed, run));
-		}
-		for (const one of foreign) {
-			// oxlint-disable-next-line no-await-in-loop -- one render at a time, in the order the boards list them
-			checked.push(await checkForeign(one, run));
 		}
 	} catch (error) {
 		throw stoppedAfter(
@@ -346,52 +321,6 @@ async function checkoutRoot(vault: string, signal: AbortSignal): Promise<string 
 	const holder = fs.realpathSync.native(checkoutOfVault(vault));
 	const root = await repoRootOf(holder, { signal });
 	return root !== undefined && fs.realpathSync.native(root) === holder ? holder : undefined;
-}
-
-/**
- * The tracked embeds of this vault's own repository that are no embed of
- * their board in its checkout: gone, untracked by Git, or of another recipe.
- * A file whose recipe cannot be read is its own finding already.
- * @param tracked The vault's tracked embeds.
- * @param embeds The embeds of the checkout.
- * @param ownRepo The repository identity of the checkout.
- * @returns Each such tracked embed.
- */
-function ownMissing(
-	tracked: readonly TrackedEntry[],
-	embeds: readonly CheckoutEmbed[],
-	ownRepo: string | undefined,
-): TrackedEntry[] {
-	return tracked.filter(
-		(entry) =>
-			entry.repo === ownRepo &&
-			!embeds.some(
-				(embed) =>
-					embed.file === entry.path &&
-					(!embed.recipe.ok || embed.recipe.recipe.board.id === entry.board.id),
-			),
-	);
-}
-
-/**
- * The tracked embeds of other repositories, each file once, as this machine finds them.
- * @param tracked The vault's tracked embeds.
- * @param run The run.
- * @param checkouts The checkouts identities resolve in.
- * @returns Each file of another repository that a board tracks.
- */
-function foreignOf(
-	tracked: readonly TrackedEntry[],
-	run: Run,
-	checkouts: ReturnType<typeof checkoutsReadFrom>,
-): ForeignEmbed[] {
-	const seen = new Set<string>();
-	return tracked.flatMap((entry) => {
-		const key = fileKey(entry.repo, entry.path);
-		if (entry.repo === run.ownRepo || seen.has(key)) return [];
-		seen.add(key);
-		return [foreignEmbed(entry, run.tracking.get(key) ?? new Set(), checkouts)];
-	});
 }
 
 /**
@@ -423,15 +352,20 @@ async function checkEmbeds(
 		ownRepo: vaultIdentity(vault),
 		tracking: trackingBoards(tracked),
 	};
-	const missing = ownMissing(tracked, embeds, run.ownRepo).map((entry) =>
-		trackedMissingFinding(entry, true, root),
+	const files = await trackedFiles(
+		tracked,
+		{ repo: run.ownRepo, root, embeds },
+		checkouts,
+		options.signal,
 	);
-	const checked = await checkInOrder(embeds, foreignOf(tracked, run, checkouts), run).catch(
-		async (error: unknown) => {
-			await run.bitmaps.stop().catch(() => undefined);
-			throw error;
-		},
+	const trackedFindings = tracked.flatMap(
+		(entry) => trackedFinding(entry, files.get(entry.repo), entry.repo === run.ownRepo) ?? [],
 	);
+	const foreign = foreignEmbeds(tracked, files, run.ownRepo, run.tracking);
+	const checked = await checkInOrder([...embeds, ...foreign], run).catch(async (error: unknown) => {
+		await run.bitmaps.stop().catch(() => undefined);
+		throw error;
+	});
 	const fixed = checked.flatMap((one) => one.fix ?? []);
 	await run.bitmaps.stop().catch((error: unknown) => {
 		throw stoppedAfter(error, fixed);
@@ -440,7 +374,7 @@ async function checkEmbeds(
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
 		tracked: tracked.map(({ board, repo, path }) => ({ board, repo, path })),
-		findings: [...checked.flatMap((one) => one.findings ?? []), ...missing],
+		findings: [...checked.flatMap((one) => one.findings ?? []), ...trackedFindings],
 		fixed,
 	};
 }
