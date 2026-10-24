@@ -4,9 +4,11 @@
 // branch, shallow and sparse, with the person's own Git: their credential
 // helpers, and their `url.<base>.insteadOf` rules, which also turn the HTTPS
 // address into SSH for a person who prefers it. Git never prompts, so a CI run
-// that has no credentials fails the fetch instead of waiting. Git reads no
-// repository that the environment names, such as the one of a hook that runs
-// the check.
+// that has no credentials fails the fetch instead of waiting: no terminal
+// prompt, no Git Credential Manager dialog, and no askpass program, for Git or
+// for SSH. A credential helper, such as gh or the system keychain, answers
+// without asking, so it still gives the credentials. Git reads no repository
+// that the environment names, such as the one of a hook that runs the check.
 //
 // The cache is in the state directory, one checkout per commit:
 // `<state>/fetched-vaults/<identity>/<commit>/.archboard/vault`, the layout the
@@ -109,6 +111,9 @@ async function runGit(
 	const env = gitEnvironment({
 		GIT_TERMINAL_PROMPT: "0",
 		GCM_INTERACTIVE: "never",
+		GIT_ASKPASS: "",
+		SSH_ASKPASS: "",
+		SSH_ASKPASS_REQUIRE: "never",
 	});
 	signal.throwIfAborted();
 	// Git runs in a process group of its own, and the whole group is ended: a
