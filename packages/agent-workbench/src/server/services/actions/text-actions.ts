@@ -47,7 +47,7 @@ interface ServerTextActionOptions {
 
 /**
  * The typed-message half of a pane: starting a turn, steering the one running,
- * and interrupting it, each carrying the board's context with it.
+ * and interrupting it, each carrying the host's context with it.
  * @param options The identities, the session, and how one operation's context
  * is read.
  * @returns The actions.

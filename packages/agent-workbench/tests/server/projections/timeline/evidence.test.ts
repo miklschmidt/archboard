@@ -390,7 +390,6 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 	// Everything the owner bounded is something the browser contract accepts.
 	const result = projectCodexBrowserState(
 		createCodexBrowserModel(authorities),
-		decoder,
 		browserProjectionInput(authorities, projection),
 	);
 	expect(result.tag).toBe("projected");
@@ -461,7 +460,6 @@ test("one long running turn over the byte budget keeps the item the agent is on 
 	}
 	const result = projectCodexBrowserState(
 		createCodexBrowserModel(authorities),
-		decoder,
 		browserProjectionInput(authorities, projection),
 	);
 	expect(result.tag).toBe("projected");

@@ -1,3 +1,4 @@
+import { CodexWorkbenchGatewayError } from "#server/protocol/gateway/contract.ts";
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
@@ -22,7 +23,8 @@ import type {
 	CodexWorkbenchTabSession,
 	CodexWorkbenchWorkhorse,
 } from "#server/services/sessions/sessions.ts";
-import type { ServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
+import type { WorkbenchDomainApprovals } from "#server/protocol/projection/domain-approvals.ts";
+import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	ServerBrowserProjectionBudget,
 	ServerTimelineOwner,
@@ -54,7 +56,9 @@ async function runMutation(operation: () => Promise<unknown>): Promise<BrowserAc
 interface ServerBrowserGatewayInput {
 	readonly components: CodexWorkbenchSharedComponents;
 	readonly sessions: Pick<CodexWorkbenchSessions, "require" | "list" | "onChange">;
-	readonly dynamicApprovals: ServerDynamicApprovalOwner;
+	readonly dynamicApprovals: WorkbenchDomainApprovals | null;
+	/** Host presentation facts for the active voice session. */
+	readonly recording?: (presentation: BrowserVoicePresentation | null) => boolean;
 	readonly state: ServerBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
 	readonly timeline: ServerTimelineOwner;
@@ -413,7 +417,16 @@ function createServerBrowserGatewayOptions(
 		},
 		realtime,
 		ordinaryApprovals: createServerOrdinaryApprovalActions(components.approvals),
-		dynamicApprovals: dynamicApprovals.browser,
+		dynamicApprovals: dynamicApprovals?.browser ?? {
+			/** Refuse a domain approval when the host supplies no approval owner. */
+			resolve: async () => {
+				throw new CodexWorkbenchGatewayError(
+					"invalid_command",
+					"Domain approvals are unsupported by this workbench host.",
+					{ outcome: "not_delivered" },
+				);
+			},
+		},
 	};
 	const projection: BrowserProjectionPort = {
 		/**
@@ -442,6 +455,7 @@ function createServerBrowserGatewayOptions(
 					session: sessionOf(context),
 					workhorse: sessionOf(context).workhorses.get(context.checkout) ?? null,
 					dynamicApprovals,
+					...(input.recording === undefined ? {} : { recording: input.recording }),
 					state,
 					timeline: input.timeline,
 					coordinatorTimeline: input.coordinatorTimeline,
@@ -484,6 +498,7 @@ function createServerBrowserGatewayOptions(
 }
 
 export {
+	type ServerBrowserGatewayInput,
 	createServerBrowserGatewayOptions,
 	createServerOrdinaryApprovalActions,
 	type ServerBrowserBindingState,

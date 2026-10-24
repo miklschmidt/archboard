@@ -8,6 +8,7 @@ import type {
 } from "#shared/schemas/browser/snapshot.ts";
 import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
 import type {
+	BrowserProjectionModel,
 	BrowserProjectionInput,
 	BrowserProjectionResult,
 	CodexCoordinatorProjectionInput,
@@ -18,11 +19,6 @@ import type {
 	CodexVoiceProjectionInput,
 } from "#server/protocol/projection/projection-contract.ts";
 import { projectApproval } from "#server/projections/browser-state/approval-projection.ts";
-import {
-	projectDynamicApproval,
-	type DynamicProjectionIdentity,
-	type DynamicProjectionModel,
-} from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import { projectSpokenApproval } from "#server/projections/browser-state/spoken-approval-projection.ts";
 import {
 	projectThreadLink,
@@ -329,13 +325,11 @@ function projectWorkhorses(
  * Project the owners' state into one validated browser snapshot, refusing
  * input that carries a secret or that the browser contract cannot represent.
  * @param model The browser schema owner.
- * @param identity The trusted identity decoder.
  * @param input The owners' state for one pane.
  * @returns The projected snapshot, or the refusal.
  */
 export function projectCodexBrowserState(
-	model: DynamicProjectionModel,
-	identity: DynamicProjectionIdentity,
+	model: BrowserProjectionModel,
 	input: BrowserProjectionInput,
 ): BrowserProjectionResult {
 	if (containsSecretKey(input))
@@ -358,9 +352,7 @@ export function projectCodexBrowserState(
 			queue: projectQueue(input.queue, input.threadLink, input.approvals),
 			settings: input.settings.map(projectSettings),
 			approvals: input.approvals.map(projectApproval),
-			dynamicApprovals: input.dynamicApprovals.map((owner) =>
-				projectDynamicApproval(model, identity, owner),
-			),
+			dynamicApprovals: input.dynamicApprovals,
 			semantic: projectSemantic(input.semantic),
 			coordinator: projectCoordinator(input.coordinator),
 			voice: projectVoice(input.voice),

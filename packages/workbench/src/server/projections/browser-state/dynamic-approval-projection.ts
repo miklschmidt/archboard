@@ -1,21 +1,18 @@
 import type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
-} from "#shared/schemas/dynamic-approval/approval.ts";
-import type { BrowserSchemas } from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/agent-workbench/contract";
+import type { BrowserSchemas } from "@archboard/agent-workbench/contract";
 import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,
 	type TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { DynamicApprovalOwnerView } from "#server/protocol/projection/projection-contract.ts";
+import type { DynamicApprovalOwnerView } from "#server/protocol/projection/domain-approval-contract.ts";
 
 type DynamicProjectionModel = Pick<
 	BrowserSchemas,
-	| "BrowserDynamicApprovalEffectSchema"
-	| "BrowserDynamicApprovalSchema"
-	| "BrowserSnapshotSchema"
-	| "BrowserSpokenApprovalSchema"
+	"BrowserDynamicApprovalEffectSchema" | "BrowserDynamicApprovalSchema"
 >;
 
 type DynamicProjectionIdentity = Pick<
@@ -148,5 +145,3 @@ export function projectDynamicApproval(
 		resumable: false,
 	});
 }
-
-export type { DynamicProjectionIdentity, DynamicProjectionModel };

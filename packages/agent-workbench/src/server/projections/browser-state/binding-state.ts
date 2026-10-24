@@ -21,7 +21,7 @@ interface ServerBrowserBindingState {
 const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
 
 /**
- * Which Archboard operation queued a submission, if Archboard queued it at all.
+ * Which operation queued a submission, if this workbench queued it.
  *
  * The queue port sets `clientUserMessageId` to the serialized OperationId on
  * every add it makes, and an OperationId is its own wire string, so the
@@ -31,9 +31,9 @@ const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", subm
  * this pane has no authority to reorder it.
  * @param submission The submission as the app server listed it.
  * @param operations The authority that issued this epoch's operations.
- * @returns The operation, or null when Archboard did not queue it.
+ * @returns The operation, or null when this workbench did not queue it.
  */
-function archboardOperation(
+function queuedOperation(
 	submission: SessionQueuedSubmission,
 	operations: OperationAuthority,
 ): OperationId | null {
@@ -60,9 +60,9 @@ function queueOwnerView(
 		submissions: queue.map((submission) => ({
 			id: submission.id,
 			input: submission.input,
-			operationId: archboardOperation(submission, operations),
+			operationId: queuedOperation(submission, operations),
 		})),
 	};
 }
 
-export { archboardOperation, queueOwnerView, UNAVAILABLE_QUEUE, type ServerBrowserBindingState };
+export { queueOwnerView, UNAVAILABLE_QUEUE, type ServerBrowserBindingState };

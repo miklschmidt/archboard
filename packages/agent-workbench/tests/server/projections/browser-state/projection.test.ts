@@ -285,7 +285,6 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			const pending = broker.receive(request);
 			const result = projectCodexBrowserState(
 				model,
-				authorities.identity.decoder,
 				projectionInput(withFutureNetworkPolicyField(broker.view(pending.requestId))),
 			);
 			expect(result.tag).toBe("projected");
@@ -355,7 +354,7 @@ test("thread-link projection discloses closed provenance without vendor source d
 		] as const;
 
 		for (const source of sources) {
-			const result = projectCodexBrowserState(model, authorities.identity.decoder, {
+			const result = projectCodexBrowserState(model, {
 				...input,
 				threadLink: {
 					kind: "thread_link",

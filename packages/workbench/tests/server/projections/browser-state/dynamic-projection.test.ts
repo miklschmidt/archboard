@@ -2,20 +2,21 @@ import { expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/agent-workbench/runtime";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
 import {
 	createIdentityAuthorities,
 	IdentityValidationError,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState } from "#server/projections/browser-state/projection.ts";
+import { projectCodexBrowserState } from "@archboard/agent-workbench/server";
+import type { BrowserProjectionInput } from "@archboard/agent-workbench/server";
+import { projectDynamicApproval } from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import {
-	type BrowserProjectionInput,
 	type DynamicApprovalOwnerRequest,
 	type DynamicApprovalOwnerView,
-} from "#server/protocol/projection/projection-contract.ts";
+} from "#server/protocol/projection/domain-approval-contract.ts";
 
 const PRIVATE_PATHS = [
 	"/private/dynamic-create",
@@ -210,7 +211,10 @@ function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerVi
 	};
 }
 
-function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserProjectionInput {
+function projectionInput(
+	authorities: IdentityAuthorities,
+	owners: readonly DynamicApprovalOwnerView[],
+): BrowserProjectionInput {
 	const link = owners[0]!.binding.capturedLink;
 	return {
 		readiness: { kind: "readiness", state: "thread_capable" },
@@ -230,7 +234,13 @@ function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserPr
 		queue: { kind: "codex_queue", submissions: [] },
 		settings: [],
 		approvals: [],
-		dynamicApprovals: owners,
+		dynamicApprovals: owners.map((owner) =>
+			projectDynamicApproval(
+				createCodexBrowserModel(authorities),
+				authorities.identity.decoder,
+				owner,
+			),
+		),
 		semantic: { kind: "codex_semantic", outcome: null, freshness: null },
 		coordinator: {
 			kind: "codex_coordinator",
@@ -259,8 +269,7 @@ test("the sole public projection closes all three dynamic approval presentations
 	const owners = ownerViews(authorities);
 	const result = projectCodexBrowserState(
 		createCodexBrowserModel(authorities),
-		authorities.identity.decoder,
-		projectionInput(owners),
+		projectionInput(authorities, owners),
 	);
 	expect(result.tag).toBe("projected");
 	if (result.tag !== "projected") {
@@ -348,8 +357,7 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 	const owner = selfForkOwner(authorities);
 	const result = projectCodexBrowserState(
 		createCodexBrowserModel(authorities),
-		authorities.identity.decoder,
-		projectionInput([owner]),
+		projectionInput(authorities, [owner]),
 	);
 	expect(result.tag).toBe("projected");
 	if (result.tag !== "projected") {
@@ -409,15 +417,8 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 				},
 			},
 		};
-		const result = projectCodexBrowserState(
-			model,
-			authorities.identity.decoder,
-			projectionInput([invalidOwner]),
+		expect(() => projectDynamicApproval(model, authorities.identity.decoder, invalidOwner)).toThrow(
+			IdentityValidationError,
 		);
-		expect(result).toEqual({
-			tag: "refused",
-			reason: "invalid_projection",
-			message: "The normalized owner state cannot be represented by the browser contract.",
-		});
 	}
 });

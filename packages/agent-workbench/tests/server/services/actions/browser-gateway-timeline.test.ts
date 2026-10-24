@@ -1,8 +1,7 @@
-import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
+import { TEST_CONTEXT_CODEC, testContextFixture } from "#tests/runtime/support/host.ts";
 import { expect, test } from "bun:test";
 
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
@@ -13,37 +12,12 @@ import { type BrowserProjectionContext } from "#server/protocol/gateway/contract
 import { type CodexTimelineProjectionInput } from "#server/protocol/projection/projection-contract.ts";
 import { createServerBrowserProjectionBudget } from "#server/projections/timeline/budget.ts";
 import { createServerBrowserGatewayOptions } from "#server/services/actions/browser-gateway.ts";
-import { createServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
 import { type ServerBrowserBindingState } from "#server/projections/browser-state/binding-state.ts";
 import { type ServerTimelineOwner } from "#server/projections/timeline/timeline.ts";
 import { createCodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
 import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/generation/generation-fixture.ts";
 import { runningProcessFacts } from "#tests/server/support/generation/process-fixture.ts";
 import { createWorkhorseComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";
-
-const archboardContext: ArchboardContext = {
-	schema: 1,
-	paneId: "pane-timeline",
-	board: { name: "Fixture board", key: "fixture board", version: 1, cursor: null },
-	threadLink: { state: "executable", reason: null },
-	child: { id: "child", epoch: "epoch" },
-	workhorse: { threadId: "thread", turnId: null },
-	coordinator: { threadId: null, realtimeSessionId: null },
-	semantic: {
-		brief: "Timeline projection fixture.",
-		capturedAtMs: 1,
-		freshUntilMs: 2,
-		truncated: false,
-	},
-	focus: { paneId: "pane-timeline", capturedAtMs: 1 },
-	variant: null,
-	view: null,
-	selection: { count: 0, subjects: [], capturedAtMs: 1 },
-	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
-	claim: { holder: "none", doing: null },
-	ambiguity: [],
-	operation: { id: null, kind: null, rpc: null, outcome: null },
-};
 
 function executableLink(
 	authorities: IdentityAuthorities,
@@ -63,7 +37,7 @@ function executableLink(
 	};
 }
 
-test("server gateway binds exact connection reads and retires it at disconnect", () => {
+test("server gateway binds exact connection reads and retires it at disconnect", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("gateway-timeline-thread");
 	const link = executableLink(authorities, threadId);
@@ -138,36 +112,25 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		},
 		login: { kind: "login", state: "idle" },
 	} satisfies ServerBrowserBindingState;
-	const dynamicApprovals = createServerDynamicApprovalOwner({
-		identity: authorities,
-		now: () => 1,
-		bindingForCaller: () => ({
-			tabSessionId,
-			binding: {
-				commandId: authorities.identity.issuer.mintBrowserCommandId(),
-				paneId: "pane-timeline",
-				capturedLink: {
-					threadId,
-					childId: authorities.identity.validator.childId,
-					epoch: authorities.identity.validator.epoch,
-				},
-			},
-		}),
-	});
+	const presentations: unknown[] = [];
 	const budget = createServerBrowserProjectionBudget();
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
 		repositoryOf: () => null,
 		sessions,
-		dynamicApprovals,
+		dynamicApprovals: null,
+		recording: (presentation) => {
+			presentations.push(presentation);
+			return false;
+		},
 		state,
 		timeline,
 		coordinatorTimeline: timeline,
 		budget,
 		leaseLedger: { sessions: new Map() },
 		process: () => runningProcessFacts(),
-		contextCodec: ARCHBOARD_CONTEXT_CODEC,
-		contextForOperation: () => archboardContext,
+		contextCodec: TEST_CONTEXT_CODEC,
+		contextForOperation: () => testContextFixture,
 		onChange: () => () => undefined,
 		onAccountNotification: () => () => undefined,
 	});
@@ -192,7 +155,17 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		mediaReady: false,
 		connection,
 	} satisfies BrowserProjectionContext;
-	expect(options.projection.read(context).timeline).toBe(timelineValue);
+	const projected = options.projection.read(context);
+	expect(projected.timeline).toBe(timelineValue);
+	expect(projected.dynamicApprovals).toEqual([]);
+	expect(projected.voice.recording).toBe(false);
+	expect(presentations).toEqual([null]);
+	await expect(
+		options.actions.dynamicApprovals.resolve({} as never, {} as never),
+	).rejects.toMatchObject({
+		code: "invalid_command",
+		outcome: "not_delivered",
+	});
 	expect(received.read).toEqual({
 		paneId: "pane-timeline",
 		revision: 7,
@@ -263,13 +236,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		components: fixture.components,
 		repositoryOf: () => null,
 		sessions,
-		dynamicApprovals: createServerDynamicApprovalOwner({
-			identity: authorities,
-			now: () => 1,
-			bindingForCaller: () => {
-				throw new Error("The projection owner issues no dynamic approvals.");
-			},
-		}),
+		dynamicApprovals: null,
 		state: {
 			account: { kind: "account", state: "unknown", reason: "not read" },
 			login: { kind: "login", state: "idle" },
@@ -279,8 +246,8 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		budget: createServerBrowserProjectionBudget(),
 		leaseLedger: { sessions: new Map() },
 		process: () => runningProcessFacts(),
-		contextCodec: ARCHBOARD_CONTEXT_CODEC,
-		contextForOperation: () => archboardContext,
+		contextCodec: TEST_CONTEXT_CODEC,
+		contextForOperation: () => testContextFixture,
 		onChange: () => () => undefined,
 		onAccountNotification: () => () => undefined,
 	});

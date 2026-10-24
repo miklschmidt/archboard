@@ -1,3 +1,4 @@
+import { createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
 import { expect, test } from "bun:test";
 
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
@@ -260,7 +261,7 @@ test("timeline projection maps every owner arm with its evidence and omits priva
 	} as const satisfies CodexTimelineProjectionInput & {
 		readonly activeRealtimeSessionAtPageStart: string;
 	};
-	const result = projectCodexBrowserState(model, decoder, { ...input, timeline });
+	const result = projectCodexBrowserState(model, { ...input, timeline });
 	expect(result.tag).toBe("projected");
 	if (result.tag !== "projected") {
 		throw new Error("timeline projection was refused");
@@ -401,7 +402,7 @@ test("settings projection closes loose nested records and refuses secrets", () =
 		},
 		modelProvider: "private-provider",
 	};
-	const result = projectCodexBrowserState(model, authorities.identity.decoder, {
+	const result = projectCodexBrowserState(model, {
 		...input,
 		settings: [
 			{
@@ -458,7 +459,7 @@ test("settings projection closes loose nested records and refuses secrets", () =
 	}
 
 	const secretAccount = { ...input.account, apiKey: "sk-browser-leak" };
-	const secret = projectCodexBrowserState(model, authorities.identity.decoder, {
+	const secret = projectCodexBrowserState(model, {
 		...input,
 		account: secretAccount,
 	} as BrowserProjectionInput);
@@ -468,4 +469,22 @@ test("settings projection closes loose nested records and refuses secrets", () =
 		message: "The browser projection contains a secret-bearing field.",
 	});
 	expect(JSON.stringify(secret)).not.toContain("sk-browser-leak");
+});
+
+test("browser projection parses and freezes final host approvals without retaining host objects", () => {
+	const fixture = createDynamicFixture();
+	const hostApproval = structuredClone(fixture.pending);
+	const result = projectCodexBrowserState(fixture.model, {
+		...projectionInput(fixture.authorities),
+		dynamicApprovals: [hostApproval],
+	});
+	expect(result.tag).toBe("projected");
+	if (result.tag !== "projected") throw new Error("host approval projection was refused");
+	expect(result.snapshot.dynamicApprovals).toEqual([hostApproval]);
+	expect(result.snapshot.dynamicApprovals[0]).not.toBe(hostApproval);
+	hostApproval.effect.visualSummary = "changed after projection";
+	expect(result.snapshot.dynamicApprovals[0]?.effect.visualSummary).toBe(
+		fixture.pending.effect.visualSummary,
+	);
+	expect(Object.isFrozen(result.snapshot.dynamicApprovals[0]?.effect)).toBe(true);
 });

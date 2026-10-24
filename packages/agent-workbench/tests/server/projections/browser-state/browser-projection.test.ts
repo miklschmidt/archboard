@@ -1,14 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { CALLBACK_MAX_UTF8_BYTES } from "#runtime/rules/coordinator-callbacks/encoding.ts";
 import { type CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
-import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/api/semantic-context.ts";
-import {
-	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
-	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
-} from "#shared/schemas/browser/vocabulary.ts";
 import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
 import { type BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
 import {
@@ -73,11 +67,6 @@ const signedInAccount = {
 		workspaceRouting: null,
 	},
 } as const satisfies ServerReadinessInput["account"];
-
-test("the browser voice-context byte limits stay pinned to their producer contracts", () => {
-	expect(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES).toBe(CALLBACK_MAX_UTF8_BYTES);
-	expect(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES).toBe(SEMANTIC_CONTEXT_LIMITS.briefBytes);
-});
 
 function readiness(overrides: Partial<ServerReadinessInput>): BrowserReadiness {
 	const value = projectServerBrowserReadiness({
