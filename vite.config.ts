@@ -160,6 +160,12 @@ const testCache = {
 		"ARCHBOARD_RENDERER_CHROMIUM",
 	],
 };
+// The Rust checks read only the crates and their lock file.
+const coreCache = {
+	input: ["packages/renderer/crates/**", "Cargo.toml", "Cargo.lock"],
+	output: [],
+	env: analysisCache.env,
+};
 const browserTestCache = {
 	...testCache,
 	env: [...testCache.env, "AGENT_BROWSER_EXECUTABLE_PATH"],
@@ -178,12 +184,19 @@ export default defineConfig({
 				command: "bun scripts/generate-codex-app-server-contract.ts --ensure",
 				cache: { input: analysisCache.input, env: analysisCache.env },
 			},
+			// The renderer core, built to WebAssembly inside `nix develop` (ADR 0057). The build
+			// script keeps a build that records the hash of this checkout's sources.
+			core: {
+				command: "bun scripts/build-core.ts",
+				cache: false,
+			},
 			frontend: {
+				dependsOn: ["core"],
 				command: "vp build",
 				cache: { input: [{ auto: true }, ...FRONTEND_INPUT_GLOBS] },
 			},
 			types: {
-				dependsOn: ["contracts"],
+				dependsOn: ["contracts", "core"],
 				command:
 					'concurrently --names source,browser "tsc --noEmit" "tsc --noEmit -p tsconfig.frontend.json"',
 				cache: analysisCache,
@@ -209,18 +222,33 @@ export default defineConfig({
 				command: "bun scripts/lint-css.ts",
 				cache: analysisCache,
 			},
+			"lint:core": {
+				command:
+					"cargo clippy --locked --workspace --target wasm32-unknown-unknown -- --deny warnings",
+				cache: coreCache,
+			},
+			"format:core": {
+				command: "cargo fmt --all --check",
+				cache: coreCache,
+			},
 			"lint:all": {
-				dependsOn: ["contracts"],
-				command: ["vp run lint:tests", "vp run lint:policy", "vp run lint:css"],
+				dependsOn: ["contracts", "core"],
+				command: [
+					"vp run lint:tests",
+					"vp run lint:policy",
+					"vp run lint:css",
+					"vp run lint:core",
+				],
 				cache: false,
 			},
 			"fix:all": {
-				dependsOn: ["contracts"],
+				dependsOn: ["contracts", "core"],
 				command: [
 					"vp run --no-cache lint:tests --fix",
 					"vp run --no-cache lint:policy --fix",
 					"vp run lint:css",
 					"vp fmt --config vite.config.ts",
+					"cargo fmt --all",
 				],
 				cache: false,
 			},
@@ -236,7 +264,12 @@ export default defineConfig({
 				cache: false,
 			},
 			"check:all": {
-				command: ["vp run lint:all", "vp run format:check", "vp run test:all"],
+				command: [
+					"vp run lint:all",
+					"vp run format:check",
+					"vp run format:core",
+					"vp run test:all",
+				],
 				cache: false,
 			},
 			"test:modules": {
@@ -325,6 +358,7 @@ export default defineConfig({
 			"node_modules/**",
 			"backlog/**",
 			"packages/codex-app-server/src/shared/protocol/generated/**",
+			"packages/renderer/src/shared/protocol/generated/**",
 		],
 		useTabs: true,
 		printWidth: 100,

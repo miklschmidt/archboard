@@ -43,6 +43,7 @@
 		".claude/**",
 		"docs/design/vendor/**",
 		"packages/codex-app-server/src/shared/protocol/generated/**",
+		"packages/renderer/src/shared/protocol/generated/**",
 		// Tests outside packages/*/tests/ui and apps/*/tests/ui are held to .oxlintrc.tests.jsonc instead.
 		"tests/**",
 		"packages/*/tests/**",

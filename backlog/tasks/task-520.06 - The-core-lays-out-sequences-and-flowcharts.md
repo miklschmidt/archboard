@@ -4,6 +4,7 @@ title: The core lays out sequences and flowcharts
 status: To Do
 assignee: []
 created_date: '2026-10-24 12:53'
+updated_date: '2026-10-24 12:55'
 labels:
   - renderer
 dependencies:
@@ -18,7 +19,7 @@ ordinal: 926000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Layout moves to Rust one engine at a time, each against the drawing geometry that the TypeScript stage answers as the oracle. This task ports sequences and flowcharts (shared/rules/flowchart and the sequence layout). Text measurement and Graphviz stay capabilities that the host gives the core through imports until TASK-520.07 and a later decision (ADR 0057). The core links the elk-rs crate directly instead of solving through the npm addon. The corpus is every board whole, every view and every non-current variant of the dogfood vault and the vaults under examples/, under both engines and both themes, with and without the comparison.
+Layout moves to Rust one engine at a time, each against the drawing geometry that the TypeScript stage answers as the oracle. This task ports sequences and flowcharts (shared/rules/flowchart and the sequence layout). Text measurement and Graphviz stay capabilities that the host gives the core through imports until TASK-520.07 and a later decision (ADR 0057). The corpus is every board whole, every view and every non-current variant of the dogfood vault and the vaults under examples/, under both engines and both themes, with and without the comparison.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

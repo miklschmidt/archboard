@@ -3,9 +3,11 @@ id: TASK-520.01
 title: >-
   The Nix dev shell builds the renderer core to WASM, and a host refuses a stale
   build
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-24 12:53'
+updated_date: '2026-10-24 13:24'
 labels:
   - renderer
   - tooling
@@ -33,3 +35,17 @@ Every later step of TASK-520 needs Rust code that Bun and the browser load. ADR 
 - [ ] #5 CI runs the complete gate inside the Nix dev shell
 - [ ] #6 ADR 0014, INSTALL.md, TESTING.md and the agent rules say how to build the core
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. flake.nix: nixpkgs cargo, rustc, rustfmt, clippy, lld and wasm-bindgen-cli; Bun pinned to 1.4.3 from its release archives, because nixpkgs has 1.4.2.
+2. Root Cargo workspace with members packages/renderer/crates/*; crate archboard-renderer-wasm pins wasm-bindgen =0.2.129 and answers sourceHash().
+3. scripts/build-core.ts: keeps a build that records the hash of the current sources, else cargo build for wasm32 with ARCHBOARD_CORE_SOURCE_HASH and wasm-bindgen --target web into packages/renderer/src/shared/protocol/generated/core (ignored like the Codex bindings).
+4. @archboard/renderer/core: coreSourceHash() and loadCore(), which refuses CORE_BUILD_MISSING and CORE_BUILD_STALE with the build command.
+5. Both layout workers load the core before loadLayoutEngine, which must capture only the Graphviz and libavoid memories.
+6. build:frontend, dev:frontend, lint and type-check run build:core first; lint:core runs clippy; fmt runs cargo fmt.
+7. CI runs install and the gate inside nix develop.
+8. ADR 0014 amendment, ADR 0057 workspace sentence, INSTALL.md, TESTING.md, AGENTS.md and the agent rules.
+Board proposal: Semantic renderer@TASK-520.01 (Renderer core, Core loader, Bun layout worker, Browser layout worker).
+<!-- SECTION:PLAN:END -->

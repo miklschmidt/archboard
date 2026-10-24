@@ -3,6 +3,7 @@ import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "#shared/rules/render/host.ts";
 import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
+import { loadCore } from "#runtime/services/core.ts";
 
 type Solve = RendererHost["solve"];
 interface Request {
@@ -13,11 +14,15 @@ interface Request {
 
 // An initialization promise is shared by every request in this worker. The
 // engine's WASM state stays private to the worker; requests run serially, each
-// from the engine's memory as loaded.
-const ready = loadLayoutEngine(async () => {
-	const [viz] = await Promise.all([instance(), AvoidLib.load()]);
-	return [viz, AvoidLib.getInstance()];
-});
+// from the engine's memory as loaded. The core loads first, outside the
+// engine's load, and the worker refuses to start on a core built from other
+// sources (ADR 0057).
+const ready = loadCore().then(() =>
+	loadLayoutEngine(async () => {
+		const [viz] = await Promise.all([instance(), AvoidLib.load()]);
+		return [viz, AvoidLib.getInstance()];
+	}),
+);
 let initFailure = false;
 void ready.catch(() => {
 	initFailure = true;

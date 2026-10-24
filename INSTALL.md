@@ -18,6 +18,9 @@ You need these things:
 - Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
+- Nix with flakes, to build the renderer core. `nix develop` in the checkout
+  gives Bun and the Rust tools. Without Nix, install the Rust toolchain with the
+  `wasm32-unknown-unknown` target, `lld`, and `wasm-bindgen-cli` 0.2.129.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
 - `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
   `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
@@ -29,6 +32,7 @@ Run these commands once:
 ```bash
 git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
 cd ~/Projects/archboard
+nix develop
 bun install
 bun run build
 ```
@@ -38,9 +42,11 @@ also installs the Codex version that archboard is pinned to, inside the
 checkout, and generates the contract for it. The Archboard server does not start unless
 that Codex passes its checks. A Codex on your `PATH` is not used.
 
-`bun run build` builds the browser application into `dist/frontend`. Without
-it, the page tells you to run the build. The server and the CLI run from the
-TypeScript in `apps/` and `packages/`, so nothing else is built. After each `git pull`,
+`bun run build` builds the renderer core to WebAssembly and the browser
+application into `dist/frontend`. Without it, the page tells you to run the
+build. The server and the CLI run from the TypeScript in `apps/` and
+`packages/`. If the renderer core was built from other sources than the
+checkout holds, they refuse to draw and name `bun run build:core` (ADR 0057). After each `git pull`,
 run `bun install` and `bun run build` again. `bun install` also links the workspace
 packages into `node_modules`, and the server does not start without those links.
 

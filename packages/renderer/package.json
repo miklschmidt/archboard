@@ -14,6 +14,7 @@
 		"./shell-geometry": "./src/shared/api/shell-geometry.ts",
 		"./browser": "./src/ui/api/browser.ts",
 		"./bun": "./src/runtime/api/bun.ts",
+		"./core": "./src/runtime/api/core.ts",
 		"./rasterizer": "./src/runtime/api/rasterizer.ts",
 		"./headless-chromium": "./src/runtime/api/headless-chromium.ts",
 		"./theme": "./src/runtime/api/theme.ts",
