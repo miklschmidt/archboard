@@ -3,11 +3,11 @@ id: TASK-526.01
 title: >-
   archboard check runs every check, and check semantics, check code and check
   embeds run one each
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T16:19:00Z'
+updated_date: '2026-10-24T16:50:00Z'
 labels:
   - cli
   - code-check
@@ -29,14 +29,14 @@ The plain `archboard check` never runs the code check, so people and CI skip it,
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard check` and `archboard check all` run the semantics check and the code check, and the embeds check once it exists
-- [ ] #2 `archboard check semantics` runs the former plain check, and `archboard check code` runs the code check with behind
-- [ ] #3 The JSON answer has one part per check, and a subcommand fills only its own part
-- [ ] #4 The command exits 1 when any part has a diagnostic or a warning, and information never changes the exit status
-- [ ] #5 `--variant`, `--every-draft` and `--plan` work on `check`, `check all` and `check code`, and the other subcommands refuse them
-- [ ] #6 `--code` is refused as an unknown option, and no doc, skill, ADR text or help names it
-- [ ] #7 The route that panes poll still runs only the semantics check
-- [ ] #8 ADR 0045, ADR 0046 and ADR 0054 carry an Amended by line that points to ADR 0057, and the Code check entry in CONTEXT.md names the new command
+- [x] #1 `archboard check` and `archboard check all` run the semantics check and the code check, and the embeds check once it exists
+- [x] #2 `archboard check semantics` runs the former plain check, and `archboard check code` runs the code check with behind
+- [x] #3 The JSON answer has one part per check, and a subcommand fills only its own part
+- [x] #4 The command exits 1 when any part has a diagnostic or a warning, and information never changes the exit status
+- [x] #5 `--variant`, `--every-draft` and `--plan` work on `check`, `check all` and `check code`, and the other subcommands refuse them
+- [x] #6 `--code` is refused as an unknown option, and no doc, skill, ADR text or help names it
+- [x] #7 The route that panes poll still runs only the semantics check
+- [x] #8 ADR 0045, ADR 0046 and ADR 0054 carry an Amended by line that points to ADR 0057, and the Code check entry in CONTEXT.md names the new command
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -59,4 +59,12 @@ The server route /api/vault/check is untouched and still the only semantics chec
 Outside the scope fence: apps/server comments, packages/board and packages/code-intel comments and the schema description that said check --code (text only); the vault board Archboard server routes still has a relationship labelled check --code (belongs to the TASK-526.02 worker's boards, not changed here); ADR 0057 was formatted by oxfmt because fmt:check failed on it.
 Footprint read against base 89ecc5bc8~1 for Command interface@TASK-526.01: Command catalogue (run.ts) and Commands changed and were not named: the commit adds the check subcommands to the table, the part's job is unchanged, so no proposal change. Request transport is named only by a relationship (normal). The code check diff (check code vs check code --variant TASK-526.01) is empty.
 README assets: bun run readme:check lists stale assets; code-evidence types the old command and needs a refresh by a person (bun run readme:assets code-evidence); the others were stale from earlier commits.
+
+Review: three independent reviewers (check command, docs and skills, answer consumers) fixed every finding in commits 7f9f07f5e, 8a56e123a, 1a7174d2f, 63eea0409, 1536f739d, dd8449a65, 93be1a4f9. The consumer review found that Fix with Codex asked for the full check while the pane shows only the semantics check; it now asks for check semantics. The parent added the Amended by note to ADR 0049 (7c45e83f9). AC 1: the embeds part arrives with TASK-526.03. AC 7: no server route changed (the diff in apps/server is comments only). Closing: Command interface@TASK-526.01 adopted at version 126. The relationship labelled check --code on the current variant of Archboard server routes is relabelled in Archboard server routes@TASK-526.02. Behind after adoption: Archboard, Archboard server, Archboard server routes, Command dispatch and Skill evaluation are behind by this task through comment, doc and command-string commits only; none of them draws the check command words, so they stay right. Gate on the merged branch: bun run check exit 0. Follow-up for a person: bun run readme:assets code-evidence, because its clip still types the old command.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check and check all run the semantics check and the code check; check semantics and check code run one each (ADR 0057). The answer is one JSON object with a part per check, the exit status is 1 on any diagnostic or warning, and --code is gone with no alias. The code check options live on check, check all and check code. Every doc, skill, help text, eval and consumer names the new commands, and ADR 0045, 0046, 0049 and 0054 carry Amended by notes. The pane-polled route is unchanged. Verified by apps/cli/tests/cli/operations/vault/check-parts.test.ts and check.test.ts, the updated system tests, and a full bun run check on the merged branch. Follow-up: refresh the code-evidence README clip.
+<!-- SECTION:FINAL_SUMMARY:END -->
