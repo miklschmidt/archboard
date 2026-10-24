@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-24 12:17'
-updated_date: '2026-10-24 12:47'
+updated_date: '2026-10-24 13:22'
 labels: []
 dependencies: []
 references:
@@ -44,6 +44,8 @@ No architecture board is affected. The route-search mechanism and its drawn resp
 
 <!-- SECTION:NOTES:BEGIN -->
 Renderer repair committed as e77643cbeed538c0f0d45c5cad72129a96ada174. The unchanged normal-environment Board viewer Track owner passed at 2944.31 ms, 2955.06 ms after extraction, and 2938.28 ms final. Earlier focused baselines were 3902.23 and 3886.03 ms, with a fresh same-slot baseline of 3648.66 ms. All six solver result JSON documents remained byte-identical. All 263 relevant tests passed with 47730 assertions. Both type projects, lint, formatting, and whitespace checks passed. No thresholds, assertions, clocks, or policies changed. Full gate remains pending. Evidence: /tmp/task519-correctness-final.log and /tmp/task519-wide-final-3.log.
+
+Independent renderer review found no correctness issue. Commit a96077cc simplifies rollback storage to the original boxes. Focused semantic owners passed, with 2000 crossing-score and 60000 endpoint comparisons. The reviewer matched the hashes of all six solver artifacts. Parent final gate retains timing acceptance after this change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

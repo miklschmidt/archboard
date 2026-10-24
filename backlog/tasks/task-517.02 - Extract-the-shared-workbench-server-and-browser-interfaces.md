@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 11:38'
-updated_date: '2026-10-24 13:17'
+updated_date: '2026-10-24 13:22'
 labels: []
 dependencies:
   - TASK-517.01
@@ -52,4 +52,6 @@ Move the existing domain-free browser transport, wire parsing, and targeting rul
 Parent moved 18 shared implementation files, 14 browser media and output files, and 23 test or support files into agent-workbench. The integration now imports those declarations through public entries. The core voice presentation payload is JSON; Archboard retains its strict walkthrough and recording schema. All 666 isolated UI and shared cases passed. Browser types and scoped UI/shared lint passed. The new package sits at layer 6, with an explicit foundation dependency contract. The final integration pass will remove public exports without an outside caller after backend imports converge.
 
 Moved the domain-free browser transport, wire parser, lease and target logic, plus the transport-to-media owner, into agent-workbench. Archboard imports the factories directly. The host voice adapter now serializes its narration payload before starting shared media. All 666 isolated browser/shared cases passed after these canonical moves. The shared implementation retains stream recovery, exact start leases, unknown outcomes, and media cleanup.
+
+Removed temporary public names without outside callers. The shared entries now expose 29 contract names, 13 realtime names, and 18 browser names. Browser types pass after pruning. Package graph/API owners passed all 79 cases. The updated Browser application proposal shows the shared media owner in the agent workflow view; its PNG was rendered and inspected at /tmp/task517-browser-agent-updated.png.
 <!-- SECTION:NOTES:END -->
