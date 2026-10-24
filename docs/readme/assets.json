@@ -25,7 +25,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "261d5bd4670712e40c9e07fdf97d1a4bed39cdd6a2cba897819fedf2b63c8c4f"
+			"hash": "5313ee3c46c8617f457ef61c30d2094f8bc2818c88b70f3ffe558c2910068e85"
 		},
 		{
 			"name": "hero",
@@ -56,7 +56,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
+			"hash": "f3471acca60dc986fe769109104ffd1cb1545471ef88dc1048c92a90a95fb569"
 		},
 		{
 			"name": "explainer",
@@ -113,7 +113,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "c3131e15476a7c8824c6cff2d918cc4e755327dc5d70e23c9a9f099ab32ba21c"
+			"hash": "50aedc0e54f9ac5fa224c1aa90948385698581e530b9430fd08afa0706561b4d"
 		},
 		{
 			"name": "history",
@@ -141,7 +141,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
+			"hash": "99b6e13936b56a77bef7894a3674d70c9061caf41b826586d0ec56276c4714c8"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -196,7 +196,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "471778c31a9ea7d2c0d983641a0b5e1a58eaca0f87b424d7b2315cc800c157fc"
 		},
 		{
 			"name": "newcomer",
@@ -253,7 +253,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "f3552de4a2a8fc76ef578a5650fb44765abb0a634ae5643541743e6e5ed78e00"
+			"hash": "cb66a6e5f918cc645d4845fc5bed36968aacf2f62d7999cba32a5ef3e11e9f44"
 		},
 		{
 			"name": "ask",
@@ -309,7 +309,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "b8356075fd518f345aa1b2851e1977000520f083a7833620b7410af38deeec1c"
+			"hash": "b71fb1fa4497590744ad366bdd49fdfbd4a8178359220fdcc35198ad83aae199"
 		},
 		{
 			"name": "web-shop",
@@ -333,7 +333,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "471778c31a9ea7d2c0d983641a0b5e1a58eaca0f87b424d7b2315cc800c157fc"
 		},
 		{
 			"name": "architecture",
@@ -386,7 +386,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "d72087d903bc85cc98916f90554fa9fea9aa1de0bc45b80425fd875a0415a868"
 		},
 		{
 			"name": "module-interfaces",
@@ -420,7 +420,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "bbbcde3f46a4d63d8a1b8116f67d733d35ee5685da2101e2a692e799becbefe3"
 		},
 		{
 			"name": "git-history",
