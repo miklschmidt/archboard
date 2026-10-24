@@ -111,6 +111,27 @@
 					"owner": "packages/renderer/tests/runtime/operations/export/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
 				},
 				{
+					"path": "semantic render/rasterize render recipe: in an SVG's <metadata> element and a PNG's text chunk, on stdout, with --out and on the clipboard",
+					"expectedUse": "keep a picture as the command wrote it; a pipeline that runs SVGO keeps <metadata>, because a file without its recipe is no embed",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/renderer/tests/runtime/operations/recipe/recipe-file.test.ts owns reading and writing the recipe; tests/system/semantic-boards/render-recipe.test.ts owns its fields, the fingerprint under real edits and the same bytes twice. Mechanical validation: no Flask scenario embeds a picture in a document"
+				},
+				{
+					"path": "semantic render/rasterize --out <file> --track --doing <line>: the board lists the file as a tracked embed { repo, path }; TRACK_OUTSIDE_CHECKOUT, TRACK_VAULT_UNREGISTERED",
+					"expectedUse": "draw a picture that a document in a Git checkout embeds with --track, SVG preferred, and commit the file with the vault",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/tracked-embeds.test.ts owns the list, the lease and doing line, the unchanged last change, both refusals and tracking a file twice. Mechanical validation: no Flask scenario embeds a picture in a document"
+				},
+				{
+					"path": "archboard check embeds and check --fix: EMBED_OUTDATED, EMBED_SOURCE_MISSING and EMBED_RECIPE_UNREADABLE warnings, EMBED_RENDERER_CHANGED and EMBED_VAULT_UNAVAILABLE information, a fetched or cached vault of an unregistered repository, the embeds check alone in a checkout without a vault",
+					"expectedUse": "after correcting a board that check code named, run archboard check, then archboard check --fix to draw each outdated embed again, and commit the files it lists",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/embeds-check.test.ts owns the findings and --fix; embeds-fetch.test.ts owns the fetch and the cache; embeds-without-vault.test.ts owns a checkout without a vault; apps/cli/tests/cli/rules/check/embed-state.test.ts owns the standing of an embed. Mechanical validation: no Flask scenario embeds a picture in a document"
+				},
+				{
 					"path": "semantic views: every view of a board with what it draws at a variant",
 					"expectedUse": "choose the view to draw from its drawn counts and marks before rendering; a view with nothing drawn draws nothing at that variant; --variant, --against and --no-comparison read as render reads them",
 					"scenarios": [],
