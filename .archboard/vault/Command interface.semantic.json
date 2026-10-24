@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 128,
+	"version": 129,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T17:24:35.723Z",
+	"updatedAt": "2026-10-24T18:02:08.192Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -48217,7 +48217,7 @@
 			"name": "TASK-526.03",
 			"lifecycle": "draft",
 			"parent": "tEUCnc5Z",
-			"summary": "check embeds reports outdated embeds in its checkout, and --fix draws them again",
+			"summary": "CLI application modules and its command groups",
 			"content": {
 				"nodes": [
 					{
@@ -50061,7 +50061,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/cli/src/cli/operations/vault/embeds/embeds-check.ts",
+							"path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
 							"symbol": "renderSemanticBoardOnServer"
 						}
 					},
@@ -50075,7 +50075,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/cli/src/cli/operations/vault/embeds/embeds-check.ts",
+							"path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
 							"symbol": "createSemanticRasterizer"
 						}
 					}
