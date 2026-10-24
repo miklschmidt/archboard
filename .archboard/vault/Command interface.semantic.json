@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 122,
+	"version": 124,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T02:34:53.352Z",
+	"updatedAt": "2026-10-24T02:50:59.406Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -41305,7 +41305,7 @@
 		{
 			"id": "wJUCTDTj",
 			"name": "TASK-509",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "S0SxSDMx",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -44760,9 +44760,9 @@
 		{
 			"id": "qzEzNiJl",
 			"name": "TASK-515",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "wJUCTDTj",
-			"summary": "Use the single build command when restarting the server",
+			"summary": "CLI application modules and its command groups",
 			"content": {
 				"nodes": [
 					{
@@ -48213,7 +48213,7 @@
 			}
 		}
 	],
-	"current": "wJUCTDTj",
+	"current": "qzEzNiJl",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -48358,6 +48358,12 @@
 			"from": "S0SxSDMx",
 			"at": "2026-10-23T02:55:36.228Z",
 			"reason": "semantic correct suggests commits, previews a correction and explicitly applies it"
+		},
+		{
+			"variant": "qzEzNiJl",
+			"from": "wJUCTDTj",
+			"at": "2026-10-24T02:50:59.406Z",
+			"reason": "TASK-515: restart uses the single build command, backed by the cached Vite+ frontend task"
 		}
 	],
 	"shelvings": [

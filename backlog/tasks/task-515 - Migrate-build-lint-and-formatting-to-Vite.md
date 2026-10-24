@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-24 02:27'
-updated_date: '2026-10-24 02:50'
+updated_date: '2026-10-24 02:51'
 labels: []
 dependencies: []
 references:
@@ -51,4 +51,6 @@ Vite+ cached lint replays all four successful leaf results on a repeat call. The
 The source invalidation probe exposed a Bun automatic-tracking gap: changing scripts/lint.ts replayed a cached result. The task configuration now includes explicit source and fixture globs alongside automatic tracking. Repeating the probe reports scripts/lint.ts modified and runs lint. The restored source then hits the cache. Changing NODE_OPTIONS also produces the expected environment cache miss.
 
 CI now installs the pinned Vite+ release and package-manager version through setup-vp v1.21.2, restores task results after installation, and saves successful results with an OS/architecture key. The macOS inventory is the test:macos task. Chrome version joins the test environment fingerprint. INSTALL.md and package engines now state the Vite+ Node requirement. The workflow parses locally; hosted execution remains pending until these commits are pushed.
+
+Command interface footprint against 3aa85af6a names Restart as changed by 8a7a5ef1c and reports no named-but-unchanged part. Commands changes only its internal artifact formatter (86e9f8bed), so its interface and responsibility remain correct. Server launcher contains the named Restart change. The 33-file migration commit is a tooling/format sweep, and the intervening stacked-label commit belongs to TASK-514. The proposal keeps all part and relationship ids and changes no interface.
 <!-- SECTION:NOTES:END -->
