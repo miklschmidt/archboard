@@ -40,13 +40,15 @@ function processOptions(root: string, executablePath: string): CodexProcessTestO
 		executablePath,
 		workingDirectory: process.cwd(),
 		storage: { rootDirectory: path.join(root, "storage") },
-		archboardServer: { url: "http://127.0.0.1:3404", binDirectory: "/opt/archboard/bin" },
 		ambientEnvironment: {
 			HOME: "/poisoned/home",
 			PATH: process.env["PATH"] ?? "",
 			CODEX_HOME: "/poisoned/codex-home",
 			OPENAI_API_KEY: "poisoned-secret",
 			PWD: "/poisoned/pwd",
+			ARCHBOARD_URL: "http://ambient.invalid",
+			ARCHBOARD_NO_AUTOSTART: "0",
+			ARCHBOARD_VAULT: "/poisoned/vault",
 		},
 	};
 }

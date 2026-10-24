@@ -218,7 +218,8 @@ function storageStage(state: ProcessOwnerState): PreparedCodexStorage {
 				: { ambient: state.options.ambientEnvironment }),
 			codexHome: storage.codexHome,
 			sqliteHome: storage.sqliteHome,
-			archboardServer: state.options.archboardServer,
+			hostEnvironment: state.options.hostEnvironment,
+			pathPrefixes: state.options.pathPrefixes,
 		});
 		return storage;
 	} catch (cause) {
