@@ -7,12 +7,12 @@ import {
 	ARCHITECTURE_LABEL_STACK_GAP,
 } from "#shared/constants/spacing.ts";
 import {
+	DRILL_MARK_ROOM,
 	HEADER_SLAB_INSET,
 	ICON_CHIP_SIZE,
 	PART_NOTE,
 	PART_TITLE,
 } from "#shared/constants/design.ts";
-import { DRILL_MARK_ROOM } from "#shared/rules/svg/parts/drill-mark.ts";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
 import { layoutWithLines, measureNaturalWidth, prepareWithSegments } from "@chenglou/pretext";

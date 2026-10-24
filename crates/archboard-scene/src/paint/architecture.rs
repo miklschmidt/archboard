@@ -10,20 +10,26 @@ use crate::markup::{Markup, concat, group, lines, tag, wrap};
 use crate::paint::Ctx;
 use crate::paint::appearance::label_look;
 use crate::paint::colour::colour_id;
-use crate::paint::crossings::{Cutout, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts};
+use crate::paint::crossings::{
+    Cutout, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
+};
 use crate::paint::design::{DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
 use crate::paint::junctions::junction_marks;
-use crate::paint::measured_cards::{paint_measured_card, paint_measured_frame, paint_measured_header};
+use crate::paint::measured_cards::{
+    paint_measured_card, paint_measured_frame, paint_measured_header,
+};
 use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, ends_in_port, port_inside, port_plan, ports_of, ride_into};
 use crate::paint::regions::paint_region;
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
-    PART_ATTRIBUTE, Standings, Unsettled, ghost_opacity, marked_box, standing_palette, standing_swipe, subject,
-    warning_on_line,
+    PART_ATTRIBUTE, Standings, Unsettled, ghost_opacity, marked_box, standing_palette,
+    standing_swipe, subject, warning_on_line,
 };
-use crate::paint::styles::{HEAD_LENGTH, Styles, edge_attributes, head_widths, quietened, relationship_ink, stroke_width};
+use crate::paint::styles::{
+    HEAD_LENGTH, Styles, edge_attributes, head_widths, quietened, relationship_ink, stroke_width,
+};
 use crate::paint::text_runs::paint_text_runs;
 use crate::paint::traffic::{TrafficLine, paint_traffic};
 use crate::request::{Arrowhead, LineAppearance, NodeAppearance, PaletteColor, Standing};
@@ -95,7 +101,11 @@ fn edge_marker(id: &str, head: Arrowhead, weight: Emphasis, ink: &str) -> Markup
 
 /// The subject kind a drawn line is: a flow step drawn on the board, or a relationship.
 fn line_kind(step: bool) -> SubjectKind {
-    if step { SubjectKind::Step } else { SubjectKind::Edge }
+    if step {
+        SubjectKind::Step
+    } else {
+        SubjectKind::Edge
+    }
 }
 
 /// One final route, its head, its halo and the insides of the ports it runs into.
@@ -113,9 +123,17 @@ fn paint_edge_line(
     let styles = Styles::of(palette);
     let width = stroke_width(edge.emphasis);
     let attributes = edge_attributes(edge.emphasis, palette, standing, appearance);
-    let ink = attributes.get("stroke").map(crate::markup::spelt).unwrap_or_default();
+    let ink = attributes
+        .get("stroke")
+        .map(crate::markup::spelt)
+        .unwrap_or_default();
     let weight = edge.emphasis;
-    let marker_id = format!("edge-head-{}-{}-{}", appearance.arrowhead.as_str(), weight.as_str(), colour_id(&ink));
+    let marker_id = format!(
+        "edge-head-{}-{}-{}",
+        appearance.arrowhead.as_str(),
+        weight.as_str(),
+        colour_id(&ink)
+    );
     let mut parts = vec![
         edge_marker(&marker_id, appearance.arrowhead, weight, &ink),
         standing_swipe(&routed.path, width, standing, palette),
@@ -159,24 +177,46 @@ fn paint_edge_line(
 }
 
 /// A relationship's label and warning, above all connections.
-fn paint_edge_words(routed: &Edge, palette: &Palette, standing: Option<Standing>, unsettled: bool, step: bool) -> Markup {
+fn paint_edge_words(
+    routed: &Edge,
+    palette: &Palette,
+    standing: Option<Standing>,
+    unsettled: bool,
+    step: bool,
+) -> Markup {
     let at = match &routed.label {
         None => label_anchor_of(&routed.curve),
-        Some(label) => crate::geometry::Point { x: label.bounds.x, y: label.bounds.y + label.bounds.height / 2.0 },
+        Some(label) => crate::geometry::Point {
+            x: label.bounds.x,
+            y: label.bounds.y + label.bounds.height / 2.0,
+        },
     };
     let badge = warning_on_line(Some(at), unsettled, palette);
     let pill = match &routed.label {
         None => Markup::new(),
-        Some(label) => lines(vec![
-            slab_seat(label.bounds, PILL_RADIUS),
-            if standing == Some(Standing::Removed) {
-                slab_shadow(label.bounds, PILL_RADIUS, Lift::Chip, palette, standing)
-            } else {
-                Markup::new()
-            },
-            slab(label.bounds, &label_look(palette), palette, standing, None),
-            paint_text_runs(&label.measured.runs, label.bounds, &standing_palette(palette, standing), None),
-        ]),
+        Some(label) => {
+            let mut parts = vec![slab_seat(label.bounds, PILL_RADIUS)];
+            for chip in label.chips() {
+                // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
+                if standing == Some(Standing::Removed) {
+                    parts.push(slab_shadow(
+                        chip,
+                        PILL_RADIUS,
+                        Lift::Chip,
+                        palette,
+                        standing,
+                    ));
+                }
+                parts.push(slab(chip, &label_look(palette), palette, standing, None));
+            }
+            parts.push(paint_text_runs(
+                &label.measured.runs,
+                label.bounds,
+                &standing_palette(palette, standing),
+                None,
+            ));
+            lines(parts)
+        }
     };
     if pill.is_empty() && badge.is_empty() {
         return Markup::new();
@@ -193,19 +233,50 @@ fn paint_edge_words(routed: &Edge, palette: &Palette, standing: Option<Standing>
 fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<Standing>) -> Markup {
     match &routed.label {
         None => Markup::new(),
-        Some(label) => shadow_under(&routed.edge.id, label.bounds, PILL_RADIUS, Lift::Chip, palette, standing, None),
+        Some(label) => lines(
+            label
+                .chips()
+                .map(|chip| {
+                    shadow_under(
+                        &routed.edge.id,
+                        chip,
+                        PILL_RADIUS,
+                        Lift::Chip,
+                        palette,
+                        standing,
+                        None,
+                    )
+                })
+                .collect(),
+        ),
     }
 }
 
+/// Boxes by subject id, in the order they were found.
+type Boxed<'edge> = Vec<(&'edge str, Rect)>;
+
 /// Each line's inked box, and each of its words' box.
-fn line_boxes(edges: &[Edge]) -> (Vec<(&str, Rect)>, Vec<(&str, Rect)>) {
+fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
     let inked = edges
         .iter()
-        .map(|routed| (routed.edge.id.as_str(), inflate(curve_bounds(&routed.curve), stroke_width(routed.edge.emphasis) / 2.0)))
+        .map(|routed| {
+            (
+                routed.edge.id.as_str(),
+                inflate(
+                    curve_bounds(&routed.curve),
+                    stroke_width(routed.edge.emphasis) / 2.0,
+                ),
+            )
+        })
         .collect();
     let labelled = edges
         .iter()
-        .filter_map(|routed| routed.label.as_ref().map(|label| (routed.edge.id.as_str(), label.bounds)))
+        .filter_map(|routed| {
+            routed
+                .label
+                .as_ref()
+                .map(|label| (routed.edge.id.as_str(), label.bounds))
+        })
         .collect();
     (inked, labelled)
 }
@@ -224,7 +295,14 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
         })
         .collect();
     boxes.extend(inked.iter().chain(&labelled).map(|(_, rect)| *rect));
-    boxes.extend(drawing.drawing.regions.iter().flatten().map(|region| region.bounds));
+    boxes.extend(
+        drawing
+            .drawing
+            .regions
+            .iter()
+            .flatten()
+            .map(|region| region.bounds),
+    );
     union(boxes)
 }
 
@@ -255,7 +333,10 @@ pub struct HeldPage<'a> {
 
 /// The line appearance of a relationship.
 fn look_of<'a>(vocabulary: &'a Vocabulary, id: &str) -> &'a LineAppearance {
-    vocabulary.lines.get(id).unwrap_or_else(|| panic!("no line appearance for {id}"))
+    vocabulary
+        .lines
+        .get(id)
+        .unwrap_or_else(|| panic!("no line appearance for {id}"))
 }
 
 /// The final drawing painted, with the atlas from the same boxes.
@@ -286,7 +367,12 @@ pub fn paint_architecture(
     let shaped = |id: &str| page.shapes.is_some_and(|shapes| shapes.has(id));
     let ports = ports_of(cards, edges, &|id| !removed(id) && !shaped(id));
     let plan = port_plan(&ports, edges);
-    let appearance_of = |id: &str| vocabulary.appearances.get(id).unwrap_or_else(|| panic!("no appearance for {id}"));
+    let appearance_of = |id: &str| {
+        vocabulary
+            .appearances
+            .get(id)
+            .unwrap_or_else(|| panic!("no appearance for {id}"))
+    };
     let (inked, labelled) = line_boxes(edges);
     let traffic_lines: Vec<TrafficLine> = edges
         .iter()
@@ -307,17 +393,28 @@ pub fn paint_architecture(
                     arrowhead_reach(appearance.arrowhead)
                 },
                 into: ride_into(&routed.curve, &into_ports),
-                ink: quietened(&relationship_ink(palette, standings.of(&edge.id), appearance), palette, edge.emphasis),
+                ink: quietened(
+                    &relationship_ink(palette, standings.of(&edge.id), appearance),
+                    palette,
+                    edge.emphasis,
+                ),
                 line_width: stroke_width(edge.emphasis),
             })
         })
         .collect();
-    let card_boxes: Vec<(String, Rect)> =
-        cards.iter().map(|card| (card.measured.node.id.clone(), card.bounds)).collect();
+    let card_boxes: Vec<(String, Rect)> = cards
+        .iter()
+        .map(|card| (card.measured.node.id.clone(), card.bounds))
+        .collect();
     let traffic = paint_traffic(&traffic_lines, &card_boxes, palette);
-    let framed: Vec<(&str, Rect)> =
-        containers.iter().map(|node| (node.measured.node.id.as_str(), node.bounds)).collect();
-    let carded: Vec<(&str, Rect)> = cards.iter().map(|node| (node.measured.node.id.as_str(), node.bounds)).collect();
+    let framed: Vec<(&str, Rect)> = containers
+        .iter()
+        .map(|node| (node.measured.node.id.as_str(), node.bounds))
+        .collect();
+    let carded: Vec<(&str, Rect)> = cards
+        .iter()
+        .map(|node| (node.measured.node.id.as_str(), node.bounds))
+        .collect();
     let canvas = canvas_for(
         page.drawing.drawing.width,
         page.drawing.drawing.height,
@@ -327,26 +424,52 @@ pub fn paint_architecture(
     let mut boxes: Vec<&Node> = containers.iter().collect();
     boxes.sort_by(|a, b| {
         let depth = a.depth - b.depth;
-        let difference = if depth != 0.0 && !depth.is_nan() { depth } else { a.measured.node.order - b.measured.node.order };
-        difference.partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal)
+        let difference = if depth != 0.0 && !depth.is_nan() {
+            depth
+        } else {
+            a.measured.node.order - b.measured.node.order
+        };
+        difference
+            .partial_cmp(&0.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
     let mut ordered_cards: Vec<&Node> = cards.iter().collect();
     ordered_cards.sort_by(|a, b| {
-        (a.measured.node.order - b.measured.node.order).partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal)
+        (a.measured.node.order - b.measured.node.order)
+            .partial_cmp(&0.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
     let mut regions: Vec<_> = drawing.drawing.regions.iter().flatten().collect();
-    regions.sort_by(|a, b| (a.depth - b.depth).partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal));
+    regions.sort_by(|a, b| {
+        (a.depth - b.depth)
+            .partial_cmp(&0.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let routes: Vec<&crate::geometry::Curve> = edges.iter().map(|routed| &routed.curve).collect();
 
     let mut painted: Vec<Markup> = vec![masks.definitions];
     painted.push(if plan.cuts.is_empty() {
         Markup::new()
     } else {
-        wrap("defs", attrs! {}, concat(plan.cuts.iter().map(|(_, cut)| cut.markup.clone()).collect()))
+        wrap(
+            "defs",
+            attrs! {},
+            concat(
+                plan.cuts
+                    .iter()
+                    .map(|(_, cut)| cut.markup.clone())
+                    .collect(),
+            ),
+        )
     });
     for held in &boxes {
         let id = &held.measured.node.id;
-        painted.push(paint_measured_frame(held, palette, standings.of(id), appearance_of(id)));
+        painted.push(paint_measured_frame(
+            held,
+            palette,
+            standings.of(id),
+            appearance_of(id),
+        ));
     }
     for region in regions {
         painted.push(paint_region(
@@ -362,7 +485,15 @@ pub fn paint_architecture(
         let id = &card.measured.node.id;
         painted.push(match page.shapes.filter(|shapes| shapes.has(id)) {
             Some(shapes) => shapes.shadow(card, standings.of(id)),
-            None => shadow_under(id, card.bounds, SLAB_RADIUS, Lift::Card, palette, standings.of(id), None),
+            None => shadow_under(
+                id,
+                card.bounds,
+                SLAB_RADIUS,
+                Lift::Card,
+                palette,
+                standings.of(id),
+                None,
+            ),
         });
     }
     for routed in edges {
@@ -388,13 +519,29 @@ pub fn paint_architecture(
             &slots,
         ));
     }
-    let joined: Vec<&Edge> = drawing.drawing.edges.iter().filter(|routed| !removed(&routed.edge.id)).collect();
+    let joined: Vec<&Edge> = drawing
+        .drawing
+        .edges
+        .iter()
+        .filter(|routed| !removed(&routed.edge.id))
+        .collect();
     let inks: Vec<(String, f64)> = joined
         .iter()
         .map(|routed| {
             let edge = &routed.edge;
-            let attributes = edge_attributes(edge.emphasis, palette, standings.of(&edge.id), look_of(vocabulary, &edge.id));
-            (attributes.get("stroke").map(crate::markup::spelt).unwrap_or_default(), stroke_width(edge.emphasis))
+            let attributes = edge_attributes(
+                edge.emphasis,
+                palette,
+                standings.of(&edge.id),
+                look_of(vocabulary, &edge.id),
+            );
+            (
+                attributes
+                    .get("stroke")
+                    .map(crate::markup::spelt)
+                    .unwrap_or_default(),
+                stroke_width(edge.emphasis),
+            )
         })
         .collect();
     painted.push(junction_marks(&joined, &inks));
@@ -419,11 +566,24 @@ pub fn paint_architecture(
     }
     for routed in edges {
         let id = &routed.edge.id;
-        painted.push(paint_edge_words(routed, palette, standings.of(id), unsettled.of(id), vocabulary.steps.contains(id.as_str())));
+        painted.push(paint_edge_words(
+            routed,
+            palette,
+            standings.of(id),
+            unsettled.of(id),
+            vocabulary.steps.contains(id.as_str()),
+        ));
     }
     for held in &boxes {
         let id = &held.measured.node.id;
-        painted.push(paint_measured_header(ctx, held, palette, standings.of(id), unsettled.of(id), appearance_of(id)));
+        painted.push(paint_measured_header(
+            ctx,
+            held,
+            palette,
+            standings.of(id),
+            unsettled.of(id),
+            appearance_of(id),
+        ));
     }
     let mut node_entries = carded.clone();
     node_entries.extend(framed.iter().copied());

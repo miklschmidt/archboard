@@ -5,7 +5,9 @@
 use crate::attrs;
 use crate::geometry::Rect;
 use crate::markup::{Markup, lines};
-use crate::paint::design::{BAND_RADIUS, HEADER_SLAB_INSET, SLAB_RADIUS, TRAY_CREASE, TRAY_LIP, TRAY_WALL};
+use crate::paint::design::{
+    BAND_RADIUS, HEADER_SLAB_INSET, SLAB_RADIUS, TRAY_CREASE, TRAY_LIP, TRAY_WALL,
+};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, across, plate, slab, slab_shadow};
 use crate::request::Standing;
@@ -53,13 +55,31 @@ pub fn tray(rect: Rect, look: &TrayLook, palette: &Palette, standing: Option<Sta
         return Markup::new();
     }
     let floor = floor_of(rect);
-    let walls = Rect { height: rect.height - TRAY_CREASE - TRAY_LIP, ..rect };
+    let walls = Rect {
+        height: rect.height - TRAY_CREASE - TRAY_LIP,
+        ..rect
+    };
     let mut parts = vec![
         plate(rect, BAND_RADIUS, attrs! { "fill": palette.slab_shadow }),
-        plate(Rect { height: rect.height - TRAY_CREASE, ..rect }, BAND_RADIUS, attrs! { "fill": palette.tray_lip }),
-        plate(walls, BAND_RADIUS, attrs! { "fill": look.top_wall.as_str() }),
         plate(
-            Rect { y: walls.y + TRAY_WALL, height: walls.height - TRAY_WALL, ..walls },
+            Rect {
+                height: rect.height - TRAY_CREASE,
+                ..rect
+            },
+            BAND_RADIUS,
+            attrs! { "fill": palette.tray_lip },
+        ),
+        plate(
+            walls,
+            BAND_RADIUS,
+            attrs! { "fill": look.top_wall.as_str() },
+        ),
+        plate(
+            Rect {
+                y: walls.y + TRAY_WALL,
+                height: walls.height - TRAY_WALL,
+                ..walls
+            },
             BAND_RADIUS,
             attrs! { "fill": look.side_wall.as_str() },
         ),
@@ -76,7 +96,19 @@ pub fn tray(rect: Rect, look: &TrayLook, palette: &Palette, standing: Option<Sta
             },
         ));
     }
-    parts.push(slab_shadow(look.header, SLAB_RADIUS, Lift::Card, palette, None));
-    parts.push(slab(look.header, &look.header_look, palette, standing, None));
+    parts.push(slab_shadow(
+        look.header,
+        SLAB_RADIUS,
+        Lift::Card,
+        palette,
+        None,
+    ));
+    parts.push(slab(
+        look.header,
+        &look.header_look,
+        palette,
+        standing,
+        None,
+    ));
     lines(parts)
 }

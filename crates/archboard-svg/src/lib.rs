@@ -57,10 +57,18 @@ fn face_source(file: &str, document: &DocumentRequest) -> Result<String, Documen
             .font_data
             .as_ref()
             .and_then(|data| data.get(file))
-            .ok_or_else(|| DocumentError(format!("The host gave no bytes for the diagram font {file}.")))?;
-        return Ok(format!("url(\"data:font/ttf;base64,{data}\") format(\"truetype\")"));
+            .ok_or_else(|| {
+                DocumentError(format!(
+                    "The host gave no bytes for the diagram font {file}."
+                ))
+            })?;
+        return Ok(format!(
+            "url(\"data:font/ttf;base64,{data}\") format(\"truetype\")"
+        ));
     }
-    Ok(format!("url(\"{FONT_URL_PREFIX}/{file}\") format(\"truetype\")"))
+    Ok(format!(
+        "url(\"{FONT_URL_PREFIX}/{file}\") format(\"truetype\")"
+    ))
 }
 
 /// The `@font-face` rules the document registers its own type with.
@@ -82,7 +90,8 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
     let ms = archboard_scene::js::number(swap_ms);
     let fade = format!("opacity {ms}ms {SWAP_EASE}");
     let shown = format!("opacity:1;visibility:visible;transition:{fade},visibility 0s");
-    let hidden = format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
+    let hidden =
+        format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
     let movement = format!("transition:transform {ms}ms {SWAP_EASE}");
     let far = format!(".{FAR_VIEW_CLASS}");
     vec![
@@ -93,7 +102,9 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         format!(".{CHIP_CLASS}{{transform:var({NEAR_PLACE});{movement}}}"),
         format!("{far} .{CHIP_CLASS}{{transform:var({FAR_PLACE})}}"),
         format!(".{WORDS_CLASS}{{{movement}}}"),
-        format!(".{FAR_CLASS}>.{WORDS_CLASS},{far} .{NEAR_CLASS}>.{WORDS_CLASS}{{transform:var({AWAY_PLACE})}}"),
+        format!(
+            ".{FAR_CLASS}>.{WORDS_CLASS},{far} .{NEAR_CLASS}>.{WORDS_CLASS}{{transform:var({AWAY_PLACE})}}"
+        ),
         format!("{far} .{FAR_CLASS}>.{WORDS_CLASS}{{transform:none}}"),
         format!(
             "@media(prefers-reduced-motion:reduce){{.{FAR_CLASS},.{NEAR_CLASS},{far} .{FAR_CLASS},{far} .{NEAR_CLASS},.{CHIP_CLASS},.{WORDS_CLASS}{{transition:none}}}}"
@@ -109,7 +120,10 @@ fn stylesheet(document: &DocumentRequest) -> Result<String, DocumentError> {
         "svg,text{font-synthesis:none}".to_owned(),
         "[data-semantic-kind]{cursor:pointer}".to_owned(),
         ".ab-halo{opacity:0}".to_owned(),
-        format!(".is-selected .ab-halo{{opacity:1;stroke:{}}}", PALETTE.selection),
+        format!(
+            ".is-selected .ab-halo{{opacity:1;stroke:{}}}",
+            PALETTE.selection
+        ),
         ".is-selected[mask]{mask:none}".to_owned(),
         format!(".is-stuck>.{HEAD_SHADE_CLASS}{{visibility:visible}}"),
     ];
@@ -118,7 +132,9 @@ fn stylesheet(document: &DocumentRequest) -> Result<String, DocumentError> {
         ".is-veiled [data-semantic-id],.is-veiled [{TRAFFIC_ATTRIBUTE}],.is-veiled [{MEMBERS_ATTRIBUTE}]{{opacity:.28}}"
     ));
     rules.push(".is-veiled .is-lit,.is-veiled .is-lit [data-semantic-id]{opacity:1}".to_owned());
-    rules.push(format!("@media(prefers-reduced-motion:reduce){{.{PULSE_CLASS}{{display:none}}}}"));
+    rules.push(format!(
+        "@media(prefers-reduced-motion:reduce){{.{PULSE_CLASS}{{display:none}}}}"
+    ));
     Ok(format!("<style>{}</style>", rules.concat()))
 }
 
@@ -134,7 +150,9 @@ fn properties_of(document: &str) -> (Vec<&str>, Vec<&str>) {
     let mut own = Vec::new();
     let bytes = document.as_bytes();
     let name_at = |start: usize| {
-        let length = document[start..].find(|character: char| !name_character(character)).unwrap_or(document.len() - start);
+        let length = document[start..]
+            .find(|character: char| !name_character(character))
+            .unwrap_or(document.len() - start);
         &document[start..start + length]
     };
     let mut at = 0;
@@ -160,7 +178,11 @@ fn properties_of(document: &str) -> (Vec<&str>, Vec<&str>) {
 }
 
 /// One token's value in a document that stands alone.
-fn token_value(document: &DocumentRequest, theme: StandaloneTheme, name: &str) -> Result<String, DocumentError> {
+fn token_value(
+    document: &DocumentRequest,
+    theme: StandaloneTheme,
+    name: &str,
+) -> Result<String, DocumentError> {
     let colors = document.theme_colors.as_ref().ok_or_else(|| {
         DocumentError(
             "This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme."
@@ -181,15 +203,29 @@ fn token_value(document: &DocumentRequest, theme: StandaloneTheme, name: &str) -
     }
     let light = color(StandaloneTheme::Light)?;
     let dark = color(StandaloneTheme::Dark)?;
-    Ok(if light == dark { light } else { light_dark(&light, &dark) })
+    Ok(if light == dark {
+        light
+    } else {
+        light_dark(&light, &dark)
+    })
 }
 
 /// What a document that stands alone declares on its root: its colour scheme,
 /// and the value of every token it names, in name order.
-fn standing_alone(document: &DocumentRequest, theme: StandaloneTheme, painted: &str) -> Result<String, DocumentError> {
+fn standing_alone(
+    document: &DocumentRequest,
+    theme: StandaloneTheme,
+    painted: &str,
+) -> Result<String, DocumentError> {
     let (references, own) = properties_of(painted);
-    let own: BTreeSet<&str> = [NEAR_PLACE, FAR_PLACE, AWAY_PLACE].into_iter().chain(own).collect();
-    let names: BTreeSet<&str> = references.into_iter().filter(|name| !own.contains(name)).collect();
+    let own: BTreeSet<&str> = [NEAR_PLACE, FAR_PLACE, AWAY_PLACE]
+        .into_iter()
+        .chain(own)
+        .collect();
+    let names: BTreeSet<&str> = references
+        .into_iter()
+        .filter(|name| !own.contains(name))
+        .collect();
     let scheme = match theme {
         StandaloneTheme::Auto => "light dark",
         StandaloneTheme::Light => "light",

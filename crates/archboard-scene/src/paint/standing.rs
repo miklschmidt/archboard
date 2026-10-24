@@ -52,7 +52,11 @@ fn pin_glyph(standing: Standing) -> &'static str {
 
 /// How solid a swipe is.
 fn swipe_opacity(standing: Standing) -> f64 {
-    if standing == Standing::Unchanged { 0.0 } else { 0.32 }
+    if standing == Standing::Unchanged {
+        0.0
+    } else {
+        0.32
+    }
 }
 
 /// The ink one standing is drawn in, or none for a subject that stands unchanged.
@@ -83,7 +87,9 @@ impl Standings {
 
     /// How one subject stands.
     pub fn of(&self, id: &str) -> Option<Standing> {
-        self.0.as_ref().map(|stated| stated.get(id).copied().unwrap_or(Standing::Unchanged))
+        self.0
+            .as_ref()
+            .map(|stated| stated.get(id).copied().unwrap_or(Standing::Unchanged))
     }
 }
 
@@ -114,7 +120,11 @@ pub const PART_ATTRIBUTE: &str = "data-semantic-part";
 
 /// The subject a drawn group carries: what it is, which it is, how it stands.
 pub fn subject(kind: SubjectKind, id: &str, standing: Option<Standing>) -> Option<Subject> {
-    Some(Subject { kind, id: id.to_owned(), standing })
+    Some(Subject {
+        kind,
+        id: id.to_owned(),
+        standing,
+    })
 }
 
 /// The opacity a removed line's group takes, or none for a line still on the proposal.
@@ -126,7 +136,11 @@ pub fn ghost_opacity(standing: Option<Standing>) -> Option<f64> {
 /// and notes are faded to the secondary ink.
 pub fn standing_palette(palette: &Palette, standing: Option<Standing>) -> Palette {
     if standing == Some(Standing::Removed) {
-        Palette { foreground: palette.muted, pill_text: palette.muted, ..*palette }
+        Palette {
+            foreground: palette.muted,
+            pill_text: palette.muted,
+            ..*palette
+        }
     } else {
         *palette
     }
@@ -144,7 +158,11 @@ pub fn standing_pin(rect: Rect, standing: Option<Standing>, palette: &Palette) -
 
 /// The pin, centred on a point.
 pub fn standing_pin_at(x: f64, y: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
-    let ink = if draws_pin(standing) { ink_of(standing, palette) } else { None };
+    let ink = if draws_pin(standing) {
+        ink_of(standing, palette)
+    } else {
+        None
+    };
     let (Some(standing), Some(ink)) = (standing, ink) else {
         return Markup::new();
     };
@@ -177,7 +195,12 @@ pub fn standing_pin_at(x: f64, y: f64, standing: Option<Standing>, palette: &Pal
 }
 
 /// The swipe laid under a line that stands for something.
-pub fn standing_swipe(path: &str, width: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
+pub fn standing_swipe(
+    path: &str,
+    width: f64,
+    standing: Option<Standing>,
+    palette: &Palette,
+) -> Markup {
     let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
         return Markup::new();
     };

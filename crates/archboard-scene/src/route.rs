@@ -51,7 +51,10 @@ pub fn segment_length(from: Point, segment: &Segment) -> f64 {
 
 /// The point a fraction of the way from one point to another.
 fn lerp(a: Point, b: Point, t: f64) -> Point {
-    Point { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    Point {
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+    }
 }
 
 /// The first part of one segment, up to a fraction of it.
@@ -62,7 +65,11 @@ fn segment_up_to(from: Point, segment: &Segment, t: f64) -> Segment {
         Segment::Cubic { first, second, .. } => {
             let one = lerp(from, *first, t);
             let two = lerp(one, lerp(*first, *second, t), t);
-            Segment::Cubic { first: one, second: two, to }
+            Segment::Cubic {
+                first: one,
+                second: two,
+                to,
+            }
         }
     }
 }
@@ -78,7 +85,10 @@ pub fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
             let kept = segment_up_to(from, segment, 1.0 - left / length);
             let mut segments = curve.segments[..index].to_vec();
             segments.push(kept);
-            return Some(Curve { from: curve.from, segments });
+            return Some(Curve {
+                from: curve.from,
+                segments,
+            });
         }
         left -= length;
     }
@@ -91,13 +101,21 @@ pub fn route_length(curve: &Curve) -> f64 {
         .segments
         .iter()
         .enumerate()
-        .fold(0.0, |length, (index, segment)| length + segment_length(segment_start(curve, index), segment))
+        .fold(0.0, |length, (index, segment)| {
+            length + segment_length(segment_start(curve, index), segment)
+        })
 }
 
 /// The unit direction from one point to another, or none when they are one.
 fn direction_of(from: Point, to: Point) -> Option<Point> {
     let length = js::hypot(to.x - from.x, to.y - from.y);
-    (!(length < 1e-9)).then(|| Point { x: (to.x - from.x) / length, y: (to.y - from.y) / length })
+    if length < 1e-9 {
+        return None;
+    }
+    Some(Point {
+        x: (to.x - from.x) / length,
+        y: (to.y - from.y) / length,
+    })
 }
 
 /// How far a segment's own control points stray from the line between its ends.
@@ -107,7 +125,8 @@ fn sag_of(from: Point, segment: &Segment) -> f64 {
     };
     let chord = js::hypot(to.x - from.x, to.y - from.y);
     js::max([*first, *second].map(|point| {
-        (((point.x - from.x) * (to.y - from.y) - (point.y - from.y) * (to.x - from.x)) / chord).abs()
+        (((point.x - from.x) * (to.y - from.y) - (point.y - from.y) * (to.x - from.x)) / chord)
+            .abs()
     }))
 }
 
@@ -115,8 +134,17 @@ fn sag_of(from: Point, segment: &Segment) -> f64 {
 fn frame_of(from: Point, to: Point, length: f64) -> String {
     let angle = (libm::atan2(to.y - from.y, to.x - from.x) * 180.0) / std::f64::consts::PI;
     let stretch = js::hypot(to.x - from.x, to.y - from.y) / length;
-    let scaled = if (stretch - 1.0).abs() < 1e-4 { String::new() } else { format!(" scale({} 1)", plain(stretch, 5)) };
-    format!("translate({} {}) rotate({}){scaled}", coord(from.x), coord(from.y), plain(angle, 3))
+    let scaled = if (stretch - 1.0).abs() < 1e-4 {
+        String::new()
+    } else {
+        format!(" scale({} 1)", plain(stretch, 5))
+    };
+    format!(
+        "translate({} {}) rotate({}){scaled}",
+        coord(from.x),
+        coord(from.y),
+        plain(angle, 3)
+    )
 }
 
 /// A route cut into the pieces a beam is drawn on.
@@ -144,16 +172,27 @@ pub fn legs_of(curve: &Curve) -> Vec<Leg> {
 /// The way a piece leaves its start, or arrives at its end.
 fn tangent_of(leg: &Leg, end: bool) -> Option<Point> {
     let ways = match leg.segment {
-        Segment::Cubic { first, second, to } if end => vec![direction_of(second, to), direction_of(first, to)],
-        Segment::Cubic { first, second, .. } => vec![direction_of(leg.from, first), direction_of(leg.from, second)],
+        Segment::Cubic { first, second, to } if end => {
+            vec![direction_of(second, to), direction_of(first, to)]
+        }
+        Segment::Cubic { first, second, .. } => vec![
+            direction_of(leg.from, first),
+            direction_of(leg.from, second),
+        ],
         Segment::Line { .. } => Vec::new(),
     };
-    ways.into_iter().flatten().next().or_else(|| direction_of(leg.from, leg.segment.to()))
+    ways.into_iter()
+        .flatten()
+        .next()
+        .or_else(|| direction_of(leg.from, leg.segment.to()))
 }
 
 /// One piece of a route as path data, run a hair past each end, or cut off exactly at its ends.
 pub fn leg_path(leg: &Leg, overlapping: bool) -> String {
-    let piece = path_of(&Curve { from: leg.from, segments: vec![leg.segment] });
+    let piece = path_of(&Curve {
+        from: leg.from,
+        segments: vec![leg.segment],
+    });
     if !overlapping {
         return piece;
     }

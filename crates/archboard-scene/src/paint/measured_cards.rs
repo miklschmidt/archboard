@@ -10,7 +10,9 @@ use crate::paint::design::{ARCHITECTURE_CARD_PADDING, BAND_RADIUS, CARD_THICKNES
 use crate::paint::far_card::{NearCard, paint_card_views, words_in};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, slab, slab_seat, slab_shadow};
-use crate::paint::standing::{PART_ATTRIBUTE, standing_palette, standing_pin, subject, warning_badge};
+use crate::paint::standing::{
+    PART_ATTRIBUTE, standing_palette, standing_pin, subject, warning_badge,
+};
 use crate::paint::styles::Styles;
 use crate::paint::tray::{header_of, tray};
 use crate::request::{NodeAppearance, Standing};
@@ -68,10 +70,19 @@ pub fn paint_measured_card(
 
 /// A containing frame below its children and all connections: a neutral well
 /// with a header slab standing on its floor.
-pub fn paint_measured_frame(placed: &Node, palette: &Palette, standing: Option<Standing>, appearance: &NodeAppearance) -> Markup {
+pub fn paint_measured_frame(
+    placed: &Node,
+    palette: &Palette,
+    standing: Option<Standing>,
+    appearance: &NodeAppearance,
+) -> Markup {
     let rect = placed.bounds;
     let styles = Styles::of(palette);
-    let look = tray_look(header_of(rect, placed.measured.header_height), palette, placed.depth);
+    let look = tray_look(
+        header_of(rect, placed.measured.header_height),
+        palette,
+        placed.depth,
+    );
     group(
         Role::Frame,
         subject(SubjectKind::Region, &placed.measured.node.id, standing),
@@ -97,7 +108,10 @@ pub fn paint_measured_header(
 ) -> Markup {
     let words = standing_palette(palette, standing);
     let header = header_of(placed.bounds, placed.measured.header_height);
-    let face = Rect { height: header.height - CARD_THICKNESS, ..header };
+    let face = Rect {
+        height: header.height - CARD_THICKNESS,
+        ..header
+    };
     let node = &placed.measured.node;
     group(
         Role::Header,

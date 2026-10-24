@@ -94,12 +94,18 @@ impl Attrs {
 
     /// The value of one attribute, if it is set.
     pub fn get(&self, name: &str) -> Option<&Value> {
-        self.0.iter().find(|(held, _)| *held == name).and_then(|(_, value)| value.as_ref())
+        self.0
+            .iter()
+            .find(|(held, _)| *held == name)
+            .and_then(|(_, value)| value.as_ref())
     }
 
     /// The attributes that are written, in order.
     pub fn finish(self) -> Vec<(&'static str, Value)> {
-        self.0.into_iter().filter_map(|(name, value)| value.map(|value| (name, value))).collect()
+        self.0
+            .into_iter()
+            .filter_map(|(name, value)| value.map(|value| (name, value)))
+            .collect()
     }
 }
 
@@ -113,28 +119,52 @@ macro_rules! attrs {
 
 /// A self-closing element.
 pub fn tag(name: &'static str, attrs: Attrs) -> Markup {
-    vec![Item::Element(Element { name, attrs: attrs.finish(), children: Vec::new(), empty: true })]
+    vec![Item::Element(Element {
+        name,
+        attrs: attrs.finish(),
+        children: Vec::new(),
+        empty: true,
+    })]
 }
 
 /// An element with children.
 pub fn wrap(name: &'static str, attrs: Attrs, children: Markup) -> Markup {
-    vec![Item::Element(Element { name, attrs: attrs.finish(), children, empty: false })]
+    vec![Item::Element(Element {
+        name,
+        attrs: attrs.finish(),
+        children,
+        empty: false,
+    })]
 }
 
 /// A group: its role, the subject it draws, its other attributes and its parts.
 pub fn group(role: Role, subject: Option<Subject>, attrs: Attrs, children: Markup) -> Markup {
-    vec![Item::Group(Group { role, subject, attrs: attrs.finish(), children })]
+    vec![Item::Group(Group {
+        role,
+        subject,
+        attrs: attrs.finish(),
+        children,
+    })]
 }
 
 /// A text element.
 pub fn text_node(attrs: Attrs, content: &str) -> Markup {
-    wrap("text", attrs, vec![Item::Text { text: content.to_owned() }])
+    wrap(
+        "text",
+        attrs,
+        vec![Item::Text {
+            text: content.to_owned(),
+        }],
+    )
 }
 
 /// Fragments joined with line breaks, the ones that hold nothing left out.
 pub fn lines(fragments: Vec<Markup>) -> Markup {
     let mut joined = Vec::new();
-    for fragment in fragments.into_iter().filter(|fragment| !fragment.is_empty()) {
+    for fragment in fragments
+        .into_iter()
+        .filter(|fragment| !fragment.is_empty())
+    {
         if !joined.is_empty() {
             joined.push(Item::Break);
         }
@@ -186,11 +216,21 @@ fn is_paint(name: &str) -> bool {
 
 /// A subject's attributes, as its group carries them first.
 fn subject_pairs(subject: &Subject) -> Vec<(&'static str, Value)> {
-    let mut pairs = vec![("data-semantic-kind", Value::Text(subject.kind.as_str().to_owned()))];
-    let id = if subject.kind == SubjectKind::GroupRegion { "data-group" } else { "data-semantic-id" };
+    let mut pairs = vec![(
+        "data-semantic-kind",
+        Value::Text(subject.kind.as_str().to_owned()),
+    )];
+    let id = if subject.kind == SubjectKind::GroupRegion {
+        "data-group"
+    } else {
+        "data-semantic-id"
+    };
     pairs.push((id, Value::Text(subject.id.clone())));
     if let Some(standing) = subject.standing {
-        pairs.push(("data-semantic-standing", Value::Text(standing.as_str().to_owned())));
+        pairs.push((
+            "data-semantic-standing",
+            Value::Text(standing.as_str().to_owned()),
+        ));
     }
     pairs
 }
@@ -230,7 +270,11 @@ fn write_item(item: &Item, out: &mut String, traffic: &dyn Fn(&TrafficMark, &mut
     match item {
         Item::Group(group) => {
             out.push_str("<g");
-            let mut pairs = group.subject.as_ref().map(subject_pairs).unwrap_or_default();
+            let mut pairs = group
+                .subject
+                .as_ref()
+                .map(subject_pairs)
+                .unwrap_or_default();
             pairs.extend(group.attrs.iter().cloned());
             write_attributes(&pairs, out);
             out.push('>');
@@ -304,19 +348,28 @@ mod tests {
             "rect",
             attrs! { "x": 1.5, "fill": "red", "rx": Option::<f64>::None, "stroke": "blue", "y": 2.0 },
         );
-        assert_eq!(markup_of(&markup), r#"<rect x="1.5" style="fill:red;stroke:blue" y="2"/>"#);
+        assert_eq!(
+            markup_of(&markup),
+            r#"<rect x="1.5" style="fill:red;stroke:blue" y="2"/>"#
+        );
     }
 
     #[test]
     fn keeps_the_place_of_an_attribute_set_again() {
         let attributes = attrs! { "a": 1.0, "b": 2.0 }.with(attrs! { "c": 3.0, "a": "x" });
-        assert_eq!(markup_of(&tag("p", attributes)), r#"<p a="x" b="2" c="3"/>"#);
+        assert_eq!(
+            markup_of(&tag("p", attributes)),
+            r#"<p a="x" b="2" c="3"/>"#
+        );
     }
 
     #[test]
     fn escapes_and_drops_what_xml_cannot_hold() {
         let markup = text_node(attrs! {}, "a<b & \"c\"\u{1}");
-        assert_eq!(markup_of(&markup), "<text>a&lt;b &amp; &quot;c&quot;</text>");
+        assert_eq!(
+            markup_of(&markup),
+            "<text>a&lt;b &amp; &quot;c&quot;</text>"
+        );
     }
 
     #[test]

@@ -7,7 +7,9 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { drawnTexts, labelPlates } from "#tests/runtime/support/drawn-text.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
+
+/** The face a label's chip is painted in. */
+const PILL = "light-dark(var(--slab-face), var(--popover))";
 
 test.each(LayoutEngineSchema.options)(
 	"stacked labels are set apart by more than the lines of one label (%s)",
@@ -44,7 +46,7 @@ test.each(LayoutEngineSchema.options)(
 			.split('data-semantic-id="e1"')
 			.find((chunk) => chunk.includes('data-semantic-part="label"'))!;
 		const words = group.slice(0, group.indexOf("</g>"));
-		expect(words.split(`style="fill:${PALETTE.pill}"`).length - 1).toBe(2);
+		expect(words.split(`style="fill:${PILL}"`).length - 1).toBe(2);
 		expect(words).not.toContain("<line");
 	},
 );

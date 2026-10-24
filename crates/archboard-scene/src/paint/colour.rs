@@ -36,7 +36,11 @@ pub const CHROMA_CAP: f64 = 0.12;
 impl ToneStep {
     /// A tone that counts the usual share of the ink's chroma.
     pub const fn new(lightness: f64, chroma: f64) -> Self {
-        ToneStep { lightness, chroma, cap: CHROMA_CAP }
+        ToneStep {
+            lightness,
+            chroma,
+            cap: CHROMA_CAP,
+        }
     }
 }
 
@@ -116,7 +120,11 @@ pub fn colour_id(colour: &str) -> String {
             spelt.push(character);
         } else {
             spelt.push('_');
-            spelt.push_str(&js::pad_start(&format!("{:x}", u32::from(character)), 2, '0'));
+            spelt.push_str(&js::pad_start(
+                &format!("{:x}", u32::from(character)),
+                2,
+                '0',
+            ));
         }
     }
     spelt
@@ -132,7 +140,10 @@ pub struct Share {
 impl Share {
     /// The same share on both grounds.
     pub const fn both(share: f64) -> Self {
-        Share { light: share, dark: share }
+        Share {
+            light: share,
+            dark: share,
+        }
     }
 }
 

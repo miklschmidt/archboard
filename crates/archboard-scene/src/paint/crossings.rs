@@ -34,10 +34,19 @@ pub fn pulse_breadth(line_width: f64) -> f64 {
 pub fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for bridge in bridges {
-        let Some(upper) = edges.iter().rev().find(|routed| routed.edge.id == bridge.edge_id) else { continue };
+        let Some(upper) = edges
+            .iter()
+            .rev()
+            .find(|routed| routed.edge.id == bridge.edge_id)
+        else {
+            continue;
+        };
         let width = stroke_width(upper.edge.emphasis);
-        let stroke =
-            if bridge.join == Some(true) { (mark_radius(width) + CUT_GAP) * 2.0 } else { width + BRIDGE_INK_GAP * 2.0 };
+        let stroke = if bridge.join == Some(true) {
+            (mark_radius(width) + CUT_GAP) * 2.0
+        } else {
+            width + BRIDGE_INK_GAP * 2.0
+        };
         let markup = tag(
             "path",
             attrs! {
@@ -50,7 +59,10 @@ pub fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout
             },
         );
         for edge_id in &bridge.under {
-            cutouts.push(Cutout { edge_id: edge_id.clone(), markup: markup.clone() });
+            cutouts.push(Cutout {
+                edge_id: edge_id.clone(),
+                markup: markup.clone(),
+            });
         }
     }
     cutouts
@@ -60,17 +72,30 @@ pub fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout
 fn past_end(piece: &Curve, end: Point, past: f64) -> Curve {
     let count = piece.segments.len();
     let last = piece.segments[count - 1];
-    let before = if count >= 2 { piece.segments[count - 2].to() } else { piece.from };
+    let before = if count >= 2 {
+        piece.segments[count - 2].to()
+    } else {
+        piece.from
+    };
     let to = last.to();
     let length = js::hypot(to.x - before.x, to.y - before.y);
-    if !matches!(last, Segment::Line { .. }) || length == 0.0 || js::hypot(to.x - end.x, to.y - end.y) > 0.5 {
+    if !matches!(last, Segment::Line { .. })
+        || length == 0.0
+        || js::hypot(to.x - end.x, to.y - end.y) > 0.5
+    {
         return piece.clone();
     }
     let scale = (length + past) / length;
-    let reached = Point { x: before.x + (to.x - before.x) * scale, y: before.y + (to.y - before.y) * scale };
+    let reached = Point {
+        x: before.x + (to.x - before.x) * scale,
+        y: before.y + (to.y - before.y) * scale,
+    };
     let mut segments = piece.segments[..count - 1].to_vec();
     segments.push(Segment::Line { to: reached });
-    Curve { from: piece.from, segments }
+    Curve {
+        from: piece.from,
+        segments,
+    }
 }
 
 /// Every stretch of a route's ink another route of its trunk draws, hidden.
@@ -119,8 +144,14 @@ pub fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
                 "fill": "black",
             },
         );
-        for routed in edges.iter().filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label)) {
-            cutouts.push(Cutout { edge_id: routed.edge.id.clone(), markup: markup.clone() });
+        for routed in edges
+            .iter()
+            .filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label))
+        {
+            cutouts.push(Cutout {
+                edge_id: routed.edge.id.clone(),
+                markup: markup.clone(),
+            });
         }
     }
     cutouts
@@ -152,7 +183,9 @@ pub fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
     let mut masks = HashMap::new();
     let mut definitions = Vec::new();
     for (edge_id, paths) in grouped {
-        let Some(routed) = edges.iter().rev().find(|routed| routed.edge.id == edge_id) else { continue };
+        let Some(routed) = edges.iter().rev().find(|routed| routed.edge.id == edge_id) else {
+            continue;
+        };
         let rect = inflate(curve_bounds(&routed.curve), 18.0);
         let bounds = attrs! {
             "x": coord(rect.x),
@@ -173,7 +206,11 @@ pub fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
         ));
     }
     Masks {
-        definitions: if definitions.is_empty() { Markup::new() } else { wrap("defs", attrs! {}, concat(definitions)) },
+        definitions: if definitions.is_empty() {
+            Markup::new()
+        } else {
+            wrap("defs", attrs! {}, concat(definitions))
+        },
         masks,
     }
 }

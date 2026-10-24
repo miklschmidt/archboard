@@ -1,5 +1,6 @@
-// The faces a diagram is drawn in, and the `@font-face` rules that put them
-// in front of a browser.
+// The faces a diagram is drawn in. The renderer core writes the `@font-face`
+// rules that put them in front of a browser (ADR 0057); this host measures
+// text in them, and hands the core their bytes for a document that embeds them.
 //
 // The renderer owns its own type. It does not borrow the page's: the
 // application stylesheet registers `Archboard Onest` from the variable file
@@ -12,32 +13,25 @@
 //
 // Two weights, and only two. 400 and 500 ship as real files and are both
 // measured. 600 and 700 do not exist here: asking for one would make a browser
-// synthesise a face wider than anything that was measured. `DiagramWeight`
-// makes that unsayable in this module, and `font-synthesis: none` in the
-// document's stylesheet makes it harmless if it were ever said anyway.
+// synthesise a face wider than anything that was measured. The weight of a
+// `DiagramFont` makes that unsayable, and `font-synthesis: none` in the document's
+// stylesheet makes it harmless if it were ever said anyway.
 //
 // The faces are the operator shell's own type — Onest and DM Mono, both under
 // the SIL Open Font License, whose texts sit beside the files in
 // `packages/renderer/assets/fonts/OFL-*.txt`.
 
-import type { FontSource } from "@archboard/board/render-reply";
+import type * as Core from "#shared/protocol/generated/core/types.ts";
 import { rendererHost } from "#shared/rules/render/host.ts";
 
 /** Which of the two families a piece of text is set in. */
-type DiagramFamily = "sans" | "mono";
+type DiagramFamily = Core.DiagramFamily;
 
-/** The two weights that exist as files. There is no third. */
-type DiagramWeight = 400 | 500;
-
-/** One face: a family and a weight, which together name exactly one file. */
-interface DiagramFont {
-	/** Which family. */
-	readonly family: DiagramFamily;
-	/** Which weight. */
-	readonly weight: DiagramWeight;
-}
-
-/** Where the faces come from when the document is opened. */
+/**
+ * One face: a family and a weight, which together name exactly one file. The
+ * two weights, 400 and 500, are the only ones that exist as files.
+ */
+type DiagramFont = Core.DiagramFont;
 
 /** The names the document registers. Deliberately not the shell's own names. */
 const SANS_CSS_FAMILY = "Archboard Diagram Sans";
@@ -97,22 +91,13 @@ const FACES: readonly DiagramFace[] = [
 ];
 
 /**
- * The family and weight attributes a piece of text carries.
- *
- * Measurement and emission come from the same value, so a string drawn at 500
- * cannot have been measured at 400: there is one `DiagramFont` per role and it
- * is passed to both.
+ * The family stack a piece of text is set in: the face the document names for
+ * it, and the face it is measured in.
  * @param font The family and weight.
- * @returns The presentation attributes to write on the element.
+ * @returns The CSS family stack.
  */
-function fontAttributes(font: DiagramFont): {
-	readonly "font-family": string;
-	readonly "font-weight": number;
-} {
-	return {
-		"font-family": font.family === "mono" ? MONO_STACK : SANS_STACK,
-		"font-weight": font.weight,
-	};
+function fontStack(font: DiagramFont): string {
+	return font.family === "mono" ? MONO_STACK : SANS_STACK;
 }
 
 const encoded = new Map<string, string>();
@@ -133,38 +118,6 @@ function base64Of(file: string): string {
 }
 
 /**
- * Where one face's bytes come from.
- *
- * A linked document is what a pane shows: the server serves the same files, so
- * the browser fetches four small files and the SVG stays a few kilobytes. An
- * embedded one is what somebody keeps: it carries its faces with it and draws
- * the same picture on a machine that has never heard of Archboard, at the cost
- * of about half a megabyte.
- * @param face The face.
- * @param source Which of the two modes.
- * @returns The `src` descriptor's value.
- */
-function faceSource(face: DiagramFace, source: FontSource): string {
-	if (source === "embedded") {
-		return `url("data:font/ttf;base64,${base64Of(face.file)}") format("truetype")`;
-	}
-	return `url("${FONT_URL_PREFIX}/${face.file}") format("truetype")`;
-}
-
-/**
- * The `@font-face` rules the document registers its own type with.
- * @param source Where the faces come from.
- * @returns The rules, as one CSS string.
- */
-function faceRules(source: FontSource): string {
-	return FACES.map(
-		(face) =>
-			`@font-face{font-family:"${face.cssFamily}";font-style:normal;` +
-			`font-weight:${face.font.weight};src:${faceSource(face, source)}}`,
-	).join("");
-}
-
-/**
  * A card's name — the one thing on a card a reader is scanning for — and a
  * container's or a flow's, on its header slab.
  */
@@ -173,20 +126,15 @@ const CARD_TITLE_FONT: DiagramFont = { family: "sans", weight: 500 };
 const CARD_NOTE_FONT: DiagramFont = { family: "sans", weight: 400 };
 /** What a connection carries: small, technical, and on a plate. */
 const PILL_FONT: DiagramFont = { family: "sans", weight: 500 };
-/** The two kind glyphs that are drawn as characters rather than as shapes. */
-const GLYPH_FONT: DiagramFont = { family: "mono", weight: 400 };
 
 export {
 	type DiagramFamily,
-	type DiagramWeight,
 	type DiagramFont,
 	FACES,
 	FONT_URL_PREFIX,
-	SANS_STACK,
-	fontAttributes,
-	faceRules,
+	fontStack,
+	base64Of,
 	CARD_TITLE_FONT,
 	CARD_NOTE_FONT,
 	PILL_FONT,
-	GLYPH_FONT,
 };

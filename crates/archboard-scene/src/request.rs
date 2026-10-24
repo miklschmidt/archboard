@@ -82,7 +82,10 @@ impl PaletteColor {
 
     /// The colour a name names, if it is one of the palette's.
     pub fn named(name: &str) -> Option<PaletteColor> {
-        ALL_COLORS.iter().copied().find(|color| color.as_str() == name)
+        ALL_COLORS
+            .iter()
+            .copied()
+            .find(|color| color.as_str() == name)
     }
 }
 
@@ -211,7 +214,17 @@ pub struct LineAppearance {
 pub enum FlowchartShape {
     Decision,
     Loop,
-    Terminal,
+    /// Where a flow starts.
+    Start,
+    /// Where a flow ends.
+    End,
+}
+
+impl FlowchartShape {
+    /// Whether it is where a flow starts or ends, which no reader picks.
+    pub fn is_terminal(self) -> bool {
+        matches!(self, FlowchartShape::Start | FlowchartShape::End)
+    }
 }
 
 /// One card a flowchart draws as a shape, and its wrapped words.
@@ -464,7 +477,7 @@ pub struct SequencePicture {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(tag = "grammar", rename_all = "lowercase")]
 pub enum Picture {
-    Architecture(ArchitecturePicture),
+    Architecture(Box<ArchitecturePicture>),
     Sequence(SequencePicture),
 }
 

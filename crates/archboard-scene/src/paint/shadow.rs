@@ -52,7 +52,10 @@ pub fn polygon_shadow(polygon: &[Point], radius: f64, reach: f64, palette: &Pale
             let share = 1.0 - (1.0 - strength) / (1.0 - next);
             let distance = (band as f64 + 1.0) * step;
             let grown = inset(polygon, -distance * SPREAD_GROW);
-            let away = Point { x: distance * SPREAD_X, y: distance * SPREAD_Y };
+            let away = Point {
+                x: distance * SPREAD_X,
+                y: distance * SPREAD_Y,
+            };
             tag(
                 "path",
                 attrs! {
@@ -63,7 +66,12 @@ pub fn polygon_shadow(polygon: &[Point], radius: f64, reach: f64, palette: &Pale
         })
         .collect();
     layers.reverse();
-    group(Role::Marks, None, attrs! { "pointer-events": "none" }, lines(layers))
+    group(
+        Role::Marks,
+        None,
+        attrs! { "pointer-events": "none" },
+        lines(layers),
+    )
 }
 
 /// Nine adjoining patches of one rounded shadow, with matching values at every seam.
@@ -92,7 +100,12 @@ pub fn smooth_shadow(rect: Rect, radius: f64, reach: f64) -> Markup {
             ));
         }
     }
-    group(Role::Marks, None, attrs! { "pointer-events": "none" }, lines(patches))
+    group(
+        Role::Marks,
+        None,
+        attrs! { "pointer-events": "none" },
+        lines(patches),
+    )
 }
 
 /// Shared side, corner and centre paints for all shadow sizes.
@@ -116,7 +129,12 @@ pub fn shadow_definitions(palette: &Palette) -> Markup {
                 .collect(),
         )
     };
-    let corners = [("00", 1.0, 1.0), ("02", 0.0, 1.0), ("20", 1.0, 0.0), ("22", 0.0, 0.0)];
+    let corners = [
+        ("00", 1.0, 1.0),
+        ("02", 0.0, 1.0),
+        ("20", 1.0, 0.0),
+        ("22", 0.0, 0.0),
+    ];
     let sides = [
         ("01", 0.0, 1.0, 0.0, 0.0),
         ("10", 1.0, 0.0, 0.0, 0.0),
