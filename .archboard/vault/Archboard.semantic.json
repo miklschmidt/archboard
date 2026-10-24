@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 78,
+	"version": 79,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T14:32:09.344Z",
+	"updatedAt": "2026-10-24T14:32:38.548Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -9256,7 +9256,7 @@
 						"order": 2000,
 						"name": "Archboard server",
 						"kind": "service",
-						"responsibility": "Owns every board, draws every view, and answers both applications; each archboard checkout runs its own, on its own port",
+						"responsibility": "Serves the Archboard browser and CLI. Each Archboard checkout runs its own server on its own port.",
 						"description": "One process for each archboard checkout, running that checkout's source: the main checkout's listens on port 3000, a linked worktree's on a port from 10000 to 19999 that its path decides. Board persistence, the renderer, the pane sockets and the agent workbench all live in it; the Codex app-server is its private child.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -9300,7 +9300,7 @@
 						"order": 5000,
 						"name": "Codex app-server",
 						"kind": "external",
-						"responsibility": "Runs each browser tab's agent threads, as one private child of the Archboard server",
+						"responsibility": "Runs each host's tab sessions as one private child over stdio.",
 						"description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. The child's environment names the URL of the server that started it and no vault, so that CLI talks to that server and never starts another. A thread finds each board's vault in its board context and names it with -C. Archboard's side of it is the agent workbench inside the Archboard server.",
 						"groups": [
 							"agent"
@@ -9348,7 +9348,7 @@
 						"order": 9000,
 						"name": "Codex home",
 						"kind": "datastore",
-						"responsibility": "Codex's sign-in, config and threads, shared by every Archboard server on this machine",
+						"responsibility": "Each host supplies private state. Archboard servers share the Archboard home, and the example uses its own state root.",
 						"description": "An archboard-only CODEX_HOME under the state directory, readable by nobody else. One sign-in serves every server, since Codex takes several processes on one home; what a server keeps about its own child, the owner lock and the epoch ledger, sits under its port. The server fills in the config it needs (auto-review approvals, a sandbox with network access) and keeps what Codex or the user set.",
 						"groups": [
 							"agent"
@@ -9395,7 +9395,7 @@
 						"order": 13000,
 						"name": "Workspace packages",
 						"kind": "package",
-						"responsibility": "The sixteen libraries the three apps are built from, each reached only through its exports",
+						"responsibility": "Reusable libraries that the applications reach only through their package exports.",
 						"description": "A package owns one behavior and names its public files in package.json exports; nothing imports an app. Each package sits in a layer: the longest chain of packages it imports. A package imports only layers below its own, and packages of one layer never import each other (tests/system/repository-policy/package-graph.test.ts holds both rules). The apps share layer 8 above them all.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
