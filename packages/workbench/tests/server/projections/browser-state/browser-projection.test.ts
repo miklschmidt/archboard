@@ -4,7 +4,7 @@ import { CALLBACK_MAX_UTF8_BYTES } from "#runtime/rules/coordinator-callbacks/en
 import { type CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
-import { SEMANTIC_CONTEXT_LIMITS } from "@archboard/codex-app-server/semantic-context";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/api/semantic-context.ts";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,

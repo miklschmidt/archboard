@@ -9,9 +9,9 @@
 // long to fit (TASK-179).
 
 import { describe, expect, test } from "bun:test";
-import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
+import { createSemanticContextPublisher } from "#runtime/api/semantic-context.ts";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
-import { type SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
+import { type SemanticContextInput } from "#runtime/api/semantic-context.ts";
 
 /** One disagreement, as the reconciliation writes them. */
 const ISSUE = {

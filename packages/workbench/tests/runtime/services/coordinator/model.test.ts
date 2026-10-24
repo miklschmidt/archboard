@@ -1,3 +1,4 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, test } from "bun:test";
 
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
@@ -5,7 +6,6 @@ import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
-import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
 import {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,
@@ -132,7 +132,11 @@ describe("coordinator model and literal profile", () => {
 	});
 
 	test("omits serviceTier when priority is not advertised", () => {
-		const params = createCoordinatorThreadStartParams(WORKING_DIRECTORY, null);
+		const params = createCoordinatorThreadStartParams(
+			WORKING_DIRECTORY,
+			null,
+			ARCHBOARD_INSTRUCTIONS.coordinator,
+		);
 
 		expect(JSON.stringify(params)).toBe(
 			JSON.stringify({
@@ -143,7 +147,7 @@ describe("coordinator model and literal profile", () => {
 				// Project docs are off: AGENTS.md is for the workhorse, never the coordinator.
 				config: { features: { realtime_conversation: true }, project_doc_max_bytes: 0 },
 				serviceName: "archboard",
-				developerInstructions: COORDINATOR_DEVELOPER_INSTRUCTIONS,
+				developerInstructions: ARCHBOARD_INSTRUCTIONS.coordinator.instructions.text,
 				ephemeral: false,
 				historyMode: "paginated",
 				sessionStartSource: "startup",
@@ -172,7 +176,11 @@ describe("coordinator model and literal profile", () => {
 	});
 
 	test("includes only the advertised priority tier and sends the exact one-update body", () => {
-		const priority = createCoordinatorThreadStartParams(WORKING_DIRECTORY, "priority");
+		const priority = createCoordinatorThreadStartParams(
+			WORKING_DIRECTORY,
+			"priority",
+			ARCHBOARD_INSTRUCTIONS.coordinator,
+		);
 		expect(priority.serviceTier).toBe("priority");
 		expect(Object.keys(priority)).toEqual([
 			"model",

@@ -1,3 +1,4 @@
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { expect, test } from "bun:test";
 
 import {
@@ -62,6 +63,7 @@ function harness(): Harness {
 	const timelineRequests: SessionParams<"thread/timeline/list">[] = [];
 	const state: Pick<Harness, "timelinePages"> = { timelinePages: [] };
 	const adapter = createCodexRealtimeAdapter({
+		voice: createArchboardVoicePolicy(),
 		identity,
 		currentBinding: () => ({
 			child: identity.validator.childId,
@@ -69,7 +71,7 @@ function harness(): Harness {
 			linkedThreadId,
 			coordinatorThreadId,
 		}),
-		boardCatalogue: {
+		coordinatorContext: {
 			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 			subscribe: () => () => {},
 		},

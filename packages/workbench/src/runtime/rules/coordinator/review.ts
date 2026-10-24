@@ -1,26 +1,11 @@
+import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import { createHash } from "node:crypto";
 
-import {
-	COORDINATOR_TOOL_MANIFEST_DIGESTS,
-	verifyCoordinatorManifestIntegrity,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
-import {
-	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
-	verifyAuthoredInstructionIntegrity,
-} from "#runtime/rules/instructions/authored.ts";
+import { COORDINATOR_TOOL_MANIFEST_DIGESTS } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type {
 	CoordinatorReviewHashes,
 	CoordinatorSettings,
 } from "#runtime/protocol/coordinator/contract.ts";
-
-const CATALOGUE_HASH_INPUT = JSON.stringify({
-	workhorse: COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse,
-	voice: COORDINATOR_TOOL_MANIFEST_DIGESTS.voice,
-});
-
-const COORDINATOR_CATALOGUE_HASH = createHash("sha256")
-	.update(CATALOGUE_HASH_INPUT, "utf8")
-	.digest("hex");
 
 /**
  * The digest of one coordinator's settings, taken over their canonical form so the same settings
@@ -33,27 +18,19 @@ function hashCoordinatorSettings(settings: CoordinatorSettings): string {
 }
 
 /**
- * The hashes that say this coordinator is the reviewed one: its developer instructions, its two
- * tool manifests, the catalogue they form, and its settings. The instruction and manifest digests
- * are re-derived here and compared against the reviewed constants, so a drifted artifact refuses
- * to start a coordinator rather than quietly changing what it is.
- * @param settingsHash - The digest of the coordinator's settings.
- * @returns The frozen review hashes.
- * @throws {Error} When any reviewed digest has drifted.
+ * Read the exact immutable profile hashes alongside the coordinator settings hash.
+ * The constructor captures the profile and proves both byte digests before any start.
+ * @param settingsHash The canonical digest of effective settings.
+ * @param profile The captured host profile and its built-in tools.
+ * @returns The exact instruction, tool, and settings evidence retained for reuse.
  */
-function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashes {
-	const instruction = verifyAuthoredInstructionIntegrity();
-	const manifests = verifyCoordinatorManifestIntegrity();
-	if (
-		instruction.coordinatorSha256 !== COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 ||
-		manifests.workhorseSha256 !== COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse ||
-		manifests.voiceSha256 !== COORDINATOR_TOOL_MANIFEST_DIGESTS.voice
-	) {
-		throw new Error("reviewed coordinator instruction or tool-manifest hashes drifted");
-	}
+function reviewedCoordinatorHashes(
+	settingsHash: string,
+	profile: WorkbenchThreadProfile,
+): CoordinatorReviewHashes {
 	return Object.freeze({
-		instructionHash: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
-		catalogueHash: COORDINATOR_CATALOGUE_HASH,
+		instructionHash: profile.instructions.sha256,
+		catalogueHash: profile.manifestHash,
 		workhorseCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse,
 		voiceCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.voice,
 		settingsHash,
@@ -96,4 +73,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export { COORDINATOR_CATALOGUE_HASH, hashCoordinatorSettings, reviewedCoordinatorHashes };
+export { hashCoordinatorSettings, reviewedCoordinatorHashes };

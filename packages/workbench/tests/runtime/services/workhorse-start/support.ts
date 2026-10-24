@@ -1,3 +1,4 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -170,6 +171,7 @@ function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture 
 		identity: authorities.identity,
 		operation: authorities.operation,
 		checkoutRoot: CHECKOUT_ROOT,
+		profile: ARCHBOARD_INSTRUCTIONS.workhorse,
 	};
 	return {
 		authorities,

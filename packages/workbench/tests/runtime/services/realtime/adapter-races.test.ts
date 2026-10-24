@@ -1,3 +1,4 @@
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { afterEach, describe, expect, test } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
@@ -92,9 +93,10 @@ function raceHarness(): RaceHarness {
 	};
 	const control = { startFailure: null as Error | null };
 	const adapter = createCodexRealtimeAdapter({
+		voice: createArchboardVoicePolicy(),
 		identity,
 		currentBinding: () => binding,
-		boardCatalogue: {
+		coordinatorContext: {
 			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 			subscribe: () => () => {},
 		},

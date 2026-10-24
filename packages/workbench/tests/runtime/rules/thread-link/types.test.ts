@@ -14,14 +14,20 @@ declare const epoch: ThreadLinkEpochAuthority;
 declare const publicBinding: ReturnType<typeof createCodexThreadLinkBinding>;
 
 function observationOnlyConstruction(): void {
-	const downstreamOptions = { session, epoch } satisfies CodexThreadLinkOptions;
+	const downstreamOptions = {
+		session,
+		epoch,
+		threadSource: "archboard",
+	} satisfies CodexThreadLinkOptions;
 	createCodexThreadLink(downstreamOptions);
 
 	const observationOnlyOptions = {
+		threadSource: "archboard",
 		session,
 		currentEpoch: (): null => null,
 	} satisfies CodexThreadLinkClassifierOptions;
 	const observationWithAuthorityOptions = {
+		threadSource: "archboard",
 		session,
 		epoch,
 	} satisfies CodexThreadLinkClassifierOptions;
@@ -31,15 +37,20 @@ function observationOnlyConstruction(): void {
 
 function rejectedConstruction(): void {
 	// @ts-expect-error A bind-capable port must require its live epoch authority.
-	createCodexThreadLink({ session });
+	createCodexThreadLink({ threadSource: "archboard", session });
 	// @ts-expect-error A current-epoch callback cannot replace the durable authority for a port.
-	createCodexThreadLink({ session, currentEpoch: (): null => null });
+	createCodexThreadLink({ threadSource: "archboard", session, currentEpoch: (): null => null });
 	const snapshotOnly: Pick<ThreadLinkEpochAuthority, "snapshot"> = epoch;
-	const staticSnapshotOptions = { session, epoch: snapshotOnly };
+	const staticSnapshotOptions = { session, epoch: snapshotOnly, threadSource: "archboard" };
 	// @ts-expect-error A static snapshot is not a live epoch authority.
 	createCodexThreadLink(staticSnapshotOptions);
-	// @ts-expect-error The public port owns its binding; callers cannot inject a store.
-	createCodexThreadLink({ session, epoch, binding: createCodexThreadLinkBinding() });
+	createCodexThreadLink({
+		threadSource: "archboard",
+		session,
+		epoch,
+		// @ts-expect-error The public port owns its binding; callers cannot inject a store.
+		binding: createCodexThreadLinkBinding(),
+	});
 	// @ts-expect-error The standalone binding factory has no authority-taking option.
 	createCodexThreadLinkBinding({ epoch });
 	type PublicBindingHasNoBind = "bind" extends keyof typeof publicBinding ? never : true;

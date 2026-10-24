@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SemanticContextInput } from "@archboard/codex-app-server/semantic-context";
+import type { SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
 import {
 	close,
 	harness,

@@ -45,6 +45,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			});
 			const result = await classifyCodexThreadLink(
 				{
+					threadSource: "archboard",
 					session: onePage(row, [row.id, row.id]),
 					currentEpoch: currentEpoch(replacement),
 					epoch: fixture.store,
@@ -65,6 +66,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			});
 			const result = await classifyCodexThreadLink(
 				{
+					threadSource: "archboard",
 					session: onePage(row, [row.id, row.id]),
 					currentEpoch: {
 						childId: fixture.authority.validator.childId,
@@ -92,7 +94,11 @@ describe("codex thread-link authored refusal precedence", () => {
 					canAcceptDirectInput: false,
 				});
 				const result = await classifyCodexThreadLink(
-					{ session: onePage(row, [row.id, row.id]), epoch: fixture.store },
+					{
+						threadSource: "archboard",
+						session: onePage(row, [row.id, row.id]),
+						epoch: fixture.store,
+					},
 					fixture.target,
 				);
 				expect(result.link.reason).toBe("thread_start_outcome_unknown");
@@ -108,7 +114,11 @@ describe("codex thread-link authored refusal precedence", () => {
 				canAcceptDirectInput: false,
 			});
 			const result = await classifyCodexThreadLink(
-				{ session: onePage(row, [row.id, row.id]), epoch: fixture.store },
+				{
+					threadSource: "archboard",
+					session: onePage(row, [row.id, row.id]),
+					epoch: fixture.store,
+				},
 				{ threadId: row.id, childId: fixture.target.childId, epoch: fixture.target.epoch },
 			);
 			expect(result.link.reason).toBe("unknown_provenance");
@@ -162,6 +172,7 @@ describe("codex thread-link authored refusal precedence", () => {
 							: [targetId];
 				const result = await classifyCodexThreadLink(
 					{
+						threadSource: "archboard",
 						session: session(
 							new Map([[null, threadPage(persisted)]]),
 							new Map([[null, loadedPage(loaded)]]),

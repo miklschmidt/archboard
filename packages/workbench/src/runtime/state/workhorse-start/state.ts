@@ -5,7 +5,7 @@ import type {
 	ThreadId,
 } from "@archboard/codex-app-server/identity";
 import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contract.ts";
-import { cloneAndFreeze } from "#runtime/rules/workhorse-start/immutability.ts";
+import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import type {
 	WorkhorseCleanupFacts,
 	WorkhorseSettlementOutcome,

@@ -16,7 +16,7 @@ import {
 	createServerDynamicLifecycleOwner,
 	type ServerDynamicLifecycleOwner,
 } from "#server/services/generation/operation-lifecycle.ts";
-import type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 import { parseWorkhorseLinkKey, type TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import {
 	closedTransport,
@@ -26,7 +26,7 @@ import {
 
 /** What building one generation's dynamic owners needs from around it. */
 interface DynamicOwnerContext {
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
 	readonly input: CodexWorkbenchGenerationInput;
 	readonly owners: GenerationOwners;

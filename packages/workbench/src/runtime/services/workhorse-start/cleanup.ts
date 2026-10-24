@@ -10,8 +10,6 @@ import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contr
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,
-	WORKHORSE_INSTRUCTION_HASH,
-	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_THREAD_SOURCE,
 } from "#runtime/rules/workhorse-start/model.ts";
 import type {
@@ -152,8 +150,8 @@ function stageCleanup(context: CleanupContext): StagedCleanup {
 			kind: WORKHORSE_CLEANUP_OPERATION_KIND,
 			rpc: WORKHORSE_CLEANUP_RPC,
 			workspaceRoot: options.checkoutRoot,
-			instructionHash: WORKHORSE_INSTRUCTION_HASH,
-			manifestHash: WORKHORSE_MANIFEST_HASH,
+			instructionHash: options.profile.instructions.sha256,
+			manifestHash: options.profile.manifestHash,
 			expected: epochSnapshot.cas,
 		});
 		assertTransaction(
@@ -294,6 +292,7 @@ function settleCommittedDelete(
 		staged.operationId,
 		started.threadId,
 		options.checkoutRoot,
+		options.profile,
 	);
 	if (!canonical) {
 		return inspectAfterBindFailure(

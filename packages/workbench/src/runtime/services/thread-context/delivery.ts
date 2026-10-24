@@ -1,9 +1,9 @@
 import { CodexSessionMutationError, type SessionParams } from "@archboard/codex-app-server/session";
 import {
-	createThreadInjectItemsParams,
+	createWorkbenchThreadInjectItemsParams,
 	type ThreadInjectItemsParams,
-} from "#runtime/rules/instructions/bodies.ts";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/rules/host/bodies.ts";
+import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
@@ -86,7 +86,7 @@ function stepFailure<Value>(reason: Reason): Step<Value> {
  * @returns The frozen outcome.
  */
 function outcome(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 	state: CodexThreadContextDeliveryState,
 	reason: Reason | null,
@@ -117,7 +117,7 @@ function outcome(
  * @returns The frozen `not_delivered` outcome.
  */
 function refused(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 	reason: Reason,
 	payload: ThreadInjectItemsParams | null = null,
@@ -175,7 +175,7 @@ function targetAuthorityReason(options: Options): Reason | null {
  * @returns The refusal reason, or null when delivery may continue.
  */
 function preflightReason(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 	lastSequence: number,
 ): Reason | null {
@@ -217,15 +217,23 @@ function readInitialBinding(options: Options): Step<ThreadLinkBindingSnapshot> {
  * @returns The body, or `invalid_context`.
  */
 function buildPayload(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 ): Step<ThreadInjectItemsParams> {
 	try {
 		const context = options.contextForEvent(event);
-		if (!contextMatchesEvent(event, context, options.target)) {
+		if (
+			!contextMatchesEvent(event, context, options.target) ||
+			(options.matchesHostContext !== undefined && !options.matchesHostContext(event, context))
+		) {
 			return stepFailure("invalid_context");
 		}
-		return stepValue(createThreadInjectItemsParams({ threadId: options.target.threadId, context }));
+		return stepValue(
+			createWorkbenchThreadInjectItemsParams(
+				{ threadId: options.target.threadId, context },
+				options.contextCodec,
+			),
+		);
 	} catch {
 		return stepFailure("invalid_context");
 	}
@@ -333,7 +341,7 @@ function settleAfterAttempt(state: DeliveryState, options: Options): Outcome {
  * @returns The final outcome.
  */
 async function deliverPrepared(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 	prepared: PreparedDelivery,
 	highestReservedSequence: () => number,
@@ -376,7 +384,7 @@ async function deliverPrepared(
  * @returns The final outcome.
  */
 async function deliverOne(
-	event: SettledSemanticChangeEvent,
+	event: WorkbenchContextEvent,
 	options: Options,
 	lastSequence: number,
 	highestReservedSequence: () => number,
@@ -420,7 +428,7 @@ function createDelivery(options: Options, subscribe: boolean): CodexThreadContex
 	 * @param event - The settled semantic change.
 	 * @returns The watermark before this event was reserved.
 	 */
-	const reserveSequence = (event: SettledSemanticChangeEvent): number => {
+	const reserveSequence = (event: WorkbenchContextEvent): number => {
 		const previousSequence = highestReservedSequence;
 		const sequence = event.cursor?.sequence ?? -1;
 		if (event.feedId === options.feedId && sequence > highestReservedSequence) {
@@ -436,7 +444,7 @@ function createDelivery(options: Options, subscribe: boolean): CodexThreadContex
 	 * @param previousSequence - The watermark before this event was reserved.
 	 * @returns The outcome promise.
 	 */
-	const start = (event: SettledSemanticChangeEvent, previousSequence: number): Promise<Outcome> =>
+	const start = (event: WorkbenchContextEvent, previousSequence: number): Promise<Outcome> =>
 		(disposed
 			? Promise.resolve(refused(event, options, "disposed"))
 			: deliverOne(event, options, previousSequence, () => highestReservedSequence)
@@ -448,7 +456,7 @@ function createDelivery(options: Options, subscribe: boolean): CodexThreadContex
 	 * @param event - The settled semantic change.
 	 * @returns The outcome promise shared by every caller for this identity.
 	 */
-	const deliver = (event: SettledSemanticChangeEvent): Promise<Outcome> => {
+	const deliver = (event: WorkbenchContextEvent): Promise<Outcome> => {
 		const key = eventKey(eventId(event));
 		const existing = pending.get(key);
 		if (existing !== undefined) {

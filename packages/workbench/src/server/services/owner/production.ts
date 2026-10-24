@@ -1,3 +1,4 @@
+import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
@@ -12,10 +13,7 @@ import type { InstallProductionCodexWorkbenchOptions } from "#server/services/ge
 import { createProductionBindings } from "#server/services/generation/bindings.ts";
 import { createGenerationOwnerStore } from "#server/services/generation/owners.ts";
 import { createProductionHooks } from "#server/services/generation/hooks.ts";
-import type {
-	CodexWorkbenchServer,
-	CodexWorkbenchStorage,
-} from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 
 /**
  * Make the coordinators' directory, holding the archboard skill the server ships as
@@ -81,7 +79,7 @@ function createWorkbenchStorage(sourceRoot: string): CodexWorkbenchStorage {
  * @returns The installation options.
  */
 export function createServerCodexWorkbenchInstallation(
-	server: CodexWorkbenchServer,
+	server: ArchboardWorkbenchServer,
 ): InstallProductionCodexWorkbenchOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
@@ -123,4 +121,4 @@ export function createServerCodexWorkbenchInstallation(
 	};
 }
 
-export type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
+export type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";

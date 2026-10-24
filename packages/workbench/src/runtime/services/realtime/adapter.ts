@@ -1,4 +1,4 @@
-import { watchCatalogueUpdates } from "#runtime/rules/realtime/catalogue-updates.ts";
+import { watchContextUpdates } from "#runtime/rules/realtime/context-updates.ts";
 import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#shared/rules/realtime-state.ts";
 import {
 	type AnswerSdp,
@@ -29,8 +29,7 @@ import {
 import { reduceRealtimeNotification } from "#runtime/services/realtime/notifications.ts";
 import * as phase from "#runtime/rules/realtime/phase.ts";
 import { exactNotification, orderedRecords } from "#runtime/services/realtime/records.ts";
-import type { RealtimePresentation } from "#runtime/rules/realtime/presentation-mode.ts";
-import { watchPresentationChanges } from "#runtime/rules/realtime/presentation-updates.ts";
+import { watchVoiceInputs } from "#runtime/rules/realtime/voice-inputs.ts";
 import { recoverRealtimeSession } from "#runtime/services/realtime/recovery.ts";
 import type { RealtimeSessionOps } from "#runtime/services/realtime/session-ops.ts";
 import {
@@ -120,7 +119,7 @@ export function createCodexRealtimeAdapter(
 	const retire = (session: ActiveRealtimeSession): void => {
 		retainedTranscript = orderedRecords(session);
 		if (active === session) {
-			session.stopCatalogueUpdates?.();
+			session.stopContextInputs?.();
 			active = null;
 		}
 	};
@@ -130,7 +129,7 @@ export function createCodexRealtimeAdapter(
 	 * @param session - The session to close.
 	 */
 	const finalize = (session: ActiveRealtimeSession): void => {
-		session.stopCatalogueUpdates?.();
+		session.stopContextInputs?.();
 		states(session, phase.closingStates(session.state));
 		if (!session.answerSettled) {
 			session.answerSettled = true;
@@ -207,7 +206,7 @@ export function createCodexRealtimeAdapter(
 	 * @param session The newly active session.
 	 * @returns Whether the watches were installed.
 	 */
-	const installCatalogueUpdates = (session: ActiveRealtimeSession): boolean => {
+	const installContextInputs = (session: ActiveRealtimeSession): boolean => {
 		/**
 		 * Whether this session still owns its binding.
 		 * @returns True while delivery is allowed.
@@ -221,10 +220,10 @@ export function createCodexRealtimeAdapter(
 			emitDiagnostic(session, "coordinator", message);
 		};
 		try {
-			const stopCatalogue = watchCatalogueUpdates(options, session, isCurrent, onError);
-			const stopPresentation = watchPresentationChanges(options, session, isCurrent, onError);
+			const stopCatalogue = watchContextUpdates(options, session, isCurrent, onError);
+			const stopPresentation = watchVoiceInputs(options, session, isCurrent, onError);
 			/** Stop both watches. */
-			session.stopCatalogueUpdates = (): void => {
+			session.stopContextInputs = (): void => {
 				stopCatalogue();
 				stopPresentation();
 			};
@@ -242,10 +241,7 @@ export function createCodexRealtimeAdapter(
 	 * @param presentation - The walkthrough the session is started to present, or null.
 	 * @returns The answer SDP once Codex has started the session.
 	 */
-	const openSession = (
-		offer: CreateOfferSdp,
-		presentation: RealtimePresentation | null,
-	): Promise<AnswerSdp> => {
+	const openSession = (offer: CreateOfferSdp, presentation: unknown): Promise<AnswerSdp> => {
 		if (disposed) {
 			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
 		}
@@ -283,10 +279,10 @@ export function createCodexRealtimeAdapter(
 			answerSdp: null,
 			answerSettled: false,
 			nextLiveOrder: 1_000_000_000,
-			stopCatalogueUpdates: null,
+			stopContextInputs: null,
 		};
 		active = session;
-		if (!installCatalogueUpdates(session)) return answer;
+		if (!installContextInputs(session)) return answer;
 		retainedTranscript = [];
 		state(session, { phase: "requesting_permission", reason: "start_requested" });
 		state(session, { phase: "negotiating", reason: "permission_granted" });
@@ -301,10 +297,8 @@ export function createCodexRealtimeAdapter(
 	 * @param presentation - The walkthrough the session is started to present, when there is one.
 	 * @returns The answer SDP once Codex has started the session.
 	 */
-	const createOffer = (
-		offer: CreateOfferSdp,
-		presentation?: RealtimePresentation | null,
-	): Promise<AnswerSdp> => openSession(offer, presentation ?? null);
+	const createOffer = (offer: CreateOfferSdp, presentation?: unknown): Promise<AnswerSdp> =>
+		openSession(offer, presentation ?? null);
 
 	/**
 	 * Reduce a server notification when it belongs exactly to the live session.
@@ -431,7 +425,7 @@ export function createCodexRealtimeAdapter(
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		}
 		state(session, stopping);
-		session.stopCatalogueUpdates?.();
+		session.stopContextInputs?.();
 		const outcome: CommandOutcome = await mutationOutcome(
 			session,
 			request,
@@ -504,7 +498,7 @@ export function createCodexRealtimeAdapter(
 			disposed = true;
 			listeners.clear();
 			if (active !== null) {
-				active.stopCatalogueUpdates?.();
+				active.stopContextInputs?.();
 				retainedTranscript = orderedRecords(active);
 			}
 			if (active !== null && !active.answerSettled) {

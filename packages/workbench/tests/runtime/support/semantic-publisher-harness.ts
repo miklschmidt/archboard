@@ -1,5 +1,5 @@
-import { createIdentityAuthority } from "#shared/rules/workbench-identity.ts";
-import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
+import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createSemanticContextPublisher } from "#runtime/api/semantic-context.ts";
 import {
 	type SemanticContextInput,
 	type SettledChangeSourceEvent,

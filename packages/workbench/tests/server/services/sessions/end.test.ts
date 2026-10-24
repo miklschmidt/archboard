@@ -71,6 +71,7 @@ function endingStore() {
 	const wire = (threadId: Parameters<typeof identity.decoder.serializeCodexIdentity>[0]) =>
 		identity.decoder.serializeCodexIdentity(threadId);
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity,
 		transport: { respond: async (_request, owner) => void responses.push(owner) },
 		session: {

@@ -1,4 +1,4 @@
-import type { SettledChangeSource } from "@archboard/codex-app-server/semantic-context";
+import type { SettledChangeSource } from "#runtime/schemas/semantic-context-types.ts";
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 
 /**

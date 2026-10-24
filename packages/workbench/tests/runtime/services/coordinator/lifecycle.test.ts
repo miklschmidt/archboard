@@ -1,3 +1,4 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, jest, test } from "bun:test";
 
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
@@ -83,7 +84,11 @@ describe("coordinator lifecycle", () => {
 		const coordinatorPersistence = persistence(snapshot);
 
 		expect(fixtureValue.session.startParams).toEqual([
-			createCoordinatorThreadStartParams(WORKING_DIRECTORY, "priority"),
+			createCoordinatorThreadStartParams(
+				WORKING_DIRECTORY,
+				"priority",
+				ARCHBOARD_INSTRUCTIONS.coordinator,
+			),
 		]);
 		expect(fixtureValue.session.updateParams).toEqual([
 			createCoordinatorSettingsUpdateParams(coordinatorPersistence.threadId, "priority"),

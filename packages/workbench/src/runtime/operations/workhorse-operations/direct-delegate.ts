@@ -1,8 +1,6 @@
-import {
-	createAdditionalContext,
-	createTextUserInput,
-} from "#runtime/rules/instructions/bodies.ts";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import { createTextUserInput } from "#runtime/rules/host/text-input.ts";
+import { createWorkbenchAdditionalContext } from "#runtime/rules/host/bodies.ts";
+import type { WorkbenchExecutionContext } from "#runtime/protocol/host/context.ts";
 import type { SessionTurn } from "@archboard/codex-app-server/session";
 import {
 	CodexWorkhorseOperationsError,
@@ -116,7 +114,10 @@ async function assertIdleForDelegate(
  * @param state - The staged operation state.
  * @returns The context for the turn body.
  */
-function delegateContext(runtime: WorkhorseRuntime, state: OperationState): ArchboardContext {
+function delegateContext(
+	runtime: WorkhorseRuntime,
+	state: OperationState,
+): WorkbenchExecutionContext {
 	try {
 		const context = runtime.options.contextFor({
 			operationId: state.operationId,
@@ -155,16 +156,16 @@ function delegateParams(
 	runtime: WorkhorseRuntime,
 	state: OperationState,
 	prompt: string,
-	context: ArchboardContext,
+	context: WorkbenchExecutionContext,
 ): TurnStartParams {
 	try {
 		return {
 			threadId: state.workhorseThreadId,
 			clientUserMessageId: state.operationIdWire,
 			input: [createTextUserInput(prompt)],
-			turnTrigger: "archboard",
-			additionalContext: createAdditionalContext(context),
-		} satisfies TurnStartParams;
+			turnTrigger: runtime.options.contextCodec.turnTrigger,
+			additionalContext: createWorkbenchAdditionalContext(context, runtime.options.contextCodec),
+		};
 	} catch (error) {
 		throw refuseInvalidBody(
 			runtime,

@@ -133,7 +133,7 @@ function applyRealtimeError(
 	}
 	const ownsPendingStart = !session.answerSettled;
 	if (ownsPendingStart) {
-		session.stopCatalogueUpdates?.();
+		session.stopContextInputs?.();
 		session.answerSettled = true;
 	}
 	ops.state(session, failure);

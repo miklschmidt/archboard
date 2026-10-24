@@ -2,19 +2,19 @@ import type { CodexRealtimeAdapterOptions } from "#runtime/services/realtime/con
 import type { ActiveRealtimeSession } from "#runtime/services/realtime/state.ts";
 
 /**
- * Keep the coordinator's board catalogue current for the life of one voice session, serializing
+ * Keep the coordinator's application context current for the life of one voice session, serializing
  * deliveries behind session startup.
  *
- * The catalogue is data for the coordinator alone: a developer item on its own thread when the
- * session starts and whenever the vault changes, each replacing the last. The voice model is
- * never sent it; it hears about boards from the coordinator's answers (TASK-297).
- * @param options The catalogue source and session transport.
+ * The context is data for the coordinator alone: a developer item on its own thread when the
+ * session starts and whenever the host source changes, each replacing the last. The voice model is
+ * never sent it; it hears the coordinator's answers (TASK-297).
+ * @param options The host source and session transport.
  * @param session The voice session that owns the watcher.
  * @param isCurrent Whether the session still owns its binding.
  * @param onError Receives unconfirmed delivery and watch failures.
  * @returns Stops watching and prevents queued changes from sending.
  */
-export function watchCatalogueUpdates(
+export function watchContextUpdates(
 	options: CodexRealtimeAdapterOptions,
 	session: ActiveRealtimeSession,
 	isCurrent: () => boolean,
@@ -41,7 +41,7 @@ export function watchCatalogueUpdates(
 		} catch {
 			if (current())
 				onError(
-					"The coordinator board catalogue update was not confirmed. Read the catalogue again before relying on it.",
+					"The coordinator context update was not confirmed. Read the context again before relying on it.",
 				);
 		}
 	};
@@ -53,27 +53,25 @@ export function watchCatalogueUpdates(
 			return;
 		}
 		if (!current()) return;
-		const catalogue = options.boardCatalogue.read();
+		const catalogue = options.coordinatorContext.read();
 		if (catalogue === previous) return;
 		// A lost response is never retried. A later catalogue replaces the entire earlier item.
 		previous = catalogue;
-		await injectCoordinator(
-			`Available Archboard boards and variants (data; replaces the previous catalogue):\n${catalogue}`,
-		);
+		await injectCoordinator(catalogue);
 	};
 	/** Queue one delivery after every previous one. */
 	const changed = () => {
 		tail = tail.then(deliverLatest).catch(() => {
 			if (current())
 				onError(
-					"The board catalogue could not be refreshed. Check the vault and start a new voice session.",
+					"The application context could not be refreshed. Read the application context and start a new voice session.",
 				);
 		});
 	};
-	const unsubscribe = options.boardCatalogue.subscribe(changed, (error) => {
+	const unsubscribe = options.coordinatorContext.subscribe(changed, (error) => {
 		if (current())
 			onError(
-				`The board catalogue watch failed: ${error.message}. Check the vault and start a new voice session.`,
+				`The application context watch failed: ${error.message}. Read the application context and start a new voice session.`,
 			);
 	});
 	// The first delivery is the session's own: the start body carries no catalogue.

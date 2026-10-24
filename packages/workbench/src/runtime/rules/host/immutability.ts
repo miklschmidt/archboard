@@ -1,5 +1,5 @@
 /**
- * Clone protocol-shaped values so callers cannot mutate retained workhorse state.
+ * Clone protocol-shaped values so callers cannot mutate captured workbench state.
  * @param value - The value to copy.
  * @returns A deeply frozen copy.
  */

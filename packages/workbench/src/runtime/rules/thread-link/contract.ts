@@ -48,6 +48,7 @@ interface ThreadLinkTarget {
 }
 
 interface CodexThreadLinkClassifierOptions {
+	readonly threadSource: string;
 	readonly session: Pick<CodexSession, "threadListPage" | "threadLoadedListPage" | "threadRead">;
 	/** Prefer this live source when supplied; `epoch.snapshot()` is the fallback. */
 	readonly currentEpoch?: ThreadLinkCurrentEpochSource;

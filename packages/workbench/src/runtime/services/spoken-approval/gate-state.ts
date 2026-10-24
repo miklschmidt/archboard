@@ -183,6 +183,7 @@ function armedSlot(
 		effectSummary: result.effectSummary,
 		effectPrompt: Object.freeze({ ...input.effectPrompt }),
 		classifier: Object.freeze({
+			contextCodec: input.classifier.contextCodec,
 			operationId: result.operationId,
 			clientUserMessageId: result.clientUserMessageId,
 			context: result.context,

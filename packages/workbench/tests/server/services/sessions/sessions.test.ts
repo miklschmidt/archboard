@@ -89,6 +89,7 @@ function twoSessions() {
 	const operationListeners = new Map<string, Set<(event: unknown) => void>>();
 	const shown = { current: null as string | null };
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity: identity.identity,
 		transport: {
 			respond: async (_request, owner, response) => void responses.push({ owner, response }),

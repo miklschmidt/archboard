@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
@@ -140,6 +141,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		callbacks: { ...fixtureSession.callbacks, ...voiceContext?.callbacks },
 	};
 	const sessions = createCodexWorkbenchSessions({
+		resolveCheckout: (named) => named,
 		identity: authorities.identity,
 		transport: fixture.transport,
 		session: fixture.session,
@@ -177,6 +179,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		dispose: () => undefined,
 	};
 	const options = createServerBrowserGatewayOptions({
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		components,
 		repositoryOf: overrides.repositoryOf ?? (() => null),
 		sessions,

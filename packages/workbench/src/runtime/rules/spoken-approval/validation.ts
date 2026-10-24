@@ -3,10 +3,8 @@ import type {
 	CodexApprovalBroker,
 	SpokenApprovalEffectPresentation,
 } from "#runtime/services/approvals/contract.ts";
-import {
-	ArchboardContextSchema,
-	type ArchboardContext,
-} from "#runtime/rules/instructions/context.ts";
+import { captureExecutionContext } from "#runtime/rules/host/context.ts";
+import type { WorkbenchExecutionContext } from "#runtime/protocol/host/context.ts";
 import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,
@@ -63,7 +61,7 @@ type ArmValidationResult =
 			readonly approval: ApprovalSnapshot;
 			readonly coordinator: CoordinatorIdentity;
 			readonly realtime: RealtimeCorrelation;
-			readonly context: ArchboardContext;
+			readonly context: WorkbenchExecutionContext;
 			readonly baselineRecordKeys: ReadonlySet<string>;
 			readonly expiresAtMs: number;
 	  };
@@ -295,7 +293,7 @@ interface ArmContextValues {
  * @param values - What the arm has established.
  * @returns True when every field matches.
  */
-function armContextMatches(context: ArchboardContext, values: ArmContextValues): boolean {
+function armContextMatches(context: WorkbenchExecutionContext, values: ArmContextValues): boolean {
 	const operation = context.operation;
 	const checks = [
 		operation.id !== null,
@@ -472,8 +470,13 @@ function validateArmContext(
 	input: SpokenApprovalArmInput,
 	values: ArmContextValues,
 ): ArmValidationResult {
-	const parsedContext = ArchboardContextSchema.safeParse(input.classifier.context);
-	if (!parsedContext.success || !armContextMatches(parsedContext.data, values)) {
+	let captured: WorkbenchExecutionContext;
+	try {
+		captured = captureExecutionContext(input.classifier.context);
+	} catch {
+		return invalid("invalid_context");
+	}
+	if (!armContextMatches(captured, values)) {
 		return invalid("invalid_context");
 	}
 	const transcript = armTranscript(context, input, values.effectSummary);
@@ -496,7 +499,7 @@ function validateArmContext(
 		approval: values.approval,
 		coordinator: values.coordinator,
 		realtime: values.realtime,
-		context: parsedContext.data,
+		context: captured,
 		baselineRecordKeys: baseline.keys,
 		expiresAtMs: expiry.expiresAtMs,
 	};

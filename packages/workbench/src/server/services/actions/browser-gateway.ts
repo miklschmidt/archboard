@@ -12,7 +12,10 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/services/generation/lifecycle.ts";
 import type {
 	CodexWorkbenchSessions,
@@ -67,6 +70,7 @@ interface ServerBrowserGatewayInput {
 	readonly repositoryOf: (checkout: string) => string | null;
 	/** Injectable clock for the authoritative re-read floor. */
 	readonly now?: () => number;
+	readonly contextCodec: WorkbenchContextCodec;
 	readonly contextForOperation: (
 		context: BrowserActionContext,
 		operation: {
@@ -74,7 +78,7 @@ interface ServerBrowserGatewayInput {
 			readonly kind: "composer_message";
 			readonly rpc: "turn/start" | "turn/steer";
 		},
-	) => ArchboardContext;
+	) => WorkbenchExecutionContext;
 }
 
 /**
@@ -349,6 +353,7 @@ function createServerBrowserGatewayOptions(
 			identity: components.identity,
 			session: components.session,
 			contextForOperation: input.contextForOperation,
+			contextCodec: input.contextCodec,
 		}),
 		queue: {
 			/**

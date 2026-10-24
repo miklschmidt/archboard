@@ -18,8 +18,11 @@ import type {
 	CoordinatorCallbackTurnPort,
 	WorkhorseNewsSituation,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { createTurnStartParams } from "#runtime/rules/instructions/bodies.ts";
-import { type ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import { createWorkbenchTurnStartParams } from "#runtime/rules/host/bodies.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import { CodexSessionMutationError, type CodexSession } from "@archboard/codex-app-server/session";
 
 /** What the port needs of the workbench around it. */
@@ -35,7 +38,8 @@ interface OutcomeReportParts {
 	 * @param operationId The minted operation identity.
 	 * @returns The context.
 	 */
-	readonly contextFor: (operationId: string) => ArchboardContext;
+	readonly contextCodec: WorkbenchContextCodec;
+	readonly contextFor: (operationId: string) => WorkbenchExecutionContext;
 	/**
 	 * Whether a recording holds the voice now.
 	 * @returns True while the live voice session is a recording's.
@@ -88,12 +92,15 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 				return "recording";
 			}
 			const operationId = parts.issue();
-			const params = createTurnStartParams({
-				threadId,
-				clientUserMessageId: operationId,
-				prompt: outcomeReportPrompt(news, situation),
-				context: parts.contextFor(operationId),
-			});
+			const params = createWorkbenchTurnStartParams(
+				{
+					threadId,
+					clientUserMessageId: operationId,
+					prompt: outcomeReportPrompt(news, situation),
+					context: parts.contextFor(operationId),
+				},
+				parts.contextCodec,
+			);
 			try {
 				await parts.session.turnStart({ ...params, threadId });
 			} catch (error) {

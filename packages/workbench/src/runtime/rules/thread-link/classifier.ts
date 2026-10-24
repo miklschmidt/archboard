@@ -174,16 +174,18 @@ function provesOwnedThreadStart(
  * @param target The target.
  * @param record The durable record that claims to own it.
  * @returns True when identity, source and workspace all agree.
+ * @param threadSource The host policy for this operation.
  */
 function matchesOwningRecord(
 	thread: SessionThread,
 	target: ThreadLinkTarget,
 	record: EpochOperationRecord,
+	threadSource: string,
 ): boolean {
 	return (
 		thread.id === target.threadId &&
 		thread.source === CODEX_SESSION_THREAD_SOURCE &&
-		thread.threadSource === "archboard" &&
+		thread.threadSource === threadSource &&
 		thread.cwd === record.provenance.workspaceRoot
 	);
 }
@@ -211,13 +213,15 @@ function isDurableRoot(thread: SessionThread): boolean {
  * @param target The target.
  * @param record The durable record that claims to own it.
  * @returns True when every field matches the record's provenance.
+ * @param threadSource The host policy for this operation.
  */
 function isOwnedCreatedRoot(
 	thread: SessionThread,
 	target: ThreadLinkTarget,
 	record: EpochOperationRecord,
+	threadSource: string,
 ): boolean {
-	return matchesOwningRecord(thread, target, record) && isDurableRoot(thread);
+	return matchesOwningRecord(thread, target, record, threadSource) && isDurableRoot(thread);
 }
 
 /**
@@ -301,7 +305,9 @@ async function readOwnedCreatedRoot(
 			error,
 		);
 	}
-	return isOwnedCreatedRoot(thread, target, record) ? cloneAndFreeze(thread) : null;
+	return isOwnedCreatedRoot(thread, target, record, options.threadSource)
+		? cloneAndFreeze(thread)
+		: null;
 }
 
 /**

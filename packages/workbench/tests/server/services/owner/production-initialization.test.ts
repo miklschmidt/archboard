@@ -1,3 +1,8 @@
+import {
+	ARCHBOARD_INSTRUCTIONS,
+	ARCHBOARD_CONTEXT_CODEC,
+} from "#runtime/services/host/archboard.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5,7 +10,6 @@ import { join } from "node:path";
 import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
-
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
@@ -18,7 +22,7 @@ import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.t
 import {
 	createSemanticContextPublisher,
 	type SemanticContextInput,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/api/semantic-context.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createBrowserLeaseLedger } from "#server/services/lease/lease.ts";
 import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
@@ -36,14 +40,12 @@ import type { CodexWorkbenchGenerationInput } from "#server/services/owner/owner
 import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/generation/generation-fixture.ts";
 import { identities, waitOwnerFor } from "#tests/server/support/generation/terminal-fixture.ts";
 import { runningProcessFacts } from "#tests/server/support/generation/process-fixture.ts";
-
 function generationInput(generation: number): CodexWorkbenchGenerationInput {
 	return {
 		generation,
 		process: { stop: async () => undefined },
 	} as unknown as CodexWorkbenchGenerationInput;
 }
-
 function deferred(): {
 	readonly promise: Promise<void>;
 	readonly resolve: () => void;
@@ -52,7 +54,6 @@ function deferred(): {
 	const promise = new Promise<void>((done) => void (resolve = done));
 	return { promise, resolve };
 }
-
 function installation(server: Record<string, unknown> = {}) {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-activation-"));
 	return withProductionState(root, () => {
@@ -60,12 +61,18 @@ function installation(server: Record<string, unknown> = {}) {
 			root,
 			value: createServerCodexWorkbenchInstallation({
 				sourceRoot: "/repo",
+				host: {
+					instructions: ARCHBOARD_INSTRUCTIONS,
+					contextCodec: ARCHBOARD_CONTEXT_CODEC,
+					resolveCheckout: (named: string) => named,
+					voiceFor: () => createArchboardVoicePolicy(),
+					coordinatorContextFor: () => ({ read: () => "{}", subscribe: () => () => undefined }),
+				},
 				...server,
 			} as never),
 		};
 	});
 }
-
 describe("production Codex storage", () => {
 	test("the servers on a machine share one Codex home, and each port owns its own state", async () => {
 		const { root, value } = installation();
@@ -102,7 +109,6 @@ describe("production Codex storage", () => {
 		}
 	});
 });
-
 describe("production Codex generation ownership", () => {
 	test("captures startup semantics under the exact minted wire session", async () => {
 		const authorities = createIdentityAuthorities(createIdentityLedger());
@@ -194,7 +200,7 @@ describe("production Codex generation ownership", () => {
 				.realtime(components);
 			const adapter = createCodexRealtimeAdapter({
 				...production,
-				boardCatalogue: {
+				coordinatorContext: {
 					read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 					subscribe: () => () => {},
 				},
@@ -242,7 +248,6 @@ describe("production Codex generation ownership", () => {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
 	});
-
 	test("a settled or replaced generation leaves no reachable owners behind", async () => {
 		const owned = installation();
 		try {
@@ -259,17 +264,14 @@ describe("production Codex generation ownership", () => {
 			// The kernel and generation calls of one generation share one record.
 			expect(owned.value.bindings(first).dynamicAdapters.approval(created)).toBe(approval);
 			expect(owned.value.bindings(first).dynamicAdapters.lifecycle(created)).toBe(lifecycle);
-
 			await owned.value
 				.hooks(first)
 				.cancelDynamicApprovalsAndWaits({} as never, "child_disconnected");
-
 			// Settlement retires the record for good. A late call is refused rather
 			// than handed a rebuilt approval owner with a live expiry timer and an
 			// effect authority nothing will dispose.
 			expect(() => owned.value.bindings(first)).toThrow("is retired");
 			expect(() => owned.value.hooks(first)).toThrow("is retired");
-
 			// A crash replacement that outruns its own cleanup retires the stranded
 			// generation too: the map never accumulates one record per restart, and
 			// the replaced generation cannot come back.
@@ -283,7 +285,6 @@ describe("production Codex generation ownership", () => {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
 	});
-
 	test("retiring a generation releases its owned-process readiness and shown-conversation subscriptions", async () => {
 		const subscribers = new Set<() => void>();
 		const subscribe = (listener: () => void) => {
@@ -317,7 +318,6 @@ describe("production Codex generation ownership", () => {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
 	});
-
 	test("child-exit settlement aborts the generation live dynamic waits", async () => {
 		let aborts = 0;
 		const owned = installation({
@@ -346,9 +346,7 @@ describe("production Codex generation ownership", () => {
 				timeoutMs: 60_000,
 				previousSequence: 0,
 			});
-
 			await owned.value.hooks(input).retireDynamicLifecycle(owner.child, owner.epoch);
-
 			// Bounded so an unretired wait reports "still pending" instead of
 			// spending the whole case timeout.
 			expect(
@@ -371,7 +369,6 @@ describe("production Codex generation ownership", () => {
 		}
 	});
 });
-
 describe("production Codex activation guards", () => {
 	for (const stage of ["initialize", "account"] as const) {
 		test(`a retired ${stage} continuation cannot publish readiness`, async () => {
@@ -453,7 +450,6 @@ describe("production Codex activation guards", () => {
 			}
 		});
 	}
-
 	test("a signed-in session is ready without starting a coordinator", async () => {
 		const owned = installation();
 		const events: string[] = [];

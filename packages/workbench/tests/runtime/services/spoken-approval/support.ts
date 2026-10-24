@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import type {
 	RealtimeSemanticEvent,
 	RealtimeSemanticEventListener,
@@ -294,6 +295,7 @@ function makeHarness(options: HarnessOptions = {}): GateHarness {
 		realtime: REALTIME,
 		effectPrompt: PROMPT,
 		classifier: {
+			contextCodec: ARCHBOARD_CONTEXT_CODEC,
 			operationId: "classifier-operation",
 			clientUserMessageId: "classifier-message",
 			context,

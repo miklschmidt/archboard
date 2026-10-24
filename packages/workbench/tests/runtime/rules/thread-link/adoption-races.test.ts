@@ -57,7 +57,11 @@ describe("codex thread-link adoption races", () => {
 		for (const [reason, optionsForPass] of cases) {
 			await withFixture(async (fixture) => {
 				const changing = changingSession(fixture, optionsForPass);
-				const port = createCodexThreadLink({ session: changing.session, epoch: fixture.store });
+				const port = createCodexThreadLink({
+					threadSource: "archboard",
+					session: changing.session,
+					epoch: fixture.store,
+				});
 
 				const bound = await port.classifyAndBind("pane-a", null, fixture.target);
 
@@ -88,6 +92,7 @@ describe("codex thread-link adoption races", () => {
 			let loadedPasses = 0;
 			const row = thread(fixture.authority, "target");
 			const port = createCodexThreadLink({
+				threadSource: "archboard",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,

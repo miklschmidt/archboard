@@ -1,7 +1,7 @@
 import type {
 	SemanticAgentSwitch,
 	SemanticUserChange,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/schemas/semantic-context-types.ts";
 import type { BrowserConnectionInstance } from "#server/protocol/gateway/contract.ts";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 

@@ -5,10 +5,13 @@ import {
 } from "#server/protocol/gateway/contract.ts";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
 import {
-	createTurnStartParams,
-	createTurnSteerParams,
-} from "#runtime/rules/instructions/bodies.ts";
-import { type ArchboardContext } from "#runtime/rules/instructions/context.ts";
+	createWorkbenchTurnStartParams,
+	createWorkbenchTurnSteerParams,
+} from "#runtime/rules/host/bodies.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 
 /**
@@ -26,6 +29,7 @@ function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
 
 /** What the typed-message actions of one generation are closed over. */
 interface ServerTextActionOptions {
+	readonly contextCodec: WorkbenchContextCodec;
 	readonly identity: CodexWorkbenchComponents["identity"];
 	readonly session: Pick<
 		CodexWorkbenchComponents["session"],
@@ -38,7 +42,7 @@ interface ServerTextActionOptions {
 			readonly kind: "composer_message";
 			readonly rpc: "turn/start" | "turn/steer";
 		},
-	) => ArchboardContext;
+	) => WorkbenchExecutionContext;
 }
 
 /**
@@ -83,16 +87,19 @@ export function createServerCanonicalTextActions(
 				);
 			}
 			const { wire } = issue();
-			const canonical = createTurnStartParams({
-				threadId,
-				clientUserMessageId: wire,
-				prompt: command.prompt,
-				context: options.contextForOperation(context, {
-					id: wire,
-					kind: "composer_message",
-					rpc: "turn/start",
-				}),
-			});
+			const canonical = createWorkbenchTurnStartParams(
+				{
+					threadId,
+					clientUserMessageId: wire,
+					prompt: command.prompt,
+					context: options.contextForOperation(context, {
+						id: wire,
+						kind: "composer_message",
+						rpc: "turn/start",
+					}),
+				},
+				options.contextCodec,
+			);
 			const response = await options.session.turnStart({ ...canonical, threadId });
 			return { outcome: "delivered", turnId: response.turn.id };
 		},
@@ -113,17 +120,20 @@ export function createServerCanonicalTextActions(
 				);
 			}
 			const { wire } = issue();
-			const canonical = createTurnSteerParams({
-				threadId,
-				expectedTurnId: command.turnId,
-				clientUserMessageId: wire,
-				prompt: command.prompt,
-				context: options.contextForOperation(context, {
-					id: wire,
-					kind: "composer_message",
-					rpc: "turn/steer",
-				}),
-			});
+			const canonical = createWorkbenchTurnSteerParams(
+				{
+					threadId,
+					expectedTurnId: command.turnId,
+					clientUserMessageId: wire,
+					prompt: command.prompt,
+					context: options.contextForOperation(context, {
+						id: wire,
+						kind: "composer_message",
+						rpc: "turn/steer",
+					}),
+				},
+				options.contextCodec,
+			);
 			await options.session.turnSteer({
 				...canonical,
 				threadId,

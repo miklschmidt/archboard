@@ -14,7 +14,6 @@ import type {
 	CodexRealtimeBinding,
 	CodexRealtimeGeneration,
 } from "#runtime/services/realtime/contract.ts";
-import type { RealtimePresentation } from "#runtime/rules/realtime/presentation-mode.ts";
 
 interface RealtimeTranscriptEntry {
 	readonly itemId: ItemId;
@@ -31,7 +30,7 @@ interface ActiveRealtimeSession {
 	readonly wireSessionId: WireRealtimeSessionId;
 	readonly semanticBrief: string;
 	/** The walkthrough this session was started to present, or null for an ordinary session. */
-	readonly presentation: RealtimePresentation | null;
+	readonly presentation: unknown;
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;
@@ -42,7 +41,7 @@ interface ActiveRealtimeSession {
 	answerSdp: string | null;
 	answerSettled: boolean;
 	nextLiveOrder: number;
-	stopCatalogueUpdates: (() => void) | null;
+	stopContextInputs: (() => void) | null;
 }
 
 /**

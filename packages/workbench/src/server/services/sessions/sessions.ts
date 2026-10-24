@@ -289,11 +289,14 @@ function createCodexWorkbenchSessions(
 		};
 		/**
 		 * The workhorse of one checkout, built the first time it is asked for.
-		 * @param checkout The checkout.
+		 * @param named The checkout as the caller names it.
 		 * @returns The workhorse.
 		 */
-		const workhorse = (checkout: string): CodexWorkbenchWorkhorse =>
-			workhorses.get(checkout) ?? buildWorkhorse(self(), workhorses, fanOut, checkout);
+		const workhorse = (named: string): CodexWorkbenchWorkhorse => {
+			const checkout = options.resolveCheckout(named);
+			if (checkout === null) throw new Error(`The host does not admit checkout ${named}.`);
+			return workhorses.get(checkout) ?? buildWorkhorse(self(), workhorses, fanOut, checkout);
+		};
 		/**
 		 * The workhorse voice is bound to.
 		 * @returns It, or null before voice started or while its checkout has none.

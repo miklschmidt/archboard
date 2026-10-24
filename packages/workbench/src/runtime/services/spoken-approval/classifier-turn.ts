@@ -1,6 +1,6 @@
 import type { ApprovalSettlement } from "#runtime/services/approvals/contract.ts";
 import type { DynamicToolRefusalReason } from "#runtime/protocol/coordinator-tool-contract/dynamic-tool-envelopes.ts";
-import { createTurnStartParams, type TurnStartParams } from "#runtime/rules/instructions/bodies.ts";
+import { createWorkbenchTurnStartParams } from "#runtime/rules/host/bodies.ts";
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
 import type { RealtimeTranscriptRecord } from "#shared/protocol/realtime-contract.ts";
 import type { IdentityAuthority, TurnId } from "@archboard/codex-app-server/identity";
@@ -267,19 +267,22 @@ function classifierTurnParams(
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
 ): SessionParams<"turn/start"> | null {
-	let params: TurnStartParams;
+	let params: Omit<SessionParams<"turn/start">, "threadId"> & { readonly threadId: string };
 	try {
-		params = createTurnStartParams({
-			threadId: slot.coordinatorThreadId,
-			clientUserMessageId: slot.classifier.clientUserMessageId,
-			prompt: createSpokenApprovalClassifierPrompt({
-				effectSummary: slot.effectSummary,
-				finalUserItemId: record.itemId,
-				finalUserSequence: record.sequence,
-				finalUserText: record.text,
-			}),
-			context: slot.classifier.context,
-		});
+		params = createWorkbenchTurnStartParams(
+			{
+				threadId: slot.coordinatorThreadId,
+				clientUserMessageId: slot.classifier.clientUserMessageId,
+				prompt: createSpokenApprovalClassifierPrompt({
+					effectSummary: slot.effectSummary,
+					finalUserItemId: record.itemId,
+					finalUserSequence: record.sequence,
+					finalUserText: record.text,
+				}),
+				context: slot.classifier.context,
+			},
+			slot.classifier.contextCodec,
+		);
 	} catch {
 		return null;
 	}

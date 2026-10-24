@@ -1,3 +1,4 @@
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 // Giving the coordinator a workhorse outcome while voice is live (TASK-291, TASK-321): the
 // Archboard server's half.
 //
@@ -17,6 +18,7 @@ function harness(startFails = false, recording = false) {
 	const starts: { readonly prompt: string; readonly clientUserMessageId: unknown }[] = [];
 	const contexts: string[] = [];
 	const port = createOutcomeReportPort({
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
 		session: {
 			turnStart: async (params) => {
 				if (startFails) {
