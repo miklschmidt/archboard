@@ -6,8 +6,13 @@ version = 4
 name = "archboard-renderer-wasm"
 version = "0.0.0"
 dependencies = [
+ "archboard-router",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "archboard-router"
+version = "0.0.0"
 
 [[package]]
 name = "bumpalo"
