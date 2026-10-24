@@ -202,8 +202,8 @@ export function createCodexRealtimeAdapter(
 	};
 
 	/**
-	 * Watch catalogue changes and by-hand presentation changes for this session, refusing the
-	 * offer if the catalogue watch cannot start.
+	 * Watch host context and voice inputs, then release each subscription once.
+	 * Refuse the offer if either subscription fails.
 	 * @param session The newly active session.
 	 * @returns Whether the watches were installed.
 	 */
@@ -220,16 +220,24 @@ export function createCodexRealtimeAdapter(
 		const onError = (message: string): void => {
 			emitDiagnostic(session, "coordinator", message);
 		};
+		const cleanups: Array<() => void> = [];
+		/** Release every installed subscription, including after partial setup. */
+		session.stopContextInputs = (): void => {
+			for (const cleanup of cleanups.splice(0)) {
+				try {
+					cleanup();
+				} catch {
+					onError("An application input subscription could not be released.");
+				}
+			}
+		};
 		try {
-			const stopCatalogue = watchContextUpdates(options, session, isCurrent, onError);
-			const stopPresentation = watchVoiceInputs(options, session, isCurrent, onError);
-			/** Stop both watches. */
-			session.stopContextInputs = (): void => {
-				stopCatalogue();
-				stopPresentation();
-			};
+			cleanups.push(watchContextUpdates(options, session, isCurrent, onError));
+			cleanups.push(watchVoiceInputs(options, session, isCurrent, onError));
 		} catch (error) {
+			session.stopContextInputs();
 			active = null;
+			session.answerSettled = true;
 			session.rejectAnswer(error instanceof Error ? error : new Error(String(error)));
 			return false;
 		}
