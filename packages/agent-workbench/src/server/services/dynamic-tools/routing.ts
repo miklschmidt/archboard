@@ -62,7 +62,8 @@ function routeDynamicRequest(
 ): void {
 	switch (request.owner) {
 		case "codex-dynamic-tools":
-			if (owners.dynamicTools === null) throw new Error("No domain tools are installed for this workbench.");
+			if (owners.dynamicTools === null)
+				throw new Error("No domain tools are installed for this workbench.");
 			void owners.dynamicTools.dispatch(request);
 			return;
 		case "codex-coordinator-tools":
