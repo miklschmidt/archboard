@@ -280,6 +280,37 @@ fn walled(buffers: &[Buffer], axis: Axis, from: f64, to: f64, span: (f64, f64)) 
     })
 }
 
+/// The orders of segments on one line, surest first, each kept only where
+/// it does not contradict the orders kept before it. Routes that cross
+/// whichever way they stand can give orders round a cycle, which no
+/// placement satisfies.
+fn acyclic(count: usize, mut orders: Vec<(u8, usize, usize)>) -> Vec<(usize, usize)> {
+    orders.sort_by_key(|&(rank, _, _)| rank);
+    let mut after: Vec<Vec<usize>> = vec![Vec::new(); count];
+    let mut kept = Vec::new();
+    for (_, left, right) in orders {
+        // Keeping left before right closes a cycle when right already comes
+        // before left.
+        let mut seen = vec![false; count];
+        let mut stack = vec![right];
+        let mut cycle = false;
+        while let Some(node) = stack.pop() {
+            if node == left {
+                cycle = true;
+                break;
+            }
+            if !std::mem::replace(&mut seen[node], true) {
+                stack.extend(&after[node]);
+            }
+        }
+        if !cycle {
+            after[left].push(right);
+            kept.push((left, right));
+        }
+    }
+    kept
+}
+
 fn nudge_axis(scene: &Scene, buffers: &[Buffer], routes: &mut [Option<Vec<Point>>], axis: Axis) {
     let segments = segments_of(routes, axis);
     if segments.is_empty() {
@@ -330,6 +361,8 @@ fn nudge_axis(scene: &Scene, buffers: &[Buffer], routes: &mut [Option<Vec<Point>
         })
         .collect();
     let mut constraints = Vec::new();
+    // Orders of segments on one line, with how sure each is.
+    let mut on_one_line: Vec<(u8, usize, usize)> = Vec::new();
     let lane = scene.params.lane;
     for a in 0..count {
         for b in a + 1..count {
@@ -347,31 +380,39 @@ fn nudge_axis(scene: &Scene, buffers: &[Buffer], routes: &mut [Option<Vec<Point>
             if walled(buffers, axis, at[a], at[b], span) {
                 continue;
             }
-            let a_first = if (at[a] - at[b]).abs() > SAME {
-                at[a] < at[b]
-            } else {
-                let (one, other) = (&segments[sa], &segments[sb]);
-                let parted = match (&routes[one.route], &routes[other.route]) {
-                    (Some(pa), Some(pb)) => order::side(pa, one.index, pb, other.index),
-                    _ => 0,
-                };
-                let (ta, tb) = (one.turns, other.turns);
-                if parted != 0 {
-                    parted < 0
-                } else if ta != tb {
-                    ta < tb
-                } else {
-                    true
-                }
+            if (at[a] - at[b]).abs() > SAME {
+                let (left, right) = if at[a] < at[b] { (a, b) } else { (b, a) };
+                constraints.push(Constraint {
+                    left,
+                    right,
+                    gap: lane,
+                });
+                continue;
+            }
+            let (one, other) = (&segments[sa], &segments[sb]);
+            let parted = match (&routes[one.route], &routes[other.route]) {
+                (Some(pa), Some(pb)) => order::side(pa, one.index, pb, other.index),
+                _ => None,
+            };
+            // Where the routes' parting does not say, fewer turns towards
+            // the low side, then input order: a guess, ranked last.
+            let (a_first, rank) = match parted {
+                Some((side, sureness)) => (side < 0, sureness as u8),
+                None => (one.turns <= other.turns, 3),
             };
             let (left, right) = if a_first { (a, b) } else { (b, a) };
-            constraints.push(Constraint {
+            on_one_line.push((rank, left, right));
+        }
+    }
+    constraints.extend(
+        acyclic(count, on_one_line)
+            .into_iter()
+            .map(|(left, right)| Constraint {
                 left,
                 right,
                 gap: lane,
-            });
-        }
-    }
+            }),
+    );
     // Consecutive segments of one route keep their order.
     for (route, points) in routes.iter().enumerate() {
         let Some(points) = points else { continue };

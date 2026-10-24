@@ -336,3 +336,41 @@ fn a_pin_that_leaves_into_another_buffer_still_routes() {
     };
     assert!(matches!(route(&scene)[0], Route::Routed(_)));
 }
+
+#[test]
+fn a_line_crossed_either_way_does_not_turn_the_others_round() {
+    // Four lines leave one block's right side and climb one channel exactly
+    // four lanes wide. The one that runs down crosses each of the others
+    // whichever side it takes, so the orders it gives contradict each other;
+    // the three that climb still stand in the order where they part.
+    let scene = Scene {
+        obstacles: vec![
+            rect(24.0, 372.0, 340.0, 573.0),
+            rect(444.0, 468.0, 960.0, 825.0),
+            rect(444.0, 24.0, 748.0, 364.0),
+        ],
+        connectors: vec![
+            (
+                pin(0, 364.0, 709.0, Dir::Right),
+                pin(2, 444.0, 117.0, Dir::Left),
+            ),
+            (
+                pin(0, 364.0, 389.0, Dir::Right),
+                pin(1, 444.0, 1037.0, Dir::Left),
+            ),
+            (
+                pin(0, 364.0, 525.0, Dir::Right),
+                pin(2, 444.0, 101.0, Dir::Left),
+            ),
+            (
+                pin(0, 364.0, 893.0, Dir::Right),
+                pin(1, 444.0, 646.0, Dir::Left),
+            ),
+        ],
+        params: PARAMS,
+    };
+    let answer = route(&scene);
+    let [middle, _, upper, lower] = [0, 1, 2, 3].map(|index| routed(&answer[index]));
+    assert_eq!(crossings(upper, middle), 0);
+    assert_eq!(crossings(middle, lower), 0);
+}

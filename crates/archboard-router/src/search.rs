@@ -1,10 +1,9 @@
 //! The search for one connector's route: A* over the grid, each state a
 //! vertex and the direction the route arrived in, as [W09] §4 searches. A
 //! route pays its length, a penalty for each turn, and a penalty each time it
-//! reaches, across, a vertex that a route found earlier runs straight
-//! through: whether it runs on across that route or turns onto its line,
-//! nudging leaves the two crossing. [W09] leaves crossings with earlier
-//! routes to future work; this count is this router's own rule.
+//! runs straight through a vertex that a route found earlier runs straight
+//! through the other way. [W09] leaves crossings with earlier routes to future
+//! work; counting them where both run straight is this router's own rule.
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -233,8 +232,7 @@ pub fn shortest(
             let mut step = distance(grid.point(vertex), grid.point(next));
             if dir != arrived {
                 step += params.bend;
-            }
-            if vertex != start.vertex && taken.crosses(vertex, arrived) {
+            } else if vertex != start.vertex && taken.crosses(vertex, dir) {
                 step += params.crossing;
             }
             let state = next * 4 + dir_index(dir);
