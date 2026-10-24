@@ -24,16 +24,24 @@ self.addEventListener("message", (event: MessageEvent<Request>) => {
 			const [viz] = await Promise.all([instance(), AvoidLib.load(request.wasmUrl)]);
 			return [viz, AvoidLib.getInstance()];
 		});
-		void ready.catch(() => {
-			initFailure = true;
-		});
+		// The pool starts its next worker once this one says its engine is loaded.
+		void ready.then(
+			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
+			() => self.postMessage({ ready: true }),
+			() => {
+				initFailure = true;
+			},
+		);
 		return;
 	}
 	queue = queue.then(async () => {
 		try {
 			if (ready === undefined) throw new Error("The layout worker was not initialized");
 			const solve = await ready;
-			const data = solve(request.graph, request.layoutOptions);
+			const data = solve(request.graph, request.layoutOptions, (told) =>
+				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
+				self.postMessage({ id: request.id, told }),
+			);
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
 			self.postMessage({ id: request.id, data });
 		} catch (error) {

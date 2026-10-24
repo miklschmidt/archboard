@@ -35,8 +35,6 @@ import { routedWeighed } from "#shared/rules/blocks/packing/trunks.ts";
 import {
 	BLOCKS_STACKING,
 	BLOCKS_STOOD,
-	BLOCKS_UNTIL_STOOD,
-	StoodLaid,
 	stackedOrNot,
 	type Stacking,
 	type Stood,
@@ -328,26 +326,26 @@ const BLOCKS_FACING = "archboard.blocks.facing";
  * relationship: its containers and group regions drawn as its root options
  * name, else packed as blocks, or inline when asked; the joins of the
  * blocks they name kept apart; and its first block that could stack laid
- * only the way they name, if they name one, telling what that way stood at,
- * and answering only that once it is laid where they ask so.
+ * only the way they name, if they name one, telling what that way stood at
+ * as soon as it is laid, and again when it answers.
  * Which way reads best is chosen where the renderer runs (`solves.ts`).
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param inline Whether containers and group regions are drawn inline, as
  * clusters of the board's own layout, when its options name no way.
+ * @param tell Told what the solve's first block that could stack stood at, as root options, once it is laid.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const { nesting, ...way } = wayOf(graph.layoutOptions ?? {}, inline);
-	let laidOut: ReturnType<typeof layOut>;
-	try {
-		laidOut = layOut(answeringOnce(viz), avoid, graph, nesting, way);
-	} catch (error) {
-		if (!(error instanceof StoodLaid)) throw error;
-		return answer(graph, { width: 0, height: 0 }, toldStood(error.stood));
-	}
-	const { tree, laid, faces } = laidOut;
+function placeBlocks(
+	viz: Graphviz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	inline = false,
+	tell?: (told: Record<string, string>) => void,
+): ElkNode {
+	const { nesting, ...way } = wayOf(graph.layoutOptions ?? {}, inline, tell);
+	const { tree, laid, faces } = layOut(answeringOnce(viz), avoid, graph, nesting, way);
 	const placed = { ...Assembly.unstepped(new Assembly(tree, laid).placed()), faces };
 	return answer(graph, placed, {
 		[BLOCKS_PLACED]: JSON.stringify(placed),
@@ -359,12 +357,14 @@ function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline =
  * The way a solve's root options ask it to lay a board out.
  * @param options The root options.
  * @param inline Whether containers and group regions are drawn inline when the options name no way.
+ * @param tell Told what its first block that could stack stood at, as root options, once it is laid.
  * @returns How its containers and group regions are drawn, which joins stay
  * apart, whether every block faces its walls, and its stacking choice.
  */
 function wayOf(
 	options: Readonly<Record<string, string>>,
 	inline: boolean,
+	tell: ((told: Record<string, string>) => void) | undefined,
 ): { nesting: Nesting; apart: ReadonlySet<string>; facing: boolean; stacking: Stacking } {
 	return {
 		nesting: NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks")),
@@ -372,7 +372,7 @@ function wayOf(
 		facing: options[BLOCKS_FACING] === "true",
 		stacking: {
 			way: StackingSchema.parse(options[BLOCKS_STACKING]),
-			until: options[BLOCKS_UNTIL_STOOD] === "true",
+			tell: tell && ((stood) => tell(toldStood(stood))),
 		},
 	};
 }
