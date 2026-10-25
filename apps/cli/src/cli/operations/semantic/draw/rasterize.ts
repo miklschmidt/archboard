@@ -10,7 +10,7 @@ import {
 	LayoutEngineSchema,
 	type DrawnBoard,
 } from "@archboard/board/render-reply";
-import { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { renderSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import {
 	RASTER_MAX_SCALE,
 	RASTER_MIN_SCALE,

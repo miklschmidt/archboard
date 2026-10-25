@@ -1,10 +1,6 @@
 import { logger } from "@archboard/diagnostics/logger";
 import { forgetBoardMemory } from "@archboard/board/lock";
-import {
-	removePidFile,
-	sweepDeadPidFiles,
-	writePidFile,
-} from "@archboard/server-lifecycle/server-host";
+import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	panePresentations,
@@ -219,12 +215,8 @@ function listen(
 				}
 				http.phase = "running";
 				logger.info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
-				writePidFile(PORT, process.pid);
+				recordServerPid(PORT);
 				http.ownsPidFile = true;
-				const swept = sweepDeadPidFiles();
-				if (swept > 0) {
-					logger.debug(`Removed ${swept} pidfiles of servers that are gone`);
-				}
 				settleStart();
 			});
 		} catch (error) {

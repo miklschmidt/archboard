@@ -378,10 +378,12 @@ package-local `#` rewrite, and a new part reaches callers through its family's c
 The ninth is `server-requests` (`@archboard/server-requests`). It is the browser's one way of speaking
 JSON to the Archboard server, and the browser side of the rule that every call names its vault
 (ADR 0049). It has one file, `ui/clients/server-requests.ts`, and its `.` export is the one api
-file, `ui/api/server-requests.ts`, with 10 names, where the module was imported through one path.
-It carries the request helpers (`json`, `post`, `mutation`, `strictReply`, `cancellable`), the
-vault and board query builders (`inVault`, `boardQuery`) and the vault a page opens in
-(`learnServedVault`, `servedVault`). The reply guards `isRecord` and `trustReply` stay private. It
+file, `ui/api/server-requests.ts`, with 6 names. `requestJson(url, { method, payload, signal })`
+is one JSON request that throws the server's own reason when it refuses: GET unless it names a
+method, with a JSON body when it carries a payload. `strictReply` takes the same request and
+parses the reply against a success and a failure schema (`ReplySchema`). `inVault` names the vault
+on a URL, and `learnServedVault` and `servedVault` are the vault a page opens in. The request
+options, the reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
 
 The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
@@ -565,31 +567,39 @@ interface.
   executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`). It starts, finds, restarts and stops the
-Archboard server, and holds the CLI's client of that server. It adopts the `api/` role for `runtime/` and exposes 9
-subpaths with 71 names, where code outside imported 12 module paths. It imports `board`, `codex-app-server`,
-`workspace`, `process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in
-Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `runtime/semantic-board-client` and
-`shared/server-startup-terminal`, which used the `shared/` name for a file that writes to a file descriptor.
+Archboard server, and holds the one identity-gated request that the CLI sends it. It adopts the `api/` role for
+`runtime/` and exposes 5 subpaths with 29 names. Each job is one operation: a caller never assembles the health
+probe, the pid file, the port and the readiness wait itself. It imports `board`, `codex-app-server`, `workspace`,
+`process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in Bun, and nothing in it is safe for
+the browser. The CLI's route clients are not here: the CLI is their only caller, so they live in
+`apps/cli/src/cli/clients/server/`.
 
-- `./server` is what a command does to the server: find it, start it (`ensureServerRunning`), stop it, restart it and
-  read its health, sync status and pid file. `./config` is the server URL that the CLI reads from the environment, the
-  removed variable that it refuses, and the version of the install. `bin.ts` imports `./config` alone and late, because
-  loading it reads `.env`.
-- `./server-client` is the typed request to a running server: JSON requests, claims on a board, the panes on screen
-  and how a refused board request is shown. `./request-context` is what one CLI invocation says about itself on
-  every request: its board, vault, doing line, write session and expected version.
-  `./semantic-board-client` reads and writes a board through the server, never through the vault.
-- `./server-host` is what the server process does for itself: whether it is the entry point, its pid file, and
-  whether its source or frontend bundle is stale. `./startup-terminal` is the records that a starting server writes
-  down the startup pipe, for the launcher to clean up after it. `./pane-messages` is the messages that the server
-  sends a pane over its socket. `./panes` is how a pane is addressed, ordered and reported.
-- `runtime/operations/` holds the spawn, the restart and the cleanup of a failed start. `runtime/clients/` holds
-  the two clients. `runtime/protocol/` holds what is written down the startup pipe and what the server sends a pane.
-  `runtime/rules/` holds the pane layout, `runtime/store/` the pid file, `runtime/state/` the invocation's context
-  and `runtime/services/` the configuration and the staleness check.
-- The server entry and the version file are found with `SOURCE_CHECKOUT` of `workspace`, because the package sits
-  at another depth than the module did: the spawn runs `apps/server/src/server.ts` and the version is read from the root
-  `package.json` of that checkout. The staleness check watches `packages/` and `apps/` of it. The startup preload
+- `./server` is what a command does to the server of its checkout. `ensureServerRunning` reaches the server at the
+  URL, or starts one when it may and waits for its readiness, and answers its URL, whether it started it and its pid
+  file's pid. `stopServer` stops it without ever signalling a process that is not it, `restartServer` stops it,
+  builds the frontend and starts it again, and `serverStatus` says what answers at the URL: nothing, a conflict
+  (another service, an older build or another checkout's server), or the running server with its pid, browsers,
+  source freshness and sync state. `connectedBrowsers` is the browser count a command that needs a pane checks.
+  `./config` is the server URL that the CLI reads from the environment and the removed variables that it refuses.
+  `bin.ts` imports `./config` alone and late, because loading it reads `.env`.
+- `./server-client` is one CLI request to a running server (`requestJson`), behind the identity gate, carrying what
+  the invocation states about itself on every request. `stateInvocation` states its board, vault, doing line, write
+  session and expected version, and `statedInvocation` reads them back. `formatBoardRefusal` and
+  `BOARD_REFUSAL_CODES` are how a refused board request is shown, and `responseError` is the error the transport
+  builds from a refused answer.
+- `./server-host` is what the server process does for itself: whether it is the entry point, whether its source or
+  frontend bundle is stale, its pid file (`recordServerPid` once it listens, which also sweeps the pid files of
+  servers that are gone, and `removePidFile`), and its reports down the startup pipe to the launcher that spawned it
+  (`reportStartupOwnership`, `reportStartupEnd`). `./panes` is how a pane is addressed (`resolvePane`), ordered and
+  reported, and the messages that the server sends a pane over its socket.
+- `runtime/operations/` holds the spawn, the stop, the restart, the status and the cleanup of a failed start.
+  `runtime/clients/` holds the transport and the health reads. `runtime/protocol/` holds what is written down the
+  startup pipe and what the server sends a pane. `runtime/rules/` holds the pane layout, `runtime/store/` the pid
+  file, `runtime/state/` the invocation's statement and `runtime/services/` the configuration and the staleness
+  check.
+- The server entry is found with `SOURCE_CHECKOUT` of `workspace`, because the package sits at another depth than
+  the module did: the spawn runs `apps/server/src/server.ts` of that checkout. The staleness check watches
+  `packages/` and `apps/` of it. The startup preload
   of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
   because the spawn imports that private file, and `package-api.test.ts` names it.
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
@@ -715,7 +725,10 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   argv parser, the introspection that feeds the generated proof, the registry, dispatch, global
   flags and help, the staged tokens, and for the `semantic` commands the answers they build
   (`semantic/compare`, `semantic/inspect`, `semantic/draw`). `clients/server/` makes sure the server
-  a command needs is running. `store/artifacts/` writes a command's file artifacts. `operations/`
+  a command needs is running, and holds the CLI's route clients over the gated `requestJson` of
+  `server-lifecycle`: the board reads and writes (`semantic-boards.ts`), the claim and the panes.
+  `store/artifacts/` writes a command's file artifacts and `store/package-version/` reads the
+  install's version. `operations/`
   holds the commands themselves, one folder per command family (`claim`, `pane`, `repo`, `server`
   with `status`, `vault`, `install-skill`, and `semantic/{board,input,inspect,compare,history,draw}`)
   and the machinery that runs one invocation: `invocation/` (the one command table in `run.ts`, the
