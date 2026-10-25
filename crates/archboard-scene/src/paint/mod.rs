@@ -134,11 +134,6 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
                 shapes: shapes
                     .as_ref()
                     .map(|shapes| shapes as &dyn architecture::Shapes),
-                card_kind: if shapes.is_some() {
-                    crate::scene::SubjectKind::Step
-                } else {
-                    crate::scene::SubjectKind::Node
-                },
             };
             let mut painting = architecture::paint_architecture(
                 &ctx,

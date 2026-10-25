@@ -325,12 +325,12 @@ pub struct Vocabulary<'a> {
     pub far_size: f64,
 }
 
-/// The drawing a page is fitted to, and how its subjects stand for the marks it holds.
+/// The drawing a page is fitted to and how its subjects stand for the marks it
+/// holds, and, on a flowchart, the shapes its cards are drawn as.
 pub struct HeldPage<'a> {
     pub drawing: &'a Painted,
     pub standings: &'a Standings,
     pub shapes: Option<&'a dyn Shapes>,
-    pub card_kind: SubjectKind,
 }
 
 /// Two numbers in ascending order, a number that is not one tied with every other.
@@ -527,6 +527,12 @@ pub fn paint_architecture(
     for routed in edges {
         painted.push(traffic.get(&routed.edge.id).cloned().unwrap_or_default());
     }
+    // A flowchart's cards are its steps.
+    let card_kind = if page.shapes.is_some() {
+        SubjectKind::Step
+    } else {
+        SubjectKind::Node
+    };
     for card in &ordered_cards {
         let id = &card.measured.node.id;
         painted.push(match page.shapes.filter(|shapes| shapes.has(id)) {
@@ -539,7 +545,7 @@ pub fn paint_architecture(
                 unsettled.of(id),
                 appearance_of(id),
                 plan.cut_of(id).map(|cut| cut.id.as_str()),
-                page.card_kind,
+                card_kind,
             ),
         });
     }
