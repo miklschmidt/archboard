@@ -1461,6 +1461,54 @@ test target, and `swift build` built it once.
   looked at the package once for each directory and took 25 to 45 ms in each
   pass. Now a pass looks at each package once, in 2 to 3 ms.
 
+#### Reading Rust, and resolving it with rust-analyzer
+
+TASK-540 measured rust-analyzer 2026-10-12 from nixpkgs on 2026-10-25, on
+24 cores, with a two-crate fixture workspace and with this repository's own
+Cargo workspace.
+
+- rust-analyzer loads the workspace of the directory it starts in. It reports
+  the progress of `Fetching`, `Building CrateGraph`, `Roots Scanned`,
+  `Building compile-time-deps` and `Loading proc-macros`. Then it begins
+  `rustAnalyzer/cachePriming`, ends it once every crate is indexed, and starts
+  `cargo check`. It asks the client for nothing but
+  `window/workDoneProgress/create`.
+- Before it loads the workspace, it answers a definition with none. While it
+  reloads with its procedural macros, it refuses one as `content modified`.
+  So the Rust row opens the file and waits for the end of
+  `rustAnalyzer/cachePriming`, as the C row waits for clangd's index.
+- The priming ended after about 2 seconds on the fixture and 5.5 seconds on
+  this repository. In `check --code`, the rust-analyzer part took 5.7 seconds.
+
+The dogfood vault binds the crates on the boards Renderer layout and Semantic
+renderer. Before TASK-540, the check read every `.rs` file as text and gave
+41 findings. With the adapter and no server, it gave 82: 41 new findings,
+and the one Rust finding of before, a missing anchor, in other words. Each of
+these 42 was checked by hand against the code:
+
+- 28 `ANCHOR_MISMATCH`. Eight anchor `paint`, which `archboard-scene`'s
+  `paint/mod.rs` defines and no part binds. Thirteen name a function of a file
+  or a symbol that neither end binds. Two name `picture` in a file that calls
+  `sequence::picture` before `flowchart::picture`, so the first wins. Two
+  name a type that the file uses only as a type for a `data` relationship.
+  One is a TypeScript hook outside the directory that its part binds. The
+  other two name a function that moved to `blocks/` from `architecture/`.
+- 2 `ANCHOR_SYMBOL_MISSING`: `slab_shadow`, which `architecture.rs` no longer
+  calls, and the module `slab`, which `measured_cards.rs` names only in a
+  `use` path.
+- 10 `RELATIONSHIP_UNDRAWN`, 1 `CALLER_UNDRAWN` and 1 `EXPOSED_UNUSED`: a
+  crate that constructs another crate's type, through a `pub use` where there
+  is one, or that calls its function, with no relationship drawn. The 5
+  unused names are used only inside `archboard-layout`, by a test, or by a
+  name that is only the same.
+
+The first run also found `Item` missing from a file that writes
+`Item::Definitions { .. }`, and `Paragraph` used only as a type in a file that
+calls `Paragraph::new`. Both were wrong. Since then, a path is a use of each
+of its leading parts, as TypeScript reads `a.b.c`. With rust-analyzer, the
+one candidate became resolved, and nothing else changed. `.rs` left the
+`text-only` skip, and `crates/archboard-layout/src` left `exposure-unknown`.
+
 #### Resolving Python and C# candidates with pyright and csharp-ls
 
 TASK-367.14 measured pyright 1.1.412, basedpyright 1.39.8 and csharp-ls 0.28.0
@@ -1800,6 +1848,7 @@ them on npm. Both are built from the exact upstream tag.
 | `@tree-sitter-grammars/tree-sitter-hcl` | 1.2.0   | Apache-2.0 | Terraform and OpenTofu |
 | `@lumis-sh/wasm-swift`                  | 0.26.3  | MIT        | Swift                  |
 | `@lumis-sh/wasm-nix`                    | 0.26.3  | MIT        | Nix                    |
+| `tree-sitter-rust`                      | 0.24.0  | MIT        | Rust (TASK-540)        |
 
 They also install `tree-sitter-javascript` 0.23.1, two nested
 `tree-sitter-c` 0.23.6, `node-addon-api` 8.9.2 and `node-gyp-build` 4.8.4, all
@@ -1820,6 +1869,7 @@ commands that reproduce these numbers.
 | Python      | `import` and `from ... import`                            | `__all__`, names that start with `_`, `__init__.py`               | pyright or basedpyright                 |
 | C# and .NET | `using` plus type references, `ProjectReference`          | `public`, `internal`, `InternalsVisibleTo`                        | csharp-ls or the Roslyn language server |
 | Swift       | module `import`, type references, `Package.swift` targets | `open`, `public`, `package`, `internal`, `fileprivate`, `private` | sourcekit-lsp                           |
+| Rust        | `use`, `mod`, paths, `Cargo.toml` dependencies            | `pub` items of `lib.rs` and `mod.rs`, `pub use` re-exports        | rust-analyzer                           |
 | Objective-C | `#import`, `@import`, message sends                       | public headers, class extensions in `.m`                          | clangd                                  |
 | C and C++   | `#include` through `compile_commands.json`                | public headers, `static`, anonymous namespaces                    | clangd                                  |
 

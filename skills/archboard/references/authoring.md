@@ -112,8 +112,8 @@ without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check semantics` tests the path only;
 `archboard check code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol. Code facts read TypeScript and
-TSX, Python, C and C++, Objective-C, C# and .NET project files, Swift,
-Terraform and OpenTofu, Kubernetes manifests, docker-compose files, env files
+TSX, Python, C and C++, Objective-C, C# and .NET project files, Swift, Rust
+and `Cargo.toml`, Terraform and OpenTofu, Kubernetes manifests, docker-compose files, env files
 and Nix flakes. Any other file, such as Objective-C++ (`.mm`), is read only as
 text: it must hold the symbol's last name, and nothing that needs references is
 judged in it. `check code` names the kinds of file that it read as text in
@@ -322,6 +322,27 @@ part can also bind `Package.swift` with a target's name as `symbol`. A name or
 a path that the manifest computes is not read, and a Swift file that no target
 of a `Package.swift` holds, as in an Xcode project, belongs to no module, so
 its uses of other files' names give no evidence.
+
+Code facts also read Rust (`.rs`), and each `Cargo.toml` without running
+Cargo. Bind a crate to its package directory or its `src`, a module to its
+directory or its file, and an item by its path in its file: `post`,
+`Ledger.post` for a method of an `impl` block, `tests.helper` inside an inline
+`mod tests`. A path in code is a use of each of its leading parts, so
+`Item::Definitions { .. }` uses `Item`, `Item.Definitions` and nothing else,
+and `ledger::money::Money::new()` calls `ledger.money.Money.new`. Anchor at the
+spelling the code writes, with `::` as `.`: when one file calls `picture` of
+two modules, `flowchart.picture` names the one you mean, where `picture` names
+the first. A use reaches its file through a `use` declaration, a `mod`
+declaration, a path from `crate`, `self` or `super`, a crate that the package
+depends on in its `Cargo.toml`, or a glob, and through each `pub use` that
+passes it on. A member reached through a value, such as `entry.balance()`,
+reaches nothing until rust-analyzer names it. A name written only in a `use`
+path, such as the module `slab` in `use crate::paint::slab::slab_shadow;`, is
+no use: anchor the name the code calls. A `Cargo.toml` names each local
+package that it depends on, by `path` or `workspace = true`, as
+build-dependency evidence. A trait that a file brings in only to call its
+methods is a use as a type. `#[path]` attributes and code that a macro writes
+are not read.
 
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
@@ -573,6 +594,7 @@ candidates stay. A server that did not start or stopped is
 - A C# checkout with no `.sln`, `.slnx` or `.csproj` file.
 - A C, C++ or Objective-C file with no `compile_commands.json`. The check never
   generates it.
+- A Rust file that no `Cargo.toml` holds.
 
 With a server, clangd names the definition of a function that a header only
 declares. Redis declares such a function in `server.h` and defines it in
@@ -633,7 +655,12 @@ of the package. It exposes the names that its `__all__` lists. Without
 `__all__`, it exposes every name that it defines or imports and that does not
 start with `_`. In Swift, the module is the directory of a target that
 `Package.swift` declares. It exposes the `open`, `public` and `package`
-declarations of all its files. In C, C++ and Objective-C, the module is a
+declarations of all its files. In Rust, a crate is its package directory or
+the directory of its `lib.rs`, and its root file is `lib.rs`. A module of a
+crate is its directory, whose root file is its `mod.rs` or the file of the same
+name beside it. The root file exposes its `pub`, `pub(crate)` and `pub(super)`
+items and what its `pub use` and `pub mod` declarations pass on. A crate with
+no library exposes nothing that the check reads. In C, C++ and Objective-C, the module is a
 bound directory. Its public headers are the headers below its `include` directory, or else the
 headers directly in it whose source file is in it too. It exposes what they
 declare. In Terraform and OpenTofu, the module is a directory of `.tf` or
