@@ -406,16 +406,12 @@ pub fn paint_architecture(
             })
         })
         .collect();
-    let card_boxes: Vec<(String, Rect)> = cards
-        .iter()
-        .map(|card| (card.measured.node.id.clone(), card.bounds))
-        .collect();
-    let traffic = paint_traffic(&traffic_lines, &card_boxes, palette);
-    let framed: Vec<(&str, Rect)> = containers
+    let carded: Vec<(&str, Rect)> = cards
         .iter()
         .map(|node| (node.measured.node.id.as_str(), node.bounds))
         .collect();
-    let carded: Vec<(&str, Rect)> = cards
+    let traffic = paint_traffic(&traffic_lines, &carded, palette);
+    let framed: Vec<(&str, Rect)> = containers
         .iter()
         .map(|node| (node.measured.node.id.as_str(), node.bounds))
         .collect();
