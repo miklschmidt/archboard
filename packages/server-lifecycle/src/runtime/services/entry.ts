@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "@archboard/diagnostics/logger";
-import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
+import { errnoCode } from "@archboard/diagnostics/errno";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 
 /**
  * The real path of a script, so symlinked bins compare equal to their target.
@@ -19,7 +20,7 @@ function resolveEntrypointPath(filePath: string | undefined): string | null {
 	try {
 		return fs.realpathSync(filePath);
 	} catch (error) {
-		const code = errorCode(error);
+		const code = errnoCode(error);
 		if (code !== "ENOENT") {
 			logger.warn(`fs.realpathSync failed for "${filePath}", falling back to path.resolve.`, {
 				code,

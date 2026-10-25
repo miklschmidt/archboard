@@ -3,7 +3,10 @@ import path from "node:path";
 
 import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
 import { type CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
-import type { CheckoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
+import type { checkoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
+
+/** What a checkout has out: the branch it is on and the commit at HEAD. */
+type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
 
 type ResolutionFailureCode = Extract<
 	CodeTargetFailureCode,
