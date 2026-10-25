@@ -373,22 +373,22 @@ The agent that `createVoiceAgent` returns has these members:
 
 Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
 
-| Action                                       | What it does                                                                                                 |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `connect()`                                  | Opens the socket, or opens it again. The client does not open a lost socket again by itself.                 |
-| `refresh()`                                  | Reads the server state again without repeating a command.                                                    |
-| `signIn(login?)`                             | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key. |
-| `cancelSignIn()`                             | Cancels the pending sign-in.                                                                                 |
-| `signOut()`                                  | Signs the account out.                                                                                       |
-| `send(message)`                              | Sends a message to the workhorse, and creates the conversation on first use.                                 |
-| `startVoice()`                               | Starts the coordinator's voice, and creates the conversation on first use.                                   |
-| `stopVoice()`                                | Stops voice. The workhorse keeps working.                                                                    |
-| `setMuted(muted)`                            | Mutes or unmutes the microphone of the running voice.                                                        |
-| `stopWork()`                                 | Interrupts the running workhorse turn. Voice keeps running.                                                  |
-| `answerApproval(approval, response, intent)` | Answers one approval that the page showed, with the `intent` of the state that showed it.                    |
-| `snapshot()`                                 | Returns the current state.                                                                                   |
-| `subscribe(listener)`                        | Calls the listener after each change of the state. Returns the function that stops it.                       |
-| `dispose()`                                  | Stops voice, releases the socket and ends every subscription.                                                |
+| Action                                       | What it does                                                                                                                                                           |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connect()`                                  | Opens the socket, or opens it again. After an open socket closes, the client opens a new one by itself. A first `connect()` that fails is not repeated: call it again. |
+| `refresh()`                                  | Reads the server state again without repeating a command.                                                                                                              |
+| `signIn(login?)`                             | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key.                                                           |
+| `cancelSignIn()`                             | Cancels the pending sign-in.                                                                                                                                           |
+| `signOut()`                                  | Signs the account out.                                                                                                                                                 |
+| `send(message)`                              | Sends a message to the workhorse, and creates the conversation on first use.                                                                                           |
+| `startVoice()`                               | Starts the coordinator's voice, and creates the conversation on first use.                                                                                             |
+| `stopVoice()`                                | Stops voice. The workhorse keeps working.                                                                                                                              |
+| `setMuted(muted)`                            | Mutes or unmutes the microphone of the running voice.                                                                                                                  |
+| `stopWork()`                                 | Interrupts the running workhorse turn. Voice keeps running.                                                                                                            |
+| `answerApproval(approval, response, intent)` | Answers one approval that the page showed, with the `intent` of the state that showed it.                                                                              |
+| `snapshot()`                                 | Returns the current state.                                                                                                                                             |
+| `subscribe(listener)`                        | Calls the listener after each change of the state. Returns the function that stops it.                                                                                 |
+| `dispose()`                                  | Stops voice, releases the socket and ends every subscription.                                                                                                          |
 
 The state has these fields:
 
@@ -549,7 +549,12 @@ The same rejection also names a state directory that the package cannot use:
 
 ### The page stays on reconnecting
 
-The socket closed, for example because the server restarted. The client does not open a lost socket again by itself. Call `client.connect()`, as the quickstart's "Connect" button does.
+`connection` reads `reconnecting` after an open socket closed, for example because the server stopped. The client opens a new socket by itself, and tries again every 3 seconds until one opens. Each attempt that does not open puts its reason in `failure`.
+
+1. Make sure that the server runs and that `start()` resolved.
+2. If the server logs no error, look at the attempts in the browser's network panel. A `403` or `400` answer has the causes in [The socket is refused](#the-socket-is-refused).
+
+A first `connect()` that fails is not repeated. The quickstart's "Connect" button calls it again.
 
 ## License
 
