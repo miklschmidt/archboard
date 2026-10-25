@@ -1,11 +1,11 @@
 ---
 id: TASK-520
 title: The renderer is a Rust core that every frontend paints
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T20:07:00Z'
+updated_date: '2026-10-25T20:25:00Z'
 labels:
   - renderer
   - performance
@@ -25,10 +25,10 @@ A native desktop frontend (GPUI with Vello, later) cannot draw today's pictures:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Bun and the browser render every board through the same WASM build of the Rust core, and no TypeScript layout or painting rules remain in packages/renderer
-- [ ] #2 Each port step leaves every corpus picture the same bytes, except the router and text steps, whose pictures are no worse on the measures of ADR 0039
-- [ ] #3 A native Rust program links the core and gets the scene of a board without a JavaScript engine
-- [ ] #4 The development tools come from the Nix flake of the repository
+- [x] #1 Bun and the browser render every board through the same WASM build of the Rust core, and no TypeScript layout or painting rules remain in packages/renderer
+- [x] #2 Each port step leaves every corpus picture the same bytes, except the router and text steps, whose pictures are no worse on the measures of ADR 0039
+- [x] #3 A native Rust program links the core and gets the scene of a board without a JavaScript engine
+- [x] #4 The development tools come from the Nix flake of the repository
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -55,4 +55,12 @@ Left on purpose:
 - Board layout EXPOSED_UNUSED: archboard-layout's lib.rs re-exports InProcess (used only by tests) and Laying, and nothing outside the crate uses either. A code matter, not a board one.
 
 Pre-push review (2026-10-25): twelve Codex gpt-6-astra reviewers at xhigh, eight scopes (router and text, Blocks, Track, layout core, scene and SVG, flows and render, TypeScript host, tooling) and four boundaries (WASM host contract, scene to painters, crate interfaces, core build and staleness), then a second round for the SVG path left in the scene and for WASM panics. Their fixes are merged with every drawing byte-equal: among them exponential container bounds in Track, quadratic route separation and long-word wrapping, paired solves that hid an error, renders left pending by a host that throws or by a Rust panic (one CoreGuard in the generated glue now rejects them with CORE_PANIC and refuses reuse), the browser refusing a stale core, CI building the core for macOS, and the scene no longer spelling SVG paths. Two Track faults that the TASK-520.08 adoption exposed (a cycle closed through a frame, a gutter between containers) are fixed and recorded as layout-rules section 56; 8 of 2,344 current drawings changed, both views better on the ADR 0039 measures except that Renderer layout's Responsibilities page grew. Full gate on the merged branch: exit 0 in every lane.
+
+Closed after pull request #14 passed CI (run 40229337618). #1: packages/renderer/src/shared/rules holds only the engine pool and the render host glue; Bun and the browser load the same WASM build (TASK-520.01, .08). #2: every port step was byte-equal on the corpus except the router (TASK-520.02) and text (TASK-520.07) steps, judged on the ADR 0039 measures and accepted. #3: crates/archboard-render/tests/native.rs renders a corpus board natively through InProcess, gets Drawn with its scene, and matches the WASM bytes; it passed in CI. #4: CI and every build run inside the flake's nix develop.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The renderer is a Rust core in crates/, built to WebAssembly for Bun and the browser and linkable natively. It lays out Track, Blocks, sequences and flowcharts, routes Blocks trunks with a clean-room router in place of libavoid, shapes text with its bundled fonts and Noto fallbacks, and paints a typed scene that a frontend paints without SVG or CSS; archboard-svg writes the SVG. packages/renderer is a thin host that runs Graphviz solves and gives icons. The crates are linted as strictly as the TypeScript, the Nix flake provides the tools, and CI runs the gate in the dev shell. Every port step was proved on the corpus. A twelve-scope review before the push fixed panic containment, several quadratic or exponential paths and two Track faults. Risks: contributors need Nix to build the core, and a stale or missing core build stops rendering until bun run build:core runs. GPUI experiments come next and are not part of this task.
+<!-- SECTION:FINAL_SUMMARY:END -->
