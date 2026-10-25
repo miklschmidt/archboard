@@ -1,5 +1,5 @@
 // The shown conversation of a browser tab (ADR 0050), as the tab registry holds it. What is
-// guarded: the first read pins it to the asking pane's checkout, after that only a show changes
+// guarded: the first read pins it to the asking chat's checkout, after that only a show changes
 // it and is told, and it ends with the tab. The route that shows one and the agent's show that
 // does not are owned by tests/system/server-state/shown-conversation.test.ts.
 
@@ -21,15 +21,15 @@ afterEach(() => {
 	jest.useRealTimers();
 });
 
-test("a tab shows the checkout of the first pane read for it, and only a show changes that", () => {
+test("a tab shows the checkout of the first chat read for it, and only a show changes that", () => {
 	const tabs = createTabSessions();
 	const told: TabSessionId[] = [];
 	tabs.onShownChange((tabSessionId) => told.push(tabSessionId));
-	tabs.note("pane-a", TAB);
+	tabs.note("chat-a", TAB);
 
 	expect(tabs.current(TAB)).toBeNull();
 	expect(tabs.shown(TAB, () => PAYMENTS)).toBe(PAYMENTS);
-	// Another pane of the tab, in another checkout, reads the same conversation.
+	// Another chat of the tab, in another checkout, reads the same conversation.
 	expect(tabs.shown(TAB, () => SHOP)).toBe(PAYMENTS);
 	expect(told).toEqual([]);
 
@@ -41,18 +41,18 @@ test("a tab shows the checkout of the first pane read for it, and only a show ch
 
 test("a tab's shown conversation ends with the tab, and a tab that comes back is pinned afresh", () => {
 	const tabs = createTabSessions();
-	tabs.note("pane-a", TAB);
+	tabs.note("chat-a", TAB);
 	tabs.show(TAB, SHOP);
 
 	// A reload within the grace keeps it.
-	tabs.forget("pane-a");
+	tabs.forget("chat-a");
 	jest.advanceTimersByTime(TAB_SESSION_GRACE_MS - 1);
-	tabs.note("pane-a", TAB);
+	tabs.note("chat-a", TAB);
 	expect(tabs.current(TAB)).toBe(SHOP);
 
-	tabs.forget("pane-a");
+	tabs.forget("chat-a");
 	jest.advanceTimersByTime(TAB_SESSION_GRACE_MS);
 	expect(tabs.current(TAB)).toBeNull();
-	tabs.note("pane-a", TAB);
+	tabs.note("chat-a", TAB);
 	expect(tabs.shown(TAB, () => PAYMENTS)).toBe(PAYMENTS);
 });

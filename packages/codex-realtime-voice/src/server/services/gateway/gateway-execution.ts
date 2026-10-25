@@ -41,7 +41,7 @@ import type { SessionLeases } from "#server/services/gateway/gateway-leases.ts";
 interface CachedCommand {
 	readonly fingerprint: string;
 	readonly browserId: BrowserConnectionId;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly connection: BrowserConnectionInstance;
 	readonly result: Promise<BrowserGatewayCommandResult>;
 }
@@ -64,12 +64,12 @@ interface CommandExecutor {
 	readonly command: (
 		browserId: BrowserConnectionId,
 		value: unknown,
-		paneIdOverride?: string,
+		chatIdOverride?: string,
 		instance?: BrowserConnectionInstance,
 	) => Promise<BrowserGatewayCommandResult>;
 	readonly accountRead: (
 		browserId: BrowserConnectionId,
-		paneId: string,
+		chatId: string,
 		instance?: BrowserConnectionInstance,
 	) => Promise<BrowserGatewayAccountReadResult>;
 	/** Refuse a command whose readiness is not account-capable; the lease claim uses this too. */
@@ -90,22 +90,22 @@ function codeForOutcome(outcome: DeliveryOutcome): CodexWorkbenchGatewayError["c
 }
 
 /**
- * The pane a command names, either because the caller knows it or because the
+ * The chat a command names, either because the caller knows it or because the
  * command itself says so.
  * @param value The command as it arrived.
- * @param paneIdOverride The pane the caller knows, when it knows one.
- * @returns The pane.
+ * @param chatIdOverride The chat the caller knows, when it knows one.
+ * @returns The chat.
  */
-function paneIdOf(value: unknown, paneIdOverride?: string): string {
-	const paneId =
-		paneIdOverride ??
-		(isRecord(value) && typeof value["paneId"] === "string" ? value["paneId"] : null);
-	if (paneId === null)
+function chatIdOf(value: unknown, chatIdOverride?: string): string {
+	const chatId =
+		chatIdOverride ??
+		(isRecord(value) && typeof value["chatId"] === "string" ? value["chatId"] : null);
+	if (chatId === null)
 		throw new CodexWorkbenchGatewayError(
 			"invalid_input",
-			"A browser command must identify its pane.",
+			"A browser command must identify its chat.",
 		);
-	return paneId;
+	return chatId;
 }
 
 /**
@@ -201,7 +201,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 	});
 
 	/**
-	 * Answer a command that was refused, recording the refusal as the pane's
+	 * Answer a command that was refused, recording the refusal as the chat's
 	 * current operation outcome so every browser sees it.
 	 * @param state The connection.
 	 * @param commandId The command, when the refusal names one.
@@ -257,7 +257,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 
 	/**
 	 * Answer a command the action carried out, recording its outcome as the
-	 * pane's current one.
+	 * chat's current one.
 	 * @param state The connection.
 	 * @param command The command.
 	 * @param actionResult What the action reported.
@@ -363,7 +363,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 		}
 		const sameOwner =
 			existing.browserId === state.browserId &&
-			existing.paneId === state.paneId &&
+			existing.chatId === state.chatId &&
 			existing.connection === state.instance;
 		return sameOwner ? existing.result : refusal(state, commandId, "lease_transferred");
 	};
@@ -424,13 +424,13 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 		 * serve, replay what it has already answered, and otherwise run it.
 		 * @param browserId The browser.
 		 * @param value The command as it arrived.
-		 * @param paneIdOverride The pane the caller knows, when it knows one.
+		 * @param chatIdOverride The chat the caller knows, when it knows one.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The command result.
 		 */
-		command: async (browserId, value, paneIdOverride, instance) => {
-			const paneId = paneIdOf(value, paneIdOverride);
-			const state = connections.stateFor(browserId, paneId, instance);
+		command: async (browserId, value, chatIdOverride, instance) => {
+			const chatId = chatIdOf(value, chatIdOverride);
+			const state = connections.stateFor(browserId, chatId, instance);
 			const parsed = parseCommand(state, value);
 			if (parsed instanceof Promise) {
 				return parsed;
@@ -449,7 +449,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 			trackInFlight(parsed.commandId, {
 				fingerprint,
 				browserId,
-				paneId,
+				chatId,
 				connection: state.instance,
 				result,
 			});
@@ -460,18 +460,18 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 		 * Ask the account owner to re-read its state, and answer with what the
 		 * browser should now be showing.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The account read result.
 		 */
-		accountRead: async (browserId, paneId, instance) => {
-			const state = connections.stateFor(browserId, paneId, instance);
+		accountRead: async (browserId, chatId, instance) => {
+			const state = connections.stateFor(browserId, chatId, instance);
 			try {
 				ensureAccountReadiness(connections.snapshotFor(state));
 				const outcome = actionOutcome(
 					await options.actions.account.read({
 						browserId,
-						paneId,
+						chatId,
 						tabSessionId: state.tabSessionId,
 						checkout: options.checkoutOf(state.browserId),
 					}),

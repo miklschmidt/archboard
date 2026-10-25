@@ -78,7 +78,7 @@ interface CodexSettingsProjectionInput {
  * The queue port sets a submission's `clientUserMessageId` to the serialized
  * OperationId on every add it makes, so the composition root can recover the
  * operation from the authoritative list and hand it over here. A null operation
- * is a submission this workbench did not queue, and this pane has no authority to
+ * is a submission this workbench did not queue, and this chat has no authority to
  * reorder it.
  */
 interface CodexQueuedSubmissionProjectionInput extends Pick<

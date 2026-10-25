@@ -31,7 +31,7 @@ interface PublicSocketClient {
 	) => Promise<Record<string, unknown>>;
 }
 
-/** The checkout every pane of this test is in. */
+/** The checkout every chat of this test is in. */
 const CHECKOUT = "/work/payments";
 
 test("the live server socket crosses the real gateway and approval broker exactly once", async () => {
@@ -152,7 +152,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			{
 				claimThread: () => undefined,
 				releaseThread: () => undefined,
-				// The tab's one workhorse, in the checkout every pane of this test is in.
+				// The tab's one workhorse, in the checkout every chat of this test is in.
 				workhorses: () => [
 					{
 						checkout: CHECKOUT,
@@ -270,7 +270,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 		gateway = activeGateway;
 		const activeOwner = createServerCodexBrowserSocketOwner({
 			gateway: activeGateway,
-			paneForBrowser: () => "pane-public",
+			chatForBrowser: () => "chat-public",
 			tabSessionForBrowser: () => parseTabSessionId("tab-public"),
 			openTabSession: () => undefined,
 		});
@@ -343,7 +343,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			kind: "browser_command",
 			command: "approvalRespond",
 			commandId: lease["commandId"],
-			paneId: lease["paneId"],
+			chatId: lease["chatId"],
 			childId: lease["childId"],
 			epoch: lease["epoch"],
 			requestId,
@@ -378,7 +378,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 				kind: "browser_command",
 				command: "realtimeStart",
 				commandId: startLease["commandId"],
-				paneId: startLease["paneId"],
+				chatId: startLease["chatId"],
 				childId: startLease["childId"],
 				epoch: startLease["epoch"],
 				threadId,
@@ -402,7 +402,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 					kind: "browser_command",
 					command,
 					commandId: currentLease["commandId"],
-					paneId: currentLease["paneId"],
+					chatId: currentLease["chatId"],
 					childId: currentLease["childId"],
 					epoch: currentLease["epoch"],
 					threadId,

@@ -17,7 +17,7 @@ const TAB_SESSION_LINK_PREFIX = "tab:";
 const WORKHORSE_LINK_PREFIX = "workhorse:";
 
 /**
- * The link of an approval shown to every pane of one tab session, as its coordinator's are.
+ * The link of an approval shown to every chat of one tab session, as its coordinator's are.
  * @param tabSessionId The tab session.
  * @returns The link.
  */
@@ -26,7 +26,7 @@ function tabSessionLink(tabSessionId: TabSessionId): string {
 }
 
 /**
- * The link of an approval one workhorse asked, shown to the panes of its checkout (ADR 0050).
+ * The link of an approval one workhorse asked, shown to the chats of its checkout (ADR 0050).
  * @param tabSessionId The workhorse's tab session.
  * @param checkout The checkout it works in.
  * @returns The link.
@@ -54,9 +54,9 @@ function tabSessionOfLink(link: string | null): TabSessionId | null {
 }
 
 /**
- * The checkout whose panes an approval's link is shown to: the workhorse's that asked it.
+ * The checkout whose chats an approval's link is shown to: the workhorse's that asked it.
  * @param link The link, or null when the approval has none.
- * @returns The checkout, or null when every pane of its tab session is shown it.
+ * @returns The checkout, or null when every chat of its tab session is shown it.
  */
 function checkoutOfLink(link: string | null): string | null {
 	if (link === null || !link.startsWith(WORKHORSE_LINK_PREFIX)) {
@@ -66,11 +66,11 @@ function checkoutOfLink(link: string | null): string | null {
 }
 
 /**
- * The approvals a pane may be shown: those its tab's coordinator asked and those the workhorse of
+ * The approvals a chat may be shown: those its tab's coordinator asked and those the workhorse of
  * its checkout asked, while they await an answer or their terminal has not yet been delivered.
  * @param approvals The broker.
- * @param tabSessionId The pane's tab session.
- * @param checkout The checkout the pane's tab shows.
+ * @param tabSessionId The chat's tab session.
+ * @param checkout The checkout the chat's tab shows.
  * @returns The views, in the broker's own order.
  */
 function visibleApprovalViews(
@@ -94,7 +94,7 @@ function visibleApprovalViews(
 }
 
 /**
- * Cancel every approval a tab session was still to answer, because the session ended: no pane of
+ * Cancel every approval a tab session was still to answer, because the session ended: no chat of
  * the tab came back within its grace, so nobody is left to answer them. Each is retired at once,
  * since no browser of the session will show its terminal either.
  * @param approvals The broker.
@@ -127,7 +127,7 @@ async function cancelTabSessionApprovals(
 }
 
 /**
- * Bind all seven ordinary approval families to one exact pane lifecycle.
+ * Bind all seven ordinary approval families to one exact chat lifecycle.
  * @param approvals The broker every action reads and answers through.
  * @returns The actions.
  */
@@ -137,7 +137,7 @@ function createServerOrdinaryApprovalActions(
 	const actions: BrowserOrdinaryApprovalActions = {
 		/**
 		 * The approval under one request id, only while it is still awaiting an
-		 * answer; anything else is nothing for the pane to act on.
+		 * answer; anything else is nothing for the chat to act on.
 		 * @param requestId The request.
 		 * @returns The view, or null.
 		 */
@@ -165,13 +165,13 @@ function createServerOrdinaryApprovalActions(
 			return { outcome: settlement.outcome };
 		},
 		/**
-		 * Retire one settled approval, the pane having shown its terminal.
+		 * Retire one settled approval, the chat having shown its terminal.
 		 * @param requestId The request.
 		 * @returns Whether the broker still held it.
 		 */
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
 		/**
-		 * Every settled approval whose terminal no pane has shown yet, and the panes it is shown
+		 * Every settled approval whose terminal no chat has shown yet, and the chats it is shown
 		 * to: its tab session's, and of a workhorse's only those of its checkout.
 		 * @returns Their request ids, tab sessions and checkouts.
 		 */
@@ -185,9 +185,9 @@ function createServerOrdinaryApprovalActions(
 					checkout: checkoutOfLink(view.snapshot.binding.link),
 				})),
 		/**
-		 * Retire the approvals a pane has now shown, ignoring any another pane
+		 * Retire the approvals a chat has now shown, ignoring any another chat
 		 * or lifecycle boundary already retired.
-		 * @param requestIds What the pane showed.
+		 * @param requestIds What the chat showed.
 		 */
 		acknowledgePublished: (requestIds) => {
 			for (const requestId of new Set(requestIds)) {

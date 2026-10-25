@@ -40,7 +40,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	const context = {
 		browserId: "browser-1",
 		connection: Object.freeze({}),
-		paneId: "pane-busy",
+		chatId: "chat-busy",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: "/work/payments",
 		commandId,
@@ -64,7 +64,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 		kind: "browser_command",
 		command: "start",
 		commandId,
-		paneId: "pane-busy",
+		chatId: "chat-busy",
 		childId: context.childId,
 		epoch: context.epoch,
 		threadId,
@@ -135,7 +135,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	const context = {
 		browserId: "browser-1",
 		connection: Object.freeze({}),
-		paneId: "pane-1",
+		chatId: "chat-1",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: "/work/payments",
 		commandId,
@@ -161,7 +161,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 				kind: "browser_command",
 				command: "steer",
 				commandId,
-				paneId: "pane-1",
+				chatId: "chat-1",
 				childId: context.childId,
 				epoch: context.epoch,
 				threadId,
@@ -216,10 +216,10 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		identity: authorities,
 		session,
 		contextForOperation: (action, operation) => {
-			contexts.push({ paneId: action.paneId, operation });
+			contexts.push({ chatId: action.chatId, operation });
 			return TEST_CONTEXT_SCHEMA.parse({
 				...testContextFixture,
-				paneId: action.paneId,
+				chatId: action.chatId,
 				child: { id: action.childId, epoch: action.epoch },
 				workhorse: { threadId: action.link.threadId, turnId: null },
 				operation: { ...operation, outcome: null },
@@ -229,7 +229,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	const context = {
 		browserId: "browser-1",
 		connection: Object.freeze({}),
-		paneId: "pane-exact",
+		chatId: "chat-exact",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: "/work/payments",
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
@@ -254,7 +254,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 			kind: "browser_command",
 			command: "start",
 			commandId: context.commandId,
-			paneId: context.paneId,
+			chatId: context.chatId,
 			childId: context.childId,
 			epoch: context.epoch,
 			threadId,
@@ -268,7 +268,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 			kind: "browser_command",
 			command: "steer",
 			commandId: context.commandId,
-			paneId: context.paneId,
+			chatId: context.chatId,
 			childId: context.childId,
 			epoch: context.epoch,
 			threadId,
@@ -302,7 +302,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	expect(typeof steerBody.clientUserMessageId).toBe("string");
 	expect(typeof steerBody.additionalContext[TEST_CONTEXT_CODEC.key]?.value).toBe("string");
 	expect(contexts).toEqual([
-		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
-		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
+		{ chatId: "chat-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
+		{ chatId: "chat-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
 	]);
 });

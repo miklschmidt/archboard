@@ -93,7 +93,7 @@ test("an approval is linked to the workhorse or coordinator whose thread asked, 
 		const fromWorkhorse = ask("thread-workhorse");
 		const unheld = ask("thread-nobody-holds");
 		expect(unheld.binding.link).toBeNull();
-		// Every pane of the tab is shown its coordinator's; only the panes of the workhorse's
+		// Every chat of the tab is shown its coordinator's; only the chats of the workhorse's
 		// checkout are shown the workhorse's.
 		const shown = (checkout: string) =>
 			visibleApprovalViews(broker, parseTabSessionId("tab-one")!, checkout).map(

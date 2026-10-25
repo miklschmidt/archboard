@@ -22,7 +22,7 @@ interface VoiceClientOptions {
 	 */
 	readonly socketPath: string;
 	/** The view in the host page that shows this conversation. Defaults to `main`. */
-	readonly paneId?: string;
+	readonly chatId?: string;
 }
 
 /** Why the last action failed. */

@@ -207,9 +207,9 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	expect(owner.read("pane-timeline", 1, link, true, connection)).toBeNull();
+	expect(owner.read("chat-timeline", 1, link, true, connection)).toBeNull();
 	await flush();
-	const projection = owner.read("pane-timeline", 1, link, true, connection);
+	const projection = owner.read("chat-timeline", 1, link, true, connection);
 	if (projection === null) {
 		throw new Error("timeline projection was not loaded");
 	}
@@ -363,8 +363,8 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 	const firstLink = executableLink(authorities, firstThreadId);
 	const secondLink = executableLink(authorities, secondThreadId);
 	const connection = {};
-	owner.read("pane-timeline", 1, firstLink, true, connection);
-	owner.read("pane-timeline", 2, secondLink, true, connection);
+	owner.read("chat-timeline", 1, firstLink, true, connection);
+	owner.read("chat-timeline", 2, secondLink, true, connection);
 	firstPage.resolve({
 		data: [turnFixture(authorities, "first-turn", [])],
 		nextCursor: null,
@@ -372,14 +372,14 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 	});
 	await flush();
 	expect(changes).toBe(0);
-	expect(owner.read("pane-timeline", 2, secondLink, true, connection)).toBeNull();
+	expect(owner.read("chat-timeline", 2, secondLink, true, connection)).toBeNull();
 	secondPage.resolve({
 		data: [turnFixture(authorities, "second-turn", [])],
 		nextCursor: null,
 		backwardsCursor: null,
 	});
 	await flush();
-	const projection = owner.read("pane-timeline", 2, secondLink, true, connection);
+	const projection = owner.read("chat-timeline", 2, secondLink, true, connection);
 	if (projection === null) {
 		throw new Error("replacement timeline projection was not loaded");
 	}
@@ -429,15 +429,15 @@ test("timeline owner waits for thread capability and refreshes only the current 
 	});
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	owner.read("pane-timeline", 1, link, false, connection);
+	owner.read("chat-timeline", 1, link, false, connection);
 	await flush();
 	expect(calls).toBe(0);
-	owner.read("pane-timeline", 1, link, true, connection);
+	owner.read("chat-timeline", 1, link, true, connection);
 	await flush();
 	expect({
 		calls,
 		changes,
-		projection: owner.read("pane-timeline", 1, link, true, connection),
+		projection: owner.read("chat-timeline", 1, link, true, connection),
 	}).toEqual({
 		calls: 1,
 		changes: 0,
@@ -460,7 +460,7 @@ test("timeline owner waits for thread capability and refreshes only the current 
 		event(authorities, authorities.identity.decoder.serializeCodexIdentity(threadId)),
 	);
 	await flush();
-	const projection = owner.read("pane-timeline", 1, link, true, connection);
+	const projection = owner.read("chat-timeline", 1, link, true, connection);
 	if (projection === null) {
 		throw new Error("timeline did not recover after notification");
 	}

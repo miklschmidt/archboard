@@ -168,7 +168,7 @@ function bindingIsStale(
 ): boolean {
 	return (
 		command.commandId !== binding.commandId ||
-		command.paneId !== binding.paneId ||
+		command.chatId !== binding.paneId ||
 		command.capturedLink.threadId !== binding.capturedLink.threadId ||
 		command.capturedLink.childId !== binding.capturedLink.childId ||
 		command.capturedLink.epoch !== binding.capturedLink.epoch

@@ -1,17 +1,17 @@
 import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
-/** The panes on screen by tab, and when each tab that has none left ends. */
+/** The chats on screen by tab, and when each tab that has none left ends. */
 interface TabSessions {
-	/** Remember which tab a pane belongs to, as its authoritative socket named it. */
+	/** Remember which tab a chat belongs to, as its authoritative socket named it. */
 	readonly note: (clientId: string, tabSessionId: TabSessionId | null) => void;
-	/** The tab a pane belongs to, or null while its socket named none. */
+	/** The tab a chat belongs to, or null while its socket named none. */
 	readonly of: (clientId: string) => TabSessionId | null;
-	/** Forget the tab of a pane whose socket has gone; its tab's grace starts if it was the last. */
+	/** Forget the tab of a chat whose socket has gone; its tab's grace starts if it was the last. */
 	readonly forget: (clientId: string) => void;
-	/** Forget every pane and every grace, because the server is stopping. Nothing ends. */
+	/** Forget every chat and every grace, because the server is stopping. Nothing ends. */
 	readonly forgetAll: () => void;
-	/** Hear each tab session that ended, once the grace passed with no pane of it back. */
+	/** Hear each tab session that ended, once the grace passed with no chat of it back. */
 	readonly onEnded: (listener: (tabSessionId: TabSessionId) => void) => () => void;
 	/**
 	 * The checkout whose conversation a tab shows. A tab that shows none yet is pinned to the
@@ -40,8 +40,8 @@ function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () =
 }
 
 /**
- * The panes on screen by tab, and the grace each tab with no pane left has to come back in.
- * @param graceMs How long a tab with no pane left still holds its conversation.
+ * The chats on screen by tab, and the grace each tab with no chat left has to come back in.
+ * @param graceMs How long a tab with no chat left still holds its conversation.
  * @returns The tab sessions.
  */
 function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions {
@@ -52,7 +52,7 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 	const shownListeners = new Set<(tabSessionId: TabSessionId) => void>();
 
 	/**
-	 * Whether any pane on screen belongs to a tab.
+	 * Whether any chat on screen belongs to a tab.
 	 * @param tabSessionId The tab.
 	 * @returns True while one does.
 	 */
@@ -60,8 +60,8 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 		[...byClient.values()].includes(tabSessionId);
 
 	/**
-	 * Start a tab's grace once its last pane has gone.
-	 * @param tabSessionId The tab a pane just left.
+	 * Start a tab's grace once its last chat has gone.
+	 * @param tabSessionId The tab a chat just left.
 	 */
 	const left = (tabSessionId: TabSessionId): void => {
 		if (present(tabSessionId) || graces.has(tabSessionId)) {
@@ -77,7 +77,7 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 	};
 
 	/**
-	 * A pane of a tab is on screen: the tab is not ending.
+	 * A chat of a tab is on screen: the tab is not ending.
 	 * @param tabSessionId The tab.
 	 */
 	const arrived = (tabSessionId: TabSessionId): void => {
@@ -87,8 +87,8 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 
 	return Object.freeze({
 		/**
-		 * Remember which tab a pane belongs to; a pane that moved tabs leaves the old one.
-		 * @param clientId The pane's client id.
+		 * Remember which tab a chat belongs to; a chat that moved tabs leaves the old one.
+		 * @param clientId The chat's client id.
 		 * @param tabSessionId The tab its socket named, or null.
 		 */
 		note: (clientId, tabSessionId) => {
@@ -104,14 +104,14 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 			}
 		},
 		/**
-		 * The tab a pane belongs to.
-		 * @param clientId The pane's client id.
+		 * The tab a chat belongs to.
+		 * @param clientId The chat's client id.
 		 * @returns Its tab session, or null.
 		 */
 		of: (clientId) => byClient.get(clientId) ?? null,
 		/**
-		 * Forget a pane whose socket has gone.
-		 * @param clientId The pane's client id.
+		 * Forget a chat whose socket has gone.
+		 * @param clientId The chat's client id.
 		 */
 		forget: (clientId) => {
 			const previous = byClient.get(clientId);
@@ -120,7 +120,7 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 				left(previous);
 			}
 		},
-		/** Forget every pane and every grace, ending nothing. */
+		/** Forget every chat and every grace, ending nothing. */
 		forgetAll: () => {
 			byClient.clear();
 			for (const grace of graces.values()) clearTimeout(grace);

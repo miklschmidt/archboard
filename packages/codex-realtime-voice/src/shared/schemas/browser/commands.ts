@@ -1,4 +1,4 @@
-// The command DTOs a pane sends and the receipts it gets back: text commands
+// The command DTOs a chat sends and the receipts it gets back: text commands
 // on a thread, the lease a command runs under, the outcome of one operation,
 // and the discriminated union of every browser command.
 
@@ -42,12 +42,12 @@ function createBrowserCommandSchemas(
 		TurnIdSchema,
 	} = identity;
 	const NullableReasonSchema = optionalNullableText(512);
-	const PaneIdSchema = boundedText(128);
+	const ChatIdSchema = boundedText(128);
 	const currentTarget = refineCurrentTarget(context);
 
 	const TargetSchema = {
 		commandId: BrowserCommandIdSchema,
-		paneId: PaneIdSchema,
+		chatId: ChatIdSchema,
 		childId: ChildIdSchema,
 		epoch: ChildEpochSchema,
 	};

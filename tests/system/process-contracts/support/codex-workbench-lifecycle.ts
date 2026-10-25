@@ -82,7 +82,7 @@ export const target = (result: WorkbenchResult): Record<string, unknown> => {
 		throw new Error(result.error ?? "The workbench lease failed.");
 	return {
 		commandId: result.value["commandId"],
-		paneId: result.value["paneId"],
+		chatId: result.value["chatId"],
 		childId: result.value["childId"],
 		epoch: result.value["epoch"],
 	};

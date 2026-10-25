@@ -1,5 +1,5 @@
 // The thread-link action controller: one action at a time, each captured
-// once against the pane it was offered on, so a focus change after that
+// once against the chat it was offered on, so a focus change after that
 // point cannot move where the command lands. A superseded action never
 // overwrites the action that replaced it.
 
@@ -11,7 +11,7 @@ import type {
 	ThreadLinkActionTarget,
 	ThreadLinkController,
 	ThreadLinkControllerOptions,
-	ThreadLinkPaneCapture,
+	ThreadLinkChatCapture,
 } from "#ui/state/thread-link/contracts.ts";
 import { classify, words } from "#ui/rules/thread-link/settlement.ts";
 import { errorMessage, uncertain } from "#ui/rules/thread-link/transport-errors.ts";
@@ -25,16 +25,16 @@ type Settled = Exclude<ThreadLinkActionSnapshot, { readonly state: "idle" | "pen
 
 /**
  * The target of an action, captured once.
- * @param pane The pane.
+ * @param chat The chat.
  * @param captured The captured intent.
  * @returns The target.
  */
 function captureTarget(
-	pane: ThreadLinkPaneCapture,
+	chat: ThreadLinkChatCapture,
 	captured: WorkbenchCommandIntent,
 ): ThreadLinkActionTarget {
 	return Object.freeze({
-		paneId: pane.paneId,
+		chatId: chat.chatId,
 		childId: captured.authority?.childId ?? null,
 		epoch: captured.authority?.epoch ?? null,
 		// The action has not acquired its own command identity yet.
@@ -46,12 +46,12 @@ function captureTarget(
 
 /**
  * A target for an action the workbench refused to hand a target to.
- * @param paneId The pane.
+ * @param chatId The chat.
  * @returns The target.
  */
-function bareTarget(paneId: string): ThreadLinkActionTarget {
+function bareTarget(chatId: string): ThreadLinkActionTarget {
 	return Object.freeze({
-		paneId,
+		chatId,
 		childId: null,
 		epoch: null,
 		commandId: null,
@@ -63,16 +63,16 @@ function bareTarget(paneId: string): ThreadLinkActionTarget {
 /**
  * The announcement of a pending action.
  * @param action The action.
- * @param paneId The pane.
+ * @param chatId The chat.
  * @returns The words.
  */
-function pendingWords(action: ThreadLinkActionName, paneId: string): string {
-	return action === "login" ? "Starting sign-in…" : `${words(action)} started for pane ${paneId}.`;
+function pendingWords(action: ThreadLinkActionName, chatId: string): string {
+	return action === "login" ? "Starting sign-in…" : `${words(action)} started for chat ${chatId}.`;
 }
 
 /**
  * The thread-link action controller.
- * @param options How it reaches its pane.
+ * @param options How it reaches its chat.
  * @returns The controller.
  */
 function createThreadLinkController(options: ThreadLinkControllerOptions): ThreadLinkController {
@@ -120,7 +120,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 
 	/**
 	 * Dispatch one captured command and classify its result.
-	 * @param pane The pane.
+	 * @param chat The chat.
 	 * @param action The action.
 	 * @param draft The draft.
 	 * @param target The captured target.
@@ -128,22 +128,22 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	 * @returns The settled snapshot.
 	 */
 	async function dispatch(
-		pane: ThreadLinkPaneCapture,
+		chat: ThreadLinkChatCapture,
 		action: ThreadLinkActionName,
 		draft: ThreadLinkCommandDraft,
 		target: ThreadLinkActionTarget,
 		captured: WorkbenchCommandIntent,
 	): Promise<Settled> {
-		if (!pane.transport.capabilities().supportsCommand(draft.command)) {
+		if (!chat.transport.capabilities().supportsCommand(draft.command)) {
 			return {
 				state: "failed",
 				revision,
 				action,
 				target,
-				announcement: `The workbench is not ready for ${draft.command}. It arrived before this pane reached the state that command needs.`,
+				announcement: `The workbench is not ready for ${draft.command}. It arrived before this chat reached the state that command needs.`,
 			};
 		}
-		const result = await pane.transport.executeCommand(draft, captured);
+		const result = await chat.transport.executeCommand(draft, captured);
 		const settledTarget = Object.freeze({ ...target, commandId: result.commandId });
 		const settlement = classify(action, result, settledTarget);
 		return {
@@ -180,7 +180,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	}
 
 	/**
-	 * Run one command against the pane captured now.
+	 * Run one command against the chat captured now.
 	 * @param action The action.
 	 * @param draft The draft.
 	 * @returns Whether the settlement was published.
@@ -189,21 +189,21 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 		action: ThreadLinkActionName,
 		draft: ThreadLinkCommandDraft,
 	): Promise<ThreadLinkActionCompletion> {
-		const pane = options.capturePane();
+		const chat = options.captureChat();
 		const operationRevision = nextRevision();
-		let target = bareTarget(pane.paneId);
+		let target = bareTarget(chat.chatId);
 		try {
-			// Captured once, here. Nothing downstream reads the pane again.
-			const captured = pane.transport.captureCommandIntent();
-			target = captureTarget(pane, captured);
+			// Captured once, here. Nothing downstream reads the chat again.
+			const captured = chat.transport.captureCommandIntent();
+			target = captureTarget(chat, captured);
 			publish({
 				state: "pending",
 				revision: operationRevision,
 				action,
 				target,
-				announcement: pendingWords(action, target.paneId),
+				announcement: pendingWords(action, target.chatId),
 			});
-			const settled = await dispatch(pane, action, draft, target, captured);
+			const settled = await dispatch(chat, action, draft, target, captured);
 			return settle(operationRevision, { ...settled, revision: operationRevision });
 		} catch (error) {
 			return settle(operationRevision, {

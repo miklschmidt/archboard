@@ -60,7 +60,7 @@ const browserEffect = model.BrowserDynamicApprovalEffectSchema.parse({
 const createdAtMs = 200_000;
 const binding = {
 	commandId: authorities.identity.issuer.mintBrowserCommandId(),
-	paneId: "pane-a",
+	chatId: "chat-a",
 	capturedLink: { threadId, childId, epoch },
 };
 const pending: BrowserDynamicApproval = model.BrowserDynamicApprovalSchema.parse({
@@ -142,7 +142,7 @@ function snapshot(options: SnapshotOptions = {}): WireRecord {
 }
 
 /**
- * A lease bound to the pending approval's command and pane.
+ * A lease bound to the pending approval's command and chat.
  * @param expiresAtMs When it expires.
  * @returns The lease record.
  */
@@ -150,7 +150,7 @@ function lease(expiresAtMs: number): WireRecord {
 	return {
 		kind: "command_lease",
 		commandId: binding.commandId,
-		paneId: binding.paneId,
+		chatId: binding.chatId,
 		childId,
 		epoch,
 		state: "active",
@@ -250,7 +250,7 @@ test("valid dynamic approval responses require one live pending approval and use
 	expect(request?.["command"]).toMatchObject({
 		command: "dynamicApprovalRespond",
 		commandId: binding.commandId,
-		paneId: "pane-a",
+		chatId: "chat-a",
 		childId,
 		epoch,
 		capturedLink: { threadId, childId, epoch },
@@ -295,7 +295,7 @@ function changedDrafts(): readonly DynamicDraft[] {
 function unansweredApprovals(clock: number): readonly (readonly unknown[])[] {
 	return [
 		[{ ...pending, binding: { ...binding, commandId: "other-command" } }],
-		[{ ...pending, binding: { ...binding, paneId: "other-pane" } }],
+		[{ ...pending, binding: { ...binding, chatId: "other-chat" } }],
 		[
 			{
 				...pending,

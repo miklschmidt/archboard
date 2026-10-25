@@ -13,7 +13,7 @@
 // the thread. A request from a thread nobody holds is refused by its owner's own answer, so a
 // running turn never waits on nobody.
 //
-// A session ends when its tab has gone for good (no pane of it came back within the grace): its
+// A session ends when its tab has gone for good (no chat of it came back within the grace): its
 // approvals are cancelled, its voice, context delivery and queues stop, every link of its workhorses is
 // cleared, and each of its threads is unsubscribed once nothing runs on it, so Codex unloads it.
 // Until then its coordinator's tools and its operations stay, so a turn still running is

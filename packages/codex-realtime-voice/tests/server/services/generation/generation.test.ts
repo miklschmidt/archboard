@@ -41,7 +41,7 @@ test("the production generation creates every owner once before readiness and sh
 	expect(Object.fromEntries(fixture.calls)).toEqual(
 		Object.fromEntries(CODEX_WORKBENCH_COMPONENT_ORDER.map((name) => [name, 1])),
 	);
-	// The generation opens no tab session itself; this one is the fixture's, as a pane's would be.
+	// The generation opens no tab session itself; this one is the fixture's, as a chat's would be.
 	expect(events.filter((event) => event === "create:tabSession")).toHaveLength(1);
 	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));

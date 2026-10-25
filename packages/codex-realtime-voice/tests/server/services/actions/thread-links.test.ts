@@ -1,4 +1,4 @@
-// The thread-link actions of one workhorse: New conversation from a pane of its checkout, and the
+// The thread-link actions of one workhorse: New conversation from a chat of its checkout, and the
 // start that work given to its checkout needs (ADR 0050).
 
 import { expect, test } from "bun:test";
@@ -114,7 +114,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	const context = {
 		browserId: "browser-1",
 		connection: Object.freeze({}),
-		paneId: "pane-1",
+		chatId: "chat-1",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: "/work/payments",
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
@@ -156,7 +156,7 @@ test("a stale browser disconnect token cannot clear a newer controller binding",
 	expect(clears).toBe(1);
 });
 
-test("two panes of a tab creating at once leave one workhorse: the later create is refused before thread/start", async () => {
+test("two chats of a tab creating at once leave one workhorse: the later create is refused before thread/start", async () => {
 	const authorities = createIdentityAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-winner");
@@ -240,11 +240,11 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 			},
 		} as never,
 	});
-	const contextFor = (paneId: string) =>
+	const contextFor = (chatId: string) =>
 		({
-			browserId: `browser-${paneId}`,
+			browserId: `browser-${chatId}`,
 			connection: Object.freeze({}),
-			paneId,
+			chatId,
 			tabSessionId: parseTabSessionId("tab-one")!,
 			checkout: "/work/payments",
 			commandId: authorities.identity.issuer.mintBrowserCommandId(),
@@ -273,9 +273,9 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 });
 
 /**
- * One pane's create context, on an unbound link or on the conversation it holds.
+ * One chat's create context, on an unbound link or on the conversation it holds.
  * @param authorities The identity authorities.
- * @param threadId The conversation the pane holds, or null.
+ * @param threadId The conversation the chat holds, or null.
  * @returns The context.
  */
 function createContext(
@@ -286,7 +286,7 @@ function createContext(
 	return {
 		browserId: "browser-A",
 		connection: Object.freeze({}),
-		paneId: "A",
+		chatId: "A",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: "/work/payments",
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),

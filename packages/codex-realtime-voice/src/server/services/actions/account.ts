@@ -95,7 +95,7 @@ function sessionLoginParams(login: BrowserLogin): SessionLoginParams {
 	}
 }
 
-/** What a pane is told when Codex answered an account read with an error. */
+/** What a chat is told when Codex answered an account read with an error. */
 export const ACCOUNT_READ_FAILED_REASON =
 	"The Codex account could not be read. Refresh the account to try again.";
 
@@ -123,7 +123,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	let disposed = false;
 	let listener: (() => void) | null = null;
 	/**
-	 * Tell the gateway that what a pane would be shown has changed.
+	 * Tell the gateway that what a chat would be shown has changed.
 	 * @returns Nothing; the listener is called for its effect.
 	 */
 	const publish = () => listener?.();
@@ -177,7 +177,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 
 	/**
 	 * Re-read the account for one revision of this owner's state, replacing what
-	 * a pane is shown only while this read is still the newest one.
+	 * a chat is shown only while this read is still the newest one.
 	 * @param expectedRevision The revision this read belongs to.
 	 */
 	const refresh = async (expectedRevision: number): Promise<void> => {
@@ -232,7 +232,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	};
 	/**
 	 * Settle the outstanding sign-in the way Codex says it went, and re-read the
-	 * account so what a pane is shown is the account, not the sign-in.
+	 * account so what a chat is shown is the account, not the sign-in.
 	 * @param params What the completion named.
 	 */
 	const onLoginCompleted = (params: LoginCompletedParams): void => {
@@ -457,7 +457,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	return {
 		actions,
 		/**
-		 * Say when the account facts a pane is shown have changed.
+		 * Say when the account facts a chat is shown have changed.
 		 * @param onChange What to call.
 		 * @returns How to stop listening, which also disposes this owner.
 		 */

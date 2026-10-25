@@ -41,9 +41,9 @@ async function projectedItems(
 	});
 	const link = executableLink(authorities, decoder.adoptThreadId("items-thread"));
 	const connection = {};
-	owner.read("pane-items", 1, link, true, connection);
+	owner.read("chat-items", 1, link, true, connection);
 	await flush();
-	const projected = owner.read("pane-items", 1, link, true, connection)?.turns[0]?.items ?? [];
+	const projected = owner.read("chat-items", 1, link, true, connection)?.turns[0]?.items ?? [];
 	owner.dispose();
 	return projected;
 }

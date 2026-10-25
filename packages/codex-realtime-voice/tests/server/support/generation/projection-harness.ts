@@ -28,13 +28,13 @@ import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/gen
 import { processFacts } from "#tests/server/support/generation/process-fixture.ts";
 import { createWorkhorseComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";
 
-/** The checkout every pane of the harness is in, so its one workhorse is the one it shows. */
+/** The checkout every chat of the harness is in, so its one workhorse is the one it shows. */
 const HARNESS_CHECKOUT = "/work/payments";
 
 /** The production browser adapter over the generation fixture, live sources injectable. */
 const executionContext = TEST_CONTEXT_SCHEMA.parse({
 	...testContextFixture,
-	paneId: "pane-readiness",
+	chatId: "chat-readiness",
 });
 
 function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
@@ -188,7 +188,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		threadId: link.threadId,
 		context: {
 			browserId: "browser-projection",
-			paneId: "pane-readiness",
+			chatId: "chat-readiness",
 			connection: {},
 			tabSessionId: parseTabSessionId("tab-one")!,
 			checkout: HARNESS_CHECKOUT,
@@ -211,7 +211,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		actionContext: {
 			browserId: "browser-projection",
 			connection: {},
-			paneId: "pane-readiness",
+			chatId: "chat-readiness",
 			tabSessionId: parseTabSessionId("tab-one")!,
 			checkout: HARNESS_CHECKOUT,
 			commandId: harnessCommandId,

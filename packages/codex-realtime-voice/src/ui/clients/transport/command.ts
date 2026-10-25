@@ -48,7 +48,7 @@ function fullCommand(
 		...draft,
 		kind: "browser_command",
 		commandId: target.commandId,
-		paneId: target.paneId,
+		chatId: target.chatId,
 		childId: target.childId,
 		epoch: target.epoch,
 	};

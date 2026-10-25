@@ -41,7 +41,7 @@ type ThreadLinkCommandName =
 /** A command without the envelope the transport adds on dispatch. */
 type Draft<Name extends WorkbenchCommandName> = Omit<
 	Extract<BrowserCommand, { readonly command: Name }>,
-	"kind" | "commandId" | "paneId" | "childId" | "epoch"
+	"kind" | "commandId" | "chatId" | "childId" | "epoch"
 >;
 
 /** The login command, with the typed login the transport requires. */
@@ -59,7 +59,7 @@ type ThreadLinkCommandDraft =
 /** The exact lease authority a command is dispatched under. */
 interface WorkbenchCommandTarget {
 	readonly commandId: BrowserCommandLease["commandId"];
-	readonly paneId: BrowserCommandLease["paneId"];
+	readonly chatId: BrowserCommandLease["chatId"];
 	readonly childId: BrowserCommandLease["childId"];
 	readonly epoch: BrowserCommandLease["epoch"];
 	readonly capturedThreadLink: BrowserThreadLink;

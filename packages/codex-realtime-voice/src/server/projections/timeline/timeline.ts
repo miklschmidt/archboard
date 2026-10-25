@@ -33,7 +33,7 @@ import { textEncoder } from "#server/rules/timeline/text.ts";
 type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
 
 /**
- * The thread one pane's timeline is read from, and the child epoch its notifications arrive on.
+ * The thread one chat's timeline is read from, and the child epoch its notifications arrive on.
  * The key says everything about that binding that would make a history read under another
  * binding the wrong history.
  */
@@ -44,9 +44,9 @@ interface TimelineTarget {
 	readonly epoch: ThreadLinkSnapshot["epoch"];
 }
 
-/** One pane's timeline: which target it is bound to, and what it has read. */
-interface TimelinePaneState {
-	readonly paneId: string;
+/** One chat's timeline: which target it is bound to, and what it has read. */
+interface TimelineChatState {
+	readonly chatId: string;
 	readonly key: string;
 	readonly connection: BrowserConnectionInstance;
 	readonly target: TimelineTarget;
@@ -57,30 +57,30 @@ interface TimelinePaneState {
 	dirty: boolean;
 }
 
-/** Reads each pane's thread history and keeps it current. */
+/** Reads each chat's thread history and keeps it current. */
 interface ServerTimelineOwner {
 	readonly read: (
-		paneId: string,
+		chatId: string,
 		revision: number,
 		link: ThreadLinkSnapshot,
 		threadCapable: boolean,
 		connection: BrowserConnectionInstance,
 	) => CodexTimelineProjectionInput | null;
 	/**
-	 * The same read for a thread that is not a pane's link, such as the voice coordinator's.
+	 * The same read for a thread that is not a chat's link, such as the voice coordinator's.
 	 * The caller builds the target's key from whatever would make the history the wrong one. A
 	 * `keepTurn` keeps only the turns it names, before the budget is spent, so the turns it leaves
 	 * out take none of it.
 	 */
 	readonly readTarget: (
-		paneId: string,
+		chatId: string,
 		target: TimelineTarget,
 		threadCapable: boolean,
 		connection: BrowserConnectionInstance,
 		keepTurn?: (turnId: TurnId) => boolean,
 	) => CodexTimelineProjectionInput | null;
 	readonly onNotification: (event: TransportServerNotification) => void;
-	readonly retire: (paneId: string, connection: BrowserConnectionInstance) => void;
+	readonly retire: (chatId: string, connection: BrowserConnectionInstance) => void;
 	readonly dispose: () => void;
 }
 
@@ -96,22 +96,22 @@ interface ServerTimelineOwnerOptions {
 }
 
 /**
- * The key one pane's timeline is retained under: everything about its link
+ * The key one chat's timeline is retained under: everything about its link
  * that would make the history it read the wrong history.
- * @param paneId The pane.
+ * @param chatId The chat.
  * @param revision Its link revision.
  * @param link The link.
  * @param threadCapable Whether the workbench can serve threads yet.
  * @returns The key.
  */
 function bindingKey(
-	paneId: string,
+	chatId: string,
 	revision: number,
 	link: ThreadLinkSnapshot,
 	threadCapable: boolean,
 ): string {
 	return JSON.stringify([
-		paneId,
+		chatId,
 		revision,
 		link.state,
 		link.childId,
@@ -125,10 +125,10 @@ function bindingKey(
 }
 
 /**
- * Whether a notification is about one pane's own thread, comparing both the
+ * Whether a notification is about one chat's own thread, comparing both the
  * decoded identity and the wire spelling of it.
  * @param eventId The thread the notification named.
- * @param threadId The pane's thread.
+ * @param threadId The chat's thread.
  * @param identity How a thread is spelled on the wire.
  * @returns True when they are the same thread.
  */
@@ -296,32 +296,32 @@ function boundedCursor(cursor: string | null): string | null {
 }
 
 /**
- * Own each pane's view of its thread's history: read it when the pane binds,
+ * Own each chat's view of its thread's history: read it when the chat binds,
  * re-read it when something about that thread changes, and project it within
  * the browser's budget.
  * @param options What it reads from, and who it tells.
  * @returns The owner.
  */
 function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerTimelineOwner {
-	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
+	const states = new Map<string, Map<BrowserConnectionInstance, TimelineChatState>>();
 	const budget = createServerBrowserProjectionBudget(options.budget);
 	const live = createTimelineLiveHolder(options.identity);
 	let disposed = false;
 	/**
-	 * Whether one retained timeline is still the pane's own, which a rebind or a
+	 * Whether one retained timeline is still the chat's own, which a rebind or a
 	 * replaced socket ends.
 	 * @param state The retained timeline.
 	 * @returns True when it is current.
 	 */
-	const isCurrent = (state: TimelinePaneState): boolean =>
-		states.get(state.paneId)?.get(state.connection) === state;
+	const isCurrent = (state: TimelineChatState): boolean =>
+		states.get(state.chatId)?.get(state.connection) === state;
 
 	/**
-	 * Re-read one pane's thread, once at a time. A change that arrives while a
+	 * Re-read one chat's thread, once at a time. A change that arrives while a
 	 * read is running marks it dirty, and the read that finishes starts another.
-	 * @param state The pane's timeline.
+	 * @param state The chat's timeline.
 	 */
-	const refresh = (state: TimelinePaneState): void => {
+	const refresh = (state: TimelineChatState): void => {
 		if (disposed || !state.ready || state.target.threadId === null || state.refresh !== null) {
 			return;
 		}
@@ -369,23 +369,23 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
-	 * What one pane should be shown of one target's thread now, starting a read the first time it
+	 * What one chat should be shown of one target's thread now, starting a read the first time it
 	 * binds and answering nothing until that read lands.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 * @param target The thread, the child epoch it arrives on, and the key of that binding.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @param connection Its browser connection.
-	 * @param keepTurn Which turns to keep, when only some are this pane's.
+	 * @param keepTurn Which turns to keep, when only some are this chat's.
 	 * @returns The projected timeline, or null while there is none.
 	 */
 	const readTarget: ServerTimelineOwner["readTarget"] = (
-		paneId,
+		chatId,
 		target,
 		threadCapable,
 		connection,
 		keepTurn,
 	): CodexTimelineProjectionInput | null => {
-		const state = stateFor(paneId, connection, target, threadCapable);
+		const state = stateFor(chatId, connection, target, threadCapable);
 		if (state.ready && state.target.threadId !== null && !state.started) {
 			refresh(state);
 		}
@@ -401,19 +401,19 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
-	 * What one pane should be shown of its own link's thread now.
-	 * @param paneId The pane.
+	 * What one chat should be shown of its own link's thread now.
+	 * @param chatId The chat.
 	 * @param revision Its link revision.
 	 * @param link Its link.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @param connection Its browser connection.
 	 * @returns The projected timeline, or null while there is none.
 	 */
-	const read: ServerTimelineOwner["read"] = (paneId, revision, link, threadCapable, connection) =>
+	const read: ServerTimelineOwner["read"] = (chatId, revision, link, threadCapable, connection) =>
 		readTarget(
-			paneId,
+			chatId,
 			{
-				key: bindingKey(paneId, revision, link, threadCapable),
+				key: bindingKey(chatId, revision, link, threadCapable),
 				threadId: link.threadId,
 				childId: link.childId,
 				epoch: link.epoch,
@@ -423,32 +423,32 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 		);
 
 	/**
-	 * The retained timeline one pane's current binding owns, replaced whenever
+	 * The retained timeline one chat's current binding owns, replaced whenever
 	 * that binding changes: history read under another binding is not this one's.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 * @param connection Its browser connection.
 	 * @param target Its binding.
 	 * @param threadCapable Whether the workbench can serve threads yet.
 	 * @returns The retained timeline.
 	 */
 	const stateFor = (
-		paneId: string,
+		chatId: string,
 		connection: BrowserConnectionInstance,
 		target: TimelineTarget,
 		threadCapable: boolean,
-	): TimelinePaneState => {
-		let paneStates = states.get(paneId);
-		if (paneStates === undefined) {
-			paneStates = new Map();
-			states.set(paneId, paneStates);
+	): TimelineChatState => {
+		let chatStates = states.get(chatId);
+		if (chatStates === undefined) {
+			chatStates = new Map();
+			states.set(chatId, chatStates);
 		}
-		const existing = paneStates.get(connection);
+		const existing = chatStates.get(connection);
 		if (existing?.key === target.key) {
 			existing.ready = threadCapable;
 			return existing;
 		}
-		const state: TimelinePaneState = {
-			paneId,
+		const state: TimelineChatState = {
+			chatId,
 			key: target.key,
 			connection,
 			target,
@@ -458,21 +458,21 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 			refresh: null,
 			dirty: false,
 		};
-		paneStates.set(connection, state);
+		chatStates.set(connection, state);
 		return state;
 	};
 
 	/**
-	 * Re-read every pane whose own thread this notification is about, on this
+	 * Re-read every chat whose own thread this notification is about, on this
 	 * child epoch. A plan or token usage report needs no re-read: it is held,
-	 * and a pane already showing that thread is republished with it.
+	 * and a chat already showing that thread is republished with it.
 	 * @param event The notification.
 	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || !isTimelineNotification(event.notification.method)) {
 			return;
 		}
-		const concerned = panesConcerned(eventThreadId(event), event);
+		const concerned = chatsConcerned(eventThreadId(event), event);
 		if (live.hold(event)) {
 			if (concerned.some((state) => state.data !== null)) {
 				options.onChange();
@@ -486,29 +486,29 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
-	 * Every pane timeline one notification is about.
+	 * Every chat timeline one notification is about.
 	 * @param threadId The thread the notification named.
 	 * @param event The notification.
-	 * @returns The pane timelines.
+	 * @returns The chat timelines.
 	 */
-	const panesConcerned = (
+	const chatsConcerned = (
 		threadId: string | null,
 		event: TransportServerNotification,
-	): TimelinePaneState[] =>
-		[...states.values()].flatMap((paneStates) =>
-			[...paneStates.values()].filter((state) => concernsPane(state, threadId, event)),
+	): TimelineChatState[] =>
+		[...states.values()].flatMap((chatStates) =>
+			[...chatStates.values()].filter((state) => concernsChat(state, threadId, event)),
 		);
 
 	/**
-	 * Whether one notification concerns one pane: its own thread, on the child
+	 * Whether one notification concerns one chat: its own thread, on the child
 	 * epoch its target names.
-	 * @param state The pane's timeline.
+	 * @param state The chat's timeline.
 	 * @param threadId The thread the notification named.
 	 * @param event The notification.
-	 * @returns True when the pane must re-read.
+	 * @returns True when the chat must re-read.
 	 */
-	const concernsPane = (
-		state: TimelinePaneState,
+	const concernsChat = (
+		state: TimelineChatState,
 		threadId: string | null,
 		event: TransportServerNotification,
 	): boolean => {
@@ -528,27 +528,27 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 	};
 
 	/**
-	 * Forget one pane's timeline, because its connection has gone.
-	 * @param paneId The pane.
+	 * Forget one chat's timeline, because its connection has gone.
+	 * @param chatId The chat.
 	 * @param connection Its browser connection.
 	 */
-	const retire = (paneId: string, connection: BrowserConnectionInstance): void => {
-		const paneStates = states.get(paneId);
-		const state = paneStates?.get(connection);
-		if (state === undefined || paneStates === undefined) {
+	const retire = (chatId: string, connection: BrowserConnectionInstance): void => {
+		const chatStates = states.get(chatId);
+		const state = chatStates?.get(connection);
+		if (state === undefined || chatStates === undefined) {
 			return;
 		}
 		state.ready = false;
 		state.dirty = false;
 		state.data = null;
 		state.refresh = null;
-		paneStates.delete(connection);
-		if (paneStates.size === 0) {
-			states.delete(paneId);
+		chatStates.delete(connection);
+		if (chatStates.size === 0) {
+			states.delete(chatId);
 		}
 	};
 
-	/** Forget every pane's timeline, because the generation is going. */
+	/** Forget every chat's timeline, because the generation is going. */
 	const dispose = (): void => {
 		if (disposed) {
 			return;

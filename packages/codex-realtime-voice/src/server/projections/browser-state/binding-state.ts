@@ -17,7 +17,7 @@ interface ServerBrowserBindingState {
 	login: BrowserOwnerProjection["login"];
 }
 
-/** What a pane is shown when no queue read of its own link has succeeded. */
+/** What a chat is shown when no queue read of its own link has succeeded. */
 const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
 
 /**
@@ -28,7 +28,7 @@ const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", subm
  * authoritative list carries the answer. The operation authority only recognises
  * identities it issued in the current child epoch: anything else — another
  * client's submission, the workhorse's own, or a prior epoch's — is foreign, and
- * this pane has no authority to reorder it.
+ * this chat has no authority to reorder it.
  * @param submission The submission as the app server listed it.
  * @param operations The authority that issued this epoch's operations.
  * @returns The operation, or null when this workbench did not queue it.
@@ -46,7 +46,7 @@ function queuedOperation(
 
 /**
  * One authoritative queue listing as the browser is shown it, each submission
- * carrying whether this pane may act on it.
+ * carrying whether this chat may act on it.
  * @param queue The submissions the app server listed.
  * @param operations The authority that issued this epoch's operations.
  * @returns The projection.

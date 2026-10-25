@@ -41,7 +41,7 @@ function createBrowserActionDispatch(options: CodexWorkbenchGatewayOptions): Bro
 		 */
 		accountLogout: (command, context) => account.logout(command, context),
 		/**
-		 * Bind the pane to a new thread.
+		 * Bind the chat to a new thread.
 		 * @param command The command.
 		 * @param context The lease's authority.
 		 * @returns What became of it.

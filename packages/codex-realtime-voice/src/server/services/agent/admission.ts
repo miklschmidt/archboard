@@ -12,17 +12,17 @@ import type { createCodexWorkbench } from "#server/services/owner/workbench.ts";
 
 export type BrowserPort = ReturnType<typeof createCodexWorkbench>["browser"];
 
-const PANE_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+const CHAT_ID = /^[a-zA-Z0-9_-]{1,128}$/;
 
 /** A socket the browser port can register: what its send needs, and a close with a code. */
 export interface AdmittedConnection extends ServerCodexBrowserWebSocket {
 	readonly close: (code: number, reason: string) => void;
 }
 
-/** What an upgrade on this path names: its pane, its tab session and the browser id of both. */
+/** What an upgrade on this path names: its chat, its tab session and the browser id of both. */
 export interface SocketSurface {
 	readonly tabSessionId: NonNullable<ReturnType<typeof parseTabSessionId>>;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly browserId: string;
 }
 
@@ -58,19 +58,19 @@ export function assertSocketOrigin(origin: string): void {
 }
 
 /**
- * Read the tab session and pane a socket URL names, and derive the browser id from both, so a
- * reconnecting pane replaces its earlier socket.
+ * Read the tab session and chat a socket URL names, and derive the browser id from both, so a
+ * reconnecting chat replaces its earlier socket.
  * @param url The socket URL.
  * @returns The surface, or null when either is missing or malformed.
  */
 function surfaceIn(url: URL): SocketSurface | null {
 	const tabSessionId = parseTabSessionId(url.searchParams.get("tabSessionId"));
-	const paneId = url.searchParams.get("paneId");
-	if (tabSessionId === null || paneId === null || !PANE_ID.test(paneId)) return null;
+	const chatId = url.searchParams.get("chatId");
+	if (tabSessionId === null || chatId === null || !CHAT_ID.test(chatId)) return null;
 	const browserId = createHash("sha256")
-		.update(JSON.stringify([tabSessionId, paneId]))
+		.update(JSON.stringify([tabSessionId, chatId]))
 		.digest("hex");
-	return { tabSessionId, paneId, browserId };
+	return { tabSessionId, chatId, browserId };
 }
 
 /**
@@ -130,7 +130,7 @@ export interface BrowserSocketSession {
  * and the socket is closed with 1011.
  * @param browser The agent's browser port.
  * @param connection The open socket, which is also its exact instance in the port.
- * @param surface The socket's pane, tab session and browser id.
+ * @param surface The socket's chat, tab session and browser id.
  * @param checkout The admitted checkout of this path.
  * @returns The socket's session, or null when the port refused it.
  */
@@ -140,9 +140,9 @@ export function openBrowserSocket(
 	surface: SocketSurface,
 	checkout: string,
 ): BrowserSocketSession | null {
-	const { tabSessionId, paneId, browserId } = surface;
+	const { tabSessionId, chatId, browserId } = surface;
 	try {
-		browser.accept(connection, browserId, { paneId, tabSessionId, checkout });
+		browser.accept(connection, browserId, { chatId, tabSessionId, checkout });
 	} catch {
 		connection.close(1011, "The voice agent is unavailable. Restart the server.");
 		return null;

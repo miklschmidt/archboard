@@ -1,7 +1,7 @@
 // One browser tab's voice session: started, spoken into and stopped by the tab that holds it.
 //
 // Voice speaks for the whole tab (ADR 0050). A start is bound to the workhorse of the checkout of
-// the pane it came from, for as long as that session runs, and any pane of the tab can stop it.
+// the chat it came from, for as long as that session runs, and any chat of the tab can stop it.
 //
 // Each tab session has its own coordinator and its own voice (TASK-373), so two tabs talk at once
 // and an unattended session, whose page is a tab session of its own, never stops somebody who is
@@ -55,7 +55,7 @@ type ActiveRealtime = Readonly<{
 	handle: string;
 	connection: BrowserActionContext["connection"];
 	browserId: string;
-	paneId: string;
+	chatId: string;
 	/** The checkout the tab showed when voice started, whose workhorse it is bound to. */
 	checkout: string;
 	childId: ChildId;
@@ -97,14 +97,14 @@ function noteRetirement(
  * Whether a realtime session belongs to the exact browser socket this command
  * came in on.
  * @param active The realtime session.
- * @param context The pane and its connection.
+ * @param context The chat and its connection.
  * @returns True when it is the same socket.
  */
 function sameSocket(active: ActiveRealtime, context: BrowserActionContext): boolean {
 	return (
 		active.connection === context.connection &&
 		active.browserId === context.browserId &&
-		active.paneId === context.paneId
+		active.chatId === context.chatId
 	);
 }
 
@@ -112,7 +112,7 @@ function sameSocket(active: ActiveRealtime, context: BrowserActionContext): bool
  * Whether a realtime session belongs to the exact thread link this command came
  * in on.
  * @param active The realtime session.
- * @param context The pane and the link it named.
+ * @param context The chat and the link it named.
  * @returns True when it is the same link.
  */
 function sameLink(active: ActiveRealtime, context: BrowserActionContext): boolean {
@@ -143,10 +143,10 @@ function coordinatorHolds(coordinator: CoordinatorSnapshot, active: ActiveRealti
  * Whether a realtime session is the one this command may act on: the same
  * handle and coordinator it was started under, and — for a command that
  * speaks into it — the same socket and link, whose media is what plays the voice.
- * A stop may come from any pane of the tab, whichever checkout it shows.
+ * A stop may come from any chat of the tab, whichever checkout it shows.
  * @param active The realtime session.
  * @param handle The handle the command named.
- * @param context The pane and the link it named.
+ * @param context The chat and the link it named.
  * @param coordinator The coordinator snapshot.
  * @param socketBound Whether the command must come from the session's own socket.
  * @returns True when the command may act on it.
@@ -166,9 +166,9 @@ function isCurrentRealtime(
 }
 
 /**
- * Whether the coordinator can carry voice for this pane right now.
+ * Whether the coordinator can carry voice for this chat right now.
  * @param coordinator The coordinator snapshot.
- * @param context The pane and its child epoch.
+ * @param context The chat and its child epoch.
  * @returns True when it can.
  */
 function coordinatorReadyFor(
@@ -183,10 +183,10 @@ function coordinatorReadyFor(
 }
 
 /**
- * Whether the workhorse of the pane's checkout is running the thread the pane is linked to,
+ * Whether the workhorse of the chat's checkout is running the thread the chat is linked to,
  * which is the thread voice would be bound to.
  * @param workhorse The workhorse snapshot, or null while the checkout has no workhorse.
- * @param threadId The pane's linked thread.
+ * @param threadId The chat's linked thread.
  * @returns True when it is.
  */
 function workhorseReadyFor(workhorse: WorkhorseSnapshot | null, threadId: ThreadId): boolean {
@@ -196,7 +196,7 @@ function workhorseReadyFor(workhorse: WorkhorseSnapshot | null, threadId: Thread
 /**
  * The workhorse of one checkout of the tab, as it describes its thread.
  * @param threads The tab session's workhorses.
- * @param checkout The checkout of the pane voice starts from.
+ * @param checkout The checkout of the chat voice starts from.
  * @returns Its snapshot, or null while the checkout has no workhorse.
  */
 function workhorseSnapshotOf(threads: RealtimeScope, checkout: string): WorkhorseSnapshot | null {
@@ -209,8 +209,8 @@ function workhorseSnapshotOf(threads: RealtimeScope, checkout: string): Workhors
  * turned on is the first thing anybody asks.
  * @param trace The tab session's voice start trace.
  * @param coordinator The coordinator snapshot.
- * @param workhorse The snapshot of the workhorse of the pane's checkout, or null.
- * @param context The pane and the link it named.
+ * @param workhorse The snapshot of the workhorse of the chat's checkout, or null.
+ * @param context The chat and the link it named.
  */
 function notePreconditions(
 	trace: SessionVoiceStartTrace,
@@ -249,8 +249,8 @@ export function createServerRealtimeActions(
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
 	let voicedCoordinator: ThreadId | null = null;
-	// The pane the last session started from, whose narration a later session replaces.
-	let voicedPane: string | null = null;
+	// The chat the last session started from, whose narration a later session replaces.
+	let voicedChat: string | null = null;
 	let realtimeQueue = Promise.resolve();
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
@@ -332,9 +332,9 @@ export function createServerRealtimeActions(
 	 * The realtime session one command may act on, refused when the handle no
 	 * longer names this exact browser binding.
 	 * @param handle The handle the command named.
-	 * @param context The pane and the link it named.
+	 * @param context The chat and the link it named.
 	 * @param socketBound Whether the command must come from the session's own
-	 * socket; only stopping may come from any pane of the tab.
+	 * socket; only stopping may come from any chat of the tab.
 	 * @returns The session.
 	 */
 	const requireActive = (
@@ -355,9 +355,9 @@ export function createServerRealtimeActions(
 	};
 	/**
 	 * The session one start would own, refused unless the coordinator and the
-	 * workhorse are both on this pane's linked thread.
+	 * workhorse are both on this chat's linked thread.
 	 * @param commandId The command starting it, which is also its handle.
-	 * @param context The pane and the link it named.
+	 * @param context The chat and the link it named.
 	 * @returns The session, not yet offered.
 	 */
 	const pendingRealtime = (
@@ -382,7 +382,7 @@ export function createServerRealtimeActions(
 			handle,
 			connection: context.connection,
 			browserId: context.browserId,
-			paneId: context.paneId,
+			chatId: context.chatId,
 			checkout: context.checkout,
 			childId: context.childId,
 			epoch: context.epoch,
@@ -396,7 +396,7 @@ export function createServerRealtimeActions(
 	/**
 	 * The session one start would own, with a refusal kept in the start trace.
 	 * @param commandId The command starting it.
-	 * @param context The pane and the link it named.
+	 * @param context The chat and the link it named.
 	 * @returns The session, not yet offered.
 	 */
 	const tracedPending = (
@@ -413,15 +413,15 @@ export function createServerRealtimeActions(
 
 	const actions: BrowserRealtimeActions = {
 		/**
-		 * Start voice for one pane, replacing whatever session its tab was running.
+		 * Start voice for one chat, replacing whatever session its tab was running.
 		 * @param command The offer.
-		 * @param context The pane and the link it named.
-		 * @returns The answer, and the handle the pane holds the session by.
+		 * @param context The chat and the link it named.
+		 * @returns The answer, and the handle the chat holds the session by.
 		 */
 		start: (command, context) =>
 			serialize(async () => {
 				validateNarrative(narrativeAdapter, command.narrative);
-				trace.begin(context.paneId);
+				trace.begin(context.chatId);
 				trace.note("requested", {
 					narrative: command.narrative !== undefined,
 					offerSdpBytes: Buffer.byteLength(command.sdp),
@@ -434,8 +434,8 @@ export function createServerRealtimeActions(
 				// Before the offer, which reads the binding: voice is bound to this checkout's workhorse.
 				threads.state.voiceCheckout = pending.checkout;
 				voicedCoordinator = pending.coordinatorThreadId;
-				forgetNarrative(narrativeAdapter, voicedPane);
-				voicedPane = pending.browserId;
+				forgetNarrative(narrativeAdapter, voicedChat);
+				voicedChat = pending.browserId;
 				try {
 					const narrative = prepareNarrative(
 						narrativeAdapter,
@@ -477,7 +477,7 @@ export function createServerRealtimeActions(
 		/**
 		 * Say something into the running session as typed text.
 		 * @param command The handle and the text.
-		 * @param context The pane and the link it named.
+		 * @param context The chat and the link it named.
 		 * @returns The browser outcome.
 		 */
 		appendText: (command, context) =>
@@ -491,10 +491,10 @@ export function createServerRealtimeActions(
 				return { outcome: "delivered" as const };
 			}),
 		/**
-		 * Stop the session, from whichever pane of the tab holds the lease, of whichever checkout:
+		 * Stop the session, from whichever chat of the tab holds the lease, of whichever checkout:
 		 * the tab has one voice, and ending it needs no media of its own.
 		 * @param command The handle.
-		 * @param context The pane and the link it named.
+		 * @param context The chat and the link it named.
 		 * @returns The browser outcome.
 		 */
 		stop: (command, context) =>
@@ -505,7 +505,7 @@ export function createServerRealtimeActions(
 			}),
 		/**
 		 * Stop the session a browser that has gone was speaking through.
-		 * @param context The pane and its connection.
+		 * @param context The chat and its connection.
 		 * @returns When the session this browser was speaking through has stopped.
 		 */
 		onBrowserDisconnect: async (context) => {

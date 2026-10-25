@@ -1,5 +1,5 @@
 // The owners under `createVoiceClient`, for a host that owns its sockets and draws its own
-// conversation UI: the transport and media owners, the conversation controllers of one pane
+// conversation UI: the transport and media owners, the conversation controllers of one chat
 // over its transport, and the conversation projected from the server's timelines. A host page
 // that opens one socket uses `./browser` instead. Safe for the browser.
 export { createBrowserWorkbenchTransport } from "#ui/clients/transport/transport.ts";

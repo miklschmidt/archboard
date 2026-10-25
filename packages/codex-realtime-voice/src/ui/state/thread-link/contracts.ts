@@ -24,12 +24,12 @@ const THREAD_LINK_MODULE_COMMANDS = [
 type ThreadLinkActionName = "create" | "login" | "cancel_login" | "logout";
 
 /**
- * The pane, epoch, lease, and link an action was offered against. The three
+ * The chat, epoch, lease, and link an action was offered against. The three
  * captured identities are null only when the workbench refused to hand out a
  * target at all, which is itself the reason the action failed.
  */
 interface ThreadLinkActionTarget {
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly childId: WorkbenchCommandTarget["childId"] | null;
 	readonly epoch: WorkbenchCommandTarget["epoch"] | null;
 	readonly commandId: WorkbenchCommandTarget["commandId"] | null;
@@ -61,15 +61,15 @@ interface ThreadLinkActionCompletion {
 }
 
 /** Everything one action is captured against, read once when it is offered. */
-interface ThreadLinkPaneCapture {
-	readonly paneId: string;
+interface ThreadLinkChatCapture {
+	readonly chatId: string;
 	readonly transport: ThreadLinkTransportPort;
 }
 
-/** How the controller reaches its pane. */
+/** How the controller reaches its chat. */
 interface ThreadLinkControllerOptions {
 	/** Read once per action; a later focus change cannot reach a running action. */
-	readonly capturePane: () => ThreadLinkPaneCapture;
+	readonly captureChat: () => ThreadLinkChatCapture;
 }
 
 /** The thread-link action controller. */
@@ -90,5 +90,5 @@ export {
 	type ThreadLinkActionTarget,
 	type ThreadLinkController,
 	type ThreadLinkControllerOptions,
-	type ThreadLinkPaneCapture,
+	type ThreadLinkChatCapture,
 };

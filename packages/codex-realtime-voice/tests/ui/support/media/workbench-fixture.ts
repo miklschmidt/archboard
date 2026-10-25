@@ -21,7 +21,7 @@ const coordinatorThreadId = model.ThreadIdSchema.parse(
 type FixtureVoiceState = BrowserSnapshot["voice"]["state"];
 
 /**
- * A snapshot whose pane is executably linked to `thread-media`.
+ * A snapshot whose chat is executably linked to `thread-media`.
  * @param voice The published voice state.
  * @param lease The active lease, if any.
  * @returns The parsed snapshot.
@@ -81,7 +81,7 @@ function workbenchSnapshot(
 }
 
 /**
- * A fresh active lease on the fixture pane.
+ * A fresh active lease on the fixture chat.
  * @param expiresAtMs When it expires.
  * @returns The parsed lease.
  */
@@ -89,7 +89,7 @@ function mediaLease(expiresAtMs: number): BrowserCommandLease {
 	return model.BrowserCommandLeaseSchema.parse({
 		kind: "command_lease",
 		commandId: authority.issuer.mintBrowserCommandId(),
-		paneId: "pane-media",
+		chatId: "chat-media",
 		childId,
 		epoch,
 		state: "active",

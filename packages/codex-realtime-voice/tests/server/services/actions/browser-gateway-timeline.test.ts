@@ -51,18 +51,18 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	};
 	const received: {
 		read: {
-			paneId: string;
+			chatId: string;
 			revision: number;
 			link: ThreadLinkSnapshot;
 			capable: boolean;
 			connection: object;
 		} | null;
-		retire: { paneId: string; connection: object } | null;
+		retire: { chatId: string; connection: object } | null;
 	} = { read: null, retire: null };
 	const timeline: ServerTimelineOwner = {
-		read: (paneId, revision, receivedLink, capable, receivedConnection) => {
+		read: (chatId, revision, receivedLink, capable, receivedConnection) => {
 			received.read = {
-				paneId,
+				chatId,
 				revision,
 				link: receivedLink,
 				capable,
@@ -72,8 +72,8 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		},
 		readTarget: () => null,
 		onNotification: () => undefined,
-		retire: (paneId, receivedConnection) => {
-			received.retire = { paneId, connection: receivedConnection };
+		retire: (chatId, receivedConnection) => {
+			received.retire = { chatId, connection: receivedConnection };
 		},
 		dispose: () => undefined,
 	};
@@ -142,7 +142,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	});
 	const context = {
 		browserId: "browser-timeline",
-		paneId: "pane-timeline",
+		chatId: "chat-timeline",
 		tabSessionId,
 		checkout: "/work/payments",
 		binding: {
@@ -173,17 +173,17 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		outcome: "not_delivered",
 	});
 	expect(received.read).toEqual({
-		paneId: "pane-timeline",
+		chatId: "chat-timeline",
 		revision: 7,
 		link,
 		capable: true,
 		connection,
 	});
 	options.projection.onBrowserDisconnect?.(
-		{ browserId: "browser-timeline", paneId: "pane-timeline", connection },
+		{ browserId: "browser-timeline", chatId: "chat-timeline", connection },
 		"browser_disconnected",
 	);
-	expect(received.retire).toEqual({ paneId: "pane-timeline", connection });
+	expect(received.retire).toEqual({ chatId: "chat-timeline", connection });
 });
 
 /** A workhorse that is never asked anything: these projections read no workhorse. */
@@ -195,7 +195,7 @@ function timelineFor(threadId: ThreadId): CodexTimelineProjectionInput {
 	return { kind: "codex_timeline", threadId, turns: [], cursor: null, usage: null };
 }
 
-test("a pane's snapshot carries its own tab's coordinator turns, never another tab's", () => {
+test("a chat's snapshot carries its own tab's coordinator turns, never another tab's", () => {
 	const authorities = createIdentityAuthorities();
 	const decoder = authorities.identity.decoder;
 	const workhorseLink = executableLink(authorities, decoder.adoptThreadId("workhorse-thread"));
@@ -203,11 +203,11 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		["tab-one", decoder.adoptThreadId("coordinator-one")],
 		["tab-two", decoder.adoptThreadId("coordinator-two")],
 	]);
-	const read: { paneId: string; threadId: ThreadId | null }[] = [];
+	const read: { chatId: string; threadId: ThreadId | null }[] = [];
 	const coordinatorTimeline: ServerTimelineOwner = {
 		read: () => null,
-		readTarget: (paneId, target) => {
-			read.push({ paneId, threadId: target.threadId });
+		readTarget: (chatId, target) => {
+			read.push({ chatId, threadId: target.threadId });
 			return target.threadId === null ? null : timelineFor(target.threadId);
 		},
 		onNotification: () => undefined,
@@ -262,7 +262,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 		sessions.open(tabSessionId);
 		return {
 			browserId: `browser-${tab}`,
-			paneId: `pane-${tab}`,
+			chatId: `chat-${tab}`,
 			tabSessionId,
 			checkout: "/work/payments",
 			binding: {
@@ -288,5 +288,5 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 
 	expect(one?.threadId).toBe(coordinatorThreads.get("tab-one"));
 	expect(two?.threadId).toBe(coordinatorThreads.get("tab-two"));
-	expect(read.map((entry) => entry.paneId)).toEqual(["pane-tab-one", "pane-tab-two"]);
+	expect(read.map((entry) => entry.chatId)).toEqual(["chat-tab-one", "chat-tab-two"]);
 });

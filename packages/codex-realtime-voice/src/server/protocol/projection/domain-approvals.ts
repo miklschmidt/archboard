@@ -9,7 +9,7 @@ interface WorkbenchDomainApprovals {
 	readonly pending: (tabSessionId: TabSessionId) => readonly BrowserDynamicApproval[];
 	readonly bindLease: (
 		tabSessionId: TabSessionId,
-		paneId: string,
+		chatId: string,
 		commandId: BrowserCommandId,
 	) => void;
 }

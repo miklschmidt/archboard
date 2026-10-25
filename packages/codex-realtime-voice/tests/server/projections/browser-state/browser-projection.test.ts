@@ -35,7 +35,7 @@ test("the real gateway delivers the pending ChatGPT authorization URL to the bro
 	try {
 		const connection = gateway.connect(
 			harness.context.browserId,
-			harness.context.paneId,
+			harness.context.chatId,
 			harness.context.tabSessionId,
 		);
 		const lease = connection.claimLease();
@@ -43,7 +43,7 @@ test("the real gateway delivers the pending ChatGPT authorization URL to the bro
 			kind: "browser_command",
 			command: "accountLogin",
 			commandId: lease.commandId,
-			paneId: lease.paneId,
+			chatId: lease.chatId,
 			childId: lease.childId,
 			epoch: lease.epoch,
 			login: { type: "chatgpt" },
@@ -343,7 +343,7 @@ test("cancelling a pending sign-in reads the account again and offers sign-in", 
 	const command = {
 		kind: "browser_command",
 		commandId: harness.actionContext.commandId,
-		paneId: harness.actionContext.paneId,
+		chatId: harness.actionContext.chatId,
 		childId: harness.actionContext.childId,
 		epoch: harness.actionContext.epoch,
 	} as const;
@@ -364,11 +364,11 @@ test("cancelling a pending sign-in reads the account again and offers sign-in", 
 	expect(readinessNow()).toBe("login_capable");
 });
 
-test("a pane of a checkout with no workhorse is shown none, and its first conversation starts that checkout's", async () => {
+test("a chat of a checkout with no workhorse is shown none, and its first conversation starts that checkout's", async () => {
 	const harness = projectionHarness();
 	const shop = "/work/shop";
 
-	// Reading what a pane shows starts nothing: the checkout has no queue or board news to show.
+	// Reading what a chat shows starts nothing: the checkout has no queue or board news to show.
 	const read = harness.options.projection.read({ ...harness.context, checkout: shop });
 	expect(read.queue).toEqual({ kind: "codex_queue", submissions: null });
 	expect([...harness.session.workhorses.keys()]).toEqual(["/work/payments"]);

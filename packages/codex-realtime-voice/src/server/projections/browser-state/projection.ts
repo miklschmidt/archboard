@@ -156,7 +156,7 @@ function projectSandbox(policy: SandboxPolicy): BrowserSettings["sandbox"] {
  * The queue's condition against the workhorse it belongs to.
  *
  * Every arm is derived from an authoritative fact the projection already holds:
- * the thread-link status the server read for this pane, and that thread's own
+ * the thread-link status the server read for this chat, and that thread's own
  * pending approvals. That is five of the eleven statuses the closed contract
  * allows, and the other six are deliberately never produced here:
  *
@@ -172,7 +172,7 @@ function projectSandbox(policy: SandboxPolicy): BrowserSettings["sandbox"] {
  * only for the link it was read for, so there is no unloaded or errored arm to
  * map here.
  * @param submissions The pending submissions.
- * @param link The pane's thread link.
+ * @param link The chat's thread link.
  * @param approvals The owner's approvals.
  * @returns The queue status.
  */
@@ -192,7 +192,7 @@ function projectQueueStatus(
 /**
  * Project the workhorse queue for the browser.
  * @param input The queue projection input.
- * @param link The pane's thread link.
+ * @param link The chat's thread link.
  * @param approvals The owner's approvals.
  * @returns The browser queue.
  */
@@ -314,7 +314,7 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 
 /**
  * The tab session's workhorse list, when the owners read one.
- * @param input The owners' state for one pane.
+ * @param input The owners' state for one chat.
  * @returns The field, or nothing.
  */
 function projectWorkhorses(
@@ -327,7 +327,7 @@ function projectWorkhorses(
  * Project the owners' state into one validated browser snapshot, refusing
  * input that carries a secret or that the browser contract cannot represent.
  * @param model The browser schema owner.
- * @param input The owners' state for one pane.
+ * @param input The owners' state for one chat.
  * @returns The projected snapshot, or the refusal.
  */
 export function projectCodexBrowserState(

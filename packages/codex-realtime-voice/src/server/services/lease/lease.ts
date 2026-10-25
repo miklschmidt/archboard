@@ -38,7 +38,7 @@ interface BrowserLeaseManager {
 	readonly find: (commandId: BrowserCommandId) => BrowserLeaseRecord | null;
 	readonly claim: (
 		browserId: BrowserConnectionId,
-		paneId: string,
+		chatId: string,
 		tabSessionId: TabSessionId,
 		checkout: string,
 		connection: BrowserConnectionInstance,
@@ -51,7 +51,7 @@ interface BrowserLeaseManager {
 	) => BrowserLeaseRecord;
 	readonly release: (
 		browserId: BrowserConnectionId,
-		paneId: string,
+		chatId: string,
 		connection: BrowserConnectionInstance,
 		commandId?: BrowserCommandId,
 	) => BrowserLeaseRecord | null;
@@ -107,7 +107,7 @@ function freezeRecord(record: BrowserLeaseRecord): BrowserLeaseRecord {
 }
 
 /**
- * Whether two leases name the same command, pane and child generation.
+ * Whether two leases name the same command, chat and child generation.
  * @param left One lease.
  * @param right The other lease.
  * @returns True when every identifying field matches.
@@ -115,7 +115,7 @@ function freezeRecord(record: BrowserLeaseRecord): BrowserLeaseRecord {
 function sameLeaseTarget(left: BrowserCommandLease, right: BrowserCommandLease): boolean {
 	return (
 		left.commandId === right.commandId &&
-		left.paneId === right.paneId &&
+		left.chatId === right.chatId &&
 		left.childId === right.childId &&
 		left.epoch === right.epoch
 	);
@@ -134,22 +134,22 @@ function assertTime(value: number): number {
 }
 
 /**
- * Whether a lease record is bound to exactly this browser, pane and socket.
+ * Whether a lease record is bound to exactly this browser, chat and socket.
  * @param record The active lease record.
  * @param browserId The browser asking.
- * @param paneId The pane asking.
+ * @param chatId The chat asking.
  * @param connection The exact socket asking.
  * @returns True when the record's binding matches all three.
  */
 function boundTo(
 	record: BrowserLeaseRecord,
 	browserId: BrowserConnectionId,
-	paneId: string,
+	chatId: string,
 	connection: BrowserConnectionInstance,
 ): boolean {
 	return (
 		record.binding.browserId === browserId &&
-		record.binding.paneId === paneId &&
+		record.binding.chatId === chatId &&
 		record.binding.connection === connection
 	);
 }
@@ -287,18 +287,18 @@ function createBrowserLeaseManager(options: {
 	};
 
 	/**
-	 * Take the lease for a browser pane, ending whatever lease was active.
+	 * Take the lease for a chat, ending whatever lease was active.
 	 * @param browserId The claiming browser.
-	 * @param paneId The claiming pane.
-	 * @param tabSessionId The tab the claiming pane belongs to.
-	 * @param checkout The checkout of the claiming pane's vault, whose workhorse it commands.
+	 * @param chatId The claiming chat.
+	 * @param tabSessionId The tab the claiming chat belongs to.
+	 * @param checkout The checkout of the claiming chat's vault, whose workhorse it commands.
 	 * @param connection The exact socket claiming.
-	 * @param capturedLink The pane's thread-link binding at claim time.
+	 * @param capturedLink The chat's thread-link binding at claim time.
 	 * @returns The new active record.
 	 */
 	const claim = (
 		browserId: BrowserConnectionId,
-		paneId: string,
+		chatId: string,
 		tabSessionId: TabSessionId,
 		checkout: string,
 		connection: BrowserConnectionInstance,
@@ -322,7 +322,7 @@ function createBrowserLeaseManager(options: {
 			lease: {
 				kind: "command_lease",
 				commandId,
-				paneId,
+				chatId,
 				childId,
 				epoch,
 				state: "active",
@@ -331,7 +331,7 @@ function createBrowserLeaseManager(options: {
 			binding: {
 				browserId,
 				connection,
-				paneId,
+				chatId,
 				tabSessionId,
 				checkout,
 				commandId,
@@ -372,7 +372,7 @@ function createBrowserLeaseManager(options: {
 			record.binding.connection !== connection ||
 			!sameLeaseTarget(record.lease, lease)
 		) {
-			throw new Error("the browser command lease belongs to another browser or pane");
+			throw new Error("the browser command lease belongs to another browser or chat");
 		}
 		const expiresAtMs = assertTime(options.now()) + CODEX_APPROVAL_MS.browserCommandLease;
 		const renewed = freezeRecord({ ...record, lease: { ...record.lease, expiresAtMs } });
@@ -394,14 +394,14 @@ function createBrowserLeaseManager(options: {
 	 * Give up the active lease when the caller holds it; otherwise answer with
 	 * the history of the lease the caller named.
 	 * @param browserId The releasing browser.
-	 * @param paneId The releasing pane.
+	 * @param chatId The releasing chat.
 	 * @param connection The exact socket releasing.
 	 * @param commandId The lease the caller believes it holds, if named.
 	 * @returns The released or retired record, or null when there is nothing to report.
 	 */
 	const release = (
 		browserId: BrowserConnectionId,
-		paneId: string,
+		chatId: string,
 		connection: BrowserConnectionInstance,
 		commandId?: BrowserCommandId,
 	): BrowserLeaseRecord | null => {
@@ -411,7 +411,7 @@ function createBrowserLeaseManager(options: {
 		if (assertTime(options.now()) >= active.lease.expiresAtMs) {
 			return finish(active, "expired");
 		}
-		if (!boundTo(active, browserId, paneId, connection)) {
+		if (!boundTo(active, browserId, chatId, connection)) {
 			return retiredRecord(commandId);
 		}
 		if (commandId !== undefined && active.lease.commandId !== commandId) {

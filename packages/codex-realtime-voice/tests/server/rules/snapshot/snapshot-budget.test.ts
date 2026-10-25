@@ -151,7 +151,7 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
-		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.connect(value.browserId, value.chatId, value.tabSessionId)
 		.snapshot().snapshot;
 	const threadId = value.threadId;
 	const turnId = decoder.adoptTurnId("near-bound-turn");
@@ -221,7 +221,7 @@ test("gives up the oldest turns and keeps the running one when history crosses t
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
-		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.connect(value.browserId, value.chatId, value.tabSessionId)
 		.snapshot().snapshot;
 	const turn = (raw: string, status: "completed" | "inProgress") => ({
 		turnId: decoder.adoptTurnId(raw),
@@ -269,7 +269,7 @@ test("fits voice delivery history in fixed producer records without altering ret
 	const authorities = createIdentityAuthorities();
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
-		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.connect(value.browserId, value.chatId, value.tabSessionId)
 		.snapshot().snapshot;
 	const sessionId = parseRealtimeSessionId("budget-voice-context");
 	const bodies = Array.from(

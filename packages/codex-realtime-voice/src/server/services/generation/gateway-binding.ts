@@ -59,7 +59,7 @@ function createGatewayBinding(
 			process: () => input.process.snapshot(),
 			/**
 			 * The canonical context one browser command runs under, captured
-			 * against the pane and link the command was leased under.
+			 * against the chat and link the command was leased under.
 			 * @param commandContext The lease's authority.
 			 * @param operation The operation the command is.
 			 * @returns The context.
@@ -92,7 +92,7 @@ function createGatewayBinding(
 			checkoutLabel: server.host.checkoutLabel,
 			/**
 			 * Watch what the browser is shown, which a change of a tab's shown conversation changes
-			 * too: every pane of the tab shows that checkout's workhorse (ADR 0050).
+			 * too: every chat of the tab shows that checkout's workhorse (ADR 0050).
 			 * @param listener What to tell.
 			 * @returns Unsubscribes.
 			 */

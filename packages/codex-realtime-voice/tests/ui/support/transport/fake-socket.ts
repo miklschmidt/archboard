@@ -1,4 +1,4 @@
-// A pane socket double and the wire fixtures the transport owners speak
+// A chat socket double and the wire fixtures the transport owners speak
 // through it. Fixtures are plain wire records: they cross the fake socket as
 // JSON and the transport parses them like anything the gateway sends.
 
@@ -46,7 +46,7 @@ function clockAt(nowMs: number): () => number {
 	return () => nowMs;
 }
 
-/** A pane socket that records what was sent and replays what a test answers. */
+/** A chat socket that records what was sent and replays what a test answers. */
 class FakeSocket extends EventTarget implements BrowserWorkbenchSocket {
 	readonly sent: FakeSocketRequest[] = [];
 	closeCalls = 0;

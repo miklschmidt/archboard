@@ -1,6 +1,6 @@
 // Each checkout of a tab has its own workhorse, under its own link (ADR 0050). What is guarded: a
-// pane reads the link of the workhorse of its own checkout, and what it types reaches that
-// workhorse and no other, whichever checkout another pane of the same tab is in.
+// chat reads the link of the workhorse of its own checkout, and what it types reaches that
+// workhorse and no other, whichever checkout another chat of the same tab is in.
 
 import { afterEach, expect, test } from "bun:test";
 
@@ -22,7 +22,7 @@ afterEach(async () => {
 const PAYMENTS = "/work/payments";
 const SHOP = "/work/shop";
 
-test("a typed message reaches the workhorse of its pane's checkout, under that workhorse's link", async () => {
+test("a typed message reaches the workhorse of its chat's checkout, under that workhorse's link", async () => {
 	const checkouts: Record<string, string> = { "browser-one": PAYMENTS, "browser-two": SHOP };
 	let shopThread: ReturnType<typeof executableLink> | null = null;
 	const value = createGatewayHarness(undefined, undefined, undefined, {
@@ -36,15 +36,15 @@ test("a typed message reaches the workhorse of its pane's checkout, under that w
 	);
 	shopThread = executableLink(childId, epoch, shopThreadId);
 	const payments = value.open();
-	const shop = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
+	const shop = value.gateway.connect("browser-two", value.chatId, value.tabSessionId);
 
-	// Each pane is shown the link of its own checkout's workhorse.
+	// Each chat is shown the link of its own checkout's workhorse.
 	expect(payments.snapshot().snapshot.threadLink).toMatchObject({ threadId: value.threadId });
 	expect(shop.snapshot().snapshot.threadLink).toMatchObject({ threadId: shopThreadId });
 
 	const fromShop = await shop.command(startCommand(value, shop.claimLease(), shopThreadId));
 	expect(fromShop.outcome).toBe("delivered");
-	// A pane cannot type into the other checkout's conversation.
+	// A chat cannot type into the other checkout's conversation.
 	const crossed = await shop.command(startCommand(value, shop.claimLease(), value.threadId));
 	expect(crossed).toMatchObject({ outcome: "not_delivered", code: "link_changed" });
 	const fromPayments = await payments.command(startCommand(value, payments.claimLease()));
@@ -63,7 +63,7 @@ test("a typed message reaches the workhorse of its pane's checkout, under that w
 	]);
 });
 
-// The shown conversation (ADR 0050) is the checkout every pane of the tab reads. What is guarded:
+// The shown conversation (ADR 0050) is the checkout every chat of the tab reads. What is guarded:
 // a Stop pressed under a lease taken before the tab was switched to another checkout is refused,
 // never sent to the conversation the person no longer sees, and the next lease is the new one's.
 test("a lease taken before the shown conversation switched is refused, and a new one runs on the shown workhorse", async () => {
@@ -78,17 +78,17 @@ test("a lease taken before the shown conversation switched is refused, and a new
 		value.authorities.identity.decoder.adoptThreadId("shop"),
 	);
 	shopThread = executableLink(value.childId, value.epoch, shopThreadId);
-	const pane = value.open();
-	const before = pane.claimLease();
+	const chat = value.open();
+	const before = chat.claimLease();
 
 	shown.checkout = SHOP;
-	const raced = await pane.command(interruptCommand(value, before));
+	const raced = await chat.command(interruptCommand(value, before));
 	expect(raced).toMatchObject({ outcome: "not_delivered", code: "link_changed" });
-	expect(() => pane.renewLease()).toThrow();
+	expect(() => chat.renewLease()).toThrow();
 	expect(value.calls).toEqual([]);
 
-	expect(pane.snapshot().snapshot.threadLink).toMatchObject({ threadId: shopThreadId });
-	const typed = await pane.command(startCommand(value, pane.claimLease(), shopThreadId));
+	expect(chat.snapshot().snapshot.threadLink).toMatchObject({ threadId: shopThreadId });
+	const typed = await chat.command(startCommand(value, chat.claimLease(), shopThreadId));
 	expect(typed.outcome).toBe("delivered");
 	expect(value.actionContexts).toEqual([
 		expect.objectContaining({
@@ -109,14 +109,14 @@ test("a command running when the shown conversation switches keeps its outcome",
 		linkFor: () => null,
 	});
 	openHarnesses.push(value);
-	const pane = value.open();
+	const chat = value.open();
 	let settle: (() => void) | undefined;
 	value.setActionGate(
 		new Promise((resolve) => {
 			settle = () => resolve(undefined);
 		}),
 	);
-	const running = pane.command(startCommand(value, pane.claimLease()));
+	const running = chat.command(startCommand(value, chat.claimLease()));
 	await Promise.resolve();
 
 	shown.checkout = SHOP;

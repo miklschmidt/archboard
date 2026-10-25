@@ -15,7 +15,7 @@ import {
 	ITEM,
 	NOW,
 	OTHER_THREAD,
-	PANE,
+	CHAT,
 	THREAD,
 	TURN,
 	callId,
@@ -31,7 +31,7 @@ type DynamicEffect = BrowserDynamicApproval["effect"];
 const BINDING = {
 	child: CHILD,
 	epoch: EPOCH,
-	link: "pane primary to workhorse-a",
+	link: "chat primary to workhorse-a",
 	target: "workhorse-a in the archboard checkout",
 	effect: "run one command in the workspace",
 };
@@ -403,7 +403,7 @@ function dynamicApproval(effect: DynamicEffect, overrides: Overrides = {}): Brow
 		toolResult: null,
 		binding: {
 			commandId: COMMAND_ID,
-			paneId: PANE,
+			chatId: CHAT,
 			capturedLink: { threadId: THREAD, childId: CHILD, epoch: EPOCH },
 		},
 		resumable: false,

@@ -176,7 +176,7 @@ function approvalFor(
 						commandId: model.BrowserCommandIdSchema.parse(
 							authorities.identity.issuer.mintBrowserCommandId(),
 						),
-						paneId: "pane-caller",
+						chatId: "chat-caller",
 						capturedLink: { threadId: caller, childId: child, epoch },
 					}
 				: null,
@@ -204,7 +204,7 @@ const response: BrowserDynamicApprovalResponse = model.BrowserDynamicApprovalRes
 	kind: "browser_command",
 	command: "dynamicApprovalRespond",
 	commandId: pending.binding!.commandId,
-	paneId: pending.binding!.paneId,
+	chatId: pending.binding!.chatId,
 	childId: child,
 	epoch,
 	capturedLink: pending.binding!.capturedLink,

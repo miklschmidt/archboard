@@ -59,7 +59,7 @@ function createSettlement(result: WorkbenchCommandResult): Settlement {
 	if (link.state !== "executable") {
 		return {
 			state: "inspect_only",
-			announcement: `The create completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The server named no reason."}`,
+			announcement: `The create completed without a confirmed executable link, so this chat stays inspect-only. ${link.reason ?? "The server named no reason."}`,
 		};
 	}
 	return { state: "succeeded", announcement: "Agent connected." };
@@ -87,7 +87,7 @@ function refusalWords(
 	return (
 		coordinatorReason ??
 		result.message ??
-		`The workbench refused ${words(action)} for pane ${target.paneId}.`
+		`The workbench refused ${words(action)} for chat ${target.chatId}.`
 	);
 }
 
@@ -111,7 +111,7 @@ function deliveredSettlement(
 	}
 	return {
 		state: "succeeded",
-		announcement: `${words(action)} completed for pane ${target.paneId}.`,
+		announcement: `${words(action)} completed for chat ${target.chatId}.`,
 	};
 }
 

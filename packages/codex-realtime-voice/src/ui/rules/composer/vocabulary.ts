@@ -12,7 +12,7 @@ const MAX_PROMPT_BYTES = 16_384;
 
 const REFUSAL_RECOVERIES: Readonly<Record<WorkbenchComposerRefusalCode, string>> = {
 	unavailable: "Wait for Codex to become thread-capable, then send the message again.",
-	unbound: "Create or attach a Codex workhorse for this pane, then send a message.",
+	unbound: "Create or attach a Codex workhorse for this chat, then send a message.",
 	inspect_only: "Select a current executable workhorse before sending a message.",
 	empty_prompt: "Type a message before sending.",
 	prompt_too_long: `Shorten the message to at most ${String(MAX_PROMPT_BYTES)} UTF-8 bytes.`,
@@ -25,8 +25,8 @@ const REFUSAL_RECOVERIES: Readonly<Record<WorkbenchComposerRefusalCode, string>>
 
 const REFUSAL_MESSAGES: Readonly<Record<WorkbenchComposerRefusalCode, string>> = {
 	unavailable: "The Codex workbench cannot accept direct workhorse input.",
-	unbound: "This pane has no Codex workhorse to send to.",
-	inspect_only: "This pane's thread link is inspect-only, so it accepts no direct input.",
+	unbound: "This chat has no Codex workhorse to send to.",
+	inspect_only: "This chat's thread link is inspect-only, so it accepts no direct input.",
 	empty_prompt: "The workhorse accepts a non-empty message only.",
 	prompt_too_long: "The message is longer than the workbench accepts.",
 	prompt_invalid: "The message contains a character the workbench contract refuses.",
@@ -44,7 +44,7 @@ const REFUSAL_MESSAGES: Readonly<Record<WorkbenchComposerRefusalCode, string>> =
  * is the authoritative in-progress guard on `turn/start`.
  */
 const TRANSPORT_REFUSALS: Readonly<Record<string, string>> = {
-	link_changed: "The pane moved to another thread link after this message was composed.",
+	link_changed: "The chat moved to another thread link after this message was composed.",
 	link_required: "The command did not name the workbench target it was composed against.",
 	lease_required: "This browser does not hold the workbench command lease.",
 	lease_expired: "The workbench command lease expired before the command was sent.",
@@ -94,7 +94,7 @@ const PENDING_MESSAGES: Readonly<Record<WorkbenchComposerAction, string>> = {
 };
 
 const LATE_RESULT_REASON =
-	"The pane moved to another thread link before the server answered, so this result is not applied here.";
+	"The chat moved to another thread link before the server answered, so this result is not applied here.";
 
 export {
 	LATE_RESULT_REASON,

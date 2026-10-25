@@ -1,6 +1,6 @@
 // One state owner for every workhorse turn command the composer can send.
 // Every dispatch captures the transport's command intent at activation and
-// hands it back to `executeCommand()`, so a pane that navigated between
+// hands it back to `executeCommand()`, so a chat that navigated between
 // composing and sending is refused by the transport rather than silently
 // retargeted. The controller holds no message list: the only turn a person
 // ever sees came from the server snapshot through the runtime.
@@ -262,7 +262,7 @@ function createWorkbenchComposerController(
 	}
 
 	/**
-	 * Whether a result arrived after the pane left the link it was sent against.
+	 * Whether a result arrived after the chat left the link it was sent against.
 	 * @param threadId The thread the command named.
 	 * @returns True when the result cannot be applied here.
 	 */

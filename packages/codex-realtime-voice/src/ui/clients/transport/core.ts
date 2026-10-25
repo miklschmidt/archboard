@@ -394,7 +394,7 @@ function captureTarget(core: TransportCore, run: SocketRun): BrowserWorkbenchCom
 	const lease = activeLease(core, core.currentLease);
 	return Object.freeze({
 		commandId: lease.commandId,
-		paneId: lease.paneId,
+		chatId: lease.chatId,
 		childId: lease.childId,
 		epoch: lease.epoch,
 		capturedThreadLink: Object.freeze({ ...snapshot.threadLink }),

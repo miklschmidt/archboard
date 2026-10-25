@@ -86,7 +86,7 @@ interface BrowserAudioElementPort {
 }
 
 /** The lease fields that name one command target. */
-type LeaseTarget = Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">;
+type LeaseTarget = Pick<BrowserCommandLease, "commandId" | "chatId" | "childId" | "epoch">;
 
 /**
  * Whether two lease targets name the same command.
@@ -97,7 +97,7 @@ type LeaseTarget = Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" 
 function sameLeaseTarget(left: LeaseTarget, right: LeaseTarget): boolean {
 	return (
 		left.commandId === right.commandId &&
-		left.paneId === right.paneId &&
+		left.chatId === right.chatId &&
 		left.childId === right.childId &&
 		left.epoch === right.epoch
 	);

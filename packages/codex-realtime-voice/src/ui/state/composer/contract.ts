@@ -88,7 +88,7 @@ type WorkbenchComposerTurn =
 
 type WorkbenchComposerLink =
 	| { readonly kind: "unavailable"; readonly reason: string }
-	/** No workhorse has been chosen for this pane yet. */
+	/** No workhorse has been chosen for this chat yet. */
 	| { readonly kind: "unbound"; readonly reason: string }
 	/** A workhorse this browser may read but never send to. */
 	| { readonly kind: "inspect_only"; readonly reason: string }
@@ -175,7 +175,7 @@ interface WorkbenchComposerControllerOptions {
 /**
  * One state owner for submit, steer, queue, interrupt, pending, and the
  * retained draft. Its `submit` is shaped to fit the runtime's `onNew`, so a
- * pane cannot end up with two answers about what is pending or what happened.
+ * chat cannot end up with two answers about what is pending or what happened.
  */
 interface WorkbenchComposerController {
 	readonly submit: (

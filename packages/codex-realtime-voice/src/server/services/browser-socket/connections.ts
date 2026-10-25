@@ -7,7 +7,7 @@ import { createServerCodexBrowserSocketOwner } from "#server/services/browser-so
 
 export interface BrowserRegistration {
 	readonly instance: BrowserConnectionInstance;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly tabSessionId: TabSessionId;
 	readonly checkout: string;
 }
@@ -58,7 +58,7 @@ export function createWorkbenchBrowserConnections(
 				 * @param id The registered browser identity.
 				 * @returns The surface identity, or null before registration.
 				 */
-				paneForBrowser: (id) => registrations.get(id)?.paneId ?? null,
+				chatForBrowser: (id) => registrations.get(id)?.chatId ?? null,
 				tabSessionForBrowser: tabs.of,
 				/**
 				 * Open the tab session its registered browser names.
@@ -92,7 +92,7 @@ export function createWorkbenchBrowserConnections(
 			) => {
 				const installed = owner();
 				assertOpaqueName(browserId, "browser");
-				assertOpaqueName(registration.paneId, "pane");
+				assertOpaqueName(registration.chatId, "chat");
 				const checkout = admit(registration.checkout);
 				if (checkout === null)
 					throw new Error("The checkout is not admitted by this workbench host.");

@@ -37,7 +37,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 	test("deduplicates an in-flight command and classifies a late result as unknown", async () => {
 		const value = harness();
 		const first = value.open();
-		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
+		const second = value.gateway.connect("browser-two", "chat-two", value.tabSessionId);
 		const lease = first.claimLease();
 		let settle: ((result: undefined) => void) | undefined;
 		value.setActionResult(undefined);
@@ -83,7 +83,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 	test("does not replay a cached command across browser ownership", async () => {
 		const value = harness();
 		const first = value.open();
-		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
+		const second = value.gateway.connect("browser-two", value.chatId, value.tabSessionId);
 		const lease = first.claimLease();
 		const command = startCommand(value, lease);
 		const delivered = await first.command(command);
@@ -209,7 +209,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		connection.claimLease();
 		await connection.close();
 		expect(value.disconnectReasons).toEqual(["browser_disconnected"]);
-		const recovered = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
+		const recovered = value.gateway.connect("browser-two", "chat-two", value.tabSessionId);
 		expect(recovered.claimLease().state).toBe("active");
 	});
 
@@ -226,7 +226,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		await first.close();
 
 		// A reload within the grace: the tab comes back on a new socket of the same session.
-		const recovered = value.gateway.connect("browser-reloaded", value.paneId, value.tabSessionId);
+		const recovered = value.gateway.connect("browser-reloaded", value.chatId, value.tabSessionId);
 		recovered.claimLease();
 		const { snapshot } = recovered.snapshot();
 		expect(snapshot.approvals).toEqual([
@@ -297,7 +297,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		});
 		expect(disposed).toBeFalse();
 		expectGatewayError(
-			() => value.gateway.connect("browser-two", "pane-two", value.tabSessionId),
+			() => value.gateway.connect("browser-two", "chat-two", value.tabSessionId),
 			"disposed",
 		);
 		expectGatewayError(() => connection.claimLease(), "disposed");
@@ -324,7 +324,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 	test("lease transfer and release do not run durable disconnect settlement", async () => {
 		const value = harness();
 		const first = value.open();
-		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
+		const second = value.gateway.connect("browser-two", "chat-two", value.tabSessionId);
 		first.claimLease();
 		const voice = deferred();
 		value.setDisconnectGate(voice.promise);

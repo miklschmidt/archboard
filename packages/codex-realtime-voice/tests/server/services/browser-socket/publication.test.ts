@@ -69,7 +69,7 @@ describe("server Codex publication boundary", () => {
 		let confirmations = 0;
 		const connection = {
 			browserId: "browser-publication",
-			paneId: "pane-publication",
+			chatId: "chat-publication",
 			tabSessionId: parseTabSessionId("tab-one")!,
 			instance,
 			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
@@ -80,7 +80,7 @@ describe("server Codex publication boundary", () => {
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
-			paneForBrowser: () => "pane-publication",
+			chatForBrowser: () => "chat-publication",
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 			openTabSession: () => undefined,
 		});
@@ -124,7 +124,7 @@ describe("server Codex publication boundary", () => {
 		let listener: ((message: BrowserGatewayMessage) => void) | null = null;
 		const connection = {
 			browserId: "browser-media-event",
-			paneId: "pane-media-event",
+			chatId: "chat-media-event",
 			tabSessionId: parseTabSessionId("tab-one")!,
 			instance,
 			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
@@ -143,7 +143,7 @@ describe("server Codex publication boundary", () => {
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
-			paneForBrowser: () => connection.paneId,
+			chatForBrowser: () => connection.chatId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 			openTabSession: () => undefined,
 		});
@@ -194,7 +194,7 @@ describe("server Codex publication boundary", () => {
 	test("a failed event send is reported once and a later snapshot republishes it", async () => {
 		const instance = Object.freeze({ socket: "event-recovery" });
 		const browserId = "browser-event-recovery";
-		const paneId = "pane-event-recovery";
+		const chatId = "chat-event-recovery";
 		const terminal = { requestId: "terminal-event-recovery" };
 		const event = {
 			kind: "delta",
@@ -216,7 +216,7 @@ describe("server Codex publication boundary", () => {
 		const confirmed: unknown[] = [];
 		const connection = {
 			browserId,
-			paneId,
+			chatId,
 			instance,
 			snapshot: () => (terminalPending ? recovered : empty),
 			refreshProjection: async () => undefined,
@@ -234,7 +234,7 @@ describe("server Codex publication boundary", () => {
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
-			paneForBrowser: () => paneId,
+			chatForBrowser: () => chatId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 			openTabSession: () => undefined,
 		});
@@ -277,7 +277,7 @@ describe("server Codex publication boundary", () => {
 			const publicationFailure = failures[0] as Error;
 			expect(publicationFailure.cause).toBe(eventSendFailure);
 			expect(publicationFailure.message).toContain(browserId);
-			expect(publicationFailure.message).toContain(paneId);
+			expect(publicationFailure.message).toContain(chatId);
 			expect(publicationFailure.message).toContain("delta");
 			expect(publicationFailure.message).toMatch(/\bsequence\s+4\b/);
 			expect(publicationFailure.message).toContain(eventSendFailure.message);
@@ -301,7 +301,7 @@ describe("server Codex publication boundary", () => {
 	test("drain combines a close failure with only the first event failure and clears both", async () => {
 		const instance = Object.freeze({ socket: "combined-drain" });
 		const browserId = "browser-combined-drain";
-		const paneId = "pane-combined-drain";
+		const chatId = "chat-combined-drain";
 		const firstEvent = { kind: "delta", sequence: 6, delta: {} } satisfies BrowserGatewayMessage;
 		const laterEvent = { kind: "delta", sequence: 7, delta: {} } satisfies BrowserGatewayMessage;
 		const firstEventFailure = new Error("first event send failed");
@@ -310,7 +310,7 @@ describe("server Codex publication boundary", () => {
 		const listeners = new Set<(message: BrowserGatewayMessage) => void>();
 		const connection = {
 			browserId,
-			paneId,
+			chatId,
 			instance,
 			snapshot: () =>
 				({
@@ -330,7 +330,7 @@ describe("server Codex publication boundary", () => {
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
-			paneForBrowser: () => paneId,
+			chatForBrowser: () => chatId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 			openTabSession: () => undefined,
 		});
@@ -377,7 +377,7 @@ describe("server Codex publication boundary", () => {
 			const publicationFailure = failures[1] as Error;
 			expect(publicationFailure.cause).toBe(firstEventFailure);
 			expect(publicationFailure.message).toContain(browserId);
-			expect(publicationFailure.message).toContain(paneId);
+			expect(publicationFailure.message).toContain(chatId);
 			expect(publicationFailure.message).toContain("delta");
 			expect(publicationFailure.message).toMatch(/\bsequence\s+6\b/);
 			expect(publicationFailure.message).toContain(firstEventFailure.message);

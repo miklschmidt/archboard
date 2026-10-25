@@ -30,10 +30,10 @@ import {
 /** The tab session owners one projection read is taken from. */
 type ProjectionComponents = CodexWorkbenchSessionComponents;
 
-/** The owners of the workhorse a pane shows. */
+/** The owners of the workhorse a chat shows. */
 type WorkhorseComponents = CodexWorkbenchWorkhorseComponents;
 
-/** What the gateway hands a projection read: the pane, its binding, its lease. */
+/** What the gateway hands a projection read: the chat, its binding, its lease. */
 type ProjectionContext = Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0];
 
 /** One record of a context delivery, as the controller kept it. */
@@ -45,7 +45,7 @@ type ContextDeliveryBinding = NonNullable<
 >;
 
 /**
- * Everything a projection read needs: the pane's tab session, whose coordinator, voice and
+ * Everything a projection read needs: the chat's tab session, whose coordinator, voice and
  * approvals it is shown, the workhorse of the shown checkout, and what the generation shares.
  */
 interface ServerOwnerProjectionInput {
@@ -58,7 +58,7 @@ interface ServerOwnerProjectionInput {
 	readonly narrative?: VoiceNarrativeAdapter;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
-	/** Reads the voice coordinator's thread, which is not any pane's link. */
+	/** Reads the voice coordinator's thread, which is not any chat's link. */
 	readonly coordinatorTimeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
@@ -67,14 +67,14 @@ interface ServerOwnerProjectionInput {
 }
 
 /**
- * Whether the controller's current binding is the link this pane shows: the
- * same link revision and the same target. Which pane created it does not
- * matter, since every pane of a checkout shows its workhorse's one link.
+ * Whether the controller's current binding is the link this chat shows: the
+ * same link revision and the same target. Which chat created it does not
+ * matter, since every chat of a checkout shows its workhorse's one link.
  * @param binding The controller's binding.
- * @param context The pane being read.
+ * @param context The chat being read.
  * @returns True when they are the same binding.
  */
-function bindingIsForPane(binding: ContextDeliveryBinding, context: ProjectionContext): boolean {
+function bindingIsForChat(binding: ContextDeliveryBinding, context: ProjectionContext): boolean {
 	return (
 		binding.link.revision === context.binding.revision &&
 		binding.target.threadId === context.binding.link.threadId &&
@@ -104,21 +104,21 @@ function deliveryIsForBinding(
 }
 
 /**
- * The context delivery this pane may be shown.
+ * The context delivery this chat may be shown.
  *
  * Delivery history is process-wide; only the exact current binding may publish
- * its result and freshness into a pane's snapshot, and every pane showing that
+ * its result and freshness into a chat's snapshot, and every chat showing that
  * binding's link is shown the same one.
- * @param components The owners of the pane's workhorse.
- * @param context The pane being read.
- * @returns The delivery, or undefined when none of it is this pane's.
+ * @param components The owners of the chat's workhorse.
+ * @param context The chat being read.
+ * @returns The delivery, or undefined when none of it is this chat's.
  */
 function presentedContextDelivery(
 	components: WorkhorseComponents,
 	context: ProjectionContext,
 ): ContextDelivery | undefined {
 	const binding = components.contextDelivery.snapshot().binding;
-	if (binding === null || !bindingIsForPane(binding, context)) {
+	if (binding === null || !bindingIsForChat(binding, context)) {
 		return undefined;
 	}
 	const latest = components.contextDelivery.inspect().at(-1);
@@ -126,9 +126,9 @@ function presentedContextDelivery(
 }
 
 /**
- * The context delivery panel: the outcome of this pane's own delivery, and the window in which
+ * The context delivery panel: the outcome of this chat's own delivery, and the window in which
  * the change it told was fresh.
- * @param delivery This pane's delivery, or undefined when it has none.
+ * @param delivery This chat's delivery, or undefined when it has none.
  * @returns The panel.
  */
 function contextDeliveryPanel(
@@ -213,12 +213,12 @@ function coordinatorSettings(
 }
 
 /**
- * The queue this pane may be shown.
+ * The queue this chat may be shown.
  *
- * Cached submissions belong to one workhorse thread; a pane looking at another
+ * Cached submissions belong to one workhorse thread; a chat looking at another
  * link is told the queue is unavailable, never shown the wrong one.
- * @param state The cached queue facts of the pane's workhorse.
- * @param context The pane being read.
+ * @param state The cached queue facts of the chat's workhorse.
+ * @param context The chat being read.
  * @returns The queue, or the unavailable queue.
  */
 function presentedQueue(
@@ -232,10 +232,10 @@ function presentedQueue(
 }
 
 /**
- * What a pane is shown of the workhorse of its checkout: its settings, its queue and its board
+ * What a chat is shown of the workhorse of its checkout: its settings, its queue and its board
  * news. A checkout no workhorse was started for yet shows none of them.
  * @param workhorse The workhorse, or null while the checkout has none.
- * @param context The pane being read.
+ * @param context The chat being read.
  * @returns The workhorse's parts of the projection.
  */
 function workhorsePanels(
@@ -261,18 +261,18 @@ function workhorsePanels(
  * Where the tab's voice coordinator's turns are read from. The key holds what makes one
  * coordinator's history another's: its thread, and the child epoch it runs on.
  * @param coordinator The tab's coordinator.
- * @param paneId The pane that is shown them.
+ * @param chatId The chat that is shown them.
  * @param threadCapable Whether the workbench can serve threads yet.
  * @returns The target, whose thread is null while the coordinator has none.
  */
 function coordinatorTarget(
 	coordinator: ReturnType<ProjectionComponents["coordinator"]["snapshot"]>,
-	paneId: string,
+	chatId: string,
 	threadCapable: boolean,
 ): TimelineTarget {
 	const { threadId, childId, epoch } = coordinator;
 	return {
-		key: JSON.stringify([paneId, threadId, childId, epoch, threadCapable]),
+		key: JSON.stringify([chatId, threadId, childId, epoch, threadCapable]),
 		threadId,
 		childId,
 		epoch,
@@ -280,10 +280,10 @@ function coordinatorTarget(
 }
 
 /**
- * One complete snapshot of the workbench as one pane is shown it, read from
+ * One complete snapshot of the workbench as one chat is shown it, read from
  * the live owners rather than from anything the adapter stored.
- * @param input The owners, the cached facts, and the pane-side owners.
- * @param context The pane, its binding, and its lease.
+ * @param input The owners, the cached facts, and the chat-side owners.
+ * @param context The chat, its binding, and its lease.
  * @returns The projection.
  */
 function readBrowserOwnerProjection(
@@ -293,7 +293,7 @@ function readBrowserOwnerProjection(
 	const { dynamicApprovals, state } = input;
 	const { components } = input.session;
 	if (context.lease?.state === "active") {
-		dynamicApprovals?.bindLease(context.tabSessionId, context.paneId, context.lease.commandId);
+		dynamicApprovals?.bindLease(context.tabSessionId, context.chatId, context.lease.commandId);
 	}
 	const coordinator = components.coordinator.snapshot();
 	const owned = workhorsePanels(input.workhorse, context);
@@ -309,15 +309,15 @@ function readBrowserOwnerProjection(
 		account: state.account,
 		login: state.login,
 		timeline: input.timeline.read(
-			context.paneId,
+			context.chatId,
 			context.binding.revision,
 			context.binding.link,
 			threadCapable,
 			context.connection,
 		),
 		coordinatorTimeline: input.coordinatorTimeline.readTarget(
-			context.paneId,
-			coordinatorTarget(coordinator, context.paneId, threadCapable),
+			context.chatId,
+			coordinatorTarget(coordinator, context.chatId, threadCapable),
 			threadCapable,
 			context.connection,
 			coordinatorTurnsShownIn(input.session.state.coordinatorTurnHomes, context.checkout),

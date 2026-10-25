@@ -62,7 +62,7 @@ function withAvailableAuthority<Result>(
 }
 
 /**
- * Adapt one pane's server socket to the browser workbench gateway.
+ * Adapt one chat's server socket to the browser workbench gateway.
  * @param transportOptions Clock and request-id sources.
  * @returns The transport.
  */

@@ -185,7 +185,7 @@ function dynamicResponse(
 		kind: "browser_command",
 		command: "dynamicApprovalRespond",
 		commandId: approval.binding.commandId,
-		paneId: approval.binding.paneId,
+		chatId: approval.binding.chatId,
 		childId: harnessValue.childId,
 		epoch: harnessValue.epoch,
 		capturedLink: approval.binding.capturedLink,

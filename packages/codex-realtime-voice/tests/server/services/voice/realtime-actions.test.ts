@@ -5,7 +5,7 @@ import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import { type BrowserActionContext } from "#server/protocol/gateway/contract.ts";
 import { createServerRealtimeActions } from "#server/services/voice/realtime-actions.ts";
 
-/** The checkout of the fixture's pane. */
+/** The checkout of the fixture's chat. */
 const CHECKOUT = "/work/payments";
 
 function fixture() {
@@ -46,7 +46,7 @@ function fixture() {
 			},
 		},
 	};
-	// The tab's one workhorse, in the checkout of the fixture's pane; its threads are not looked at.
+	// The tab's one workhorse, in the checkout of the fixture's chat; its threads are not looked at.
 	const workhorse = { snapshot: () => ({ state: "ready", threadId }) };
 	const scope = {
 		claimThread: () => undefined,
@@ -58,7 +58,7 @@ function fixture() {
 	const context: BrowserActionContext = {
 		browserId: "browser-1",
 		connection,
-		paneId: "pane-1",
+		chatId: "chat-1",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		checkout: CHECKOUT,
 		commandId: identity.identity.issuer.mintBrowserCommandId(),
@@ -97,10 +97,10 @@ type Fixture = ReturnType<typeof fixture>;
 type Actions = ReturnType<typeof createServerRealtimeActions>;
 
 /**
- * Start voice on the fixture's pane.
+ * Start voice on the fixture's chat.
  * @param actions The realtime actions.
  * @param value The fixture.
- * @returns The handle the pane holds the session by.
+ * @returns The handle the chat holds the session by.
  */
 async function startVoice(actions: Actions, value: Fixture) {
 	const commandId = value.identity.identity.issuer.mintBrowserCommandId();
@@ -109,7 +109,7 @@ async function startVoice(actions: Actions, value: Fixture) {
 			kind: "browser_command",
 			command: "realtimeStart",
 			commandId,
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -121,7 +121,7 @@ async function startVoice(actions: Actions, value: Fixture) {
 }
 
 /**
- * Act on a running session from the fixture's pane.
+ * Act on a running session from the fixture's chat.
  * @param actions The realtime actions.
  * @param value The fixture.
  * @param handle The session's handle.
@@ -136,7 +136,7 @@ async function onSession(
 	const common = {
 		kind: "browser_command",
 		commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-		paneId: value.context.paneId,
+		chatId: value.context.chatId,
 		childId: value.context.childId,
 		epoch: value.context.epoch,
 		threadId: value.threadId,
@@ -157,14 +157,14 @@ test("a voice start after a finished session runs on a fresh coordinator", async
 	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const first = await startVoice(actions, value);
 	expect(value.replacements).toHaveLength(0);
-	// Voice is bound to the workhorse of the checkout of the pane it started from (ADR 0050).
+	// Voice is bound to the workhorse of the checkout of the chat it started from (ADR 0050).
 	expect(value.scope.state.voiceCheckout).toBe(CHECKOUT);
 	await onSession(actions, value, first, "stop");
 
 	const second = await startVoice(actions, value);
 
 	expect(value.replacements).toHaveLength(1);
-	// The session belongs to the fresh coordinator, so the pane can speak into it.
+	// The session belongs to the fresh coordinator, so the chat can speak into it.
 	await onSession(actions, value, second, "append");
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop", "start", "append"]);
 });
@@ -195,7 +195,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 			kind: "browser_command",
 			command: "realtimeStart",
 			commandId: startId,
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -212,7 +212,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 			kind: "browser_command",
 			command: "realtimeAppendText",
 			commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -226,7 +226,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 			kind: "browser_command",
 			command: "realtimeStop",
 			commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -255,7 +255,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 			kind: "browser_command",
 			command: "realtimeStart",
 			commandId: startId,
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -269,7 +269,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 				kind: "browser_command",
 				command: "realtimeAppendText",
 				commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-				paneId: context.paneId,
+				chatId: context.chatId,
 				childId: context.childId,
 				epoch: context.epoch,
 				threadId: value.threadId,
@@ -290,7 +290,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });
 
-test("another pane of the tab can stop voice, whichever checkout it shows, but cannot speak into it", async () => {
+test("another chat of the tab can stop voice, whichever checkout it shows, but cannot speak into it", async () => {
 	const value = fixture();
 	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
@@ -299,7 +299,7 @@ test("another pane of the tab can stop voice, whichever checkout it shows, but c
 			kind: "browser_command",
 			command: "realtimeStart",
 			commandId: startId,
-			paneId: value.context.paneId,
+			chatId: value.context.chatId,
 			childId: value.context.childId,
 			epoch: value.context.epoch,
 			threadId: value.threadId,
@@ -307,10 +307,10 @@ test("another pane of the tab can stop voice, whichever checkout it shows, but c
 		},
 		value.context,
 	);
-	const otherPane: BrowserActionContext = {
+	const otherChat: BrowserActionContext = {
 		...value.context,
 		browserId: "browser-2",
-		paneId: "pane-2",
+		chatId: "chat-2",
 		connection: Object.freeze({ socket: "two" }),
 		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId: value.identity.identity.issuer.mintBrowserCommandId(),
@@ -319,7 +319,7 @@ test("another pane of the tab can stop voice, whichever checkout it shows, but c
 		({
 			kind: "browser_command",
 			commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-			paneId: context.paneId,
+			chatId: context.chatId,
 			childId: context.childId,
 			epoch: context.epoch,
 			threadId: value.threadId,
@@ -327,15 +327,15 @@ test("another pane of the tab can stop voice, whichever checkout it shows, but c
 		}) as const;
 	await expect(
 		actions.appendText(
-			{ ...base(otherPane), command: "realtimeAppendText", text: "not this socket's media" },
-			otherPane,
+			{ ...base(otherChat), command: "realtimeAppendText", text: "not this socket's media" },
+			otherChat,
 		),
 	).rejects.toThrow();
 	const linked = value.context.link;
 	if (linked.state !== "executable") throw new Error("The fixture link must be executable.");
-	// A pane of another checkout shows another workhorse's link; voice is the whole tab's (ADR 0050).
+	// A chat of another checkout shows another workhorse's link; voice is the whole tab's (ADR 0050).
 	const elsewhere: BrowserActionContext = {
-		...otherPane,
+		...otherChat,
 		checkout: "/work/shop",
 		link: { ...linked, threadId: value.identity.identity.decoder.adoptThreadId("another-thread") },
 	};
@@ -371,7 +371,7 @@ test("a refused host narrative leaves live voice and its coordinator unchanged",
 				kind: "browser_command",
 				command: "realtimeStart",
 				commandId: value.identity.identity.issuer.mintBrowserCommandId(),
-				paneId: value.context.paneId,
+				chatId: value.context.chatId,
 				childId: value.context.childId,
 				epoch: value.context.epoch,
 				threadId: value.threadId,

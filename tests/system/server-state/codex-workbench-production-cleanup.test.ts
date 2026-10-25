@@ -185,7 +185,7 @@ describe.serial("production Codex setup cleanup", () => {
 					kind: "browser_command",
 					command: "threadLinkCreate",
 					commandId: target["commandId"],
-					paneId: target["paneId"],
+					chatId: target["chatId"],
 					childId: target["childId"],
 					epoch: target["epoch"],
 				},

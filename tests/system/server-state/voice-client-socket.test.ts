@@ -61,7 +61,7 @@ test("the browser client meets an agent's Bun.serve sockets before start and rec
 
 	expect(await client.connect()).toBe(false);
 	const refused = await closeOf(
-		`${server.url.origin.replace("http:", "ws:")}/voice?tabSessionId=t&paneId=main`,
+		`${server.url.origin.replace("http:", "ws:")}/voice?tabSessionId=t&chatId=main`,
 	);
 	expect(refused.code).toBe(1011);
 	expect(client.snapshot().failure?.message).toBe(refused.reason);

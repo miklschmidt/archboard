@@ -84,7 +84,7 @@ describe("Codex workbench browser gateway readiness", () => {
 				reason: source.reason,
 			});
 			const projected = value.gateway
-				.connect(value.browserId, value.paneId, value.tabSessionId)
+				.connect(value.browserId, value.chatId, value.tabSessionId)
 				.snapshot().snapshot.threadLink;
 			expect(projected.sourcePresentation).toBe(source.presentation);
 			expect(Object.keys(projected).toSorted()).toEqual([
@@ -342,7 +342,7 @@ describe("Codex workbench browser command routing", () => {
 	test("keeps a spontaneous terminal until both live connections publish it", () => {
 		const value = harness();
 		const first = value.open();
-		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
+		const second = value.gateway.connect("browser-two", value.chatId, value.tabSessionId);
 		const approval = value.makeOrdinaryApproval();
 		first.snapshot();
 		second.snapshot();

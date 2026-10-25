@@ -52,7 +52,7 @@ function ensureThreadReadiness(snapshot: BrowserSnapshot): void {
 }
 
 /**
- * Refuse a command aimed at a thread the pane is no longer linked to.
+ * Refuse a command aimed at a thread the chat is no longer linked to.
  * @param command The command.
  * @param snapshot The snapshot it was checked against.
  */
@@ -99,7 +99,7 @@ function ensureLoginCancelTarget(command: OwnedBrowserCommand, snapshot: Browser
 }
 
 /**
- * Refuse a command whose lease is not this browser's, this pane's, this
+ * Refuse a command whose lease is not this browser's, this chat's, this
  * socket's and this child epoch's.
  * @param state The connection.
  * @param command The command.
@@ -112,7 +112,7 @@ function ensureLeaseOwnership(
 ): void {
 	if (
 		record.binding.browserId !== state.browserId ||
-		record.binding.paneId !== command.paneId ||
+		record.binding.chatId !== command.chatId ||
 		record.binding.connection !== state.instance
 	)
 		throw new CodexWorkbenchGatewayError("lease_transferred", "The lease owner changed.", {
@@ -126,7 +126,7 @@ function ensureLeaseOwnership(
 
 /**
  * Refuse a coordination approval response whose captured link is not the one
- * the pane now has.
+ * the chat now has.
  * @param command The response.
  * @param snapshot The snapshot it was checked against.
  */
@@ -171,7 +171,7 @@ function answersApproval(
 
 /**
  * Whether an approval response answers exactly the request that is pending on
- * this pane's link, and has not expired.
+ * this chat's link, and has not expired.
  * @param pending What the approval owner has pending, when it has one.
  * @param command The response.
  * @param snapshot The snapshot it was checked against.
@@ -198,7 +198,7 @@ function answersPendingRequest(
 
 /**
  * Everything a command must satisfy before any action runs: its lease, its
- * pane binding, the workbench's readiness, and the approval it answers.
+ * chat binding, the workbench's readiness, and the approval it answers.
  * @param owners What the gateway around the checks provides.
  * @returns The admission check.
  */
@@ -209,7 +209,7 @@ function createCommandAdmission(
 
 	/**
 	 * Refuse an approval response whose approval is no longer pending on this
-	 * pane's link.
+	 * chat's link.
 	 * @param command The command.
 	 * @param snapshot The snapshot it was checked against.
 	 */

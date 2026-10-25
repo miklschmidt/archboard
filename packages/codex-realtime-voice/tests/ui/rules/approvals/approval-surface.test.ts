@@ -156,7 +156,7 @@ describe("ordinary approval families", () => {
 	test("carries the broker identity on every ordinary card", () => {
 		for (const card of surface({ approvals: [...ORDINARY] }).cards) {
 			expect(card.kind).toBe("ordinary");
-			expect(rowValue(card, "Broker link")).toBe("pane primary to workhorse-a");
+			expect(rowValue(card, "Broker link")).toBe("chat primary to workhorse-a");
 			expect(rowValue(card, "Broker effect")).toBe("run one command in the workspace");
 			expect(rowValue(card, "Broker target")).toBe(IMMUTABLE_TARGET);
 		}

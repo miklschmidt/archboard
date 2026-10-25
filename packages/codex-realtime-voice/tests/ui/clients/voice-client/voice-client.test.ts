@@ -22,7 +22,7 @@ import {
 	snapshotMessage,
 } from "#tests/ui/support/transport/fixtures.ts";
 
-/** A pane socket that opens on the next task and can be closed. */
+/** A chat socket that opens on the next task and can be closed. */
 class OpeningSocket extends FakeSocket {
 	readonly url: string;
 
@@ -37,7 +37,7 @@ class OpeningSocket extends FakeSocket {
 	}
 }
 
-/** A pane socket that the server refuses: it closes without opening. */
+/** A chat socket that the server refuses: it closes without opening. */
 class RefusedSocket extends FakeSocket {
 	/** Close the socket on the next task. */
 	constructor() {
@@ -46,7 +46,7 @@ class RefusedSocket extends FakeSocket {
 	}
 }
 
-/** A pane socket that opens and that the server closes, with a reason, before its first answer. */
+/** A chat socket that opens and that the server closes, with a reason, before its first answer. */
 class ClosedSocket extends FakeSocket {
 	/** Open the socket, then close it on its first request. */
 	constructor() {
@@ -308,7 +308,7 @@ function gateway(behaviour: GatewayBehaviour = {}) {
 		return answer;
 	};
 	const client = openVoiceClient(
-		{ socketPath: "/api/voice", paneId: "pane-a" },
+		{ socketPath: "/api/voice", chatId: "chat-a" },
 		{
 			transport: createBrowserWorkbenchTransport(),
 			media,
@@ -373,13 +373,13 @@ async function fire(timers: Timer[]): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-test("connect opens the socket with the pane and tab identity and attaches voice", async () => {
+test("connect opens the socket with the chat and tab identity and attaches voice", async () => {
 	const { client, sockets, urls, calls } = gateway();
 	expect(await client.connect()).toBe(true);
 	const url = new URL(urls[0] ?? "");
 	expect(url.protocol).toBe("wss:");
 	expect(url.pathname).toBe("/api/voice");
-	expect(url.searchParams.get("paneId")).toBe("pane-a");
+	expect(url.searchParams.get("chatId")).toBe("chat-a");
 	expect(url.searchParams.get("tabSessionId")).toBe("tab-1");
 	expect(calls).toEqual(["attach"]);
 	expect(client.snapshot().connection).toBe("connected");

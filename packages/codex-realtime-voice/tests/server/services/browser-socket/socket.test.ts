@@ -15,7 +15,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 	let current: BrowserConnectionInstance | null = null;
 	const connection = (instance: BrowserConnectionInstance): BrowserWorkbenchConnection => ({
 		browserId: "browser-reconnect",
-		paneId: "pane-reconnect",
+		chatId: "chat-reconnect",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		instance,
 		snapshot: () => ({ kind: "snapshot", sequence: 1, snapshot: {} }) as never,
@@ -42,7 +42,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 	const gateway = {
 		connect: (
 			_browserId: string,
-			_paneId: string,
+			_chatId: string,
 			_tabSessionId: string,
 			instance: BrowserConnectionInstance,
 		) => {
@@ -51,7 +51,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		},
 		closeConnection: async (
 			_browserId: string,
-			_paneId: string,
+			_chatId: string,
 			instance: BrowserConnectionInstance,
 		) => {
 			if (current === instance) {
@@ -61,7 +61,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 	} as unknown as CodexWorkbenchGateway;
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: () => "pane-reconnect",
+		chatForBrowser: () => "chat-reconnect",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
@@ -107,7 +107,7 @@ test("normal browser close and teardown share one delayed close owner", async ()
 	let closeCalls = 0;
 	const connection = {
 		browserId: "browser-delayed",
-		paneId: "pane-delayed",
+		chatId: "chat-delayed",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		instance,
 		close: async () => {
@@ -124,7 +124,7 @@ test("normal browser close and teardown share one delayed close owner", async ()
 	} as unknown as CodexWorkbenchGateway;
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: () => "pane-delayed",
+		chatForBrowser: () => "chat-delayed",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
@@ -158,13 +158,13 @@ test("teardown drains every normal close and preserves a delayed close failure",
 	const gateway = {
 		connect: (
 			_browserId: string,
-			paneId: string,
+			chatId: string,
 			_tabSessionId: string,
 			instance: BrowserConnectionInstance,
 		) =>
 			({
 				browserId: "browser-close-failure",
-				paneId,
+				chatId,
 				tabSessionId: parseTabSessionId("tab-one")!,
 				instance,
 				close: async () => {
@@ -179,7 +179,7 @@ test("teardown drains every normal close and preserves a delayed close failure",
 	} as unknown as CodexWorkbenchGateway;
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: (browserId) => `pane-${browserId}`,
+		chatForBrowser: (browserId) => `chat-${browserId}`,
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
@@ -207,7 +207,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 	};
 	const connection: BrowserWorkbenchConnection = {
 		browserId: "browser-1",
-		paneId: "pane-authoritative",
+		chatId: "chat-authoritative",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		instance,
 		refreshProjection: async () => undefined,
@@ -255,8 +255,8 @@ test("the public socket owner routes the complete gateway workflow through serve
 		},
 	};
 	const gateway: CodexWorkbenchGateway = {
-		connect: (browserId, paneId) => {
-			calls.push(`connect:${browserId}:${paneId}`);
+		connect: (browserId, chatId) => {
+			calls.push(`connect:${browserId}:${chatId}`);
 			return connection;
 		},
 		snapshot: () => connection.snapshot(),
@@ -265,16 +265,16 @@ test("the public socket owner routes the complete gateway workflow through serve
 		releaseLease: () => connection.releaseLease(),
 		accountRead: () => connection.accountRead(),
 		command: (_browserId, command) => connection.command(command),
-		subscribe: (_browserId, _paneId, next) => connection.subscribe(next),
-		closeConnection: async (browserId, paneId, closingInstance) =>
-			void calls.push(`close:${browserId}:${paneId}:${String(closingInstance === instance)}`),
+		subscribe: (_browserId, _chatId, next) => connection.subscribe(next),
+		closeConnection: async (browserId, chatId, closingInstance) =>
+			void calls.push(`close:${browserId}:${chatId}:${String(closingInstance === instance)}`),
 		childExit: async () => undefined,
 		endSession: () => undefined,
 		dispose: async () => undefined,
 	};
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: (browserId) => (browserId === "browser-1" ? "pane-authoritative" : null),
+		chatForBrowser: (browserId) => (browserId === "browser-1" ? "chat-authoritative" : null),
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
@@ -308,14 +308,14 @@ test("the public socket owner routes the complete gateway workflow through serve
 	owner.dispose();
 	const replacementOwner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: () => "pane-authoritative",
+		chatForBrowser: () => "chat-authoritative",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
 	await replacementOwner.close(instance, "browser-1");
 
 	expect(calls).toEqual([
-		"connect:browser-1:pane-authoritative",
+		"connect:browser-1:chat-authoritative",
 		"snapshot",
 		"published",
 		"subscribe",
@@ -335,7 +335,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		"published",
 		"unsubscribe",
 		"connection-close",
-		"close:browser-1:pane-authoritative:true",
+		"close:browser-1:chat-authoritative:true",
 	]);
 	expect(messages).toContainEqual({
 		type: "codex_workbench_event",
@@ -350,7 +350,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 	});
 });
 
-test("the socket owner refuses missing pane authority and disposal only removes subscriptions", async () => {
+test("the socket owner refuses missing chat authority and disposal only removes subscriptions", async () => {
 	const calls: string[] = [];
 	const gateway: CodexWorkbenchGateway = {
 		connect: () => {
@@ -384,7 +384,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 	};
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: () => null,
+		chatForBrowser: () => null,
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});
@@ -401,7 +401,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 		requestId: "missing",
 		action: "connect",
 		ok: false,
-		error: "The browser has not registered an authoritative canvas pane.",
+		error: "The browser has not registered a chat.",
 	});
 	expect(calls).toEqual([]);
 });
@@ -410,7 +410,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 	const instance = Object.freeze({});
 	const connection: BrowserWorkbenchConnection = {
 		browserId: "browser-live",
-		paneId: "pane-live",
+		chatId: "chat-live",
 		tabSessionId: parseTabSessionId("tab-one")!,
 		instance,
 		refreshProjection: async () => undefined,
@@ -434,7 +434,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		releaseLease: () => connection.releaseLease(),
 		accountRead: () => connection.accountRead(),
 		command: (_browserId, command) => connection.command(command),
-		subscribe: (_browserId, _paneId, listener) => connection.subscribe(listener),
+		subscribe: (_browserId, _chatId, listener) => connection.subscribe(listener),
 		closeConnection: async () => undefined,
 		childExit: async () => undefined,
 		endSession: () => undefined,
@@ -442,7 +442,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 	};
 	const owner = createServerCodexBrowserSocketOwner({
 		gateway,
-		paneForBrowser: () => "pane-live",
+		chatForBrowser: () => "chat-live",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		openTabSession: () => undefined,
 	});

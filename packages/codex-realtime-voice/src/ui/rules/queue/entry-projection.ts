@@ -1,4 +1,4 @@
-// One entry as the server holds it, with what this pane may do to it and why
+// One entry as the server holds it, with what this chat may do to it and why
 // each unavailable control is unavailable.
 
 import type {
@@ -97,9 +97,9 @@ function entryCorrelation(
 		return `Held on ${workhorse} behind ${correlation.blockingApprovals} pending approval request(s).`;
 	}
 	if (entry.operationId === null) {
-		return `Queued on ${workhorse} outside this coordinator. This pane can still edit, cancel or start it; only submissions this coordinator queued can be reordered.`;
+		return `Queued on ${workhorse} outside this coordinator. This chat can still edit, cancel or start it; only submissions this coordinator queued can be reordered.`;
 	}
-	return `Queued on ${workhorse} by coordinator operation ${entry.operationId}. This pane can edit, cancel, start and reorder it.`;
+	return `Queued on ${workhorse} by coordinator operation ${entry.operationId}. This chat can edit, cancel, start and reorder it.`;
 }
 
 /**

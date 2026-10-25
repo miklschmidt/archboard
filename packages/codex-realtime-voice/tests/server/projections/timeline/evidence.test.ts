@@ -133,9 +133,9 @@ test("long outputs, sprawling patches and large arguments are cut to their wire 
 	});
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	owner.read("pane-bounds", 1, link, true, connection);
+	owner.read("chat-bounds", 1, link, true, connection);
 	await flush();
-	const projection = owner.read("pane-bounds", 1, link, true, connection);
+	const projection = owner.read("chat-bounds", 1, link, true, connection);
 	const [long, unbroken, none, files, tool] = projection?.turns[0]?.items ?? [];
 	if (
 		long?.kind !== "command_execution" ||
@@ -222,7 +222,7 @@ test("plan and token usage reports republish the timeline without re-reading his
 	});
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	const current = () => owner.read("pane-live", 1, link, true, connection);
+	const current = () => owner.read("chat-live", 1, link, true, connection);
 	current();
 	await flush();
 	expect({ reads, changes }).toEqual({ reads: 1, changes: 1 });
@@ -250,7 +250,7 @@ test("plan and token usage reports republish the timeline without re-reading his
 			},
 		}),
 	);
-	// Another thread's plan changes nothing this pane shows.
+	// Another thread's plan changes nothing this chat shows.
 	owner.onNotification(
 		wireEvent(authorities, "turn/plan/updated", {
 			threadId: "another-thread",
@@ -373,9 +373,9 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 	);
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	owner.read("pane-budget", 1, link, true, connection);
+	owner.read("chat-budget", 1, link, true, connection);
 	await flush();
-	const projection = owner.read("pane-budget", 1, link, true, connection);
+	const projection = owner.read("chat-budget", 1, link, true, connection);
 	if (projection === null) {
 		throw new Error("the budget timeline was not loaded");
 	}
@@ -435,9 +435,9 @@ test("one long running turn over the byte budget keeps the item the agent is on 
 	});
 	const link = executableLink(authorities, threadId);
 	const connection = {};
-	owner.read("pane-long-turn", 1, link, true, connection);
+	owner.read("chat-long-turn", 1, link, true, connection);
 	await flush();
-	const projection = owner.read("pane-long-turn", 1, link, true, connection);
+	const projection = owner.read("chat-long-turn", 1, link, true, connection);
 	const projected = projection?.turns.at(-1);
 	if (projection === null || projected === undefined) {
 		throw new Error("the long turn was not projected");

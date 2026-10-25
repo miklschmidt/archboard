@@ -409,7 +409,7 @@ test("the production gateway strips permission cwd, paths, and unreviewed vendor
 		};
 		harness.setOrdinaryApproval(linkedView);
 		const [approval] = harness.gateway
-			.connect(harness.browserId, harness.paneId, harness.tabSessionId)
+			.connect(harness.browserId, harness.chatId, harness.tabSessionId)
 			.snapshot().snapshot.approvals;
 		expect(approval).toMatchObject({
 			approvalKind: "permissions",

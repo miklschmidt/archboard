@@ -220,7 +220,7 @@ describe("workbench queue states", () => {
 		expect(view.entries[0]?.cancel.reason).toContain("Refresh the list");
 	});
 
-	test("a link this pane cannot execute leaves the queue unavailable and recoverable", () => {
+	test("a link this chat cannot execute leaves the queue unavailable and recoverable", () => {
 		const view = project(
 			connected(
 				snapshot({
@@ -245,7 +245,7 @@ describe("workbench queue states", () => {
 		expect(view.recovery).toContain("Reconnect the workbench");
 		expect(view.list.enabled).toBe(false);
 		expect(view.list.reason).toContain("no socket");
-		// A queue this pane cannot reach reads differently from a link that has no
+		// A queue this chat cannot reach reads differently from a link that has no
 		// queue: only the second is recovered by choosing another thread link.
 		expect(view.detail).not.toBe(
 			project(connected(snapshot({ queue: queue("unavailable") }))).detail,

@@ -19,7 +19,7 @@ interface VoiceStartTraceEntry {
 /** One attempt to start voice. */
 interface VoiceStartAttempt {
 	readonly startedAt: string;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly entries: VoiceStartTraceEntry[];
 }
 
@@ -35,10 +35,10 @@ interface VoiceStartTrace {
 	/**
 	 * A new attempt begins. Each browser tab starts its own voice, so two attempts may run at once:
 	 * whatever happens during this one is noted through the handle, never into another tab's.
-	 * @param paneId The pane voice is starting for.
+	 * @param chatId The chat voice is starting for.
 	 * @returns How to note what happens during this attempt.
 	 */
-	readonly begin: (paneId: string) => VoiceStartNote;
+	readonly begin: (chatId: string) => VoiceStartNote;
 	/**
 	 * Every kept attempt, oldest first.
 	 * @returns The attempts.
@@ -56,14 +56,14 @@ function createVoiceStartTrace(now: () => number = Date.now): VoiceStartTrace {
 
 	/**
 	 * A new attempt begins.
-	 * @param paneId The pane voice is starting for.
+	 * @param chatId The chat voice is starting for.
 	 * @returns How to note what happens during it, kept only while the attempt is.
 	 */
-	function begin(paneId: string): VoiceStartNote {
+	function begin(chatId: string): VoiceStartNote {
 		const began = now();
 		const attempt: VoiceStartAttempt = {
 			startedAt: new Date(began).toISOString(),
-			paneId,
+			chatId,
 			entries: [],
 		};
 		kept = [...kept, attempt].slice(-KEPT_ATTEMPTS);
@@ -95,9 +95,9 @@ const voiceStartTrace = createVoiceStartTrace();
 interface SessionVoiceStartTrace {
 	/**
 	 * This conversation begins a voice start.
-	 * @param paneId The pane voice is starting for.
+	 * @param chatId The chat voice is starting for.
 	 */
-	readonly begin: (paneId: string) => void;
+	readonly begin: (chatId: string) => void;
 	/** Note into this conversation's latest attempt. */
 	readonly note: VoiceStartNote;
 }
@@ -112,10 +112,10 @@ function sessionVoiceStartTrace(trace: VoiceStartTrace = voiceStartTrace): Sessi
 	return {
 		/**
 		 * This conversation begins a voice start.
-		 * @param paneId The pane voice is starting for.
+		 * @param chatId The chat voice is starting for.
 		 */
-		begin: (paneId) => {
-			current = trace.begin(paneId);
+		begin: (chatId) => {
+			current = trace.begin(chatId);
 		},
 		/**
 		 * Note into this conversation's latest attempt; before any it is dropped.

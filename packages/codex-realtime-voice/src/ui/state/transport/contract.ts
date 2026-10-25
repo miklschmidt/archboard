@@ -77,14 +77,14 @@ type BrowserCommandName = BrowserIntentCommand["command"];
 type BrowserCommandDraft = {
 	[CommandName in BrowserCommandName]: Omit<
 		Extract<BrowserIntentCommand, { readonly command: CommandName }>,
-		"kind" | "commandId" | "paneId" | "childId" | "epoch"
+		"kind" | "commandId" | "chatId" | "childId" | "epoch"
 	>;
 }[BrowserCommandName];
 
 /** The authority fields every wire command carries, taken from the active lease. */
 type BrowserCommandAuthority = Pick<
 	BrowserCommandLease,
-	"commandId" | "paneId" | "childId" | "epoch"
+	"commandId" | "chatId" | "childId" | "epoch"
 >;
 
 /** The lease identity plus the thread link the command was composed against. */
@@ -123,7 +123,7 @@ interface BrowserWorkbenchReconnectingState {
 	readonly reason: string;
 }
 
-/** The transport after its socket closed, waiting for the pane session to reattach. */
+/** The transport after its socket closed, waiting for the chat session to reattach. */
 interface BrowserWorkbenchBackoffState {
 	readonly kind: "connection";
 	readonly state: "backoff";
@@ -236,7 +236,7 @@ class BrowserWorkbenchTransportError extends Error {
 	}
 }
 
-/** One transport over one pane socket at a time. */
+/** One transport over one chat socket at a time. */
 interface BrowserWorkbenchTransport {
 	readonly attach: (socket: BrowserWorkbenchSocket) => Promise<BrowserWorkbenchState>;
 	readonly detach: (socket?: BrowserWorkbenchSocket) => Promise<void>;

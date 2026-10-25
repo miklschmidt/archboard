@@ -21,7 +21,7 @@ const SAME_PLACE = "This submission is already in that place.";
 /**
  * An entry carries the identity of the coordinator dynamic-tool call that
  * queued it. A null identity is a submission the coordinator did not
- * make, another client's or the workhorse's own, and this pane has no
+ * make, another client's or the workhorse's own, and this chat has no
  * authority to move it.
  * @param entry The queue entry.
  * @returns True when the coordinator queued it.

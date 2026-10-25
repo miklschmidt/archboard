@@ -43,20 +43,20 @@ import {
 /**
  * A connection as it begins: no snapshot, no lease, and nothing published.
  * @param browserId The browser.
- * @param paneId The pane.
- * @param tabSessionId The tab the browser's pane belongs to.
+ * @param chatId The chat.
+ * @param tabSessionId The tab the browser's chat belongs to.
  * @param instance Its socket.
  * @returns The connection state.
  */
 function freshConnectionState(
 	browserId: BrowserConnectionId,
-	paneId: string,
+	chatId: string,
 	tabSessionId: TabSessionId,
 	instance: BrowserConnectionInstance,
 ): ConnectionState {
 	return {
 		browserId,
-		paneId,
+		chatId,
 		tabSessionId,
 		instance,
 		listeners: new Set(),
@@ -173,23 +173,23 @@ export function createCodexWorkbenchGateway(
 	});
 
 	/**
-	 * Open, or re-open, one browser's connection to one pane. A reconnection
+	 * Open, or re-open, one browser's connection to one chat. A reconnection
 	 * under the same socket is the same connection; a different socket replaces
 	 * the one it finds, and that one's lease goes with it.
 	 * @param browserId The browser.
-	 * @param paneId The pane.
-	 * @param tabSessionId The tab the browser's pane belongs to.
+	 * @param chatId The chat.
+	 * @param tabSessionId The tab the browser's chat belongs to.
 	 * @param providedInstance The socket, when the caller owns one.
 	 * @returns The connection.
 	 */
 	const connect = (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		tabSessionId: TabSessionId,
 		providedInstance?: BrowserConnectionInstance,
 	): BrowserWorkbenchConnection => {
-		requireConnectable(browserId, paneId);
-		const key = connectionKey(browserId, paneId);
+		requireConnectable(browserId, chatId);
+		const key = connectionKey(browserId, chatId);
 		const instance = providedInstance ?? Object.freeze({});
 		const open = openConnection(key);
 		if (open?.instance === instance) {
@@ -198,7 +198,7 @@ export function createCodexWorkbenchGateway(
 		if (open !== null) {
 			retireForReplacement(open);
 		}
-		const state = freshConnectionState(browserId, paneId, tabSessionId, instance);
+		const state = freshConnectionState(browserId, chatId, tabSessionId, instance);
 		retainLeaseFor(state);
 		connections.states.set(key, state);
 		if (open !== null) void connections.notifyDisconnect(open, "browser_disconnected");
@@ -209,13 +209,13 @@ export function createCodexWorkbenchGateway(
 	 * Refuse a connection to a disposed gateway, or one named by anything but a
 	 * short opaque identifier.
 	 * @param browserId The browser.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 */
-	const requireConnectable = (browserId: string, paneId: string): void => {
+	const requireConnectable = (browserId: string, chatId: string): void => {
 		if (connections.disposed)
 			throw new CodexWorkbenchGatewayError("disposed", "The browser gateway is disposed.");
 		assertOpaqueName(browserId, "browserId");
-		assertOpaqueName(paneId, "paneId");
+		assertOpaqueName(chatId, "chatId");
 	};
 
 	/**
@@ -247,7 +247,7 @@ export function createCodexWorkbenchGateway(
 		const retained = leases.of(state.tabSessionId).manager.current();
 		if (
 			retained?.binding.browserId !== state.browserId ||
-			retained.binding.paneId !== state.paneId ||
+			retained.binding.chatId !== state.chatId ||
 			retained.binding.tabSessionId !== state.tabSessionId ||
 			retained.binding.connection !== state.instance
 		) {
@@ -312,7 +312,7 @@ export function createCodexWorkbenchGateway(
 		}
 		state.closed = true;
 		state.listeners.clear();
-		const key = connectionKey(state.browserId, state.paneId);
+		const key = connectionKey(state.browserId, state.chatId);
 		if (connections.states.get(key) === state) connections.states.delete(key);
 		connections.acknowledgeReadyTerminals();
 		leases.of(state.tabSessionId).releaseForSocket(state, "lease_released");
@@ -323,17 +323,17 @@ export function createCodexWorkbenchGateway(
 	/**
 	 * Close one exact socket's connection, if it is still the one open.
 	 * @param browserId The browser.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 * @param instance The socket.
 	 */
 	const closeConnectionInstance = async (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		instance: BrowserConnectionInstance,
 	): Promise<void> => {
 		const state = connections.disposed
 			? undefined
-			: connections.states.get(connectionKey(browserId, paneId));
+			: connections.states.get(connectionKey(browserId, chatId));
 		if (state === undefined || state.instance !== instance) {
 			await connections.drainSettlements();
 			return;
@@ -369,18 +369,18 @@ export function createCodexWorkbenchGateway(
 	/**
 	 * Subscribe to one connection's messages.
 	 * @param browserId The browser.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 * @param listener What to tell.
 	 * @param instance The socket the caller believes it is.
 	 * @returns Unsubscribes.
 	 */
 	const subscribe = (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		listener: (message: BrowserGatewayMessage) => void,
 		instance?: BrowserConnectionInstance,
 	): BrowserUnsubscribe => {
-		const state = connections.stateFor(browserId, paneId, instance);
+		const state = connections.stateFor(browserId, chatId, instance);
 		state.listeners.add(listener);
 		return () => state.listeners.delete(listener);
 	};
@@ -394,7 +394,7 @@ export function createCodexWorkbenchGateway(
 	const connectionFor = (state: ConnectionState): BrowserWorkbenchConnection =>
 		Object.freeze({
 			browserId: state.browserId,
-			paneId: state.paneId,
+			chatId: state.chatId,
 			tabSessionId: state.tabSessionId,
 			instance: state.instance,
 			/**
@@ -403,7 +403,7 @@ export function createCodexWorkbenchGateway(
 			 */
 			snapshot: () =>
 				connections.updateSnapshot(
-					connections.stateFor(state.browserId, state.paneId, state.instance),
+					connections.stateFor(state.browserId, state.chatId, state.instance),
 				),
 			/**
 			 * Ask every owner to re-read before the next snapshot.
@@ -411,7 +411,7 @@ export function createCodexWorkbenchGateway(
 			 */
 			refreshProjection: () =>
 				connections.refreshProjection(
-					connections.stateFor(state.browserId, state.paneId, state.instance),
+					connections.stateFor(state.browserId, state.chatId, state.instance),
 				),
 			/**
 			 * Record what this connection has been shown.
@@ -425,13 +425,13 @@ export function createCodexWorkbenchGateway(
 			 * @returns The lease.
 			 */
 			claimLease: () =>
-				leases.of(state.tabSessionId).claim(state.browserId, state.paneId, state.instance),
+				leases.of(state.tabSessionId).claim(state.browserId, state.chatId, state.instance),
 			/**
 			 * Keep this connection's lease alive.
 			 * @returns The renewed lease.
 			 */
 			renewLease: () => {
-				connections.stateFor(state.browserId, state.paneId, state.instance);
+				connections.stateFor(state.browserId, state.chatId, state.instance);
 				const owner = leases.of(state.tabSessionId);
 				owner.expireIfDue();
 				if (state.lease === null)
@@ -445,7 +445,7 @@ export function createCodexWorkbenchGateway(
 			releaseLease: () =>
 				leases
 					.of(state.tabSessionId)
-					.release(state.browserId, state.paneId, undefined, state.instance),
+					.release(state.browserId, state.chatId, undefined, state.instance),
 			/**
 			 * Record whether this connection can play media.
 			 * @param ready Whether it can.
@@ -456,21 +456,21 @@ export function createCodexWorkbenchGateway(
 			 * Re-read the account.
 			 * @returns The account read result.
 			 */
-			accountRead: () => executor.accountRead(state.browserId, state.paneId, state.instance),
+			accountRead: () => executor.accountRead(state.browserId, state.chatId, state.instance),
 			/**
 			 * Send one command.
 			 * @param value The command as it arrived.
 			 * @returns The command result.
 			 */
 			command: (value: unknown) =>
-				executor.command(state.browserId, value, state.paneId, state.instance),
+				executor.command(state.browserId, value, state.chatId, state.instance),
 			/**
 			 * Subscribe to this connection's messages.
 			 * @param listener What to tell.
 			 * @returns Unsubscribes.
 			 */
 			subscribe: (listener: (message: BrowserGatewayMessage) => void) =>
-				subscribe(state.browserId, state.paneId, listener, state.instance),
+				subscribe(state.browserId, state.chatId, listener, state.instance),
 			/**
 			 * Close this connection.
 			 * @returns Resolves once every owner has settled.
@@ -479,36 +479,36 @@ export function createCodexWorkbenchGateway(
 		});
 
 	/**
-	 * The lease owner of the tab session one open browser pane belongs to.
+	 * The lease owner of the tab session one open chat belongs to.
 	 * @param browserId The browser.
-	 * @param paneId The pane.
+	 * @param chatId The chat.
 	 * @returns Its tab session's lease owner.
 	 */
-	const leasesOf = (browserId: string, paneId: string) =>
-		leases.of(connections.stateFor(browserId, paneId).tabSessionId);
+	const leasesOf = (browserId: string, chatId: string) =>
+		leases.of(connections.stateFor(browserId, chatId).tabSessionId);
 
 	const sourceUnsubscribers = subscribeToSources(options, connections.publishAll, childExit);
 
 	return Object.freeze({
 		connect,
 		/**
-		 * What one browser's pane should be showing now.
+		 * What one browser's chat should be showing now.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @returns The snapshot message.
 		 */
-		snapshot: (browserId: string, paneId: string) =>
-			connections.updateSnapshot(connections.stateFor(browserId, paneId)),
+		snapshot: (browserId: string, chatId: string) =>
+			connections.updateSnapshot(connections.stateFor(browserId, chatId)),
 		/**
-		 * Take the command lease for one browser pane, releasing whoever in its tab session held it.
+		 * Take the command lease for one chat, releasing whoever in its tab session held it.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @returns The lease.
 		 */
-		claimLease: (browserId: BrowserConnectionId, paneId: string) =>
-			leasesOf(browserId, paneId).claim(browserId, paneId),
+		claimLease: (browserId: BrowserConnectionId, chatId: string) =>
+			leasesOf(browserId, chatId).claim(browserId, chatId),
 		/**
-		 * Keep a browser pane's lease alive.
+		 * Keep a chat's lease alive.
 		 * @param browserId The browser.
 		 * @param lease What it says it holds.
 		 * @returns The renewed lease.
@@ -516,45 +516,45 @@ export function createCodexWorkbenchGateway(
 		renewLease: (
 			browserId: BrowserConnectionId,
 			lease: Parameters<CodexWorkbenchGateway["renewLease"]>[1],
-		) => leasesOf(browserId, lease.paneId).renew(browserId, lease),
+		) => leasesOf(browserId, lease.chatId).renew(browserId, lease),
 		/**
-		 * Give a browser pane's lease back.
+		 * Give a chat's lease back.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param commandId The lease, when the caller names one.
 		 * @returns The released lease, or null.
 		 */
 		releaseLease: (
 			browserId: BrowserConnectionId,
-			paneId: string,
+			chatId: string,
 			commandId?: Parameters<CodexWorkbenchGateway["releaseLease"]>[2],
-		) => leasesOf(browserId, paneId).release(browserId, paneId, commandId),
+		) => leasesOf(browserId, chatId).release(browserId, chatId, commandId),
 		/**
-		 * Re-read the account for one browser pane.
+		 * Re-read the account for one chat.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The account read result.
 		 */
 		accountRead: (
 			browserId: BrowserConnectionId,
-			paneId: string,
+			chatId: string,
 			instance?: BrowserConnectionInstance,
-		) => executor.accountRead(browserId, paneId, instance),
+		) => executor.accountRead(browserId, chatId, instance),
 		/**
 		 * Take one command from a browser.
 		 * @param browserId The browser.
 		 * @param value The command as it arrived.
-		 * @param paneIdOverride The pane the caller knows, when it knows one.
+		 * @param chatIdOverride The chat the caller knows, when it knows one.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The command result.
 		 */
 		command: (
 			browserId: BrowserConnectionId,
 			value: unknown,
-			paneIdOverride?: string,
+			chatIdOverride?: string,
 			instance?: BrowserConnectionInstance,
-		) => executor.command(browserId, value, paneIdOverride, instance),
+		) => executor.command(browserId, value, chatIdOverride, instance),
 		subscribe,
 		closeConnection: closeConnectionInstance,
 		childExit,

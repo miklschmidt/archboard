@@ -35,7 +35,7 @@ const realtimeSessionId = model.RealtimeSessionIdSchema.parse(
 	authority.issuer.mintRealtimeSessionId(),
 );
 
-const target = { commandId, paneId: "pane-fixture", childId, epoch };
+const target = { commandId, chatId: "chat-fixture", childId, epoch };
 const readiness = { kind: "readiness" as const, state: "thread_capable" as const };
 const account = {
 	kind: "account" as const,
@@ -139,7 +139,7 @@ const approval = {
 	binding: {
 		child: childId,
 		epoch,
-		link: "pane-fixture",
+		link: "chat-fixture",
 		target: "thread-fixture",
 		effect: "Run bun test in /repo",
 	},
@@ -179,7 +179,7 @@ const voice = {
 const lease = {
 	kind: "command_lease" as const,
 	commandId,
-	paneId: "pane-fixture",
+	chatId: "chat-fixture",
 	childId,
 	epoch,
 	state: "active" as const,

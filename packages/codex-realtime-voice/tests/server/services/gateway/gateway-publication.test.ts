@@ -89,7 +89,7 @@ describe("Codex workbench terminal publication", () => {
 		// Another browser tab is never shown this tab's approvals, so it cannot hold them back.
 		const otherTab = value.gateway.connect(
 			"browser-other-tab",
-			value.paneId,
+			value.chatId,
 			parseTabSessionId("tab-other")!,
 		);
 		const approval = value.makeOrdinaryApproval();
@@ -104,7 +104,7 @@ describe("Codex workbench terminal publication", () => {
 		expect(value.publishedAcknowledgements).toEqual([approval.request.requestId]);
 	});
 
-	test("a workhorse's terminal retires once every pane of its checkout has shown it", () => {
+	test("a workhorse's terminal retires once every chat of its checkout has shown it", () => {
 		const checkouts: Record<string, string> = {
 			"browser-one": "/work/payments",
 			"browser-two": "/work/shop",
@@ -115,8 +115,8 @@ describe("Codex workbench terminal publication", () => {
 		});
 		openHarnesses.push(value);
 		const own = value.open();
-		// A pane of the same tab in another checkout is never shown this workhorse's approvals.
-		const otherCheckout = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
+		// A chat of the same tab in another checkout is never shown this workhorse's approvals.
+		const otherCheckout = value.gateway.connect("browser-two", value.chatId, value.tabSessionId);
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
 		own.snapshot();

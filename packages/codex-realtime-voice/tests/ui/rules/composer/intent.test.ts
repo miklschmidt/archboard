@@ -81,10 +81,10 @@ describe("the link the composer may target", () => {
 		});
 	});
 
-	test("an unbound pane reads as unbound, not as an inspect-only history", () => {
+	test("an unbound chat reads as unbound, not as an inspect-only history", () => {
 		expect(
 			readComposerLink(connected(snapshot({ threadLink: unboundLink(), timeline: null }))),
-		).toEqual({ kind: "unbound", reason: "This pane has no Codex workhorse yet." });
+		).toEqual({ kind: "unbound", reason: "This chat has no Codex workhorse yet." });
 		expect(
 			readComposerLink(
 				connected(snapshot({ threadLink: unboundLink("Sign in first."), timeline: null })),
@@ -195,7 +195,7 @@ describe("what the composer refuses before anything is sent", () => {
 		});
 	});
 
-	test("a submit against an unbound pane is refused as unbound, with its own next action", () => {
+	test("a submit against an unbound chat is refused as unbound, with its own next action", () => {
 		const plan = planComposerSubmit(
 			connected(snapshot({ threadLink: unboundLink(), timeline: null })),
 			"Hello.",
@@ -203,7 +203,7 @@ describe("what the composer refuses before anything is sent", () => {
 		expect(plan).toMatchObject({
 			refusal: {
 				code: "unbound",
-				recovery: "Create or attach a Codex workhorse for this pane, then send a message.",
+				recovery: "Create or attach a Codex workhorse for this chat, then send a message.",
 			},
 		});
 	});

@@ -30,14 +30,14 @@ type QueueCommandName = "queueAdd" | "queueUpdate" | "queueDelete" | "queueReord
 type QueueCommandDraft = {
 	[Name in QueueCommandName]: Omit<
 		Extract<BrowserCommand, { readonly command: Name }>,
-		"kind" | "commandId" | "paneId" | "childId" | "epoch"
+		"kind" | "commandId" | "chatId" | "childId" | "epoch"
 	>;
 }[QueueCommandName];
 
 /** The exact lease authority a command is dispatched under. */
 interface WorkbenchCommandTarget {
 	readonly commandId: BrowserCommandLease["commandId"];
-	readonly paneId: BrowserCommandLease["paneId"];
+	readonly chatId: BrowserCommandLease["chatId"];
 	readonly childId: BrowserCommandLease["childId"];
 	readonly epoch: BrowserCommandLease["epoch"];
 	readonly capturedThreadLink: BrowserThreadLink;
@@ -147,7 +147,7 @@ interface WorkbenchQueueTransportPort {
 		draft: QueueCommandDraft,
 		intent?: WorkbenchCommandIntent,
 	) => Promise<WorkbenchCommandResult>;
-	/** Re-reads the authoritative snapshot for the link this pane is on. */
+	/** Re-reads the authoritative snapshot for the link this chat is on. */
 	readonly refresh: () => Promise<unknown>;
 }
 

@@ -45,7 +45,7 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
 function leaseWords(snapshot: BrowserSnapshot | null): string | null {
 	const lease = snapshot?.lease ?? null;
 	if (lease === null) return null;
-	return `${lease.state} · pane ${lease.paneId} · until ${clockTime(lease.expiresAtMs)}`;
+	return `${lease.state} · pane ${lease.chatId} · until ${clockTime(lease.expiresAtMs)}`;
 }
 
 /**

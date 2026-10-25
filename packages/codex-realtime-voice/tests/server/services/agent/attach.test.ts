@@ -59,7 +59,7 @@ function upgradeStatus(origin: string, path: string, headers: Record<string, str
 	});
 }
 
-const SURFACE = "?tabSessionId=tab-one&paneId=main";
+const SURFACE = "?tabSessionId=tab-one&chatId=main";
 
 test("attach refuses a foreign origin on its path and leaves other paths to other listeners", async () => {
 	const { server, origin } = await listen();
@@ -77,7 +77,7 @@ test("attach refuses a foreign origin on its path and leaves other paths to othe
 		expect(
 			await upgradeStatus(origin, `/voice${SURFACE}`, { Origin: "https://other.example" }),
 		).toBe(403);
-		expect(await upgradeStatus(origin, `/voice?paneId=main`)).toBe(400);
+		expect(await upgradeStatus(origin, `/voice?chatId=main`)).toBe(400);
 		expect(await upgradeStatus(origin, `/other${SURFACE}`)).toBe(418);
 		// A target that is no URL is refused, never thrown out of the server's upgrade listener.
 		expect(await upgradeStatus(origin, "http://[")).toBe(400);

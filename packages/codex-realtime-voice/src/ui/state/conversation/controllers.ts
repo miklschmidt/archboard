@@ -1,4 +1,4 @@
-// The conversation controllers of one pane, made together over the pane's transport: the
+// The conversation controllers of one chat, made together over the chat's transport: the
 // thread link and sign-in, the composer, the queue and the approvals.
 
 import {
@@ -15,7 +15,7 @@ import type { ThreadLinkController } from "#ui/state/thread-link/contracts.ts";
 import { createThreadLinkController } from "#ui/state/thread-link/controller.ts";
 import type { BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
 
-/** The controllers over one pane's transport. */
+/** The controllers over one chat's transport. */
 interface ConversationControllers {
 	/** Creates and resumes the conversation and runs sign-in. */
 	readonly threadLink: ThreadLinkController;
@@ -27,30 +27,30 @@ interface ConversationControllers {
 	readonly approvals: WorkbenchApprovalsController;
 }
 
-/** The pane the controllers act for. */
+/** The chat the controllers act for. */
 interface ConversationControllersOptions {
 	/** The view in the host page that shows this conversation. */
-	readonly paneId: string;
-	/** The transport attached to that pane's socket. */
+	readonly chatId: string;
+	/** The transport attached to that chat's socket. */
 	readonly transport: BrowserWorkbenchTransport;
 }
 
 /**
- * Make the conversation controllers of one pane.
- * @param options The pane and its transport.
+ * Make the conversation controllers of one chat.
+ * @param options The chat and its transport.
  * @returns The controllers.
  */
 function createConversationControllers(
 	options: ConversationControllersOptions,
 ): ConversationControllers {
-	const { paneId, transport } = options;
+	const { chatId, transport } = options;
 	return Object.freeze({
 		threadLink: createThreadLinkController({
 			/**
-			 * The pane an action is captured against.
+			 * The chat an action is captured against.
 			 * @returns The capture.
 			 */
-			capturePane: () => ({ paneId, transport }),
+			captureChat: () => ({ chatId, transport }),
 		}),
 		composer: createWorkbenchComposerController({ transport }),
 		queue: createWorkbenchQueueController(transport),
