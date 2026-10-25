@@ -8,7 +8,7 @@
 // Run from the repository root, inside `nix develop`:
 //   bun run build:core
 
-import { rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	CHECKOUT,
@@ -82,13 +82,16 @@ try {
 	run(["cargo", "build", "--release", "--locked", "--target", TARGET, "--package", CRATE], {
 		ARCHBOARD_CORE_SOURCE_HASH: hash,
 	});
-	rmSync(CORE_BUILD_DIRECTORY, { recursive: true, force: true });
-	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
 	const types = run(
 		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-scene"],
 		{},
 		"pipe",
 	);
+	// The WebAssembly, whose recorded hash says the build is whole, lands last:
+	// a build stopped before it is refused as missing and made again.
+	rmSync(CORE_BUILD_DIRECTORY, { recursive: true, force: true });
+	mkdirSync(CORE_BUILD_DIRECTORY, { recursive: true });
 	writeFileSync(TYPES, types);
+	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
 	console.log(`Built the renderer core from these sources (${hash}).`);
 }
