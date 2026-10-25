@@ -66,6 +66,9 @@ pub(super) struct CycleWalk {
     back: Set<String>,
     state: Map<String, Walked>,
     out: Map<String, Vec<(String, Option<String>)>>,
+    /// The items the walk stands in, outermost first, each with the
+    /// relationship it was entered by: none for a root or a containment link.
+    path: Vec<(String, Option<String>)>,
 }
 
 impl CycleWalk {
@@ -86,10 +89,10 @@ impl CycleWalk {
             .cloned()
             .collect();
         for item in &roots {
-            self.from(item);
+            self.from(item, None);
         }
         for item in items {
-            self.from(item);
+            self.from(item, None);
         }
         std::mem::take(&mut self.back)
     }
@@ -122,23 +125,36 @@ impl CycleWalk {
         self.walk(&walked)
     }
 
-    /// Walk from one item, unless the walk has been there.
-    fn from(&mut self, item: &str) {
+    /// Walk from one item, entered by a relationship or not, unless the walk has been there.
+    fn from(&mut self, item: &str, entered: Option<String>) {
         if self.state.contains_key(item) {
             return;
         }
         self.state.insert(item.to_owned(), Walked::Open);
+        self.path.push((item.to_owned(), entered));
         let links = self.out.get(item).cloned().unwrap_or_default();
         for (to, edge) in links {
             if self.state.get(&to) == Some(&Walked::Open) {
-                if let Some(edge) = edge {
-                    self.back.insert(edge);
+                if let Some(turned) = edge.or_else(|| self.closing(&to)) {
+                    self.back.insert(turned);
                 }
             } else {
-                self.from(&to);
+                self.from(&to, edge);
             }
         }
+        self.path.pop();
         self.state.insert(item.to_owned(), Walked::Done);
+    }
+
+    /// The relationship to turn where a containment link closes a cycle back
+    /// to an open item: a frame cannot stand below its own member, so the
+    /// cycle turns the last relationship the walk took since that item.
+    fn closing(&self, to: &str) -> Option<String> {
+        let start = self.path.iter().rposition(|(item, _)| item == to)?;
+        self.path[start + 1..]
+            .iter()
+            .rev()
+            .find_map(|(_, entered)| entered.clone())
     }
 }
 
@@ -155,6 +171,22 @@ mod tests {
         let items: Vec<String> = ["a", "b", "c"].map(str::to_owned).to_vec();
         let back = walk.with_containment(&items, &[]);
         assert_eq!(back.into_iter().collect::<Vec<_>>(), vec!["ca".to_owned()]);
+    }
+
+    #[test]
+    fn a_cycle_a_frame_closes_round_its_member_turns_the_line_into_the_frame() {
+        // Walked from `c`, the cycle is closed by the frame's link to its own
+        // member, which no line can turn.
+        let mut walk = CycleWalk::default();
+        walk.add("c", "a", Some("ca"));
+        walk.add("a", "b", Some("ab"));
+        walk.add("b", "frame", Some("into"));
+        let items: Vec<String> = ["c", "a", "b"].map(str::to_owned).to_vec();
+        let back = walk.with_containment(&items, &[("a".to_owned(), "frame".to_owned())]);
+        assert_eq!(
+            back.into_iter().collect::<Vec<_>>(),
+            vec!["into".to_owned()]
+        );
     }
 
     #[test]
