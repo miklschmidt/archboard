@@ -46,13 +46,13 @@ impl Track<'_> {
     /// Once the labels have slid, move each run of lanes that stands on no one
     /// column, or on one neither of its ends reaches straight, onto the column
     /// of the station it leads into or the one it leaves. Answers whether any run moved.
-    pub fn unstrand_lanes(&mut self, chains: &[ChainId]) -> bool {
+    pub(crate) fn unstrand_lanes(&mut self, chains: &[ChainId]) -> bool {
         self.each_run(chains, Move::Unstrand)
     }
 
     /// Close the steps inside every run of lanes again once the labels have
     /// settled onto the lanes toward their cards' ports.
-    pub fn close_lane_steps(&mut self, chains: &[ChainId]) -> bool {
+    pub(crate) fn close_lane_steps(&mut self, chains: &[ChainId]) -> bool {
         self.each_run(chains, Move::CloseSteps)
     }
 
@@ -137,7 +137,11 @@ impl Track<'_> {
 
     /// Move each run of lanes that stands closer than a lane to the card port
     /// it leaves or enters onto that port's column, where the column is free.
-    pub fn pull_to_ports(&mut self, chains: &[ChainId], ports: &Map<StationId, f64>) -> bool {
+    pub(crate) fn pull_to_ports(
+        &mut self,
+        chains: &[ChainId],
+        ports: &Map<StationId, f64>,
+    ) -> bool {
         let runs = self.lane_runs(chains);
         let mut moved = false;
         for index in 0..runs.len() {
@@ -173,7 +177,7 @@ impl Track<'_> {
 
     /// Once the labels have slid, try every run of lanes to or from a
     /// container on its straight column again.
-    pub fn straighten_into_containers(&mut self, chains: &[ChainId]) -> bool {
+    pub(crate) fn straighten_into_containers(&mut self, chains: &[ChainId]) -> bool {
         let runs = self.lane_runs(chains);
         let straight: Vec<usize> = (0..runs.len())
             .filter(|&index| {
@@ -219,7 +223,7 @@ impl Track<'_> {
 
     /// Slide each of a block's own ports onto the column of the lane its line
     /// runs on beside it, where the port may stand there.
-    pub fn ports_onto_lanes(&mut self, nets: &[NetId]) {
+    pub(crate) fn ports_onto_lanes(&mut self, nets: &[NetId]) {
         for &net in nets {
             for end in [End::Top, End::Bottom] {
                 let far = self.net(net).at(end.other());

@@ -33,7 +33,7 @@ fn words_width(text: &impl Text, words: &str) -> f64 {
 }
 
 /// What one frame's tab and head row say: its operator, and the words beside it.
-fn head_of(step: FrameStep) -> (FrameOperator, String) {
+fn head_of(step: FrameStep<'_>) -> (FrameOperator, String) {
     match step {
         FrameStep::Decision(decision) => (FrameOperator::Alt, decision.question.clone()),
         FrameStep::Loop(repeat) => (FrameOperator::Loop, format!("[{}]", repeat.condition)),
@@ -42,7 +42,7 @@ fn head_of(step: FrameStep) -> (FrameOperator, String) {
 
 /// The narrowest a frame may be and still hold its own words: the tab and the
 /// words beside it, and each alternative's label.
-fn own_width(text: &impl Text, rows: &FrameRows, tab_width: f64, words: &str) -> f64 {
+fn own_width(text: &impl Text, rows: &FrameRows<'_>, tab_width: f64, words: &str) -> f64 {
     let mut widest = tab_width + FRAME_TAB_PADDING + words_width(text, words) + FRAME_PAD;
     for guard in &rows.guards {
         widest = js::js_max(
@@ -55,7 +55,7 @@ fn own_width(text: &impl Text, rows: &FrameRows, tab_width: f64, words: &str) ->
 
 /// What one message claims across a frame: its ink, and the lifelines it runs
 /// between with the bars on them, so a frame's side never lies on a bar.
-fn ink_of(placed: &PlacedStep, active: &ActiveAt) -> Rect {
+fn ink_of(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Rect {
     let left = js::js_min(placed.from_x, placed.to_x) - ACTIVATION_HALF_WIDTH;
     let width = (placed.to_x - placed.from_x).abs() + ACTIVATION_HALF_WIDTH * 2.0;
     covering(
@@ -74,11 +74,11 @@ fn ink_of(placed: &PlacedStep, active: &ActiveAt) -> Rect {
 /// for its own words. The frames arrive each after the frames inside it, so a
 /// frame's inner frames are placed before it. A frame that holds no drawn ink
 /// spans the flow's columns.
-pub fn place_frames<'a>(
+pub(super) fn place_frames<'a>(
     text: &impl Text,
     frames: Vec<FrameRows<'a>>,
-    steps: &[PlacedStep],
-    active: &ActiveAt,
+    steps: &[PlacedStep<'_>],
+    active: &ActiveAt<'_>,
     columns_x: f64,
     columns_width: f64,
 ) -> Vec<PlacedFrame<'a>> {
@@ -145,7 +145,7 @@ fn sided<'a>(
 
 /// A flow's span across the page, grown to hold its decisions' and loops'
 /// frames with the inset its columns keep, in whole units.
-pub fn span_around((x, width): (f64, f64), frames: &[PlacedFrame]) -> (f64, f64) {
+pub(super) fn span_around((x, width): (f64, f64), frames: &[PlacedFrame<'_>]) -> (f64, f64) {
     let mut left = x;
     let mut right = x + width;
     for frame in frames {

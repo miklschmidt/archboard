@@ -107,7 +107,7 @@ impl Groups {
 
 /// Nudge every route, x then y; where that crowds routes, nudge them again
 /// with each pin held only by its stub, and keep the routes crowded less.
-pub fn nudge(
+pub(crate) fn nudge(
     scene: &Scene,
     buffers: &[Buffer],
     found: &[Option<Vec<Point>>],

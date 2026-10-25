@@ -257,7 +257,7 @@ fn clear_line(columns: &mut Columns<'_, '_>, wrap: &Wrap<'_>, join: &Join) {
 }
 
 /// Keep the lines through a wrap straight where a lowered card stood in their way.
-pub fn clear_wrap(columns: &mut Columns<'_, '_>, wrap: Option<&Wrap<'_>>) {
+pub(crate) fn clear_wrap(columns: &mut Columns<'_, '_>, wrap: Option<&Wrap<'_>>) {
     let Some(wrap) = wrap else {
         return;
     };

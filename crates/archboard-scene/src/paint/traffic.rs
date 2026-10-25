@@ -30,7 +30,7 @@ const HOT_LIGHT: Share = Share {
 
 /// How a pulse on a line is drawn: its relationship's colour at full strength
 /// with white mixed in, and more of it in the front.
-pub fn pulse_look(ink: &str, line_width: f64, palette: &Palette) -> PulseLook {
+pub(super) fn pulse_look(ink: &str, line_width: f64, palette: &Palette) -> PulseLook {
     PulseLook {
         head: tinted(ink, Some(palette.glow), BODY_LIGHT),
         hot: tinted(ink, Some(palette.glow), HOT_LIGHT),
@@ -40,14 +40,14 @@ pub fn pulse_look(ink: &str, line_width: f64, palette: &Palette) -> PulseLook {
 
 /// The part of a route a pulse rides: the route with the base of its arrowhead
 /// and a little air taken off its end, and how long it is.
-pub fn ride_of(curve: &Curve, head_reach: f64) -> Option<(Curve, f64)> {
+pub(super) fn ride_of(curve: &Curve, head_reach: f64) -> Option<(Curve, f64)> {
     let ride = shortened_by(curve, head_reach + AIR)?;
     let length = route_length(&ride);
     Some((ride, length))
 }
 
 /// One line that carries traffic, and what its pulses are drawn in.
-pub struct TrafficLine<'a> {
+pub(super) struct TrafficLine<'a> {
     pub routed: &'a Edge,
     pub traffic: Traffic,
     /// How far back from the route's end its arrowhead's ink reaches.
@@ -60,8 +60,8 @@ pub struct TrafficLine<'a> {
 }
 
 /// A board's traffic: each line's in a layer of its own, by relationship id.
-pub fn paint_traffic(
-    lines: &[TrafficLine],
+pub(super) fn paint_traffic(
+    lines: &[TrafficLine<'_>],
     cards: &[(&str, Rect)],
     palette: &Palette,
 ) -> HashMap<String, Markup> {

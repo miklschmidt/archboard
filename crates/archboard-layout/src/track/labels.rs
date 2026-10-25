@@ -31,7 +31,7 @@ type Runs = Map<(u64, u64), ((f64, f64), Vec<Slider>)>;
 type Wall = (f64, f64);
 
 /// How far the scene's cards, title rows and labels reach, left and right.
-pub fn extent_of(scene: &Placement) -> Wall {
+pub(crate) fn extent_of(scene: &Placement) -> Wall {
     let boxes: Vec<Rect> = scene
         .cards
         .values()
@@ -262,7 +262,7 @@ impl Track<'_> {
 
     /// Slide every label box toward where its line can reach it straight,
     /// then move the nets through it with it.
-    pub fn slide_labels(&mut self, nets: &[NetId]) {
+    pub(crate) fn slide_labels(&mut self, nets: &[NetId]) {
         let lanes = self.lanes_by_band(nets);
         let sliders = self.sliders_of(nets);
         for (band, on_band) in lanes.iter().enumerate() {
@@ -290,7 +290,7 @@ impl Track<'_> {
 
     /// Settle every label box onto the lane or face its line meets it from,
     /// and move the nets through it with it.
-    pub fn settle_labels(&mut self, nets: &[NetId]) {
+    pub(crate) fn settle_labels(&mut self, nets: &[NetId]) {
         self.settle_on_lanes(nets);
         let sliders = self.sliders_of(nets);
         self.centre_on_faces(nets, &sliders);
@@ -412,7 +412,7 @@ impl Track<'_> {
 
     /// Move a label box so its centre stands at an x, when it stays clear of
     /// everything else on its band. Answers whether it moved.
-    pub fn nudge_label(&mut self, nets: &[NetId], item: ItemId, x: f64) -> bool {
+    pub(crate) fn nudge_label(&mut self, nets: &[NetId], item: ItemId, x: f64) -> bool {
         let bx = self.scene.item(item).bx;
         let moved = Rect {
             x: x - bx.width / 2.0,
@@ -429,7 +429,7 @@ impl Track<'_> {
     /// Slide a block's own port along the block's edge to an x, when only this
     /// net runs through it, the x is on its stretch, and it keeps a lane from
     /// the block's other sliding ports. Answers whether it moved.
-    pub fn slide_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
+    pub(crate) fn slide_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let item = self.station(self.net(net).at(end)).item.expect("a port");
         let (low, high) = self.scene.slides[&item];
         let shared = nets.iter().any(|&other| {
@@ -455,7 +455,7 @@ impl Track<'_> {
     }
 
     /// The x of every lane, by the band it passes.
-    pub fn lanes_by_band(&self, nets: &[NetId]) -> Vec<Vec<f64>> {
+    pub(crate) fn lanes_by_band(&self, nets: &[NetId]) -> Vec<Vec<f64>> {
         let mut lanes: Vec<Vec<f64>> = vec![Vec::new(); self.scene.bands.len()];
         for &id in nets {
             let net = self.net(id);

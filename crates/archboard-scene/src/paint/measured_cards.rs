@@ -20,8 +20,8 @@ use crate::scene::{Role, SubjectKind};
 
 /// One measured card with its kind glyph and its standing's treatment.
 #[allow(clippy::too_many_arguments)]
-pub fn paint_measured_card(
-    ctx: &Ctx,
+pub(super) fn paint_measured_card(
+    ctx: &Ctx<'_>,
     placed: &Node,
     palette: &Palette,
     standing: Option<Standing>,
@@ -53,7 +53,7 @@ pub fn paint_measured_card(
 
 /// A containing frame below its children and all connections: a neutral well
 /// with a header slab standing on its floor.
-pub fn paint_measured_frame(
+pub(super) fn paint_measured_frame(
     placed: &Node,
     palette: &Palette,
     standing: Option<Standing>,
@@ -81,8 +81,8 @@ pub fn paint_measured_frame(
 }
 
 /// A frame's heading, above the connection layer.
-pub fn paint_measured_header(
-    ctx: &Ctx,
+pub(super) fn paint_measured_header(
+    ctx: &Ctx<'_>,
     placed: &Node,
     palette: &Palette,
     standing: Option<Standing>,

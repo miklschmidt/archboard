@@ -1,13 +1,13 @@
 //! Points and boxes, and the few measures of them the layout takes
 //! (`shared/rules/geometry.ts`).
 
-pub use archboard_scene::geometry::{Point, Rect, covering, inflate};
+pub(crate) use archboard_scene::geometry::{Point, Rect, covering, inflate};
 
 use crate::ecma::{js_max, js_min};
 
 /// Which face of a box a line meets.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Side {
+pub(crate) enum Side {
     Top,
     Right,
     Bottom,
@@ -16,7 +16,7 @@ pub enum Side {
 
 impl Side {
     /// The face's name, as the TypeScript engine spelt it.
-    pub fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Side::Top => "top",
             Side::Right => "right",
@@ -27,7 +27,7 @@ impl Side {
 }
 
 /// The x of a polyline where it crosses a height, or nothing when it never reaches it.
-pub fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
+pub(crate) fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
     for pair in points.windows(2) {
         let (one, other) = (pair[0], pair[1]);
         let low = js_min(one.y, other.y);

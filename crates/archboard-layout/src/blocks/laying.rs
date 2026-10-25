@@ -19,7 +19,7 @@ use super::card_layout::{CardLayout, Engine};
 use super::laid::Laid;
 
 /// A fresh layout of a block.
-pub type Make<'t> = Rc<dyn Fn() -> CardLayout<'t> + 't>;
+pub(crate) type Make<'t> = Rc<dyn Fn() -> CardLayout<'t> + 't>;
 
 /// A layout of a block, and the block laid out by it.
 type Layout<'t> = (CardLayout<'t>, Rc<Laid>);
@@ -27,7 +27,7 @@ type Layout<'t> = (CardLayout<'t>, Rc<Laid>);
 /// A block of cards laid out with every cluster title as Graphviz breaks its
 /// ties, and, where some title was pulled up as hard as down, the way to lay
 /// it with that title pulled onto its members.
-pub struct Laying<'t> {
+pub(crate) struct Laying<'t> {
     /// The block with its titles left tied.
     pub tied: Rc<Laid>,
     remake: Make<'t>,
@@ -43,7 +43,7 @@ impl Laying<'_> {
     /// # Errors
     ///
     /// What Graphviz refused the block's graph with.
-    pub fn untied(&self, gv: &mut Engine<'_>) -> Result<Option<Rc<Laid>>, String> {
+    pub(crate) fn untied(&self, gv: &mut Engine<'_>) -> Result<Option<Rc<Laid>>, String> {
         if self.ties && self.untied.borrow().is_none() {
             let laid = (self.remake)().lay(gv)?;
             *self.untied.borrow_mut() = Some(laid);
@@ -103,7 +103,7 @@ const REMEDIES: [Remedy; 2] = [
 /// # Errors
 ///
 /// What Graphviz refused the block's graph with.
-pub fn lay_both<'t>(gv: &mut Engine<'_>, make: Make<'t>) -> Result<Laying<'t>, String> {
+pub(crate) fn lay_both<'t>(gv: &mut Engine<'_>, make: Make<'t>) -> Result<Laying<'t>, String> {
     let mut laid = tied_layout(gv, &make)?;
     let mut making = make;
     for remedy in &REMEDIES {
@@ -158,7 +158,7 @@ fn reads_no_worse(one: &Laid, other: &Laid) -> bool {
 /// # Errors
 ///
 /// What Graphviz refused the block's graph with.
-pub fn settled(gv: &mut Engine<'_>, laying: &Laying<'_>) -> Result<Rc<Laid>, String> {
+pub(crate) fn settled(gv: &mut Engine<'_>, laying: &Laying<'_>) -> Result<Rc<Laid>, String> {
     let Some(untied) = laying.untied(gv)? else {
         return Ok(Rc::clone(&laying.tied));
     };
@@ -170,7 +170,7 @@ pub fn settled(gv: &mut Engine<'_>, laying: &Laying<'_>) -> Result<Rc<Laid>, Str
 }
 
 /// How much line some lines draw.
-pub fn line_length<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> f64 {
+pub(crate) fn line_length<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> f64 {
     let mut sum = 0.0;
     for points in lines {
         for pair in points.windows(2) {

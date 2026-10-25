@@ -22,7 +22,7 @@ use crate::sequence::rows::pitch_of;
 
 /// How one message is drawn, as the painter and the frames around it read it.
 #[derive(Clone, Copy, Debug)]
-pub struct Drawn {
+pub(super) struct Drawn {
     /// Which way it crosses the page: 1 right, -1 left, 0 a message that
     /// never leaves its sender.
     pub travel: i8,
@@ -54,7 +54,7 @@ fn travel_of(kind: MessageKind, from_x: f64, to_x: f64) -> i8 {
 /// Where a crossing message's arrow starts and stops. A busy column is a bar
 /// rather than a line, so an arrow touching one stops at the bar's edge, short
 /// of it by what the arrowhead's tip reaches past the line's end.
-fn ends_for(placed: &PlacedStep, active: &ActiveAt, direction: i8) -> (f64, f64) {
+fn ends_for(placed: &PlacedStep<'_>, active: &ActiveAt<'_>, direction: i8) -> (f64, f64) {
     let direction = f64::from(direction);
     let leaving = if active.at(&placed.step.from, placed.y) {
         ACTIVATION_HALF_WIDTH
@@ -74,7 +74,7 @@ fn ends_for(placed: &PlacedStep, active: &ActiveAt, direction: i8) -> (f64, f64)
 
 /// How big a message's label plate is: as wide as its widest line, and one
 /// pill tall with a line's step more for every line past the first.
-fn pill_size(placed: &PlacedStep) -> (f64, f64) {
+fn pill_size(placed: &PlacedStep<'_>) -> (f64, f64) {
     let widest = placed
         .words
         .lines
@@ -91,7 +91,7 @@ fn pill_size(placed: &PlacedStep) -> (f64, f64) {
 /// the lifeline. Above rather than beside: columns are narrow and stand a
 /// seam apart, so a plate beside the loop would lie across the next column.
 /// Its ink is the loop with its label.
-fn self_drawn(placed: &PlacedStep, active: &ActiveAt) -> (f64, f64, Rect, Rect) {
+fn self_drawn(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> (f64, f64, Rect, Rect) {
     let start = placed.from_x
         + if active.at(&placed.step.from, placed.y) {
             ACTIVATION_HALF_WIDTH
@@ -117,7 +117,11 @@ fn self_drawn(placed: &PlacedStep, active: &ActiveAt) -> (f64, f64, Rect, Rect) 
 /// A crossing message: its arrow between the ends `ends_for` gives, its label
 /// centred on the gap between lifelines its layout chose, just above the
 /// arrow. Its ink is the arrow with its label.
-fn straight_drawn(placed: &PlacedStep, active: &ActiveAt, travel: i8) -> (f64, f64, Rect, Rect) {
+fn straight_drawn(
+    placed: &PlacedStep<'_>,
+    active: &ActiveAt<'_>,
+    travel: i8,
+) -> (f64, f64, Rect, Rect) {
     let (start, end) = ends_for(placed, active, travel);
     let (width, height) = pill_size(placed);
     let centre = placed.words.centre.unwrap_or((start + end) / 2.0);
@@ -137,7 +141,7 @@ fn straight_drawn(placed: &PlacedStep, active: &ActiveAt, travel: i8) -> (f64, f
 }
 
 /// How one message is drawn, whichever sort of message it is.
-pub fn drawn(placed: &PlacedStep, active: &ActiveAt) -> Drawn {
+pub(super) fn drawn(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Drawn {
     let travel = travel_of(placed.step.kind, placed.from_x, placed.to_x);
     let (start, end, label, ink) = if travel == 0 {
         self_drawn(placed, active)
@@ -168,7 +172,12 @@ pub fn drawn(placed: &PlacedStep, active: &ActiveAt) -> Drawn {
 /// Where a flow's frame stands across the page: round its columns, and round
 /// every message's ink as well, with the inset the columns keep. A frame that
 /// grows left moves the page, not the columns. In whole units once it grows.
-pub fn frame_span(steps: &[PlacedStep], active: &ActiveAt, x: f64, width: f64) -> (f64, f64) {
+pub(super) fn frame_span(
+    steps: &[PlacedStep<'_>],
+    active: &ActiveAt<'_>,
+    x: f64,
+    width: f64,
+) -> (f64, f64) {
     let mut left = x;
     let mut right = x + width;
     for placed in steps {

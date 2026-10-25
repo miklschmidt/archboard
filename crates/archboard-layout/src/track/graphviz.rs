@@ -12,7 +12,7 @@ use crate::viz::Node;
 
 /// One object Graphviz placed: a node or a cluster.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Object {
+pub(crate) struct Object {
     pub name: String,
     #[serde(default)]
     pub bb: Option<String>,
@@ -22,7 +22,7 @@ pub struct Object {
 
 /// One edge Graphviz drew.
 #[derive(Clone, Debug, Deserialize)]
-pub struct OutputEdge {
+pub(crate) struct OutputEdge {
     #[serde(default)]
     pub id: Option<String>,
     #[serde(default)]
@@ -31,7 +31,7 @@ pub struct OutputEdge {
 
 /// What Graphviz answers in its `json0` format.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Output {
+pub(crate) struct Output {
     pub bb: String,
     #[serde(default)]
     pub objects: Vec<Object>,
@@ -44,7 +44,7 @@ pub struct Output {
 /// # Errors
 ///
 /// When the answer is not the JSON Graphviz writes.
-pub fn output_of(answer: &str) -> Result<Output, String> {
+pub(crate) fn output_of(answer: &str) -> Result<Output, String> {
     serde_json::from_str(answer)
         .map_err(|error| format!("Graphviz answered unreadable JSON: {error}"))
 }
@@ -54,7 +54,7 @@ pub fn output_of(answer: &str) -> Result<Output, String> {
 /// # Errors
 ///
 /// When Graphviz answered a coordinate that is not a number.
-pub fn numbers(value: &str) -> Result<Vec<f64>, String> {
+pub(crate) fn numbers(value: &str) -> Result<Vec<f64>, String> {
     let parsed: Vec<f64> = value.split(',').map(number_of).collect();
     if parsed.iter().any(|number| !number.is_finite()) {
         return Err("Graphviz returned non-finite geometry".to_owned());
@@ -64,7 +64,7 @@ pub fn numbers(value: &str) -> Result<Vec<f64>, String> {
 
 /// The polyline points of a Graphviz edge, without its arrow markers, in
 /// diagram coordinates. The TypeScript engine kept each as `x,y` text.
-pub fn polyline_points(pos: &str, origin: Point) -> Result<Vec<Point>, String> {
+pub(crate) fn polyline_points(pos: &str, origin: Point) -> Result<Vec<Point>, String> {
     pos.split(' ')
         .filter(|token| !token.starts_with("e,") && !token.starts_with("s,"))
         .map(|token| {
@@ -78,7 +78,7 @@ pub fn polyline_points(pos: &str, origin: Point) -> Result<Vec<Point>, String> {
 }
 
 /// Every vendor node's centre in diagram coordinates, by vendor name.
-pub fn centres_of(output: &Output, origin: Point) -> Result<Map<String, Point>, String> {
+pub(crate) fn centres_of(output: &Output, origin: Point) -> Result<Map<String, Point>, String> {
     let mut centres = Map::default();
     for object in &output.objects {
         let Some(pos) = &object.pos else {
@@ -97,7 +97,7 @@ pub fn centres_of(output: &Output, origin: Point) -> Result<Map<String, Point>, 
 }
 
 /// Every node's box where Graphviz placed it, from its centre and its size, by name.
-pub fn boxes_of(nodes: &[&Node], centres: &Map<String, Point>) -> Map<String, Rect> {
+pub(crate) fn boxes_of(nodes: &[&Node], centres: &Map<String, Point>) -> Map<String, Rect> {
     let mut boxes = Map::default();
     for node in nodes {
         let Some(centre) = centres.get(&node.name) else {
@@ -128,7 +128,7 @@ const NEAR_MISS: f64 = 16.0;
 
 /// A line between two items, upper end first, through its label's box when it has one.
 #[derive(Clone, Debug)]
-pub struct Join {
+pub(crate) struct Join {
     pub tail: String,
     pub head: String,
     pub label: Option<String>,
@@ -137,7 +137,7 @@ pub struct Join {
 }
 
 /// The wrap Graphviz placed a block's rank by.
-pub struct Wrap<'a> {
+pub(crate) struct Wrap<'a> {
     /// Every card of the wrapped rank and the row it was dealt to.
     pub rows: &'a Map<String, usize>,
     /// The innermost cluster around a card, if any.
@@ -145,7 +145,7 @@ pub struct Wrap<'a> {
 }
 
 /// The invisible holds a block's containers keep their members below their titles with.
-pub struct Holds<'a> {
+pub(crate) struct Holds<'a> {
     /// How far in from its container's wall a hold passing beside a member stands it.
     pub slot: f64,
     /// The innermost container around a card, if any.
@@ -153,7 +153,7 @@ pub struct Holds<'a> {
 }
 
 /// What an item moved sideways must keep to.
-pub struct Room<'a> {
+pub(crate) struct Room<'a> {
     /// How far it keeps from every other item.
     pub gap: f64,
     /// Every Graphviz edge's polyline, by id, which a moved item must stay clear of.
@@ -170,7 +170,7 @@ pub struct Room<'a> {
 
 impl Room<'_> {
     /// Whether an item is a card: `room.card?.(name) === true`.
-    pub fn is_card(&self, name: &str) -> bool {
+    pub(crate) fn is_card(&self, name: &str) -> bool {
         self.card.is_some_and(|card| card(name))
     }
 }
@@ -213,7 +213,7 @@ fn through(from: Point, to: Point, at: &Rect) -> bool {
 }
 
 /// The horizontal centre of a box.
-pub fn middle(at: &Rect) -> f64 {
+pub(crate) fn middle(at: &Rect) -> f64 {
     at.x + at.width / 2.0
 }
 
@@ -236,7 +236,7 @@ fn fans(at: &Rect, fan: &[Rect]) -> bool {
 }
 
 /// The lines between items Graphviz placed, and the items lined up so far.
-pub struct Columns<'a, 'r> {
+pub(crate) struct Columns<'a, 'r> {
     pub boxes: &'a mut Map<String, Rect>,
     pub joins: &'a [Join],
     pub room: &'a Room<'r>,
@@ -248,7 +248,7 @@ pub struct Columns<'a, 'r> {
 
 impl<'a, 'r> Columns<'a, 'r> {
     /// Read what the items stand in.
-    pub fn new(
+    pub(crate) fn new(
         boxes: &'a mut Map<String, Rect>,
         joins: &'a [Join],
         room: &'a Room<'r>,
@@ -295,7 +295,7 @@ impl<'a, 'r> Columns<'a, 'r> {
     }
 
     /// The lines whose upper end stands wholly above their lower end.
-    pub fn stacked(&self) -> Vec<Join> {
+    pub(crate) fn stacked(&self) -> Vec<Join> {
         self.joins
             .iter()
             .filter(
@@ -309,12 +309,12 @@ impl<'a, 'r> Columns<'a, 'r> {
     }
 
     /// How far a line's upper end stands right of its lower end.
-    pub fn offset(&self, join: &Join) -> f64 {
+    pub(crate) fn offset(&self, join: &Join) -> f64 {
         middle(&self.boxes[&join.tail]) - middle(&self.boxes[&join.head])
     }
 
     /// An item's box centred on another x.
-    pub fn moved(&self, name: &str, centre: f64) -> Rect {
+    pub(crate) fn moved(&self, name: &str, centre: f64) -> Rect {
         let at = self.boxes[name];
         Rect {
             x: centre - at.width / 2.0,
@@ -324,7 +324,7 @@ impl<'a, 'r> Columns<'a, 'r> {
 
     /// Whether an item may stand at a box, whatever lines Graphviz drew there:
     /// inside its span, and crowding nothing but what holds it.
-    pub fn roomy(&self, name: &str, at: &Rect) -> bool {
+    pub(crate) fn roomy(&self, name: &str, at: &Rect) -> bool {
         let Some((left, right)) = (self.room.within)(name) else {
             return false;
         };
@@ -339,7 +339,7 @@ impl<'a, 'r> Columns<'a, 'r> {
 
     /// Whether an item may stand at a box: inside its span, crowding nothing
     /// but what holds it, and clear of every line it is not an end of.
-    pub fn free(&self, name: &str, at: &Rect) -> bool {
+    pub(crate) fn free(&self, name: &str, at: &Rect) -> bool {
         self.roomy(name, at)
             && self.paths.iter().all(|(ends, points)| {
                 ends.contains(name) || points.windows(2).all(|pair| !through(pair[0], pair[1], at))
@@ -483,7 +483,7 @@ impl<'a, 'r> Columns<'a, 'r> {
 /// cards, two joined cards on one centre whose widths differ by no more than
 /// a near miss are made one width, and where it names a wrap, its lowered
 /// cards stand out of the way of the lines through it.
-pub fn align_columns(boxes: &mut Map<String, Rect>, joins: &[Join], room: &Room<'_>) {
+pub(crate) fn align_columns(boxes: &mut Map<String, Rect>, joins: &[Join], room: &Room<'_>) {
     let mut columns = Columns::new(boxes, joins, room);
     hold_slots::close_slots(&mut columns, room.holds.as_ref());
     for join in columns.stacked() {

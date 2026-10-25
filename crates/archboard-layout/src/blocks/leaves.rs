@@ -16,7 +16,7 @@ use super::lone::side_room;
 use super::tree::{Block, BlockTree, Kind, header_of};
 
 /// The side of a port's square.
-pub const PORT: f64 = 1.0;
+pub(crate) const PORT: f64 = 1.0;
 
 /// Whether two leaves share some height.
 fn level(one: &PlacedNode, other: &PlacedNode) -> bool {
@@ -26,7 +26,7 @@ fn level(one: &PlacedNode, other: &PlacedNode) -> bool {
 /// Stand the header in the block's top-left corner, over what the block
 /// holds, and every leaf on its rank right of it a lane apart, at the widest
 /// size it has room for there.
-pub fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) {
+pub(crate) fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) {
     let id = header_of(block);
     let Some(at) = leaves.iter().position(|leaf| leaf.id == id) else {
         return;
@@ -90,7 +90,7 @@ fn widened(
 /// routed: Graphviz stands them beside the header, which may hold a port away
 /// from its line, and a port may then move onto that line's column. A top
 /// port keeps clear of the header. The root has no ports of its own.
-pub fn let_ports_slide(scene: &mut Placement, block: &Block) {
+pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
     if block.kind == Kind::Root {
         return;
     }
@@ -114,7 +114,7 @@ pub fn let_ports_slide(scene: &mut Placement, block: &Block) {
 /// Mark the items of a block's scene that stand for group regions: a region
 /// packed whole, and a card laid out as the region it is alone in, whose own
 /// faces stand in from its box. A lane keeps a region's clearance off each.
-pub fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
+pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
     for item in &block.items {
         let card = scene.cards.get(item).copied();
         if let Some(lone) = tree.lone.get(item) {
@@ -134,7 +134,7 @@ pub fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
 }
 
 /// A pin as a block's scene reads it: a sliver as tall as its child block, at its port's x.
-pub fn pinned_leaf(
+pub(crate) fn pinned_leaf(
     tree: &BlockTree,
     laid: &LaidMap,
     pin: &str,
@@ -159,7 +159,7 @@ pub fn pinned_leaf(
 }
 
 /// Every leaf under a block's placed nodes, those inside its frames included.
-pub fn leaves_of(nodes: &mut [PlacedNode]) -> Vec<&mut PlacedNode> {
+pub(crate) fn leaves_of(nodes: &mut [PlacedNode]) -> Vec<&mut PlacedNode> {
     let mut leaves = Vec::new();
     for node in nodes {
         if node.children.is_none() {
@@ -174,7 +174,7 @@ pub fn leaves_of(nodes: &mut [PlacedNode]) -> Vec<&mut PlacedNode> {
 /// Where a block routed again stands a pin or a block inside it: a pin where
 /// its block's settled port now stands, and a block as large as it was routed
 /// again, round the same centre; nothing for a leaf that stays where it is.
-pub fn settled_leaf(
+pub(crate) fn settled_leaf(
     tree: &BlockTree,
     laid: &LaidMap,
     id: &str,
@@ -205,7 +205,7 @@ pub fn settled_leaf(
 }
 
 /// Grow inline frames around children resized after their ports settle.
-pub fn hold_resized_children(nodes: &mut [PlacedNode]) {
+pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
     for node in nodes {
         let Some(children) = node
             .children
@@ -235,7 +235,7 @@ pub fn hold_resized_children(nodes: &mut [PlacedNode]) {
 /// The room a block of cards keeps where no line turns under its header, and
 /// over its bottom ports when they stand on its edge: the inset it keeps at
 /// its sides. Nothing when the block draws no edge.
-pub fn rim_of(block: &Block, insets: Insets) -> Option<Rim> {
+pub(crate) fn rim_of(block: &Block, insets: Insets) -> Option<Rim> {
     block.header.as_ref()?;
     let own = insets.side;
     Some(Rim {

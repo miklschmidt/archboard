@@ -184,13 +184,13 @@ fn same_point(one: Point, other: Point) -> bool {
 }
 
 /// A line as the steps read it: its points and its label's box.
-pub struct Drawn<'a> {
+pub(crate) struct Drawn<'a> {
     pub points: &'a [Point],
     pub label: Option<Rect>,
 }
 
 /// What every line keeps clear of.
-pub struct Surroundings<'a> {
+pub(crate) struct Surroundings<'a> {
     /// Every card, title row and caption.
     pub boxes: &'a [Rect],
     /// Every container's and group region's box.
@@ -562,7 +562,7 @@ fn weigher_of<'w>(
 }
 
 /// Every line with the steps it need not take taken out.
-pub fn unstepped<'w>(lines: &'w [Drawn<'w>], around: &Surroundings<'w>) -> Vec<Vec<Point>> {
+pub(crate) fn unstepped<'w>(lines: &'w [Drawn<'w>], around: &Surroundings<'w>) -> Vec<Vec<Point>> {
     let mut routes: Vec<Vec<Point>> = lines.iter().map(|line| corners(line.points)).collect();
     for _ in 0..PASSES {
         let mut slides = 0;

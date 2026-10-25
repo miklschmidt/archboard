@@ -46,7 +46,7 @@ struct Junction {
 }
 
 /// One route, as the joins are found from it.
-pub struct JoinRoute {
+pub(super) struct JoinRoute {
     corners: Vec<Point>,
     bends: Vec<f64>,
     width: f64,
@@ -344,13 +344,13 @@ fn bends_of(curve: &Curve) -> Vec<f64> {
 }
 
 /// How far a junction mark reaches from its point on a line of some width.
-pub fn mark_radius(width: f64) -> f64 {
+pub(super) fn mark_radius(width: f64) -> f64 {
     width + JUNCTION_REACH
 }
 
 /// The marks for every join, in the ink and weight of the heavier line there:
 /// each route with the ink its line is drawn in.
-pub fn junction_marks(routes: &[(&Edge, String)]) -> Markup {
+pub(super) fn junction_marks(routes: &[(&Edge, String)]) -> Markup {
     let join_routes: Vec<JoinRoute> = routes
         .iter()
         .map(|(route, _)| JoinRoute {

@@ -32,18 +32,18 @@ use super::lone::{Card, Lone, band_of, captions_of, card_as, frame_header, placi
 /// as a cluster of the board's layout, or containers inline with each group's
 /// region packed as a block.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Nesting {
+pub(crate) enum Nesting {
     Inline,
     Groups,
 }
 
 /// A block's place in the tree.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct BlockId(pub usize);
+pub(crate) struct BlockId(pub usize);
 
 /// What a block is: the board, a group region packed whole, or a column a block folds into.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Kind {
+pub(crate) enum Kind {
     Root,
     Region,
     Column,
@@ -51,7 +51,7 @@ pub enum Kind {
 
 /// Whether a cluster is a container or a group region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ClusterKind {
+pub(crate) enum ClusterKind {
     Frame,
     Region,
 }
@@ -59,7 +59,7 @@ pub enum ClusterKind {
 /// A container or group region a block of cards draws inline: a cluster of the
 /// block's own Graphviz layout rather than a block of its own.
 #[derive(Clone, Debug)]
-pub struct Cluster {
+pub(crate) struct Cluster {
     pub id: String,
     pub kind: ClusterKind,
     /// The cluster it sits in, if any.
@@ -75,7 +75,7 @@ pub struct Cluster {
 
 /// A line inside one block, between two of the block's items.
 #[derive(Clone, Debug)]
-pub struct Line {
+pub(crate) struct Line {
     /// The line's id in its block: its relationship's when it carries the label.
     pub key: String,
     /// The first relationship drawn on it, for its kind, order and label.
@@ -93,7 +93,7 @@ pub struct Line {
 }
 
 /// A line's ends: where it comes from and goes to, and which Graphviz ranks above the other.
-pub struct Ends {
+pub(crate) struct Ends {
     pub from: String,
     pub to: String,
     pub tail: String,
@@ -102,7 +102,7 @@ pub struct Ends {
 
 /// A block: the board, a group region packed whole, or a column a block folds into.
 #[derive(Clone, Debug)]
-pub struct Block {
+pub(crate) struct Block {
     pub id: String,
     pub kind: Kind,
     pub parent: Option<BlockId>,
@@ -124,13 +124,13 @@ pub struct Block {
 
 impl Block {
     /// Whether one of its ports stands on its bottom.
-    pub fn has_bottom_port(&self) -> bool {
+    pub(crate) fn has_bottom_port(&self) -> bool {
         self.ports.values().any(|&side| side == Side::Bottom)
     }
 
     /// The innermost container a block draws inline around one of its items,
     /// passing over regions, starting from a cluster.
-    pub fn frame_around(&self, start: Option<&str>) -> Option<String> {
+    pub(crate) fn frame_around(&self, start: Option<&str>) -> Option<String> {
         let mut at = start;
         while let Some(id) = at {
             let cluster = &self.clusters[id];
@@ -143,7 +143,7 @@ impl Block {
     }
 
     /// The clusters around an id, innermost first, starting from the one it stands in.
-    pub fn clusters_from<'b>(&'b self, start: Option<&'b str>) -> Vec<&'b str> {
+    pub(crate) fn clusters_from<'b>(&'b self, start: Option<&'b str>) -> Vec<&'b str> {
         let mut chain = Vec::new();
         let mut at = start;
         while let Some(id) = at {
@@ -159,7 +159,7 @@ impl Block {
 
 /// Where one relationship is drawn: its block, and the blocks it leaves and enters.
 #[derive(Clone, Debug)]
-pub struct Projection {
+pub(crate) struct Projection {
     pub edge: Rc<Edge>,
     /// The lowest block holding both ends.
     pub at: BlockId,
@@ -174,29 +174,29 @@ pub struct Projection {
 }
 
 /// One part of a relationship: the block it is drawn in and its line there.
-pub type Piece = (BlockId, String);
+pub(crate) type Piece = (BlockId, String);
 
 /// How one relationship is drawn: its lines in order, and the block that holds its label.
 #[derive(Clone, Debug)]
-pub struct Route {
+pub(crate) struct Route {
     pub pieces: Vec<Piece>,
     pub label_at: BlockId,
 }
 
 /// Where a pin meets its child block: the block and its port.
 #[derive(Clone, Debug)]
-pub struct Pin {
+pub(crate) struct Pin {
     pub block: BlockId,
     pub port: String,
 }
 
 /// The id of a block's header item.
-pub fn header_of(block: &Block) -> String {
+pub(crate) fn header_of(block: &Block) -> String {
     format!("header:{}", block.id)
 }
 
 /// The key a port's moved edge is kept by (`sides.rs`).
-pub fn exit_key(block: &str, way: &str, face: Side, along: &str) -> String {
+pub(crate) fn exit_key(block: &str, way: &str, face: Side, along: &str) -> String {
     format!("{block}|port:{way}|{}|{along}", face.name())
 }
 
@@ -212,7 +212,7 @@ fn walled(side: Side, inner: &str) -> String {
 }
 
 /// The board's blocks and every relationship's lines through them.
-pub struct BlockTree {
+pub(crate) struct BlockTree {
     pub arena: Vec<Block>,
     pub blocks: Map<String, BlockId>,
     /// The block holding each card, and each container drawn inline, as an item.
@@ -245,7 +245,7 @@ impl BlockTree {
     ///
     /// When the hierarchy's measured options are unreadable, or a relationship
     /// names a node the hierarchy does not hold.
-    pub fn new(
+    pub(crate) fn new(
         graph: &Node,
         exits: Map<String, Side>,
         nesting: Nesting,
@@ -292,27 +292,27 @@ impl BlockTree {
     }
 
     /// A block.
-    pub fn get(&self, id: BlockId) -> &Block {
+    pub(crate) fn get(&self, id: BlockId) -> &Block {
         &self.arena[id.0]
     }
 
     /// A block, to change.
-    pub fn get_mut(&mut self, id: BlockId) -> &mut Block {
+    pub(crate) fn get_mut(&mut self, id: BlockId) -> &mut Block {
         &mut self.arena[id.0]
     }
 
     /// The block of an item, if the item is one.
-    pub fn block_of(&self, item: &str) -> Option<BlockId> {
+    pub(crate) fn block_of(&self, item: &str) -> Option<BlockId> {
         self.blocks.get(item).copied()
     }
 
     /// Whether an item is a block.
-    pub fn is_block(&self, item: &str) -> bool {
+    pub(crate) fn is_block(&self, item: &str) -> bool {
         self.blocks.contains_key(item)
     }
 
     /// Make a block, and add it to its parent's items.
-    pub fn block(
+    pub(crate) fn block(
         &mut self,
         id: String,
         kind: Kind,
@@ -482,7 +482,7 @@ impl BlockTree {
     }
 
     /// The blocks around a node, innermost first.
-    pub fn above(&self, id: &str) -> Vec<BlockId> {
+    pub(crate) fn above(&self, id: &str) -> Vec<BlockId> {
         let mut chain = Vec::new();
         let start = self
             .blocks
@@ -569,7 +569,7 @@ impl BlockTree {
     /// The relationships that close a cycle in the block they are drawn in,
     /// found depth-first from the items nothing points at, in the board's
     /// order. A line into its own container runs upward.
-    pub fn back_edges(&self) -> Set<String> {
+    pub(crate) fn back_edges(&self) -> Set<String> {
         let mut back = Set::default();
         for &block in self.blocks.values() {
             back.extend(self.back_edges_in(block));
@@ -757,7 +757,7 @@ impl BlockTree {
     }
 
     /// What a relationship's ports on a block's edge share: its kind and look, or its own id.
-    pub fn kind_of(&self, edge: &Edge) -> String {
+    pub(crate) fn kind_of(&self, edge: &Edge) -> String {
         if self.apart.contains(&edge.id) {
             format!("{}|{}", trunk_kind(edge), edge.id)
         } else {
@@ -785,14 +785,14 @@ impl BlockTree {
     }
 
     /// A block's port, made on first use.
-    pub fn port(&mut self, block: BlockId, key: String, side: Side) -> String {
+    pub(crate) fn port(&mut self, block: BlockId, key: String, side: Side) -> String {
         let id = format!("port:{key}");
         self.get_mut(block).ports.insert(id.clone(), side);
         id
     }
 
     /// The item where a child block's port meets its parent's lines.
-    pub fn pin(&mut self, block: BlockId, port: &str) -> String {
+    pub(crate) fn pin(&mut self, block: BlockId, port: &str) -> String {
         let id = format!("pin:{}:{port}", self.get(block).id);
         self.pins.insert(
             id.clone(),
@@ -838,7 +838,7 @@ impl BlockTree {
     }
 
     /// Every block, each after the blocks inside it.
-    pub fn innermost_first(&self, block: BlockId) -> Vec<BlockId> {
+    pub(crate) fn innermost_first(&self, block: BlockId) -> Vec<BlockId> {
         let mut all = Vec::new();
         for item in &self.get(block).items {
             if let Some(&inner) = self.blocks.get(item) {
@@ -859,7 +859,7 @@ fn by_order(nodes: &[Node]) -> Vec<&Node> {
 }
 
 /// Whether a container or region a block draws inline holds an item, however deep.
-pub fn holds(block: &Block, cluster: &str, item: &str) -> bool {
+pub(crate) fn holds(block: &Block, cluster: &str, item: &str) -> bool {
     let mut at = block.cluster_of.get(item);
     while let Some(around) = at {
         if around == cluster {
@@ -872,13 +872,13 @@ pub fn holds(block: &Block, cluster: &str, item: &str) -> bool {
 
 /// Whether one item leads down to another, as edges are added.
 #[derive(Default)]
-pub struct Below {
+pub(crate) struct Below {
     next: Map<String, Vec<String>>,
 }
 
 impl Below {
     /// Record that one item ranks below another.
-    pub fn add(&mut self, tail: &str, head: &str) {
+    pub(crate) fn add(&mut self, tail: &str, head: &str) {
         self.next
             .entry(tail.to_owned())
             .or_default()
@@ -886,7 +886,7 @@ impl Below {
     }
 
     /// Every item one leads down to, itself among them.
-    pub fn reach(&self, from: &str) -> Set<String> {
+    pub(crate) fn reach(&self, from: &str) -> Set<String> {
         let mut seen: Set<String> = Set::default();
         let mut open = vec![from.to_owned()];
         while let Some(at) = open.pop() {
@@ -901,7 +901,7 @@ impl Below {
     }
 
     /// Whether one item leads down to another.
-    pub fn reaches(&self, from: &str, target: &str) -> bool {
+    pub(crate) fn reaches(&self, from: &str, target: &str) -> bool {
         let mut seen: Set<String> = Set::default();
         let mut open = vec![from.to_owned()];
         while let Some(at) = open.pop() {

@@ -236,7 +236,7 @@ fn from_side(curve: &Curve, bounds: Rect) -> Option<Curve> {
 /// A line with each end that meets a diamond or a terminal moved to the
 /// middle of the side it crosses, or, where it was laid out to leave beside
 /// the shape, out of the point on that side.
-pub fn at_shape_points(curve: Curve, from: Option<Rect>, to: Option<Rect>) -> Curve {
+pub(super) fn at_shape_points(curve: Curve, from: Option<Rect>, to: Option<Rect>) -> Curve {
     let left = match from {
         None => curve,
         Some(bounds) => match from_side(&curve, bounds) {
@@ -258,7 +258,7 @@ pub fn at_shape_points(curve: Curve, from: Option<Rect>, to: Option<Rect>) -> Cu
 /// or at a slanted side where the line had no room to turn; a hexagon at its
 /// cut corners; a terminal's ends are round, but a line meets its flat top or
 /// foot.
-pub fn on_outline(shape: FlowchartShape, bounds: Rect, end: Point) -> Point {
+pub(super) fn on_outline(shape: FlowchartShape, bounds: Rect, end: Point) -> Point {
     let half = Point {
         x: bounds.width / 2.0,
         y: bounds.height / 2.0,

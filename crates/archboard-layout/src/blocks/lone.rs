@@ -31,7 +31,7 @@ const ON_WALL: f64 = 0.5;
 /// A node alone in its group's region: the group, its caption's size, and
 /// how the region stands round the node when its caption widens it.
 #[derive(Clone, Debug)]
-pub struct Lone {
+pub(crate) struct Lone {
     pub group: String,
     pub caption: Size,
     /// A card's width: a caption wider than the card widens the region round it, not the card.
@@ -43,14 +43,14 @@ pub struct Lone {
 
 /// Where a line stops at a node alone in its region: that region's box and the node's.
 #[derive(Clone, Copy, Debug)]
-pub struct Stop {
+pub(crate) struct Stop {
     pub region: Rect,
     pub card: Rect,
 }
 
 /// A card as a block lays it out: its size and its peers.
 #[derive(Clone, Debug)]
-pub struct Card {
+pub(crate) struct Card {
     pub width: f64,
     pub height: f64,
     /// What interchangeable cards share, when the card has any: kind and responsibility.
@@ -73,7 +73,7 @@ fn card_of(node: &Node) -> Card {
 /// # Errors
 ///
 /// When the sizes are not the JSON measurement writes.
-pub fn captions_of(graph: &Node) -> Result<Map<String, Size>, String> {
+pub(crate) fn captions_of(graph: &Node) -> Result<Map<String, Size>, String> {
     let rows: Vec<(String, f64, f64)> =
         serde_json::from_str(graph.option(GROUP_CAPTIONS).unwrap_or("[]"))
             .map_err(|error| format!("{GROUP_CAPTIONS} is unreadable: {error}"))?;
@@ -86,7 +86,7 @@ pub fn captions_of(graph: &Node) -> Result<Map<String, Size>, String> {
 /// The group a node is gathered with into a region: its placing group, unless
 /// no sibling shares that group with it. Such a node is laid out as its region
 /// instead, and gathered with none; it is added to `lone`.
-pub fn placing_group(
+pub(crate) fn placing_group(
     lone: &mut Map<String, Lone>,
     captions: &Map<String, Size>,
     node: &Node,
@@ -131,18 +131,18 @@ fn alone_in(node: &Node, siblings: &[&Node]) -> bool {
 
 /// The band above the node that holds the region's caption: its tab, which
 /// reaches the caption's foot, and the region's inset under it.
-pub fn band_of(lone: &Lone) -> f64 {
+pub(crate) fn band_of(lone: &Lone) -> f64 {
     CAPTION_INSET + lone.caption.height + REGION_INSET
 }
 
 /// How wide a region's caption needs it: the caption and its inset on each side.
-pub fn caption_width(lone: &Lone) -> f64 {
+pub(crate) fn caption_width(lone: &Lone) -> f64 {
     lone.caption.width + 2.0 * CAPTION_INSET
 }
 
 /// How much taller a region round one node stands than the node: its caption
 /// band above and its inset below.
-pub fn grown_by(lone: &Lone) -> f64 {
+pub(crate) fn grown_by(lone: &Lone) -> f64 {
     band_of(lone) + REGION_INSET
 }
 
@@ -152,7 +152,7 @@ pub fn grown_by(lone: &Lone) -> f64 {
 /// # Errors
 ///
 /// When its measured header sizes are unreadable.
-pub fn frame_header(node: &Node, band: f64) -> Result<Header, String> {
+pub(crate) fn frame_header(node: &Node, band: f64) -> Result<Header, String> {
     let header = number_of(node.option("archboard.header.size").unwrap_or("0"));
     Ok(Header {
         width: node.w(),
@@ -163,7 +163,7 @@ pub fn frame_header(node: &Node, band: f64) -> Result<Header, String> {
 
 /// A card as the blocks lay it out: grown into the box its region takes when
 /// it is alone in one.
-pub fn card_as(node: &Node, lone: Option<&Lone>) -> Card {
+pub(crate) fn card_as(node: &Node, lone: Option<&Lone>) -> Card {
     let card = card_of(node);
     let Some(lone) = lone else {
         return card;
@@ -176,7 +176,7 @@ pub fn card_as(node: &Node, lone: Option<&Lone>) -> Card {
 }
 
 /// The card's or container's own box inside the box its region took.
-pub fn card_in(region: Rect, lone: &Lone) -> Rect {
+pub(crate) fn card_in(region: Rect, lone: &Lone) -> Rect {
     let side = side_room(region.width, lone);
     Rect {
         x: region.x + side,
@@ -187,7 +187,7 @@ pub fn card_in(region: Rect, lone: &Lone) -> Rect {
 }
 
 /// How far in from each side of the box its region took a card or container stands.
-pub fn side_room(width: f64, lone: &Lone) -> f64 {
+pub(crate) fn side_room(width: f64, lone: &Lone) -> f64 {
     match lone.width {
         None => room_of(lone),
         Some(own) => js_max(REGION_INSET, (width - own) / 2.0),
@@ -195,12 +195,12 @@ pub fn side_room(width: f64, lone: &Lone) -> f64 {
 }
 
 /// How far in from each side of its region a container stands.
-pub fn room_of(lone: &Lone) -> f64 {
+pub(crate) fn room_of(lone: &Lone) -> f64 {
     lone.room.unwrap_or(REGION_INSET)
 }
 
 /// What a container's title's centre, height and words are, as its title row reads them.
-pub struct Head<'a> {
+pub(crate) struct Head<'a> {
     pub centre: f64,
     pub height: f64,
     pub words: f64,
@@ -210,7 +210,7 @@ pub struct Head<'a> {
 /// The title row a container drawn inline gives the track scene, and the room
 /// it keeps below what it holds. Alone in its region, the scene reads it as
 /// the region.
-pub fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> FrameRow {
+pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> FrameRow {
     FrameRow {
         title: [
             bounds.x,
@@ -232,7 +232,7 @@ pub fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> FrameRow
 
 /// A container drawn inline, laid out as the region it is alone in: its own
 /// box inside the box the scene fitted round what it holds.
-pub fn frame_shape(shape: FrameShape, lone: Option<&Lone>) -> FrameShape {
+pub(crate) fn frame_shape(shape: FrameShape, lone: Option<&Lone>) -> FrameShape {
     match lone {
         None => shape,
         Some(lone) => FrameShape {
@@ -243,7 +243,7 @@ pub fn frame_shape(shape: FrameShape, lone: Option<&Lone>) -> FrameShape {
 }
 
 /// How wide a block drawing a container inline lays its title row out.
-pub fn title_width(header: &Header, lone: Option<&Lone>, inset: f64) -> f64 {
+pub(crate) fn title_width(header: &Header, lone: Option<&Lone>, inset: f64) -> f64 {
     match lone {
         None => header.width,
         Some(lone) => js_max(header.width, caption_width(lone) - 2.0 * inset),
@@ -300,7 +300,11 @@ fn carried(end: Point, stop: &Stop) -> Vec<Point> {
 }
 
 /// A line carried on to the face of every card alone in its region it stops at.
-pub fn carried_line(points: &[Point], source: Option<&Stop>, target: Option<&Stop>) -> Vec<Point> {
+pub(crate) fn carried_line(
+    points: &[Point],
+    source: Option<&Stop>,
+    target: Option<&Stop>,
+) -> Vec<Point> {
     let mut line = Vec::with_capacity(points.len() + 6);
     if let Some(source) = source {
         let mut before = carried(points[0], source);
@@ -357,7 +361,7 @@ fn clear_of(band: (f64, f64), width: f64, crossing: &[f64], room: f64) -> Option
 /// band's top-left corner as every region does, unless a line into the node
 /// crosses the band there; then as far left as the words stand clear of
 /// every line.
-pub fn caption_in(region: Rect, lone: &Lone, lines: &[&[Point]]) -> Rect {
+pub(crate) fn caption_in(region: Rect, lone: &Lone, lines: &[&[Point]]) -> Rect {
     let Size { width, height } = lone.caption;
     let crossing = crossing_band(region, band_of(lone), lines);
     let band = (

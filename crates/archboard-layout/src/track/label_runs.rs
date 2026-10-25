@@ -13,7 +13,7 @@ use crate::track::scene::{ItemId, Placement};
 
 /// A label box that may slide, where it wants its centre, and where its line reaches it straight.
 #[derive(Clone, Debug)]
-pub struct Slider {
+pub(crate) struct Slider {
     pub item: ItemId,
     pub wanted: f64,
     /// The x its line reaches it at straight from the station above, and from the one below.
@@ -197,7 +197,7 @@ fn crossings_in(sliders: &[Slider]) -> f64 {
 /// Place boxes that share one stretch in the order Graphviz stood them, or in
 /// the order of where they want to be when that crosses no more lines and
 /// jogs fewer or moves them less.
-pub fn place_run(scene: &mut Placement, sliders: &[Slider], low: f64, high: f64) {
+pub(crate) fn place_run(scene: &mut Placement, sliders: &[Slider], low: f64, high: f64) {
     let x = |slider: &Slider| scene.item(slider.item).bx.x;
     let orders = [
         sorted_by(sliders, |one, other| x(one) - x(other)),

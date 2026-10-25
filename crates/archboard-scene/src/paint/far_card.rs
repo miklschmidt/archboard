@@ -70,7 +70,7 @@ fn words_of(text: &str) -> Vec<&str> {
 /// A text broken into lines by words, balanced, and cut with an ellipsis where
 /// it takes more than some lines.
 fn break_lines(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     text: &str,
     face: DiagramFont,
     size: f64,
@@ -124,7 +124,7 @@ fn break_lines(
 
 /// A card's words at one name size, broken to the room they have.
 fn stack_at(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     name: &str,
     gist: Option<&str>,
     size: f64,
@@ -156,7 +156,7 @@ fn stack_at(
 }
 
 /// A card's name and gist sized to the room its box holds.
-fn settle(ctx: &Ctx, name: &str, gist: Option<&str>, room: f64, height: f64) -> Stack {
+fn settle(ctx: &Ctx<'_>, name: &str, gist: Option<&str>, room: f64, height: f64) -> Stack {
     let whole = words_of(name).join(" ");
     for (size, gist_lines) in attempts() {
         if gist.is_none() && gist_lines > 0 {
@@ -173,7 +173,7 @@ fn settle(ctx: &Ctx, name: &str, gist: Option<&str>, room: f64, height: f64) -> 
 /// One line of words as a run, from the left of the line's top: its baseline
 /// half a cap height below the line's middle.
 fn run(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     text: &str,
     at: Point,
     size: f64,
@@ -193,7 +193,7 @@ fn run(
 }
 
 /// A stack's runs, the name's lines and then the gist's, from one top.
-fn runs_of(ctx: &Ctx, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
+fn runs_of(ctx: &Ctx<'_>, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
     let name_step = stack.name_size * NAME_LINE;
     let gist_step = stack.gist_size * GIST_LINE;
     let gist_top = top + stack.names.len() as f64 * name_step + GIST_GAP;
@@ -230,13 +230,13 @@ fn runs_of(ctx: &Ctx, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
 }
 
 /// A block of words as the near view draws them, and where they start.
-pub struct Words {
+pub(super) struct Words {
     pub markup: Markup,
     pub anchor: Place,
 }
 
 /// Measured lines as a block of words, with where they start.
-pub fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words {
+pub(super) fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words {
     let anchor = runs.first().map_or(
         Place {
             x: rect.x,
@@ -257,7 +257,7 @@ pub fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words {
 
 /// A part as its card or its heading draws it: what it is, the box its views
 /// fill, its look, and how it stands.
-pub struct Part<'a> {
+pub(super) struct Part<'a> {
     pub kind: SubjectKind,
     pub node: &'a NodeFacts,
     pub rect: Rect,
@@ -267,7 +267,7 @@ pub struct Part<'a> {
 }
 
 /// What a card draws near: where its chip stands, and its words.
-pub struct NearCard {
+pub(super) struct NearCard {
     pub chip_x: f64,
     pub chip_y: f64,
     pub words: Words,
@@ -279,7 +279,12 @@ fn gist_of(text: Option<&str>) -> Option<&str> {
 }
 
 /// A part's near and far views, and the kind chip they share.
-pub fn paint_card_views(ctx: &Ctx, part: &Part, palette: &Palette, near: NearCard) -> Markup {
+pub(super) fn paint_card_views(
+    ctx: &Ctx<'_>,
+    part: &Part<'_>,
+    palette: &Palette,
+    near: NearCard,
+) -> Markup {
     let rect = part.rect;
     let drill = part.appearance.drill;
     let words = standing_palette(palette, part.standing);
@@ -334,8 +339,8 @@ pub fn paint_card_views(ctx: &Ctx, part: &Part, palette: &Palette, near: NearCar
 }
 
 /// The near and far views of a heading that has no kind of its own to show, a flow's.
-pub fn paint_heading_views(
-    ctx: &Ctx,
+pub(super) fn paint_heading_views(
+    ctx: &Ctx<'_>,
     name: &str,
     summary: Option<&str>,
     rect: Rect,

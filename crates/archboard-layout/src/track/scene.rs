@@ -14,26 +14,26 @@ use crate::ecma::{self, max, min, round, via_text};
 use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
 
 /// An insertion-ordered map, as a `Map` of ECMAScript is.
-pub type Map<K, V> = IndexMap<K, V, FxBuildHasher>;
+pub(crate) type Map<K, V> = IndexMap<K, V, FxBuildHasher>;
 /// An insertion-ordered set, as a `Set` of ECMAScript is.
-pub type Set<K> = IndexSet<K, FxBuildHasher>;
+pub(crate) type Set<K> = IndexSet<K, FxBuildHasher>;
 
 /// How far a region's caption sits in from its band's left edge.
-pub const REGION_CAPTION_INSET: f64 = 6.0;
+pub(crate) const REGION_CAPTION_INSET: f64 = 6.0;
 /// How far below a region's top edge a label box in its caption row keeps.
 const ROW_MARGIN: f64 = 4.0;
 
 /// The band of an item not yet grouped into one.
-pub const NO_BAND: usize = usize::MAX;
+pub(crate) const NO_BAND: usize = usize::MAX;
 
 /// An item of the scene, by the place it is kept: the identity a `Map` of
 /// items keys it by.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ItemId(pub usize);
+pub(crate) struct ItemId(pub usize);
 
 /// Something that sits on a band: a card, a label box or a frame's title row; a label box may slide.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Item {
+pub(crate) struct Item {
     pub bx: Rect,
     pub band: usize,
     /// How far a card's own faces stand in from its box, for a card laid out as its region.
@@ -42,7 +42,7 @@ pub struct Item {
 
 impl Item {
     /// An item on a band.
-    pub fn new(bx: Rect, band: usize) -> Item {
+    pub(crate) fn new(bx: Rect, band: usize) -> Item {
         Item {
             bx,
             band,
@@ -53,7 +53,7 @@ impl Item {
 
 /// The stretch of an item's box its own face spans: all of it, but for a card
 /// laid out as the region round it, whose face stands in from the box.
-pub fn card_face(item: &Item) -> Rect {
+pub(crate) fn card_face(item: &Item) -> Rect {
     let inset = item.inset.unwrap_or(0.0);
     Rect {
         x: item.bx.x + inset,
@@ -63,7 +63,7 @@ pub fn card_face(item: &Item) -> Rect {
 }
 
 /// An item's horizontal centre.
-pub fn centre_x(item: &Item) -> f64 {
+pub(crate) fn centre_x(item: &Item) -> f64 {
     item.bx.x + item.bx.width / 2.0
 }
 
@@ -74,14 +74,14 @@ fn centre_key(item: &Item) -> f64 {
 
 /// A size a frame's title row can take: how far its words reach in, and how tall it stands.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct TitleStep {
+pub(crate) struct TitleStep {
     pub words: f64,
     pub height: f64,
 }
 
 /// One band: the items on one rank, and where it lies before and after spacing.
 #[derive(Clone, Copy, Debug)]
-pub struct Band {
+pub(crate) struct Band {
     pub top: f64,
     pub bottom: f64,
     pub new_top: f64,
@@ -91,14 +91,14 @@ pub struct Band {
 
 /// Where a station of a line stands: its band and its x.
 #[derive(Clone, Copy, Debug)]
-pub struct Spot {
+pub(crate) struct Spot {
     pub band: usize,
     pub x: f64,
 }
 
 /// A frame: its placed node, its depth and every card or frame inside it.
 #[derive(Clone, Debug)]
-pub struct Frame {
+pub(crate) struct Frame {
     pub x: f64,
     pub width: f64,
     /// The region's inset it keeps below what it holds, laid out as its lone region.
@@ -111,7 +111,7 @@ pub struct Frame {
 
 /// A group region: Graphviz's cluster box, its caption row and the nodes it gathers.
 #[derive(Clone, Debug)]
-pub struct Region {
+pub(crate) struct Region {
     pub group: String,
     pub parent: Option<String>,
     pub members: Vec<String>,
@@ -122,7 +122,7 @@ pub struct Region {
 
 /// A title row's or caption's painted words.
 #[derive(Clone, Copy, Debug)]
-pub struct Heading {
+pub(crate) struct Heading {
     pub band: usize,
     pub left: f64,
     pub end: f64,
@@ -130,11 +130,11 @@ pub struct Heading {
 }
 
 /// Each frame and region a band passes through, by id, with its walls.
-pub type Walls = Rc<Map<String, (f64, f64)>>;
+pub(crate) type Walls = Rc<Map<String, (f64, f64)>>;
 
 /// The placed hierarchy read back into items, bands and frames.
 #[derive(Clone, Debug, Default)]
-pub struct Placement {
+pub(crate) struct Placement {
     pub items: Vec<Item>,
     pub cards: Map<String, ItemId>,
     pub labels: Map<String, ItemId>,
@@ -199,7 +199,7 @@ fn title_row(node: &PlacedNode) -> Option<(Item, f64, Vec<TitleStep>, f64)> {
 
 impl Placement {
     /// Read every placed item and group them into bands by their centres.
-    pub fn new(placed: &PlacedBlock) -> Placement {
+    pub(crate) fn new(placed: &PlacedBlock) -> Placement {
         let mut scene = Placement::default();
         scene.visit(&placed.children, 0, &[]);
         scene.read_labels(&placed.edges);
@@ -233,17 +233,17 @@ impl Placement {
     }
 
     /// An item.
-    pub fn item(&self, id: ItemId) -> &Item {
+    pub(crate) fn item(&self, id: ItemId) -> &Item {
         &self.items[id.0]
     }
 
     /// An item, to change.
-    pub fn item_mut(&mut self, id: ItemId) -> &mut Item {
+    pub(crate) fn item_mut(&mut self, id: ItemId) -> &mut Item {
         &mut self.items[id.0]
     }
 
     /// Keep a new item.
-    pub fn add(&mut self, item: Item) -> ItemId {
+    pub(crate) fn add(&mut self, item: Item) -> ItemId {
         self.items.push(item);
         ItemId(self.items.len() - 1)
     }
@@ -360,7 +360,7 @@ impl Placement {
     }
 
     /// The item a relationship ends at: a card, or a frame's title row.
-    pub fn endpoint(&self, id: &str) -> ItemId {
+    pub(crate) fn endpoint(&self, id: &str) -> ItemId {
         self.cards
             .get(id)
             .or_else(|| self.titles.get(id))
@@ -369,12 +369,12 @@ impl Placement {
     }
 
     /// The card or title row of a member, if the scene holds it.
-    pub fn member(&self, id: &str) -> Option<ItemId> {
+    pub(crate) fn member(&self, id: &str) -> Option<ItemId> {
         self.cards.get(id).or_else(|| self.titles.get(id)).copied()
     }
 
     /// Every title row's and caption's painted words.
-    pub fn headings(&self) -> Vec<Heading> {
+    pub(crate) fn headings(&self) -> Vec<Heading> {
         let titles = self.titles.iter().map(|(id, &item)| {
             let frame = &self.frames[id];
             let row = self.item(item);
@@ -400,7 +400,7 @@ impl Placement {
     /// What a label box keeps clear of on its band for each group region
     /// heading it: the caption's words, and the whole caption row when the box
     /// would reach above the region's top edge there.
-    pub fn captions_for(&self, label: &Item) -> Vec<Item> {
+    pub(crate) fn captions_for(&self, label: &Item) -> Vec<Item> {
         self.regions
             .iter()
             .filter(|region| self.item(region.caption).band == label.band)
@@ -423,7 +423,7 @@ impl Placement {
     }
 
     /// The title band of every group region a label box reaches down into.
-    pub fn title_bands_for(&self, label: &Item) -> Vec<Item> {
+    pub(crate) fn title_bands_for(&self, label: &Item) -> Vec<Item> {
         let (top, bottom) = (label.bx.y, label.bx.y + label.bx.height);
         self.regions
             .iter()
@@ -454,7 +454,7 @@ impl Placement {
     }
 
     /// The last band a frame covers.
-    pub fn last_band_of(&self, id: &str) -> usize {
+    pub(crate) fn last_band_of(&self, id: &str) -> usize {
         let frame = &self.frames[id];
         let title = self.item(self.titles[id]).band as f64;
         max(std::iter::once(title).chain(frame.members.iter().map(|member| self.band_of(member))))
@@ -462,7 +462,7 @@ impl Placement {
     }
 
     /// Whether a station stands inside a frame: on a band the frame covers, between its walls.
-    pub fn inside(&self, id: &str, station: Spot) -> bool {
+    pub(crate) fn inside(&self, id: &str, station: Spot) -> bool {
         let walls = self.walled(station.band);
         walls
             .get(id)
@@ -471,7 +471,7 @@ impl Placement {
 
     /// Whether some stations of a line may stand on a column for the frames it
     /// lies in, read once for a search that tries column after column.
-    pub fn keeps_frames(&self, lanes: &[Spot], before: Spot, after: Spot) -> KeepsFrames {
+    pub(crate) fn keeps_frames(&self, lanes: &[Spot], before: Spot, after: Spot) -> KeepsFrames {
         let mut held = Vec::new();
         for lane in lanes {
             for (id, &(low, high)) in self.walled(lane.band).iter() {
@@ -485,7 +485,7 @@ impl Placement {
     }
 
     /// Every frame and group region a band passes through, with its left and right walls.
-    pub fn walled(&self, band: usize) -> Walls {
+    pub(crate) fn walled(&self, band: usize) -> Walls {
         if let Some(known) = self.walls.borrow().get(&band) {
             return known.clone();
         }
@@ -503,7 +503,7 @@ impl Placement {
     }
 
     /// Every frame a band passes through, with its walls.
-    pub fn frame_walls(&self, band: usize) -> Vec<(String, (f64, f64))> {
+    pub(crate) fn frame_walls(&self, band: usize) -> Vec<(String, (f64, f64))> {
         self.frames
             .iter()
             .filter(|(id, _)| {
@@ -538,7 +538,7 @@ impl Placement {
     }
 
     /// The last band a region covers: its lowest member's, frames' members included.
-    pub fn region_last_band(&self, region: &Region) -> usize {
+    pub(crate) fn region_last_band(&self, region: &Region) -> usize {
         let caption = self.item(region.caption).band as f64;
         let nodes = region.members.iter().flat_map(|id| {
             std::iter::once(id).chain(
@@ -552,7 +552,13 @@ impl Placement {
     }
 
     /// The walls of each group region that a relaid label box on a band keeps out of.
-    pub fn regions_off(&self, from: Spot, to: Spot, label: &Item, band: usize) -> Vec<(f64, f64)> {
+    pub(crate) fn regions_off(
+        &self,
+        from: Spot,
+        to: Spot,
+        label: &Item,
+        band: usize,
+    ) -> Vec<(f64, f64)> {
         self.regions
             .iter()
             .filter(|region| {
@@ -579,7 +585,7 @@ impl Placement {
     }
 
     /// An item's box after its band moved.
-    pub fn moved(&self, item: &Item, left: f64) -> Rect {
+    pub(crate) fn moved(&self, item: &Item, left: f64) -> Rect {
         let band = &self.bands[item.band];
         Rect {
             x: item.bx.x + left,
@@ -590,20 +596,20 @@ impl Placement {
     }
 
     /// An item's box after its band moved, by id.
-    pub fn moved_id(&self, id: ItemId, left: f64) -> Rect {
+    pub(crate) fn moved_id(&self, id: ItemId, left: f64) -> Rect {
         self.moved(self.item(id), left)
     }
 }
 
 /// [`Placement::keeps_frames`]: the test of a column.
 #[derive(Clone, Debug)]
-pub struct KeepsFrames {
+pub(crate) struct KeepsFrames {
     held: Vec<(f64, f64, bool)>,
 }
 
 impl KeepsFrames {
     /// Whether a column keeps the frames: true when it does.
-    pub fn passes(&self, x: f64) -> bool {
+    pub(crate) fn passes(&self, x: f64) -> bool {
         self.held
             .iter()
             .all(|&(low, high, inside)| (x > low && x < high) == inside)

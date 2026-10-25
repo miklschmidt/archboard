@@ -192,7 +192,7 @@ struct Bar<'a> {
 }
 
 /// One piece of a pulse: the mask, the clip inside it, and the bar that slides behind them.
-fn leg_markup(leg: &Leg, bar: &Bar) -> String {
+fn leg_markup(leg: &Leg, bar: &Bar<'_>) -> String {
     let shift = if bar.shift == 0.0 {
         String::new()
     } else {

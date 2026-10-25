@@ -12,16 +12,16 @@ const JOG: f64 = 2.0 * LANE;
 /// The shortest sideways step a line turns: its two bends.
 const MIN_STEP: f64 = 2.0 * BEND_RADIUS;
 /// What crossing another line costs, as sideways travel: the detour that makes a lap.
-pub const CROSSING: f64 = 25.0 * LANE;
+pub(crate) const CROSSING: f64 = 25.0 * LANE;
 /// How far inside an interval's edge still counts as outside it.
-pub const EDGE: f64 = 1e-9;
+pub(crate) const EDGE: f64 = 1e-9;
 
 /// An interval of x.
-pub type Span = (f64, f64);
+pub(crate) type Span = (f64, f64);
 
 /// One step of the search down a chain: each column's cheapest cost, and the column above it came from.
 #[derive(Clone, Debug)]
-pub struct Step {
+pub(crate) struct Step {
     pub cost: Vec<f64>,
     pub came: Vec<i32>,
 }
@@ -72,7 +72,7 @@ fn from_right(above: &[f64], warped: &[f64], xs: &[f64], step: &mut Step) {
 
 /// Move down one channel: each column's cheapest cost from the column above
 /// it, or from one at least a whole step aside.
-pub fn descend(above: &[f64], warped: &[f64], xs: &[f64]) -> Step {
+pub(crate) fn descend(above: &[f64], warped: &[f64], xs: &[f64]) -> Step {
     let mut step = Step {
         cost: above.to_vec(),
         came: (0..above.len() as i32).collect(),
@@ -83,7 +83,7 @@ pub fn descend(above: &[f64], warped: &[f64], xs: &[f64]) -> Step {
 }
 
 /// The columns the search went down, from the one it ended on: each station's column, top to bottom.
-pub fn backtrack(steps: &[Vec<i32>], end: usize) -> Vec<usize> {
+pub(crate) fn backtrack(steps: &[Vec<i32>], end: usize) -> Vec<usize> {
     let mut chosen = vec![end];
     for came in steps.iter().rev() {
         let first = came[chosen[0]];
@@ -93,7 +93,7 @@ pub fn backtrack(steps: &[Vec<i32>], end: usize) -> Vec<usize> {
 }
 
 /// The first index of an ascending list whose value is above a bound.
-pub fn first_above(sorted: &[f64], bound: f64) -> usize {
+pub(crate) fn first_above(sorted: &[f64], bound: f64) -> usize {
     let (mut low, mut high) = (0, sorted.len());
     while low < high {
         let middle = (low + high) >> 1;
@@ -107,7 +107,7 @@ pub fn first_above(sorted: &[f64], bound: f64) -> usize {
 }
 
 /// Mark the columns strictly inside an interval as taken.
-pub fn block(free: &mut [bool], xs: &[f64], span: Span) {
+pub(crate) fn block(free: &mut [bool], xs: &[f64], span: Span) {
     let mut j = first_above(xs, span.0);
     while j < xs.len() && xs[j] < span.1 {
         free[j] = false;
@@ -117,7 +117,7 @@ pub fn block(free: &mut [bool], xs: &[f64], span: Span) {
 
 /// Each column's warped x in a channel: its x plus a crossing's worth for
 /// every other line's end left of it, each end counting half.
-pub fn warp(xs: &[f64], ends: &[f64]) -> Vec<f64> {
+pub(crate) fn warp(xs: &[f64], ends: &[f64]) -> Vec<f64> {
     let mut warped = vec![0.0; xs.len()];
     let mut passed = 0usize;
     for j in 0..xs.len() {
@@ -130,7 +130,7 @@ pub fn warp(xs: &[f64], ends: &[f64]) -> Vec<f64> {
 }
 
 /// How many runs cover each column, strictly inside.
-pub fn spanned(xs: &[f64], runs: &[Span]) -> Vec<f64> {
+pub(crate) fn spanned(xs: &[f64], runs: &[Span]) -> Vec<f64> {
     let mut counts = vec![0.0; xs.len() + 1];
     for &(low, high) in runs {
         let from = first_above(xs, low + 0.5);
@@ -147,7 +147,7 @@ pub fn spanned(xs: &[f64], runs: &[Span]) -> Vec<f64> {
 
 /// What reaching each column from a card costs: nothing across its face,
 /// else the warped travel from the face's nearest edge and a jog.
-pub fn from_reach(xs: &[f64], warped: &[f64], reach: Span) -> Vec<f64> {
+pub(crate) fn from_reach(xs: &[f64], warped: &[f64], reach: Span) -> Vec<f64> {
     let left = first_above(xs, reach.0 - EDGE);
     let right = first_above(xs, reach.1 - EDGE);
     let mut cost = vec![0.0; warped.len()];

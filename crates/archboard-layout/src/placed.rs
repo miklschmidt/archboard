@@ -15,7 +15,7 @@ use crate::graph::Edge;
 
 /// A placed card, port, header or pin, or a container round its members.
 #[derive(Clone, Debug)]
-pub struct PlacedNode {
+pub(crate) struct PlacedNode {
     pub id: String,
     pub x: f64,
     pub y: f64,
@@ -29,7 +29,7 @@ pub struct PlacedNode {
 
 /// What a container laid out inline tells the track scene of itself.
 #[derive(Clone, Debug)]
-pub struct FrameRow {
+pub(crate) struct FrameRow {
     /// Its title row's box, as `x, y, width, height`, and how far its words reach in.
     pub title: [f64; 5],
     /// Each size its title row can take, as `[words, height]`, narrowest first.
@@ -42,7 +42,7 @@ pub struct FrameRow {
 
 /// A placed line: its ends in the scene, its label's box, and its polyline.
 #[derive(Clone, Debug)]
-pub struct PlacedEdge {
+pub(crate) struct PlacedEdge {
     pub id: String,
     pub source: String,
     pub target: String,
@@ -54,14 +54,14 @@ pub struct PlacedEdge {
 
 impl PlacedEdge {
     /// One of the relationship's layout options.
-    pub fn option(&self, name: &str) -> Option<&str> {
+    pub(crate) fn option(&self, name: &str) -> Option<&str> {
         self.edge.option(name)
     }
 }
 
 /// A group region as placement answers it.
 #[derive(Clone, Debug)]
-pub struct PlacedRegion {
+pub(crate) struct PlacedRegion {
     pub group: String,
     pub parent: Option<String>,
     pub members: Vec<String>,
@@ -71,7 +71,7 @@ pub struct PlacedRegion {
 
 /// A placed block.
 #[derive(Clone, Debug)]
-pub struct PlacedBlock {
+pub(crate) struct PlacedBlock {
     pub children: Vec<PlacedNode>,
     pub edges: Vec<PlacedEdge>,
     pub regions: Vec<PlacedRegion>,

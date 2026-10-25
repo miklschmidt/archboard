@@ -309,14 +309,14 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
 }
 
 /// The cards drawn as shapes of their own: a flowchart's decisions, loops and terminals.
-pub trait Shapes {
+pub(super) trait Shapes {
     fn has(&self, id: &str) -> bool;
     fn shadow(&self, card: &Node, standing: Option<Standing>) -> Markup;
     fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Markup;
 }
 
 /// What an architecture is painted with besides its drawing.
-pub struct Vocabulary<'a> {
+pub(super) struct Vocabulary<'a> {
     pub appearances: &'a BTreeMap<String, NodeAppearance>,
     pub lines: &'a BTreeMap<String, LineAppearance>,
     pub groups: &'a BTreeMap<String, PaletteColor>,
@@ -327,7 +327,7 @@ pub struct Vocabulary<'a> {
 
 /// The drawing a page is fitted to and how its subjects stand for the marks it
 /// holds, and, on a flowchart, the shapes its cards are drawn as.
-pub struct HeldPage<'a> {
+pub(super) struct HeldPage<'a> {
     pub drawing: &'a Painted,
     pub standings: &'a Standings,
     pub shapes: Option<&'a dyn Shapes>,
@@ -339,7 +339,7 @@ fn ascending(a: f64, b: f64) -> std::cmp::Ordering {
 }
 
 /// The line appearance of a relationship.
-fn look_of<'a>(vocabulary: &'a Vocabulary, id: &str) -> &'a LineAppearance {
+fn look_of<'a>(vocabulary: &'a Vocabulary<'_>, id: &str) -> &'a LineAppearance {
     vocabulary
         .lines
         .get(id)
@@ -347,14 +347,14 @@ fn look_of<'a>(vocabulary: &'a Vocabulary, id: &str) -> &'a LineAppearance {
 }
 
 /// The final drawing painted, with the atlas from the same boxes.
-pub fn paint_architecture(
-    ctx: &Ctx,
+pub(super) fn paint_architecture(
+    ctx: &Ctx<'_>,
     drawing: &Painted,
     palette: &Palette,
     standings: &Standings,
     unsettled: &Unsettled,
-    vocabulary: &Vocabulary,
-    page: &HeldPage,
+    vocabulary: &Vocabulary<'_>,
+    page: &HeldPage<'_>,
 ) -> PaintedPage {
     let cards = &drawing.drawing.cards;
     let containers = &drawing.drawing.containers;
@@ -380,7 +380,7 @@ pub fn paint_architecture(
             .unwrap_or_else(|| panic!("no appearance for {id}"))
     };
     let (inked, labelled) = line_boxes(edges);
-    let traffic_lines: Vec<TrafficLine> = edges
+    let traffic_lines: Vec<TrafficLine<'_>> = edges
         .iter()
         .filter_map(|routed| {
             let edge = &routed.edge;

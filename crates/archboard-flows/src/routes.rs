@@ -10,7 +10,7 @@ use archboard_scene::geometry::{Curve, Point, Segment, segment_start};
 use archboard_scene::js;
 
 /// A line read backwards: the same pieces, from its end to its start.
-pub fn reversed(curve: &Curve) -> Curve {
+pub(crate) fn reversed(curve: &Curve) -> Curve {
     let segments = curve
         .segments
         .iter()
@@ -54,7 +54,7 @@ fn place(value: f64) -> i64 {
 
 /// How many times one line crosses another, each pair of lines counted at each
 /// place: a trunk of several lines crosses a line once for each of them.
-pub fn pair_crossings(lines: &[Vec<Point>]) -> usize {
+pub(crate) fn pair_crossings(lines: &[Vec<Point>]) -> usize {
     let runs: Vec<Run> = lines
         .iter()
         .enumerate()

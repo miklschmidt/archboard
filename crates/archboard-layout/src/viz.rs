@@ -7,7 +7,7 @@ use crate::json::J;
 
 /// An attribute's value.
 #[derive(Clone, Debug, PartialEq)]
-pub enum Value {
+pub(crate) enum Value {
     Num(f64),
     Str(String),
     Bool(bool),
@@ -24,7 +24,7 @@ impl Value {
     }
 
     /// Whether the value is truthy, as `if (value)` reads it.
-    pub fn truthy(&self) -> bool {
+    pub(crate) fn truthy(&self) -> bool {
         match self {
             Value::Num(value) => *value != 0.0 && !value.is_nan(),
             Value::Str(value) => !value.is_empty(),
@@ -33,7 +33,7 @@ impl Value {
     }
 
     /// The value as a number, as `Number(value)` reads it.
-    pub fn number(&self) -> f64 {
+    pub(crate) fn number(&self) -> f64 {
         match self {
             Value::Num(value) => *value,
             Value::Str(value) => crate::ecma::number_of(value),
@@ -68,11 +68,11 @@ impl From<bool> for Value {
 
 /// Attributes, in the order they were set.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Attrs(pub Vec<(&'static str, Value)>);
+pub(crate) struct Attrs(pub Vec<(&'static str, Value)>);
 
 impl Attrs {
     /// Attributes from their pairs, in order.
-    pub fn of<const N: usize>(pairs: [(&'static str, Value); N]) -> Attrs {
+    pub(crate) fn of<const N: usize>(pairs: [(&'static str, Value); N]) -> Attrs {
         let mut attrs = Attrs::default();
         for (key, value) in pairs {
             attrs.set(key, value);
@@ -81,7 +81,7 @@ impl Attrs {
     }
 
     /// Set one, where it stood if it was set before.
-    pub fn set(&mut self, key: &'static str, value: impl Into<Value>) {
+    pub(crate) fn set(&mut self, key: &'static str, value: impl Into<Value>) {
         let value = value.into();
         match self.0.iter_mut().find(|(one, _)| *one == key) {
             Some((_, old)) => *old = value,
@@ -90,7 +90,7 @@ impl Attrs {
     }
 
     /// One attribute.
-    pub fn get(&self, key: &str) -> Option<&Value> {
+    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         self.0
             .iter()
             .find(|(one, _)| *one == key)
@@ -110,14 +110,14 @@ impl Attrs {
 
 /// A node: its name and its attributes.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Node {
+pub(crate) struct Node {
     pub name: String,
     pub attributes: Attrs,
 }
 
 /// An edge between two nodes, by name.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Edge {
+pub(crate) struct Edge {
     pub tail: String,
     pub head: String,
     pub attributes: Attrs,
@@ -125,7 +125,7 @@ pub struct Edge {
 
 impl Edge {
     /// An edge between two nodes.
-    pub fn new(tail: impl Into<String>, head: impl Into<String>, attributes: Attrs) -> Edge {
+    pub(crate) fn new(tail: impl Into<String>, head: impl Into<String>, attributes: Attrs) -> Edge {
         Edge {
             tail: tail.into(),
             head: head.into(),
@@ -153,7 +153,7 @@ impl Node {
 
 /// A subgraph: a cluster, or a rank of nodes held together.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Subgraph {
+pub(crate) struct Subgraph {
     pub name: Option<String>,
     pub graph_attributes: Option<Attrs>,
     pub nodes: Option<Vec<Node>>,
@@ -194,7 +194,7 @@ impl Subgraph {
 
 /// A graph Graphviz lays out.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Graph {
+pub(crate) struct Graph {
     pub graph_attributes: Attrs,
     pub node_attributes: Attrs,
     pub edge_attributes: Attrs,
@@ -205,7 +205,7 @@ pub struct Graph {
 
 impl Graph {
     /// The graph as viz-js reads it, spelt as JSON.
-    pub fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         J::obj([
             ("directed", J::Bool(true)),
             ("graphAttributes", self.graph_attributes.json()),
@@ -223,7 +223,7 @@ impl Graph {
 }
 
 /// Every node in a graph and all its subgraphs.
-pub fn nodes_in<'a>(nodes: &'a [Node], subgraphs: &'a [Subgraph]) -> Vec<&'a Node> {
+pub(crate) fn nodes_in<'a>(nodes: &'a [Node], subgraphs: &'a [Subgraph]) -> Vec<&'a Node> {
     let mut all: Vec<&Node> = nodes.iter().collect();
     for subgraph in subgraphs {
         all.extend(nodes_in(
@@ -235,7 +235,7 @@ pub fn nodes_in<'a>(nodes: &'a [Node], subgraphs: &'a [Subgraph]) -> Vec<&'a Nod
 }
 
 /// A fixed-size Graphviz box in its inch units, from its size in diagram points.
-pub fn box_node(name: impl Into<String>, width: f64, height: f64) -> Node {
+pub(crate) fn box_node(name: impl Into<String>, width: f64, height: f64) -> Node {
     Node {
         name: name.into(),
         attributes: Attrs::of([

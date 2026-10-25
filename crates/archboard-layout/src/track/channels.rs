@@ -25,14 +25,14 @@ const PORT_MARGIN: f64 = 20.0;
 
 /// An end of a net: its upper station's bottom face, or its lower station's top face.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum End {
+pub(crate) enum End {
     Top,
     Bottom,
 }
 
 impl End {
     /// The other end.
-    pub fn other(self) -> End {
+    pub(crate) fn other(self) -> End {
         match self {
             End::Top => End::Bottom,
             End::Bottom => End::Top,
@@ -42,15 +42,15 @@ impl End {
 
 /// A net, by its place in the track.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct NetId(pub usize);
+pub(crate) struct NetId(pub usize);
 
 /// A trunk, by its place in the track.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct TrunkId(pub usize);
+pub(crate) struct TrunkId(pub usize);
 
 /// Relationships that share a port and a track at one card face.
 #[derive(Clone, Debug)]
-pub struct Trunk {
+pub(crate) struct Trunk {
     /// Which end they share.
     pub side: End,
     pub nets: Vec<NetId>,
@@ -60,7 +60,7 @@ pub struct Trunk {
 
 /// One relationship's run between two stations on neighbouring bands.
 #[derive(Clone, Debug)]
-pub struct Net {
+pub(crate) struct Net {
     pub edge: Rc<str>,
     pub order: f64,
     pub channel: usize,
@@ -79,7 +79,7 @@ pub struct Net {
 
 impl Net {
     /// The station at one end.
-    pub fn at(&self, end: End) -> StationId {
+    pub(crate) fn at(&self, end: End) -> StationId {
         match end {
             End::Top => self.top,
             End::Bottom => self.bottom,
@@ -87,7 +87,7 @@ impl Net {
     }
 
     /// Where it meets the station at one end.
-    pub fn x_at(&self, end: End) -> f64 {
+    pub(crate) fn x_at(&self, end: End) -> f64 {
         match end {
             End::Top => self.top_x,
             End::Bottom => self.bottom_x,
@@ -95,7 +95,7 @@ impl Net {
     }
 
     /// Stand its end at one station at an x.
-    pub fn set_x_at(&mut self, end: End, x: f64) {
+    pub(crate) fn set_x_at(&mut self, end: End, x: f64) {
         match end {
             End::Top => self.top_x = x,
             End::Bottom => self.bottom_x = x,
@@ -116,14 +116,14 @@ struct PortRequest {
 type Ends = (Option<ItemId>, Option<ItemId>);
 
 /// The stretch of a face a port may stand on, clear of its corners.
-pub fn port_reach(face: &Rect) -> (f64, f64) {
+pub(crate) fn port_reach(face: &Rect) -> (f64, f64) {
     let margin = js_min(PORT_MARGIN, face.width / 2.0);
     (face.x + margin, face.x + face.width - margin)
 }
 
 /// Spread the ports on one face, each as close to its other end as spacing
 /// allows, in the order the ports must keep.
-pub fn spread_ports(face: &Rect, wanted: &[f64]) -> Vec<f64> {
+pub(crate) fn spread_ports(face: &Rect, wanted: &[f64]) -> Vec<f64> {
     let (low, high) = port_reach(face);
     let count = wanted.len();
     let gap = if count > 1 {
@@ -202,7 +202,7 @@ impl Track<'_> {
     /// Group nets that share a card face, a channel, a kind and a standing
     /// into trunks: first those leaving a face, then, among the rest, those
     /// entering one.
-    pub fn bundle_trunks(&mut self, nets: &[NetId]) {
+    pub(crate) fn bundle_trunks(&mut self, nets: &[NetId]) {
         let line_ends = self.ends_of(nets);
         for side in [End::Top, End::Bottom] {
             let groups: Vec<Vec<NetId>> = self
@@ -268,7 +268,7 @@ impl Track<'_> {
     }
 
     /// Whether an end item is a block's one-point port.
-    pub fn one_point(&self, item: Option<ItemId>) -> bool {
+    pub(crate) fn one_point(&self, item: Option<ItemId>) -> bool {
         item.is_some_and(|item| self.scene.item(item).bx.width <= 1.0)
     }
 
@@ -340,7 +340,7 @@ impl Track<'_> {
     }
 
     /// Whether a net can run straight down from its upper station to its lower one.
-    pub fn drops_straight(&self, net: NetId) -> bool {
+    pub(crate) fn drops_straight(&self, net: NetId) -> bool {
         let net = self.net(net);
         let (a, b) = self.reach_of(net.top);
         let (c, d) = self.reach_of(net.bottom);
@@ -399,7 +399,7 @@ impl Track<'_> {
     }
 
     /// The trunk whose port one end of a net shares, if any.
-    pub fn shared_at(&self, net: NetId, side: End) -> Option<TrunkId> {
+    pub(crate) fn shared_at(&self, net: NetId, side: End) -> Option<TrunkId> {
         let trunk = self.net(net).trunk?;
         let one = &self.trunks[trunk.0];
         (one.side == side || one.whole).then_some(trunk)
@@ -511,7 +511,7 @@ impl Track<'_> {
 
     /// Give every net its x at both ends: cards spread their ports, labels and
     /// lanes keep their x. Twice, so a port can follow the other end's port.
-    pub fn assign_ports(&mut self, nets: &[NetId]) {
+    pub(crate) fn assign_ports(&mut self, nets: &[NetId]) {
         for _ in 0..2 {
             for (item, requests) in self.port_requests(nets) {
                 let tops: Vec<&PortRequest> = requests
@@ -582,7 +582,7 @@ impl Track<'_> {
     }
 
     /// Assign the tracks of one channel, and answer how many it holds.
-    pub fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
+    pub(crate) fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);

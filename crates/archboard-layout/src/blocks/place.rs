@@ -47,7 +47,7 @@ const BLOCKS_STOOD: &str = "archboard.blocks.stood";
 
 /// What ends a solve early: what its first block that could stack stood at,
 /// when it was asked to answer once that block is laid, or what went wrong.
-pub enum Stop {
+pub(crate) enum Stop {
     Stood(Box<Stood>),
     Failed(String),
 }
@@ -61,7 +61,7 @@ impl From<String> for Stop {
 /// The room a block keeps around what it holds: the page margin round the
 /// board, none round a column, and a region's inset round a region, but under
 /// it where a port stands on its bottom.
-pub fn insets_of(block: &Block) -> Insets {
+pub(crate) fn insets_of(block: &Block) -> Insets {
     match block.kind {
         Kind::Root => Insets {
             side: PAGE_MARGIN,

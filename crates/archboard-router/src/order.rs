@@ -60,11 +60,11 @@ fn handed(heading: (f64, f64), turn: (f64, f64)) -> i32 {
 /// on one line, to where they part.
 /// Returns the side route `a` parts to, seen along the walk, or 0 when they
 /// part at an end of either route.
-fn parting(a: View, mut ia: usize, b: View, mut ib: usize) -> i32 {
+fn parting(a: View<'_>, mut ia: usize, b: View<'_>, mut ib: usize) -> i32 {
     loop {
         let heading = heading(a.at(ia), a.at(ia + 1));
         let progress = |p: Point| p.x * heading.0 + p.y * heading.1;
-        let turn = |route: View, index: usize| {
+        let turn = |route: View<'_>, index: usize| {
             (index + 2 < route.len()).then(|| {
                 let (corner, next) = (route.at(index + 1), route.at(index + 2));
                 handed(heading, (next.x - corner.x, next.y - corner.y))
@@ -90,7 +90,7 @@ fn parting(a: View, mut ia: usize, b: View, mut ib: usize) -> i32 {
 
 /// How sure an order of two routes on one line is, surest first.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Sureness {
+pub(crate) enum Sureness {
     /// Both ends of the shared stretch say the same.
     Agreed,
     /// One end says, and the other ends a route.
@@ -102,7 +102,7 @@ pub enum Sureness {
 /// Which side of route `b` route `a` runs on along the line their segments
 /// `ia` and `ib` share: -1 at the lower coordinate across the line, 1 at the
 /// higher, and how sure that is; nothing when where they part does not say.
-pub fn side(a: &[Point], ia: usize, b: &[Point], ib: usize) -> Option<(i32, Sureness)> {
+pub(crate) fn side(a: &[Point], ia: usize, b: &[Point], ib: usize) -> Option<(i32, Sureness)> {
     let a = View {
         points: a,
         reversed: false,

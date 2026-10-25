@@ -44,7 +44,7 @@ impl Stretch {
 
 impl Track<'_> {
     /// Move the lanes that cross a title row or caption clear of its words, in their order.
-    pub fn clear_headings(&mut self, chains: &[ChainId]) {
+    pub(crate) fn clear_headings(&mut self, chains: &[ChainId]) {
         let lanes: Vec<StationId> = chains
             .iter()
             .flat_map(|&chain| self.chain(chain).stations.iter().copied())
@@ -74,7 +74,7 @@ impl Track<'_> {
     /// Stand every line that has a label on one column from card to card,
     /// where one is free, the one that crosses fewest other lines and then
     /// steps fewest times. Longer lines choose first.
-    pub fn straighten_through_labels(&mut self, chains: &[ChainId]) {
+    pub(crate) fn straighten_through_labels(&mut self, chains: &[ChainId]) {
         let mut bands: Vec<ByBand> = chains
             .iter()
             .map(|&chain| by_band(self, &self.chain(chain).stations))

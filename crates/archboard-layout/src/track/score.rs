@@ -24,7 +24,7 @@ fn bus_cost() -> f64 {
 
 /// A straight run of one line, with whether each of its ends is a bend of that line.
 #[derive(Clone, Copy, Debug)]
-pub struct Run {
+pub(crate) struct Run {
     pub line: usize,
     pub from: Point,
     pub to: Point,
@@ -32,14 +32,14 @@ pub struct Run {
 
 /// A place two lines cross: a level run of one through an upright run of the other, by its key.
 #[derive(Clone, Copy, Debug)]
-pub struct Crossing {
+pub(crate) struct Crossing {
     pub key: (u64, u64),
 }
 
 /// What a layout is weighed on: its page, its crossings and its lines between
 /// columns, and what else a reader sees in it where an engine counts it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Weighed {
+pub(crate) struct Weighed {
     pub width: f64,
     pub height: f64,
     pub crossings: f64,
@@ -69,7 +69,7 @@ fn place_key(x: f64, y: f64) -> (u64, u64) {
 }
 
 /// Where two different lines cross: a level run of one through an upright run of another.
-pub fn crossing_places<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> Vec<Crossing> {
+pub(crate) fn crossing_places<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> Vec<Crossing> {
     let mut runs = Vec::new();
     for (line, points) in lines.into_iter().enumerate() {
         for index in 0..points.len().saturating_sub(1) {
@@ -105,7 +105,7 @@ pub fn crossing_places<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> Vec<
 }
 
 /// How many places two different lines cross, drawn as one hop each.
-pub fn crossings_of<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> f64 {
+pub(crate) fn crossings_of<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> f64 {
     let keys: Set<(u64, u64)> = crossing_places(lines)
         .into_iter()
         .map(|crossing| crossing.key)
@@ -114,11 +114,11 @@ pub fn crossings_of<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> f64 {
 }
 
 /// How long an upright run beyond everything a block holds must be to lap round it.
-pub const LAP: f64 = 200.0;
+pub(crate) const LAP: f64 = 200.0;
 
 /// How many lines lap round a block: run down or up, for more than a short
 /// way, beyond everything it holds on either side.
-pub fn laps_of<'a>(lines: impl IntoIterator<Item = &'a [Point]>, boxes: &[Rect]) -> f64 {
+pub(crate) fn laps_of<'a>(lines: impl IntoIterator<Item = &'a [Point]>, boxes: &[Rect]) -> f64 {
     if boxes.is_empty() {
         return 0.0;
     }
@@ -150,7 +150,7 @@ fn measures_of(layout: &Weighed) -> [f64; 4] {
 /// How one layout reads against another, on the measures of ADR 0039 in its
 /// order: below zero when the first reads better, above when the other does,
 /// zero when they read alike.
-pub fn reading_order(one: &Weighed, other: &Weighed) -> f64 {
+pub(crate) fn reading_order(one: &Weighed, other: &Weighed) -> f64 {
     let (mine, theirs) = (measures_of(one), measures_of(other));
     let at = (0..4).find(|&index| mine[index] != theirs[index]);
     if let Some(at) = at
@@ -168,7 +168,7 @@ pub fn reading_order(one: &Weighed, other: &Weighed) -> f64 {
 
 /// Whether one layout reads better than another; or, reading alike, fits the
 /// reference pane better; or fits it as well on a smaller page.
-pub fn reads_better(one: &Weighed, other: &Weighed) -> bool {
+pub(crate) fn reads_better(one: &Weighed, other: &Weighed) -> bool {
     let order = reading_order(one, other);
     if order == 0.0 {
         fits_better(one, other)
@@ -190,7 +190,7 @@ fn no_worse(one: &Weighed, other: &Weighed) -> bool {
 /// reading pick where its earlier weighing agrees, or where that pick reads no
 /// worse on any measure; else the earlier pick. `reads` is by default whether
 /// the first reads better.
-pub fn takes(one: &Weighed, other: &Weighed, earlier: bool, reads: Option<bool>) -> bool {
+pub(crate) fn takes(one: &Weighed, other: &Weighed, earlier: bool, reads: Option<bool>) -> bool {
     let reads = reads.unwrap_or_else(|| reads_better(one, other));
     if reads == earlier {
         return reads;
@@ -216,7 +216,7 @@ fn fits_better(one: &Weighed, other: &Weighed) -> bool {
 
 /// A layout's fit to the reference pane, less a share for every crossing and
 /// a greater one for every line between columns.
-pub fn score_of(layout: &Weighed) -> f64 {
+pub(crate) fn score_of(layout: &Weighed) -> f64 {
     let crossings = layout.crossings + layout.away.unwrap_or(0.0);
     fit_in(layout.width, layout.height)
         * pow(CROSSING_COST, crossings)
@@ -224,7 +224,7 @@ pub fn score_of(layout: &Weighed) -> f64 {
 }
 
 /// Whether one layout scores higher than another, or as high on a smaller page.
-pub fn scores_better(one: &Weighed, other: &Weighed) -> bool {
+pub(crate) fn scores_better(one: &Weighed, other: &Weighed) -> bool {
     let (mine, theirs) = (score_of(one), score_of(other));
     if abs(mine - theirs) > 1e-9 {
         return mine > theirs;
@@ -233,11 +233,11 @@ pub fn scores_better(one: &Weighed, other: &Weighed) -> bool {
 }
 
 /// A wrap of a wide rank: the row of every card of the rank, left to right.
-pub type Plan = Map<String, usize>;
+pub(crate) type Plan = Map<String, usize>;
 
 /// The ways to wrap a wide rank into rows, every row after the first lowered
 /// one row of cards more.
-pub fn wrap_plans(runs: &[(Vec<String>, f64)]) -> Vec<Plan> {
+pub(crate) fn wrap_plans(runs: &[(Vec<String>, f64)]) -> Vec<Plan> {
     let total = runs.iter().fold(0.0, |sum, (_, width)| sum + width);
     let cards: Vec<&String> = runs.iter().flat_map(|(ids, _)| ids).collect();
     let mut plans = Vec::new();
@@ -277,7 +277,7 @@ pub fn wrap_plans(runs: &[(Vec<String>, f64)]) -> Vec<Plan> {
 
 /// The lowered cards of a wrap that no line arrives at, each with its rows and
 /// the card of its rank that stays in the first row and holds it down.
-pub fn anchored(plan: &Plan, arriving: &Set<String>) -> Vec<(String, usize, String)> {
+pub(crate) fn anchored(plan: &Plan, arriving: &Set<String>) -> Vec<(String, usize, String)> {
     let Some(anchor) = plan
         .iter()
         .find(|&(_, &row)| row == 0)
@@ -298,7 +298,7 @@ fn across(one: &Rect, other: &Rect) -> bool {
 
 /// Whether a wrap, laid out, sinks a card rather than wrapping it: some
 /// lowered card has no card in the row above standing over it.
-pub fn sinks(
+pub(crate) fn sinks(
     plan: &Plan,
     boxes: &Map<String, Rect>,
     around: impl Fn(&str) -> Option<String>,

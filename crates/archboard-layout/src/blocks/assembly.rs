@@ -13,7 +13,7 @@ use super::tree::{Block, BlockId, BlockTree, Kind, Projection, header_of};
 
 /// A card or container, placed.
 #[derive(Clone, Debug)]
-pub struct PlacedCard {
+pub(crate) struct PlacedCard {
     pub id: String,
     pub bx: Rect,
     pub depth: usize,
@@ -23,7 +23,7 @@ pub struct PlacedCard {
 
 /// A group region, placed.
 #[derive(Clone, Debug)]
-pub struct PlacedArea {
+pub(crate) struct PlacedArea {
     pub group: String,
     pub parent: Option<String>,
     pub bx: Rect,
@@ -33,7 +33,7 @@ pub struct PlacedArea {
 
 /// A relationship's route and label, placed.
 #[derive(Clone, Debug)]
-pub struct PlacedLine {
+pub(crate) struct PlacedLine {
     pub id: String,
     pub points: Vec<Point>,
     pub label: Option<Rect>,
@@ -41,14 +41,14 @@ pub struct PlacedLine {
 
 /// A container's title row, and the band across the container's top it stands in.
 #[derive(Clone, Debug)]
-pub struct Title {
+pub(crate) struct Title {
     pub bx: Rect,
     pub band: Rect,
 }
 
 /// The whole drawing's geometry.
 #[derive(Clone, Debug)]
-pub struct Placed {
+pub(crate) struct Placed {
     pub width: f64,
     pub height: f64,
     pub cards: Vec<PlacedCard>,
@@ -71,7 +71,7 @@ fn box_json(at: &Rect) -> J {
 impl Placed {
     /// The drawing as the solve answers it, with whether facing every block's
     /// walls would change its blocks.
-    pub fn json(&self, faces: bool) -> J {
+    pub(crate) fn json(&self, faces: bool) -> J {
         let card = |one: &PlacedCard| {
             let mut members = vec![
                 ("id".to_owned(), J::str(&one.id)),
@@ -134,7 +134,7 @@ impl Placed {
     }
 
     /// The drawing with the steps its joined lines need not take taken out.
-    pub fn unstepped(mut self) -> Placed {
+    pub(crate) fn unstepped(mut self) -> Placed {
         let mut boxes: Vec<Rect> = self.cards.iter().map(|card| card.bx).collect();
         boxes.extend(self.regions.iter().map(|region| region.caption));
         boxes.extend(self.titles.iter().map(|title| title.bx));
@@ -196,7 +196,7 @@ struct Alone {
 }
 
 /// Every block put where its parent placed it, and every relationship joined.
-pub struct Assembly<'a> {
+pub(crate) struct Assembly<'a> {
     tree: &'a BlockTree,
     laid: &'a LaidMap,
     origins: Map<String, Point>,
@@ -206,7 +206,7 @@ pub struct Assembly<'a> {
 
 impl<'a> Assembly<'a> {
     /// Place every block from the root down.
-    pub fn new(tree: &'a BlockTree, laid: &'a LaidMap) -> Assembly<'a> {
+    pub(crate) fn new(tree: &'a BlockTree, laid: &'a LaidMap) -> Assembly<'a> {
         let root = &tree.get(tree.root).id;
         let mut assembly = Assembly {
             tree,
@@ -466,7 +466,7 @@ impl<'a> Assembly<'a> {
     }
 
     /// The drawing's geometry.
-    pub fn placed(&self) -> Placed {
+    pub(crate) fn placed(&self) -> Placed {
         let root = self.laid_of(self.tree.get(self.tree.root));
         let edges: Vec<PlacedLine> = self
             .tree

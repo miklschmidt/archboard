@@ -9,11 +9,11 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 /// Layout options: text by name, in the order they were set.
-pub type Options = IndexMap<String, String>;
+pub(crate) type Options = IndexMap<String, String>;
 
 /// A card, a container or the board.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Node {
+pub(crate) struct Node {
     pub id: String,
     #[serde(default)]
     pub width: Option<f64>,
@@ -29,7 +29,7 @@ pub struct Node {
 
 /// A relationship.
 #[derive(Debug, Deserialize)]
-pub struct Edge {
+pub(crate) struct Edge {
     pub id: String,
     pub sources: Vec<String>,
     pub targets: Vec<String>,
@@ -41,7 +41,7 @@ pub struct Edge {
 
 /// A relationship's measured label.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Label {
+pub(crate) struct Label {
     #[serde(default)]
     pub width: Option<f64>,
     #[serde(default)]
@@ -50,62 +50,62 @@ pub struct Label {
 
 impl Node {
     /// One layout option, if set.
-    pub fn option(&self, name: &str) -> Option<&str> {
+    pub(crate) fn option(&self, name: &str) -> Option<&str> {
         self.layout_options.as_ref()?.get(name).map(String::as_str)
     }
 
     /// Whether the node holds children: `node.children?.length` is truthy.
-    pub fn has_children(&self) -> bool {
+    pub(crate) fn has_children(&self) -> bool {
         self.children
             .as_ref()
             .is_some_and(|children| !children.is_empty())
     }
 
     /// Its children, none when it has no list.
-    pub fn kids(&self) -> &[Node] {
+    pub(crate) fn kids(&self) -> &[Node] {
         self.children.as_deref().unwrap_or(&[])
     }
 
     /// Its measured width; a measured node always has one.
-    pub fn w(&self) -> f64 {
+    pub(crate) fn w(&self) -> f64 {
         self.width.unwrap_or(f64::NAN)
     }
 
     /// Its measured height.
-    pub fn h(&self) -> f64 {
+    pub(crate) fn h(&self) -> f64 {
         self.height.unwrap_or(f64::NAN)
     }
 }
 
 impl Edge {
     /// One layout option, if set.
-    pub fn option(&self, name: &str) -> Option<&str> {
+    pub(crate) fn option(&self, name: &str) -> Option<&str> {
         self.layout_options.as_ref()?.get(name).map(String::as_str)
     }
 
     /// Its source's id.
-    pub fn source(&self) -> &str {
+    pub(crate) fn source(&self) -> &str {
         self.sources.first().map(String::as_str).unwrap_or("")
     }
 
     /// Its target's id.
-    pub fn target(&self) -> &str {
+    pub(crate) fn target(&self) -> &str {
         self.targets.first().map(String::as_str).unwrap_or("")
     }
 
     /// How many labels it carries: `edge.labels?.length ?? 0`.
-    pub fn label_count(&self) -> usize {
+    pub(crate) fn label_count(&self) -> usize {
         self.labels.as_ref().map_or(0, Vec::len)
     }
 
     /// Its first label.
-    pub fn label(&self) -> Option<&Label> {
+    pub(crate) fn label(&self) -> Option<&Label> {
         self.labels.as_ref()?.first()
     }
 }
 
 /// `semanticOrder`: the authored order a shape carries.
-pub fn semantic_order(options: Option<&Options>) -> f64 {
+pub(crate) fn semantic_order(options: Option<&Options>) -> f64 {
     crate::ecma::number_of(
         options
             .and_then(|options| options.get("archboard.order"))
@@ -114,14 +114,14 @@ pub fn semantic_order(options: Option<&Options>) -> f64 {
 }
 
 /// The layout option naming the group a node is placed with.
-pub const PLACING_GROUP: &str = "archboard.group";
+pub(crate) const PLACING_GROUP: &str = "archboard.group";
 /// The root option carrying each placing group's caption size.
-pub const GROUP_CAPTIONS: &str = "archboard.group.captions";
+pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
 /// The option marking a child an entry point of its container.
-pub const ENTRY_POINT: &str = "archboard.entry";
+pub(crate) const ENTRY_POINT: &str = "archboard.entry";
 /// The option carrying each size a container's header can take.
-pub const HEADER_STEPS: &str = "archboard.header.steps";
+pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";
 /// The option marking a line that leaves its source from the source's points.
-pub const FROM_POINTS: &str = "archboard.from-points";
+pub(crate) const FROM_POINTS: &str = "archboard.from-points";
 /// How far in from its source's sides a line from a side point runs down.
-pub const POINTS_INSET: &str = "archboard.from-points.inset";
+pub(crate) const POINTS_INSET: &str = "archboard.from-points.inset";
