@@ -1,18 +1,14 @@
 import { expect, test } from "bun:test";
 
-import {
-	createCodexApprovalBroker,
-	type SpokenApprovalSnapshot,
-} from "@archboard/codex-realtime-voice/runtime";
+import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
+import { type SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
-import { parseRealtimeItemId, parseRealtimeSessionId } from "@archboard/codex-realtime-voice/realtime";
+import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-} from "@archboard/codex-realtime-voice/server";
+import { projectCodexBrowserState } from "#server/projections/browser-state/projection.ts";
+import { type BrowserProjectionInput } from "#server/protocol/projection/projection-contract.ts";
 
 const NOW = 1_700_000_000_000;
 
