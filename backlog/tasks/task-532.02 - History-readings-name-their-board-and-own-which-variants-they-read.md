@@ -1,10 +1,11 @@
 ---
 id: TASK-532.02
 title: History readings name their board and own which variants they read
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
+updated_date: '2026-10-25T04:03:00Z'
 labels: []
 dependencies: []
 references:
@@ -22,7 +23,27 @@ readFootprint and the locality reading take already-resolved board and variant o
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 readFootprint and locality.read take the vault, board name and variant names, and return a reading or a typed refusal
-- [ ] #2 footprint-variants.ts and readableVariant are gone from the server; the rules live privately in code-intel and the refusal codes come from its shared history entry
-- [ ] #3 Lifecycle, default-comparison and unresolved-head cases are tested through the code-intel operations; route tests keep status mapping and cancellation
+- [x] #1 readFootprint and locality.read take the vault, board name and variant names, and return a reading or a typed refusal
+- [x] #2 footprint-variants.ts and readableVariant are gone from the server; the rules live privately in code-intel and the refusal codes come from its shared history entry
+- [x] #3 Lifecycle, default-comparison and unresolved-head cases are tested through the code-intel operations; route tests keep status mapping and cancellation
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Footprint: move footprint-variants.ts into code-intel as a private selection file (history-lens/footprint-selection.ts) together with the unresolved-head refusal. readFootprint({vault, board, variant?, against?, base, head?, signal}) reads the board by name and returns {ok:true, answer} or a typed refusal {ok:false, code, problem}. The variant-object walk stays as the private in-memory seam the lens tests drive. Route keeps 400/404/422 mapping and hang-up cancellation. Move lifecycle, default-comparison and unresolved-head cases from footprint-route.test.ts into a code-intel test through readFootprint. Commit.
+2. Locality: move readableVariant into history-lens/locality-selection.ts; createLocalityReading().read({vault, board, variant?, since?, signal}) reads the board and selects, keeping the remembered answers in the private seam. Route keeps since/query validation, status mapping and cancellation. Move refusal cases into a code-intel test. Commit.
+3. Refusal codes: one const in #shared/protocol, exported from @archboard/code-intel/history; CLI refusal objects use it. Interface width of code-intel must stay at or below 16, so one name is dropped (FootprintAnswer becomes unused outside the package once the head refusal moves in; the CLI derives it from FootprintReplySchema).
+4. Focused checks, type-check, lint, repository-policy, fmt.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Footprint (bfd428486): readFootprint({vault, board, variant?, against?, base, head?, signal}) in history-lens/footprint-reading.ts reads the board, chooses the variants (moved verbatim from the server's footprint-variants.ts) and refuses an unresolved head (moved from the route). The variant walk stays as readVariantFootprint, the private seam the lens tests drive.
+Locality (a4f4b291e): createLocalityReading().read({vault, board, variant?, since?, signal}) in history-lens/locality-reading.ts reads the board and chooses the variant (readableVariant moved from the route). The remembered answers stay in the seam createVariantLocality (locality.ts); one reading by name shares one memory.
+Shared: history-lens/admission.ts holds the refusal type {ok:false, code, problem} and the board read. HistoryRefusalCode (const and type of one name) is on @archboard/code-intel/history; the CLI refusals use it. The package graph already lets the CLI import @archboard/code-intel/history.
+Width: adding HistoryRefusalCode would raise code-intel to 17 over its ceiling of 16. FootprintAnswer left the shared entry: after the head refusal moved into code-intel its only outside users were the CLI (now z.infer<typeof FootprintReplySchema>) and a route test stand-in (now inferred). Width stays 16.
+Behaviour: every status code, refusal code and wire field is kept. One ordering change: a board or variant refusal is now decided inside the checkout work rather than before it, so during a server stop such a request is answered by the checkout work owner's refusal first.
+Vault: .archboard/vault/Archboard server routes.semantic.json anchors steps on the symbol readableVariant at an already stale path (src/server/archboard/lib/locality-route.ts); the vault is out of scope.
+<!-- SECTION:NOTES:END -->
