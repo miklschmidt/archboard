@@ -44,6 +44,10 @@ pub const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CA
 pub const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;
 pub const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
 
+/// The room inside a sequence card either side of its words.
+pub const CARD_PADDING_X: f64 = 13.0;
+/// The room a drill-down mark takes beside a card's words.
+pub use super::drill_mark::DRILL_MARK_ROOM;
 /// Half the width of a sequence's activation bar, and how far it holds arrows
 /// off the lifeline.
 pub const ACTIVATION_HALF_WIDTH: f64 = 6.0;
