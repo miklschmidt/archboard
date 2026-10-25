@@ -7,10 +7,9 @@
 
 use crate::constants::LABEL_CARD_CLEARANCE;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
-use crate::track::chains::{
-    ByBand, ChainId, Kind, LANE, LaneRun, Occupancy, StationId, Track, nearest,
-};
+use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
 use crate::track::labels::extent_of;
+use crate::track::occupancy::{Occupancy, nearest};
 use crate::track::readings::{Relaid, by_band, on_band};
 use crate::track::scene::{Item, Set};
 

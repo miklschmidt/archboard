@@ -3,7 +3,8 @@
 //! relationship descends in one line instead of jogging at every channel.
 
 use crate::ecma::{min_of, sort_by, sorted_by};
-use crate::track::chains::{ByBand, ChainId, Kind, LaneRun, Occupancy, StationId, Track, nearest};
+use crate::track::chains::{ByBand, ChainId, Kind, LaneRun, StationId, Track};
+use crate::track::occupancy::{Occupancy, nearest};
 use crate::track::readings::by_band;
 use crate::track::scene::Set;
 
