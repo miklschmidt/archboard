@@ -16,12 +16,7 @@
 // a directory.
 
 import fs from "node:fs";
-import {
-	chosenCheckouts,
-	gitCheckoutOfVault,
-	listRegistry,
-	type RegisteredRepoStatus,
-} from "@archboard/workspace/checkouts";
+import { chosenCheckouts, gitCheckoutOfVault, listRegistry } from "@archboard/workspace/checkouts";
 
 /**
  * Whether a registered directory is the one at a canonical root.
@@ -44,14 +39,14 @@ function isRoot(registered: string, root: string): boolean {
  * @returns One checkout for each identity: the vault's own for its own
  * identity, the chosen one for every other.
  */
-function checkoutsReadFrom(vault: string | null): RegisteredRepoStatus[] {
+function checkoutsReadFrom(vault: string | null): ReturnType<typeof chosenCheckouts> {
 	const chosen = chosenCheckouts();
 	const own = vault === null ? undefined : gitCheckoutOfVault(vault);
 	if (own === undefined) return chosen;
 	// A registered entry for this directory keeps its language servers; one
 	// that nobody registered has none.
 	const registered = listRegistry().checkouts.find((entry) => isRoot(entry.root, own.root));
-	const read: RegisteredRepoStatus = {
+	const read: ReturnType<typeof chosenCheckouts>[number] = {
 		source: "declared",
 		addedAt: "",
 		...registered,
