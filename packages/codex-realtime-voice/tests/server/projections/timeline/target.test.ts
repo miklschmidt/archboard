@@ -137,7 +137,7 @@ test("a target read shows only the turns its reader keeps, and every turn to a r
 	await flush();
 
 	expect(turnsShown()?.toSorted()).toEqual(["turn-one", "turn-two"]);
-	// One conversation shows only the coordinator turns that belong to it (ADR 0050).
+	// One conversation shows only the coordinator turns that belong to it.
 	expect(turnsShown((turnId) => decoder.serializeCodexIdentity(turnId) === "turn-two")).toEqual([
 		"turn-two",
 	]);

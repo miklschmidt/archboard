@@ -1,5 +1,5 @@
 import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
-// Workhorse news (TASK-321): the coordinator hears when a turn on the linked workhorse thread ends
+// Workhorse news: the coordinator hears when a turn on the linked workhorse thread ends
 // or starts waiting on the user, whoever started the turn, and what the workhorse tells it, only
 // while voice is live.
 //
@@ -200,7 +200,7 @@ describe("workhorse news", () => {
 					method: "turn/completed",
 					params: { threadId: "workhorse", turn: { id: "old", status: "completed", error: null } },
 				},
-				"archboard:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444" as Harness["ids"]["epoch"],
+				"codex:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444" as Harness["ids"]["epoch"],
 			),
 		);
 		await live.callbacks.flush();
@@ -257,7 +257,7 @@ function wireOf(h: Harness, threadId: ThreadId | null): string | null {
 }
 
 /**
- * Give the harness's tab session a second workhorse, in another checkout (ADR 0050).
+ * Give the harness's tab session a second workhorse, in another checkout.
  * @param h - The harness.
  * @param wire - Its thread as Codex spells it.
  * @param checkout - The checkout it works in.

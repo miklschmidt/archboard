@@ -156,7 +156,7 @@ describe("coordinator candidate reuse and replacement", () => {
 	test("a conversation's first coordinator starts beside another conversation's committed one in the same epoch", async () => {
 		const fixtureValue = fixture();
 		await ready(fixtureValue);
-		// Another browser tab's conversation, on the same child epoch and Codex session (TASK-373).
+		// Another browser tab's conversation, on the same child epoch and Codex session.
 		const other = createCodexCoordinator({
 			session: fixtureValue.session,
 			threadLink: fixtureValue.link,

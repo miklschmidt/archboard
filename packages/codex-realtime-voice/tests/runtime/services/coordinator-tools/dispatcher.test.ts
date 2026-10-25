@@ -158,7 +158,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 	});
 
 	test("a workhorse tool acts only on the workhorse of the checkout it names", async () => {
-		// One workhorse for each checkout (ADR 0050): a checkout this conversation has no
+		// One workhorse for each checkout: a checkout this conversation has no
 		// workhorse in is refused before any effect, so no call lands on another checkout's.
 		const h = fixture();
 		for (const tool of [

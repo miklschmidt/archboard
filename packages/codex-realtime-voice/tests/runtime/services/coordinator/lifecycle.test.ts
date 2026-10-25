@@ -106,13 +106,13 @@ describe("coordinator lifecycle", () => {
 		expect(snapshot.approvalPolicy).toBe("on-request");
 		expect(snapshot.approvalsReviewer).toBe("user");
 		expect(snapshot.sandboxPolicy).toEqual({ type: "dangerFullAccess" });
-		expect(snapshot.activePermissionProfile).toEqual({ id: "archboard-default", extends: null });
+		expect(snapshot.activePermissionProfile).toEqual({ id: "example-default", extends: null });
 		expect(snapshot.capabilities).toEqual(COORDINATOR_CAPABILITY_POLICY);
 		expect(snapshot.capabilities.sustainedWork).toBe("instruction_policy");
 		expect(coordinatorPersistence.settings.approvalPolicy).toBe("on-request");
 		expect(coordinatorPersistence.settings.sandboxPolicy).toEqual({ type: "dangerFullAccess" });
 		expect(coordinatorPersistence.settings.activePermissionProfile).toEqual({
-			id: "archboard-default",
+			id: "example-default",
 			extends: null,
 		});
 		expect(fixtureValue.epoch.records).toHaveLength(1);

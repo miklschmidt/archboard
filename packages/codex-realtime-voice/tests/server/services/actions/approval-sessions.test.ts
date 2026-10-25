@@ -1,4 +1,4 @@
-// Which browser tab an approval belongs to (TASK-373).
+// Which browser tab an approval belongs to.
 //
 // An approval is shown to, and answered by, the tab session whose thread asked: its workhorse or
 // its coordinator. What is guarded: the production binding links an approval to that session, and

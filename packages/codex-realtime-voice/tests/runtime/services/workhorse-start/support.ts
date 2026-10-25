@@ -30,7 +30,7 @@ import {
 	type WorkhorseThreadLinkPort,
 } from "#runtime/protocol/workhorse-start/contract.ts";
 
-const CHECKOUT_ROOT = "/workspace/archboard";
+const CHECKOUT_ROOT = "/workspace/example";
 
 interface WorkhorseFixture {
 	readonly authorities: IdentityAuthorities;
@@ -127,7 +127,7 @@ class FakeThreadLink implements WorkhorseThreadLinkPort {
 }
 
 function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture {
-	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-start-")));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-workhorse-start-")));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");
@@ -242,7 +242,7 @@ function startResponse(
 		approvalPolicy: "on-request",
 		approvalsReviewer: "user",
 		sandbox: { type: "dangerFullAccess" },
-		activePermissionProfile: { id: "archboard-default", extends: null },
+		activePermissionProfile: { id: "example-default", extends: null },
 		reasoningEffort: null,
 		multiAgentMode: "explicitRequestOnly",
 		disabledPluginIds: [],

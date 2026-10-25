@@ -88,7 +88,7 @@ describe("codex workhorse retained-value immutability", () => {
 				excludeTmpdirEnvVar: false,
 				excludeSlashTmp: false,
 			};
-			const activePermissionProfile = { id: "archboard-default", extends: null };
+			const activePermissionProfile = { id: "example-default", extends: null };
 			const response = startResponse(fixture.thread, {
 				approvalPolicy,
 				sandbox,
@@ -126,7 +126,7 @@ describe("codex workhorse retained-value immutability", () => {
 			expect(result.start).toMatchObject({
 				approvalPolicy: { granular: { sandbox_approval: true, rules: true } },
 				sandbox: { type: "workspaceWrite", writableRoots: [CHECKOUT_ROOT] },
-				activePermissionProfile: { id: "archboard-default" },
+				activePermissionProfile: { id: "example-default" },
 			});
 			expect(result.binding).toMatchObject({
 				revision: 2,
@@ -157,7 +157,7 @@ describe("codex workhorse retained-value immutability", () => {
 				excludeTmpdirEnvVar: false,
 				excludeSlashTmp: false,
 			};
-			const activePermissionProfile = { id: "archboard-default", extends: null };
+			const activePermissionProfile = { id: "example-default", extends: null };
 			const response = startResponse(fixture.thread, {
 				approvalPolicy,
 				sandbox,

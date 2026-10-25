@@ -8,7 +8,7 @@ import type { CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
 
 // A host's words reach the page as they were told. Words longer than the wire holds, or holding a
-// NUL the wire refuses, must not stop the page from being shown its state (TASK-530.05).
+// NUL the wire refuses, must not stop the page from being shown its state.
 test("the page is shown a host's words and start context within the wire's limits and without NUL", () => {
 	const generation = {
 		child: "child",

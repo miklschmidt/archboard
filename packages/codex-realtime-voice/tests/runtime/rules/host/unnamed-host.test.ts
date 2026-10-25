@@ -14,8 +14,8 @@ import { createDefaultWorkbenchHost } from "#server/services/host/default.ts";
 import { createHarness } from "#tests/runtime/services/thread-context/delivery-support.ts";
 
 // The package is public: a host that names nothing must not hand Codex, or store, the name of the
-// host it was first built for (TASK-530.04).
-test("a host that supplies no identity gives Codex and its records no Archboard name", () => {
+// host it was first built for.
+test("a host that supplies no identity gives Codex and its records no name of the host the package was first built for", () => {
 	const profile = (role: "coordinator" | "workhorse") =>
 		createWorkbenchThreadProfile({
 			identity: {},
@@ -65,7 +65,7 @@ test("a host that supplies no identity gives Codex and its records no Archboard 
 
 // A host with no domain of its own announces a change and starts a turn under the default codec:
 // what Codex reads names the change and the execution, never the words of the host
-// the package was first built for (TASK-530.05).
+// the package was first built for.
 test("a host with no identity and no extensions sends Codex no context in the words of the host the package was first built for", async () => {
 	const profile = (role: "coordinator" | "workhorse") =>
 		createWorkbenchThreadProfile({

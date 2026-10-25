@@ -79,17 +79,16 @@ describe("coordinator callback live authority", () => {
 		);
 	});
 
-	// TASK-302.07: the live classification observes the thread as it is now, so a running turn
+	// The live classification observes the thread as it is now, so a running turn
 	// shows it active while its link was bound idle. What the person picks by hand is still news;
 	// a live link naming another thread, child or epoch is still not the link the pick was for.
 	test("a thread's status is not its identity: a pick is delivered while the thread runs, and refused when the link names another thread, child or epoch", async () => {
 		const scenarios = {
 			running: { status: "active" },
-			thread: { threadId: "archboard:thread:s616e6f74686572" },
-			child: { childId: "archboard:child:h33333333333333333333333333333333" },
+			thread: { threadId: "codex:thread:s616e6f74686572" },
+			child: { childId: "codex:child:h33333333333333333333333333333333" },
 			epoch: {
-				epoch:
-					"archboard:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444",
+				epoch: "codex:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444",
 			},
 		} as const;
 		await Promise.all(

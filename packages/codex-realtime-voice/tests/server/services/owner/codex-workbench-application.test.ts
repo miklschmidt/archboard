@@ -321,7 +321,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 				reason: "Run the public command",
 				networkApprovalContext: null,
 				command: "bun test",
-				cwd: "/workspace/archboard",
+				cwd: "/workspace/example",
 				commandActions: null,
 				additionalPermissions: null,
 				proposedExecpolicyAmendment: null,

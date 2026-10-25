@@ -31,7 +31,7 @@ const identity = model.DynamicApprovalIdentitySchema.parse({
 	threadId,
 	turnId,
 	callId,
-	namespace: "archboard_app",
+	namespace: "example_app",
 	tool: "send_message_to_thread",
 	manifestHash: "manifest-a",
 	operationId,

@@ -43,13 +43,14 @@ describe("spoken approval classifier contract", () => {
 	});
 
 	test("asks a host's classifier through the host's voice namespace, byte for byte as reviewed", () => {
-		// The digest of Archboard's classifier prompt before its names became host identity.
+		// A host that keeps its names keeps its classifier prompt: the digest pins the reviewed template
+		// filled with one host's names.
 		const named = SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replaceAll(
 			"<product-name>",
-			"Archboard",
-		).replace("<voice-namespace>", "archboard_voice");
+			"Example",
+		).replace("<voice-namespace>", "example_voice");
 		expect(new Bun.CryptoHasher("sha256").update(named).digest("hex")).toBe(
-			"1873dd2050fe6f6ce41cd27f43af18d8c7a3cd4af9755dd7b0322e375f636380",
+			"de3819c6f2fc6f25bb3a5a726920fb49ba719ebc6d607546f6d5e2dd41881ab4",
 		);
 	});
 });

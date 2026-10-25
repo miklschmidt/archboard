@@ -8,7 +8,7 @@ import {
 
 declare const operationIdBrand: unique symbol;
 
-/** Stand-in for the canonical shared OperationId owned by TASK-143.01.20. */
+/** Stand-in for the canonical shared OperationId of the shared package. */
 type CanonicalOperationId = string & {
 	readonly [operationIdBrand]: "operation";
 };

@@ -114,7 +114,7 @@ function createStandaloneFixture(
 	authorities: IdentityAuthorities,
 ): { readonly fixture: Fixture } {
 	const identity = authorities.identity;
-	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-operations-")));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-workhorse-operations-")));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");
@@ -370,7 +370,7 @@ function input(
 		operationId,
 		kind,
 		rpc,
-		workspaceRoot: "/workspace/archboard",
+		workspaceRoot: "/workspace/example",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
 	};

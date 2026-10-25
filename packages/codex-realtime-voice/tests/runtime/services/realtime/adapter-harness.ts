@@ -177,7 +177,7 @@ function harness(
  * @returns The catalogue text.
  */
 function startBrief(): string {
-	return '{"type":"archboard_board_catalogue","boards":[],"omitted":0}';
+	return '{"type":"example_catalogue","items":[],"omitted":0}';
 }
 
 function notificationEvent(

@@ -1,4 +1,4 @@
-// What a coordinator operation's own outcome does while voice is live (TASK-291, TASK-321).
+// What a coordinator operation's own outcome does while voice is live.
 //
 // That a turn ended or waits on the user is workhorse news from the thread itself, whoever started
 // the turn, so an operation's completed, failed and attention stay quiet here rather than telling
@@ -61,7 +61,7 @@ describe("a coordinator operation's outcome while voice is live", () => {
 		try {
 			for (const type of ["accepted", "queued", "started", "progress"] as const) {
 				// The tool result already told the coordinator how its delegation went in, and the
-				// envelope is machine text a speech model would say out loud (TASK-293).
+				// envelope is machine text a speech model would say out loud.
 				const delivery = await callbacks.enqueue(operationEvent(h.ids, type));
 				expect(delivery).toMatchObject({
 					path: "silent",

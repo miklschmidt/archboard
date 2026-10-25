@@ -83,7 +83,7 @@ describe("production Codex generation ownership", () => {
 			});
 			// Readiness deltas publish without a browser command, so the gateway holds one
 			// subscription on the owned process for this generation. It holds one on the tabs' shown
-			// conversations too: every chat of a tab shows the checkout the person activated (ADR 0050).
+			// conversations too: every chat of a tab shows the checkout the person activated.
 			expect(subscribers.size).toBe(2);
 			// stopBrowser disposes the gateway before the generation settles.
 			await gateway.dispose();

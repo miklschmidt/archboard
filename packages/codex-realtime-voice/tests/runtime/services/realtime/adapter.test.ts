@@ -37,7 +37,7 @@ describe("Codex realtime adapter", () => {
 		// Each model gets its own prompt and no data blob: the voice model no JSON, no startup
 		// context and no developer items; the coordinator only what a voice session adds.
 		expect(start.realtimeStartInstructions).not.toContain(startBrief());
-		expect(start.realtimeStartInstructions).not.toContain("archboard_board_catalogue");
+		expect(start.realtimeStartInstructions).not.toContain("example_catalogue");
 		expect(start.realtimeStartInstructions).not.toContain("You are the");
 		expect(start.prompt).not.toContain("{");
 		expect(start.prompt).toBeString();

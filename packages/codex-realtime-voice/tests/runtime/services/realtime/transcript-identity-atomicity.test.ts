@@ -72,7 +72,7 @@ function harness(): Harness {
 			coordinatorThreadId,
 		}),
 		coordinatorContext: {
-			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+			read: () => '{"type":"example_catalogue","items":[],"omitted":0}',
 			subscribe: () => () => {},
 		},
 		session: {

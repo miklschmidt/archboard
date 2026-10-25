@@ -105,7 +105,7 @@ function startResponse(
 		approvalPolicy: "on-request",
 		approvalsReviewer: "user",
 		sandbox: { type: "dangerFullAccess" },
-		activePermissionProfile: { id: "archboard-default", extends: null },
+		activePermissionProfile: { id: "example-default", extends: null },
 		reasoningEffort: COORDINATOR_EFFORT,
 		multiAgentMode: "explicitRequestOnly",
 		disabledPluginIds: [],

@@ -60,7 +60,7 @@ describe("codex workhorse start transaction", () => {
 				approvalPolicy: "on-request",
 				approvalsReviewer: "user",
 				sandbox: { type: "dangerFullAccess" },
-				activePermissionProfile: { id: "archboard-default", extends: null },
+				activePermissionProfile: { id: "example-default", extends: null },
 				instructionHash: TEST_INSTRUCTIONS.workhorse.instructions.sha256,
 				manifestHash: TEST_INSTRUCTIONS.workhorse.manifestHash,
 			});

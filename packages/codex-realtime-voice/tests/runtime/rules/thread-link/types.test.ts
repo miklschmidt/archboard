@@ -17,17 +17,17 @@ function observationOnlyConstruction(): void {
 	const downstreamOptions = {
 		session,
 		epoch,
-		threadSource: "archboard",
+		threadSource: "example",
 	} satisfies CodexThreadLinkOptions;
 	createCodexThreadLink(downstreamOptions);
 
 	const observationOnlyOptions = {
-		threadSource: "archboard",
+		threadSource: "example",
 		session,
 		currentEpoch: (): null => null,
 	} satisfies CodexThreadLinkClassifierOptions;
 	const observationWithAuthorityOptions = {
-		threadSource: "archboard",
+		threadSource: "example",
 		session,
 		epoch,
 	} satisfies CodexThreadLinkClassifierOptions;
@@ -37,15 +37,15 @@ function observationOnlyConstruction(): void {
 
 function rejectedConstruction(): void {
 	// @ts-expect-error A bind-capable port must require its live epoch authority.
-	createCodexThreadLink({ threadSource: "archboard", session });
+	createCodexThreadLink({ threadSource: "example", session });
 	// @ts-expect-error A current-epoch callback cannot replace the durable authority for a port.
-	createCodexThreadLink({ threadSource: "archboard", session, currentEpoch: (): null => null });
+	createCodexThreadLink({ threadSource: "example", session, currentEpoch: (): null => null });
 	const snapshotOnly: Pick<ThreadLinkEpochAuthority, "snapshot"> = epoch;
-	const staticSnapshotOptions = { session, epoch: snapshotOnly, threadSource: "archboard" };
+	const staticSnapshotOptions = { session, epoch: snapshotOnly, threadSource: "example" };
 	// @ts-expect-error A static snapshot is not a live epoch authority.
 	createCodexThreadLink(staticSnapshotOptions);
 	createCodexThreadLink({
-		threadSource: "archboard",
+		threadSource: "example",
 		session,
 		epoch,
 		// @ts-expect-error The public port owns its binding; callers cannot inject a store.

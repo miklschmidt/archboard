@@ -36,7 +36,7 @@ function useFixtureGroup(): FixtureGroup["create"] {
 function createFixtureGroup(): FixtureGroup {
 	const authorities = createIdentityAuthorities();
 	const identity = authorities.identity;
-	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-operations-group-")));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-workhorse-operations-group-")));
 	const preparedRoot = join(parent, "prepared");
 	const preparedEpochRoot = join(preparedRoot, "epoch");
 	const preparedCodexHome = join(preparedRoot, "codex-home");

@@ -12,7 +12,7 @@ const MANIFEST_HASH = "2".repeat(64);
 
 describe("codex epoch settlement", () => {
 	test("settles an unknown outcome only with its exact positive correlation", () => {
-		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-settlement-")));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "voice-codex-settlement-")));
 		const root = join(parent, "epoch");
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");
@@ -62,7 +62,7 @@ describe("codex epoch settlement", () => {
 	});
 
 	test("settles an initial turn only with its exact recorded thread and turn", () => {
-		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-settlement-")));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "voice-codex-settlement-")));
 		const root = join(parent, "epoch");
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");
@@ -133,7 +133,7 @@ function input(
 		operationId,
 		kind,
 		rpc: kind === "epoch_start" ? "epoch/start" : "turn/start",
-		workspaceRoot: "/workspace/archboard",
+		workspaceRoot: "/workspace/example",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
 		...(expected === undefined ? {} : { expected }),

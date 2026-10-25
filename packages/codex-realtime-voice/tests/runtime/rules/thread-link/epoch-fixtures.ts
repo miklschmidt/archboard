@@ -40,7 +40,7 @@ export function realEpochFixture(
 	authority: IdentityAuthority = createIdentityAuthority(),
 	options: RealEpochOptions = {},
 ): RealEpochFixture {
-	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-thread-link-epoch-")));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-thread-link-epoch-")));
 	const root = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");
@@ -133,7 +133,7 @@ function epochInput(
 		operationId,
 		kind,
 		rpc,
-		workspaceRoot: "/workspace/archboard",
+		workspaceRoot: "/workspace/example",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
 		...(expected === undefined ? {} : { expected }),

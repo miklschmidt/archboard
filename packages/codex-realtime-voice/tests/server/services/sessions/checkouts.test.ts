@@ -87,7 +87,7 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 const admitIndependentCheckout = (named: string) =>
 	named === "allowed" ? "/independent/project" : null;
 
-test("the supplied host admits a checkout without a vault and refuses every other checkout", async () => {
+test("the supplied host admits the checkout it names and refuses every other checkout", async () => {
 	const starts: string[] = [];
 	const workhorseOf = (admittedCheckout: string) => ({
 		actions: {

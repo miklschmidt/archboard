@@ -1,4 +1,4 @@
-// The agent dock's list of a tab's workhorses (ADR 0050). What is guarded: it names the shown
+// The list of a tab's workhorses. What is guarded: it names the shown
 // checkout and every workhorse with a thread, once each, in label order; it marks a running
 // turn, an approval and a question by the workhorse that asked; and the coordinator's own
 // approvals mark no workhorse.

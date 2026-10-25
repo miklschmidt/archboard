@@ -1,7 +1,7 @@
 /** Independent reviewed snapshots: this file intentionally does not import the catalogue. */
 const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
-	name: "archboard_workhorse",
+	name: "example_workhorse",
 	description:
 		"Work with your workhorses, the agents that do sustained work for this workbench. There is one workhorse for each checkout, and it works in that checkout. Every tool but stop_workhorses takes checkout: the directory where that workhorse runs. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
@@ -134,7 +134,7 @@ const WORKHORSE_MANIFEST_SNAPSHOT = {
 
 const VOICE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
-	name: "archboard_voice",
+	name: "example_voice",
 	description:
 		"Settle an approval the user answered by voice. Called from a script, a tool resolves to one string of JSON holding its whole result: print it with text(result). It is not an object, and it has no content array.",
 	tools: [
