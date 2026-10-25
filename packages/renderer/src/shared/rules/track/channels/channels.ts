@@ -264,7 +264,18 @@ function portReach(face: Box): [number, number] {
  * @returns The ports' x, in the same order.
  */
 function spreadPorts(face: Box, wanted: readonly number[]): number[] {
-	const [low, high] = portReach(face);
+	return spreadAlong(portReach(face), wanted);
+}
+
+/**
+ * Spread ports along one stretch, each as close to where it wants to stand
+ * as a lane apart allows, or closer where the stretch is too short for that.
+ * @param stretch The lowest and highest place a port may stand.
+ * @param wanted Each port's preferred place, in the order the ports must keep.
+ * @returns The ports' places, in the same order.
+ */
+function spreadAlong(stretch: readonly [number, number], wanted: readonly number[]): number[] {
+	const [low, high] = stretch;
 	const count = wanted.length;
 	const gap = count > 1 ? Math.min(LANE, (high - low) / (count - 1)) : 0;
 	const ports = wanted.map((x) => Math.min(high, Math.max(low, x)));
@@ -500,6 +511,7 @@ export {
 	onePoint,
 	portReach,
 	sharedAt,
+	spreadAlong,
 	spreadPorts,
 	type Net,
 };
