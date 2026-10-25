@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/codex-realtime-voice/runtime";
-import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import {
 	createIdentityAuthorities,
@@ -93,7 +93,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"a".repeat(64)}`,
 		createdAtMs: 100,
-		expiresAtMs: 100 + CODEX_APPROVAL_EXPIRY_MS,
+		expiresAtMs: 100 + CODEX_APPROVAL_MS.expiry,
 		privatePath: PRIVATE_PATHS[0],
 	};
 	const create = ownerRequest(createSource);
@@ -123,7 +123,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"b".repeat(64)}`,
 		createdAtMs: 200,
-		expiresAtMs: 200 + CODEX_APPROVAL_EXPIRY_MS,
+		expiresAtMs: 200 + CODEX_APPROVAL_MS.expiry,
 		privatePath: PRIVATE_PATHS[1],
 	};
 	const fork = ownerRequest(forkSource);
@@ -149,7 +149,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"c".repeat(64)}`,
 		createdAtMs: 300,
-		expiresAtMs: 300 + CODEX_APPROVAL_EXPIRY_MS,
+		expiresAtMs: 300 + CODEX_APPROVAL_MS.expiry,
 		privatePath: PRIVATE_PATHS[2],
 	};
 	const send = ownerRequest(sendSource);
@@ -195,7 +195,7 @@ function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerVi
 		},
 		effectHash: `sha256:${"d".repeat(64)}`,
 		createdAtMs: 400,
-		expiresAtMs: 400 + CODEX_APPROVAL_EXPIRY_MS,
+		expiresAtMs: 400 + CODEX_APPROVAL_MS.expiry,
 	});
 	return {
 		request,

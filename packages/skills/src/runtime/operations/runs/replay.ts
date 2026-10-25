@@ -10,7 +10,7 @@ import { z } from "zod";
 import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
 import type { VaultCheck } from "@archboard/board/policy";
-import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
 	RecordingContainerSchema,
 	type RecordingContainer,
@@ -104,7 +104,7 @@ function talkOfFixture(
 	if (walkthrough === undefined) {
 		throw new Error(`the fixture's talk: no walkthrough "${fixture.walkthrough}" to present`);
 	}
-	const step = (SKILL_EVAL_TALK_STEP_MS / 1000) * TALK_SAMPLE_RATE;
+	const step = (SKILL_EVAL_MS.talkStep / 1000) * TALK_SAMPLE_RATE;
 	const samples = step * walkthrough.beats.length;
 	const events: TalkEvent[] = [
 		{ kind: "drawn", at: 0, version: board.version },

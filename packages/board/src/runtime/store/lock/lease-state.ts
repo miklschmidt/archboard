@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { LOCK_WATCH_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import { VAULT_STATE_DIR, boardMemoryKey, normalizeBoardKey } from "#runtime/store/address.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import type { LockHolder, LockRecord, LockSink } from "#runtime/store/lock/contracts.ts";
@@ -314,7 +314,7 @@ function watchBoardLocks(watched: WatchedBoards | null): void {
 	}
 	const timer = setInterval(() => {
 		sweepBoardLocks();
-	}, LOCK_WATCH_MS);
+	}, BOARD_LOCK_MS.watch);
 	// The poll must not be the reason a process stays alive.
 	timer.unref();
 	processWatcher.timer = timer;

@@ -1,4 +1,4 @@
-import { CLAIM_DEFAULT_MS, CLAIM_LEASE_MS, CLAIM_MAX_MS } from "@archboard/timing";
+import { CLAIM_MS } from "@archboard/timing";
 import { boardMemoryKey, normalizeBoardKey } from "#runtime/store/address.ts";
 import { holdBoard } from "#runtime/store/lock/acquisition.ts";
 import {
@@ -50,7 +50,7 @@ async function claimBoard(
 		vault: request.vault,
 		board,
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
-		leaseMs: CLAIM_LEASE_MS,
+		leaseMs: CLAIM_MS.lease,
 		...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {}),
 		...(request.signal !== undefined ? { signal: request.signal } : {}),
 	});
@@ -73,7 +73,7 @@ async function claimBoard(
  * @returns The campaign's length in milliseconds.
  */
 function campaignLength(asked: number | undefined): number {
-	return Math.min(Math.max(asked ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
+	return Math.min(Math.max(asked ?? CLAIM_MS.default, CLAIM_MS.lease), CLAIM_MS.max);
 }
 
 /**

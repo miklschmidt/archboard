@@ -10,11 +10,7 @@ import { fileURLToPath } from "node:url";
 import type { Subprocess } from "bun";
 import { z } from "zod";
 
-import {
-	GIT_COMMAND_TIMEOUT_MS,
-	GIT_PROCESS_GROUP_CLEANUP_MS,
-	GIT_PROCESS_GROUP_POLL_MS,
-} from "@archboard/timing";
+import { GIT_MS } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -37,7 +33,7 @@ const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/
  * @returns True when the group disappeared in time.
  */
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	const deadline = Date.now() + GIT_MS.groupCleanup;
 	for (;;) {
 		if (!processGroupExists(pgid)) {
 			return true;
@@ -46,7 +42,7 @@ async function processGroupDisappeared(pgid: number): Promise<boolean> {
 			return false;
 		}
 		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
-		await new Promise((resolve) => setTimeout(resolve, GIT_PROCESS_GROUP_POLL_MS));
+		await new Promise((resolve) => setTimeout(resolve, GIT_MS.groupPoll));
 	}
 }
 
@@ -235,7 +231,7 @@ async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
 		const cleanupExpired = run.terminationSignal.then(
 			() =>
 				new Promise<null>((resolve) => {
-					cleanupTimer = setTimeout(() => resolve(null), GIT_PROCESS_GROUP_CLEANUP_MS);
+					cleanupTimer = setTimeout(() => resolve(null), GIT_MS.groupCleanup);
 				}),
 		);
 		const raced = await Promise.race([complete, cleanupExpired]);
@@ -544,7 +540,7 @@ async function settleWithLimits(command: RunningCommand, options: GitOptions): P
 	const timeout =
 		options.timeoutMs === null
 			? undefined
-			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? GIT_COMMAND_TIMEOUT_MS);
+			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? GIT_MS.command);
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");

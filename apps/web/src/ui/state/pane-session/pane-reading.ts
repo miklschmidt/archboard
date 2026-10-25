@@ -19,7 +19,7 @@ import {
 	type SemanticPaneContext,
 	type SemanticPanePart,
 } from "@archboard/board/pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
 import { inVault, post } from "@archboard/server-requests";
 
@@ -167,7 +167,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		if (timer !== null) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(flush, SELECTION_DEBOUNCE_MS);
+		timer = setTimeout(flush, PANE_MS.selectionDebounce);
 	}
 
 	/**

@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
-import { SUBJECT_TIP_DELAY_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
@@ -103,7 +103,7 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 			forget();
 			waiting.current = {
 				target,
-				timer: frameClock().after(SUBJECT_TIP_DELAY_MS, () => {
+				timer: frameClock().after(EXPLORING_MS.subjectTip, () => {
 					waiting.current = null;
 					setOpen({ target, drawing });
 				}),
