@@ -11,6 +11,11 @@ stay on the repository's pre-policy rules by the maintainer's decision
 Generated Codex declarations stay lint-excluded and compiler-checked, and the
 earlier full-catalogue requirement is superseded.
 
+The Rust crates under `crates/` have a policy of the same strictness, chosen
+for Rust (TASK-520.09). [strict-analysis-rust.md](strict-analysis-rust.md)
+names each lint, each lint left off, and each rule on this page that does not
+carry over to Rust, with the reasons.
+
 ## Ordinary commands and repository boundary
 
 `bun run lint` runs the Vite+ `lint:all` task.
