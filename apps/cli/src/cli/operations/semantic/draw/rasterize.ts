@@ -212,17 +212,23 @@ const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
 	shared: ["url", "directory"],
 	summary: "Draw a semantic board as PNG, headlessly, at native scale",
-	description:
-		"Draws the same picture `semantic render` draws and rasterizes it in a private headless Chromium: " +
-		"one bitmap pixel per diagram pixel by default, whatever the display or any open pane is doing. " +
-		"The whole diagram is captured, never fitted or cropped; a bitmap that would exceed what one " +
-		"capture may hold is refused. Traffic animation is paused at its first frame. Needs a Chromium or " +
-		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
-		"Without --out or --clipboard, stdout carries PNG bytes. Each PNG carries the render recipe of its SVG, with the scale and region, in a text chunk. " +
-		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
-		"Use --no-comparison to hide comparison marks and removed subjects. " +
-		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
-		"leaving out the Planned frame.",
+	description: [
+		"Draws the same picture that `semantic render` draws, and rasterizes it in a private headless Chromium. It needs a Chromium or Google Chrome executable on PATH, or one that ARCHBOARD_RENDERER_CHROMIUM names.",
+		"",
+		"The picture:",
+		"- One bitmap pixel for each diagram pixel by default, whatever the display or an open pane does.",
+		"- The whole diagram, never fitted or cropped. A bitmap larger than one capture can hold is refused.",
+		"- The traffic animation stops at its first frame.",
+		"- Each PNG carries the render recipe of its SVG, with the scale and the region, in a text chunk.",
+		"",
+		"Output:",
+		"- Without --out or --clipboard, stdout carries the PNG bytes.",
+		"- --clipboard copies PNG and HTML with the accessible description, on Linux and macOS.",
+		"",
+		"Comparison:",
+		"- --no-comparison hides the comparison marks and the removed subjects.",
+		"- --against draws relative to another variant. It marks only what the drawn variant changes over that variant, and leaves out the Planned frame.",
+	].join("\n"),
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
