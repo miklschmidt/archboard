@@ -10,7 +10,7 @@ use crate::track::labels::extent_of;
 use crate::track::scene::{Map, Placement};
 use crate::track::spacing::Rim;
 
-use super::headers::{Room, TakenHeader, header_within};
+use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};
 use super::lone::side_room;
 use super::tree::{Block, BlockTree, Kind, header_of};
@@ -25,10 +25,12 @@ fn level(one: &PlacedNode, other: &PlacedNode) -> bool {
 
 /// Stand the header in the block's top-left corner, over what the block
 /// holds, and every leaf on its rank right of it a lane apart, at the widest
-/// size it has room for there. Answers the header it took, if it has one.
-pub fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) -> Option<TakenHeader> {
+/// size it has room for there.
+pub fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) {
     let id = header_of(block);
-    let at = leaves.iter().position(|leaf| leaf.id == id)?;
+    let Some(at) = leaves.iter().position(|leaf| leaf.id == id) else {
+        return;
+    };
     let others: Vec<usize> = (0..leaves.len()).filter(|&index| index != at).collect();
     leaves[at].x = min(others.iter().map(|&index| leaves[index].x));
     let mut beside: Vec<usize> = others
@@ -37,14 +39,13 @@ pub fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) -> Opt
         .filter(|&index| level(&leaves[index], &leaves[at]))
         .collect();
     beside.sort_by(|&one, &other| crate::ecma::order(leaves[one].x - leaves[other].x));
-    let taken = widened(block, leaves, at, &others, &beside, side);
+    widened(block, leaves, at, &others, &beside, side);
     let mut free = leaves[at].x + leaves[at].width + LANE;
     for index in beside {
         let leaf = &mut leaves[index];
         leaf.x = js_max(leaf.x, free);
         free = leaf.x + leaf.width + LANE;
     }
-    Some(taken)
 }
 
 /// Give a block's header the widest size it has room for, now Graphviz has
@@ -57,7 +58,7 @@ fn widened(
     others: &[usize],
     beside: &[usize],
     side: f64,
-) -> TakenHeader {
+) {
     let least = block
         .header
         .as_ref()
@@ -80,10 +81,9 @@ fn widened(
         },
     );
     let header = &mut leaves[at];
-    header.y += (header.height - taken.size.height) / 2.0;
-    header.width = taken.size.width;
-    header.height = taken.size.height;
-    taken
+    header.y += (header.height - taken.height) / 2.0;
+    header.width = taken.width;
+    header.height = taken.height;
 }
 
 /// Let a block's own top and bottom ports slide along its edge while it is

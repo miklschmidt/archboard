@@ -593,11 +593,6 @@ impl Placement {
     pub fn moved_id(&self, id: ItemId, left: f64) -> Rect {
         self.moved(self.item(id), left)
     }
-
-    /// Forget the walls each band was found to pass, for a scene whose items moved bands.
-    pub fn forget_walls(&self) {
-        self.walls.borrow_mut().clear();
-    }
 }
 
 /// [`Placement::keeps_frames`]: the test of a column.
