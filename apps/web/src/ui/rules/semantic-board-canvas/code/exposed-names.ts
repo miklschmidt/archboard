@@ -32,8 +32,8 @@ interface ExposedNamesPlace {
 	readonly variant: string;
 	readonly version: number;
 	readonly node: SemanticNode;
-	/** The variant that holds the part, whole. */
-	readonly content: VariantContent;
+	/** The variant that holds the part, as far as its parts. */
+	readonly content: Pick<VariantContent, "nodes">;
 }
 
 const NONE: ExposedNamesState = { kind: "none" };

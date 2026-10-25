@@ -19,12 +19,11 @@ const ORDERS: SemanticNode = {
 	order: 1000,
 	binding: BINDING,
 };
-const CONTENT: VariantContent = {
+const CONTENT: Pick<VariantContent, "nodes"> = {
 	nodes: [
 		ORDERS,
 		{ id: "place", name: "Place order", kind: "function", order: 2000, parent: "orders" },
 	],
-	edges: [],
 };
 
 /** Where the picked part is: version 4 of the current variant of the board. */
