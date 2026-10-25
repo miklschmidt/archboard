@@ -51,7 +51,7 @@ function identity(
 		threadId: caller,
 		turnId: callerTurn,
 		callId: callIds[callId],
-		namespace: "archboard_app",
+		namespace: "example_app",
 		tool,
 		manifestHash: "manifest-hash",
 		operationId: operationIds[operationId],

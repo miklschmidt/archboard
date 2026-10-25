@@ -114,7 +114,7 @@ interface CoordinatorToolsFixture {
 	) => DynamicServerRequest;
 }
 
-/** The checkout the fixture's one workhorse works in (ADR 0050). */
+/** The checkout the fixture's one workhorse works in. */
 const CHECKOUT = "/work/payments";
 
 /**

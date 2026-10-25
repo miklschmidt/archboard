@@ -51,14 +51,15 @@ import {
 	WORKHORSE_MANIFEST_SNAPSHOT,
 } from "#tests/runtime/protocol/coordinator-tool-contract/fixtures.ts";
 
-// A host that keeps its names keeps its threads: these are the names Archboard's threads were
-// started with, and the digests their calls carried before the names became host identity.
+// A host that keeps its names keeps its threads: Codex reuses a retained thread only while the
+// bytes of its tools are unchanged, so the digests pin the reviewed templates filled with one
+// host's names.
 const NAMED = createVoiceToolset({
-	productName: "Archboard",
+	productName: "Example",
 	toolNamespaces: {
-		workhorse: "archboard_workhorse",
-		voice: "archboard_voice",
-		coordinator: "archboard_coordinator",
+		workhorse: "example_workhorse",
+		voice: "example_voice",
+		coordinator: "example_coordinator",
 	},
 });
 const WORKHORSE_TOOL_NAMESPACE = NAMED.workhorse.namespace;
@@ -72,15 +73,15 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(NAMED.workhorse.text)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(JSON.parse(VOICE_TOOLS_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect([NAMED.workhorse.sha256, NAMED.voice.sha256, NAMED.coordinator.sha256]).toEqual([
-			"22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11",
-			"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
-			"dc2594074e93dc26f0b95b6bce1f4c08082b26cb67000dbf2b667423fe38eb25",
+			"07dc953628a28401b856d1092412116fd3b876dcc9ffd26d1c77c80d47e2415a",
+			"92416eb7c07865e66fde019bb9a43f6422a1ba9d4b0993db2fa9dd8240bf8eea",
+			"884f263d14421f061facdc23bf42c3fd4d956c36d6c74a2a229c793428080c15",
 		]);
 		const other = createVoiceToolset({
 			productName: "Payments",
 			toolNamespaces: { workhorse: "pay_work", voice: "pay_voice", coordinator: "pay_desk" },
 		});
-		expect(JSON.stringify(other).toLowerCase()).not.toContain("archboard");
+		expect(JSON.stringify(other).toLowerCase()).not.toContain("example");
 		expect(other.coordinator.namespace.description).toContain("talk with Payments by voice");
 		for (const namespace of [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
@@ -294,7 +295,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 				checkout: "/work/payments",
 			}),
 		).toEqual({ checkout: "/work/payments" });
-		// Every workhorse tool names the checkout whose workhorse it works with (ADR 0050).
+		// Every workhorse tool names the checkout whose workhorse it works with.
 		expect(() => parseCoordinatorToolInput("workhorse", "inspect_workhorse", {})).toThrow();
 		expect(
 			parseCoordinatorToolInput("workhorse", "delegate_to_workhorse", {

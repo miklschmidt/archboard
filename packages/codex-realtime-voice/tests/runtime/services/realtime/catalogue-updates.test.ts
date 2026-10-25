@@ -1,12 +1,12 @@
-// The board catalogue is the coordinator's data and nobody else's: it lands on the coordinator
-// thread when a voice session starts and whenever the vault changes, each replacing the last,
-// and the voice session is never sent it (TASK-297).
+// The host's catalogue is the coordinator's data and nobody else's: it lands on the coordinator
+// thread when a voice session starts and whenever the catalogue changes, each replacing the last,
+// and the voice session is never sent it.
 
 import { expect, test } from "bun:test";
 import { harness, started } from "#tests/runtime/services/realtime/adapter-harness.ts";
 
 function catalogueSource() {
-	let text = '{"type":"archboard_board_catalogue","boards":[],"omitted":0}';
+	let text = '{"type":"example_catalogue","items":[],"omitted":0}';
 	const listeners = new Set<() => void>();
 	return {
 		read: () => text,
@@ -52,8 +52,8 @@ test("hands the coordinator the catalogue at start and every replacement, never 
 		expect(start.initialItems).toEqual([]);
 		expect(start.realtimeStartInstructions).not.toContain(source.read());
 		await injected(h, 1);
-		expect(JSON.stringify(h.session.injections[0])).toContain("archboard_board_catalogue");
-		for (const text of ['{"boards":["payments","payments@proposed"]}', '{"boards":["payments"]}']) {
+		expect(JSON.stringify(h.session.injections[0])).toContain("example_catalogue");
+		for (const text of ['{"items":["payments","payments@proposed"]}', '{"items":["payments"]}']) {
 			const delivered = injected(h, h.session.injections.length + 1);
 			source.set(text);
 			source.set(text);
@@ -85,8 +85,8 @@ test("reports a lost coordinator update once and does not retry it", async () =>
 			attempts += 1;
 			throw new Error("response lost");
 		};
-		source.set('{"boards":["payments"]}');
-		source.set('{"boards":["payments"]}');
+		source.set('{"items":["payments"]}');
+		source.set('{"items":["payments"]}');
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(attempts).toBe(1);
 		expect(h.session.texts).toHaveLength(0);
@@ -105,7 +105,7 @@ test("delivers nothing further once the session's binding has changed", async ()
 	try {
 		await injected(h, 1);
 		h.binding = null;
-		source.set('{"boards":["payments"]}');
+		source.set('{"items":["payments"]}');
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(h.session.injections).toHaveLength(1);
 		expect(h.session.texts).toHaveLength(0);

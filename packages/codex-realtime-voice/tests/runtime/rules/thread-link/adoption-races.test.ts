@@ -58,7 +58,7 @@ describe("codex thread-link adoption races", () => {
 			await withFixture(async (fixture) => {
 				const changing = changingSession(fixture, optionsForPass);
 				const port = createCodexThreadLink({
-					threadSource: "archboard",
+					threadSource: "example",
 					session: changing.session,
 					epoch: fixture.store,
 				});
@@ -79,7 +79,7 @@ describe("codex thread-link adoption races", () => {
 				operationId: "replacement-operation",
 				kind: "link",
 				rpc: "turn/start",
-				workspaceRoot: "/workspace/archboard",
+				workspaceRoot: "/workspace/example",
 				instructionHash: "3".repeat(64),
 				manifestHash: "4".repeat(64),
 				expected: fixture.store.snapshot().cas,
@@ -92,7 +92,7 @@ describe("codex thread-link adoption races", () => {
 			let loadedPasses = 0;
 			const row = thread(fixture.authority, "target");
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,

@@ -346,7 +346,7 @@ export function createGatewayHarness(
 			threadId: targetThreadId,
 			turnId,
 			callId: authorities.identity.decoder.adoptDynamicToolCallId("gateway-call"),
-			namespace: "archboard_app",
+			namespace: "example_app",
 			tool: "send_message_to_thread",
 			manifestHash: "gateway-manifest",
 			operationId,

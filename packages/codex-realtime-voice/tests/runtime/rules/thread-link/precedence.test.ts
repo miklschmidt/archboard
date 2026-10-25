@@ -45,7 +45,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			});
 			const result = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePage(row, [row.id, row.id]),
 					currentEpoch: currentEpoch(replacement),
 					epoch: fixture.store,
@@ -66,7 +66,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			});
 			const result = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePage(row, [row.id, row.id]),
 					currentEpoch: {
 						childId: fixture.authority.validator.childId,
@@ -95,7 +95,7 @@ describe("codex thread-link authored refusal precedence", () => {
 				});
 				const result = await classifyCodexThreadLink(
 					{
-						threadSource: "archboard",
+						threadSource: "example",
 						session: onePage(row, [row.id, row.id]),
 						epoch: fixture.store,
 					},
@@ -115,7 +115,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			});
 			const result = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePage(row, [row.id, row.id]),
 					epoch: fixture.store,
 				},
@@ -172,7 +172,7 @@ describe("codex thread-link authored refusal precedence", () => {
 							: [targetId];
 				const result = await classifyCodexThreadLink(
 					{
-						threadSource: "archboard",
+						threadSource: "example",
 						session: session(
 							new Map([[null, threadPage(persisted)]]),
 							new Map([[null, loadedPage(loaded)]]),

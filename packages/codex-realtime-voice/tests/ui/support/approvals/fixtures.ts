@@ -32,7 +32,7 @@ const BINDING = {
 	child: CHILD,
 	epoch: EPOCH,
 	link: "chat primary to workhorse-a",
-	target: "workhorse-a in the archboard checkout",
+	target: "workhorse-a in the example checkout",
 	effect: "run one command in the workspace",
 };
 
@@ -270,7 +270,7 @@ function elicitationApproval(overrides: Overrides = {}): BrowserApproval {
 	return parseApproval({
 		...envelope(),
 		approvalKind: "elicitation",
-		serverName: "archboard-mcp",
+		serverName: "example-mcp",
 		mode: "form",
 		message: "The server needs connection details.",
 		url: null,
@@ -289,7 +289,7 @@ function unsafeUrlElicitation(): Readonly<Record<string, unknown>> {
 	return {
 		...envelope(),
 		approvalKind: "elicitation",
-		serverName: "archboard-mcp",
+		serverName: "example-mcp",
 		mode: "url",
 		message: "Open the consent page.",
 		url: "javascript:alert(1)",
@@ -307,7 +307,7 @@ function safeUrlElicitation(overrides: Overrides = {}): BrowserApproval {
 	return parseApproval({
 		...envelope(),
 		approvalKind: "elicitation",
-		serverName: "archboard-mcp",
+		serverName: "example-mcp",
 		mode: "url",
 		message: "Open the consent page.",
 		url: "https://example.test/consent",
@@ -376,7 +376,7 @@ function dynamicIdentity(effect: DynamicEffect): BrowserDynamicApproval["identit
 		threadId: THREAD,
 		turnId: TURN,
 		callId: callId(CALL_NAMES.get(effect) ?? `call-${effect.tool}`),
-		namespace: "archboard_app",
+		namespace: "example_app",
 		tool: effect.tool,
 		manifestHash: "manifest-1",
 		operationId: effect.mutationOperationId,

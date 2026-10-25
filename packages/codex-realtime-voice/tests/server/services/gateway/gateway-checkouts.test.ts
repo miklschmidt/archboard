@@ -1,4 +1,4 @@
-// Each checkout of a tab has its own workhorse, under its own link (ADR 0050). What is guarded: a
+// Each checkout of a tab has its own workhorse, under its own link. What is guarded: a
 // chat reads the link of the workhorse of its own checkout, and what it types reaches that
 // workhorse and no other, whichever checkout another chat of the same tab is in.
 
@@ -63,7 +63,7 @@ test("a typed message reaches the workhorse of its chat's checkout, under that w
 	]);
 });
 
-// The shown conversation (ADR 0050) is the checkout every chat of the tab reads. What is guarded:
+// The shown conversation is the checkout every chat of the tab reads. What is guarded:
 // a Stop pressed under a lease taken before the tab was switched to another checkout is refused,
 // never sent to the conversation the person no longer sees, and the next lease is the new one's.
 test("a lease taken before the shown conversation switched is refused, and a new one runs on the shown workhorse", async () => {

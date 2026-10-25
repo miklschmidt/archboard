@@ -157,7 +157,7 @@ test("a voice start after a finished session runs on a fresh coordinator", async
 	const actions = createServerRealtimeActions(value.components as never, value.scope as never);
 	const first = await startVoice(actions, value);
 	expect(value.replacements).toHaveLength(0);
-	// Voice is bound to the workhorse of the checkout of the chat it started from (ADR 0050).
+	// Voice is bound to the workhorse of the checkout of the chat it started from.
 	expect(value.scope.state.voiceCheckout).toBe(CHECKOUT);
 	await onSession(actions, value, first, "stop");
 
@@ -333,7 +333,7 @@ test("another chat of the tab can stop voice, whichever checkout it shows, but c
 	).rejects.toThrow();
 	const linked = value.context.link;
 	if (linked.state !== "executable") throw new Error("The fixture link must be executable.");
-	// A chat of another checkout shows another workhorse's link; voice is the whole tab's (ADR 0050).
+	// A chat of another checkout shows another workhorse's link; voice is the whole tab's.
 	const elsewhere: BrowserActionContext = {
 		...otherChat,
 		checkout: "/work/shop",

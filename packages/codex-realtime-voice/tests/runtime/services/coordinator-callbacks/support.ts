@@ -44,10 +44,10 @@ interface Identities {
 }
 
 function identities(): Identities {
-	const childId = "archboard:child:h11111111111111111111111111111111";
+	const childId = "codex:child:h11111111111111111111111111111111";
 	const authorities = restoreIdentityAuthorities({
 		childId,
-		epoch: "archboard:epoch:h11111111111111111111111111111111.h22222222222222222222222222222222",
+		epoch: "codex:epoch:h11111111111111111111111111111111.h22222222222222222222222222222222",
 	});
 	const identity = authorities.identity;
 	const coordinator = identity.decoder.adoptThreadId("coordinator");
@@ -64,7 +64,7 @@ function identities(): Identities {
 			threadId: coordinator,
 			turnId: turn,
 			callId: identity.decoder.adoptDynamicToolCallId("callback-call"),
-			namespace: "archboard_app",
+			namespace: "example_app",
 			tool: "delegate_to_workhorse",
 			manifestHash: "manifest-hash",
 		}),
@@ -211,14 +211,10 @@ interface HarnessState {
 	child: CoordinatorCallbackCurrentChild | null;
 	coordinator: CoordinatorCallbackReadyCoordinator | null;
 	link: CoordinatorCallbackLinkCorrelation | null;
-	/** The workhorses of the tab session's other checkouts (ADR 0050). */
+	/** The workhorses of the tab session's other checkouts. */
 	others: CoordinatorCallbackLinkCorrelation[];
 	generation: CoordinatorCallbackRealtimeGeneration | null;
 	classification: ThreadLinkClassification;
-	/** The boards the tab's chats show. */
-	boards: readonly string[];
-	/** The board a narration in the tab is on, or null. */
-	narrated: string | null;
 }
 
 interface Harness {
@@ -287,8 +283,6 @@ function harness(active = true): Harness {
 			currentEpoch: { childId: ids.child, epoch: ids.epoch },
 			proof: proof(ids),
 		},
-		boards: ["architecture"],
-		narrated: null,
 	};
 	const listeners = new Set<(event: WorkhorseOperationEvent) => void>();
 	const reports: Parameters<CoordinatorCallbackTurnPort["report"]>[0][] = [];

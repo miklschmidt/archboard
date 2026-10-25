@@ -368,7 +368,7 @@ test("a chat of a checkout with no workhorse is shown none, and its first conver
 	const harness = projectionHarness();
 	const shop = "/work/shop";
 
-	// Reading what a chat shows starts nothing: the checkout has no queue or board news to show.
+	// Reading what a chat shows starts nothing: the checkout has no queue or context news to show.
 	const read = harness.options.projection.read({ ...harness.context, checkout: shop });
 	expect(read.queue).toEqual({ kind: "codex_queue", submissions: null });
 	expect([...harness.session.workhorses.keys()]).toEqual(["/work/payments"]);

@@ -85,21 +85,21 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 		}),
 		mcpToolCallItem(authorities, "timeline-mcp", {
 			type: "mcpToolCall",
-			server: "archboard",
+			server: "example",
 			tool: "inspect",
 			status: "failed",
-			arguments: { board: "payments" },
+			arguments: { item: "payments" },
 			appContext: null,
 			mcpAppUi: null,
 			pluginId: null,
 			readOnlyHint: null,
 			result: null,
-			error: { message: "board not found" },
+			error: { message: "item not found" },
 			durationMs: 12,
 		}),
 		dynamicToolCallItem(authorities, "timeline-dynamic", {
 			type: "dynamicToolCall",
-			namespace: "archboard_app",
+			namespace: "example_app",
 			tool: "inspect",
 			arguments: {},
 			status: "failed",
@@ -274,14 +274,14 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 	expect(mcp).toMatchObject({
 		kind: "tool_call",
 		item: { tool: "inspect", status: "failed", durationMs: 12 },
-		server: "archboard",
-		arguments: '{"board":"payments"}',
-		error: "board not found",
+		server: "example",
+		arguments: '{"item":"payments"}',
+		error: "item not found",
 	});
 	if (dynamic?.kind !== "tool_call") {
 		throw new Error("the dynamic tool call was not projected");
 	}
-	expect(dynamic.server).toBe("archboard_app");
+	expect(dynamic.server).toBe("example_app");
 	expect(dynamic.item.durationMs).toBe(3);
 	expect(dynamic.error).not.toBeNull();
 	expect(command).toMatchObject({

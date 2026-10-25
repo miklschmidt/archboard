@@ -21,7 +21,7 @@ interface FingerprintCase {
 	readonly invalid: readonly ToolArguments[];
 }
 
-/** The checkout every workhorse case names: the fixture's one workhorse works in it (ADR 0050). */
+/** The checkout every workhorse case names: the fixture's one workhorse works in it. */
 const CHECKOUT = "/work/payments";
 /** Another checkout with a workhorse, which a replay of a workhorse call can name instead. */
 const OTHER_CHECKOUT = "/work/shop";

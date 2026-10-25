@@ -141,7 +141,7 @@ function operationRecord(
 						: authority.decoder.adoptThreadId(options.provenanceThreadId),
 			turnId: null,
 			threadSource: null,
-			workspaceRoot: "/workspace/archboard",
+			workspaceRoot: "/workspace/example",
 			instructionHash: "1".repeat(64),
 			manifestHash: "2".repeat(64),
 			confirmedAtMs: 1,

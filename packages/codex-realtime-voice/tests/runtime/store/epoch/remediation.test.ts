@@ -23,7 +23,7 @@ const MANIFEST_HASH = "2".repeat(64);
 
 describe("codex epoch review remediations", () => {
 	test("rejects a parent symlink into Codex storage before creating the epoch root", () => {
-		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-parent-link-")));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "voice-codex-parent-link-")));
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");
 		const linkedParent = join(parent, "linked-parent");
@@ -93,7 +93,7 @@ interface TestState {
 }
 
 function withState<T>(callback: (state: TestState) => T): T {
-	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-remediation-")));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-codex-remediation-")));
 	const state: TestState = {
 		root: join(parent, "epoch"),
 		codexHome: join(parent, "codex-home"),
@@ -131,7 +131,7 @@ function input(
 		operationId,
 		kind,
 		rpc: kind === "epoch_start" ? "epoch/start" : "turn/start",
-		workspaceRoot: "/workspace/archboard",
+		workspaceRoot: "/workspace/example",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
 		...(expected === undefined ? {} : { expected }),

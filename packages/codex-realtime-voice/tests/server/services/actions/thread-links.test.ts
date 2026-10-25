@@ -1,5 +1,5 @@
 // The thread-link actions of one workhorse: New conversation from a chat of its checkout, and the
-// start that work given to its checkout needs (ADR 0050).
+// start that work given to its checkout needs.
 
 import { expect, test } from "bun:test";
 
@@ -363,7 +363,7 @@ test("a new conversation keeps the tab's coordinator and readies it before its w
 		.create({ command: "threadLinkCreate" } as never, createContext(authorities, threadId))
 		.catch(() => undefined);
 	// The coordinator speaks for every workhorse of the tab, so one checkout's new conversation
-	// keeps it (ADR 0050).
+	// keeps it.
 	expect(starts).toEqual(["ensure", "workhorse"]);
 });
 

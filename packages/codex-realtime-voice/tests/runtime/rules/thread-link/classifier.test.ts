@@ -82,7 +82,7 @@ describe("codex thread-link classification", () => {
 				]),
 			);
 			const result = await classifyCodexThreadLink(
-				{ threadSource: "archboard", session: sessionFixture, epoch: fixture.store },
+				{ threadSource: "example", session: sessionFixture, epoch: fixture.store },
 				fixture.target,
 			);
 
@@ -119,7 +119,7 @@ describe("codex thread-link classification", () => {
 			const recent = thread(fixture.authority, "recent", { status: "active" });
 			const result = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: session(
 						new Map([[null, threadPage([recent])]]),
 						new Map([[null, loadedPage([fixture.target.threadId])]]),
@@ -142,7 +142,7 @@ describe("codex thread-link classification", () => {
 			const row = thread(fixture.authority, "target");
 			const duplicatePersisted = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: session(
 						new Map([[null, threadPage([row, row])]]),
 						new Map([[null, loadedPage([row.id])]]),
@@ -153,7 +153,7 @@ describe("codex thread-link classification", () => {
 			);
 			const duplicateLoaded = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePageSession(row, [row.id, row.id]),
 					epoch: fixture.store,
 				},
@@ -161,7 +161,7 @@ describe("codex thread-link classification", () => {
 			);
 			const persistedRepeat = await rejection(
 				createCodexThreadLinkClassifier({
-					threadSource: "archboard",
+					threadSource: "example",
 					session: session(
 						new Map([
 							[null, threadPage([row], "same")],
@@ -174,7 +174,7 @@ describe("codex thread-link classification", () => {
 			);
 			const loadedRepeat = await rejection(
 				createCodexThreadLinkClassifier({
-					threadSource: "archboard",
+					threadSource: "example",
 					session: session(
 						new Map([[null, threadPage([row])]]),
 						new Map([
@@ -197,7 +197,7 @@ describe("codex thread-link classification", () => {
 		await withFixture({ threadId: "disappeared" }, async (fixture) => {
 			const row = thread(fixture.authority, "disappeared");
 			const result = await classifyCodexThreadLink(
-				{ threadSource: "archboard", session: onePageSession(row, []), epoch: fixture.store },
+				{ threadSource: "example", session: onePageSession(row, []), epoch: fixture.store },
 				fixture.target,
 			);
 			expect(result.link).toMatchObject({
@@ -212,7 +212,7 @@ describe("codex thread-link classification", () => {
 			for (const source of ["cli", "vscode", "exec", "appServer"] as const) {
 				const row = thread(fixture.authority, "target", { source });
 				const result = await classifyCodexThreadLink(
-					{ threadSource: "archboard", session: onePageSession(row), epoch: fixture.store },
+					{ threadSource: "example", session: onePageSession(row), epoch: fixture.store },
 					fixture.target,
 				);
 				expect(result.link).toMatchObject({ state: "executable", source });
@@ -224,7 +224,7 @@ describe("codex thread-link classification", () => {
 			] as const) {
 				const row = thread(fixture.authority, "target", { source });
 				const result = await classifyCodexThreadLink(
-					{ threadSource: "archboard", session: onePageSession(row), epoch: fixture.store },
+					{ threadSource: "example", session: onePageSession(row), epoch: fixture.store },
 					fixture.target,
 				);
 				expect(result.link).toMatchObject({ state: "inspect_only", reason });
@@ -242,7 +242,7 @@ describe("codex thread-link classification", () => {
 			] as const) {
 				const row = thread(fixture.authority, "target", { status, canAcceptDirectInput });
 				const result = await classifyCodexThreadLink(
-					{ threadSource: "archboard", session: onePageSession(row), epoch: fixture.store },
+					{ threadSource: "example", session: onePageSession(row), epoch: fixture.store },
 					fixture.target,
 				);
 				expect(result.link).toMatchObject({ state: "inspect_only", reason });
@@ -262,7 +262,7 @@ describe("codex thread-link classification", () => {
 			const replacement = createIdentityAuthority();
 			const stale = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePageSession(row, [row.id, row.id]),
 					currentEpoch: currentEpoch(replacement),
 					epoch: fixture.store,
@@ -275,7 +275,7 @@ describe("codex thread-link classification", () => {
 			});
 			const prior = await classifyCodexThreadLink(
 				{
-					threadSource: "archboard",
+					threadSource: "example",
 					session: onePageSession(row, [row.id, row.id]),
 					currentEpoch: currentEpoch(sameChildNewEpoch),
 					epoch: fixture.store,
@@ -304,7 +304,7 @@ describe("codex thread-link classification", () => {
 				async (fixture) => {
 					const result = await classifyCodexThreadLink(
 						{
-							threadSource: "archboard",
+							threadSource: "example",
 							session: onePageSession(thread(fixture.authority, "target")),
 							epoch: fixture.store,
 						},
@@ -324,7 +324,7 @@ describe("codex thread-link classification", () => {
 			async (fixture) => {
 				const result = await classifyCodexThreadLink(
 					{
-						threadSource: "archboard",
+						threadSource: "example",
 						session: onePageSession(thread(fixture.authority, "target")),
 						epoch: fixture.store,
 					},
@@ -341,7 +341,7 @@ describe("codex thread-link classification", () => {
 			const options = {
 				session: onePageSession(row),
 				epoch: fixture.store,
-				threadSource: "archboard",
+				threadSource: "example",
 			};
 			const missing = await classifyCodexThreadLink(options, targetWithoutAttachedProof(fixture));
 			const missingRecord = await classifyCodexThreadLink(options, {
@@ -406,7 +406,7 @@ describe("codex thread-link classification", () => {
 		const authority = createIdentityAuthority();
 		const row = thread(authority, "stopped-child");
 		const stopped = await classifyCodexThreadLink(
-			{ threadSource: "archboard", session: onePageSession(row), currentEpoch: () => null },
+			{ threadSource: "example", session: onePageSession(row), currentEpoch: () => null },
 			{ threadId: row.id, childId: authority.validator.childId, epoch: authority.validator.epoch },
 		);
 		expect(stopped.link).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
@@ -415,7 +415,7 @@ describe("codex thread-link classification", () => {
 		let reads = 0;
 		const moving = await classifyCodexThreadLink(
 			{
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(row),
 				currentEpoch: () => {
 					reads += 1;
@@ -433,7 +433,7 @@ describe("codex thread-link classification", () => {
 			const error = await rejection(
 				classifyCodexThreadLink(
 					{
-						threadSource: "archboard",
+						threadSource: "example",
 						session: session(
 							new Map([[null, new Error("session closed")]]),
 							new Map([[null, loadedPage([])]]),
@@ -461,7 +461,7 @@ describe("codex thread-link classification", () => {
 				],
 			} as never;
 			const result = await classifyCodexThreadLink(
-				{ threadSource: "archboard", session: onePageSession(row), epoch: fixture.store },
+				{ threadSource: "example", session: onePageSession(row), epoch: fixture.store },
 				fixture.target,
 			);
 

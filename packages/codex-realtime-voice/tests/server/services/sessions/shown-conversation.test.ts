@@ -1,4 +1,4 @@
-// The shown conversation of a browser tab (ADR 0050), as the tab registry holds it. What is
+// The shown conversation of a browser tab, as the tab registry holds it. What is
 // guarded: the first read pins it to the asking chat's checkout, after that only a show changes
 // it and is told, and it ends with the tab. The route that shows one and the agent's show that
 // does not are owned by tests/system/server-state/shown-conversation.test.ts.

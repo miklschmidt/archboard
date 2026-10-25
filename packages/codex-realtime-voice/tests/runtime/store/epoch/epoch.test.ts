@@ -48,7 +48,7 @@ describe("codex epoch ownership", () => {
 			const committed = store.commitEpoch(staged);
 			expect(committed.status).toBe("committed");
 			expect(committed.outcome).toBe("delivered");
-			expect(committed.provenance.workspaceRoot).toBe("/workspace/archboard");
+			expect(committed.provenance.workspaceRoot).toBe("/workspace/example");
 			expect(committed.provenance.instructionHash).toBe(INSTRUCTION_HASH);
 			expect(committed.provenance.manifestHash).toBe(MANIFEST_HASH);
 			expect(store.snapshot().manifest.activeEpoch).toEqual({
@@ -362,7 +362,7 @@ interface TestState {
 }
 
 function withState<T>(callback: (state: TestState) => T): T {
-	const root = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-epoch-")));
+	const root = realpathSync(mkdtempSync(join("/tmp", "voice-codex-epoch-")));
 	const state: TestState = {
 		root: join(root, "epoch"),
 		codexHome: join(root, "codex-home"),
@@ -402,7 +402,7 @@ function epochInput(
 		operationId,
 		kind,
 		rpc: "epoch/start",
-		workspaceRoot: "/workspace/archboard",
+		workspaceRoot: "/workspace/example",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
 		...(expected === undefined ? {} : { expected }),

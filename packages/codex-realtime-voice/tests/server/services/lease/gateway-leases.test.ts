@@ -8,7 +8,7 @@ import {
 import { createBrowserLeaseLedger } from "#server/services/lease/lease.ts";
 import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
-// One command lease per browser tab session (TASK-373): the chats of one tab hand it to each
+// One command lease per browser tab session: the chats of one tab hand it to each
 // other, and another tab's claim, renewal or expiry never touches it.
 
 const openHarnesses: GatewayHarness[] = [];

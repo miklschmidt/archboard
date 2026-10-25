@@ -3,7 +3,7 @@
 // It exists so that "realtime negotiation was unavailable or failed" can be read afterwards as a
 // sequence of stages with the refusing message in it. What is guarded: entries belong to the
 // attempt they happened in and carry when they happened, even while another tab's attempt runs
-// beside it (TASK-373); and the record stays bounded however often voice is started.
+// beside it; and the record stays bounded however often voice is started.
 
 import { expect, test } from "bun:test";
 import { createVoiceStartTrace } from "#server/services/voice/start-trace.ts";

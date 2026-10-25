@@ -167,7 +167,7 @@ describe("codex thread-link bindings", () => {
 				},
 			};
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch,
 			});
@@ -189,7 +189,7 @@ describe("codex thread-link bindings", () => {
 			const row = thread(fixture.authority, "target");
 			let listPass = 0;
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,
@@ -218,7 +218,7 @@ describe("codex thread-link bindings", () => {
 			const row = thread(fixture.authority, "target");
 			let listPass = 0;
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				epoch: fixture.store,
 				session: {
 					threadRead: unavailableThreadRead,
@@ -231,7 +231,7 @@ describe("codex thread-link bindings", () => {
 								operationId: "epoch-start-replacement",
 								kind: "epoch_start",
 								rpc: "epoch/start",
-								workspaceRoot: "/workspace/archboard",
+								workspaceRoot: "/workspace/example",
 								instructionHash: "1".repeat(64),
 								manifestHash: "2".repeat(64),
 								expected: fixture.store.snapshot().cas,
@@ -265,7 +265,7 @@ describe("codex thread-link bindings", () => {
 				},
 			};
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch,
 			});
@@ -305,7 +305,7 @@ describe("codex thread-link bindings", () => {
 				clear: () => undefined,
 			};
 			const options = Object.assign(
-				{ session: onePageSession(fixture), epoch: fixture.store, threadSource: "archboard" },
+				{ session: onePageSession(fixture), epoch: fixture.store, threadSource: "example" },
 				{ binding: unchecked },
 			);
 			const port = createCodexThreadLink(options);
@@ -323,7 +323,7 @@ describe("codex thread-link bindings", () => {
 		await withFixture(async (fixture) => {
 			const replacement = createIdentityAuthority();
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -341,7 +341,7 @@ describe("codex thread-link bindings", () => {
 		await withFixture(async (fixture) => {
 			const replacement = createIdentityAuthority();
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -400,7 +400,7 @@ describe("codex thread-link bindings", () => {
 	test("requires a fresh token to clear and prevents a second null-CAS writer", async () => {
 		await withFixture(async (fixture) => {
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
@@ -418,7 +418,7 @@ describe("codex thread-link bindings", () => {
 	test("exposes one frozen port without an unchecked binding injection", async () => {
 		await withFixture(async (fixture) => {
 			const port = createCodexThreadLink({
-				threadSource: "archboard",
+				threadSource: "example",
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});

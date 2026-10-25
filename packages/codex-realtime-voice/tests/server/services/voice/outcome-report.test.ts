@@ -1,6 +1,6 @@
 import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
-// Giving the coordinator a workhorse outcome while voice is live (TASK-291, TASK-321): the
-// Archboard server's half.
+// Giving the coordinator a workhorse outcome while voice is live: the
+// server's half.
 //
 // What is guarded: the outcome goes out at once as one turn/start, under a minted identity and
 // the reviewed producer, whatever the coordinator is doing (Codex adds it to a running turn or

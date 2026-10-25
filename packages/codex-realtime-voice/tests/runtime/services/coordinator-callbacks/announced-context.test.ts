@@ -8,7 +8,7 @@ import {
 } from "#tests/runtime/services/coordinator-callbacks/support.ts";
 
 // What the tab's one callback queue does with a change a host announced to the coordinator or to
-// the voice (TASK-530.05). How it gets there is `announce`'s; that the queue keeps its order, and
+// the voice. How it gets there is `announce`'s; that the queue keeps its order, and
 // drops the oldest past its buffer, is the queue's own and owned elsewhere.
 
 describe("an announced change in the callback queue", () => {

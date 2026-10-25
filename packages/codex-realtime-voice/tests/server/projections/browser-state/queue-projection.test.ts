@@ -163,7 +163,7 @@ describe("workhorse queue projection", () => {
 		}
 	});
 
-	test("carries the Archboard operation that queued each entry, and null for foreign ones", () => {
+	test("carries the operation that queued each entry, and null for foreign ones", () => {
 		const ours = authorities.operation.issuer.mintOperationId();
 		const queue = projectedQueue(
 			submissions([

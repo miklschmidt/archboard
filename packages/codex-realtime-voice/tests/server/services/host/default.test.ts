@@ -162,7 +162,7 @@ const OPERATION = {
 } as const;
 
 describe("the default workbench host", () => {
-	test("admits real checkout directories without a vault, labels each by its directory and captures the allowed list", () => {
+	test("admits real checkout directories, labels each by its directory and captures the allowed list", () => {
 		const h = harness();
 		try {
 			expect(h.host.resolveCheckout(h.root)).toBe(h.root);

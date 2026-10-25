@@ -75,14 +75,11 @@ describe("codex thread context delivery", () => {
 		const harness = createHarness();
 
 		// The news a thread most needs is that what it was told has stopped being
-		// true, and nothing about the change says whose work made it. It used to:
-		// a write stated the chat it was running for, and a change whose stated
-		// chat matched this port's was dropped as an echo. That made a surface a
-		// person opens and closes decide who hears about an architecture, and it
-		// went quiet in the one case that mattered — two threads on one claimed
-		// board, where the second suppressed the first's change.
+		// true, and nothing about the change says whose work made it. A change is
+		// never dropped as an echo because of the chat it was made for: two threads
+		// on one context each hear the other's change.
 		//
-		// Redundancy replaces it: a thread may be told about its own write, and
+		// Redundancy replaces silence: a thread may be told about its own write, and
 		// that is a thing it is told how to read.
 		const first = await harness.delivery.deliver(harness.events());
 		const second = await harness.delivery.deliver(harness.events({ sequence: 2 }));

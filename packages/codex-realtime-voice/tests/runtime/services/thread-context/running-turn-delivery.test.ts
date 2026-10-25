@@ -1,4 +1,4 @@
-// A person's board change reaching a workhorse while it runs a turn. The turn
+// A context change reaching a workhorse while it runs a turn. The turn
 // makes the thread's observed status active; the link's binding was taken while
 // it was idle. What the final gate compares is the link's identity — thread,
 // child, epoch — not what was observed of the thread.
