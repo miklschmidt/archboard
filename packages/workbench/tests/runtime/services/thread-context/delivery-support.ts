@@ -1,4 +1,9 @@
 import type {
+	EpochExecutionProof,
+	EpochExecutionRequest,
+	ThreadLinkClassification,
+} from "#runtime/protocol/voice/extension.ts";
+import type {
 	WorkbenchExecutionContext,
 	CodexThreadLinkPort,
 } from "#runtime/protocol/voice/extension.ts";
@@ -9,11 +14,7 @@ import {
 	archboardContextMatchesEvent,
 } from "#runtime/services/host/archboard-context-match.ts";
 import type { WorkbenchContextEvent } from "@archboard/codex-realtime-voice/runtime";
-import type {
-	CodexEpochError,
-	EpochExecutionProof,
-	EpochExecutionRequest,
-} from "@archboard/codex-realtime-voice/runtime";
+import type { CodexEpochError } from "@archboard/codex-realtime-voice/runtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type {
@@ -21,7 +22,6 @@ import type {
 	InspectOnlyThreadLink,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
-	ThreadLinkClassification,
 	ThreadLinkReasonCode,
 	ThreadLinkSnapshot,
 	ThreadLinkStatus,

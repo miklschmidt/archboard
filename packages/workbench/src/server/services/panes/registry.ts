@@ -1,3 +1,4 @@
+import type { BrowserConnectionInstance } from "#runtime/protocol/voice/extension.ts";
 import type { BrowserLeaseLedger } from "#runtime/protocol/voice/extension.ts";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
@@ -8,7 +9,6 @@ import { listSemanticBoards, readBoardVariant } from "@archboard/board/store-rea
 import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
 import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
 import { PANE_MS } from "@archboard/timing";
-import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file

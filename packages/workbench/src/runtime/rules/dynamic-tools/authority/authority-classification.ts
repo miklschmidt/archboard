@@ -1,3 +1,4 @@
+import type { ThreadLinkClassification } from "#runtime/protocol/voice/extension.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import { CodexDynamicToolsError } from "#runtime/rules/dynamic-tools/errors.ts";
 import type {
@@ -6,7 +7,6 @@ import type {
 	DynamicObservedTarget,
 	DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import {
 	authorityRefusalCode,
 	epochRefusalCode,

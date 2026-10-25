@@ -20,7 +20,9 @@ import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 
-type SemanticPanePresentation = NonNullable<z.infer<typeof SemanticPaneContextSchema>["presentation"]>;
+type SemanticPanePresentation = NonNullable<
+	z.infer<typeof SemanticPaneContextSchema>["presentation"]
+>;
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 

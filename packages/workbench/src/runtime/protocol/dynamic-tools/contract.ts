@@ -1,16 +1,14 @@
-import type { CodexEpochStore, CodexThreadLinkPort } from "#runtime/protocol/voice/extension.ts";
 import type {
 	EpochExecutionProof,
 	EpochTransaction,
-} from "@archboard/codex-realtime-voice/runtime";
+	ThreadLinkClassification,
+	ThreadLinkTarget,
+	CodexWaitGraph,
+} from "#runtime/protocol/voice/extension.ts";
+import type { CodexEpochStore, CodexThreadLinkPort } from "#runtime/protocol/voice/extension.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { CodexSession, SessionThread } from "@archboard/codex-app-server/session";
-import type {
-	ThreadLinkClassification,
-	ThreadLinkSource,
-	ThreadLinkTarget,
-} from "@archboard/codex-realtime-voice/runtime";
-import type { CodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import type { SessionThreadSource as ThreadLinkSource } from "@archboard/codex-app-server/session";
 import type {
 	CodexTransport,
 	DynamicServerRequest,
