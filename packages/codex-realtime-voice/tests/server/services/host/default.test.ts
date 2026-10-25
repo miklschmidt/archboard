@@ -225,9 +225,12 @@ describe("the default workbench host", () => {
 		const h = harness();
 		try {
 			const context = h.host.contextForOperation(h.authority, OPERATION);
-			const withData = { ...context, note: undefined, files: ["a", undefined] };
+			// An undefined entry and a hole are both absent.
+			const files: (string | undefined)[] = ["a", undefined];
+			files[3] = "b";
+			const withData = { ...context, note: undefined, files };
 			expect(JSON.parse(h.host.contextCodec.encode(withData))).toEqual(
-				JSON.parse(JSON.stringify({ ...context, files: ["a", null] })),
+				JSON.parse(JSON.stringify({ ...context, files: ["a", null, null, "b"] })),
 			);
 		} finally {
 			h.close();
