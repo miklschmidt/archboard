@@ -12,10 +12,7 @@
 // anything about a semantic board (ADR 0023).
 
 import { addressedVariant, parseSemanticBoard } from "@archboard/board/document";
-import type {
-	SemanticBoard,
-	SemanticVariant,
-} from "@archboard/board/document";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { comparedWith, compareVariants, standingOf } from "@archboard/board/comparison";
 import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";

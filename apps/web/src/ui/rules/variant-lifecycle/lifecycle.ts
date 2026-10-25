@@ -7,7 +7,6 @@ type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 // in. Shared by every place that lists a board's variants, so the navigator,
 // the header and a pane's sidebar say the same thing the same way. Pure.
 
-
 /** What a variant must say for its place in a list. */
 interface ListedLifecycle {
 	readonly id: string;

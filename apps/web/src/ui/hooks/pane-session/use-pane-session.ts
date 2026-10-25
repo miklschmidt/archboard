@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-
 import { createPaneCore, type PaneCore } from "#ui/state/pane-session/pane-core.ts";
 import { usePaneContact, type PaneContact } from "#ui/hooks/pane-session/use-pane-contact.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";

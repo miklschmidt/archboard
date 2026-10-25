@@ -1,7 +1,4 @@
-import {
-	VaultCheckSchema,
-	VaultDiagnosticSchema,
-} from "@archboard/board/policy";
+import { VaultCheckSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
 // How the CLI reaches a semantic board: through the running Archboard server, never the
 // vault directly.
 //
