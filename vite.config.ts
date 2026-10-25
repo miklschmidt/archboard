@@ -151,6 +151,8 @@ const testCache = {
 		// A test loads the core, which refuses a build of other sources than these.
 		"crates/**",
 		"Cargo.lock",
+		"flake.nix",
+		"flake.lock",
 	],
 	env: [
 		...analysisCache.env,
@@ -169,6 +171,8 @@ const coreCache = {
 		"Cargo.toml",
 		"clippy.toml",
 		"Cargo.lock",
+		"flake.nix",
+		"flake.lock",
 		"packages/renderer/assets/fonts/*.ttf",
 	],
 	output: [],
