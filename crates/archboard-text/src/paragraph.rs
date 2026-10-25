@@ -357,10 +357,10 @@ impl Paragraph {
     }
 
     /// The narrowest whole width, wider than some, at which the words break
-    /// into fewer lines than there; nothing when they take one line or none.
+    /// into fewer lines than there. Nothing when only hard breaks remain.
     pub fn fewer_lines_at(&self, width: f64) -> Option<f64> {
         let lines = self.line_count(width);
-        if lines <= 1 {
+        if lines <= self.hards.len() {
             return None;
         }
         let mut too_narrow = width;
