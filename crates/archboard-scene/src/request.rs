@@ -31,18 +31,6 @@ pub enum Standing {
     Unchanged,
 }
 
-impl Standing {
-    /// The word the document spells it with.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Standing::Added => "added",
-            Standing::Removed => "removed",
-            Standing::Changed => "changed",
-            Standing::Unchanged => "unchanged",
-        }
-    }
-}
-
 /// One of the vault policy's named colours.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
@@ -71,29 +59,6 @@ pub enum PaletteColor {
 }
 
 impl PaletteColor {
-    /// The colour's name, as its page token and the document spell it.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            PaletteColor::Red => "red",
-            PaletteColor::Orange => "orange",
-            PaletteColor::Amber => "amber",
-            PaletteColor::Yellow => "yellow",
-            PaletteColor::Lime => "lime",
-            PaletteColor::Green => "green",
-            PaletteColor::Emerald => "emerald",
-            PaletteColor::Teal => "teal",
-            PaletteColor::Cyan => "cyan",
-            PaletteColor::Sky => "sky",
-            PaletteColor::Blue => "blue",
-            PaletteColor::Indigo => "indigo",
-            PaletteColor::Violet => "violet",
-            PaletteColor::Purple => "purple",
-            PaletteColor::Fuchsia => "fuchsia",
-            PaletteColor::Pink => "pink",
-            PaletteColor::Rose => "rose",
-        }
-    }
-
     /// The colour a name names, if it is one of the palette's: read as the
     /// contract reads it.
     pub fn named(name: &str) -> Option<PaletteColor> {
@@ -114,18 +79,6 @@ pub enum DrillDirection {
     Across,
     /// The vault lists no level for the part's kind or for the board drawn, so no way can be said.
     Elsewhere,
-}
-
-impl DrillDirection {
-    /// The word the document spells it with.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            DrillDirection::Up => "up",
-            DrillDirection::Down => "down",
-            DrillDirection::Across => "across",
-            DrillDirection::Elsewhere => "elsewhere",
-        }
-    }
 }
 
 /// The independent visual channels of a node in this reading.
@@ -167,17 +120,6 @@ pub enum Dash {
     Dotted,
 }
 
-impl Dash {
-    /// The word the document spells it with.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Dash::Solid => "solid",
-            Dash::Dashed => "dashed",
-            Dash::Dotted => "dotted",
-        }
-    }
-}
-
 /// Which arrowhead a line ends in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
@@ -189,17 +131,6 @@ pub enum Arrowhead {
     Filled,
     Open,
     None,
-}
-
-impl Arrowhead {
-    /// The word the document spells it with.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Arrowhead::Filled => "filled",
-            Arrowhead::Open => "open",
-            Arrowhead::None => "none",
-        }
-    }
 }
 
 /// How a drawn line reads: a relationship in its kind's appearance, or a flow
@@ -301,16 +232,6 @@ pub enum Picture {
 pub enum LegendLayout {
     Horizontal,
     Vertical,
-}
-
-impl LegendLayout {
-    /// The word the document spells it with.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            LegendLayout::Horizontal => "horizontal",
-            LegendLayout::Vertical => "vertical",
-        }
-    }
 }
 
 /// What an export asks to carry beside the drawing.

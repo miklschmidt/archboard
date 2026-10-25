@@ -3,29 +3,24 @@
 
 use std::collections::BTreeMap;
 
-use crate::attrs;
 use crate::geometry::Rect;
 use crate::js;
-use crate::markup::{Attrs, Markup, concat, tag};
+use crate::paint::build::{Items, concat, shape};
 use crate::paint::colour::{Inked, Share, Tone, ToneStep, inked_over, mixed, tinted, toned};
 use crate::paint::design::{
     CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
     SLAB_RADIUS,
 };
 use crate::paint::icons::glyph_group;
-use crate::paint::palette::{Palette, token};
+use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, ghost_face, slab, slab_shadow};
 use crate::paint::tray::TrayLook;
 use crate::request::{NodeAppearance, PaletteColor, Standing};
+use crate::scene::{Colour, Paint, Purpose, Shape};
 
-/// One named palette colour, as the page's token for it.
-pub fn semantic_ink(color: Option<PaletteColor>) -> Option<String> {
-    color.map(semantic_token)
-}
-
-/// A named palette colour's page token.
-fn semantic_token(color: PaletteColor) -> String {
-    token(&format!("--semantic-{}", color.as_str()))
+/// One named palette colour.
+pub(super) fn semantic_ink(color: Option<PaletteColor>) -> Option<Colour> {
+    color.map(Colour::palette)
 }
 
 const DARK_FACE: ToneStep = ToneStep::new(0.31, 0.4);
@@ -61,10 +56,10 @@ fn light_face(color: PaletteColor) -> (f64, f64) {
 }
 
 /// A grouped card's face: a tone of its group's colour.
-fn face_in(color: PaletteColor) -> String {
+fn face_in(color: PaletteColor) -> Colour {
     let (lightness, chroma) = light_face(color);
     toned(
-        &semantic_token(color),
+        &Colour::palette(color),
         Tone {
             light: ToneStep {
                 lightness,
@@ -103,117 +98,89 @@ const CHIP_EDGE: Inked = Inked {
 };
 
 /// A card's slab: its face tinted and its front edge toned by its group.
-pub fn card_look(body_color: Option<PaletteColor>, palette: &Palette) -> SlabLook {
+pub(super) fn card_look(body_color: Option<PaletteColor>, palette: &Palette) -> SlabLook {
     SlabLook {
-        face: body_color.map_or_else(|| palette.slab_face.to_owned(), face_in),
-        ground: Some(palette.slab_face.to_owned()),
-        lit: None,
-        edge: semantic_ink(body_color).map_or_else(
-            || palette.slab_edge.to_owned(),
-            |ink| toned(&ink, CARD_EDGE),
-        ),
-        thickness: CARD_THICKNESS,
-        radius: SLAB_RADIUS,
+        tintable: true,
         sheen: true,
+        ..SlabLook::plain(
+            body_color.map_or_else(|| palette.slab_face.clone(), face_in),
+            semantic_ink(body_color)
+                .map_or_else(|| palette.slab_edge.clone(), |ink| toned(&ink, CARD_EDGE)),
+            CARD_THICKNESS,
+            SLAB_RADIUS,
+        )
     }
 }
 
 /// A relationship's or a message's label: a low tile, its face the plate its words are read on.
-pub fn label_look(palette: &Palette) -> SlabLook {
-    SlabLook {
-        face: palette.pill.to_owned(),
-        ground: None,
-        lit: None,
-        edge: mixed(palette.pill, palette.slab_deep, LABEL_EDGE),
-        thickness: PILL_THICKNESS,
-        radius: PILL_RADIUS,
-        sheen: false,
-    }
+pub(super) fn label_look(palette: &Palette) -> SlabLook {
+    SlabLook::plain(
+        palette.pill.clone(),
+        mixed(&palette.pill, &palette.slab_deep, LABEL_EDGE),
+        PILL_THICKNESS,
+        PILL_RADIUS,
+    )
 }
 
 /// The floor of a tray nested in some containers: a step deeper for each.
-fn floor_at(depth: f64, palette: &Palette) -> String {
+fn floor_at(depth: f64, palette: &Palette) -> Colour {
     let sink = Share {
         light: js::js_min(TRAY_SINK_MAX.light, depth * TRAY_SINK.light),
         dark: js::js_min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
     };
-    tinted(palette.tray_floor, Some(palette.tray_sink), sink)
+    tinted(&palette.tray_floor, Some(&palette.tray_sink), sink)
 }
 
 /// A container's tray: a neutral well with a header slab made of what holds it.
-pub fn tray_look(header: Rect, palette: &Palette, depth: f64) -> TrayLook {
+pub(super) fn tray_look(header: Rect, palette: &Palette, depth: f64) -> TrayLook {
     let floor = floor_at(depth, palette);
     let ground = if depth == 0.0 {
-        palette.background.to_owned()
+        palette.background.clone()
     } else {
         floor_at(depth - 1.0, palette)
     };
     TrayLook {
-        top_wall: tinted(&floor, Some(palette.slab_deep), TOP_WALL),
-        side_wall: tinted(&floor, Some(palette.slab_deep), SIDE_WALL),
+        top_wall: tinted(&floor, Some(&palette.slab_deep), TOP_WALL),
+        side_wall: tinted(&floor, Some(&palette.slab_deep), SIDE_WALL),
         floor,
         header,
-        header_look: SlabLook {
-            edge: tinted(&ground, Some(palette.slab_deep), TOP_WALL),
-            face: ground,
-            ground: None,
-            lit: None,
-            thickness: CARD_THICKNESS,
-            radius: SLAB_RADIUS,
-            sheen: false,
-        },
+        header_look: SlabLook::plain(
+            ground.clone(),
+            tinted(&ground, Some(&palette.slab_deep), TOP_WALL),
+            CARD_THICKNESS,
+            SLAB_RADIUS,
+        ),
     }
 }
 
-/// Applied channels for browser inspection of the actual drawing.
-pub fn appearance_attributes(appearance: &NodeAppearance) -> Attrs {
-    attrs! {
-        "data-depiction": if appearance.container { "container" } else { "card" },
-        "data-body-color": appearance.body_color.map_or("neutral", PaletteColor::as_str),
-        "data-group": appearance.group.as_deref(),
-        "data-type-color": appearance.type_color.map_or("neutral", PaletteColor::as_str),
-        "data-type-name": appearance.type_name.as_str(),
-        "data-type-kind": appearance.type_kind.as_str(),
-    }
-}
-
-/// One type chip, a small tile raised off the face it sits on; on a removed
-/// part a flat, see-through tile under its glyph.
-pub fn type_chip(
-    x: f64,
-    y: f64,
+/// One type chip at the origin, a small tile raised off the face it sits on;
+/// on a removed part a flat, see-through tile under its glyph.
+pub(super) fn type_chip(
     appearance: &NodeAppearance,
     palette: &Palette,
     standing: Option<Standing>,
     icons: &BTreeMap<String, Vec<String>>,
-) -> Markup {
-    let ink = semantic_ink(appearance.type_color).unwrap_or_else(|| palette.glyph.to_owned());
+) -> Items {
+    let ink = semantic_ink(appearance.type_color).unwrap_or_else(|| palette.glyph.clone());
     let rect = Rect {
-        x,
-        y,
+        x: 0.0,
+        y: 0.0,
         width: ICON_CHIP_SIZE,
         height: ICON_CHIP_SIZE,
     };
     let glyph = glyph_group(
         &appearance.icon,
-        x + ICON_CHIP_SIZE / 2.0,
-        y + (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
+        ICON_CHIP_SIZE / 2.0,
+        (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
         &ink,
         icons,
     );
     if standing == Some(Standing::Removed) {
         return concat(vec![
-            tag(
-                "rect",
-                attrs! {
-                    "x": x,
-                    "y": y,
-                    "width": ICON_CHIP_SIZE,
-                    "height": ICON_CHIP_SIZE,
-                    "rx": ICON_CHIP_RADIUS,
-                }
-                .with(ghost_face(palette)),
-            ),
+            shape(ghost_face(
+                Shape::rect(Purpose::Box, rect, Some(ICON_CHIP_RADIUS)),
+                palette,
+            )),
             glyph,
         ]);
     }
@@ -221,12 +188,13 @@ pub fn type_chip(
 }
 
 /// A type chip's tile without its glyph, and the shadow it casts.
-pub fn chip_tile(rect: Rect, ink: &str, palette: &Palette) -> Markup {
+pub(super) fn chip_tile(rect: Rect, ink: &Colour, palette: &Palette) -> Items {
+    let face = inked_over(&palette.slab_face, ink, CHIP_FACE);
     let look = SlabLook {
-        face: inked_over(palette.slab_face, ink, CHIP_FACE),
-        ground: None,
-        lit: None,
-        edge: inked_over(palette.slab_edge, ink, CHIP_EDGE),
+        face: Paint::from(&face),
+        tintable: false,
+        lit: face,
+        edge: inked_over(&palette.slab_edge, ink, CHIP_EDGE),
         thickness: CHIP_THICKNESS,
         radius: ICON_CHIP_RADIUS,
         sheen: true,

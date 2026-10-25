@@ -2,33 +2,34 @@
 //! with, its label and warning above all connections, and the shadow its label
 //! casts under every line.
 
-use crate::attrs;
 use crate::drawing::{Edge, Emphasis};
-use crate::geometry::{coord, label_anchor_of};
-use crate::markup::{Markup, group, lines, tag, wrap};
+use crate::geometry::{Point, label_anchor_of, round_coord};
 use crate::paint::appearance::label_look;
-use crate::paint::colour::colour_id;
+use crate::paint::build::{Items, group, grouped, lines, route, shape};
 use crate::paint::design::PILL_RADIUS;
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
-    PART_ATTRIBUTE, ghost_opacity, standing_palette, standing_swipe, subject, warning_on_line,
+    ghost_opacity, standing_palette, standing_swipe, subject, warning_on_line,
 };
 use crate::paint::styles::{
-    HEAD_LENGTH, Head, Styles, drawn_ink, edge_attributes, head_ref_x, head_widths,
+    HEAD_LENGTH, Styles, drawn_ink, edge_stroke, head_of, head_ref_x, head_widths,
     relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
-use crate::request::{LineAppearance, PaletteColor, Standing};
-use crate::scene::{Role, SubjectKind};
+use crate::request::{LineAppearance, Standing};
+use crate::scene::{
+    Colour, Definition, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId, PathStep, Purpose,
+    Role, Shape, Stroke, SubjectKind,
+};
 
 /// Width added to a connection's invisible selection halo.
 const EDGE_HALO_EXTRA: f64 = 5.0;
 /// An arrowhead's drawing: a square this many marker units wide.
 const MARKER_BOX: f64 = 10.0;
 /// How thick the open head's arms are drawn, in marker units.
-const OPEN_ARM: f64 = 1.7;
+pub(super) const OPEN_ARM: f64 = 1.7;
 
 /// How far back from a route's end its arrowhead's ink reaches.
 pub(super) fn arrowhead_reach(head: Head) -> f64 {
@@ -39,36 +40,49 @@ pub(super) fn arrowhead_reach(head: Head) -> f64 {
     ((head_ref_x(head) - back) * HEAD_LENGTH) / MARKER_BOX
 }
 
-/// An arrowhead marker in one ink, in SVG's proportional stroke-width units.
-pub(super) fn arrowhead_marker(id: &str, head: Head, weight: Emphasis, ink: &str) -> Markup {
-    let side = coord(head_widths(weight));
-    let shape = match head {
-        Head::Filled => tag("path", attrs! { "d": "M0,0 L10,5 L0,10 z", "fill": ink }),
-        Head::Open => tag(
-            "path",
-            attrs! {
-                "d": "M2,1 L10,5 L2,9",
-                "fill": "none",
-                "stroke": ink,
-                "stroke-width": OPEN_ARM,
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-            },
-        ),
-    };
-    wrap(
-        "marker",
-        attrs! {
-            "id": id,
-            "viewBox": format!("0 0 {} {}", crate::js::number(MARKER_BOX), crate::js::number(MARKER_BOX)),
-            "refX": head_ref_x(head),
-            "refY": MARKER_BOX / 2.0,
-            "markerWidth": side.as_str(),
-            "markerHeight": side.as_str(),
-            "orient": "auto-start-reverse",
-        },
-        shape,
-    )
+/// A point of an arrowhead's square.
+const fn at(x: f64, y: f64) -> Point {
+    Point { x, y }
+}
+
+/// The outline of an arrowhead in its ten-unit square: closed for a filled
+/// head, two arms for an open one.
+pub(super) fn head_outline(head: Head) -> Vec<PathStep> {
+    match head {
+        Head::Filled => vec![
+            PathStep::Move { to: at(0.0, 0.0) },
+            PathStep::Line { to: at(10.0, 5.0) },
+            PathStep::Line { to: at(0.0, 10.0) },
+            PathStep::Close,
+        ],
+        Head::Open => vec![
+            PathStep::Move { to: at(2.0, 1.0) },
+            PathStep::Line { to: at(10.0, 5.0) },
+            PathStep::Line { to: at(2.0, 9.0) },
+        ],
+    }
+}
+
+/// An arrowhead in one ink, drawn in its marker's ten-unit square.
+pub(super) fn arrowhead(head: Head, ink: &Colour) -> Shape {
+    let outline = Shape::path(Purpose::Arrowhead, head_outline(head));
+    match head {
+        Head::Filled => outline.filled(ink),
+        Head::Open => outline
+            .unfilled()
+            .stroked(Stroke::new(ink, OPEN_ARM).rounded()),
+    }
+}
+
+/// An arrowhead marker in one ink, sized in widths of its line's stroke.
+pub(super) fn arrowhead_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
+    Marker {
+        id,
+        view: MARKER_BOX,
+        reference: at(head_ref_x(head), MARKER_BOX / 2.0),
+        size: round_coord(head_widths(weight)),
+        shapes: vec![arrowhead(head, ink)],
+    }
 }
 
 /// The subject kind a drawn line is: a flow step drawn on the board, or a relationship.
@@ -86,7 +100,7 @@ pub(super) fn line_ink(
     standing: Option<Standing>,
     appearance: &LineAppearance,
     weight: Emphasis,
-) -> String {
+) -> Colour {
     drawn_ink(
         &relationship_ink(palette, standing, appearance),
         palette,
@@ -100,69 +114,55 @@ pub(super) fn paint_edge_line(
     palette: &Palette,
     standing: Option<Standing>,
     appearance: &LineAppearance,
-    mask: Option<&String>,
+    mask: Option<&MaskId>,
     step: bool,
     ports: &[(Port, bool)],
-) -> Markup {
+) -> Items {
     let edge = &routed.edge;
     let styles = Styles::of(palette);
-    let width = stroke_width(edge.emphasis);
-    let attributes = edge_attributes(edge.emphasis, palette, standing, appearance);
     let weight = edge.emphasis;
+    let width = stroke_width(weight);
+    let stroke = edge_stroke(weight, palette, standing, appearance);
     let ink = line_ink(palette, standing, appearance, weight);
-    let marker_id = format!(
-        "edge-head-{}-{}-{}",
-        appearance.arrowhead.as_str(),
-        weight.as_str(),
-        colour_id(&ink)
-    );
-    let head = Head::of(appearance.arrowhead);
-    let mut parts = vec![
-        head.map_or_else(Markup::new, |head| {
-            wrap(
-                "defs",
-                attrs! {},
-                arrowhead_marker(&marker_id, head, weight, &ink),
-            )
-        }),
-        standing_swipe(&routed.path, width, standing, palette),
-        tag(
-            "path",
-            attrs! {
-                "class": "ab-halo",
-                "d": routed.path.as_str(),
-                "stroke-width": width + EDGE_HALO_EXTRA,
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-            }
-            .with(styles.halo()),
-        ),
-        tag(
-            "path",
-            attrs! {
-                "d": routed.path.as_str(),
-                "marker-end": head.map(|_| format!("url(#{marker_id})")),
-            }
-            .with(attributes.clone()),
-        ),
-    ];
-    for (port, well) in ports {
-        parts.push(port_inside(port, *well, attributes.clone(), width, palette));
+    let head = head_of(appearance.arrowhead);
+    let path = route(&routed.curve);
+    let mut line = Shape::path(Purpose::Line, path.clone())
+        .unfilled()
+        .stroked(stroke.clone());
+    let mut parts = Vec::new();
+    if let Some(head) = head {
+        let id = MarkerId::Line {
+            head,
+            weight,
+            ink: ink.clone(),
+        };
+        line.marker = Some(id.clone());
+        parts.push(vec![Item::Definitions {
+            definitions: vec![Definition::Marker(arrowhead_marker(id, head, weight, &ink))],
+        }]);
     }
-    group(
-        Role::Line,
-        Some(subject(line_kind(step), &edge.id, standing)),
-        attrs! {
-            "opacity": ghost_opacity(standing),
-            "mask": mask.map(|mask| format!("url(#{mask})")),
-            "data-type-name": appearance.name.as_str(),
-            "data-type-kind": edge.kind.as_str(),
-            "data-line-color": appearance.color.map_or("neutral", PaletteColor::as_str),
-            "data-line-dash": appearance.dash.as_str(),
-            "data-arrowhead": appearance.arrowhead.as_str(),
-        },
-        lines(parts),
-    )
+    parts.push(standing_swipe(&path, width, standing, palette));
+    parts.push(shape(
+        Shape::path(Purpose::Halo, path)
+            .unfilled()
+            .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
+    ));
+    parts.push(shape(line));
+    for (port, well) in ports {
+        parts.push(port_inside(port, *well, &stroke, width, palette));
+    }
+    grouped(Group {
+        opacity: ghost_opacity(standing),
+        mask: mask.cloned(),
+        ..Group::new(
+            Role::Line(Some(Box::new(LineFacts {
+                appearance: appearance.clone(),
+                kind: edge.kind.clone(),
+            }))),
+            lines(parts),
+        )
+        .drawing(subject(line_kind(step), &edge.id, standing))
+    })
 }
 
 /// A relationship's label and warning, above all connections.
@@ -172,17 +172,17 @@ pub(super) fn paint_edge_words(
     standing: Option<Standing>,
     unsettled: bool,
     step: bool,
-) -> Markup {
+) -> Items {
     let at = match &routed.label {
         None => label_anchor_of(&routed.curve),
-        Some(label) => crate::geometry::Point {
+        Some(label) => Point {
             x: label.bounds.x,
             y: label.bounds.y + label.bounds.height / 2.0,
         },
     };
     let badge = warning_on_line(Some(at), unsettled, palette);
     let pill = match &routed.label {
-        None => Markup::new(),
+        None => Items::new(),
         Some(label) => {
             let mut parts = vec![slab_seat(label.bounds, PILL_RADIUS)];
             for chip in label.chips() {
@@ -208,20 +208,19 @@ pub(super) fn paint_edge_words(
         }
     };
     if pill.is_empty() && badge.is_empty() {
-        return Markup::new();
+        return Items::new();
     }
     group(
         Role::Label,
         Some(subject(line_kind(step), &routed.edge.id, standing)),
-        attrs! { PART_ATTRIBUTE: "label" },
         lines(vec![pill, badge]),
     )
 }
 
 /// The shadow a relationship's label casts, under every line.
-pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<Standing>) -> Markup {
+pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<Standing>) -> Items {
     match &routed.label {
-        None => Markup::new(),
+        None => Items::new(),
         Some(label) => lines(
             label
                 .chips()

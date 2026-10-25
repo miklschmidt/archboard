@@ -1,58 +1,47 @@
-//! A Remix Icon, drawn as its own component renders it. The host supplies each
-//! icon's path data; the painter writes the markup.
+//! A Remix Icon, centred inside its type chip. The scene names the icon; each
+//! frontend draws it from the icon set the host gave.
 
 use std::collections::BTreeMap;
 
-use crate::attrs;
-use crate::geometry::coord;
-use crate::markup::{Markup, concat, group, wrap};
-use crate::scene::Role;
+use crate::geometry::round_coord;
+use crate::paint::build::{Items, grouped};
+use crate::scene::{Colour, Group, Icon, Item, Role, Transform};
 
 /// The icon drawn for a name the icon set does not have.
 pub const FALLBACK_ICON: &str = "RiQuestionLine";
 
-/// One icon at chip size, as `@remixicon/react` renders it.
-fn icon_markup(paths: &[String], ink: &str) -> Markup {
-    wrap(
-        "svg",
-        attrs! {
-            "viewBox": "0 0 24 24",
-            "xmlns": "http://www.w3.org/2000/svg",
-            "width": 18.0,
-            "height": 18.0,
-            "fill": ink,
-            "aria-hidden": "true",
-            "class": "remixicon ",
-        },
-        concat(
-            paths
-                .iter()
-                .map(|d| wrap("path", attrs! { "d": d }, Markup::new()))
-                .collect(),
-        ),
+/// The side of the square an icon is drawn into on its chip.
+const ICON_SIZE: f64 = 18.0;
+
+/// The move that centres an icon on a point.
+pub(super) fn centred_on(cx: f64, cy: f64) -> Transform {
+    Transform::translate(
+        round_coord(cx - ICON_SIZE / 2.0),
+        round_coord(cy - ICON_SIZE / 2.0),
     )
 }
 
-/// A configured icon, centred inside its type chip.
-pub fn glyph_group(
-    icon: &str,
+/// A kind's icon at chip size, centred on a point: the icon the kind asked
+/// for when the host has it, else the icon for a name the set does not have.
+pub(super) fn glyph_group(
+    asked: &str,
     cx: f64,
     cy: f64,
-    ink: &str,
+    ink: &Colour,
     icons: &BTreeMap<String, Vec<String>>,
-) -> Markup {
-    let paths = icons
-        .get(icon)
-        .or_else(|| icons.get(FALLBACK_ICON))
-        .map(Vec::as_slice)
-        .unwrap_or_default();
-    group(
-        Role::Icon,
-        None,
-        attrs! {
-            "transform": format!("translate({},{})", coord(cx - 9.0), coord(cy - 9.0)),
-            "data-type-icon": icon,
-        },
-        icon_markup(paths, ink),
+) -> Items {
+    let name = if icons.contains_key(asked) {
+        asked
+    } else {
+        FALLBACK_ICON
+    };
+    let icon = Icon {
+        name: name.to_owned(),
+        size: ICON_SIZE,
+        ink: ink.clone(),
+    };
+    grouped(
+        Group::new(Role::Icon(Some(asked.to_owned())), vec![Item::Icon(icon)])
+            .moved(centred_on(cx, cy)),
     )
 }

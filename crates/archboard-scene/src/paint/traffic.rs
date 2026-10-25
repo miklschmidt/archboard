@@ -4,17 +4,15 @@
 
 use std::collections::HashMap;
 
-use crate::attrs;
 use crate::drawing::{Edge, Traffic};
-use crate::geometry::{Curve, Rect};
+use crate::geometry::{Curve, Point, Rect};
 use crate::js;
-use crate::markup::{Markup, group};
+use crate::paint::build::{Items, grouped};
 use crate::paint::colour::{Share, tinted};
 use crate::paint::palette::Palette;
 use crate::paint::relay::{Lane, relay_rhythms, rim_length};
-use crate::paint::standing::TRAFFIC_ATTRIBUTE;
 use crate::route::{route_length, shortened_by};
-use crate::scene::{Item, Motion, PulseLook, Role, TrafficMark};
+use crate::scene::{Colour, Group, Item, Motion, PulseLook, Role, TrafficMark};
 
 /// The air between the base of an arrowhead and the pulse that sinks into it.
 const AIR: f64 = 1.0;
@@ -30,10 +28,10 @@ const HOT_LIGHT: Share = Share {
 
 /// How a pulse on a line is drawn: its relationship's colour at full strength
 /// with white mixed in, and more of it in the front.
-pub(super) fn pulse_look(ink: &str, line_width: f64, palette: &Palette) -> PulseLook {
+pub(super) fn pulse_look(ink: &Colour, line_width: f64, palette: &Palette) -> PulseLook {
     PulseLook {
-        head: tinted(ink, Some(palette.glow), BODY_LIGHT),
-        hot: tinted(ink, Some(palette.glow), HOT_LIGHT),
+        head: tinted(ink, Some(&palette.glow), BODY_LIGHT),
+        hot: tinted(ink, Some(&palette.glow), HOT_LIGHT),
         line_width,
     }
 }
@@ -55,7 +53,7 @@ pub(super) struct TrafficLine<'a> {
     /// The route its pulses ride, when it runs on into the ports at its ends.
     pub into: Curve,
     /// The relationship's colour at full strength.
-    pub ink: String,
+    pub ink: Colour,
     pub line_width: f64,
 }
 
@@ -64,7 +62,7 @@ pub(super) fn paint_traffic(
     lines: &[TrafficLine<'_>],
     cards: &[(&str, Rect)],
     palette: &Palette,
-) -> HashMap<String, Markup> {
+) -> HashMap<String, Items> {
     let rides: HashMap<&str, Option<(Curve, f64)>> = lines
         .iter()
         .map(|line| {
@@ -93,7 +91,7 @@ pub(super) fn paint_traffic(
             }
         })
         .collect();
-    let across = |card: &str, from: crate::geometry::Point, to: crate::geometry::Point| {
+    let across = |card: &str, from: Point, to: Point| {
         // A card listed twice answers with the last of its boxes, as a map built from the list does.
         match cards.iter().rev().find(|(id, _)| *id == card) {
             Some((_, rect)) => rim_length(*rect, from, to),
@@ -116,16 +114,11 @@ pub(super) fn paint_traffic(
                         phase: rhythm.phase,
                     },
                 })],
-                _ => Markup::new(),
+                _ => Items::new(),
             };
             (
                 id.to_owned(),
-                group(
-                    Role::Traffic,
-                    None,
-                    attrs! { TRAFFIC_ATTRIBUTE: id },
-                    pulses,
-                ),
+                grouped(Group::new(Role::Traffic(id.to_owned()), pulses)),
             )
         })
         .collect()

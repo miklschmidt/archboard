@@ -1,20 +1,21 @@
 //! The page a painting is drawn on: moved clear of the canvas edge, framed as
 //! planned when nothing it describes is built, and the boxes of its atlas.
 
-use crate::attrs;
-use crate::geometry::{Canvas, Rect, coord, covering, round_coord};
-use crate::markup::{Markup, group, lines, tag, text_node};
+use crate::geometry::{Canvas, Point, Rect, covering, round_coord};
 use crate::paint::Ctx;
-use crate::paint::design::{PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
-use crate::paint::fonts::{PILL_FONT, font_attributes};
+use crate::paint::build::{Items, grouped, lines, shape, text};
+use crate::paint::design::{PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
 use crate::paint::palette::Palette;
-use crate::scene::{Atlas, AtlasBox, Boxes, Role};
+use crate::scene::{
+    Atlas, AtlasBox, Baseline, Boxes, Group, Purpose, Role, Setting, Shape, Slot, Stroke, Text,
+    Transform,
+};
 
 /// A painted page: its body, its size and where each subject landed on it.
 #[derive(Debug)]
-pub struct PaintedPage {
+pub(super) struct PaintedPage {
     /// What is drawn, in page coordinates.
-    pub body: Markup,
+    pub body: Items,
     /// The page's width, in diagram units.
     pub width: f64,
     /// The page's height, in diagram units.
@@ -25,7 +26,7 @@ pub struct PaintedPage {
 
 /// Boxes onto the canvas, in the order they were drawn; an id drawn more than
 /// once keeps the box covering every drawing of it.
-pub fn atlas_boxes(entries: &[(&str, Rect)], canvas: &Canvas) -> Boxes {
+pub(super) fn atlas_boxes(entries: &[(&str, Rect)], canvas: &Canvas) -> Boxes {
     let mut grown: Vec<(String, Rect)> = Vec::new();
     for (id, rect) in entries {
         match grown.iter_mut().find(|(held, _)| held == id) {
@@ -53,16 +54,14 @@ pub fn atlas_boxes(entries: &[(&str, Rect)], canvas: &Canvas) -> Boxes {
 
 /// The body moved clear of the canvas edge, when something was drawn above or
 /// left of the origin.
-pub fn shifted(canvas: &Canvas, body: Markup) -> Markup {
+pub(super) fn shifted(canvas: &Canvas, body: Items) -> Items {
     if canvas.shift_x == 0.0 && canvas.shift_y == 0.0 {
         return body;
     }
-    group(
-        Role::Move,
-        None,
-        attrs! { "transform": format!("translate({},{})", coord(canvas.shift_x), coord(canvas.shift_y)) },
-        body,
-    )
+    grouped(Group::new(Role::Move, body).moved(Transform::translate(
+        round_coord(canvas.shift_x),
+        round_coord(canvas.shift_y),
+    )))
 }
 
 /// What the planned frame says.
@@ -93,7 +92,7 @@ fn moved_all(boxes: &Boxes, dx: f64, dy: f64) -> Boxes {
 }
 
 /// An atlas moved with its body.
-pub fn moved_atlas(atlas: &Atlas, dx: f64, dy: f64) -> Atlas {
+pub(super) fn moved_atlas(atlas: &Atlas, dx: f64, dy: f64) -> Atlas {
     Atlas {
         nodes: moved_all(&atlas.nodes, dx, dy),
         edges: moved_all(&atlas.edges, dx, dy),
@@ -112,55 +111,55 @@ fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> Pai
     let height = page.height + dx + dy;
     let top = PLANNED_FRAME_INSET + LABEL_RISE;
     let label_x = PLANNED_FRAME_INSET + LABEL_INDENT;
-    let frame = tag(
-        "rect",
-        attrs! {
-            "x": PLANNED_FRAME_INSET,
-            "y": round_coord(top),
-            "width": round_coord(width - 2.0 * PLANNED_FRAME_INSET),
-            "height": round_coord(height - top - PLANNED_FRAME_INSET),
-            "rx": 10.0,
-            "fill": "none",
-            "stroke": palette.muted,
-            "stroke-opacity": 0.6,
-            "stroke-width": 1.5,
-            "stroke-dasharray": "6 4",
+    let frame = shape(
+        Shape::rect(
+            Purpose::Box,
+            Rect {
+                x: PLANNED_FRAME_INSET,
+                y: round_coord(top),
+                width: round_coord(width - 2.0 * PLANNED_FRAME_INSET),
+                height: round_coord(height - top - PLANNED_FRAME_INSET),
+            },
+            Some(10.0),
+        )
+        .unfilled()
+        .stroked(Stroke::new(&palette.muted, 1.5).at(0.6).dashed(&[6.0, 4.0])),
+    );
+    let clearing = shape(
+        Shape::rect(
+            Purpose::Box,
+            Rect {
+                x: label_x - LABEL_CLEARANCE,
+                y: round_coord(top - LABEL_SIZE / 2.0 - 1.0),
+                width: round_coord(label_width + 2.0 * LABEL_CLEARANCE),
+                height: LABEL_SIZE + 2.0,
+            },
+            None,
+        )
+        .filled(&palette.background),
+    );
+    let label = text(Text {
+        setting: Setting::Caption,
+        at: Point {
+            x: label_x,
+            y: round_coord(top),
         },
-    );
-    let clearing = tag(
-        "rect",
-        attrs! {
-            "x": label_x - LABEL_CLEARANCE,
-            "y": round_coord(top - LABEL_SIZE / 2.0 - 1.0),
-            "width": round_coord(label_width + 2.0 * LABEL_CLEARANCE),
-            "height": LABEL_SIZE + 2.0,
-            "fill": palette.background,
-        },
-    );
-    let label = text_node(
-        attrs! {
-            "x": label_x,
-            "y": round_coord(top),
-            "dominant-baseline": "central",
-            "font-size": LABEL_SIZE,
-            "fill": palette.muted,
-        }
-        .with(font_attributes(PILL_FONT)),
-        PLANNED_LABEL,
-    );
+        font: PILL_FONT,
+        size: LABEL_SIZE,
+        fill: palette.muted.clone(),
+        anchor: None,
+        baseline: Some(Baseline::Central),
+        keeps_spaces: false,
+        words: PLANNED_LABEL.to_owned(),
+    });
     PaintedPage {
         body: lines(vec![
-            group(
-                Role::Slot,
-                None,
-                attrs! { "data-slot": "planned-frame" },
+            grouped(Group::new(
+                Role::Slot(Slot::PlannedFrame),
                 lines(vec![frame, clearing, label]),
-            ),
-            group(
-                Role::Move,
-                None,
-                attrs! { "transform": format!("translate({} {})", crate::js::number(dx), crate::js::number(round_coord(dy))) },
-                page.body,
+            )),
+            grouped(
+                Group::new(Role::Inset, page.body).moved(Transform::translate(dx, round_coord(dy))),
             ),
         ]),
         width,
@@ -170,7 +169,7 @@ fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> Pai
 }
 
 /// The page a painting is drawn on: as painted, or framed as planned.
-pub fn page_for(
+pub(super) fn page_for(
     ctx: &Ctx<'_>,
     painting: PaintedPage,
     palette: &Palette,
@@ -184,7 +183,7 @@ pub fn page_for(
 }
 
 /// The accessible name, saying what the frame says when the board is planned.
-pub fn planned_title(title: &str, unbuilt: bool) -> String {
+pub(super) fn planned_title(title: &str, unbuilt: bool) -> String {
     if unbuilt {
         format!("{title}. {PLANNED_LABEL}")
     } else {

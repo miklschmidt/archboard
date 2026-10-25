@@ -2,12 +2,11 @@
 //! the pulses that ride it on the exchange's shared clock, and each message's
 //! words, label chip and note, with the tint a comparison lays over its row.
 
-use crate::attrs;
 use crate::drawing::Emphasis;
-use crate::geometry::{Curve, Point, Rect, Segment, coord, curve_through};
+use crate::geometry::{Curve, Point, Rect, Segment, curve_through, round_coord};
 use crate::js;
-use crate::markup::{Attrs, Markup, concat, group, lines, tag, text_node};
 use crate::paint::appearance::label_look;
+use crate::paint::build::{Items, concat, group, grouped, lines, point, shape, text};
 use crate::paint::design::{
     MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
     STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
@@ -15,16 +14,17 @@ use crate::paint::design::{
 use crate::paint::palette::Palette;
 use crate::paint::relay::PULSE_PACE;
 use crate::paint::slab::{boxed, ghost_face, slab, slab_seat};
-use crate::paint::standing::{
-    PART_ATTRIBUTE, ghost_opacity, ink_of, standing_palette, subject, warning_on_line,
-};
+use crate::paint::standing::{ghost_opacity, ink_of, standing_palette, subject, warning_on_line};
 use crate::paint::styles::{
-    Head, LIT_HEAD, Styles, full_line_colour, head_base, head_reach, line_colour, marker_for,
-    stroke_width,
+    Styles, full_line_colour, head_base, head_reach, line_colour, marker_for, stroke_width,
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
-use crate::scene::{Item, Motion, Role, SubjectKind, TrafficMark};
+use crate::scene::traffic::PULSE_LENGTH;
+use crate::scene::{
+    Anchor, Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Setting, Shape,
+    Stroke, SubjectKind, TrafficMark,
+};
 
 const STEP_WEIGHT: Emphasis = Emphasis::Normal;
 const STEP_HALO_EXTRA: f64 = 5.0;
@@ -34,8 +34,6 @@ const ROW_TINT: f64 = 0.08;
 const LIT_RULE_WIDTH: f64 = 1.25;
 /// Where the baseline of a line of pill words stands in its row, as a share of the row.
 pub(super) const PILL_BASELINE: f64 = 0.68;
-/// The longest a pulse is: the room a clock leaves after its last pulse has left.
-const PULSE_LENGTH: f64 = 3.0 + 12.0 + 56.0 + 2.0;
 /// The air between the base of an arrowhead and the pulse that sinks into it.
 const AIR: f64 = 1.0;
 
@@ -60,47 +58,69 @@ pub fn arrow_standoff(kind: MessageKind) -> f64 {
 }
 
 /// What sort of message each kind is, said in dashes: only the reply is dashed.
-fn step_dash(kind: MessageKind) -> Option<&'static str> {
-    (kind == MessageKind::Return).then_some("5 4")
+fn step_dash(kind: MessageKind) -> &'static [f64] {
+    if kind == MessageKind::Return {
+        &[5.0, 4.0]
+    } else {
+        &[]
+    }
 }
 
 /// How one message's line is stroked.
-fn step_attributes(kind: MessageKind, palette: &Palette, standing: Option<Standing>) -> Attrs {
-    attrs! {
-        "fill": "none",
-        "stroke": line_colour(palette, standing),
-        "stroke-width": stroke_width(STEP_WEIGHT),
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-dasharray": step_dash(kind),
-    }
+fn step_stroke(kind: MessageKind, palette: &Palette, standing: Option<Standing>) -> Stroke {
+    Stroke::new(line_colour(palette, standing), stroke_width(STEP_WEIGHT))
+        .rounded()
+        .dashed(step_dash(kind))
 }
 
 /// The path a self-message takes: out to the right, down, and back.
-fn self_path(placed: &SequenceStep) -> String {
-    let corner = js::number(SELF_LOOP_CORNER);
-    format!(
-        "M{},{} h{} a{corner},{corner} 0 0 1 {corner},{corner} v{} a{corner},{corner} 0 0 1 -{corner},{corner} h-{}",
-        coord(placed.start),
-        coord(placed.y),
-        coord(SELF_LOOP_REACH),
-        coord(SELF_LOOP_DROP),
-        coord(SELF_LOOP_REACH - arrow_standoff(MessageKind::Myself)),
-    )
+fn self_path(placed: &SequenceStep) -> Vec<PathStep> {
+    let corner = Point {
+        x: SELF_LOOP_CORNER,
+        y: SELF_LOOP_CORNER,
+    };
+    vec![
+        PathStep::Move {
+            to: point(placed.start, placed.y),
+        },
+        PathStep::AcrossBy {
+            dx: round_coord(SELF_LOOP_REACH),
+        },
+        PathStep::ArcBy {
+            radius: corner,
+            clockwise: true,
+            by: corner,
+        },
+        PathStep::DownBy {
+            dy: round_coord(SELF_LOOP_DROP),
+        },
+        PathStep::ArcBy {
+            radius: corner,
+            clockwise: true,
+            by: Point {
+                x: -SELF_LOOP_CORNER,
+                y: SELF_LOOP_CORNER,
+            },
+        },
+        PathStep::AcrossBy {
+            dx: -round_coord(SELF_LOOP_REACH - arrow_standoff(MessageKind::Myself)),
+        },
+    ]
 }
 
 /// The path one message's line takes.
-fn step_path(placed: &SequenceStep) -> String {
+fn step_path(placed: &SequenceStep) -> Vec<PathStep> {
     if placed.travel == 0 {
         return self_path(placed);
     }
-    format!(
-        "M{},{} L{},{}",
-        coord(placed.start),
-        coord(placed.y),
-        coord(placed.end),
-        coord(placed.y)
-    )
+    vec![
+        PathStep::Move {
+            to: point(placed.start, placed.y),
+        },
+        PathStep::Line {
+            to: point(placed.end, placed.y),
+        },
+    ]
 }
 
 /// The part of one message's line its pulses ride, and how long it is.
@@ -191,7 +211,7 @@ fn timed_crossings(
     palette: &Palette,
     crossing: &Crossing,
     mark: Option<Standing>,
-) -> Markup {
+) -> Items {
     let look = pulse_look(
         full_line_colour(palette, mark),
         stroke_width(STEP_WEIGHT),
@@ -220,19 +240,19 @@ fn timed_crossings(
 }
 
 /// A standing's tint over a box.
-pub(super) fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette) -> Markup {
+pub(super) fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette) -> Items {
     let Some(ink) = ink_of(standing, palette) else {
-        return Markup::new();
+        return Items::new();
     };
-    tag(
-        "rect",
-        boxed(rect).set("fill", ink).set("fill-opacity", ROW_TINT),
-    )
+    shape(Shape {
+        fill_opacity: Some(ROW_TINT),
+        ..Shape::rect(Purpose::Box, boxed(rect), None).filled(ink)
+    })
 }
 
-/// A rounded plate's geometry.
-fn rect_of(rect: Rect) -> Attrs {
-    boxed(rect).set("rx", PILL_RADIUS)
+/// A rounded plate.
+fn plate_of(rect: Rect) -> Shape {
+    Shape::rect(Purpose::Box, boxed(rect), Some(PILL_RADIUS))
 }
 
 /// One message's label, a line at a time, each centred, on a chip.
@@ -242,13 +262,13 @@ fn paint_label(
     palette: &Palette,
     standing: Option<Standing>,
     mark: Option<Standing>,
-) -> Markup {
+) -> Items {
     let words = standing_palette(palette, standing);
     let styles = Styles::of(&words);
     let plate = if standing == Some(Standing::Removed) {
         concat(vec![
-            tag("rect", rect_of(rect).set("fill", palette.tray_floor)),
-            tag("rect", rect_of(rect).with(ghost_face(palette))),
+            shape(plate_of(rect).filled(&palette.tray_floor)),
+            shape(ghost_face(plate_of(rect), palette)),
             row_tint(rect, mark, palette),
         ])
     } else {
@@ -257,23 +277,23 @@ fn paint_label(
             slab(rect, &label_look(palette), palette, None, None),
         ])
     };
-    let rule = tag(
-        "rect",
-        attrs! { "class": "ab-halo" }
-            .with(rect_of(rect))
-            .set("stroke-width", LIT_RULE_WIDTH)
-            .with(styles.halo()),
-    );
+    let rule = shape(Shape {
+        purpose: Purpose::Halo,
+        ..plate_of(rect)
+            .unfilled()
+            .stroked(styles.ring(Some(LIT_RULE_WIDTH)))
+    });
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
-        text_node(
-            attrs! {
-                "x": coord(rect.x + rect.width / 2.0),
-                "y": coord(rect.y + PILL_HEIGHT * PILL_BASELINE + index as f64 * MESSAGE_LINE_STEP),
-                "text-anchor": "middle",
-            }
-            .with(styles.pill_text()),
+        let mut set = styles.pill_text().set(
+            Setting::Caption,
+            point(
+                rect.x + rect.width / 2.0,
+                rect.y + PILL_HEIGHT * PILL_BASELINE + index as f64 * MESSAGE_LINE_STEP,
+            ),
             &line.text,
-        )
+        );
+        set.anchor = Some(Anchor::Middle);
+        text(set)
     });
     let mut parts = vec![plate, rule];
     parts.extend(lines_of_words);
@@ -281,25 +301,26 @@ fn paint_label(
 }
 
 /// A step's note under its message, on a plate of the frame's own face.
-fn paint_note(placed: &SequenceStep, palette: &Palette, mark: Option<Standing>) -> Markup {
+fn paint_note(placed: &SequenceStep, palette: &Palette, mark: Option<Standing>) -> Items {
     let Some(note) = &placed.note else {
-        return Markup::new();
+        return Items::new();
     };
     let styles = Styles::of(palette);
     let mut parts = vec![concat(vec![
-        tag("rect", rect_of(note.bounds).set("fill", palette.tray_floor)),
+        shape(plate_of(note.bounds).filled(&palette.tray_floor)),
         row_tint(note.bounds, mark, palette),
     ])];
     parts.extend(note.lines.iter().map(|run| {
-        text_node(
-            attrs! {
-                "xml:space": "preserve",
-                "x": coord(note.bounds.x + STEP_NOTE_PADDING_X + run.x),
-                "y": coord(note.bounds.y + STEP_NOTE_PADDING_Y + run.y),
-            }
-            .with(styles.note()),
+        let mut set = styles.note().set(
+            Setting::Caption,
+            point(
+                note.bounds.x + STEP_NOTE_PADDING_X + run.x,
+                note.bounds.y + STEP_NOTE_PADDING_Y + run.y,
+            ),
             &run.text,
-        )
+        );
+        set.keeps_spaces = true;
+        text(set)
     }));
     lines(parts)
 }
@@ -311,12 +332,11 @@ pub(super) fn paint_step_words(
     standing: Option<Standing>,
     mark: Option<Standing>,
     unsettled: bool,
-) -> Markup {
+) -> Items {
     let plate = placed.label_box;
     group(
         Role::Label,
         Some(subject(SubjectKind::Step, &placed.step.id, standing)),
-        attrs! { PART_ATTRIBUTE: "label" },
         lines(vec![
             paint_label(placed, plate, palette, standing, mark),
             paint_note(placed, palette, mark),
@@ -339,51 +359,53 @@ pub(super) fn paint_step(
     standing: Option<Standing>,
     mark: Option<Standing>,
     crossing: &Crossing,
-) -> Markup {
+) -> Items {
     let styles = Styles::of(palette);
     let path = step_path(placed);
     let ride = step_ride(placed);
     let kind = placed.step.kind;
     let head = step_head(kind);
-    group(
-        Role::Line,
-        Some(subject(SubjectKind::Step, &placed.step.id, standing)),
-        attrs! { "opacity": ghost_opacity(standing) },
-        lines(vec![
-            tag(
-                "path",
-                attrs! {
-                    "class": "ab-halo",
-                    "d": path.as_str(),
-                    "stroke-width": stroke_width(STEP_WEIGHT) + STEP_HALO_EXTRA,
-                    "stroke-opacity": STEP_HALO_OPACITY,
-                    "stroke-linecap": "round",
-                    "stroke-linejoin": "round",
-                }
-                .with(styles.halo()),
-            ),
-            tag(
-                "path",
-                attrs! { "d": path.as_str(), "marker-end": marker_for(STEP_WEIGHT, head, mark) }
-                    .with(step_attributes(kind, palette, mark)),
-            ),
-            tag(
-                "path",
-                attrs! {
-                    "class": "ab-halo",
-                    "d": path.as_str(),
-                    "marker-end": format!("url(#ah-{}-{}{LIT_HEAD})", head.as_str(), STEP_WEIGHT.as_str()),
-                }
-                .with(step_attributes(kind, palette, None))
-                .with(styles.halo())
-                .set("stroke-width", stroke_width(STEP_WEIGHT) + LIT_TRACE_EXTRA),
-            ),
-            match (&ride, standing) {
-                (Some((curve, _)), standing) if standing != Some(Standing::Removed) => {
-                    timed_crossings(placed, curve, palette, crossing, mark)
-                }
-                _ => Markup::new(),
-            },
-        ]),
-    )
+    let width = stroke_width(STEP_WEIGHT);
+    let line = Shape {
+        marker: Some(marker_for(STEP_WEIGHT, head, mark)),
+        ..Shape::path(Purpose::Line, path.clone())
+            .unfilled()
+            .stroked(step_stroke(kind, palette, mark))
+    };
+    let lit = Shape {
+        marker: Some(MarkerId::Shared {
+            head,
+            weight: STEP_WEIGHT,
+            ink: HeadInk::Lit,
+        }),
+        ..styles.halo(Shape::path(Purpose::LitLine, path.clone()).stroked(Stroke {
+            width: Some(width + LIT_TRACE_EXTRA),
+            ..step_stroke(kind, palette, None)
+        }))
+    };
+    grouped(Group {
+        opacity: ghost_opacity(standing),
+        ..Group::new(
+            Role::Line(None),
+            lines(vec![
+                shape(
+                    Shape::path(Purpose::Halo, path).unfilled().stroked(
+                        styles
+                            .ring(Some(width + STEP_HALO_EXTRA))
+                            .at(STEP_HALO_OPACITY)
+                            .rounded(),
+                    ),
+                ),
+                shape(line),
+                shape(lit),
+                match (&ride, standing) {
+                    (Some((curve, _)), standing) if standing != Some(Standing::Removed) => {
+                        timed_crossings(placed, curve, palette, crossing, mark)
+                    }
+                    _ => Items::new(),
+                },
+            ]),
+        )
+        .drawing(subject(SubjectKind::Step, &placed.step.id, standing))
+    })
 }

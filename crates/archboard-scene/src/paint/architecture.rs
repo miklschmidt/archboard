@@ -3,11 +3,10 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use crate::attrs;
 use crate::drawing::{DrawingRegion, Edge, Node, Painted};
 use crate::geometry::{Curve, Rect, canvas_for, curve_bounds, inflate, union};
-use crate::markup::{Markup, concat, lines, wrap};
 use crate::paint::Ctx;
+use crate::paint::build::{Items, lines};
 use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
@@ -16,6 +15,7 @@ use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
 };
 use crate::paint::far_card::Part;
+use crate::paint::flowchart_shapes::FlowchartShapes;
 use crate::paint::junctions::junction_marks;
 use crate::paint::measured_cards::{
     paint_measured_card, paint_measured_frame, paint_measured_header,
@@ -26,10 +26,10 @@ use crate::paint::ports::{Port, PortPlan, Ports, ends_in_port, port_plan, ports_
 use crate::paint::regions::paint_region;
 use crate::paint::slab::{Lift, shadow_under};
 use crate::paint::standing::{Standings, Unsettled, marked_box};
-use crate::paint::styles::{Head, quietened, relationship_ink, stroke_width};
+use crate::paint::styles::{head_of, quietened, relationship_ink, stroke_width};
 use crate::paint::traffic::{TrafficLine, paint_traffic};
 use crate::request::{LineAppearance, NodeAppearance, PaletteColor, Standing};
-use crate::scene::{Atlas, SubjectKind};
+use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 
 /// Boxes by subject id, in the order they were found.
 type Boxed<'edge> = Vec<(&'edge str, Rect)>;
@@ -85,16 +85,6 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
     union(boxes)
 }
 
-/// The cards drawn as shapes of their own: a flowchart's decisions, loops and terminals.
-pub(super) trait Shapes {
-    /// Whether a card is drawn as one of these shapes.
-    fn has(&self, id: &str) -> bool;
-    /// The shadow under a card drawn as its shape.
-    fn shadow(&self, card: &Node, standing: Option<Standing>) -> Markup;
-    /// A card drawn as its shape, with how it stands against the variant it came from.
-    fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Markup;
-}
-
 /// What an architecture is painted with besides its drawing.
 pub(super) struct Vocabulary<'a> {
     pub appearances: &'a BTreeMap<String, NodeAppearance>,
@@ -110,7 +100,16 @@ pub(super) struct Vocabulary<'a> {
 pub(super) struct HeldPage<'a> {
     pub drawing: &'a Painted,
     pub standings: &'a Standings,
-    pub shapes: Option<&'a dyn Shapes>,
+    pub shapes: Option<&'a FlowchartShapes<'a>>,
+}
+
+/// Some definitions laid among the layers that refer to them; nothing when there are none.
+fn definitions(definitions: Vec<Definition>) -> Items {
+    if definitions.is_empty() {
+        Items::new()
+    } else {
+        vec![Item::Definitions { definitions }]
+    }
 }
 
 /// Two numbers in ascending order, a number that is not one tied with every other.
@@ -227,7 +226,7 @@ impl<'p> Painting<'p> {
     }
 
     /// The shapes that draw a card of its own, if the card is one of theirs.
-    fn shapes_of(&self, id: &str) -> Option<&'p dyn Shapes> {
+    fn shapes_of(&self, id: &str) -> Option<&'p FlowchartShapes<'p>> {
         self.page.shapes.filter(|shapes| shapes.has(id))
     }
 
@@ -238,7 +237,7 @@ impl<'p> Painting<'p> {
         let traffic = edge.traffic.filter(|_| !self.removed(&edge.id))?;
         let appearance = look_of(self.vocabulary, &edge.id);
         let into_ports = self.ports.of_edge(&edge.id);
-        let head_reach = Head::of(appearance.arrowhead)
+        let head_reach = head_of(appearance.arrowhead)
             .filter(|_| !ends_in_port(&routed.curve, &into_ports))
             .map_or(0.0, arrowhead_reach);
         Some(TrafficLine {
@@ -256,16 +255,19 @@ impl<'p> Painting<'p> {
     }
 
     /// The clips of the cards a port's well cuts into.
-    fn cuts(&self) -> Markup {
-        if self.plan.cuts.is_empty() {
-            return Markup::new();
-        }
-        let cuts = self.plan.cuts.iter().map(|(_, cut)| cut.markup.clone());
-        wrap("defs", attrs! {}, concat(cuts.collect()))
+    fn cuts(&self) -> Items {
+        definitions(
+            self.plan
+                .cuts
+                .iter()
+                .cloned()
+                .map(Definition::Clip)
+                .collect(),
+        )
     }
 
     /// A container's tray, before anything inside it.
-    fn frame(&self, held: &Node) -> Markup {
+    fn frame(&self, held: &Node) -> Items {
         let id = &held.measured.node.id;
         paint_measured_frame(
             held,
@@ -276,14 +278,14 @@ impl<'p> Painting<'p> {
     }
 
     /// A group's region, its caption kept clear of the routes.
-    fn region(&self, region: &DrawingRegion, routes: &[&Curve]) -> Markup {
+    fn region(&self, region: &DrawingRegion, routes: &[&Curve]) -> Items {
         let color = self.vocabulary.groups.get(&region.group).copied();
         let far_size = self.vocabulary.far_size;
         paint_region(self.ctx, region, self.palette, color, far_size, routes)
     }
 
     /// The shadow under a card: its shape's own, or the slab's.
-    fn card_shadow(&self, card: &Node) -> Markup {
+    fn card_shadow(&self, card: &Node) -> Items {
         let id = &card.measured.node.id;
         let standing = self.standings.of(id);
         match self.shapes_of(id) {
@@ -301,7 +303,7 @@ impl<'p> Painting<'p> {
     }
 
     /// A relationship's line, with the ports it runs into and the masks that cut it.
-    fn edge_line(&self, routed: &Edge) -> Markup {
+    fn edge_line(&self, routed: &Edge) -> Items {
         let id = &routed.edge.id;
         let slots: Vec<(Port, bool)> = self
             .ports
@@ -329,8 +331,8 @@ impl<'p> Painting<'p> {
     }
 
     /// The marks where lines join, each in its line's ink, removed lines left out.
-    fn junctions(&self) -> Markup {
-        let joined: Vec<(&Edge, String)> = self
+    fn junctions(&self) -> Items {
+        let joined: Vec<(&Edge, Colour)> = self
             .drawing
             .drawing
             .edges
@@ -352,7 +354,7 @@ impl<'p> Painting<'p> {
 
     /// A card: its shape when it is drawn as one, else its slab with its words,
     /// clipped where a port's well cuts into it.
-    fn card(&self, card: &Node) -> Markup {
+    fn card(&self, card: &Node) -> Items {
         let id = &card.measured.node.id;
         let (standing, unsettled) = (self.standings.of(id), self.unsettled.of(id));
         if let Some(shapes) = self.shapes_of(id) {
@@ -372,12 +374,12 @@ impl<'p> Painting<'p> {
             standing,
             unsettled,
         };
-        let cut = self.plan.cut_of(id).map(|cut| cut.id.as_str());
+        let cut = self.plan.cut_of(id);
         paint_measured_card(self.ctx, card, &part, self.palette, cut)
     }
 
     /// A relationship's words on their plate.
-    fn edge_words(&self, routed: &Edge) -> Markup {
+    fn edge_words(&self, routed: &Edge) -> Items {
         let id = &routed.edge.id;
         paint_edge_words(
             routed,
@@ -389,7 +391,7 @@ impl<'p> Painting<'p> {
     }
 
     /// A container's header slab with its name and responsibility, painted over its contents.
-    fn header(&self, held: &Node) -> Markup {
+    fn header(&self, held: &Node) -> Items {
         let id = &held.measured.node.id;
         paint_measured_header(
             self.ctx,
@@ -402,10 +404,11 @@ impl<'p> Painting<'p> {
     }
 
     /// Every layer of the picture, bottom to top.
-    fn layers(&self, stacked: &Stacked<'_>, traffic: &HashMap<String, Markup>) -> Vec<Markup> {
+    fn layers(&self, stacked: &Stacked<'_>, traffic: &HashMap<String, Items>) -> Vec<Items> {
         let edges = &self.drawing.bridged.edges;
         let routes: Vec<&Curve> = edges.iter().map(|routed| &routed.curve).collect();
-        let mut painted: Vec<Markup> = vec![self.masks.definitions.clone(), self.cuts()];
+        let mut painted: Vec<Items> =
+            vec![definitions(self.masks.definitions.clone()), self.cuts()];
         painted.extend(stacked.containers.iter().map(|held| self.frame(held)));
         painted.extend(
             stacked

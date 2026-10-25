@@ -4,30 +4,27 @@
 
 use std::collections::HashMap;
 
-use crate::attrs;
 use crate::drawing::{DrawingBridge, Edge};
-use crate::geometry::{Curve, Point, Rect, Segment, coord, curve_bounds, inflate, path_of};
+use crate::geometry::{Curve, Point, Rect, Segment, curve_bounds, inflate, round_coord};
 use crate::js;
-use crate::markup::{Markup, concat, content_id, markup_of, tag, wrap};
+use crate::paint::build::route;
 use crate::paint::design::PILL_RADIUS;
 use crate::paint::junctions::mark_radius;
 use crate::paint::shared_ink::shared_ink;
+use crate::paint::slab::boxed;
 use crate::paint::styles::stroke_width;
+use crate::scene::traffic::pulse_breadth;
+use crate::scene::{Cap, Colour, Definition, Mask, MaskId, Purpose, Shape, Stroke};
 
 /// A restrained sliver of clear space on each side of the upper arc.
 const BRIDGE_INK_GAP: f64 = 1.5;
 /// The clear space round a join's mark where a line that crosses beside the join is cut.
 const CUT_GAP: f64 = 3.0;
 
-/// One piece of ink a route must not show, as mask markup.
+/// One piece of ink a route must not show, drawn black in its mask.
 pub(super) struct Cutout {
     pub edge_id: String,
-    pub markup: Markup,
-}
-
-/// How thick a pulse is on a line of one width: the width of its core.
-pub(super) fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(1.5, line_width + 0.6)
+    pub shape: Shape,
 }
 
 /// Lower ink cleared narrowly beneath each hop that crosses over it.
@@ -47,21 +44,13 @@ pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec
         } else {
             width + BRIDGE_INK_GAP * 2.0
         };
-        let markup = tag(
-            "path",
-            attrs! {
-                "d": path_of(&bridge.curve),
-                "fill": "none",
-                "stroke": "black",
-                "stroke-width": stroke,
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-            },
-        );
+        let shape = Shape::path(Purpose::Line, route(&bridge.curve))
+            .unfilled()
+            .stroked(Stroke::new(Colour::Black, stroke).rounded());
         for edge_id in &bridge.under {
             cutouts.push(Cutout {
                 edge_id: edge_id.clone(),
-                markup: markup.clone(),
+                shape: shape.clone(),
             });
         }
     }
@@ -106,18 +95,15 @@ pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
         let width = stroke_width(routed.edge.emphasis);
         let end = routed.curve.end();
         for piece in pieces {
+            let breadth = round_coord(pulse_breadth(width) + BRIDGE_INK_GAP * 2.0);
             cutouts.push(Cutout {
                 edge_id: routed.edge.id.clone(),
-                markup: tag(
-                    "path",
-                    attrs! {
-                        "d": path_of(&past_end(&piece, end, width + BRIDGE_INK_GAP)),
-                        "stroke-width": coord(pulse_breadth(width) + BRIDGE_INK_GAP * 2.0),
-                        "stroke-linecap": "butt",
-                        "fill": "none",
-                        "stroke": "black",
-                    },
-                ),
+                shape: Shape::path(
+                    Purpose::Cutout,
+                    route(&past_end(&piece, end, width + BRIDGE_INK_GAP)),
+                )
+                .unfilled()
+                .stroked(Stroke::new(Colour::Black, breadth).capped(Cap::Butt)),
             });
         }
     }
@@ -133,98 +119,72 @@ fn overlaps(a: Rect, b: Rect) -> bool {
 pub(super) fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for label in labels {
-        let markup = tag(
-            "rect",
-            attrs! {
-                "x": coord(label.x),
-                "y": coord(label.y),
-                "width": coord(label.width),
-                "height": coord(label.height),
-                "rx": PILL_RADIUS,
-                "fill": "black",
-            },
-        );
+        let shape =
+            Shape::rect(Purpose::Box, boxed(*label), Some(PILL_RADIUS)).filled(Colour::Black);
         for routed in edges
             .iter()
             .filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label))
         {
             cutouts.push(Cutout {
                 edge_id: routed.edge.id.clone(),
-                markup: markup.clone(),
+                shape: shape.clone(),
             });
         }
     }
     cutouts
 }
 
-/// The masks of a drawing: their definitions, and each affected route's mask id.
+/// The masks of a drawing: their definitions, and each affected route's mask.
 pub(super) struct Masks {
-    pub definitions: Markup,
-    pub masks: HashMap<String, String>,
+    pub definitions: Vec<Definition>,
+    pub masks: HashMap<String, MaskId>,
 }
 
-/// Each route's cutouts, as written and as markup: routes in the order they
-/// were first cut, and each cutout once.
-type Grouped = Vec<(String, Vec<(String, Markup)>)>;
+/// Each route's cutouts: routes in the order they were first cut, and each cutout once.
+type Grouped = Vec<(String, Vec<Shape>)>;
 
-/// The cutouts sorted by route, a cutout written alike to one before it left out.
+/// The cutouts sorted by route, a cutout alike to one before it left out.
 fn grouped(cutouts: Vec<Cutout>) -> Grouped {
     let mut grouped: Grouped = Vec::new();
-    for Cutout { edge_id, markup } in cutouts {
-        let written = markup_of(&markup);
+    for Cutout { edge_id, shape } in cutouts {
         let at = if let Some(at) = grouped.iter().position(|(id, _)| *id == edge_id) {
             at
         } else {
             grouped.push((edge_id, Vec::new()));
             grouped.len() - 1
         };
-        let paths = &mut grouped[at].1;
-        if !paths.iter().any(|(held, _)| *held == written) {
-            paths.push((written, markup));
+        let shapes = &mut grouped[at].1;
+        if !shapes.contains(&shape) {
+            shapes.push(shape);
         }
     }
     grouped
 }
 
-/// One route's mask, named by its content: all of the route's ink but its cutouts.
-fn mask_of(routed: &Edge, paths: Vec<(String, Markup)>) -> (String, Markup) {
-    let rect = inflate(curve_bounds(&routed.curve), 18.0);
-    let bounds = attrs! {
-        "x": coord(rect.x),
-        "y": coord(rect.y),
-        "width": coord(rect.width),
-        "height": coord(rect.height),
-    };
-    let mut body = tag("rect", bounds.clone().set("fill", "white"));
-    for (_, path) in paths {
-        body.extend(path);
+/// One route's mask: all of the route's ink but its cutouts.
+fn mask_of(routed: &Edge, cutouts: Vec<Shape>) -> Mask {
+    let bounds = boxed(inflate(curve_bounds(&routed.curve), 18.0));
+    let mut shapes = vec![Shape::rect(Purpose::Box, bounds, None).filled(Colour::White)];
+    shapes.extend(cutouts);
+    Mask {
+        id: MaskId {
+            line: routed.edge.id.clone(),
+        },
+        bounds,
+        shapes,
     }
-    let id = format!("crossing-{}", content_id(&markup_of(&body)));
-    let definition = wrap(
-        "mask",
-        attrs! { "id": id.as_str(), "maskUnits": "userSpaceOnUse", "maskContentUnits": "userSpaceOnUse" }.with(bounds),
-        body,
-    );
-    (id, definition)
 }
 
 /// One mask per route with anything to hide, keeping all the rest of its ink.
 pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
     let mut masks = HashMap::new();
     let mut definitions = Vec::new();
-    for (edge_id, paths) in grouped(cutouts) {
+    for (edge_id, shapes) in grouped(cutouts) {
         if let Some(routed) = edges.iter().rev().find(|routed| routed.edge.id == edge_id) {
-            let (id, definition) = mask_of(routed, paths);
-            masks.insert(edge_id, id);
-            definitions.push(definition);
+            let mask = mask_of(routed, shapes);
+            masks.insert(edge_id, mask.id.clone());
+            definitions.push(Definition::Mask(mask));
         }
     }
-    Masks {
-        definitions: if definitions.is_empty() {
-            Markup::new()
-        } else {
-            wrap("defs", attrs! {}, concat(definitions))
-        },
-        masks,
-    }
+    Masks { definitions, masks }
 }

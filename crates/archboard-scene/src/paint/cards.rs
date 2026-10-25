@@ -1,18 +1,16 @@
 //! The selection ring every subject carries, the card a part is drawn as in
 //! either grammar, and the cards and frame headings of a message sequence.
 
-use crate::attrs;
-use crate::geometry::{Rect, coord};
-use crate::markup::{Markup, group, lines, tag, text_node};
+use crate::geometry::{Rect, round_coord};
 use crate::paint::Ctx;
-use crate::paint::appearance::{appearance_attributes, card_look};
+use crate::paint::appearance::card_look;
+use crate::paint::build::{Items, grouped, lines, point, shape, text};
 use crate::paint::design::{
-    ARCHITECTURE_NOTE_GAP, CARD_PADDING_X, ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_SIZE,
-    PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
+    ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT, ICON_CHIP_GAP,
+    ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
 };
 use crate::paint::far_card::{NearCard, Part, Words, paint_card_views};
 use crate::paint::far_view::Place;
-use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
@@ -20,7 +18,7 @@ use crate::paint::standing::{
 };
 use crate::paint::styles::Styles;
 use crate::request::{NodeAppearance, SequenceCard, Standing};
-use crate::scene::{Role, SubjectKind};
+use crate::scene::{Group, Purpose, Role, Setting, Shape, SubjectKind};
 
 /// How far outside its subject a selection ring sits.
 pub(super) const HALO_INSET: f64 = 3.0;
@@ -39,24 +37,25 @@ pub(super) fn halo(
     radius: f64,
     styles: &Styles<'_>,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     let inset = if standing == Some(Standing::Removed) {
         -OUTLINE_WIDTH / 2.0
     } else {
         HALO_INSET
     };
-    tag(
-        "rect",
-        attrs! {
-            "class": "ab-halo",
-            "x": coord(rect.x - inset),
-            "y": coord(rect.y - inset),
-            "width": coord(rect.width + inset * 2.0),
-            "height": coord(rect.height + inset * 2.0),
-            "rx": coord(radius + inset),
-            "stroke-width": HALO_WIDTH,
-        }
-        .with(styles.halo()),
+    shape(
+        Shape::rect(
+            Purpose::Halo,
+            Rect {
+                x: round_coord(rect.x - inset),
+                y: round_coord(rect.y - inset),
+                width: round_coord(rect.width + inset * 2.0),
+                height: round_coord(rect.height + inset * 2.0),
+            },
+            Some(round_coord(radius + inset)),
+        )
+        .unfilled()
+        .stroked(styles.ring(Some(HALO_WIDTH))),
     )
 }
 
@@ -68,7 +67,7 @@ pub(super) fn paint_card(
     standing: Option<Standing>,
     unsettled: bool,
     appearance: &NodeAppearance,
-) -> Markup {
+) -> Items {
     let words = standing_palette(palette, standing);
     let styles = Styles::of(&words);
     let rect = placed.bounds;
@@ -80,30 +79,28 @@ pub(super) fn paint_card(
     } else {
         rect.y + rect.height / 2.0 + title_size * OPTICAL_CENTRE
     };
-    let title = text_node(
-        attrs! { "x": coord(text_x), "y": coord(title_y), "font-size": title_size }
-            .with(styles.title()),
+    let title = text(styles.title(title_size).set(
+        Setting::Caption,
+        point(text_x, title_y),
         &ctx.measurer.truncate(
             &placed.node.name,
             CARD_TITLE_FONT,
             title_size,
             placed.title_room,
         ),
-    );
+    ));
     let note = lines(
         placed
             .notes
             .iter()
             .map(|run| {
-                text_node(
-                    attrs! {
-                        "xml:space": "preserve",
-                        "x": coord(text_x),
-                        "y": coord(rect.y + NOTE_BASELINE - NOTE_SIZE + run.y),
-                    }
-                    .with(styles.note()),
+                let mut line = styles.note().set(
+                    Setting::Caption,
+                    point(text_x, rect.y + NOTE_BASELINE - NOTE_SIZE + run.y),
                     &run.text,
-                )
+                );
+                line.keeps_spaces = true;
+                text(line)
             })
             .collect(),
     );
@@ -124,7 +121,7 @@ pub(super) fn paint_card(
         chip_x: rect.x + CARD_PADDING_X,
         chip_y,
         words: Words {
-            markup: lines(vec![title, note]),
+            items: lines(vec![title, note]),
             anchor: Place {
                 x: text_x,
                 y: title_y,
@@ -142,33 +139,34 @@ pub(super) fn paint_slab_card(
     ctx: &Ctx<'_>,
     part: &Part<'_>,
     palette: &Palette,
-    cut: Option<&str>,
+    cut: Option<&crate::scene::ClipId>,
     near: NearCard,
-) -> Markup {
+) -> Items {
     let Part { rect, standing, .. } = *part;
-    group(
-        Role::Card,
-        Some(subject(part.kind, &part.node.id, standing)),
-        appearance_attributes(part.appearance),
-        lines(vec![
-            slab_seat(rect, SLAB_RADIUS),
-            if standing == Some(Standing::Removed) {
-                slab_shadow(rect, SLAB_RADIUS, Lift::Card, palette, standing)
-            } else {
-                Markup::new()
-            },
-            halo(rect, SLAB_RADIUS, &Styles::of(palette), standing),
-            slab(
-                rect,
-                &card_look(part.appearance.body_color, palette),
-                palette,
-                standing,
-                cut,
-            ),
-            paint_card_views(ctx, part, palette, near),
-            standing_pin(rect, standing, palette),
-            warning_badge(rect, part.unsettled, palette),
-        ]),
+    grouped(
+        Group::new(
+            Role::Card(Box::new(part.appearance.clone())),
+            lines(vec![
+                slab_seat(rect, SLAB_RADIUS),
+                if standing == Some(Standing::Removed) {
+                    slab_shadow(rect, SLAB_RADIUS, Lift::Card, palette, standing)
+                } else {
+                    Items::new()
+                },
+                halo(rect, SLAB_RADIUS, &Styles::of(palette), standing),
+                slab(
+                    rect,
+                    &card_look(part.appearance.body_color, palette),
+                    palette,
+                    standing,
+                    cut,
+                ),
+                paint_card_views(ctx, part, palette, near),
+                standing_pin(rect, standing, palette),
+                warning_badge(rect, part.unsettled, palette),
+            ]),
+        )
+        .drawing(subject(part.kind, &part.node.id, standing)),
     )
 }
 
@@ -179,27 +177,30 @@ pub(super) fn paint_header(
     name: &str,
     responsibility: Option<&str>,
     styles: &Styles<'_>,
-) -> Markup {
+) -> Items {
     let name_baseline = header_anchor(header).y;
     let note_baseline = header.y + PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_SIZE;
     lines(vec![
-        text_node(
-            attrs! { "x": coord(header.x), "y": coord(name_baseline) }.with(styles.header_name()),
-            &ctx.measurer
-                .truncate(name, CARD_TITLE_FONT, PART_TITLE_SIZE, header.width),
+        text(
+            styles.header_name().set(
+                Setting::Caption,
+                point(header.x, name_baseline),
+                &ctx.measurer
+                    .truncate(name, CARD_TITLE_FONT, PART_TITLE_SIZE, header.width),
+            ),
         ),
         match responsibility {
-            None => Markup::new(),
-            Some(responsibility) => text_node(
-                attrs! { "x": coord(header.x), "y": coord(note_baseline) }
-                    .with(styles.header_note()),
+            None => Items::new(),
+            Some(responsibility) => text(styles.header_note().set(
+                Setting::Caption,
+                point(header.x, note_baseline),
                 &ctx.measurer.truncate(
                     responsibility,
                     CARD_NOTE_FONT,
                     PART_NOTE_SIZE,
                     header.width,
                 ),
-            ),
+            )),
         },
     ])
 }

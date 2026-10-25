@@ -91,10 +91,21 @@ fn rounded_up(longer: &str) -> String {
     String::from_utf8(digits).unwrap_or_default()
 }
 
+/// `Number(value.toFixed(places))`: a number rounded to some places.
+pub fn fixed(value: f64, places: usize) -> f64 {
+    to_fixed(value, places).parse::<f64>().unwrap_or(f64::NAN)
+}
+
 /// `String(Number(value.toFixed(places)))`: a number rounded to some places and
 /// spelt without trailing zeros.
 pub fn fixed_number(value: f64, places: usize) -> String {
-    number(to_fixed(value, places).parse::<f64>().unwrap_or(f64::NAN))
+    number(fixed(value, places))
+}
+
+/// Where a value falls within one period from zero: ECMAScript's remainder,
+/// moved up by the period where it is negative.
+pub fn within(value: f64, period: f64) -> f64 {
+    ((value % period) + period) % period
 }
 
 /// `value.toLocaleString("en-US", { useGrouping: false, maximumSignificantDigits: 21 })`:

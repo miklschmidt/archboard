@@ -38,7 +38,7 @@ use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
 use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
-use archboard_scene::paint::fonts::CARD_TITLE_FONT;
+use archboard_scene::paint::design::CARD_TITLE_FONT;
 
 use crate::text::{Text, fitted_size};
 

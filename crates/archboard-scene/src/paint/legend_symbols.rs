@@ -2,20 +2,24 @@
 //! chip, a relationship's line and head, and the two things a line says beside
 //! its kind, its emphasis and its traffic, each drawn as the picture draws it.
 
-use crate::attrs;
 use crate::drawing::Emphasis;
-use crate::geometry::{Rect, coord};
-use crate::js;
-use crate::markup::{Attrs, Markup, group, lines, tag, wrap};
+use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::appearance::{chip_tile, semantic_ink};
+use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::design::{CHIP_THICKNESS, ICON_CHIP_SIZE};
-use crate::paint::legend_entries::{Applied, Entry, Keys};
+use crate::paint::edge_line::arrowhead;
+use crate::paint::icons::centred_on;
+use crate::paint::legend_entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
-use crate::paint::styles::{HEAD_LENGTH, dash_array, drawn_ink, stroke_width};
+use crate::paint::styles::{HEAD_LENGTH, dash_array, drawn_ink, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
-use crate::request::{Dash, PaletteColor};
-use crate::scene::Role;
+use crate::request::{Arrowhead, Dash};
+use crate::scene::traffic::pulse_breadth;
+use crate::scene::{
+    Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Item, PathStep,
+    Purpose, Role, Shape, Stop, Stroke, Viewport,
+};
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;
@@ -32,108 +36,100 @@ const PULSE_STOPS: [(f64, f64); 6] = [
 const PULSE_SPAN: f64 = 40.0;
 const PULSE_GLOW: f64 = 3.0;
 
+/// A straight run across a symbol's row, from one left edge to another.
+fn run_across(from: f64, y: f64, to: f64) -> Vec<PathStep> {
+    vec![
+        PathStep::Move {
+            to: point(from, y + ROW / 2.0),
+        },
+        PathStep::Across { x: round_coord(to) },
+    ]
+}
+
 /// A round-capped stroke across a symbol's row, stopping `end` short of its right edge.
-fn line_at(x: f64, y: f64, attributes: Attrs, end: f64) -> Markup {
-    tag(
-        "path",
-        attrs! {
-            "d": format!("M{} {}H{}", coord(x + 1.0), coord(y + ROW / 2.0), coord(x + GLYPH - end)),
-            "fill": "none",
-            "stroke-linecap": "round",
-        }
-        .with(attributes),
+fn line_at(x: f64, y: f64, stroke: Stroke, end: f64) -> Items {
+    shape(
+        Shape::path(Purpose::Sample, run_across(x + 1.0, y, x + GLYPH - end))
+            .unfilled()
+            .stroked(stroke.capped(Cap::Round)),
     )
 }
 
-/// The dash array of a relationship's dash, as its appearance spells it; none for a solid line.
-fn dash_of(word: &str) -> Option<&'static str> {
-    match word {
-        "dashed" => dash_array(Dash::Dashed),
-        "dotted" => dash_array(Dash::Dotted),
-        _ => None,
-    }
-}
-
-/// A relationship kind's symbol: a short line in its ink and dash, with its arrowhead.
-fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
-    let named = semantic_ink(PaletteColor::named(&applied.line_color));
+/// A relationship kind's symbol: a short line in its ink and dash, with the
+/// arrowhead its lines end in.
+fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
+    let (color, dash, ends) = match &applied.drawn {
+        Drawn::Line(facts) => (
+            facts.appearance.color,
+            facts.appearance.dash,
+            facts.appearance.arrowhead,
+        ),
+        Drawn::Part(_) => (None, Dash::Solid, Arrowhead::Filled),
+    };
+    let named = semantic_ink(color);
     let ink = drawn_ink(
-        named.as_deref().unwrap_or(palette.edge),
+        named.as_ref().unwrap_or(&palette.edge),
         palette,
         Emphasis::Normal,
     );
     let head = HEAD_LENGTH;
-    let filled = applied.arrowhead == "filled";
-    let headed = filled || applied.arrowhead == "open";
     let tip = x + GLYPH - 1.0;
-    let shape = if filled {
-        tag(
-            "path",
-            attrs! { "d": "M0 0L10 5L0 10Z", "fill": ink.as_str() },
-        )
-    } else {
-        tag(
-            "path",
-            attrs! {
-                "d": "M2 1L10 5L2 9",
-                "fill": "none",
-                "stroke": ink.as_str(),
-                "stroke-width": 1.7,
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-            },
-        )
-    };
+    let shown = head_of(ends);
+    let sample = Stroke::new(&ink, stroke_width(Emphasis::Normal)).dashed(dash_array(dash));
     lines(vec![
         line_at(
             x,
             y,
-            attrs! {
-                "stroke": ink.as_str(),
-                "stroke-width": stroke_width(Emphasis::Normal),
-                "stroke-dasharray": dash_of(&applied.dash),
+            sample,
+            if shown == Some(Head::Filled) {
+                1.0 + head / 2.0
+            } else {
+                1.0
             },
-            if filled { 1.0 + head / 2.0 } else { 1.0 },
         ),
-        if headed {
-            wrap(
-                "svg",
-                attrs! {
-                    "x": coord(tip - head),
-                    "y": coord(y + ROW / 2.0 - head / 2.0),
-                    "width": head,
-                    "height": head,
-                    "viewBox": "0 0 10 10",
+        match shown {
+            None => Items::new(),
+            Some(shown) => vec![Item::Viewport(Viewport {
+                frame: Rect {
+                    x: round_coord(tip - head),
+                    y: round_coord(y + ROW / 2.0 - head / 2.0),
+                    width: head,
+                    height: head,
                 },
-                shape,
-            )
-        } else {
-            Markup::new()
+                view: Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 10.0,
+                    height: 10.0,
+                },
+                items: shape(arrowhead(shown, &ink)),
+            })],
         },
     ])
 }
 
 /// A part kind's symbol: its type chip in the kind's ink, with its icon.
-fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
-    let named = semantic_ink(PaletteColor::named(&applied.type_color));
-    let ink = named.unwrap_or_else(|| palette.glyph.to_owned());
+fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
+    let color = match &applied.drawn {
+        Drawn::Part(appearance) => appearance.type_color,
+        Drawn::Line(_) => None,
+    };
+    let ink = semantic_ink(color).unwrap_or_else(|| palette.glyph.clone());
     let rect = Rect {
         x: x + (GLYPH - ICON_CHIP_SIZE) / 2.0,
         y: y + (ROW - ICON_CHIP_SIZE) / 2.0,
         width: ICON_CHIP_SIZE,
         height: ICON_CHIP_SIZE,
     };
-    let glyph = group(
-        Role::Icon,
-        None,
-        attrs! {
-            "transform": format!(
-                "translate({},{})",
-                coord(rect.x + ICON_CHIP_SIZE / 2.0 - 9.0),
-                coord(rect.y + (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0 - 9.0)
-            ),
-        },
-        applied.icon.iter().cloned().collect(),
+    let glyph = grouped(
+        Group::new(
+            Role::Icon(None),
+            applied.icon.iter().cloned().map(Item::Icon).collect(),
+        )
+        .moved(centred_on(
+            rect.x + ICON_CHIP_SIZE / 2.0,
+            rect.y + (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
+        )),
     );
     let mut symbol = chip_tile(rect, &ink, palette);
     symbol.extend(glyph);
@@ -141,86 +137,84 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
 }
 
 /// A line drawn with more emphasis.
-fn emphasis_symbol(palette: &Palette, x: f64, y: f64) -> Markup {
+fn emphasis_symbol(palette: &Palette, x: f64, y: f64) -> Items {
     line_at(
         x,
         y,
-        attrs! {
-            "stroke": drawn_ink(palette.edge, palette, Emphasis::Hero),
-            "stroke-width": stroke_width(Emphasis::Hero),
-        },
+        Stroke::new(
+            drawn_ink(&palette.edge, palette, Emphasis::Hero),
+            stroke_width(Emphasis::Hero),
+        ),
         1.0,
     )
 }
 
 /// A line with a pulse on it, held still.
-fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Markup {
-    let plain = attrs! {
-        "stroke": drawn_ink(palette.edge, palette, Emphasis::Normal),
-        "stroke-width": stroke_width(Emphasis::Normal),
-    };
-    let light = pulse_look(palette.edge, stroke_width(Emphasis::Normal), palette).head;
+fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Items {
+    let width = stroke_width(Emphasis::Normal);
+    let plain = Stroke::new(drawn_ink(&palette.edge, palette, Emphasis::Normal), width);
+    let light: Colour = pulse_look(&palette.edge, width, palette).head;
     let front = x + GLYPH / 2.0 + PULSE_SPAN / 2.0;
-    let run = format!(
-        "M{} {}H{}",
-        coord(front - PULSE_SPAN),
-        coord(y + ROW / 2.0),
-        coord(front)
-    );
-    let gradient = wrap(
-        "linearGradient",
-        attrs! {
-            "id": "export-legend-pulse",
-            "gradientUnits": "userSpaceOnUse",
-            "x1": coord(front - PULSE_SPAN),
-            "x2": coord(front),
-            "y1": 0.0,
-            "y2": 0.0,
+    let run = run_across(front - PULSE_SPAN, y, front);
+    let gradient = Gradient {
+        id: GradientId::LegendPulse,
+        form: GradientForm::Linear {
+            line: Some((
+                Point {
+                    x: round_coord(front - PULSE_SPAN),
+                    y: 0.0,
+                },
+                Point {
+                    x: round_coord(front),
+                    y: 0.0,
+                },
+            )),
+            user_space: true,
         },
-        PULSE_STOPS
+        stops: PULSE_STOPS
             .iter()
-            .flat_map(|(offset, opacity)| {
-                tag("stop", attrs! { "offset": *offset, "stop-color": light.as_str(), "stop-opacity": *opacity })
+            .map(|(offset, opacity)| Stop {
+                offset: Some(*offset),
+                colour: light.clone(),
+                opacity: Some(*opacity),
             })
             .collect(),
-    );
-    wrap(
-        "svg",
-        attrs! {
-            "x": coord(x),
-            "y": coord(y),
-            "width": GLYPH,
-            "height": ROW,
-            "viewBox": format!("{} {} {} {}", coord(x), coord(y), js::number(GLYPH), js::number(ROW)),
+    };
+    let pulse = |breadth: f64| Stroke::new(GradientId::LegendPulse, breadth);
+    vec![Item::Viewport(Viewport {
+        frame: Rect {
+            x: round_coord(x),
+            y: round_coord(y),
+            width: GLYPH,
+            height: ROW,
         },
-        lines(vec![
-            wrap("defs", attrs! {}, gradient),
+        view: Rect {
+            x: round_coord(x),
+            y: round_coord(y),
+            width: GLYPH,
+            height: ROW,
+        },
+        items: lines(vec![
+            vec![Item::Definitions {
+                definitions: vec![Definition::Gradient(gradient)],
+            }],
             line_at(x, y, plain, 1.0),
-            tag(
-                "path",
-                attrs! {
-                    "d": run.as_str(),
-                    "fill": "none",
-                    "stroke": "url(#export-legend-pulse)",
-                    "stroke-opacity": 0.25,
-                    "stroke-width": stroke_width(Emphasis::Normal) + 0.6 + PULSE_GLOW,
-                },
+            shape(
+                Shape::path(Purpose::Sample, run.clone())
+                    .unfilled()
+                    .stroked(pulse(pulse_breadth(width) + PULSE_GLOW).at(0.25)),
             ),
-            tag(
-                "path",
-                attrs! {
-                    "d": run.as_str(),
-                    "fill": "none",
-                    "stroke": "url(#export-legend-pulse)",
-                    "stroke-width": stroke_width(Emphasis::Normal) + 0.6,
-                },
+            shape(
+                Shape::path(Purpose::Sample, run)
+                    .unfilled()
+                    .stroked(pulse(pulse_breadth(width))),
             ),
         ]),
-    )
+    })]
 }
 
 /// The symbol an entry stands beside.
-pub(super) fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Markup {
+pub(super) fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Items {
     match &entry.keys {
         Keys::Mark(standing, _) => {
             standing_pin_at(x + GLYPH / 2.0, y + ROW / 2.0, Some(*standing), palette)

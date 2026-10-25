@@ -5,17 +5,18 @@
 
 use std::collections::HashMap;
 
-use crate::attrs;
 use crate::drawing::{Edge, Node};
-use crate::geometry::{Curve, Point, Rect, Segment, coord};
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::js;
-use crate::markup::{Attrs, Markup, concat, content_id, group, lines, markup_of, tag, wrap};
+use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::design::{CARD_THICKNESS, SLAB_RADIUS};
 use crate::paint::palette::Palette;
 use crate::paint::styles::stroke_width;
-use crate::scene::Role;
+use crate::scene::{
+    Cap, Clip, ClipId, Definition, Geometry, Gradient, GradientForm, GradientId, Group, PathStep,
+    Pointer, Purpose, Role, Shape, Stop, Stroke,
+};
 
-const PORT_CLASS: &str = "ab-port";
 const SOCKET: f64 = 2.1;
 const LID: f64 = 0.6;
 const SILL: f64 = 0.7;
@@ -23,8 +24,6 @@ const WEB: f64 = 1.5;
 const FLOOR: f64 = 0.5;
 const CORNER_ROOM: f64 = SLAB_RADIUS - 2.75;
 const RIDE_IN: f64 = CARD_THICKNESS - LID + 1.0;
-const WELL_ID: &str = "ab-port-well";
-const FADE_ID: &str = "ab-port-fade";
 
 /// One slot, cut through a card's front edge where a line meets its foot.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -206,8 +205,22 @@ fn slot_of(port: &Port) -> Rect {
     }
 }
 
+/// A move to a point.
+const fn go(to: Point) -> PathStep {
+    PathStep::Move { to }
+}
+
+/// A half turn of a slot's round end, to a point.
+const fn turn(radius: Point, clockwise: bool, to: Point) -> PathStep {
+    PathStep::Arc {
+        radius,
+        clockwise,
+        to,
+    }
+}
+
 /// A slot's outline as a path: a box with round ends.
-fn outline_of(slot: Rect) -> String {
+fn outline_of(slot: Rect) -> Vec<PathStep> {
     let Rect {
         x,
         y,
@@ -215,36 +228,38 @@ fn outline_of(slot: Rect) -> String {
         height,
     } = slot;
     let round = height / 2.0;
-    let arc = format!("A{},{} 0 0 1", coord(round), coord(round));
-    format!(
-        "M{},{}H{}{arc} {},{}H{}{arc} {},{}Z",
-        coord(x + round),
-        coord(y),
-        coord(x + width - round),
-        coord(x + width - round),
-        coord(y + height),
-        coord(x + round),
-        coord(x + round),
-        coord(y),
-    )
+    let radius = point(round, round);
+    vec![
+        go(point(x + round, y)),
+        PathStep::Across {
+            x: round_coord(x + width - round),
+        },
+        turn(radius, true, point(x + width - round, y + height)),
+        PathStep::Across {
+            x: round_coord(x + round),
+        },
+        turn(radius, true, point(x + round, y)),
+        PathStep::Close,
+    ]
 }
 
 /// A slot's outline filled, which takes no pointer events.
-fn outlined(slot: Rect, fill: &str) -> Markup {
-    tag(
-        "path",
-        attrs! { "d": outline_of(slot), "fill": fill, "pointer-events": "none" },
+fn outlined(steps: Vec<PathStep>, fill: impl Into<crate::scene::Paint>) -> Items {
+    shape(
+        Shape::path(Purpose::Port, steps)
+            .filled(fill)
+            .pointer(Pointer::None),
     )
 }
 
 /// A share of a card's box, spelt finely enough.
-fn share(value: f64) -> String {
-    js::fixed_number(value, 6)
+fn share(value: f64) -> f64 {
+    js::fixed(value, 6)
 }
 
 /// A port's hole in its card's clip, in shares of the card's box: the slot, and
 /// the gap its line runs down through to the card's foot.
-fn hole_of(port: &Port, rect: Rect) -> String {
+fn hole_of(port: &Port, rect: Rect) -> Vec<PathStep> {
     let Rect {
         x,
         y,
@@ -252,34 +267,38 @@ fn hole_of(port: &Port, rect: Rect) -> String {
         height,
     } = slot_of(port);
     let round = height / 2.0;
-    let u = |value: f64| share((value - rect.x) / rect.width);
-    let v = |value: f64| share((value - rect.y) / rect.height);
-    let arc = format!(
-        "A{},{} 0 0 1",
-        share(round / rect.width),
-        share(round / rect.height)
-    );
+    let at = |across: f64, down: f64| Point {
+        x: share((across - rect.x) / rect.width),
+        y: share((down - rect.y) / rect.height),
+    };
+    let u = |value: f64| at(value, rect.y).x;
+    let v = |value: f64| at(rect.x, value).y;
+    let radius = Point {
+        x: share(round / rect.width),
+        y: share(round / rect.height),
+    };
     let left = port.x - port.line / 2.0;
     let right = port.x + port.line / 2.0;
-    format!(
-        "M{},{}H{}{arc} {},{}H{}V{}H{}V{}H{}{arc} {},{}Z",
-        u(x + round),
-        v(y),
-        u(x + width - round),
-        u(x + width - round),
-        v(y + height),
-        u(right),
-        v(port.foot + 1.0),
-        u(left),
-        v(y + height),
-        u(x + round),
-        u(x + round),
-        v(y),
-    )
+    vec![
+        go(at(x + round, y)),
+        PathStep::Across {
+            x: u(x + width - round),
+        },
+        turn(radius, true, at(x + width - round, y + height)),
+        PathStep::Across { x: u(right) },
+        PathStep::Down {
+            y: v(port.foot + 1.0),
+        },
+        PathStep::Across { x: u(left) },
+        PathStep::Down { y: v(y + height) },
+        PathStep::Across { x: u(x + round) },
+        turn(radius, true, at(x + round, y)),
+        PathStep::Close,
+    ]
 }
 
 /// The lower half of a slot's outline, which the port's lip colour fills.
-fn floor_of(slot: Rect) -> String {
+fn floor_of(slot: Rect) -> Vec<PathStep> {
     let Rect {
         x,
         y,
@@ -288,107 +307,100 @@ fn floor_of(slot: Rect) -> String {
     } = slot;
     let round = height / 2.0;
     let (left, right, middle, foot) = (x, x + width, y + round, y + height);
-    let arc = format!("A{},{} 0 0", coord(round), coord(round));
-    format!(
-        "M{},{}{arc} 0 {},{}H{}{arc} 0 {},{}{arc} 1 {},{}H{}{arc} 1 {},{}Z",
-        coord(left),
-        coord(middle),
-        coord(left + round),
-        coord(foot),
-        coord(right - round),
-        coord(right),
-        coord(middle),
-        coord(right - round),
-        coord(foot - FLOOR),
-        coord(left + round),
-        coord(left),
-        coord(middle),
-    )
+    let radius = point(round, round);
+    vec![
+        go(point(left, middle)),
+        turn(radius, false, point(left + round, foot)),
+        PathStep::Across {
+            x: round_coord(right - round),
+        },
+        turn(radius, false, point(right, middle)),
+        turn(radius, true, point(right - round, foot - FLOOR)),
+        PathStep::Across {
+            x: round_coord(left + round),
+        },
+        turn(radius, true, point(left, middle)),
+        PathStep::Close,
+    ]
 }
 
 /// The inside of a port, drawn in its line's group under the card.
 pub(super) fn port_inside(
     port: &Port,
     well: bool,
-    stroke: Attrs,
+    stroke: &Stroke,
     width: f64,
     palette: &Palette,
-) -> Markup {
+) -> Items {
     let slot = slot_of(port);
     let left = port.x - width / 2.0;
     let bottom = slot.y + slot.height;
-    group(
+    grouped(Group::new(
         Role::Port,
-        None,
-        attrs! { "class": PORT_CLASS },
         lines(vec![
             if well {
-                outlined(slot, &format!("url(#{WELL_ID})"))
+                outlined(outline_of(slot), GradientId::PortWell)
             } else {
-                Markup::new()
+                Items::new()
             },
             if well {
-                tag(
-                    "path",
-                    attrs! { "d": floor_of(slot), "fill": palette.port_lip, "pointer-events": "none" },
-                )
+                outlined(floor_of(slot), &palette.port_lip)
             } else {
-                Markup::new()
+                Items::new()
             },
-            tag(
-                "line",
-                attrs! {
-                    "x1": coord(port.x),
-                    "y1": coord(port.foot),
-                    "x2": coord(port.x),
-                    "y2": coord(slot.y),
-                    "pointer-events": "none",
-                }
-                .with(stroke)
-                .set("stroke-linecap", "butt"),
+            shape(
+                Shape::new(
+                    Purpose::Line,
+                    Geometry::Line {
+                        from: point(port.x, port.foot),
+                        to: point(port.x, slot.y),
+                    },
+                )
+                .pointer(Pointer::None)
+                .unfilled()
+                .stroked(stroke.clone().capped(Cap::Butt)),
             ),
-            tag(
-                "path",
-                attrs! {
-                    "d": format!(
-                        "M{},{}H{}V{}H{}Z",
-                        coord(left),
-                        coord(slot.y),
-                        coord(left + width),
-                        coord(bottom),
-                        coord(left)
-                    ),
-                    "fill": format!("url(#{FADE_ID})"),
-                    "pointer-events": "none",
-                },
+            outlined(
+                vec![
+                    go(point(left, slot.y)),
+                    PathStep::Across {
+                        x: round_coord(left + width),
+                    },
+                    PathStep::Down {
+                        y: round_coord(bottom),
+                    },
+                    PathStep::Across {
+                        x: round_coord(left),
+                    },
+                    PathStep::Close,
+                ],
+                GradientId::PortFade,
             ),
         ]),
-    )
+    ))
 }
 
-/// A card's cut: its id and its clip's definition.
-pub(super) struct Cut {
-    pub id: String,
-    pub markup: Markup,
-}
-
-/// A card's clip with a hole for each of its ports; none for a card with no port. Its id comes from its content.
-fn port_cut(ports: &[Port], rect: Rect) -> Option<Cut> {
+/// A card's clip with a hole for each of its ports; none for a card with no port.
+fn port_cut(card: &str, ports: &[Port], rect: Rect) -> Option<Clip> {
     if ports.is_empty() {
         return None;
     }
-    let mut d = String::from("M-1,-1H2V2H-1Z");
+    let mut outline = vec![
+        go(Point { x: -1.0, y: -1.0 }),
+        PathStep::Across { x: 2.0 },
+        PathStep::Down { y: 2.0 },
+        PathStep::Across { x: -1.0 },
+        PathStep::Close,
+    ];
     for port in ports {
-        d.push_str(&hole_of(port, rect));
+        outline.extend(hole_of(port, rect));
     }
-    let outline = tag("path", attrs! { "d": d, "clip-rule": "evenodd" });
-    let id = format!("ab-port-{}", content_id(&markup_of(&outline)));
-    let markup = wrap(
-        "clipPath",
-        attrs! { "id": id.as_str(), "clipPathUnits": "objectBoundingBox" },
+    Some(Clip {
+        id: ClipId {
+            card: card.to_owned(),
+        },
         outline,
-    );
-    Some(Cut { id, markup })
+    })
 }
 
 /// How a drawing's ports are drawn: which line draws each port's well, and
@@ -397,16 +409,16 @@ pub(super) struct PortPlan {
     /// The line that draws each port's well, by port index.
     pub wells: HashMap<usize, String>,
     /// Each cut card's clip, in the order the cards are drawn.
-    pub cuts: Vec<(String, Cut)>,
+    pub cuts: Vec<Clip>,
 }
 
 impl PortPlan {
     /// The clip a card's body is drawn through, if it has ports.
-    pub(super) fn cut_of(&self, card: &str) -> Option<&Cut> {
+    pub(super) fn cut_of(&self, card: &str) -> Option<&ClipId> {
         self.cuts
             .iter()
-            .find(|(id, _)| id == card)
-            .map(|(_, cut)| cut)
+            .find(|clip| clip.id.card == card)
+            .map(|clip| &clip.id)
     }
 }
 
@@ -431,7 +443,7 @@ pub(super) fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
         .filter_map(|(id, slots)| {
             let rect = ports.box_of(id)?;
             let slots: Vec<Port> = slots.iter().map(|at| ports.all[*at]).collect();
-            port_cut(&slots, rect).map(|cut| (id.clone(), cut))
+            port_cut(id, &slots, rect)
         })
         .collect();
     PortPlan { wells, cuts }
@@ -472,44 +484,42 @@ pub(super) fn ends_in_port(curve: &Curve, ports: &[Port]) -> bool {
     inside_port(curve.end(), ports).is_some()
 }
 
+/// One stop of a port's gradient.
+fn stop(offset: f64, colour: &crate::scene::Colour, opacity: Option<f64>) -> Stop {
+    Stop {
+        offset: Some(offset),
+        colour: colour.clone(),
+        opacity,
+    }
+}
+
 /// The gradients every port is drawn in.
-pub(super) fn port_definitions(palette: &Palette) -> Markup {
-    concat(vec![
-        wrap(
-            "radialGradient",
-            attrs! { "id": WELL_ID, "cx": 0.5, "cy": 0.3, "r": 0.62 },
-            concat(vec![
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.0, "stop-color": palette.port_deep },
-                ),
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.45, "stop-color": palette.port_deep },
-                ),
-                tag(
-                    "stop",
-                    attrs! { "offset": 1.0, "stop-color": palette.port_wall },
-                ),
-            ]),
-        ),
-        wrap(
-            "linearGradient",
-            attrs! { "id": FADE_ID, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
-            concat(vec![
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.0, "stop-color": palette.port_deep },
-                ),
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.45, "stop-color": palette.port_deep, "stop-opacity": 0.8 },
-                ),
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.85, "stop-color": palette.port_deep, "stop-opacity": 0.0 },
-                ),
-            ]),
-        ),
-    ])
+pub(super) fn port_definitions(palette: &Palette) -> Vec<Definition> {
+    let deep = &palette.port_deep;
+    vec![
+        Definition::Gradient(Gradient {
+            id: GradientId::PortWell,
+            form: GradientForm::Radial {
+                centre: Point { x: 0.5, y: 0.3 },
+                radius: 0.62,
+            },
+            stops: vec![
+                stop(0.0, deep, None),
+                stop(0.45, deep, None),
+                stop(1.0, &palette.port_wall, None),
+            ],
+        }),
+        Definition::Gradient(Gradient {
+            id: GradientId::PortFade,
+            form: GradientForm::Linear {
+                line: Some((Point { x: 0.0, y: 0.0 }, Point { x: 0.0, y: 1.0 })),
+                user_space: false,
+            },
+            stops: vec![
+                stop(0.0, deep, None),
+                stop(0.45, deep, Some(0.8)),
+                stop(0.85, deep, Some(0.0)),
+            ],
+        }),
+    ]
 }

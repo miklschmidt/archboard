@@ -5,27 +5,26 @@
 use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
-use crate::attrs;
 use crate::drawing::Node;
-use crate::geometry::{Point, Rect, coord};
+use crate::geometry::{Point, Rect};
 use crate::js;
-use crate::markup::{Markup, concat, group, lines, tag, text_node, wrap};
-use crate::paint::architecture::Shapes;
+use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
-use crate::paint::design::CARD_THICKNESS;
-use crate::paint::fonts::{PILL_FONT, font_attributes};
-use crate::paint::palette::{Palette, token};
+use crate::paint::design::{CARD_THICKNESS, PILL_FONT};
+use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, polygon_path};
 use crate::paint::shadow::{SHADOW_REACH, polygon_shadow};
 use crate::paint::slab::{SlabLook, shadow_group, solid_ghost, solid_seat, solid_slab};
 use crate::paint::standing::{OUTLINE_WIDTH, standing_pin_at, subject, warning_on_line};
 use crate::paint::styles::Styles;
 use crate::request::{FlowchartShape, ShapedCard, Standing};
-use crate::scene::{Role, SubjectKind};
+use crate::scene::{
+    Anchor, Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Setting,
+    Shape, Stop, SubjectKind, Text, Token,
+};
 
 const SHAPE_TEXT_SIZE: f64 = 11.0;
 const SHAPE_TEXT_LINE: f64 = 14.0;
-const GOLD_FACE_ID: &str = "ab-flow-gold";
 const CORNER: f64 = 5.0;
 const END_SIDES: u32 = 16;
 
@@ -105,58 +104,63 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
 /// rounded but for a terminal's, whose outline is already round.
 fn look_of(shape: FlowchartShape) -> SlabLook {
     SlabLook {
-        face: format!("url(#{GOLD_FACE_ID})"),
-        ground: None,
-        lit: Some(token("--primary-top")),
-        edge: token("--primary-edge"),
+        face: Paint::from(GradientId::FlowGold),
+        tintable: false,
+        lit: Token::PrimaryTop.into(),
+        edge: Token::PrimaryEdge.into(),
         thickness: CARD_THICKNESS,
         radius: if shape.is_terminal() { 0.0 } else { CORNER },
         sheen: false,
     }
 }
 
+/// One stop of the gold.
+fn gold(offset: f64, token: Token) -> Stop {
+    Stop {
+        offset: Some(offset),
+        colour: token.into(),
+        opacity: None,
+    }
+}
+
 /// The gradient a shape's face is painted with, for the flowchart's definitions.
-pub fn flowchart_definitions() -> Markup {
-    wrap(
-        "defs",
-        attrs! {},
-        wrap(
-            "linearGradient",
-            attrs! { "id": GOLD_FACE_ID, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
-            concat(vec![
-                tag(
-                    "stop",
-                    attrs! { "offset": 0.0, "stop-color": token("--primary-top") },
-                ),
-                tag(
-                    "stop",
-                    attrs! { "offset": 1.0, "stop-color": token("--primary-bottom") },
-                ),
-            ]),
-        ),
-    )
+pub(super) fn flowchart_definitions() -> Vec<Definition> {
+    vec![Definition::Gradient(Gradient {
+        id: GradientId::FlowGold,
+        form: GradientForm::Linear {
+            line: Some((Point { x: 0.0, y: 0.0 }, Point { x: 0.0, y: 1.0 })),
+            user_space: false,
+        },
+        stops: vec![
+            gold(0.0, Token::PrimaryTop),
+            gold(1.0, Token::PrimaryBottom),
+        ],
+    })]
 }
 
 /// A shape's lines of words, centred on its face above its front edge.
-fn centred_words(rect: Rect, words: &[String], fill: &str) -> Markup {
+fn centred_words(rect: Rect, words: &[String], fill: &Colour) -> Items {
     let top = rect.y + (rect.height - CARD_THICKNESS) / 2.0
         - (words.len() as f64 * SHAPE_TEXT_LINE) / 2.0;
     concat(
         words
             .iter()
             .enumerate()
-            .map(|(index, text)| {
-                text_node(
-                    attrs! {
-                        "x": coord(rect.x + rect.width / 2.0),
-                        "y": coord(top + (index as f64 + 0.78) * SHAPE_TEXT_LINE),
-                        "text-anchor": "middle",
-                        "font-size": SHAPE_TEXT_SIZE,
-                    }
-                    .with(font_attributes(PILL_FONT))
-                    .set("fill", fill),
-                    text,
-                )
+            .map(|(index, line)| {
+                text(Text {
+                    setting: Setting::Centred,
+                    at: point(
+                        rect.x + rect.width / 2.0,
+                        top + (index as f64 + 0.78) * SHAPE_TEXT_LINE,
+                    ),
+                    font: PILL_FONT,
+                    size: SHAPE_TEXT_SIZE,
+                    fill: fill.clone(),
+                    anchor: Some(Anchor::Middle),
+                    baseline: None,
+                    keeps_spaces: false,
+                    words: line.clone(),
+                })
             })
             .collect(),
     )
@@ -187,41 +191,42 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
 }
 
 /// The selection ring round an outline: outside it, or inside it on a removed shape.
-fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
+fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Items {
     let by = if standing == Some(Standing::Removed) {
         OUTLINE_WIDTH / 2.0
     } else {
         -HALO_INSET
     };
-    tag(
-        "path",
-        attrs! {
-            "class": "ab-halo",
-            "d": polygon_path(&inset(outline, by), js::js_max(0.0, radius - by)),
-            "stroke-width": HALO_WIDTH,
-        }
-        .with(Styles::of(palette).halo()),
+    shape(
+        Shape::path(
+            Purpose::Ring,
+            polygon_path(&inset(outline, by), js::js_max(0.0, radius - by)),
+        )
+        .unfilled()
+        .stroked(Styles::of(palette).ring(Some(HALO_WIDTH))),
     )
 }
 
 /// The painter of a flowchart's shapes.
 #[derive(Debug)]
-pub struct FlowchartShapes<'a> {
+pub(super) struct FlowchartShapes<'a> {
     /// The cards drawn as shapes of their own, by id.
     pub shapes: &'a BTreeMap<String, ShapedCard>,
     /// The palette the shapes are inked from.
     pub palette: &'a Palette,
 }
 
-impl Shapes for FlowchartShapes<'_> {
-    fn has(&self, id: &str) -> bool {
+impl FlowchartShapes<'_> {
+    /// Whether a card is drawn as one of these shapes.
+    pub(super) fn has(&self, id: &str) -> bool {
         self.shapes.contains_key(id)
     }
 
-    fn shadow(&self, card: &Node, standing: Option<Standing>) -> Markup {
+    /// The shadow under a card drawn as its shape.
+    pub(super) fn shadow(&self, card: &Node, standing: Option<Standing>) -> Items {
         let shaped = &self.shapes[&card.measured.node.id];
         if standing == Some(Standing::Removed) {
-            return Markup::new();
+            return Items::new();
         }
         let look = look_of(shaped.shape);
         let cast = polygon_shadow(
@@ -238,20 +243,21 @@ impl Shapes for FlowchartShapes<'_> {
         )
     }
 
-    fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Markup {
+    /// A card drawn as its shape, with how it stands against the variant it came from.
+    pub(super) fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Items {
         let shaped = &self.shapes[&card.measured.node.id];
         let look = look_of(shaped.shape);
         let palette = self.palette;
         let rect = card.bounds;
         let outline = outline_of(shaped.shape, rect);
+        let foreground = Colour::from(Token::PrimaryForeground);
         if shaped.shape.is_terminal() {
             return group(
                 Role::Shape,
                 None,
-                attrs! {},
                 lines(vec![
                     solid_slab(&outline, &look, palette, None),
-                    centred_words(rect, &shaped.words, &token("--primary-foreground")),
+                    centred_words(rect, &shaped.words, &foreground),
                 ]),
             );
         }
@@ -270,20 +276,19 @@ impl Shapes for FlowchartShapes<'_> {
             },
         );
         let ink = if standing == Some(Standing::Removed) {
-            palette.muted.to_owned()
+            palette.muted.clone()
         } else {
-            token("--primary-foreground")
+            foreground
         };
         group(
             Role::Shape,
             Some(subject(SubjectKind::Step, &card.measured.node.id, standing)),
-            attrs! {},
             lines(vec![
                 solid_seat(&outline, look.radius),
                 if standing == Some(Standing::Removed) {
                     solid_ghost(&outline, look.radius, palette)
                 } else {
-                    Markup::new()
+                    Items::new()
                 },
                 ring(&outline, look.radius, standing, palette),
                 solid_slab(&outline, &look, palette, standing),

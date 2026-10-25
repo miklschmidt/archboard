@@ -36,7 +36,7 @@ use std::future::Future;
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
-use archboard_scene::paint::icons::FALLBACK_ICON;
+use archboard_scene::paint::design::FALLBACK_ICON;
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,

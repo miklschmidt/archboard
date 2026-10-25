@@ -4,37 +4,31 @@
 //! repeating gradient that slides by one spacing every spacing's time; a
 //! message's pulse crosses its line once in every turn of the shared clock.
 
-use crate::legs::{Leg, leg_path, legs_of};
-use archboard_scene::attrs;
-use archboard_scene::geometry::{Segment, coord, round_coord};
-use archboard_scene::js;
-use archboard_scene::markup::{Markup, markup_of, tag, wrap};
+use archboard_scene::geometry::{Segment, round_coord};
+use archboard_scene::js::{self, within};
+use archboard_scene::scene::traffic::{
+    PULSE_FRONT as FRONT, PULSE_HEAD as HEAD, PULSE_MASK_ROOM as MASK_ROOM, PULSE_TAIL as TAIL,
+    pulse_breadth,
+};
 use archboard_scene::scene::{Motion, PulseLook, TrafficMark};
+
+use crate::colour::css;
+use crate::legs::{Leg, leg_path, legs_of};
+use crate::xml::{Attributes, close, coord, empty, open};
 
 /// The class every moving mark carries, for the stylesheet to hide it from a
 /// reader who asked for less motion.
 pub(crate) const PULSE_CLASS: &str = "ab-pulse";
 
-const CORE_LEAST: f64 = 1.5;
-const CORE_OVER_LINE: f64 = 0.6;
 /// How a pulse falls off across its line: how much wider than its core each
 /// layer of the glow is, and how much light it lets through.
 const GLOW: [(f64, f64); 4] = [(6.0, 0.07), (3.4, 0.2), (1.3, 0.5), (0.0, 0.9)];
 const HALO_OVER: f64 = 1.0;
-const HEAD: f64 = 12.0;
-const TAIL: f64 = 56.0;
-const FRONT: f64 = 3.0;
 const FILL: f64 = 0.8;
 const TAIL_CURVE: f64 = 2.3;
 const TAIL_LIGHT: f64 = 0.6;
 const TAIL_STEPS: u32 = 9;
-const MASK_ROOM: f64 = 2.0;
 const BAR_ROOM: f64 = 1.0;
-
-/// How thick a pulse is on a line of one width: the width of its core.
-fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(CORE_LEAST, line_width + CORE_OVER_LINE)
-}
 
 /// How long a pulse's tail is where pulses are `room` apart.
 fn tail_for(room: f64) -> f64 {
@@ -79,10 +73,14 @@ struct Defined {
 /// The clip that keeps the light of a piece inside the box of its mask.
 fn clip_of(leg: &Leg, core: f64) -> Defined {
     let [x, y, width, height] = box_of(leg, core);
-    let rect = markup_of(&tag(
-        "rect",
-        attrs! { "x": x, "y": y, "width": width, "height": height },
-    ));
+    let mut attributes = Attributes::new();
+    attributes
+        .set("x", x)
+        .set("y", y)
+        .set("width", width)
+        .set("height", height);
+    let mut rect = String::new();
+    empty("rect", &attributes, &mut rect);
     let id = format!("ab-clip-{}", short_hash(&rect));
     Defined {
         markup: format!("<clipPath id=\"{id}\">{rect}</clipPath>"),
@@ -98,16 +96,23 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
     let layers: String = GLOW
         .iter()
         .map(|(over, light)| {
-            markup_of(&tag(
-                "path",
-                attrs! {
-                    "d": if *over > HALO_OVER { exact.as_str() } else { joined.as_str() },
-                    "fill": "none",
-                    "stroke": "#ffffff",
-                    "stroke-width": js::fixed_number(core + over, 2),
-                    "stroke-opacity": *light,
-                },
-            ))
+            let mut attributes = Attributes::new();
+            attributes
+                .set(
+                    "d",
+                    if *over > HALO_OVER {
+                        exact.as_str()
+                    } else {
+                        joined.as_str()
+                    },
+                )
+                .set("fill", "none")
+                .set("stroke", "#ffffff")
+                .set("stroke-width", js::fixed_number(core + over, 2))
+                .set("stroke-opacity", *light);
+            let mut layer = String::new();
+            empty("path", &attributes, &mut layer);
+            layer
         })
         .collect();
     let markup = format!(
@@ -123,15 +128,17 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
 /// The gradient a pulse is painted with, along one axis, its front at the far end.
 fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined {
     let reach = FRONT + HEAD + tail;
+    let head = css(&look.head);
+    let hot = css(&look.hot);
     let stop = |behind: f64, colour: &str, light: f64| {
-        markup_of(&tag(
-            "stop",
-            attrs! {
-                "offset": js::fixed_number((span - behind) / span, 4),
-                "stop-color": colour,
-                "stop-opacity": js::fixed_number(light, 3),
-            },
-        ))
+        let mut attributes = Attributes::new();
+        attributes
+            .set("offset", js::fixed_number((span - behind) / span, 4))
+            .set("stop-color", colour)
+            .set("stop-opacity", js::fixed_number(light, 3));
+        let mut stop = String::new();
+        empty("stop", &attributes, &mut stop);
+        stop
     };
     let mut stops = String::new();
     if tail >= 1.0 {
@@ -139,15 +146,15 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
             let share = f64::from(step) / f64::from(TAIL_STEPS);
             stops.push_str(&stop(
                 reach - tail * share,
-                &look.head,
+                &head,
                 TAIL_LIGHT * js::pow(share, TAIL_CURVE),
             ));
         }
     }
-    stops.push_str(&stop(FRONT + HEAD, &look.head, TAIL_LIGHT));
-    stops.push_str(&stop(FRONT + HEAD * 0.45, &look.hot, 0.9));
-    stops.push_str(&stop(FRONT, &look.hot, 1.0));
-    stops.push_str(&stop(0.0, &look.hot, 0.0));
+    stops.push_str(&stop(FRONT + HEAD, &head, TAIL_LIGHT));
+    stops.push_str(&stop(FRONT + HEAD * 0.45, &hot, 0.9));
+    stops.push_str(&stop(FRONT, &hot, 1.0));
+    stops.push_str(&stop(0.0, &hot, 0.0));
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
         js::fixed_number(span, 4),
@@ -174,11 +181,6 @@ fn ratio(value: f64) -> String {
     js::to_fixed(js::js_min(js::js_max(value, 0.0), 1.0), 6)
 }
 
-/// A number held to one period.
-fn within(value: f64, period: f64) -> f64 {
-    ((value % period) + period) % period
-}
-
 /// How one piece's bar sits in the piece's frame, and what it is painted with.
 struct Bar<'a> {
     mask: &'a str,
@@ -188,7 +190,7 @@ struct Bar<'a> {
     from: f64,
     width: f64,
     height: f64,
-    motion: &'a Markup,
+    motion: &'a Attributes,
 }
 
 /// One piece of a pulse: the mask, the clip inside it, and the bar that slides behind them.
@@ -198,30 +200,29 @@ fn leg_markup(leg: &Leg, bar: &Bar<'_>) -> String {
     } else {
         format!(" translate({} 0)", js::fixed_number(bar.shift, 2))
     };
-    let slide = wrap(
-        "g",
-        attrs! { "transform": format!("{}{shift}", leg.frame) },
-        wrap(
-            "rect",
-            attrs! {
-                "x": js::fixed_number(bar.from, 2),
-                "y": js::fixed_number(-bar.height / 2.0, 2),
-                "width": js::fixed_number(bar.width, 2),
-                "height": js::fixed_number(bar.height, 2),
-                "fill": format!("url(#{})", bar.gradient),
-            },
-            bar.motion.clone(),
-        ),
-    );
-    markup_of(&wrap(
-        "g",
-        attrs! { "mask": format!("url(#{})", bar.mask) },
-        wrap(
-            "g",
-            attrs! { "clip-path": format!("url(#{})", bar.clip) },
-            slide,
-        ),
-    ))
+    let mut out = String::new();
+    let mut masked = Attributes::new();
+    masked.set("mask", format!("url(#{})", bar.mask));
+    open("g", &masked, &mut out);
+    let mut clipped = Attributes::new();
+    clipped.set("clip-path", format!("url(#{})", bar.clip));
+    open("g", &clipped, &mut out);
+    let mut framed = Attributes::new();
+    framed.set("transform", format!("{}{shift}", leg.frame));
+    open("g", &framed, &mut out);
+    let mut rect = Attributes::new();
+    rect.set("x", js::fixed_number(bar.from, 2))
+        .set("y", js::fixed_number(-bar.height / 2.0, 2))
+        .set("width", js::fixed_number(bar.width, 2))
+        .set("height", js::fixed_number(bar.height, 2))
+        .set("fill", format!("url(#{})", bar.gradient));
+    open("rect", &rect, &mut out);
+    empty("animateTransform", bar.motion, &mut out);
+    close("rect", &mut out);
+    close("g", &mut out);
+    close("g", &mut out);
+    close("g", &mut out);
+    out
 }
 
 /// A pulse as a group: its gradient and the masks and clips of its pieces, then the pieces.
@@ -253,18 +254,15 @@ fn steady_pulses(
     let period = round_coord(spacing);
     let core = pulse_breadth(look.line_width);
     let gradient = gradient_of(look, period, tail_for(period), true);
-    let motion = tag(
-        "animateTransform",
-        attrs! {
-            "attributeName": "transform",
-            "type": "translate",
-            "from": "0 0",
-            "to": format!("{} 0", js::fixed_number(period, 4)),
-            "dur": timecount(period / speed),
-            "repeatCount": "indefinite",
-            "calcMode": "linear",
-        },
-    );
+    let mut motion = Attributes::new();
+    motion
+        .set("attributeName", "transform")
+        .set("type", "translate")
+        .set("from", "0 0")
+        .set("to", format!("{} 0", js::fixed_number(period, 4)))
+        .set("dur", timecount(period / speed))
+        .set("repeatCount", "indefinite")
+        .set("calcMode", "linear");
     let pieces: Vec<(Defined, Defined, String)> = legs
         .iter()
         .map(|leg| {
@@ -290,25 +288,35 @@ fn steady_pulses(
 }
 
 /// How a message's bar slides along one piece of its route.
-fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Markup {
+fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Attributes {
     let span = FRONT + HEAD + TAIL;
     let slide_at = |time: f64| (time - start) * speed - leg.along + FRONT - span;
     let moment_of = |slide: f64| start + (slide + leg.along - FRONT + span) / speed;
     let from = js::js_max(0.0, moment_of(-span - 1.0));
     let to = js::js_min(cycle, moment_of(leg.length + 1.0));
     let slides = [slide_at(from), slide_at(from), slide_at(to), slide_at(to)];
-    tag(
-        "animateTransform",
-        attrs! {
-            "attributeName": "transform",
-            "type": "translate",
-            "values": slides.iter().map(|x| format!("{} 0", js::fixed_number(*x, 2))).collect::<Vec<_>>().join(";"),
-            "keyTimes": ["0".to_owned(), ratio(from / cycle), ratio(to / cycle), "1".to_owned()].join(";"),
-            "dur": timecount(cycle),
-            "repeatCount": "indefinite",
-            "calcMode": "linear",
-        },
-    )
+    let values = slides
+        .iter()
+        .map(|x| format!("{} 0", js::fixed_number(*x, 2)))
+        .collect::<Vec<_>>()
+        .join(";");
+    let times = [
+        "0".to_owned(),
+        ratio(from / cycle),
+        ratio(to / cycle),
+        "1".to_owned(),
+    ]
+    .join(";");
+    let mut motion = Attributes::new();
+    motion
+        .set("attributeName", "transform")
+        .set("type", "translate")
+        .set("values", values)
+        .set("keyTimes", times)
+        .set("dur", timecount(cycle))
+        .set("repeatCount", "indefinite")
+        .set("calcMode", "linear");
+    motion
 }
 
 /// A message's pulse: one that crosses its line once in every turn of the clock.

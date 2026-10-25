@@ -1,8 +1,30 @@
-//! The sizes the painter draws with. The core's sequence and flowchart layout
-//! (`archboard-flows`) reads them from here. The TypeScript layout of Track
-//! and Blocks reads the same sizes from `packages/renderer/src/shared/constants`,
-//! where each is explained; the two are one design until that layout moves
-//! into the core.
+//! The sizes and faces the painter draws with. The core's sequence and
+//! flowchart layout (`archboard-flows`) reads them from here. The TypeScript
+//! layout of Track and Blocks reads the same sizes from
+//! `packages/renderer/src/shared/constants`, where each is explained; the two
+//! are one design until that layout moves into the core.
+
+use crate::drawing::{DiagramFont, FontFamily};
+
+pub use super::icons::FALLBACK_ICON;
+pub use super::sequence_messages::arrow_standoff;
+pub use super::shadow::SHADOW_REACH;
+
+/// A card's name, and a container's or a flow's on its header slab.
+pub const CARD_TITLE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
+/// What a card, a container or a flow is responsible for.
+pub const CARD_NOTE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 400,
+};
+/// What a connection carries: small, technical, and on a plate.
+pub const PILL_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
 
 /// The corner radius of a container's tray and of a flow's frame.
 pub const BAND_RADIUS: f64 = 10.0;
