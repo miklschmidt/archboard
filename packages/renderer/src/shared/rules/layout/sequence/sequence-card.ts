@@ -5,9 +5,9 @@ import type { TextRun } from "#shared/rules/render/drawing.ts";
 import { measureNoteLines } from "#shared/rules/text/measurement.ts";
 import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "#shared/rules/text/fonts.ts";
 import { measure } from "#shared/rules/text/text.ts";
-import { DRILL_MARK_ROOM } from "#shared/rules/svg/parts/drill-mark.ts";
 import { CARD_PADDING_X } from "#shared/constants/spacing.ts";
 import {
+	DRILL_MARK_ROOM,
 	ICON_CHIP_SIZE,
 	ICON_CHIP_GAP,
 	CARD_HEIGHT,

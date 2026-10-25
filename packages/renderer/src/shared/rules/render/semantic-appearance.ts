@@ -1,28 +1,35 @@
 import { placingGroups, type SemanticEdge, type SemanticNode } from "@archboard/board/content";
+import type * as Core from "#shared/protocol/generated/core/types.ts";
 import type { LineLook } from "#shared/rules/render/drawing.ts";
-import { drillDirection, type DrillDirection } from "#shared/rules/svg/parts/drill-mark.ts";
-import {
-	DEFAULT_SEMANTIC_POLICY,
-	type PaletteColor,
-	type SemanticPolicy,
-} from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 
-/** The independent visual channels of a node in this reading. */
-interface NodeAppearance {
-	readonly container: boolean;
-	/**
-	 * Its body's colour: a card's placing group's (ADR 0038). A container's well
-	 * and header are made of what the well is cut into, so it has none (TASK-474).
-	 */
-	readonly bodyColor?: PaletteColor | undefined;
-	/** The group whose colour it takes, if any. */
-	readonly group?: string | undefined;
-	readonly typeColor?: PaletteColor | undefined;
-	readonly icon: string;
-	readonly typeName: string;
-	readonly typeKind: string;
-	/** Which way the board it opens lies, or null when it opens none. */
-	readonly drill: DrillDirection | null;
+/** The independent visual channels of a node in this reading, as the core reads them. */
+type NodeAppearance = Core.NodeAppearance;
+
+/** Which way the board a part opens lies from the board it is drawn on. */
+type DrillDirection = Core.DrillDirection;
+
+/**
+ * Which way the board a part opens lies.
+ * @param kind The part's kind, which is the level of the board it opens.
+ * @param here The level of the board it is drawn on, when the caller said.
+ * @param levels The vault's levels, coarsest first.
+ * @returns The direction, or `elsewhere` when either level is not one the vault lists.
+ */
+function drillDirection(
+	kind: string,
+	here: string | undefined,
+	levels: readonly string[],
+): DrillDirection {
+	const there = levels.indexOf(kind);
+	const at = here === undefined ? -1 : levels.indexOf(here);
+	if (there < 0 || at < 0) {
+		return "elsewhere";
+	}
+	if (there === at) {
+		return "across";
+	}
+	return there < at ? "up" : "down";
 }
 
 /**
@@ -175,4 +182,11 @@ function lineLooks(
 	);
 }
 
-export { type NodeAppearance, nodeAppearances, lineAppearance, lineLooks, relationshipAppearance };
+export {
+	type DrillDirection,
+	type NodeAppearance,
+	drillDirection,
+	nodeAppearances,
+	lineAppearance,
+	lineLooks,
+};

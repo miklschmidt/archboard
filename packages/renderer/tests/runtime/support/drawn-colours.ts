@@ -285,7 +285,7 @@ function chromaOf(hex: string): number {
 
 /**
  * The hue of a hex colour in OKLCH, in degrees: the hue every tone of an ink
- * keeps (`toned` in `shared/rules/svg/page/colour.ts`) unless sRGB clips it.
+ * keeps (`toned` in `crates/archboard-scene/src/paint/colour.rs`) unless sRGB clips it.
  * @param hex The colour.
  * @returns Its hue.
  */

@@ -9,6 +9,12 @@ below are the dated inventory's; file references describe the tree at that time.
 [Section 28](#28-every-variant-is-laid-out-fresh-2026-09-19-task-276) records the
 removal of predecessor geometry constraints under ADR 0032.
 
+The painter is no longer TypeScript. Since TASK-520.03 (2026-10-24) the renderer
+core in Rust paints the drawing that layout answers, bridges and all
+([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
+so where a rule below says it runs in the painter, it runs in
+`crates/archboard-scene/src/paint/`.
+
 Traffic no longer has a place where it rests, so layout owes it nothing. Sections
 40 to 43 once held rules about where a still picture rested a traffic streak
 (`comet-rest.ts`). They were removed on 2026-10-04 with that code. A still picture

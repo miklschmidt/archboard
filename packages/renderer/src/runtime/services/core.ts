@@ -33,16 +33,21 @@ class CoreBuildError extends Error {
 }
 
 /**
- * Load the core's build and check it against the sources it must be made from.
+ * Load the core's build on this thread, at once, and check it against the
+ * sources it must be made from.
  * @param expected The source hash the build must record; the checkout's own by default.
  * @returns The core.
  * @throws {CoreBuildError} When there is no build, or it was made from other sources.
  */
-async function loadCore(expected: string = coreSourceHash()): Promise<Core> {
+function coreBuild(expected: string = coreSourceHash()): Core {
 	let core: Core;
 	let bytes: Buffer;
 	try {
-		core = await import("#shared/protocol/generated/core/archboard_renderer_wasm.js");
+		// Bun loads a module synchronously on require, so a picture is painted
+		// in the same turn it is laid out in.
+		// A missing build is refused with what to run, not thrown at import.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the glue wasm-bindgen wrote, typed by its own declarations
+		core = require("#shared/protocol/generated/core/archboard_renderer_wasm.js") as Core;
 		bytes = readFileSync(CORE_WASM);
 	} catch {
 		throw new CoreBuildError(
@@ -62,4 +67,14 @@ async function loadCore(expected: string = coreSourceHash()): Promise<Core> {
 	return core;
 }
 
-export { CoreBuildError, loadCore, type Core, type CoreBuildRefusal };
+/**
+ * Load the core's build and check it against the sources it must be made from.
+ * @param expected The source hash the build must record; the checkout's own by default.
+ * @returns The core.
+ * @throws {CoreBuildError} When there is no build, or it was made from other sources.
+ */
+async function loadCore(expected?: string): Promise<Core> {
+	return coreBuild(expected);
+}
+
+export { CoreBuildError, coreBuild, loadCore, type Core, type CoreBuildRefusal };

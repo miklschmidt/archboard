@@ -10,18 +10,20 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 // (ADR 0023, ADR 0028). Inputs carry no coordinates, font sizes, colours or routes.
 //
 // Callers derive proposal standings from shared subject identities per render,
-// never authoring or storing them. `shared/rules/svg/parts/standing.ts` owns how they are drawn.
+// never authoring or storing them. The renderer core owns how they are drawn:
+// this module lays the content out and hands the drawing to the core, which
+// paints it and writes the document (ADR 0057, `shared/rules/render/paint.ts`).
 //
 // Nothing here reads a clock, a random number or a file. Text is measured by the
 // canvas of the host that draws, with the diagram faces loaded, and the host
-// supplies the layout engine, the theme colours a document that stands alone
+// supplies the core, the layout engine, the theme colours a document that stands alone
 // carries and the font bytes a self-contained document embeds (`shared/rules/render/host.ts`).
 // So one host draws the same content, theme and font source to the same bytes
 // in any order, and two browsers may measure a word differently because each
 // paints it differently.
 //
-// Page pictures take the page's colour tokens (`shared/rules/svg/page/theme.ts`). Only documents
-// that stand alone are drawn for a theme.
+// Page pictures take the page's colour tokens. Only documents that stand alone
+// are drawn for a theme.
 
 import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
@@ -30,6 +32,7 @@ import {
 	type DiagramRenderRequest,
 	type RenderedDiagram,
 	type SemanticViewRenderRequest,
+	type StatedStandings,
 } from "#shared/protocol/render-request.ts";
 import { renderFlowchart } from "#shared/rules/flowchart/flowchart.ts";
 import { layoutEngine } from "#shared/rules/layout/engines.ts";
@@ -37,23 +40,24 @@ import { entryPointsOf } from "#shared/rules/layout/compound-graph.ts";
 import type { PaintedDrawing } from "#shared/rules/render/drawing.ts";
 import { measureArchitecture } from "#shared/rules/text/measurement.ts";
 import { withStepLines, type StepLines } from "#shared/rules/render/step-lines.ts";
-import { lineLooks } from "#shared/rules/render/semantic-appearance.ts";
-import { shownDrawing, unshownOf } from "#shared/rules/render/shown.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
-import { paintArchitecture } from "#shared/rules/svg/parts/architecture.ts";
-import { pulseLook } from "#shared/rules/svg/lines/beam-light.ts";
-import { paintDataFlow } from "#shared/rules/svg/sequence/dataflow.ts";
-import { svgDocument } from "#shared/rules/svg/page/document.ts";
-import { exportedName, framedForExport } from "#shared/rules/svg/page/export-frame.ts";
-import { drawnInk, HEAD_LENGTH, STROKE_WIDTH, type Weight } from "#shared/rules/svg/page/styles.ts";
-import { pageFor, plannedTitle } from "#shared/rules/svg/page/planned-frame.ts";
 import {
-	standingPinAt,
-	standingsFrom,
-	unsettledFrom,
-	type StatedStandings,
-	type SubjectStanding,
-} from "#shared/rules/svg/parts/standing.ts";
+	lineAppearance,
+	lineLooks,
+	nodeAppearances,
+} from "#shared/rules/render/semantic-appearance.ts";
+import { shownDrawing, shownFlows, unshownOf } from "#shared/rules/render/shown.ts";
+import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
+import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
+import { layoutDataFlow } from "#shared/rules/layout/sequence/dataflow.ts";
+import {
+	documentRequest,
+	groupColours,
+	iconsFor,
+	pageRequest,
+	paintDocument,
+} from "#shared/rules/render/paint.ts";
+import { sequenceDrawing } from "#shared/rules/render/sequence-picture.ts";
+import { farSizeFor } from "#shared/rules/text/measurement.ts";
 
 /**
  * How many of a thing there are, in words a screen reader can say.
@@ -225,38 +229,42 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		entryPointsOf(stepLines.content, reading.variant),
 	);
 	const shown = shownOf(drawing, stepLines, reading, policy);
-	const painting = paintArchitecture(
-		shown,
-		PALETTE,
-		standingsFrom(plain ? undefined : request.standing),
-		unsettledFrom(request.unsettled),
-		{ policy, level: request.level },
-		stepLines.derived,
-		// The page is the comparison's page whether or not its marks are drawn.
-		{ drawing, standingOf: standingsFrom(request.standing) },
+	// Every node the page lays out, drawn or not, so leaving some out changes
+	// no kept card's colour or whether it draws as a container.
+	const appearances = nodeAppearances(
+		[...drawing.cards, ...drawing.containers].map(({ measured }) => measured.node),
+		policy,
+		request.level,
 	);
-	const page = framedForExport(pageFor(painting, PALETTE, request.unbuilt), request, PALETTE);
-
-	const svg = svgDocument({
-		width: page.width,
-		height: page.height,
-		palette: PALETTE,
-		title: exportedName(plannedTitle(titleFor(told), request.unbuilt), request.frame),
-		description: descriptionFor(shown.containers.map(({ measured }) => measured.node.name)),
-		fonts: request.fonts ?? "linked",
-		body: page.body,
-		reading: drawing.direction,
-		theme: request.theme,
+	return paintDocument({
+		picture: {
+			grammar: "architecture",
+			drawing: shown,
+			// The page is the comparison's page whether or not its marks are drawn.
+			whole: shown === drawing ? undefined : drawing,
+			appearances: Object.fromEntries(appearances),
+			lines: Object.fromEntries(
+				drawing.edges.map(({ edge }) => [
+					edge.id,
+					lineAppearance(edge.kind, policy, stepLines.derived.has(edge.id)),
+				]),
+			),
+			steps: [...stepLines.derived],
+			groups: groupColours(policy),
+			// Group captions draw their names from far away at the largest size
+			// every card the page holds, drawn or not, fits its name at.
+			farSize: farSizeFor(
+				drawing.cards.map(({ measured, box }) => ({ name: measured.node.name, box })),
+			),
+		},
+		page: pageRequest(request, plain),
+		document: documentRequest(
+			request,
+			titleFor(told),
+			descriptionFor(shown.containers.map(({ measured }) => measured.node.name)),
+		),
+		icons: iconsFor(appearances.values()),
 	});
-
-	return {
-		svg,
-		width: page.width,
-		height: page.height,
-		atlas: page.atlas,
-		placed: page.placed,
-		readingDirection: drawing.direction,
-	};
 }
 
 /**
@@ -304,30 +312,26 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 			"this content has no flow, so there is no sequence to draw",
 		);
 	}
-
-	const painting = paintDataFlow(
-		content.flows,
-		content.nodes,
-		PALETTE,
-		standingsFrom(plain ? undefined : request.standing),
-		unsettledFrom(request.unsettled),
-		{ policy: request.policy, level: request.level },
-		{ held: plain ? told.flows : undefined, standingOf: standingsFrom(request.standing) },
+	const laid = layoutDataFlow(content.flows, content.nodes);
+	const shown = shownFlows(laid, plain ? told.flows : undefined);
+	// Sequence columns are cards; containment is not depicted in this grammar.
+	const appearances = nodeAppearances(
+		content.nodes.map(({ parent: _parent, ...node }) => node),
+		request.policy,
+		request.level,
 	);
-	const page = framedForExport(pageFor(painting, PALETTE, request.unbuilt), request, PALETTE);
-
-	const svg = svgDocument({
-		width: page.width,
-		height: page.height,
-		palette: PALETTE,
-		title: exportedName(plannedTitle(sequenceTitleFor(told), request.unbuilt), request.frame),
-		description: sequenceDescriptionFor(told),
-		fonts: request.fonts ?? "linked",
-		body: page.body,
-		theme: request.theme,
+	return paintDocument({
+		picture: {
+			grammar: "sequence",
+			laid: sequenceDrawing(laid),
+			shown: shown === laid ? undefined : sequenceDrawing(shown),
+			appearances: Object.fromEntries(appearances),
+			clock: { trafficSpeed: DEFAULT_TRAFFIC_SPEED, cycleCapMs: FLOW_CYCLE_CAP_MS },
+		},
+		page: pageRequest(request, plain),
+		document: documentRequest(request, sequenceTitleFor(told), sequenceDescriptionFor(told)),
+		icons: iconsFor(appearances.values()),
 	});
-
-	return { svg, width: page.width, height: page.height, atlas: page.atlas, placed: page.placed };
 }
 
 /**
@@ -347,65 +351,4 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 	return await renderArchitecture(request);
 }
 
-/**
- * The colour a relationship's line is drawn in, from the colour it stands for:
- * the one expression the picture draws the line in, for a key beside it to
- * draw the same.
- * @param ink The colour at full strength.
- * @returns The line's colour.
- */
-function lineInk(ink: string): string {
-	return drawnInk(ink, PALETTE);
-}
-
-/**
- * The colour of the body of a pulse that rides a line of one colour: the one
- * expression the picture draws it in, for a key beside it to draw the same.
- * @param ink The line's colour at full strength.
- * @returns The pulse's colour.
- */
-function pulseInk(ink: string): string {
-	return pulseLook(ink, STROKE_WIDTH.normal, PALETTE).head;
-}
-
-/**
- * How wide a page draws a line of one emphasis, in diagram units: for a key
- * that has to draw a line the way the picture does (TASK-383).
- * @param emphasis How loudly its author asked the line to speak.
- * @returns The stroke width.
- */
-function lineWidth(emphasis: Weight): number {
-	return STROKE_WIDTH[emphasis];
-}
-
-/**
- * How long a page draws the arrowhead of a line of one emphasis, from its base
- * to its tip, in diagram units: for a key that has to draw a head the way the
- * picture does.
- * @param emphasis How loudly its author asked the line to speak.
- * @returns The head's length, which is also its width.
- */
-function headLength(emphasis: Weight): number {
-	return HEAD_LENGTH[emphasis];
-}
-
-/**
- * The pin a subject of one standing wears on its corner, as a page draws it:
- * for a key that has to show the mark the picture shows (TASK-383).
- * @param standing How the subject stands.
- * @returns The pin, centred on the origin in a twenty-unit square; empty for unchanged.
- */
-function standingMark(standing: SubjectStanding): string {
-	return standingPinAt(0, 0, standing, PALETTE);
-}
-
-export {
-	renderArchitecture,
-	renderDataFlow,
-	renderSemanticView,
-	headLength,
-	lineInk,
-	lineWidth,
-	pulseInk,
-	standingMark,
-};
+export { renderArchitecture, renderDataFlow, renderSemanticView };
