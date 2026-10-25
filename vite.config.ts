@@ -337,6 +337,7 @@ export default defineConfig({
 		ignorePatterns: [
 			".archboard/vault/**/*.semantic.json",
 			"examples/**/*.semantic.json",
+			".agents/**",
 			".claude/**",
 			"dist/**",
 			"node_modules/**",
