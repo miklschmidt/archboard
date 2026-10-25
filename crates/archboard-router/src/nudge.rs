@@ -28,6 +28,7 @@ use crate::{End, Point, Scene};
 /// A weight that makes a variable stay where it is.
 const FIXED: f64 = 1e6;
 
+/// The axis a pass of nudging places segments along.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Axis {
     /// Segments that run down, placed along x.
@@ -37,18 +38,21 @@ enum Axis {
 }
 
 impl Axis {
+    /// A point's position on this axis.
     fn of(self, p: Point) -> f64 {
         match self {
             Axis::X => p.x,
             Axis::Y => p.y,
         }
     }
+    /// A point's position on the other axis, along the segments placed on this one.
     fn along(self, p: Point) -> f64 {
         match self {
             Axis::X => p.y,
             Axis::Y => p.x,
         }
     }
+    /// Move a point to a position on this axis.
     fn set(self, p: &mut Point, value: f64) {
         match self {
             Axis::X => p.x = value,
@@ -84,6 +88,7 @@ struct Segment {
 struct Groups(Vec<usize>);
 
 impl Groups {
+    /// The root of a segment's group, with every segment on the way pointed straight at it.
     fn find(&mut self, a: usize) -> usize {
         let mut root = a;
         while self.0[root] != root {
@@ -97,6 +102,7 @@ impl Groups {
         }
         root
     }
+    /// Put two segments' groups into one.
     fn join(&mut self, a: usize, b: usize) {
         let (a, b) = (self.find(a), self.find(b));
         // The lower index roots the group, so groups do not depend on order.
@@ -363,6 +369,7 @@ fn walk(len: usize, from_head: bool) -> Vec<usize> {
     }
 }
 
+/// The stretch along the axis that two segments share, when they share more than a touch.
 fn overlap(a: &Segment, b: &Segment) -> Option<(f64, f64)> {
     let (low, high) = (a.low.max(b.low), a.high.min(b.high));
     (high - low > SAME).then_some((low, high))

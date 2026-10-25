@@ -52,6 +52,7 @@ pub(super) struct JoinRoute {
     width: f64,
 }
 
+/// A route's straight stretches between its corners, each with the bends at its two ends.
 fn stretches_of(route: &JoinRoute, index: usize) -> Vec<Stretch> {
     let bend = |at: usize| route.bends.get(at).copied().unwrap_or(0.0);
     route
@@ -70,6 +71,8 @@ fn stretches_of(route: &JoinRoute, index: usize) -> Vec<Stretch> {
         .collect()
 }
 
+/// The stretch from one corner to the next, low end first; none unless it runs
+/// straight across or straight down.
 fn stretch_between(
     a: Point,
     b: Point,
@@ -95,12 +98,15 @@ fn stretch_between(
     })
 }
 
+/// Whether a point lies on a stretch, within `near` of it.
 fn on_stretch(stretch: &Stretch, point: Point, near: f64) -> bool {
     let off = if stretch.across { point.y } else { point.x };
     let along = if stretch.across { point.x } else { point.y };
     (off - stretch.at).abs() <= near && along >= stretch.from - near && along <= stretch.to + near
 }
 
+/// The ways a stretch's ink leaves a point on it: left and right, or up and
+/// down, each where the stretch runs on past the point.
 fn stretch_ways(stretch: &Stretch, point: Point, near: f64) -> Vec<&'static str> {
     if !on_stretch(stretch, point, near) {
         return Vec::new();
@@ -121,6 +127,7 @@ fn stretch_ways(stretch: &Stretch, point: Point, near: f64) -> Vec<&'static str>
     ways
 }
 
+/// The ways a route's ink leaves a point, each once.
 fn ways_out(stretches: &[Stretch], point: Point, near: f64) -> Vec<&'static str> {
     let mut ways: Vec<&'static str> = Vec::new();
     for way in stretches
@@ -134,6 +141,7 @@ fn ways_out(stretches: &[Stretch], point: Point, near: f64) -> Vec<&'static str>
     ways
 }
 
+/// Whether two routes' ink parts at a point: it leaves the point in different ways.
 fn part_at(one: &[Stretch], other: &[Stretch], point: Point, near: f64) -> bool {
     let a = ways_out(one, point, near);
     let b = ways_out(other, point, near);
@@ -146,6 +154,8 @@ struct Shared {
     near: f64,
 }
 
+/// Where two routes run together on one stretch, and where their ink parts at
+/// each end of it, held in from a bend; none when they do not share one.
 fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     if one.route == other.route || one.across != other.across {
         return None;
@@ -191,6 +201,8 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     })
 }
 
+/// The joins of two stretches: a mark at each end of their shared run where
+/// the routes part, in the ink of the heavier one.
 fn joins_between(one: &Stretch, other: &Stretch, by_route: &[Vec<Stretch>]) -> Vec<Junction> {
     let Some(shared) = shared_ends(one, other) else {
         return Vec::new();
@@ -217,6 +229,7 @@ fn joins_between(one: &Stretch, other: &Stretch, by_route: &[Vec<Stretch>]) -> V
         .collect()
 }
 
+/// The routes each once, in the order first given.
 fn unique(routes: impl IntoIterator<Item = usize>) -> Vec<usize> {
     let mut kept = Vec::new();
     for route in routes {
@@ -235,6 +248,8 @@ struct Found {
 }
 
 impl Found {
+    /// Keep a join, or merge it into the one found at its place: the heavier one
+    /// stays, and both keep every route either named.
     fn keep(&mut self, junction: Junction) {
         let key = format!(
             "{},{}",
@@ -266,6 +281,7 @@ impl Found {
     }
 }
 
+/// Whether two joins stand close enough on one line that their marks would touch.
 fn touching(a: &Junction, b: &Junction) -> bool {
     let dx = (a.point.x - b.point.x).abs();
     let dy = (a.point.y - b.point.y).abs();
@@ -273,6 +289,8 @@ fn touching(a: &Junction, b: &Junction) -> bool {
     (dx < ONWARD && dy < reach) || (dy < ONWARD && dx < reach)
 }
 
+/// One mark for joins that touch: the heaviest one's, stretched from the first
+/// to the last of them, naming every route they join.
 fn mark_of(cluster: &[Junction]) -> Junction {
     let heaviest =
         cluster.iter().skip(1).fold(
@@ -295,6 +313,7 @@ fn mark_of(cluster: &[Junction]) -> Junction {
     }
 }
 
+/// The joins gathered into marks, joins that touch each other into one.
 fn gathered(junctions: Vec<Junction>) -> Vec<Junction> {
     let mut pending = junctions;
     let mut marks = Vec::new();
@@ -311,6 +330,7 @@ fn gathered(junctions: Vec<Junction>) -> Vec<Junction> {
     marks
 }
 
+/// Every place where two routes run together and part, one join per place.
 fn joins_of(routes: &[JoinRoute]) -> Vec<Junction> {
     let by_route: Vec<Vec<Stretch>> = routes
         .iter()

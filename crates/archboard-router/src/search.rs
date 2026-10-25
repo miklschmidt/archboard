@@ -21,6 +21,7 @@ pub(crate) struct Taken {
 }
 
 impl Taken {
+    /// Nothing taken yet on any vertex of a grid.
     pub(crate) fn new(grid: &Grid) -> Taken {
         Taken {
             through: vec![0; grid.len()],
@@ -51,6 +52,7 @@ impl Taken {
         }
     }
 
+    /// Whether moving through a vertex in a direction would cross a route that already runs straight through it the other way.
     fn crosses(&self, vertex: usize, dir: Dir) -> bool {
         let other = if dir.horizontal() { 2 } else { 1 };
         self.through[vertex] & other != 0
@@ -106,6 +108,9 @@ struct Goal {
     paid: f64,
 }
 
+/// Where a route starts searching from an end: a free end's own vertex in any
+/// direction, or a pin's stub end, leaving its obstacle the pin's way and paying
+/// for the stub.
 fn start_of(grid: &Grid, end: End) -> Option<Start> {
     match end {
         End::Free { at } => Some(Start {
@@ -128,6 +133,8 @@ fn start_of(grid: &Grid, end: End) -> Option<Start> {
     }
 }
 
+/// Where a route ends searching at an end: a free end's own vertex, or a pin's
+/// stub end, which the route must enter facing the obstacle and pay the stub to.
 fn goal_of(grid: &Grid, end: End) -> Option<Goal> {
     match end {
         End::Free { at } => Some(Goal {
@@ -150,6 +157,7 @@ fn goal_of(grid: &Grid, end: End) -> Option<Goal> {
     }
 }
 
+/// The distance between two points along the grid's axes.
 fn distance(a: Point, b: Point) -> f64 {
     (a.x - b.x).abs() + (a.y - b.y).abs()
 }
@@ -183,6 +191,7 @@ struct Search<'s> {
 }
 
 impl Search<'_> {
+    /// Queue a state at an estimate, behind every state queued before it at the same estimate.
     fn push(&mut self, estimate: f64, state: usize, done: bool) {
         self.queue.push(Item {
             estimate,

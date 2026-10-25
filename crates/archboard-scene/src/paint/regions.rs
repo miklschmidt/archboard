@@ -80,6 +80,8 @@ struct Crossing {
     right: f64,
 }
 
+/// A caption tab's outline in a top corner of its region: round as the region
+/// is at the region's corner, and round by a radius of its own at its inner foot.
 fn tab_path(rect: Rect, corner: Corner) -> String {
     let Rect {
         x,
@@ -144,6 +146,8 @@ fn tab_box(region: &DrawingRegion, run: &TextRun, corner: Corner, grown: f64) ->
     )
 }
 
+/// The colours of a group's region, from its colour or the muted ink for none.
+/// A yellow group takes the primary colours for its tab and words.
 fn group_colours(color: Option<PaletteColor>, palette: &Palette) -> GroupColours {
     let ink = semantic_ink(color).unwrap_or_else(|| palette.muted.to_owned());
     let lightness = color.map_or(0.635, light_corner);
@@ -173,6 +177,7 @@ fn group_colours(color: Option<PaletteColor>, palette: &Palette) -> GroupColours
     }
 }
 
+/// A caption's tab in a corner of its region, with the caption's words on it.
 fn caption_tab(
     region: &DrawingRegion,
     run: &TextRun,
@@ -200,6 +205,7 @@ fn caption_tab(
     ])
 }
 
+/// A rounded outline drawn inside the edge of a box, `width` thick.
 fn outline(rect: Rect, width: f64, ink: &str) -> Markup {
     let inset = width / 2.0;
     tag(
@@ -217,6 +223,7 @@ fn outline(rect: Rect, width: f64, ink: &str) -> Markup {
     )
 }
 
+/// An arm at each corner of a box, bent round the corner, in place of a whole outline.
 fn brackets(rect: Rect, ink: &str) -> Markup {
     let inset = BRACKET_WIDTH / 2.0;
     let radius = BAND_RADIUS - inset;
@@ -257,6 +264,8 @@ fn brackets(rect: Rect, ink: &str) -> Markup {
     )
 }
 
+/// The stretches of the routes that cross the region's caption row, each by its
+/// leftmost and rightmost points, a cubic's control points included.
 fn crossings_of(region: &DrawingRegion, routes: &[&Curve]) -> Vec<Crossing> {
     let top = region.bounds.y;
     let bottom = region.caption.bounds.y + region.caption.bounds.height;
@@ -282,12 +291,15 @@ fn crossings_of(region: &DrawingRegion, routes: &[&Curve]) -> Vec<Crossing> {
     crossings
 }
 
+/// Whether every crossing keeps the route room from either side of a box.
 fn clear_of(rect: Rect, crossings: &[Crossing]) -> bool {
     crossings.iter().all(|crossing| {
         crossing.right < rect.x - ROUTE_ROOM || crossing.left > rect.x + rect.width + ROUTE_ROOM
     })
 }
 
+/// The corner a caption's tab stands in: the start, unless a route crosses it
+/// there and none would at the end.
 fn corner_of(region: &DrawingRegion, run: &TextRun, crossings: &[Crossing]) -> Corner {
     let blocked = |corner| !clear_of(tab_box(region, run, corner, 1.0).0, crossings);
     if blocked(Corner::Start) && !blocked(Corner::End) {
@@ -297,6 +309,8 @@ fn corner_of(region: &DrawingRegion, run: &TextRun, crossings: &[Crossing]) -> C
     }
 }
 
+/// The room along the region's top edge that a caption in a corner can grow
+/// into before it meets a route crossing that edge.
 fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[Crossing]) -> f64 {
     let rect = region.bounds;
     let near = tab_box(region, run, corner, 1.0).0;

@@ -315,8 +315,11 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
 
 /// The cards drawn as shapes of their own: a flowchart's decisions, loops and terminals.
 pub(super) trait Shapes {
+    /// Whether a card is drawn as one of these shapes.
     fn has(&self, id: &str) -> bool;
+    /// The shadow under a card drawn as its shape.
     fn shadow(&self, card: &Node, standing: Option<Standing>) -> Markup;
+    /// A card drawn as its shape, with how it stands against the variant it came from.
     fn paint(&self, card: &Node, standing: Option<Standing>, unsettled: bool) -> Markup;
 }
 
@@ -376,6 +379,9 @@ struct Stacked<'p> {
 }
 
 impl<'p> Stacked<'p> {
+    /// A drawing's boxes in the order they are painted: containers shallowest
+    /// first, then the board's order, cards in the board's order, and regions
+    /// shallowest first.
     fn of(drawing: &'p Painted) -> Stacked<'p> {
         let mut containers: Vec<&Node> = drawing.drawing.containers.iter().collect();
         containers.sort_by(|a, b| {
@@ -395,6 +401,8 @@ impl<'p> Stacked<'p> {
 }
 
 impl<'p> Painting<'p> {
+    /// Read what every layer shares: the masks that cut lines where they cross or
+    /// meet a label, and the ports of the cards neither removed nor drawn as shapes.
     fn new(
         ctx: &'p Ctx<'p>,
         drawing: &'p Painted,
@@ -433,10 +441,12 @@ impl<'p> Painting<'p> {
         }
     }
 
+    /// Whether the comparison removes a subject.
     fn removed(&self, id: &str) -> bool {
         self.standings.of(id) == Some(Standing::Removed)
     }
 
+    /// How a part looks. Every part drawn has an appearance, so a missing one is a broken request.
     fn appearance_of(&self, id: &str) -> &'p NodeAppearance {
         self.vocabulary
             .appearances
@@ -482,6 +492,7 @@ impl<'p> Painting<'p> {
         wrap("defs", attrs! {}, concat(cuts.collect()))
     }
 
+    /// A container's tray, before anything inside it.
     fn frame(&self, held: &Node) -> Markup {
         let id = &held.measured.node.id;
         paint_measured_frame(
@@ -492,12 +503,14 @@ impl<'p> Painting<'p> {
         )
     }
 
+    /// A group's region, its caption kept clear of the routes.
     fn region(&self, region: &DrawingRegion, routes: &[&Curve]) -> Markup {
         let color = self.vocabulary.groups.get(&region.group).copied();
         let far_size = self.vocabulary.far_size;
         paint_region(self.ctx, region, self.palette, color, far_size, routes)
     }
 
+    /// The shadow under a card: its shape's own, or the slab's.
     fn card_shadow(&self, card: &Node) -> Markup {
         let id = &card.measured.node.id;
         let standing = self.standings.of(id);
@@ -515,6 +528,7 @@ impl<'p> Painting<'p> {
         }
     }
 
+    /// A relationship's line, with the ports it runs into and the masks that cut it.
     fn edge_line(&self, routed: &Edge) -> Markup {
         let id = &routed.edge.id;
         let slots: Vec<(Port, bool)> = self
@@ -564,6 +578,8 @@ impl<'p> Painting<'p> {
         junction_marks(&joined)
     }
 
+    /// A card: its shape when it is drawn as one, else its slab with its words,
+    /// clipped where a port's well cuts into it.
     fn card(&self, card: &Node) -> Markup {
         let id = &card.measured.node.id;
         let (standing, unsettled) = (self.standings.of(id), self.unsettled.of(id));
@@ -588,6 +604,7 @@ impl<'p> Painting<'p> {
         paint_measured_card(self.ctx, card, &part, self.palette, cut)
     }
 
+    /// A relationship's words on their plate.
     fn edge_words(&self, routed: &Edge) -> Markup {
         let id = &routed.edge.id;
         paint_edge_words(
@@ -599,6 +616,7 @@ impl<'p> Painting<'p> {
         )
     }
 
+    /// A container's header slab with its name and responsibility, painted over its contents.
     fn header(&self, held: &Node) -> Markup {
         let id = &held.measured.node.id;
         paint_measured_header(

@@ -217,6 +217,7 @@ enum Keys {
 }
 
 impl Keys {
+    /// The word an entry's `data-legend-entry` attribute names its sort by.
     fn as_str(&self) -> &'static str {
         match self {
             Keys::Mark(..) => "mark",
@@ -244,6 +245,7 @@ impl Entry {
     }
 }
 
+/// A round-capped stroke across a symbol's row, stopping `end` short of its right edge.
 fn line_at(x: f64, y: f64, attributes: Attrs, end: f64) -> Markup {
     tag(
         "path",
@@ -256,6 +258,7 @@ fn line_at(x: f64, y: f64, attributes: Attrs, end: f64) -> Markup {
     )
 }
 
+/// The dash array of a relationship's dash, as its appearance spells it; none for a solid line.
 fn dash_of(word: &str) -> Option<&'static str> {
     match word {
         "dashed" => dash_array(Dash::Dashed),
@@ -264,6 +267,7 @@ fn dash_of(word: &str) -> Option<&'static str> {
     }
 }
 
+/// A relationship kind's symbol: a short line in its ink and dash, with its arrowhead.
 fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
     let named = semantic_ink(PaletteColor::named(&applied.line_color));
     let ink = drawn_ink(
@@ -322,6 +326,7 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
     ])
 }
 
+/// A part kind's symbol: its type chip in the kind's ink, with its icon.
 fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
     let named = semantic_ink(PaletteColor::named(&applied.type_color));
     let ink = named.unwrap_or_else(|| palette.glyph.to_owned());
@@ -427,6 +432,7 @@ fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Markup {
     )
 }
 
+/// The symbol an entry stands beside.
 fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Markup {
     match &entry.keys {
         Keys::Mark(standing, _) => {
@@ -470,6 +476,8 @@ fn mark_counts(
     .collect()
 }
 
+/// The legend's lists, empty ones left out: the comparison's marks, the part
+/// kinds drawn, and the relationship kinds drawn followed by emphasis and traffic.
 fn entries_of(body: &[Item], marks: &[(Standing, &'static str, usize)]) -> Vec<Vec<Entry>> {
     let appearances: Vec<Applied> = picture_appearances(body)
         .into_iter()
@@ -527,6 +535,7 @@ fn entries_of(body: &[Item], marks: &[(Standing, &'static str, usize)]) -> Vec<V
     lists
 }
 
+/// How wide an entry is: its symbol, its words and its count, rounded.
 fn width_of(ctx: &Ctx<'_>, entry: &Entry) -> f64 {
     let words = ctx
         .measurer
@@ -540,6 +549,7 @@ fn width_of(ctx: &Ctx<'_>, entry: &Entry) -> f64 {
     round_coord(GLYPH + WORD_GAP + words + count)
 }
 
+/// One entry drawn at a point: its symbol, its words and its count.
 fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Markup {
     let words = |at: f64| {
         attrs! { "x": coord(at), "y": coord(y + ROW / 2.0), "dominant-baseline": "central", "font-size": WORD_SIZE }
@@ -584,6 +594,8 @@ struct Placed {
     height: f64,
 }
 
+/// The entries' places with the size they fill: as wide as the widest row
+/// reaches, down to `bottom`, with the margins.
 fn extent(ctx: &Ctx<'_>, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
     let right = js::max(
         std::iter::once(DIAGRAM_MARGIN).chain(
@@ -601,6 +613,7 @@ fn extent(ctx: &Ctx<'_>, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> P
     }
 }
 
+/// The entries stood one under another, a short gap between lists.
 fn column(ctx: &Ctx<'_>, lists: &[Vec<Entry>]) -> Placed {
     let mut at = Vec::new();
     let mut y = DIAGRAM_MARGIN;
@@ -619,6 +632,7 @@ fn column(ctx: &Ctx<'_>, lists: &[Vec<Entry>]) -> Placed {
     extent(ctx, lists, at, y)
 }
 
+/// The entries stood in a row that wraps before `wrap_at`, a wider gap between lists.
 fn row(ctx: &Ctx<'_>, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
     let mut at = Vec::new();
     let mut x = DIAGRAM_MARGIN;
@@ -654,6 +668,7 @@ struct Legend {
 }
 
 impl Legend {
+    /// The legend drawn with its top left corner at a point.
     fn draw(&self, ctx: &Ctx<'_>, x: f64, y: f64, palette: &Palette) -> Markup {
         group(
             Role::Slot,
@@ -673,6 +688,8 @@ impl Legend {
     }
 }
 
+/// The legend of a picture laid out: a column for a vertical layout, else a row
+/// that wraps at the page's width.
 fn legend_of(
     ctx: &Ctx<'_>,
     body: &[Item],
@@ -693,6 +710,7 @@ fn legend_of(
     }
 }
 
+/// A page with its legend: beside it on the right for a vertical layout, else under it.
 fn with_legend(
     ctx: &Ctx<'_>,
     page: PaintedPage,
@@ -715,6 +733,7 @@ fn with_legend(
     }
 }
 
+/// A page moved down under its title, made wide enough for the title.
 fn under_title(ctx: &Ctx<'_>, page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
     let words = text_node(
         attrs! {

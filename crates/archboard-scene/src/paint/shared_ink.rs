@@ -12,12 +12,14 @@ use crate::js;
 /// Two straight pieces closer than this across their axis draw as one line.
 const SHARED_INK: f64 = 2.0;
 
+/// The axis a straight piece runs along.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Axis {
     X,
     Y,
 }
 
+/// A point's position on an axis.
 fn get(point: Point, axis: Axis) -> f64 {
     match axis {
         Axis::X => point.x,
@@ -25,6 +27,7 @@ fn get(point: Point, axis: Axis) -> f64 {
     }
 }
 
+/// The other axis.
 fn across(axis: Axis) -> Axis {
     match axis {
         Axis::X => Axis::Y,
