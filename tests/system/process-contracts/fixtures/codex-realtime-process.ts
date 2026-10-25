@@ -32,6 +32,11 @@ import {
 import type { RealtimeSemanticEvent } from "@archboard/codex-realtime-voice/realtime";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
+/**
+ * The record prefix this harness passes as its host, as Archboard passes its own. It is neither
+ * Archboard's nor a package default, so an id under it was minted by this harness's ledger.
+ */
+const HOST_RECORD_PREFIX = "realtime-host";
 const DEFAULTS = {
 	startEvents: [
 		{ method: "thread/realtime/sdp", params: { threadId: "$THREAD", sdp: "answer-sdp" } },
@@ -229,8 +234,7 @@ async function createHarness(
 	const unsubscribeChild = owner.onChild((child) => {
 		bridge = new PublicChildBridge(child);
 		bridgeExitForwarded = false;
-		// The identity Archboard's server mints, with the record prefix its host passes.
-		const identity = createIdentityAuthorities(createIdentityLedger("archboard")).identity;
+		const identity = createIdentityAuthorities(createIdentityLedger(HOST_RECORD_PREFIX)).identity;
 		const binding = makeBinding(identity);
 		writeControl(
 			controlPath,
@@ -437,6 +441,7 @@ async function waitForGenerations(harness: RealtimeHarness, count: number): Prom
 }
 
 export {
+	HOST_RECORD_PREFIX,
 	type FixtureControl,
 	type Generation,
 	type RealtimeHarness,
