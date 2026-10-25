@@ -1779,7 +1779,12 @@
 			"workflow": "read",
 			"flask": "3.0.0",
 			"fixture": "fixtures/S16.json",
-			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/ctx.py", "src/flask/sessions.py"],
+			"sources": [
+				"src/flask/app.py",
+				"src/flask/cli.py",
+				"src/flask/ctx.py",
+				"src/flask/sessions.py"
+			],
 			"prompt": "Before a refactor, survey the saved boards of this repository. Which entry points only pass one call on, which containers have no hidden part, and which containers have no entry point? Say which boards you could read. Answer from the saved boards using the CLI. Change nothing.",
 			"expectedFeatures": [
 				{
