@@ -1,8 +1,13 @@
 // Pure layout shared by the Bun and browser workers. Hosts initialize
 // Graphviz through `loadLayoutEngine`, which puts back what it held as loaded
-// before every solve.
+// before every solve. The renderer core lays Track boards out and asks this
+// host's Graphviz for each graph it ranks (ADR 0057, TASK-520.04).
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
-import type { Viz } from "@viz-js/viz";
+import type { Graph, Viz } from "@viz-js/viz";
+import {
+	layOutTrack,
+	type GraphvizHost,
+} from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import { placeBlocks } from "#shared/rules/blocks/tree/place.ts";
 import { SOLVE_STAGE } from "#shared/rules/render/host.ts";
 
@@ -15,9 +20,20 @@ import { SOLVE_STAGE } from "#shared/rules/render/host.ts";
  * @returns A complete layout operation.
  */
 export function createLayoutEngine(viz: Viz) {
+	const graphviz: GraphvizHost = {
+		/**
+		 * Lay out one graph the core ranks.
+		 * @param graph The graph, as the JSON of a viz-js `Graph`.
+		 * @returns What Graphviz answers of it as `json0`, y inverted.
+		 */
+		render: (graph) =>
+			viz.renderString(JSON.parse(graph) as Graph, { yInvert: true, format: "json0" }),
+	};
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
-		if (stage === "track") return placeBlocks(viz, graph, true);
+		if (stage === "track") {
+			return JSON.parse(layOutTrack(JSON.stringify(graph), graphviz)) as ElkNode;
+		}
 		if (stage === "blocks") return placeBlocks(viz, graph);
 		throw new Error(
 			`A solve names its stage in ${SOLVE_STAGE}, "track" or "blocks"; this one said ${String(stage)}.`,
@@ -109,8 +125,9 @@ function heldBytes(memory: WebAssembly.Memory): Uint8Array {
  * every solve's objects the same places, so a solve's answer is decided by
  * its graph and options alone, not by which worker answered it or what that
  * worker solved before. What is put back is a few hundred kilobytes, which
- * costs microseconds. The renderer core, which routes the trunks, holds no
- * state between calls, and a host loads it before this (ADR 0057).
+ * costs microseconds. The renderer core, which lays Track boards out and
+ * routes the trunks, holds no state between calls, and a host loads it before
+ * this (ADR 0057).
  * @param load Instantiates Graphviz, answering its instance. It must
  * instantiate it itself: an engine loaded earlier has nothing as loaded to
  * go back to.
