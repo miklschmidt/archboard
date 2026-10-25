@@ -164,6 +164,17 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		previous.close();
 	};
 
+	/** Open a socket and attach the owners to it. */
+	const open = async () => {
+		const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
+		socket = next;
+		await opened(next);
+		if (disposed) return;
+		await transport.attach(next);
+		await media.attach(transport);
+		await transport.accountRead();
+	};
+
 	/**
 	 * Open the socket again and attach the owners to it. A dispose while it
 	 * runs opens no socket, or closes the one it opened.
@@ -172,14 +183,7 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const connect = async () => {
 		const completed = await run(async () => {
 			await release();
-			if (disposed) return;
-			const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
-			socket = next;
-			await opened(next);
-			if (disposed) return;
-			await transport.attach(next);
-			await media.attach(transport);
-			await transport.accountRead();
+			if (!disposed) await open();
 		});
 		return completed && !disposed;
 	};
