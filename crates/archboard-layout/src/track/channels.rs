@@ -359,17 +359,22 @@ impl Track<'_> {
 
     /// The units of one channel that need a track: trunks, and lone nets that turn.
     fn units_of(&self, nets: &[NetId]) -> Vec<(Unit, Vec<NetId>)> {
-        let mut groups: Map<UnitKey, Vec<NetId>> = Map::default();
-        for &net in nets {
-            let (key, members) = match self.net(net).trunk {
-                Some(trunk) => (UnitKey::Trunk(trunk), self.trunks[trunk.0].nets.clone()),
-                None => (UnitKey::Net(net), vec![net]),
-            };
-            groups.insert(key, members);
-        }
+        let groups: Set<UnitKey> = nets
+            .iter()
+            .map(|&net| match self.net(net).trunk {
+                Some(trunk) => UnitKey::Trunk(trunk),
+                None => UnitKey::Net(net),
+            })
+            .collect();
         groups
-            .into_values()
-            .map(|members| (self.unit_of(&members), members))
+            .into_iter()
+            .map(|group| {
+                let members = match group {
+                    UnitKey::Trunk(trunk) => self.trunks[trunk.0].nets.clone(),
+                    UnitKey::Net(net) => vec![net],
+                };
+                (self.unit_of(&members), members)
+            })
             .filter(|(unit, _)| unit.high - unit.low > 0.5)
             .collect()
     }
