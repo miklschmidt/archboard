@@ -18,16 +18,16 @@ if (handedOff !== null) {
 	process.exit(handedOff);
 }
 
-// Disable colors to prevent ANSI color codes from breaking JSON parsing
-process.env["NODE_DISABLE_COLORS"] = "1";
-process.env["NO_COLOR"] = "1";
-
 // Must run before importing anything that reads runtime configuration. A help
 // request is answered from the command table alone, so it configures nothing.
 const { applyCliBootstrap } = await import("#cli/operations/bootstrap/bootstrap.ts");
 const bootstrap = applyCliBootstrap(argv);
 
 if (!bootstrap.help) {
+	// Disable colors to prevent ANSI color codes from breaking JSON parsing. Help
+	// prints no JSON, so it keeps the terminal's colors.
+	process.env["NODE_DISABLE_COLORS"] = "1";
+	process.env["NO_COLOR"] = "1";
 	const { removedEnvironmentMessage } = await import("@archboard/server-lifecycle/config");
 	const removed = removedEnvironmentMessage();
 	if (removed !== null) {
