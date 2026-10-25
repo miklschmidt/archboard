@@ -1,7 +1,7 @@
 import { realpathSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import { captureExecutionContext } from "#runtime/rules/host/context.ts";
 import { sameBinding } from "#runtime/services/thread-context/link-equality.ts";
@@ -326,7 +326,7 @@ function createDefaultWorkbenchHost(
 			freshness: {
 				state: "fresh" as const,
 				capturedAtMs,
-				freshUntilMs: capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS,
+				freshUntilMs: capturedAtMs + CODEX_REALTIME_MS.semanticFreshness,
 			},
 		});
 	};

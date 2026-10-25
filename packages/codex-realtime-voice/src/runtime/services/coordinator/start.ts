@@ -1,6 +1,6 @@
 import type { SessionNotificationHandler } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -479,10 +479,10 @@ function createCoordinatorStarter(
 				kind: "expired",
 				error: new CodexCoordinatorError(
 					"settings_timeout",
-					`The coordinator settings notification did not match within ${CODEX_REQUEST_SETTLEMENT_MS} ms; inspect the authoritative thread list.`,
+					`The coordinator settings notification did not match within ${CODEX_SESSION_MS.requestSettlement} ms; inspect the authoritative thread list.`,
 				),
 			});
-		}, CODEX_REQUEST_SETTLEMENT_MS);
+		}, CODEX_SESSION_MS.requestSettlement);
 		return {
 			promise,
 			cancel: pending.cancel,

@@ -10,7 +10,7 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
-import { BOARD_LISTING_STALE_MS } from "@archboard/timing";
+import { BOARD_CACHE_MS } from "@archboard/timing";
 import { fetchRepositories } from "#ui/clients/board-catalog/repositories.ts";
 import { fetchPaneInventory } from "#ui/clients/pane-session/pane-requests.ts";
 
@@ -49,7 +49,7 @@ function paneInventoryQuery() {
 		 * @returns The pane inventory.
 		 */
 		queryFn: (context) => fetchPaneInventory(context.signal),
-		staleTime: BOARD_LISTING_STALE_MS,
+		staleTime: BOARD_CACHE_MS.listingStale,
 		refetchOnWindowFocus: "always",
 	});
 }
@@ -71,7 +71,7 @@ function repositoriesQuery() {
 		 * @returns The listing.
 		 */
 		queryFn: (context) => fetchRepositories(context.signal),
-		staleTime: BOARD_LISTING_STALE_MS,
+		staleTime: BOARD_CACHE_MS.listingStale,
 		refetchOnWindowFocus: "always",
 	});
 }

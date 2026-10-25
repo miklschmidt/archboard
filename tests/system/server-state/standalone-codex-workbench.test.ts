@@ -204,9 +204,9 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(await workbench.start()).toMatchObject({ ready: true });
 		const restarted = {};
 		workbench.browser.accept(restarted, "browser", registration);
-		expect(
-			(await request<Snapshot>("connect", {}, restarted)).snapshot.threadLink.state,
-		).not.toBe("executable");
+		expect((await request<Snapshot>("connect", {}, restarted)).snapshot.threadLink.state).not.toBe(
+			"executable",
+		);
 		await workbench.shutdown();
 	} finally {
 		await resources.disposeAsync();

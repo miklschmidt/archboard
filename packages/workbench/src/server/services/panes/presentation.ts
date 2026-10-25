@@ -19,7 +19,7 @@ import type {
 	SemanticPaneContext,
 	SemanticPanePresentation,
 } from "@archboard/board/pane-context";
-import { PRESENTATION_ARRIVAL_TIMEOUT_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import { paneBoardOf, panes, sendToPane } from "#server/services/panes/registry.ts";
 
 /** Why a pane could not be shown the step it was asked for. */
@@ -220,7 +220,7 @@ function awaitAnswer(
 	return new Promise<PresentOutcome>((resolve) => {
 		const timer = setTimeout(() => {
 			settle({ kind: "refused", reason: "timeout" });
-		}, PRESENTATION_ARRIVAL_TIMEOUT_MS);
+		}, PANE_MS.presentationArrival);
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.

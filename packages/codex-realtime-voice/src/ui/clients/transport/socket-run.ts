@@ -2,7 +2,7 @@
 // the snapshot it has reduced so far. The transport owns at most one run at a
 // time; a retired run answers nothing and touches nothing.
 
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
 import {
 	BrowserWorkbenchTransportError,
@@ -227,7 +227,7 @@ function sendRequest(run: SocketRun, ports: SocketRunPorts, spec: RequestSpec): 
 	run.pending.set(requestId, pending);
 	pending.timer = setTimeout(
 		() => expirePending(run, requestId, pending),
-		CODEX_REQUEST_SETTLEMENT_MS,
+		CODEX_SESSION_MS.requestSettlement,
 	);
 	try {
 		run.socket.send(JSON.stringify(request));

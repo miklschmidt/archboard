@@ -9,7 +9,7 @@
 // then, well under one frame of video. Nothing here draws or captures a
 // picture: the picture is rendered from the talk afterwards, frame by frame.
 
-import { RECORDING_TAP_DRAIN_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/timing";
 import { TALK_SAMPLE_RATE, type TalkEvent, type TalkLog } from "@archboard/walkthrough/talk";
 
 /** What the audio worklet's scope has that the DOM library does not declare. */
@@ -298,7 +298,7 @@ class TalkCapture {
 	 * @returns Once it has, or once waiting longer would not help.
 	 */
 	async #drained(until: number): Promise<void> {
-		const deadline = performance.now() + RECORDING_TAP_DRAIN_MS;
+		const deadline = performance.now() + RECORDING_MS.tapDrain;
 		while (performance.now() < deadline) {
 			const last = this.#blocks.at(-1);
 			if (last !== undefined && last.frame + last.pcm.length >= until) return;

@@ -1,12 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import {
-	LOCK_LEASE_MS,
-	LOCK_POLL_MS,
-	LOCK_STEAL_GUARD_MS,
-	LOCK_WAIT_CAP_MS,
-} from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import { boardMemoryKey, normalizeBoardKey } from "#runtime/store/address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/store/lock/claim-state.ts";
 import {
@@ -375,7 +370,7 @@ async function stealContested(
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
-	await sleep(LOCK_STEAL_GUARD_MS);
+	await sleep(BOARD_LOCK_MS.stealGuard);
 	const settled = readRecord(file);
 	if (settled?.token !== record.token) {
 		return { ok: false, record: liveRecord(settled) };
@@ -452,9 +447,9 @@ type WaitVerdict = "stop" | "retry" | "wait";
 function waitPlan(request: LockRequest): WaitPlan {
 	const startedAt = Date.now();
 	return {
-		leaseMs: request.leaseMs ?? LOCK_LEASE_MS,
+		leaseMs: request.leaseMs ?? BOARD_LOCK_MS.lease,
 		startedAt,
-		deadline: startedAt + (request.waitMs ?? LOCK_WAIT_CAP_MS),
+		deadline: startedAt + (request.waitMs ?? BOARD_LOCK_MS.waitCap),
 	};
 }
 
@@ -465,7 +460,7 @@ function waitPlan(request: LockRequest): WaitPlan {
  * @returns The interval in milliseconds.
  */
 function pollFor(deadline: number): number {
-	return Math.min(LOCK_POLL_MS, Math.max(1, deadline - Date.now()));
+	return Math.min(BOARD_LOCK_MS.poll, Math.max(1, deadline - Date.now()));
 }
 
 /**

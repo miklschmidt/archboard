@@ -56,11 +56,12 @@ export {
 	type LockSink,
 } from "#runtime/store/lock/contracts.ts";
 export {
+	type LostClaim,
 	claimBoard,
-	claimEndReason,
 	claimOn,
 	claimWriterId,
 	releaseClaim,
+	takeBackBoard,
 	takeClaimRevocation,
 } from "#runtime/store/lock/claims.ts";
 export {
