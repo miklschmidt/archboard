@@ -353,7 +353,7 @@ package-local `#` rewrite, and a new part reaches callers through its family's c
 
 - `./components` is every component, one composite per job. A caller imports the family and
   reaches its parts on it: `Dialog` with `Dialog.Content`, `Dialog.Header`, `Dialog.Title`,
-  `Dialog.Description`, `Dialog.Footer`, `Dialog.Trigger`, `Dialog.Close` and the shared
+  `Dialog.Description`, `Dialog.Footer`, `Dialog.Trigger` and the shared
   `Dialog.Busy` (progress text), `Dialog.Error` (the host's failure) and `Dialog.Cancel` (the
   footer's dismissing action); `Field` with its label, description, content, set, legend and
   `Field.Issues`; and likewise `Select`, `Tabs`, `RadioGroup`, `ToggleGroup`, `InputGroup`,
