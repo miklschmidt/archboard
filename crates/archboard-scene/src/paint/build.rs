@@ -32,8 +32,9 @@ pub(super) fn shape(shape: Shape) -> Items {
     vec![Item::Shape(shape)]
 }
 
-/// One run of words, as a run of items.
-pub(super) fn text(text: Text) -> Items {
+/// One run of words, with its final baseline rounded after alignment.
+pub(super) fn text(mut text: Text) -> Items {
+    text.at = point(text.at.x, text.at.y);
     vec![Item::Text(text)]
 }
 
@@ -74,4 +75,38 @@ pub(super) fn route(curve: &Curve) -> Vec<PathStep> {
         },
     }));
     steps
+}
+
+#[cfg(test)]
+mod tests {
+    use super::text;
+    use crate::drawing::{DiagramFont, FontFamily};
+    use crate::geometry::Point;
+    use crate::scene::{Colour, Item, Text};
+
+    #[test]
+    fn centred_text_reaches_the_scene_at_its_final_coordinates() {
+        let words = Text {
+            width: 3.33,
+            ..Text::set(
+                Point {
+                    x: 10.01,
+                    y: 20.125,
+                },
+                DiagramFont {
+                    family: FontFamily::Sans,
+                    weight: 400,
+                },
+                12.0,
+                Colour::Black,
+                "a",
+            )
+        }
+        .centred();
+        let items = text(words);
+        let Item::Text(run) = &items[0] else {
+            panic!("words are a text item")
+        };
+        assert_eq!(run.at, Point { x: 8.34, y: 20.13 });
+    }
 }
