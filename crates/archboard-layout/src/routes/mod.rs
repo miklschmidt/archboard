@@ -20,8 +20,8 @@ mod tests;
 use archboard_scene::request::{Arrowhead, Dash};
 use serde::{Deserialize, Serialize};
 
-pub use crossings::{bridge_crossings, bridge_unfolded};
-pub use folded::unfold_crossings;
+pub(crate) use crossings::{bridge_crossings, bridge_unfolded};
+pub(crate) use folded::unfold_crossings;
 
 /// How a relationship's line is drawn: its dash and its head, as the vault's
 /// policy draws its kind.

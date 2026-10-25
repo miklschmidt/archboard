@@ -501,7 +501,7 @@ fn by_key(a: &Plan, b: &Plan) -> f64 {
 /// lines cross plainly wherever none does, on routes whose folded crossings
 /// have already moved onto straight runs (`bridgeUnfolded`). No placement
 /// moves, and painters and interaction geometry share the resulting curves.
-pub fn bridge_unfolded(
+pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
 ) -> Bridged<EdgeFacts> {
@@ -548,7 +548,7 @@ pub fn bridge_unfolded(
 /// two corners first moves onto straight runs, taking a label on a moved lane
 /// along ([`unfold_crossings`]), and then each crossing is hopped or crossed
 /// plainly ([`bridge_unfolded`]).
-pub fn bridge_crossings(
+pub(crate) fn bridge_crossings(
     settled: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
 ) -> Bridged<EdgeFacts> {
