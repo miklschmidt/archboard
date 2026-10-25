@@ -4,15 +4,19 @@
 // as a narrow column at the left of a wide, tall, mostly empty slab.
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import {
-	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_ICON_GAP,
-	CONTAINER_INSET,
-} from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The room inside a card round its words: archboard_scene::paint::design::ARCHITECTURE_CARD_PADDING. */
+const ARCHITECTURE_CARD_PADDING = 16;
+
+/** The room between a card's icon and its words: archboard_scene::paint::design::ARCHITECTURE_ICON_GAP. */
+const ARCHITECTURE_ICON_GAP = 12;
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 /** The type chip a slab keeps left of its words, and the gap between them. */
 const CHIP_AND_GAP = 24 + ARCHITECTURE_ICON_GAP;

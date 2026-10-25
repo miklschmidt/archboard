@@ -17,8 +17,13 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE } from "#shared/constants/spacing.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The room a line's words keep from a card: archboard_layout::constants::LABEL_CARD_CLEARANCE. */
+const LABEL_CARD_CLEARANCE = 16;
+
+/** The room one line's words keep from another's: archboard_layout::constants::LABEL_LABEL_CLEARANCE. */
+const LABEL_LABEL_CLEARANCE = 24;
 
 /** The room a badge keeps from a card and from the ends of its run. */
 const AIR = LABEL_CARD_CLEARANCE;

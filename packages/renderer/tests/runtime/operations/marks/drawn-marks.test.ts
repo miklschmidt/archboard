@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 import type { DrawnBoard } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { markCounts } from "#shared/rules/render/picture-key.ts";
+import { markCounts } from "#shared/rules/render/key-marks.ts";
 import { renderBoard } from "#runtime/operations/render.ts";
 import { type BoardRenderChoices } from "#shared/rules/render/board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";

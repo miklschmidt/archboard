@@ -8,9 +8,11 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { REGION_INSET } from "#shared/constants/spacing.ts";
 import { bodyShift, pointsOf } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+
+/** The room a group region keeps round its members: archboard_layout::constants::REGION_INSET. */
+const REGION_INSET = 14;
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],

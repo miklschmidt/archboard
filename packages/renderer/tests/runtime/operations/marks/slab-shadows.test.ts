@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { lightnessOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
@@ -142,8 +142,12 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
-test("every participant's shadow lies under every participant of a sequence", () => {
-	const drawing = renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: EXCHANGE });
+test("every participant's shadow lies under every participant of a sequence", async () => {
+	const drawing = await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: EXCHANGE,
+		grammar: "sequence",
+	});
 	expectShadowsUnderCards(drawing.svg, ["web", "app", "db"]);
 });
 

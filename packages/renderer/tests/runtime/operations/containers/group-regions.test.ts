@@ -11,7 +11,6 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import {
 	bodyShift,
 	boxesOverlap,
@@ -30,6 +29,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import codexWorkhorse from "#tests/runtime/support/fixtures/codex-workhorse.json";
 import nestedRegion from "#tests/runtime/support/fixtures/nested-region.json";
 import sideSlack from "#tests/runtime/support/fixtures/side-slack.json";
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],

@@ -52,7 +52,8 @@ test("a failed required block solve cancels the speculative solves through the h
 			layout: "blocks",
 			theme: "light",
 		}).catch((error: unknown) => error);
-		expect(outcome).toBe(failure);
+		// The core carries the host's failure out by its words.
+		expect(outcome).toHaveProperty("message", failure.message);
 		// Two joining source blocks produce several candidates before the first
 		// failure is observed. Passing no signal would leave these jobs queued.
 		expect(signals.length).toBeGreaterThan(2);
