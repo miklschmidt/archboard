@@ -43,12 +43,7 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "namespace") {
 	const xdgState = process.env["XDG_STATE_HOME"]!;
 	const temporary = process.env["TMPDIR"]!;
 	const workbench = path.join(stateDir(), "codex-workbench");
-	const lock = path.join(
-		workbench,
-		"canvases",
-		process.env["PORT"]!,
-		".archboard-codex-process.lock",
-	);
+	const lock = path.join(workbench, "canvases", process.env["PORT"]!, ".codex-process.lock");
 	try {
 		fs.mkdirSync(path.dirname(lock), { recursive: true, mode: 0o700 });
 		fs.writeFileSync(lock, `${process.pid}\n`, { flag: "wx", mode: 0o600 });
@@ -337,12 +332,7 @@ describe("owned server direct lifecycle", () => {
 				expect(namespace).not.toContainValue(callerPaths.temporary);
 				expect(namespace.workbench).toBe(workbench);
 				expect(namespace.lock).toBe(
-					path.join(
-						workbench,
-						"canvases",
-						new URL(server.base).port,
-						".archboard-codex-process.lock",
-					),
+					path.join(workbench, "canvases", new URL(server.base).port, ".codex-process.lock"),
 				);
 				expect(namespace.ambientSentinel).toBeUndefined();
 				expect(fs.existsSync(namespace.lock)).toBeTrue();

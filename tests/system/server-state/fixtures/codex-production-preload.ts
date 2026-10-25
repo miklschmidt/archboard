@@ -19,12 +19,17 @@ if (logPath !== undefined) {
 }
 
 const executableModule: typeof CodexProcessInterface = await import(CODEX_PROCESS_MODULE_PATH);
+// Mocking updates the imported namespace in place, so the stand-in keeps the real function.
+const { resolveCodexExecutable } = executableModule;
 await Promise.resolve(
 	mock.module(CODEX_PROCESS_MODULE_PATH, (): typeof executableModule => ({
 		...executableModule,
-		resolveProjectCodexExecutable: () =>
-			process.env["ARCHBOARD_TEST_PRODUCTION_FAIL_STAGE"] === "child_start"
-				? `${executable}.missing`
-				: executable,
+		resolveCodexExecutable: () =>
+			resolveCodexExecutable({
+				executablePath:
+					process.env["ARCHBOARD_TEST_PRODUCTION_FAIL_STAGE"] === "child_start"
+						? `${executable}.missing`
+						: executable,
+			}),
 	})),
 );

@@ -10,10 +10,7 @@ import {
 	OtherSourceError,
 } from "#runtime/clients/server-client-transport.ts";
 import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
@@ -130,7 +127,7 @@ function refuseUnstartableServer(): void {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	try {
-		verifyCodexExecutable(resolveProjectCodexExecutable());
+		resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
 	} catch (cause) {
 		throw startupRefusal(
 			cause instanceof Error

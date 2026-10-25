@@ -1,4 +1,8 @@
-import { TEST_CONTEXT_CODEC, TEST_CONTEXT_SCHEMA } from "#tests/runtime/support/host.ts";
+import {
+	TEST_CONTEXT_CODEC,
+	TEST_CONTEXT_SCHEMA,
+	testContextFixture,
+} from "#tests/runtime/support/host.ts";
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
@@ -170,4 +174,137 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 		),
 	).rejects.toThrow("expectedTurnId does not match the current active turn");
 	expect(steerCalls).toBe(1);
+});
+
+test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
+	const turnId = authorities.identity.decoder.adoptTurnId("turn-current");
+	const starts: unknown[] = [];
+	const steers: unknown[] = [];
+	const contexts: unknown[] = [];
+	// Both mutations read the authoritative thread first, so the fake reports the
+	// thread the server would actually see: idle for the start, running for the steer.
+	let activeTurns: readonly { readonly id: unknown; readonly status: string }[] = [];
+	const session = {
+		turnStart: async (params: unknown) => {
+			starts.push(params);
+			return { turn: { id: turnId } } as never;
+		},
+		threadRead: async (params: unknown) => {
+			if (
+				typeof params === "object" &&
+				params !== null &&
+				"includeTurns" in params &&
+				params.includeTurns
+			)
+				throw new Error("list_turns is not supported yet");
+			return {
+				thread: {
+					id: threadId,
+					status: { type: activeTurns.length === 0 ? "idle" : "active" },
+					turns: activeTurns,
+				},
+			} as never;
+		},
+		turnSteer: async (params: unknown) => {
+			steers.push(params);
+			return { turnId } as never;
+		},
+		turnInterrupt: async () => ({}) as never,
+	};
+	const actions = createServerCanonicalTextActions({
+		contextCodec: TEST_CONTEXT_CODEC,
+		identity: authorities,
+		session,
+		contextForOperation: (action, operation) => {
+			contexts.push({ paneId: action.paneId, operation });
+			return TEST_CONTEXT_SCHEMA.parse({
+				...testContextFixture,
+				paneId: action.paneId,
+				child: { id: action.childId, epoch: action.epoch },
+				workhorse: { threadId: action.link.threadId, turnId: null },
+				operation: { ...operation, outcome: null },
+			});
+		},
+	});
+	const context = {
+		browserId: "browser-1",
+		connection: Object.freeze({}),
+		paneId: "pane-exact",
+		tabSessionId: parseTabSessionId("tab-one")!,
+		checkout: "/work/payments",
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 3,
+		link: {
+			kind: "thread_link",
+			state: "executable",
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			source: "appServer",
+			status: "idle",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+	} as const;
+	await actions.start(
+		{
+			kind: "browser_command",
+			command: "start",
+			commandId: context.commandId,
+			paneId: context.paneId,
+			childId: context.childId,
+			epoch: context.epoch,
+			threadId,
+			prompt: "Start from the selected service.",
+		},
+		context,
+	);
+	activeTurns = [{ id: turnId, status: "inProgress" }];
+	await actions.steer(
+		{
+			kind: "browser_command",
+			command: "steer",
+			commandId: context.commandId,
+			paneId: context.paneId,
+			childId: context.childId,
+			epoch: context.epoch,
+			threadId,
+			turnId,
+			prompt: "Keep the same target.",
+		},
+		context,
+	);
+
+	expect(starts).toHaveLength(1);
+	expect(starts[0]).toMatchObject({
+		threadId,
+		turnTrigger: TEST_CONTEXT_CODEC.turnTrigger,
+		input: [{ type: "text", text: "Start from the selected service.", text_elements: [] }],
+		additionalContext: { [TEST_CONTEXT_CODEC.key]: { kind: "application" } },
+	});
+	expect(steers).toHaveLength(1);
+	expect(steers[0]).toMatchObject({
+		threadId,
+		expectedTurnId: turnId,
+		input: [{ type: "text", text: "Keep the same target.", text_elements: [] }],
+		additionalContext: { [TEST_CONTEXT_CODEC.key]: { kind: "application" } },
+	});
+	const startBody = starts[0] as {
+		clientUserMessageId: unknown;
+		additionalContext: Record<string, { value: unknown }>;
+	};
+	const steerBody = steers[0] as typeof startBody;
+	expect(typeof startBody.clientUserMessageId).toBe("string");
+	expect(typeof startBody.additionalContext[TEST_CONTEXT_CODEC.key]?.value).toBe("string");
+	expect(typeof steerBody.clientUserMessageId).toBe("string");
+	expect(typeof steerBody.additionalContext[TEST_CONTEXT_CODEC.key]?.value).toBe("string");
+	expect(contexts).toEqual([
+		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
+		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
+	]);
 });

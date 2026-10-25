@@ -97,8 +97,9 @@ A package has no `lib/` folder and no `index.ts` barrel. Name the role of a fold
 `constants`, `schemas`, `rules` or `operations`, and let a folder that grows past about 12 files
 split by behavior.
 
-- **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. There is no build step, no
-  wildcard pattern and no condition object. Import `@archboard/<name>`, or
+- **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. Inside the
+  repository there is no build step, no wildcard pattern and no condition object. The npm build of
+  `codex-realtime-voice` is the one exception, and it leaves the workspace `exports` as they are. Import `@archboard/<name>`, or
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
@@ -210,7 +211,7 @@ link of a binding are not here: only the code opener reads them, so they live in
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It owns one private Codex app-server session over stdio.
 It holds protocol contracts, the process owner, the stdio transport, and the session.
-It imports the lower process, workspace, diagnostics, and timing packages.
+It imports the lower process, diagnostics, and timing packages.
 It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
 
 The two shared entries are safe for the browser. The four runtime entries run only in Bun.
@@ -608,8 +609,17 @@ the browser. The CLI's route clients are not here: the CLI is their only caller,
 The `codex-realtime-voice` package (`@archboard/codex-realtime-voice`) owns reusable Codex conversations and realtime voice.
 It runs one private app-server process with separate coordinator and workhorse histories.
 Each browser tab has one coordinator and one workhorse per admitted checkout.
-The package sits at layer 6 and reads only its Codex, process, workspace, diagnostics, and timing foundations.
+The package sits at layer 6 and reads only its Codex, process, diagnostics, and timing foundations.
 It imports no Archboard board, vault, walkthrough, pane, or server-lifecycle module.
+
+The package and the four packages it reads are MIT-licensed, each with its own `LICENSE`. Every other package is BUSL-1.1.
+`bun run pack:voice` (the `voice-package` Vite+ task, `scripts/pack-codex-realtime-voice.ts`) builds it for npm into ignored `dist/codex-realtime-voice/`.
+It bundles the four MIT packages into ESM and bundled declarations for each public entry, and keeps zod, ws, React, Express and `@openai/codex` external.
+`tsconfig.voice-package.json` names the sources the declarations come from.
+The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
+The owner publishes that directory with `npm publish`.
+`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installedIn: SOURCE_CHECKOUT` to refuse any other install.
+`tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
 `./contract` holds shared snapshots, gateway messages, commands, and their identity-bound schemas.
@@ -618,11 +628,17 @@ Its public entries separate browser code from Bun code.
 `./runtime` and `./server` run only in Bun.
 All four areas adopt the `api/` role.
 
-The primary server entry is `createCodexWorkbench` from `./server`.
-The caller supplies private storage, the Codex process configuration, instructions, application context, and checkout admission.
-The factory owns process startup, generations, sessions, browser connections, shown conversations, and shutdown.
-Optional domain extensions install application tools and context sources into that same graph.
+The server entry is one factory, `createVoiceAgent` from `./server`.
+The host supplies a storage directory, the Codex process inputs, the admitted checkouts, role instructions as text, an identity, and `onFatal`.
+The agent's `start()`, `attach(server, { path, origin })` and `shutdown()` own process startup, generations, sessions, browser sockets, shown conversations, and shutdown.
+`attach` serves the browser sockets on one path of a `node:http` server, so a host writes no upgrade handling.
+The identity sets the Codex service name and thread source, with the neutral default `codex-realtime-voice`.
+A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, voice presentation, and its own browser routing.
+A host that multiplexes its own socket uses `agent.browser` instead of `attach`.
+That extension contract is one type, and a host derives the parts it names from it.
+`./runtime` holds only what Archboard's domain tools and callbacks still need from the core: epoch, wait-graph and thread-link types, the callback engine and its types, and instruction byte checks.
 A consumer never assembles the internal factories.
+Host context events carry generic fields (feed, sequence, freshness, identity, coalescing) and a payload that only the host's policy reads.
 
 `runtime/` owns execution identity, immutable instruction profiles, thread links, approvals, queues, coordinators, workhorses, and realtime recovery.
 Host context stays separate from execution identity.
@@ -660,7 +676,9 @@ Its board schemas, brief builder, and catalogue formatting stay in this integrat
 `./runtime` exposes application behavior needed by outside callers.
 
 `./server`, `./panes`, and `./host` expose Archboard server integration.
-The production adapter supplies the shared factory with domain instructions, context, admitted vault checkouts, and tool handlers.
+The production adapter calls `createVoiceAgent` like any host: Archboard's identity (`archboard`), its role instructions and app tools, admitted vault checkouts, and its extensions.
+Its pane sockets reach the agent through the extension's own browser routing.
+`src/runtime/protocol/voice/extension.ts` names the extension types Archboard implements, derived from `VoiceAgentExtensions`.
 It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
 The Codex SDK supplies none of those application values by default.
 Pane registration, board request context, semantic projections, and narration remain integration concerns.
@@ -858,7 +876,7 @@ applies safe Oxlint fixes and formats the repository.
 `apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
 The server admits one checkout and keeps private state in the supplied directory.
 It reads only public SDK and codex-realtime-voice entries.
-Its server forwards exact socket identities through the shared factory browser ingress.
+Its server calls `createVoiceAgent` and `agent.attach`, and keeps only its own HTTP routes.
 Its browser uses the shared transport and media owner.
 The two stop controls keep voice and workhorse lifetimes separate.
 

@@ -1,8 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import {
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMESPACE,
 	type CanonicalNamespace,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type { CoordinatorThreadStartParams } from "#runtime/protocol/coordinator/contract.ts";
@@ -97,14 +97,14 @@ function finiteJsonNumber(value: number): number {
  */
 function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dynamicTools"]> {
 	return [
-		namespaceForThreadStart(ARCHBOARD_WORKHORSE_NAMESPACE),
-		namespaceForThreadStart(ARCHBOARD_VOICE_NAMESPACE),
+		namespaceForThreadStart(WORKHORSE_TOOL_NAMESPACE),
+		namespaceForThreadStart(VOICE_TOOL_NAMESPACE),
 	];
 }
 
 export { coordinatorDynamicTools };
 
-const RESERVED_NAMESPACES = [...coordinatorDynamicTools(), ARCHBOARD_COORDINATOR_NAMESPACE];
+const RESERVED_NAMESPACES = [...coordinatorDynamicTools(), COORDINATOR_CALLBACK_NAMESPACE];
 /**
  * Identify a namespace whose descriptor belongs to the workbench.
  * @param name The namespace name.
@@ -140,7 +140,7 @@ function assertWorkbenchThreadTools(
 	}
 	if (role === undefined) return;
 	const required =
-		role === "coordinator" ? coordinatorDynamicTools() : [ARCHBOARD_COORDINATOR_NAMESPACE];
+		role === "coordinator" ? coordinatorDynamicTools() : [COORDINATOR_CALLBACK_NAMESPACE];
 	const reservedNames = new Set([...names].filter(isReservedWorkbenchNamespace));
 	if (!isDeepStrictEqual(reservedNames, new Set(required.map((tool) => tool.name))))
 		throw new TypeError(`The ${role} profile must declare exactly its coordination namespaces.`);

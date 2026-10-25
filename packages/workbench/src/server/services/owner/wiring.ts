@@ -1,5 +1,9 @@
+import type {
+	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
+	CodexWorkbenchTabSession,
+} from "#runtime/protocol/voice/extension.ts";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
-import { createCodexWorkbench } from "@archboard/codex-realtime-voice/server";
+import { createVoiceAgent, type VoiceAgent } from "@archboard/codex-realtime-voice/server";
 import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
 import { createArchboardCallbackPolicy } from "#runtime/services/coordinator-callbacks/deliver.ts";
 import {
@@ -10,10 +14,7 @@ import { ARCHBOARD_VOICE_PRESENTATION } from "#server/services/host/archboard-pr
 import { createArchboardDomainTools } from "#server/services/generation/domain.ts";
 import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
 import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
-import {
-	ARCHBOARD_INSTRUCTIONS,
-	ARCHBOARD_CONTEXT_CODEC,
-} from "#runtime/services/host/archboard.ts";
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { checkoutNamedBy } from "#server/services/host/archboard-checkouts.ts";
 import { createArchboardCoordinatorContextSource } from "#server/services/host/archboard-context-source.ts";
@@ -24,8 +25,6 @@ import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import { workbenchFeedFor } from "#server/services/sessions/feed.ts";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 import { reportStartupOwnership } from "@archboard/server-lifecycle/server-host";
-import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
-import type { CodexWorkbenchTabSession } from "@archboard/codex-realtime-voice/server";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createServerCodexBrowserSocketOwner } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
@@ -181,22 +180,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	};
 	const integration: ArchboardWorkbenchServer = {
 		host: {
-			instructions: ARCHBOARD_INSTRUCTIONS,
 			contextCodec: ARCHBOARD_CONTEXT_CODEC,
 			resolveCheckout: checkoutNamedBy,
-			/**
-			 * Read the checkout shown by a browser's tab through the Archboard integration.
-			 * @param id The browser client id.
-			 * @returns The shown checkout.
-			 */
-			shownCheckoutOf: (id) => integration.shownCheckoutOf(id),
-			shownConversationOf: currentShownCheckout,
-			/**
-			 * Notify the core when a browser tab changes its shown conversation.
-			 * @param listener Receives the change signal.
-			 * @returns The subscription cleanup.
-			 */
-			onShownChange: (listener) => onShownChange(() => listener()),
 			/**
 			 * Resolve the repository that owns a checkout through the Archboard integration.
 			 * @param checkout The checkout directory.
@@ -553,7 +538,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	};
 	return integration;
 }
-let codexApplication: ReturnType<typeof createCodexWorkbench> | null = null;
+let codexApplication: VoiceAgent | null = null;
 
 /** Shut the Codex workbench application down and forget its wiring. */
 async function stopCodexWorkbench(): Promise<void> {
@@ -577,8 +562,8 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
 	}
-	const application = createCodexWorkbench(
-		productionModule.createServerCodexWorkbenchInstallation(createArchboardWorkbenchServer()),
+	const application = createVoiceAgent(
+		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer()),
 	);
 	codexApplication = application;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */

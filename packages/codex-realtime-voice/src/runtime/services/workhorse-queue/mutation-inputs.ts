@@ -73,7 +73,7 @@ function operationIdPort<OperationIdValue extends string>(
 		if (error instanceof CodexWorkhorseQueueError) throw error;
 		throw queueError(
 			"invalid_input",
-			"The queue mutation requires a current operation identity issued by the Archboard server.",
+			"The queue mutation requires a current operation identity issued by the server.",
 			{ operation, cause: error },
 		);
 	}

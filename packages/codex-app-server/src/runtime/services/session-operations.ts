@@ -86,7 +86,7 @@ function validateLogin(value: unknown): unknown {
 	if (!supported.success) {
 		throw new CodexSessionError(
 			"unsupported_login",
-			"The login variant is not supported by the reviewed Archboard session.",
+			"The login variant is not supported by the reviewed Codex session.",
 		);
 	}
 	return supported.data;

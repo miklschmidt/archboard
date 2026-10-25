@@ -28,7 +28,7 @@ import {
 	type ApprovalSnapshot,
 	type CodexApprovalBroker,
 } from "#runtime/services/approvals/contract.ts";
-import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { VOICE_TOOLS_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
@@ -371,7 +371,7 @@ function resolverRequest(
 		harness.identity.decoder.adoptDynamicToolCallId(`resolver-call-${harness.startParams.length}`);
 	const namespace = options.namespace ?? "archboard_voice";
 	const tool = options.tool ?? "resolve_spoken_approval";
-	const manifestHash = options.manifestHash ?? ARCHBOARD_VOICE_MANIFEST_SHA256;
+	const manifestHash = options.manifestHash ?? VOICE_TOOLS_MANIFEST_SHA256;
 	const params = {
 		threadId: String(threadId),
 		turnId: String(turnId),

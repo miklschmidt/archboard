@@ -3,7 +3,6 @@ import {
 	waitOwnerFor,
 	waitProbe,
 } from "#tests/server/support/generation/terminal-fixture.ts";
-import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { archboardPublisher } from "#server/services/host/archboard-publisher.ts";
 import {
@@ -27,15 +26,15 @@ import { join } from "node:path";
 import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
-import { createServerCodexWorkbenchInstallation } from "#server/services/owner/production.ts";
+import { createServerVoiceAgentOptions } from "#server/services/owner/production.ts";
 
 function installation() {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-storage-"));
 	return withProductionState(root, () => ({
 		root,
-		value: createServerCodexWorkbenchInstallation({
+		value: createServerVoiceAgentOptions({
 			sourceRoot: "/repo",
-			host: { instructions: ARCHBOARD_INSTRUCTIONS, resolveCheckout: (named: string) => named },
+			host: { resolveCheckout: (named: string) => named },
 		} as never),
 	}));
 }
@@ -56,7 +55,7 @@ describe("production Codex storage", () => {
 				process.env["PORT"] || String(checkoutPort(SOURCE_CHECKOUT)),
 			);
 			expect({
-				rootDirectory: value.storage.rootDirectory,
+				rootDirectory: value.storage.directory,
 				ownerDirectory: value.storage.ownerDirectory,
 			}).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
 			expect(statSync(owner).mode & 0o777).toBe(0o700);

@@ -8,8 +8,4 @@ export type {
 	CodexProcessSnapshot,
 } from "#runtime/processes/process-contract.ts";
 export { createCodexProcess } from "#runtime/processes/process.ts";
-export {
-	CodexExecutableError,
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "#runtime/services/executable.ts";
+export { CodexExecutableError, resolveCodexExecutable } from "#runtime/services/executable.ts";

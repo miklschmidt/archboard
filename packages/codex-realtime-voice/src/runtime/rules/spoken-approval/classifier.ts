@@ -3,11 +3,11 @@ import { createHash } from "node:crypto";
 import { boundedWireText } from "#shared/schemas/browser/scalars.ts";
 
 const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
-	"1873dd2050fe6f6ce41cd27f43af18d8c7a3cd4af9755dd7b0322e375f636380";
+	"743d72a9e358644cdd8e9cb742188010ee487a2663beeb2e23ba6dd8ea7b569a";
 
 /** The reviewed template, including its one terminal LF. */
 const SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE =
-	"Classify one spoken binary approval for Archboard. The Archboard server has already bound the request identity; do not infer or mention another request.\n\n" +
+	"Classify one spoken binary approval. The server has already bound the request identity; do not infer or mention another request.\n\n" +
 	"<spoken_approval>\n" +
 	"effect: <bounded-effect-summary>\n" +
 	"user_final_item_id: <opaque-item-id>\n" +

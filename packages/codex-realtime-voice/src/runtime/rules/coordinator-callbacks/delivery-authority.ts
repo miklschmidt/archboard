@@ -211,7 +211,7 @@ function linkAuthorityReason(
 }
 
 /**
- * Why the voice session no longer authorizes delivery: the generation turned over, or a semantic
+ * Why the voice session no longer authorizes delivery: the generation turned over, or a host-context
  * callback names a voice session other than the one the generation is speaking through.
  * @param callback - The normalized callback.
  * @param options - The server authorities.
@@ -229,7 +229,7 @@ function voiceAuthorityReason(
 	}
 	if (
 		correlation.realtimeGeneration !== null &&
-		callback.kind === "semantic" &&
+		callback.kind === "host_context" &&
 		correlation.realtimeSessionId !== correlation.realtimeGeneration.wireSessionId
 	) {
 		return "stale_session";
