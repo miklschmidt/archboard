@@ -1,8 +1,8 @@
 //! The search for one connector's route: A* over the grid, each state a
-//! vertex and the direction the route arrived in, as [W09] §4 searches. A
+//! vertex and the direction the route arrived in, as \[W09\] §4 searches. A
 //! route pays its length, a penalty for each turn, and a penalty each time it
 //! runs straight through a vertex that a route found earlier runs straight
-//! through the other way. [W09] leaves crossings with earlier routes to future
+//! through the other way. \[W09\] leaves crossings with earlier routes to future
 //! work; counting them where both run straight is this router's own rule.
 
 use std::cmp::Ordering;

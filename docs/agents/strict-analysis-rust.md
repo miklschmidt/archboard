@@ -16,10 +16,18 @@ TypeScript rule that does not carry over, with the reason.
   `cargo clippy --locked --workspace --all-targets --target wasm32-unknown-unknown -- --deny warnings`.
   No crate code depends on the target, so the native target gives the same
   findings. `format:core` and `test:core` run `cargo fmt --check` and the tests.
+- `lint:core-docs` runs
+  `RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps --document-private-items`.
+  rustdoc reads every doc comment, private ones too, and fails on any rustdoc lint.
 - The cache of these lanes reads `crates/**`, `Cargo.toml`, `clippy.toml` and
   `Cargo.lock`, so a policy change runs the lanes again.
+- `tests/system/repository-policy/rust-crates.test.ts` in `test:repository`
+  holds the two rules that no lint can see. Every crate manifest under
+  `crates/` inherits the workspace lints, and every `.rs` file under `crates/`
+  has 600 lines or fewer, counted as `max-lines` counts them.
 
-Every lint is at `warn`, and `lint:core` turns every warning into a failure.
+Every lint is at `warn`, and `lint:core` and `lint:core-docs` turn every
+warning into a failure.
 A build or a test run still works while a fix is under way. The one exception
 is `unsafe_code`, which is `forbid`: no crate needs unsafe code. The code
 that the `wasm-bindgen` macros write passes it.
@@ -82,6 +90,15 @@ The crates carry 25 exceptions:
   `unit_bindings`, `unused_import_braces`, `unused_lifetimes`,
   `unused_macro_rules` and `unused_qualifications`. Each finds dead or
   misleading code, and none has a false positive in these crates.
+
+### rustdoc
+
+- The `rustdoc::all` group: every stable rustdoc lint. It holds
+  `broken_intra_doc_links`, `invalid_html_tags` and `bare_urls`, and also
+  `unescaped_backticks`, which rustdoc leaves off by default. A doc link that names no item is a
+  failure, so a rename cannot leave a doc pointing at nothing. A citation
+  such as `\[W09\]` in the router is escaped, because it names a paper and not
+  an item.
 
 ### clippy groups
 
@@ -171,10 +188,11 @@ buys nothing.
 - The `cargo` group checks the metadata of published crates, and no crate is
   published.
 
-## TypeScript rules that do not carry over
+## TypeScript rules and their Rust form
 
-- File length of 600 lines: clippy has no file-length lint. 13 crate files are
-  longer today. Whether a repository check holds the crates to it is open.
+- File length of 600 lines: clippy has no file-length lint, so
+  `rust-crates.test.ts` holds every crate file to the cap. The 13 files that
+  were longer were split along their seams into modules of their own.
 - A JSDoc description on every function: `missing_docs` holds every public
   item to it. Every private function and type has a doc too, but no lint
   holds them to it, because `missing_docs_in_private_items` also asks for one

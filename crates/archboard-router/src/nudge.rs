@@ -1,8 +1,8 @@
 //! Nudging: the routes found one at a time may run on one line; this moves
-//! their segments apart, one axis at a time, as [W09] §5.2 does.
+//! their segments apart, one axis at a time, as \[W09\] §5.2 does.
 //!
 //! - Segments of routes that share an end and run together from it are one
-//!   line until the routes part ([W12] §3).
+//!   line until the routes part (\[W12\] §3).
 //! - The segment that holds a route's pin stays where the pin is. Where
 //!   that leaves a channel too narrow for its lanes, the routes are nudged
 //!   again with only the stub out of each pin's buffer held there: the rest

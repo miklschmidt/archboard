@@ -3,13 +3,13 @@
 //! Written from the published algorithms, not from any existing router's
 //! source:
 //!
-//! - [W09] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Connector
+//! - \[W09\] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Connector
 //!   Routing", Graph Drawing 2009, LNCS 5849, pp. 219-231: the path search
 //!   with bend penalties and the nudging of shared segments.
-//! - [W12] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Hyperedge
+//! - \[W12\] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Hyperedge
 //!   Routing", Diagrams 2012: connectors that share an end run as one line
 //!   until they part.
-//! - [D05] T. Dwyer, K. Marriott and P. J. Stuckey, "Fast Node Overlap
+//! - \[D05\] T. Dwyer, K. Marriott and P. J. Stuckey, "Fast Node Overlap
 //!   Removal", Graph Drawing 2005: the separation-constraint solver (VPSC).
 //!
 //! A route never throws. A connector with no route through free space is

@@ -20,14 +20,18 @@ native lanes in this order:
   (`tests/system/repository-policy/skill-frontmatter.test.ts`),
   the README asset manifest and staleness owner
   (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
-  and the owner that holds the README banner's mark to the shell's
-  (`tests/system/repository-policy/readme-lockup.test.ts`);
+  the owner that holds the README banner's mark to the shell's
+  (`tests/system/repository-policy/readme-lockup.test.ts`),
+  and the owner of the crates' shape rules that no lint sees: every crate
+  inherits the workspace lints, and no `.rs` file is over 600 lines
+  (`tests/system/repository-policy/rust-crates.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
+`lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
