@@ -46,7 +46,8 @@ export interface VoiceAgentOptions {
 	/**
 	 * The agent's private state: Codex home, SQLite home and process-owner records. Created with
 	 * mode 0700. Keep it outside every checkout. The directory and everything below it must not
-	 * be a symbolic link; links above it, such as `/tmp` on macOS, are resolved once, here.
+	 * be a symbolic link. A link above it that you or root own, in directories no other user can
+	 * change, such as `/tmp` on macOS, is resolved once, here; any other link is refused at start.
 	 */
 	readonly storage: {
 		readonly directory: string;
@@ -89,8 +90,9 @@ export type VoiceAgentStatus = ReturnType<Workbench["snapshot"]>;
 
 /**
  * The browser connection port, for a host that serves the agent's browser messages on a socket
- * of its own instead of {@link VoiceAgent.attach}: accept a socket with its pane, tab session and
- * checkout, hand it each parsed request, close it, and drain accepted work.
+ * of its own instead of {@link VoiceAgent.attach} or {@link VoiceAgent.bunHandlers}: accept a
+ * socket with its pane, tab session and checkout, hand it each parsed request, close it, and drain
+ * accepted work.
  */
 export type VoiceAgentBrowserPort = Workbench["browser"];
 
@@ -132,8 +134,9 @@ export interface VoiceAgent {
 		options: VoiceAgentBunOptions<HostData>,
 	) => VoiceAgentBunHandlers<HostData>;
 	/**
-	 * Detach every attached server, stop the Codex process and forget every browser tab. After a
-	 * later {@link VoiceAgent.start}, attach again to serve sockets.
+	 * Close the sockets of every {@link VoiceAgent.attach} and {@link VoiceAgent.bunHandlers} call,
+	 * stop the Codex process and forget every browser tab. After a later {@link VoiceAgent.start},
+	 * attach again or reload the server with new Bun handlers to serve sockets.
 	 */
 	readonly shutdown: () => Promise<void>;
 	/** The browser connection port; see {@link VoiceAgentBrowserPort}. */

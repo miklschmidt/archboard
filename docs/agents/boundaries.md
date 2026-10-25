@@ -640,11 +640,12 @@ All four areas adopt the `api/` role.
 
 The server entry is one factory, `createVoiceAgent` from `./server`.
 The host supplies a storage directory, the Codex process inputs, the admitted checkouts, role instructions as text, an identity, and `onFatal`.
-The agent's `start()`, `attach(server, { path, origin })` and `shutdown()` own process startup, generations, sessions, browser sockets, shown conversations, and shutdown.
-`attach` serves the browser sockets on one path of a `node:http` server, so a host writes no upgrade handling.
+The agent's `start()`, its two socket adapters and `shutdown()` own process startup, generations, sessions, browser sockets, shown conversations, and shutdown.
+`attach(server, { path, origin })` serves the browser sockets on one path of a `node:http` server, and `bunHandlers({ path, fetch, websocket })` returns the `fetch` and `websocket` of a `Bun.serve` server that serves them, so a host writes no upgrade handling.
+Both apply the one admission in `server/services/agent/admission.ts`.
 The identity sets the Codex service name and thread source, with the neutral default `codex-realtime-voice`.
 A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, voice presentation, and its own browser routing.
-A host that multiplexes its own socket uses `agent.browser` instead of `attach`.
+A host that multiplexes its own socket uses `agent.browser` instead of either adapter.
 That extension contract is one type, and a host derives the parts it names from it.
 `./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, instruction byte checks, and the realtime adapter and thread-context delivery its tests build on.
 The namespace of a dynamic approval on the browser wire is whatever the host names; Archboard sends `archboard_app`.
@@ -891,7 +892,7 @@ applies safe Oxlint fixes and formats the repository.
 `apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
 The server admits one checkout and keeps private state in the supplied directory.
 It reads only public SDK and codex-realtime-voice entries.
-Its server calls `createVoiceAgent` and `agent.attach`, and keeps only its own HTTP routes.
+Its server calls `createVoiceAgent` and runs on `Bun.serve` with `agent.bunHandlers`, and keeps only its own HTTP routes.
 Its browser uses `createVoiceClient` and the `./react` hooks, as an outside developer would.
 The two stop controls keep voice and workhorse lifetimes separate.
 
