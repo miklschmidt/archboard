@@ -7,9 +7,9 @@
 		"Agent workbench"
 	],
 	"level": "service",
-	"version": 124,
+	"version": 125,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-25T05:19:40.886Z",
+	"updatedAt": "2026-10-25T05:30:09.606Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -460,6 +460,26 @@
 				"nodes": [
 					"SsiEBdik",
 					"kEF4DfR4"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "Aqyz2LQe",
+			"name": "Hosts and entries",
+			"grammar": "architecture",
+			"summary": "What each host gives the voice agent, and what the agent and its client reach inside the package.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"yyFS6UVO",
+					"tzyaOHwF",
+					"tAO3moEw",
+					"YiFwU6JS",
+					"Lrq90XiL",
+					"k9hxdLjq",
+					"u2LFaG7R"
 				],
 				"edges": [],
 				"flows": []
@@ -37778,6 +37798,7 @@
 						"name": "Browser pane",
 						"kind": "service",
 						"responsibility": "The pane a user works in: it names its tab session, holds the tab's lease, sends commands and draws the published state",
+						"parent": "SScV6EZR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/ui"
@@ -38221,6 +38242,7 @@
 						"name": "Application policy",
 						"kind": "module",
 						"responsibility": "Archboard's options for the voice agent: its identity and tool names, domain instructions, context, tools, storage, Codex environment and admitted checkouts",
+						"parent": "SScV6EZR",
 						"groups": [
 							"agent"
 						],
@@ -38264,6 +38286,7 @@
 						"kind": "module",
 						"responsibility": "The host's one entry: createVoiceAgent turns its storage, Codex, checkouts, instructions, identity and extensions into one workbench, and serves its browser sockets on node:http or Bun.serve",
 						"description": "start, status, shutdown and the browser port come from the workbench it creates. attach admits sockets on one path of a node:http server, and bunHandlers wraps the fetch and websocket handlers of Bun.serve; both admit an upgrade only from the one origin and on the one path the host names, and work in the checkout the host names for that path. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other.",
+						"parent": "eOG7Eo1U",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/server/services/agent"
@@ -38276,6 +38299,7 @@
 						"kind": "module",
 						"responsibility": "The package's browser client for a host page: one socket on the host's path with its tab session, one frozen state and the page's actions, and a new socket after a lost one",
 						"description": "createVoiceClient owns the socket, the tab session id, the transport and media owners and the state a page draws; an uncertain delivery stays visible as a failure. ./react reads it through VoiceClientProvider, useVoiceClient and useVoiceState. A host that owns its sockets, as Archboard does, builds on ./controllers instead.",
+						"parent": "eOG7Eo1U",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/ui/clients/voice-client"
@@ -38287,10 +38311,26 @@
 						"name": "Example host",
 						"kind": "service",
 						"responsibility": "A host outside Archboard on Bun.serve: one voice agent for its own checkout, its sockets through bunHandlers, and a React page on the voice client",
+						"parent": "SScV6EZR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/workbench-example"
 						}
+					},
+					{
+						"id": "SScV6EZR",
+						"order": 49000,
+						"name": "Hosts",
+						"kind": "module",
+						"responsibility": "The applications that use the package: Archboard's server policy and browser pane, and the example host",
+						"description": "Archboard's adapters that plug into one mechanism of the package, as its thread tools, board context and tab adapter do, sit with that mechanism instead."
+					},
+					{
+						"id": "eOG7Eo1U",
+						"order": 50000,
+						"name": "Public entries",
+						"kind": "module",
+						"responsibility": "What a host imports: the voice agent from ./server and the voice client a page builds on"
 					}
 				],
 				"edges": [

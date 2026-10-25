@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 86,
+	"version": 87,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-25T05:23:29.211Z",
+	"updatedAt": "2026-10-25T05:30:23.693Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -11611,12 +11611,6 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice"
-						},
-						"drillDown": {
-							"board": "Codex realtime voice",
-							"variant": {
-								"kind": "current"
-							}
 						}
 					},
 					{
