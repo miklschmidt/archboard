@@ -62,7 +62,7 @@ pub struct TrafficLine<'a> {
 /// A board's traffic: each line's in a layer of its own, by relationship id.
 pub fn paint_traffic(
     lines: &[TrafficLine],
-    cards: &[(String, Rect)],
+    cards: &[(&str, Rect)],
     palette: &Palette,
 ) -> HashMap<String, Markup> {
     let rides: HashMap<&str, Option<(Curve, f64)>> = lines
@@ -95,7 +95,7 @@ pub fn paint_traffic(
         .collect();
     let across = |card: &str, from: crate::geometry::Point, to: crate::geometry::Point| {
         // A card listed twice answers with the last of its boxes, as a map built from the list does.
-        match cards.iter().rev().find(|(id, _)| id == card) {
+        match cards.iter().rev().find(|(id, _)| *id == card) {
             Some((_, rect)) => rim_length(*rect, from, to),
             None => js::hypot(from.x - to.x, from.y - to.y),
         }
