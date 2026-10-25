@@ -4,14 +4,17 @@
 
 import type { RealtimePhase } from "#shared/protocol/realtime-contract.ts";
 import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserAudioElementPort } from "#ui/clients/media/media-state.ts";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchState,
 } from "#ui/state/transport/contract.ts";
 
-/** How a host connects one page view to the voice server. */
+/**
+ * How a host connects one page view to the voice server. The tab session id
+ * lives in `sessionStorage`, so a reload keeps its conversation and another tab
+ * gets its own.
+ */
 interface VoiceClientOptions {
 	/**
 	 * The server's socket path, or a full URL. A path resolves against the page
@@ -20,13 +23,6 @@ interface VoiceClientOptions {
 	readonly socketPath: string;
 	/** The view in the host page that shows this conversation. Defaults to `main`. */
 	readonly paneId?: string;
-	/**
-	 * The `sessionStorage` key that keeps the tab session id, so a reload keeps
-	 * its conversation and another tab gets its own. Defaults to `codex-realtime-voice:tab`.
-	 */
-	readonly tabSessionKey?: string;
-	/** Where the remote voice audio element comes from. Defaults to a hidden element in the page. */
-	readonly audioElements?: BrowserAudioElementPort;
 }
 
 /** Why the last action failed. */

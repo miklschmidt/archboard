@@ -40,20 +40,17 @@ interface VoiceClientOwners {
 }
 
 const UNCERTAIN = "Delivery is uncertain. Refresh the conversation before trying another action.";
-const DEFAULT_TAB_SESSION_KEY = "codex-realtime-voice:tab";
+const TAB_SESSION_KEY = "codex-realtime-voice:tab";
 
 /**
  * Connect one page view to the voice server through the real browser.
- * @param options The socket path, the pane, the tab session key and the audio elements.
+ * @param options The socket path and the pane.
  * @returns The client. Call `connect()` to open the socket.
  */
 function createVoiceClient(options: VoiceClientOptions): VoiceClient {
-	const key = options.tabSessionKey ?? DEFAULT_TAB_SESSION_KEY;
 	return openVoiceClient(options, {
 		transport: createBrowserWorkbenchTransport(),
-		media: createBrowserWorkbenchMediaOwner(
-			options.audioElements === undefined ? {} : { audioElements: options.audioElements },
-		),
+		media: createBrowserWorkbenchMediaOwner(),
 		/**
 		 * A browser WebSocket.
 		 * @param url Where it connects.
@@ -61,10 +58,10 @@ function createVoiceClient(options: VoiceClientOptions): VoiceClient {
 		 */
 		openSocket: (url) => new WebSocket(url),
 		/**
-		 * The id kept under the tab session key.
+		 * The id kept for this tab.
 		 * @returns The id.
 		 */
-		tabSessionId: () => storedTabSessionId(key),
+		tabSessionId: () => storedTabSessionId(TAB_SESSION_KEY),
 		/**
 		 * The page's own location.
 		 * @returns The URL.
