@@ -144,3 +144,23 @@ fn a_native_build_draws_a_corpus_board_to_the_bytes_the_webassembly_build_draws(
         "the native document differs from the WebAssembly one"
     );
 }
+
+#[test]
+fn a_sequence_with_an_unknown_participant_is_refused_before_painting() {
+    let request: RenderRequest = serde_json::from_str(
+        r#"{"grammar":"sequence","content":{"flows":[
+            {"id":"f","name":"F","participants":["missing"],"steps":[
+                {"id":"s","kind":"self","from":"missing","to":"missing","label":"work"}]}]},
+            "policy":{"levels":[],"nodeKinds":{},"relationshipKinds":{}},
+            "clock":{"farViewSwapMs":100,"trafficSpeed":100,"cycleCapMs":1000}}"#,
+    )
+    .unwrap();
+    let host = Native {
+        solver: InProcess::new(|_: &str| Recorded {
+            renders: Vec::new().into_iter(),
+        }),
+        icons: BTreeMap::new(),
+    };
+    answer_of(Renderer::default().render(&request, &host))
+        .expect_err("an incomplete reading must return an error, not panic in the painter");
+}
