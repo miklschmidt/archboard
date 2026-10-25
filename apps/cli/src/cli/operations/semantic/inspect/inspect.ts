@@ -211,18 +211,27 @@ const semanticInspectContract = defineCommand({
 	path: ["semantic", "inspect"],
 	shared: ["url", "directory"],
 	summary: "Inspect one group or one container of a semantic board",
-	description:
-		"Reports one group or one container of one variant, over the whole variant before any " +
-		"view narrows it. A group answers with its explicit members, the relationships between " +
-		"them, the relationships crossing its boundary with their direction, and the immediate " +
-		"external neighbors those reach; a group the configuration defines but nobody has joined " +
-		"answers empty, and an id that is neither configured nor a membership of any node is " +
-		"refused. A container is a node with children, and it answers with its interface: the " +
-		"entry points (the children that relationships from outside reach), the hidden parts " +
-		"(the children none reaches), the callers outside, the outgoing relationships, the " +
-		"relationships that end on the container itself, and the pass-through entry points (the " +
-		"entry points that may only pass one call on), with a count of each. A node with no " +
-		"children answers that it holds no parts.",
+	description: [
+		"Reports one group or one container of one variant. The report is read over the whole variant before any view narrows it.",
+		"",
+		"A group answers with:",
+		"- Its explicit members.",
+		"- The relationships between them.",
+		"- The relationships that cross its boundary, with their direction.",
+		"- The immediate external neighbors that those reach.",
+		"",
+		"A group that the configuration defines but nobody has joined answers empty. UNKNOWN_GROUP: an id that is neither configured nor a membership of any node is refused.",
+		"",
+		"A container is a node with children. It answers with its interface and a count of each of these:",
+		"- The entry points: the children that relationships from outside reach.",
+		"- The hidden parts: the children that none reaches.",
+		"- The callers outside.",
+		"- The outgoing relationships.",
+		"- The relationships that end on the container itself.",
+		"- The pass-through entry points: the entry points that may only pass one call on.",
+		"",
+		"A node with no children answers that it holds no parts.",
+	].join("\n"),
 	examples: [
 		"archboard semantic inspect payments --group fulfillment",
 		'archboard semantic inspect payments --group billing --variant "Read cache"',
