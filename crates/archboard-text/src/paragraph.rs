@@ -251,10 +251,13 @@ pub struct Paragraph {
 }
 
 impl Paragraph {
-    /// Words in a face at a size. A carriage return, a pair of one and a line
-    /// feed, and a form feed each break the line as a line feed does.
+    /// Words in a face at a size. Unicode mandatory separators each start a
+    /// new line; a carriage return and line feed together count as one.
     pub fn new(face: Face, size: f64, words: &str) -> Paragraph {
-        let words = words.replace("\r\n", "\n").replace(['\r', '\u{c}'], "\n");
+        let words = words.replace("\r\n", "\n").replace(
+            ['\r', '\u{b}', '\u{c}', '\u{85}', '\u{2028}', '\u{2029}'],
+            "\n",
+        );
         let hards = if words.is_empty() {
             Vec::new()
         } else {
