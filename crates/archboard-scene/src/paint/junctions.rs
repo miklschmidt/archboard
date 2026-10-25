@@ -5,14 +5,12 @@
 
 use std::collections::HashMap;
 
-use crate::attrs;
 use crate::drawing::Edge;
-use crate::geometry::{Curve, Point, Segment, coord, vertices_of};
+use crate::geometry::{Curve, Point, Segment, round_coord, vertices_of};
 use crate::js;
-use crate::markup::{Markup, concat, group, tag};
-use crate::paint::standing::MEMBERS_ATTRIBUTE;
+use crate::paint::build::{Items, concat, grouped, point, shape};
 use crate::paint::styles::stroke_width;
-use crate::scene::Role;
+use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke};
 
 /// How far a junction mark reaches past the line it sits on.
 const JUNCTION_REACH: f64 = 1.6;
@@ -370,7 +368,7 @@ pub(super) fn mark_radius(width: f64) -> f64 {
 
 /// The marks for every join, in the ink and weight of the heavier line there:
 /// each route with the ink its line is drawn in.
-pub(super) fn junction_marks(routes: &[(&Edge, String)]) -> Markup {
+pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
     let join_routes: Vec<JoinRoute> = routes
         .iter()
         .map(|(route, _)| JoinRoute {
@@ -381,56 +379,46 @@ pub(super) fn junction_marks(routes: &[(&Edge, String)]) -> Markup {
         .collect();
     let junctions = gathered(joins_of(&join_routes));
     if junctions.is_empty() {
-        return Markup::new();
+        return Items::new();
     }
     let marks = junctions
         .iter()
         .map(|junction| {
-            let ink = routes[junction.route].1.as_str();
+            let ink = &routes[junction.route].1;
             let radius = mark_radius(junction.width);
-            let members = junction
-                .routes
-                .iter()
-                .map(|at| routes[*at].0.edge.id.as_str())
-                .collect::<Vec<_>>()
-                .join(" ");
-            match junction.until {
-                None => tag(
-                    "circle",
-                    attrs! {
-                        "cx": coord(junction.point.x),
-                        "cy": coord(junction.point.y),
-                        "r": coord(radius),
-                        "fill": ink,
-                        MEMBERS_ATTRIBUTE: members,
+            let from = point(junction.point.x, junction.point.y);
+            let mark = match junction.until {
+                None => Shape::new(
+                    Purpose::Line,
+                    Geometry::Circle {
+                        centre: Some(from),
+                        radius: round_coord(radius),
                     },
-                ),
-                Some(until) => tag(
-                    "path",
-                    attrs! {
-                        "d": format!(
-                            "M{},{} L{},{}",
-                            coord(junction.point.x),
-                            coord(junction.point.y),
-                            coord(until.x),
-                            coord(until.y)
-                        ),
-                        "fill": "none",
-                        "stroke": ink,
-                        "stroke-width": coord(radius * 2.0),
-                        "stroke-linecap": "round",
-                        MEMBERS_ATTRIBUTE: members,
-                    },
-                ),
-            }
+                )
+                .filled(ink),
+                Some(until) => Shape::path(
+                    Purpose::Line,
+                    vec![
+                        PathStep::Move { to: from },
+                        PathStep::Line {
+                            to: point(until.x, until.y),
+                        },
+                    ],
+                )
+                .unfilled()
+                .stroked(Stroke::new(ink, round_coord(radius * 2.0)).capped(Cap::Round)),
+            };
+            shape(Shape {
+                members: junction
+                    .routes
+                    .iter()
+                    .map(|at| routes[*at].0.edge.id.clone())
+                    .collect(),
+                ..mark
+            })
         })
         .collect();
-    group(
-        Role::Junctions,
-        None,
-        attrs! { "class": "ab-junctions", "pointer-events": "none" },
-        concat(marks),
-    )
+    grouped(Group::new(Role::Junctions, concat(marks)).pointer(Pointer::None))
 }
 
 #[cfg(test)]

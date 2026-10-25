@@ -6,13 +6,12 @@
 use crate::drawing::{DiagramFont, NodeFacts, TextRole, TextRun};
 use crate::geometry::{Point, Rect};
 use crate::js;
-use crate::markup::{Markup, concat, lines};
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
-use crate::paint::design::ICON_CHIP_SIZE;
+use crate::paint::build::{Items, concat, lines};
+use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE};
 use crate::paint::drill_mark::{DRILL_MARK_ROOM, corner_drill_mark};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
-use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_palette;
 use crate::paint::text_runs::paint_text_runs;
@@ -231,7 +230,7 @@ fn runs_of(ctx: &Ctx<'_>, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
 
 /// A block of words as the near view draws them, and where they start.
 pub(super) struct Words {
-    pub markup: Markup,
+    pub items: Items,
     pub anchor: Place,
 }
 
@@ -250,7 +249,7 @@ pub(super) fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words
         },
     );
     Words {
-        markup: paint_text_runs(runs, rect, palette, None),
+        items: paint_text_runs(runs, rect, palette, None),
         anchor,
     }
 }
@@ -284,13 +283,13 @@ pub(super) fn paint_card_views(
     part: &Part<'_>,
     palette: &Palette,
     near: NearCard,
-) -> Markup {
+) -> Items {
     let rect = part.rect;
     let drill = part.appearance.drill;
     let words = standing_palette(palette, part.standing);
     let mark = |scale: f64| match drill {
-        None => Markup::new(),
-        Some(direction) => corner_drill_mark(rect, direction, words.glyph, scale),
+        None => Items::new(),
+        Some(direction) => corner_drill_mark(rect, direction, &words.glyph, scale),
     };
     let tile = js::js_min(TILE, rect.height - EDGE * 2.0);
     let x = EDGE + tile + EDGE;
@@ -323,16 +322,16 @@ pub(super) fn paint_card_views(
     };
     lines(vec![
         shared_chip(
-            type_chip(0.0, 0.0, part.appearance, palette, part.standing, ctx.icons),
+            type_chip(part.appearance, palette, part.standing, ctx.icons),
             near_chip,
             far_chip,
         ),
         near_layer(concat(vec![
-            moving_words(near.words.markup, near.words.anchor, far.anchor),
+            moving_words(near.words.items, near.words.anchor, far.anchor),
             mark(1.0),
         ])),
         far_layer(concat(vec![
-            moving_words(far.markup, far.anchor, near.words.anchor),
+            moving_words(far.items, far.anchor, near.words.anchor),
             mark(MARK_SCALE),
         ])),
     ])
@@ -346,7 +345,7 @@ pub(super) fn paint_heading_views(
     rect: Rect,
     palette: &Palette,
     near: Words,
-) -> Markup {
+) -> Items {
     let stack = settle(
         ctx,
         name,
@@ -360,7 +359,7 @@ pub(super) fn paint_heading_views(
         palette,
     );
     lines(vec![
-        near_layer(moving_words(near.markup, near.anchor, far.anchor)),
-        far_layer(moving_words(far.markup, far.anchor, near.anchor)),
+        near_layer(moving_words(near.items, near.anchor, far.anchor)),
+        far_layer(moving_words(far.items, far.anchor, near.anchor)),
     ])
 }

@@ -4,85 +4,96 @@
 use std::collections::{BTreeMap, HashSet};
 
 use crate::drawing::ReadingDirection;
-use crate::markup::{Markup, concat};
 use crate::measure::{Measure, Measurer};
 use crate::request::{PaintRequest, Picture, Standing};
-use crate::scene::{Atlas, Boxes, Scene};
+use crate::scene::{Atlas, Boxes, Definition, Head, HeadInk, Item, MarkerId, Scene};
 
-pub mod appearance;
+mod appearance;
 mod architecture;
+mod build;
 mod cards;
-pub mod colour;
+mod colour;
 mod crossings;
 pub mod design;
 mod drill_mark;
 mod edge_line;
-pub mod export;
+mod export;
 mod far_card;
 mod far_view;
-pub mod flowchart_shapes;
-pub mod fonts;
-pub mod icons;
+mod flowchart_shapes;
+mod icons;
 mod junctions;
 mod legend_entries;
 mod legend_symbols;
+mod marks;
 mod measured_cards;
-pub mod page;
-pub mod palette;
-pub mod polygon;
+mod page;
+mod palette;
+mod polygon;
 mod ports;
 mod regions;
 mod relay;
-pub mod sequence;
+mod sequence;
 mod sequence_frames;
 mod sequence_messages;
-pub mod shadow;
+mod shadow;
 mod shared_ink;
-pub mod slab;
-pub mod standing;
-pub mod styles;
-pub mod text_runs;
+mod slab;
+mod standing;
+mod styles;
+mod text_runs;
 mod traffic;
 mod tray;
+
+pub use marks::{ViewerMarks, viewer_marks};
 
 /// What every part of one picture is painted with: the host's measure of text,
 /// and the icons the host has.
 #[derive(Debug)]
-pub struct Ctx<'a> {
+struct Ctx<'a> {
     /// The host's measure of text in the diagram fonts.
-    pub measurer: Measurer<'a>,
+    measurer: Measurer<'a>,
     /// Each icon's path data, by its export name.
-    pub icons: &'a BTreeMap<String, Vec<String>>,
+    icons: &'a BTreeMap<String, Vec<String>>,
 }
 
 /// Every arrowhead marker and shared gradient a picture's body refers to.
-fn definitions(palette: &palette::Palette) -> Markup {
-    use styles::{Head, LIT_HEAD, WEIGHTS, line_colour};
+fn definitions(palette: &palette::Palette) -> Vec<Definition> {
+    use styles::{WEIGHTS, line_colour};
 
-    let mut inks: Vec<(String, String)> = vec![(line_colour(palette, None), String::new())];
-    for standing in [Standing::Added, Standing::Changed, Standing::Removed] {
-        inks.push((
-            line_colour(palette, Some(standing)),
-            format!("-{}", standing.as_str()),
-        ));
-    }
-    inks.push((palette.selection.to_owned(), LIT_HEAD.to_owned()));
-    let mut parts = Vec::new();
+    let inks = [
+        (HeadInk::Neutral, line_colour(palette, None)),
+        (HeadInk::Added, line_colour(palette, Some(Standing::Added))),
+        (
+            HeadInk::Changed,
+            line_colour(palette, Some(Standing::Changed)),
+        ),
+        (
+            HeadInk::Removed,
+            line_colour(palette, Some(Standing::Removed)),
+        ),
+        (HeadInk::Lit, palette.selection.clone()),
+    ];
+    let mut defined = Vec::new();
     for head in [Head::Filled, Head::Open] {
         for weight in WEIGHTS {
-            for (colour, suffix) in &inks {
-                parts.push(edge_line::arrowhead_marker(
-                    &format!("ah-{}-{}{suffix}", head.as_str(), weight.as_str()),
+            for (ink, colour) in &inks {
+                defined.push(Definition::Marker(edge_line::arrowhead_marker(
+                    MarkerId::Shared {
+                        head,
+                        weight,
+                        ink: *ink,
+                    },
                     head,
                     weight,
                     colour,
-                ));
+                )));
             }
         }
     }
-    parts.push(slab::slab_definitions(palette));
-    parts.push(ports::port_definitions(palette));
-    concat(parts)
+    defined.extend(slab::slab_definitions(palette));
+    defined.extend(ports::port_definitions(palette));
+    defined
 }
 
 /// An atlas holding only the subjects a reader can pick.
@@ -109,7 +120,7 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
         measurer: Measurer::new(host),
         icons: &request.icons,
     };
-    let palette = &palette::PALETTE;
+    let palette = &palette::Palette::of_page();
     let page = &request.page;
     let unsettled = standing::Unsettled::from(&page.unsettled);
     let painted = standing::Standings::from(if page.plain {
@@ -139,9 +150,7 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
                 drawing: picture.whole.as_ref().unwrap_or(&picture.drawing),
                 // A flowchart's page holds the marks it draws.
                 standings: if shapes.is_some() { &painted } else { &held },
-                shapes: shapes
-                    .as_ref()
-                    .map(|shapes| -> &dyn architecture::Shapes { shapes }),
+                shapes: shapes.as_ref(),
             };
             let mut painting = architecture::paint_architecture(
                 &ctx,
@@ -174,12 +183,16 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
         &ctx,
         framed,
         page.frame.as_ref(),
-        page.standing.as_ref(),
+        (page.standing.as_ref(), &placed),
         page.plain,
         palette,
     );
     let body = if flowchart {
-        concat(vec![flowchart_shapes::flowchart_definitions(), framed.body])
+        let mut body = vec![Item::Definitions {
+            definitions: flowchart_shapes::flowchart_definitions(),
+        }];
+        body.extend(framed.body);
+        body
     } else {
         framed.body
     };
@@ -193,7 +206,7 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
         ),
         description: document.description.clone(),
         reading: reading.filter(|direction| *direction == ReadingDirection::Down),
-        background: palette.background.to_owned(),
+        background: palette.background.clone(),
         definitions: definitions(palette),
         body,
         atlas: framed.atlas,
@@ -211,6 +224,11 @@ mod tests {
     use crate::measure::fixed::Monospace;
     use crate::request::{PaintRequest, Standing};
     use crate::scene::{Item, Motion, Role, Scene, Subject, SubjectKind};
+
+    /// The sort of role a group plays, its facts aside.
+    fn sort(role: &Role) -> std::mem::Discriminant<Role> {
+        std::mem::discriminant(role)
+    }
 
     /// Two cards, the first one added, and a line with traffic between them.
     const REQUEST: &str = r#"{
@@ -249,8 +267,8 @@ mod tests {
         for item in items {
             all.push(item);
             match item {
-                Item::Group(group) => all.extend(every(&group.children)),
-                Item::Element(element) => all.extend(every(&element.children)),
+                Item::Group(group) => all.extend(every(&group.items)),
+                Item::Viewport(viewport) => all.extend(every(&viewport.items)),
                 _ => {}
             }
         }
@@ -268,14 +286,14 @@ mod tests {
     fn each_group_names_its_subject_and_role() {
         let scene = painted();
         let items = every(&scene.body);
-        let drawn = |kind: SubjectKind, id: &str| -> Vec<(Role, Subject)> {
+        let drawn = |kind: SubjectKind, id: &str| -> Vec<(&Role, Subject)> {
             items
                 .iter()
                 .filter_map(|item| match item {
                     Item::Group(group) => group
                         .subject
                         .as_ref()
-                        .map(|subject| (group.role, subject.clone())),
+                        .map(|subject| (&group.role, subject.clone())),
                     _ => None,
                 })
                 .filter(|(_, subject)| subject.kind == kind && subject.id == id)
@@ -286,18 +304,29 @@ mod tests {
             id: "a".to_owned(),
             standing: Some(Standing::Added),
         };
-        assert!(drawn(SubjectKind::Node, "a").contains(&(Role::Card, added)));
+        let card = |(role, subject): &(&Role, Subject), wanted: &Subject| {
+            matches!(role, Role::Card(_)) && subject == wanted
+        };
+        assert!(
+            drawn(SubjectKind::Node, "a")
+                .iter()
+                .any(|drawn| card(drawn, &added))
+        );
         // A comparison states what moved, and what it does not mention stands unchanged.
         let kept = Subject {
             kind: SubjectKind::Node,
             id: "b".to_owned(),
             standing: Some(Standing::Unchanged),
         };
-        assert!(drawn(SubjectKind::Node, "b").contains(&(Role::Card, kept)));
+        assert!(
+            drawn(SubjectKind::Node, "b")
+                .iter()
+                .any(|drawn| card(drawn, &kept))
+        );
         assert!(
             drawn(SubjectKind::Edge, "ab")
                 .iter()
-                .any(|(role, _)| *role == Role::Line)
+                .any(|(role, _)| sort(role) == sort(&Role::Line(None)))
         );
     }
 
@@ -315,8 +344,5 @@ mod tests {
         assert_ne!(traffic.len(), 0, "the board draws its traffic");
         assert!(traffic.iter().all(|mark| !mark.route.segments.is_empty()
             && matches!(mark.motion, Motion::Steady { speed, .. } if speed > 0.0)));
-        assert!(items.iter().all(
-            |item| !matches!(item, Item::Element(element) if element.name.starts_with("animate"))
-        ));
     }
 }

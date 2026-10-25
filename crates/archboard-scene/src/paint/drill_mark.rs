@@ -2,11 +2,10 @@
 //! that says which way the other board lies, in the top-right corner inside the
 //! card or the container's header, near and far alike.
 
-use crate::attrs;
-use crate::geometry::{Rect, coord};
-use crate::markup::{Markup, concat, group, tag};
+use crate::geometry::{Point, Rect, round_coord};
+use crate::paint::build::{Items, concat, grouped, shape};
 use crate::request::DrillDirection;
-use crate::scene::Role;
+use crate::scene::{Colour, Geometry, Group, PathStep, Purpose, Role, Shape, Stroke, Transform};
 
 /// The ring's radius.
 const DRILL_MARK_RADIUS: f64 = 6.5;
@@ -18,13 +17,47 @@ const DRILL_MARK_INSET: f64 = 16.0;
 /// What a part keeps clear beside its name for the mark.
 pub const DRILL_MARK_ROOM: f64 = 2.0 * DRILL_MARK_RADIUS + 8.0;
 
+/// A move of the arrow to a point.
+const fn go(x: f64, y: f64) -> PathStep {
+    PathStep::Move { to: Point { x, y } }
+}
+
+/// A stroke of the arrow to a point.
+const fn to(x: f64, y: f64) -> PathStep {
+    PathStep::Line { to: Point { x, y } }
+}
+
 /// The arrow inside the ring, drawn about the ring's centre.
-fn arrow(direction: DrillDirection) -> &'static str {
+fn arrow(direction: DrillDirection) -> Vec<PathStep> {
     match direction {
-        DrillDirection::Up => "M0,3.1 V-3.1 M-2.7,-0.5 L0,-3.2 L2.7,-0.5",
-        DrillDirection::Down => "M0,-3.1 V3.1 M-2.7,0.5 L0,3.2 L2.7,0.5",
-        DrillDirection::Across => "M-3.1,0 H3.1 M0.5,-2.7 L3.2,0 L0.5,2.7",
-        DrillDirection::Elsewhere => "M-2.3,2.3 L2.4,-2.4 M-1.1,-2.6 H2.6 V1.1",
+        DrillDirection::Up => vec![
+            go(0.0, 3.1),
+            PathStep::Down { y: -3.1 },
+            go(-2.7, -0.5),
+            to(0.0, -3.2),
+            to(2.7, -0.5),
+        ],
+        DrillDirection::Down => vec![
+            go(0.0, -3.1),
+            PathStep::Down { y: 3.1 },
+            go(-2.7, 0.5),
+            to(0.0, 3.2),
+            to(2.7, 0.5),
+        ],
+        DrillDirection::Across => vec![
+            go(-3.1, 0.0),
+            PathStep::Across { x: 3.1 },
+            go(0.5, -2.7),
+            to(3.2, 0.0),
+            to(0.5, 2.7),
+        ],
+        DrillDirection::Elsewhere => vec![
+            go(-2.3, 2.3),
+            to(2.4, -2.4),
+            go(-1.1, -2.6),
+            PathStep::Across { x: 2.6 },
+            PathStep::Down { y: 1.1 },
+        ],
     }
 }
 
@@ -33,46 +66,37 @@ fn arrow(direction: DrillDirection) -> &'static str {
 pub(super) fn corner_drill_mark(
     rect: Rect,
     direction: DrillDirection,
-    ink: &str,
+    ink: &Colour,
     scale: f64,
-) -> Markup {
+) -> Items {
     let cx = rect.x + rect.width - DRILL_MARK_INSET;
     let cy = rect.y + DRILL_MARK_INSET;
-    let scaled = if scale == 1.0 {
-        String::new()
-    } else {
-        format!(" scale({})", coord(scale))
-    };
-    group(
-        Role::DrillMark,
-        None,
-        attrs! {
-            "class": "ab-drill",
-            "data-drill": direction.as_str(),
-            "transform": format!("translate({},{}){scaled}", coord(cx), coord(cy)),
-        },
-        concat(vec![
-            tag(
-                "circle",
-                attrs! {
-                    "r": DRILL_MARK_RADIUS,
-                    "fill": "none",
-                    "stroke": ink,
-                    "stroke-width": RING_STROKE,
-                    "stroke-opacity": 0.75,
-                },
-            ),
-            tag(
-                "path",
-                attrs! {
-                    "d": arrow(direction),
-                    "fill": "none",
-                    "stroke": ink,
-                    "stroke-width": 1.4,
-                    "stroke-linecap": "round",
-                    "stroke-linejoin": "round",
-                },
-            ),
-        ]),
+    grouped(
+        Group::new(
+            Role::DrillMark(direction),
+            concat(vec![
+                shape(
+                    Shape::new(
+                        Purpose::Line,
+                        Geometry::Circle {
+                            centre: None,
+                            radius: DRILL_MARK_RADIUS,
+                        },
+                    )
+                    .unfilled()
+                    .stroked(Stroke::new(ink, RING_STROKE).at(0.75)),
+                ),
+                shape(
+                    Shape::path(Purpose::Line, arrow(direction))
+                        .unfilled()
+                        .stroked(Stroke::new(ink, 1.4).rounded()),
+                ),
+            ]),
+        )
+        .moved(Transform {
+            x: round_coord(cx),
+            y: round_coord(cy),
+            scale: (scale != 1.0).then(|| round_coord(scale)),
+        }),
     )
 }

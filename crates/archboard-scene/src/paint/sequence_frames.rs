@@ -2,18 +2,17 @@
 //! and summary, and each decision's or loop's fragment with its operator tab,
 //! its guards and its dividers.
 
-use crate::attrs;
-use crate::geometry::{Rect, coord};
-use crate::markup::{Markup, group, lines, tag, text_node};
+use crate::geometry::{Rect, round_coord};
+use crate::names::word;
 use crate::paint::Ctx;
 use crate::paint::appearance::tray_look;
+use crate::paint::build::{Items, group, lines, point, shape};
 use crate::paint::cards::{halo, header_anchor, paint_header};
 use crate::paint::design::{
     BAND_RADIUS, CARD_THICKNESS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
-    FRAME_TAB_PADDING, PILL_TEXT_SIZE,
+    FRAME_TAB_PADDING,
 };
 use crate::paint::far_card::{Words, paint_heading_views};
-use crate::paint::fonts::{PILL_FONT, font_attributes};
 use crate::paint::palette::Palette;
 use crate::paint::sequence_messages::PILL_BASELINE;
 use crate::paint::slab::{Lift, boxed, slab_seat, slab_shadow};
@@ -24,12 +23,14 @@ use crate::paint::standing::{
 use crate::paint::styles::{Styles, full_line_colour};
 use crate::paint::tray::tray;
 use crate::request::{SequenceFlow, SequenceFrame, Standing};
-use crate::scene::{Role, SubjectKind};
+use crate::scene::{
+    Colour, Geometry, Group, Item, PathStep, Purpose, Role, Setting, Shape, Stroke, SubjectKind,
+};
 
 const MARK_SPACING: f64 = 24.0;
 const FRAGMENT_RADIUS: f64 = 3.0;
 const TAB_CUT: f64 = 5.0;
-const DIVIDER_DASH: &str = "4 3";
+const DIVIDER_DASH: [f64; 2] = [4.0, 3.0];
 
 /// The frame around one flow, with the flow's name and summary on it.
 pub(super) fn paint_frame(
@@ -38,7 +39,7 @@ pub(super) fn paint_frame(
     palette: &Palette,
     standing: Option<Standing>,
     unsettled: bool,
-) -> Markup {
+) -> Items {
     let styles = Styles::of(palette);
     let frame = layout.frame;
     let header = layout.header;
@@ -51,9 +52,8 @@ pub(super) fn paint_frame(
     };
     let flow = &layout.flow;
     group(
-        Role::Frame,
+        Role::Frame(None),
         Some(subject(SubjectKind::Flow, &flow.id, standing)),
-        attrs! {},
         lines(vec![
             slab_seat(frame, BAND_RADIUS),
             slab_shadow(frame, BAND_RADIUS, Lift::Tray, palette, ghosted),
@@ -66,7 +66,7 @@ pub(super) fn paint_frame(
                 plate,
                 palette,
                 Words {
-                    markup: paint_header(ctx, header, &flow.name, flow.summary.as_deref(), &styles),
+                    items: paint_header(ctx, header, &flow.name, flow.summary.as_deref(), &styles),
                     anchor: header_anchor(header),
                 },
             ),
@@ -77,42 +77,45 @@ pub(super) fn paint_frame(
 }
 
 /// The tab a decision's or loop's operator stands in.
-fn tab_path(frame: &SequenceFrame, ink: &str, face: &str) -> Markup {
+fn tab_path(frame: &SequenceFrame, ink: &Colour, face: &Colour) -> Items {
     let Rect {
         x,
         y,
         width,
         height,
     } = frame.tab;
-    let d = format!(
-        "M {} {} H {} V {} L {} {} H {} Z",
-        coord(x),
-        coord(y),
-        coord(x + width),
-        coord(y + height - TAB_CUT),
-        coord(x + width - TAB_CUT),
-        coord(y + height),
-        coord(x)
-    );
-    tag(
-        "path",
-        attrs! { "d": d, "fill": face, "stroke": ink, "stroke-width": 1.0 },
+    let steps = vec![
+        PathStep::Move { to: point(x, y) },
+        PathStep::Across {
+            x: round_coord(x + width),
+        },
+        PathStep::Down {
+            y: round_coord(y + height - TAB_CUT),
+        },
+        PathStep::Line {
+            to: point(x + width - TAB_CUT, y + height),
+        },
+        PathStep::Across { x: round_coord(x) },
+        PathStep::Close,
+    ];
+    shape(
+        Shape::path(Purpose::Outline, steps)
+            .filled(face)
+            .stroked(Stroke::new(ink, 1.0)),
     )
 }
 
 /// The words of one row of a frame, left aligned at a height.
-fn row_words(x: f64, top: f64, height: f64, text: &str, fill: &str) -> Markup {
-    text_node(
-        attrs! { "x": coord(x), "y": coord(top + height * PILL_BASELINE) }
-            .with(font_attributes(PILL_FONT))
-            .set("font-size", PILL_TEXT_SIZE)
-            .set("fill", fill),
-        text,
-    )
+fn row_words(x: f64, top: f64, height: f64, words: &str, palette: &Palette) -> Items {
+    vec![Item::Text(Styles::of(palette).pill_text().set(
+        Setting::Row,
+        point(x, top + height * PILL_BASELINE),
+        words,
+    ))]
 }
 
 /// Each alternative's label at the start of its operand, and its dashed divider.
-fn paint_guards(frame: &SequenceFrame, ink: &str, words: &str) -> Markup {
+fn paint_guards(frame: &SequenceFrame, ink: &Colour, words: &Palette) -> Items {
     let rect = frame.bounds;
     lines(
         frame
@@ -121,18 +124,16 @@ fn paint_guards(frame: &SequenceFrame, ink: &str, words: &str) -> Markup {
             .map(|guard| {
                 lines(vec![
                     match guard.divider {
-                        None => Markup::new(),
-                        Some(divider) => tag(
-                            "line",
-                            attrs! {
-                                "x1": coord(rect.x),
-                                "y1": coord(divider),
-                                "x2": coord(rect.x + rect.width),
-                                "y2": coord(divider),
-                                "stroke": ink,
-                                "stroke-width": 1.0,
-                                "stroke-dasharray": DIVIDER_DASH,
-                            },
+                        None => Items::new(),
+                        Some(divider) => shape(
+                            Shape::new(
+                                Purpose::Line,
+                                Geometry::Line {
+                                    from: point(rect.x, divider),
+                                    to: point(rect.x + rect.width, divider),
+                                },
+                            )
+                            .stroked(Stroke::new(ink, 1.0).dashed(&DIVIDER_DASH)),
                         ),
                     },
                     row_words(
@@ -154,62 +155,52 @@ pub(super) fn paint_fragment(
     palette: &Palette,
     standing: Option<Standing>,
     unsettled: bool,
-) -> Markup {
+) -> Items {
     let rect = frame.bounds;
     let tab = frame.tab;
     let ink = full_line_colour(palette, standing);
-    let words = standing_palette(palette, standing).pill_text;
-    let outline = boxed(rect).set("rx", FRAGMENT_RADIUS);
+    let words = standing_palette(palette, standing);
+    let outline = Shape::rect(Purpose::Box, boxed(rect), Some(FRAGMENT_RADIUS));
     let mark_x = rect.x + rect.width - PIN_INSET;
-    let operator = match frame.operator {
-        crate::request::FrameOperator::Alt => "alt",
-        crate::request::FrameOperator::Loop => "loop",
-    };
-    group(
-        Role::Fragment,
-        Some(subject(SubjectKind::Step, &frame.step.id, standing)),
-        attrs! { "opacity": ghost_opacity(standing) },
-        lines(vec![
-            tag(
-                "rect",
-                outline
-                    .clone()
-                    .set("fill", "none")
-                    .set("stroke", ink)
-                    .set("stroke-width", 1.0),
-            ),
-            tag(
-                "rect",
-                attrs! { "class": "ab-halo" }
-                    .with(outline)
-                    .set("stroke-width", 2.0)
-                    .with(Styles::of(palette).halo()),
-            ),
-            tab_path(frame, ink, palette.pill),
-            row_words(
-                tab.x + FRAME_TAB_PADDING,
-                tab.y,
-                FRAME_HEAD_HEIGHT,
-                operator,
-                words,
-            ),
-            row_words(
-                tab.x + tab.width + FRAME_TAB_PADDING,
-                tab.y,
-                FRAME_HEAD_HEIGHT,
-                &frame.words,
-                words,
-            ),
-            paint_guards(frame, ink, words),
-            standing_pin_at(mark_x, rect.y + PIN_INSET, standing, palette),
-            warning_badge(
-                Rect {
-                    width: rect.width - MARK_SPACING,
-                    ..rect
-                },
-                unsettled,
-                palette,
-            ),
-        ]),
-    )
+    vec![Item::Group(Group {
+        opacity: ghost_opacity(standing),
+        ..Group::new(
+            Role::Fragment,
+            lines(vec![
+                shape(outline.clone().unfilled().stroked(Stroke::new(ink, 1.0))),
+                shape(Shape {
+                    purpose: Purpose::Halo,
+                    ..outline
+                        .unfilled()
+                        .stroked(Styles::of(palette).ring(Some(2.0)))
+                }),
+                tab_path(frame, ink, &palette.pill),
+                row_words(
+                    tab.x + FRAME_TAB_PADDING,
+                    tab.y,
+                    FRAME_HEAD_HEIGHT,
+                    word(&frame.operator),
+                    &words,
+                ),
+                row_words(
+                    tab.x + tab.width + FRAME_TAB_PADDING,
+                    tab.y,
+                    FRAME_HEAD_HEIGHT,
+                    &frame.words,
+                    &words,
+                ),
+                paint_guards(frame, ink, &words),
+                standing_pin_at(mark_x, rect.y + PIN_INSET, standing, palette),
+                warning_badge(
+                    Rect {
+                        width: rect.width - MARK_SPACING,
+                        ..rect
+                    },
+                    unsettled,
+                    palette,
+                ),
+            ]),
+        )
+        .drawing(subject(SubjectKind::Step, &frame.step.id, standing))
+    })]
 }

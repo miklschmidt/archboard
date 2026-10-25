@@ -10,7 +10,7 @@ use crate::sequence::design::{
     CARD_HEIGHT, CARD_HEIGHT_WITH_NOTE, CARD_PADDING_X, DRILL_MARK_ROOM, ICON_CHIP_GAP,
     ICON_CHIP_SIZE, NOTE_SIZE, TEXT_LINE_HEIGHT, TITLE_SIZE,
 };
-use archboard_scene::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT};
+use archboard_scene::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 
 use crate::text::Text;
 

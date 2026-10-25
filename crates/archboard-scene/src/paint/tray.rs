@@ -2,22 +2,22 @@
 //! floor a step below what holds it, and a header slab standing on the floor,
 //! made of what the tray is cut into. A tray casts no shadow.
 
-use crate::attrs;
 use crate::geometry::Rect;
-use crate::markup::{Markup, lines};
+use crate::paint::build::{Items, lines, shape};
 use crate::paint::design::{
     BAND_RADIUS, HEADER_SLAB_INSET, SLAB_RADIUS, TRAY_CREASE, TRAY_LIP, TRAY_WALL,
 };
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, across, plate, slab, slab_shadow};
 use crate::request::Standing;
+use crate::scene::{Colour, Stroke};
 
 /// How a tray looks: its floor, its walls and its header.
 #[derive(Clone, Debug, PartialEq)]
-pub struct TrayLook {
-    pub floor: String,
-    pub top_wall: String,
-    pub side_wall: String,
+pub(super) struct TrayLook {
+    pub floor: Colour,
+    pub top_wall: Colour,
+    pub side_wall: Colour,
     pub header: Rect,
     pub header_look: SlabLook,
 }
@@ -55,9 +55,9 @@ pub(super) fn tray(
     look: &TrayLook,
     palette: &Palette,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     if standing == Some(Standing::Removed) {
-        return Markup::new();
+        return Items::new();
     }
     let floor = floor_of(rect);
     let walls = Rect {
@@ -65,40 +65,36 @@ pub(super) fn tray(
         ..rect
     };
     let mut parts = vec![
-        plate(rect, BAND_RADIUS, attrs! { "fill": palette.slab_shadow }),
-        plate(
-            Rect {
-                height: rect.height - TRAY_CREASE,
-                ..rect
-            },
-            BAND_RADIUS,
-            attrs! { "fill": palette.tray_lip },
+        shape(plate(rect, BAND_RADIUS).filled(&palette.slab_shadow)),
+        shape(
+            plate(
+                Rect {
+                    height: rect.height - TRAY_CREASE,
+                    ..rect
+                },
+                BAND_RADIUS,
+            )
+            .filled(&palette.tray_lip),
         ),
-        plate(
-            walls,
-            BAND_RADIUS,
-            attrs! { "fill": look.top_wall.as_str() },
+        shape(plate(walls, BAND_RADIUS).filled(&look.top_wall)),
+        shape(
+            plate(
+                Rect {
+                    y: walls.y + TRAY_WALL,
+                    height: walls.height - TRAY_WALL,
+                    ..walls
+                },
+                BAND_RADIUS,
+            )
+            .filled(&look.side_wall),
         ),
-        plate(
-            Rect {
-                y: walls.y + TRAY_WALL,
-                height: walls.height - TRAY_WALL,
-                ..walls
-            },
-            BAND_RADIUS,
-            attrs! { "fill": look.side_wall.as_str() },
-        ),
-        plate(floor, FLOOR_RADIUS, attrs! { "fill": look.floor.as_str() }),
+        shape(plate(floor, FLOOR_RADIUS).filled(&look.floor)),
     ];
     for (index, share) in WALL_SHADOW.iter().enumerate() {
         parts.push(across(
             floor,
             floor.y + (index as f64 + 0.5) * SHADOW_BAND,
-            attrs! {
-                "stroke": palette.slab_shadow,
-                "stroke-opacity": *share,
-                "stroke-width": SHADOW_BAND,
-            },
+            Stroke::new(&palette.slab_shadow, SHADOW_BAND).at(*share),
         ));
     }
     parts.push(slab_shadow(

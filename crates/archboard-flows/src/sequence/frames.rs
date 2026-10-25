@@ -23,7 +23,7 @@ use crate::sequence::design::{
 };
 use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
 use crate::sequence::messages::drawn;
-use archboard_scene::paint::fonts::PILL_FONT;
+use archboard_scene::paint::design::PILL_FONT;
 
 use crate::text::Text;
 

@@ -10,19 +10,18 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::attrs;
-use crate::geometry::{Point, coord, round_coord};
+use crate::drawing::DiagramFont;
+use crate::geometry::{Point, round_coord};
 use crate::js;
-use crate::markup::{Markup, group, lines, text_node};
 use crate::paint::Ctx;
-use crate::paint::design::DIAGRAM_MARGIN;
-use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT, font_attributes};
+use crate::paint::build::{Items, grouped, lines, point, text};
+use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 use crate::paint::legend_entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend_symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
 use crate::request::{ExportFrame, LegendLayout, Standing};
-use crate::scene::{Atlas, Item, Role};
+use crate::scene::{Atlas, Baseline, Colour, Group, Item, Role, Setting, Slot, Text, Transform};
 
 const WORD_GAP: f64 = 8.0;
 const COUNT_GAP: f64 = 6.0;
@@ -46,41 +45,52 @@ fn width_of(ctx: &Ctx<'_>, entry: &Entry) -> f64 {
     round_coord(GLYPH + WORD_GAP + words + count)
 }
 
+/// Words of the page an export adds, centred on their row.
+fn caption(at: Point, font: DiagramFont, size: f64, fill: &Colour, words: &str) -> Items {
+    text(Text {
+        setting: Setting::Caption,
+        at,
+        font,
+        size,
+        fill: fill.clone(),
+        anchor: None,
+        baseline: Some(Baseline::Central),
+        keeps_spaces: false,
+        words: words.to_owned(),
+    })
+}
+
 /// One entry drawn at a point: its symbol, its words and its count.
-fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Markup {
-    let words = |at: f64| {
-        attrs! { "x": coord(at), "y": coord(y + ROW / 2.0), "dominant-baseline": "central", "font-size": WORD_SIZE }
-    };
+fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Items {
     let words_x = x + GLYPH + WORD_GAP;
-    group(
-        Role::LegendEntry,
-        None,
-        attrs! { "data-legend-entry": entry.keys.as_str() },
+    let at = |across: f64| point(across, y + ROW / 2.0);
+    grouped(Group::new(
+        Role::LegendEntry(entry.keys.kind()),
         lines(vec![
             symbol_of(entry, palette, x, y),
-            text_node(
-                words(words_x)
-                    .set("fill", palette.foreground)
-                    .with(font_attributes(CARD_NOTE_FONT)),
+            caption(
+                at(words_x),
+                CARD_NOTE_FONT,
+                WORD_SIZE,
+                &palette.foreground,
                 &entry.words,
             ),
             match entry.count() {
-                None => Markup::new(),
-                Some(count) => text_node(
-                    words(
-                        words_x
-                            + ctx
-                                .measurer
-                                .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE)
-                            + COUNT_GAP,
-                    )
-                    .set("fill", palette.muted)
-                    .with(font_attributes(CARD_NOTE_FONT)),
+                None => Items::new(),
+                Some(count) => caption(
+                    at(words_x
+                        + ctx
+                            .measurer
+                            .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE)
+                        + COUNT_GAP),
+                    CARD_NOTE_FONT,
+                    WORD_SIZE,
+                    &palette.muted,
                     &count.to_string(),
                 ),
             },
         ]),
-    )
+    ))
 }
 
 /// Where each entry stands, in the order its lists hold it, and the size they
@@ -166,11 +176,11 @@ struct Legend {
 
 impl Legend {
     /// The legend drawn with its top left corner at a point.
-    fn draw(&self, ctx: &Ctx<'_>, x: f64, y: f64, palette: &Palette) -> Markup {
-        group(
-            Role::Slot,
-            None,
-            attrs! { "data-slot": "export-legend", "data-layout": self.layout.as_str() },
+    fn draw(&self, ctx: &Ctx<'_>, x: f64, y: f64, palette: &Palette) -> Items {
+        grouped(Group::new(
+            Role::Slot(Slot::ExportLegend {
+                layout: self.layout,
+            }),
             lines(
                 self.lists
                     .iter()
@@ -181,7 +191,7 @@ impl Legend {
                     })
                     .collect(),
             ),
-        )
+        ))
     }
 }
 
@@ -232,32 +242,21 @@ fn with_legend(
 
 /// A page moved down under its title, made wide enough for the title.
 fn under_title(ctx: &Ctx<'_>, page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
-    let words = text_node(
-        attrs! {
-            "x": DIAGRAM_MARGIN,
-            "y": DIAGRAM_MARGIN + TITLE_LINE / 2.0,
-            "dominant-baseline": "central",
-            "font-size": TITLE_SIZE,
-            "fill": palette.foreground,
-        }
-        .with(font_attributes(CARD_TITLE_FONT)),
+    let words = caption(
+        Point {
+            x: DIAGRAM_MARGIN,
+            y: DIAGRAM_MARGIN + TITLE_LINE / 2.0,
+        },
+        CARD_TITLE_FONT,
+        TITLE_SIZE,
+        &palette.foreground,
         title,
     );
     let band = DIAGRAM_MARGIN + TITLE_LINE;
     PaintedPage {
         body: lines(vec![
-            group(
-                Role::Slot,
-                None,
-                attrs! { "data-slot": "export-title" },
-                words,
-            ),
-            group(
-                Role::Move,
-                None,
-                attrs! { "transform": format!("translate(0 {})", js::number(band)) },
-                page.body,
-            ),
+            grouped(Group::new(Role::Slot(Slot::ExportTitle), words)),
+            grouped(Group::new(Role::Inset, page.body).moved(Transform::translate(0.0, band))),
         ]),
         width: js::js_max(
             page.width,
@@ -280,7 +279,7 @@ fn array_index(key: &str) -> Option<u32> {
 
 /// Every subject a painted drawing placed: what its atlas holds, nodes, then
 /// lines, then regions, each once, in the order a host reads its atlas's keys.
-pub fn placed_on(atlas: &Atlas) -> Vec<String> {
+pub(super) fn placed_on(atlas: &Atlas) -> Vec<String> {
     let mut placed: Vec<String> = Vec::new();
     let mut seen: HashSet<&str> = HashSet::new();
     for boxes in [&atlas.nodes, &atlas.edges, &atlas.regions] {
@@ -306,11 +305,11 @@ pub fn placed_on(atlas: &Atlas) -> Vec<String> {
 
 /// A page as an export carries it: with its legend under it or beside it, or
 /// its legend alone, under its title when it has one.
-pub fn framed_for_export(
+pub(super) fn framed_for_export(
     ctx: &Ctx<'_>,
     page: PaintedPage,
     frame: Option<&ExportFrame>,
-    standing: Option<&BTreeMap<String, Standing>>,
+    (standing, placed): (Option<&BTreeMap<String, Standing>>, &[String]),
     plain: bool,
     palette: &Palette,
 ) -> PaintedPage {
@@ -320,7 +319,6 @@ pub fn framed_for_export(
     let keyed = match frame.legend {
         None => page,
         Some(layout) => {
-            let placed = placed_on(&page.atlas);
             let marks = if plain {
                 Vec::new()
             } else {
@@ -329,7 +327,7 @@ pub fn framed_for_export(
             let legend = legend_of(ctx, &page.body, &marks, layout, page.width);
             let shown = if frame.legend_only == Some(true) {
                 PaintedPage {
-                    body: Markup::new(),
+                    body: Items::new(),
                     width: 0.0,
                     height: 0.0,
                     atlas: Atlas::default(),
@@ -347,7 +345,7 @@ pub fn framed_for_export(
 }
 
 /// The accessible name as the export draws it.
-pub fn exported_name(name: &str, frame: Option<&ExportFrame>) -> String {
+pub(super) fn exported_name(name: &str, frame: Option<&ExportFrame>) -> String {
     let titled = match frame.and_then(|frame| frame.title.as_deref()) {
         None => name.to_owned(),
         Some(title) => format!("{title}. {name}"),
