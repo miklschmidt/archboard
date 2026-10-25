@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T04:29:00Z'
-updated_date: '2026-10-25T04:39:00Z'
+updated_date: '2026-10-25T05:38:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-520
@@ -36,3 +36,19 @@ The TypeScript source is held to a strict analysis policy (TASK-150, .oxlintrc.j
 5. Record each chosen and rejected lint, and each TypeScript rule that does not carry over, in docs/agents/strict-analysis.md.
 6. Render /tmp/lints-after and compare (must be 0 differ); run lint:core native and wasm32, test:core, then bun run check lane by lane.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation (branch rust-lints, from 6bcf7ebbf, head aa45f17af):
+- Policy: one [workspace.lints] table in Cargo.toml (rustc: unsafe_code forbid, missing_docs, unreachable_pub, four groups, eleven single lints; clippy: all + pedantic less cast_precision_loss/float_cmp/must_use_candidate/similar_names, 15 picked nursery lints, 30 picked restriction lints). Everything else at warn; lint:core denies warnings. clippy.toml: cognitive-complexity-threshold 6, avoid-breaking-exported-api false, allow-unwrap-in-tests, doc-valid-idents. Every crate has [lints] workspace = true. clippy.toml joined the core lanes' cache inputs.
+- Docs: docs/agents/strict-analysis-rust.md records each chosen lint, each rejected lint with its finding count and reason, the thresholds, the 25 expects, and each TypeScript rule that does not carry over; strict-analysis.md links it.
+- Fixes: unreachable_pub and elided lifetimes swept; small pedantic/nursery/restriction findings fixed in code; casts made integer where the value is a count or index, ten checked float-to-integer casts carry expects; every function over complexity 6 split (router, scene, layout, flows); every public item documented (8 vocabulary enums carry missing_docs expects), and every private function and type documented too.
+- Decision: missing_docs_in_private_items stays off (it also asks for 816 private field/constant/variant docs); private functions are documented but not lint-enforced.
+- Decision: no file-length lint exists in clippy; 13 crate files exceed 600 lines. Left for the parent to decide.
+Evidence:
+- nix develop -c bunx vp run lint:core (wasm32, --deny warnings): pass. Native cargo clippy --locked --workspace --all-targets -- --deny warnings: pass. cargo fmt --all --check: pass. cargo test --locked --workspace: 73 passed.
+- Corpus: render-corpus compare /tmp/lints-before /tmp/lints-after: "0 of 2344 drawings differ".
+- bun run check: exit 0, all 18 vp tasks successful, bun tests 4881 pass 1 skip 0 fail, system 257 pass, serial browser lane 19 files exit 0.
+- No #[allow] anywhere in crates/ (allow_attributes refuses one); no crate-wide expect.
+<!-- SECTION:NOTES:END -->
