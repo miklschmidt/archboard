@@ -26,14 +26,11 @@
 // sure that canvas exists and has the diagram faces loaded before measuring.
 
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
-import type { DiagramTheme } from "@archboard/board/render-reply";
 import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 
 /** What the renderer asks of the core. */
 type CorePainter = Pick<typeof CoreBuild, "drawFlowchart" | "drawSequence" | "paintDocument">;
-
-/** Every theme colour by theme and custom property name. */
-type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>>>>;
 
 /** The place the renderer runs in. */
 interface RendererHost {
@@ -109,4 +106,4 @@ function rendererHost(): RendererHost {
 	return installed;
 }
 
-export { installRendererHost, SOLVE_STAGE, rendererHost, type RendererHost, type ThemeColors };
+export { installRendererHost, SOLVE_STAGE, rendererHost, type RendererHost };
