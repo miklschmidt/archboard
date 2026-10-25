@@ -7,6 +7,7 @@
 
 import { expect, test } from "bun:test";
 
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	cornerWarning,
@@ -43,6 +44,7 @@ function unplaced(markup: string): string {
 test("a pane draws the pins, warnings, inks and heads the picture draws", async () => {
 	const drawn = await renderArchitecture({
 		content: CONTENT,
+		policy: DEFAULT_SEMANTIC_POLICY,
 		standing: { a: "added", b: "unchanged", ab: "unchanged" },
 		unsettled: ["b"],
 	});
