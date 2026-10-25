@@ -12,6 +12,7 @@
 // Which command runs the server is no part of a row (server-command.ts).
 
 import path from "node:path";
+import { cargoWorkspaceOf } from "#runtime/operations/language-servers/cargo-workspace.ts";
 import { compileDatabaseOf } from "#runtime/operations/language-servers/compile-database.ts";
 import { dotnetProjectOf } from "#runtime/operations/language-servers/dotnet-solution.ts";
 import { pythonProjectOf } from "#runtime/operations/language-servers/python-environment.ts";
@@ -139,6 +140,18 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 		opensFiles: true,
 		indexProgress: "backgroundIndexProgress",
 		project: compileDatabaseOf,
+	},
+	// Measured with the rust-analyzer release 2026-10-12: before it has loaded the Cargo
+	// workspace it answers a definition with none, and while it reloads with
+	// its procedural macros it refuses one as `content modified`. It begins
+	// the progress `rustAnalyzer/cachePriming` once the workspace, its build
+	// scripts and its procedural macros are loaded, and ends it once every
+	// crate is indexed (TASK-540).
+	rust: {
+		languageIds: { ".rs": "rust" },
+		opensFiles: true,
+		indexProgress: "rustAnalyzer/cachePriming",
+		project: cargoWorkspaceOf,
 	},
 };
 
