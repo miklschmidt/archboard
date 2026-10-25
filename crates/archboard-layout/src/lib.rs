@@ -7,15 +7,15 @@
 //! read in the order they were filled, sorts as stable, and numbers spelt as
 //! ECMAScript spells them (`ecma`, `json`).
 
-pub mod blocks;
-pub mod constants;
-pub mod ecma;
-pub mod geometry;
-pub mod graph;
-pub mod json;
-pub mod placed;
-pub mod track;
-pub mod viz;
+mod blocks;
+mod constants;
+mod ecma;
+mod geometry;
+mod graph;
+mod json;
+mod placed;
+mod track;
+mod viz;
 
 pub use blocks::place::lay_out_track;
 

@@ -1,7 +1,7 @@
 //! Points and boxes, and the few measures of them the layout takes
 //! (`shared/rules/geometry.ts`).
 
-pub use archboard_scene::geometry::{Point, Rect, covering, inflate, union};
+pub use archboard_scene::geometry::{Point, Rect, covering, inflate};
 
 use crate::ecma::{js_max, js_min};
 
@@ -15,16 +15,6 @@ pub enum Side {
 }
 
 impl Side {
-    /// The face directly across from this one.
-    pub fn opposite(self) -> Side {
-        match self {
-            Side::Top => Side::Bottom,
-            Side::Bottom => Side::Top,
-            Side::Left => Side::Right,
-            Side::Right => Side::Left,
-        }
-    }
-
     /// The face's name, as the TypeScript engine spelt it.
     pub fn name(self) -> &'static str {
         match self {
@@ -32,17 +22,6 @@ impl Side {
             Side::Right => "right",
             Side::Bottom => "bottom",
             Side::Left => "left",
-        }
-    }
-
-    /// A face from its name.
-    pub fn from_name(name: &str) -> Option<Side> {
-        match name {
-            "top" => Some(Side::Top),
-            "right" => Some(Side::Right),
-            "bottom" => Some(Side::Bottom),
-            "left" => Some(Side::Left),
-            _ => None,
         }
     }
 }
@@ -62,14 +41,4 @@ pub fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
         return Some(one.x + ((other.x - one.x) * (y - one.y)) / (other.y - one.y));
     }
     None
-}
-
-/// A box with nothing in it at a point.
-pub fn at_point(point: Point) -> Rect {
-    Rect {
-        x: point.x,
-        y: point.y,
-        width: 0.0,
-        height: 0.0,
-    }
 }

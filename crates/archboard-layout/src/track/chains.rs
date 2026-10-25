@@ -601,13 +601,6 @@ impl Occupancy {
             .collect()
     }
 
-    /// Whether a lane may stand at an x on a band.
-    pub fn free(&self, band: usize, x: f64) -> bool {
-        self.taken[band]
-            .iter()
-            .all(|&(low, high)| x <= low || x >= high)
-    }
-
     /// Whether a whole run may move to one column.
     pub fn fits(&mut self, track: &Track<'_>, run: &LaneRun, x: f64) -> bool {
         self.fitting(track, run).passes(x)

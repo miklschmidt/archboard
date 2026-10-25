@@ -28,15 +28,12 @@ pub struct Run {
     pub line: usize,
     pub from: Point,
     pub to: Point,
-    pub bends: (bool, bool),
 }
 
-/// A place two lines cross: a level run of one through an upright run of the other, and its key.
+/// A place two lines cross: a level run of one through an upright run of the other, by its key.
 #[derive(Clone, Copy, Debug)]
 pub struct Crossing {
     pub key: (u64, u64),
-    pub level: Run,
-    pub upright: Run,
 }
 
 /// What a layout is weighed on: its page, its crossings and its lines between
@@ -80,7 +77,6 @@ pub fn crossing_places<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> Vec<
                 line,
                 from: points[index],
                 to: points[index + 1],
-                bends: (index > 0, index + 2 < points.len()),
             });
         }
     }
@@ -101,8 +97,6 @@ pub fn crossing_places<'a>(lines: impl IntoIterator<Item = &'a [Point]>) -> Vec<
             {
                 crossings.push(Crossing {
                     key: place_key(other.from.x, one.from.y),
-                    level: **one,
-                    upright: **other,
                 });
             }
         }

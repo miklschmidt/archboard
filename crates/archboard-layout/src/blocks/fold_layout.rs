@@ -15,8 +15,8 @@ use crate::track::spacing::{TRACK_TOP, channel_height};
 use crate::track::tracks::{Unit, stack_units, unit_across};
 
 use super::fold::MIN_GUTTER;
-use super::headers::{Room, TakenHeader, header_within};
-use super::laid::{Insets, Laid, LaidMap};
+use super::headers::{Header, Room, header_within};
+use super::laid::{Insets, Laid, LaidMap, Size};
 use super::leaves::{PORT, rim_of};
 use super::tree::{BlockId, BlockTree, Line, header_of};
 
@@ -81,7 +81,7 @@ pub struct FoldLayout<'t> {
     /// Each column's x.
     column_x: Vec<f64>,
     /// The block's header as laid out: at its least size until the columns say how wide the block is.
-    header: Option<TakenHeader>,
+    header: Option<Size>,
 }
 
 impl<'t> FoldLayout<'t> {
@@ -93,7 +93,7 @@ impl<'t> FoldLayout<'t> {
         columns: Vec<BlockId>,
         insets: Insets,
     ) -> FoldLayout<'t> {
-        let header = tree.get(block).header.as_ref().map(TakenHeader::least);
+        let header = tree.get(block).header.as_ref().map(Header::size);
         FoldLayout {
             tree,
             laid,
@@ -242,7 +242,7 @@ impl<'t> FoldLayout<'t> {
             + self
                 .header
                 .as_ref()
-                .map_or(0.0, |header| header.size.width + LANE);
+                .map_or(0.0, |header| header.width + LANE);
         let low = if top { clear } else { self.insets.side };
         let high = js_max(right, low + LANE * (ports.len() + 1) as f64);
         let xs = spread_ports(
@@ -346,8 +346,8 @@ impl<'t> FoldLayout<'t> {
             Rect {
                 x: side,
                 y: top,
-                width: taken.size.width,
-                height: taken.size.height,
+                width: taken.width,
+                height: taken.height,
             },
         );
         self.header = Some(taken);
@@ -371,9 +371,7 @@ impl<'t> FoldLayout<'t> {
     fn stack_rows(&mut self, top: &Stacked, bottom: &Stacked) -> (f64, f64) {
         let tops = self.ports_on(Side::Top);
         let row = js_max(
-            self.header
-                .as_ref()
-                .map_or(0.0, |header| header.size.height),
+            self.header.as_ref().map_or(0.0, |header| header.height),
             if tops.is_empty() { 0.0 } else { PORT },
         );
         let channel_top = self.insets.top + row;
@@ -539,7 +537,7 @@ impl<'t> FoldLayout<'t> {
         for index in 0..courses.len() {
             self.draw(&courses, index, &top, &bottom, rows);
         }
-        let header = self.header.as_ref().map_or(0.0, |header| header.size.width);
+        let header = self.header.as_ref().map_or(0.0, |header| header.width);
         let ended = !self.ports_on(Side::Bottom).is_empty();
         let width =
             max(std::iter::once(header).chain(self.boxes.values().map(|one| one.x + one.width)))
@@ -551,7 +549,6 @@ impl<'t> FoldLayout<'t> {
             height,
             boxes: self.boxes,
             lines: self.lines,
-            header: self.header.and_then(|header| header.index),
             ..Laid::default()
         }
     }
