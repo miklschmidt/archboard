@@ -297,6 +297,7 @@ function makeHarness(options: HarnessOptions = {}): GateHarness {
 	let currentRealtime = REALTIME;
 	const gate = createCodexSpokenApprovalGate({
 		tools: TEST_TOOLS,
+		productName: "Codex",
 		approvalBroker: broker,
 		coordinator: { snapshot: () => coordinatorState },
 		realtime,
