@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:54
-updated_date: '2026-10-25T14:08:00Z'
+updated_date: '2026-10-25T14:50:00Z'
 labels:
   - renderer
 dependencies:
@@ -147,4 +147,115 @@ They still differ, and the fallback faces do not change them. Onest has a glyph 
 ## Rerun with the fallback faces
 
 The scorecard did not change: Track has 3 drawings changed, and Blocks has 12. The corpus did not change: 0 of 36032 drawings differ in size, and the 586 corpus SVGs still take 145,227,288 bytes. Folder: /tmp/archboard-task-520.07/after-fallback.
+
+## Board proposals, adopted
+
+Five boards were adopted as TASK-520.07. Renderer layout is at v77 (current tTuRFlNL). Semantic renderer is at v121 (current wnkTiVu4). Board rasterizer is at v77 (current g6ghgAxA). Board viewer is at v133 (current BuLCyzn1). Browser application is at v134 (current VXLz7ZFo). Each proposal carries the board's scope as its summary.
+
+Renderer layout:
+- Pretext (RvOyWmEb) and Host canvas (dYxhsEhY) are removed, with their three relationships and the canvas steps of "Sizing a card".
+- Measured text (kHpIix5b) is now a module bound to crates/archboard-scene/src/measure (measure_board at measure/board.rs:51).
+- Text shaping is new. It is bound to crates/archboard-text/src (shape at shape.rs:69, Paragraph at paragraph.rs:247, the faces and Noto fallbacks at faces.rs:81). Measured text calls it ("shape and break every word", measure/mod.rs:47 Paragraph::new).
+- "Draw and measure" now says it measures in the renderer core.
+- "Sizing a card" is redrawn with View dispatcher, Measured text and Text shaping, and step ids are kept. Paragraph::new shapes the words (paragraph.rs:68, :230). natural_width is at cards.rs:201. lines(width) shapes each line whole (paragraph.rs:287-292). The inner per-line canvas loop is gone, because lines() gives each line its whole width. The "painted width wins" rule is at cards.rs:213-219.
+- Both walkthrough beats that named Pretext and the canvas are rewritten. The summary of the "Sizing a card" view is updated, and the "Draw and measure" view now includes Text shaping.
+- Correction: the measuring calls from View dispatcher (TPRWw9F4, K9SFgjvi, 86rBqUC3) are now anchored at measure_board. The anchor measureArchitecture lives in packages/renderer/src/shared/rules/render/measure.ts, which no part binds, so it gave ANCHOR_MISMATCH. This follows how the board anchors painting at paint_architecture.
+
+Semantic renderer:
+- Host canvas (gUN928v4) is removed, with BzVsPvqY, V6JJ4OjE, tmrkphkd and qbz0QY1B.
+- Measured text (J3yMo4ag) is rebound to crates/archboard-scene/src/measure.
+- "Flows hand-off -> Measured text" (oCH6TGpi) is removed, because flows.ts no longer measures (flows.ts:58, its only host call is track).
+- Two relationships are added: Sequence layout -> Measured text (sequence/rows.rs note_lines) and Flowchart -> Measured text (flowchart/mod.rs:224 measure_node).
+- Descriptions are updated:
+  - Measured text.
+  - SVG document: each glyph is defined once and the words are written in no ink (archboard-svg glyphs.rs:103-145).
+  - Renderer host: no font bytes (host.ts:43-70).
+  - Bun host installation: no canvas and no fonts (bun-host.ts installBunHost).
+  - Flows hand-off: it answers only the track engine.
+  - Paint hand-off: it adds no faces (paint.ts:26-38).
+  - Renderer core: measureBoard is added (renderer-wasm scene.rs:27), and "through the host's canvas" is dropped.
+  - Sequence layout and Flowchart: they measure through the core.
+  - Browser application: it loads no faces (browser-renderer.ts:63-79).
+  - Scene: its runs are glyph runs (scene/text.rs:17-53).
+- Edge labels: "drawSequence, and drawFlowchart with the track engine", "paintDocument, as JSON" and "renderBoard" (the "linked faces" is gone).
+- "Draw a view" and "Draw a sequence" now run the measuring steps between the core's layouts and Measured text. The steps f8Ma7jiv, gLbCi3Gp, S53p7nFg and kdVOvXlC are removed.
+- In the "Host seam" view, Measured text and Host canvas are replaced by Renderer core. Two beats are rewritten. Every beat of that walkthrough now names its view, which fixes WALKTHROUGH_VIEW_MISSING in the touched walkthrough.
+- Correction: ezsxPVcK, YlwhO14p and xnf4S2ZR are anchored at measure_board, for the same reason as on Renderer layout.
+- Dropped: a Text shaping part on Semantic renderer. Only Renderer layout needs it. Here Measured text's description names archboard-text.
+
+Board rasterizer:
+- The edge label "the SVG, faces embedded" is now "the SVG, its words drawn as glyphs". Its stale anchor drawRequest is gone. It now points at the render route the request reaches (semantic-board-routes.ts:165 renderRoute), because renderSemanticBoardOnServer is in server-lifecycle and gave ANCHOR_MISMATCH.
+- Page readiness description: there is no face to wait for (page.ts:26-36, :54-58).
+- The "One rasterize" flow:
+  - The readiness note and its return now read the SVG's size.
+  - The decision "Did every declared face load?" is now "Did the page report its readiness?", with the alternatives "no report" and "reported" (checkedReadiness throws only on a malformed answer, page.ts:54).
+- Beat BnjBLsWM is rewritten, and its walkthrough's beats name the Rasterizing view.
+- Kept: Replay page still waits for document.fonts (apps/web frame-readiness.ts:65). Those are the page's own faces.
+
+Board viewer: the responsibility of "Draw here" (F90402mH) no longer names the tab's canvas.
+
+Browser application: the responsibility of "Browser renderer" (hDWpDois) no longer names the tab's canvas.
+
+## Code check, diff method
+
+`archboard check --code --variant TASK-520.07` was compared with the same run without --variant: no line is new (no `>`). 30 lines cleared (`<`):
+- Renderer layout: 17 ANCHOR_PATH_MISSING into the deleted measurement.ts and canvas-text.ts.
+- Semantic renderer: 4 ANCHOR_PATH_MISSING and 7 ANCHOR_SYMBOL_MISSING (measureNoteLines, measure, loadDiagramFaces, nodeOffscreenCanvas, noteLines, measureNode, nodeMeasured).
+- Board rasterizer: drawRequest.
+
+After adoption, the full run against the run before adoption shows the same 30 cleared and nothing new. `archboard check` reports no diagnostics. The check reads .rs as text only (skip text-only), so every Rust anchor was tested by name, and I read each one by hand.
+
+## Footprint
+
+Base: 47e05a3ff, found with the trailer command (TASK-520[.]07). Each answer's `current` is the parent of its proposal. Every commit in the range is a TASK-520.07 commit.
+- Renderer layout:
+  - namedAndChanged: Measured text and Text shaping.
+  - changedNotNamed: Architecture painter (9a6bdd61e). paint_region no longer takes the measuring context. That is internal.
+- Semantic renderer:
+  - namedAndChanged: Sequence layout, Measured text, SVG document, Bun renderer, Renderer host, Board answer, Flowchart, Bun host installation, Renderer core, Scene, Paint hand-off, Flows hand-off.
+  - changedNotNamed (all 9a6bdd61e, all internal):
+    - View dispatcher: imports measureArchitecture from render/measure.ts, and the core now takes the far size.
+    - Subject atlas: page.rs measures "Planned" with measure::width and sets it with Text::set.
+    - Architecture painter and Sequence painter: the measuring context argument is gone.
+    - Near and far content, Export frame and Export legend: they measure through measure::width and truncate.
+    - Bun measurement entry: an import path changed.
+- Board rasterizer:
+  - namedAndChanged: Raster session and Page readiness.
+  - changedNotNamed: Receipt (source.fonts and facesLoaded are gone from the schema; its responsibility still holds) and the Semantic rasterizer directory.
+  - namedNotChanged: Rasterizer, named only by steps under the renamed decision. That is normal.
+- Board viewer:
+  - changedNotNamed: Local pictures. The DrawBoard type no longer omits fonts. That is internal.
+  - Draw here is skipped as a drill-down. git log shows 9a6bdd61e on browser-renderer.ts, and the proposal names it.
+- Browser application: Browser renderer is skipped as a drill-down (packages/renderer/src/ui changed in 9a6bdd61e, and the proposal names it).
+
+## Behind (step 7)
+
+After adoption, the five adopted boards read 0 behind. These other boards are behind because of 9a6bdd61e, and each is still right:
+- Archboard: the renderer and board packages. Its renderer says "Draws a board as a picture, in the browser or under Bun".
+- Archboard server and Live panes: HTTP application. The /assets/diagram-fonts route is gone, and neither board draws it.
+- Archboard server routes: Board routes. The fonts selector is gone, and nothing on the board names it.
+- Command interface: Board client, Rasterize, Render, Views and Commands. The fonts option and the receipt fields are gone, and no description names them.
+- Skill evaluation: Captures. source.fonts and facesLoaded are gone, and they are not on the board.
+
+The other behind boards (Agent workbench, Codex workhorse, Codex session, Voice coordinator, Board persistence) count no TASK-520.07 commit. The workbench subtitles still measure with document.fonts (packages/workbench/src/ui/rules/subtitles/measured-lines.ts:42), which this task did not change.
+
+## Pictures, dark, after adoption
+
+/tmp/t7b/pics:
+- rl-overview and rl-sizing
+- sr-layout, sr-hostseam and sr-drawview
+- br-proved and br-one
+- bv-overview and ba-overview
+
+The proposal pictures rl-sizing-prop and sr-seq-prop show the removals drawn as removed. Every picture draws its words in the core's glyphs. Titles, responsibilities, edge labels, step labels, notes and diamond questions read cleanly at 1x. Nothing is clipped, and no .notdef box appears.
+
+## Stale anchors from TASK-520.03 (commit 5eab5afab)
+
+These were corrected in place on Semantic renderer's current variant before the branch:
+- 0s8raCUw: now architecture.rs paint_edge_line. The label is "rounded curves", because the painter places labels itself with label_anchor_of in geometry.rs.
+- ryvCaAp5: now export.rs symbol_of. Its mark entry calls standing_pin_at (legend_symbols.rs:220).
+- t5CUCz5T: now sequence.rs paint_frame, which calls paint_heading_views (sequence_frames.rs:60). The description names the Rust functions.
+- uGaKoVb8: now bun-host.ts loadCore.
+- o1aDteuC: now sequence.rs paint_step. Its line comes from step_path (sequence_messages.rs:112).
+- 7ZIx3pOn: now export.rs entries_of, which legend_of calls.
 <!-- SECTION:NOTES:END -->
