@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T04:40:00Z'
+updated_date: '2026-10-25T04:46:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -35,4 +35,6 @@ Pack: bun run pack:voice (Vite+ task voice-package, scripts/pack-codex-realtime-
 Consumer fixes on branch voice/consumer-fixes, commits 5fba76403 to 15dfda011. One: start() already rejected with startup_failed, and its TSDoc, the README quickstart and the example now treat that rejection as the contract. Two: the example disposes its client on every pagehide and makes a new one on a persisted pageshow, and the README quickstart matches. Three: workbenchStorage resolves the links above the host-given state and owner directories once at creation, and still refuses the directory itself or anything below it when it is a link. Four: the instructions TSDoc names the non-empty rule and its TypeError.
 
 Security review of 96ff7bc38: following every link above the state directory let a link planted in a shared ancestor (for example /tmp/app -> a directory of the user's) move the private Codex home anywhere in the user's tree, where start then accepted it. Fixed in 669ae33ee: only links that the user or root own, reached through directories no other user can change (or sticky ones such as /tmp), are followed; any other link stays in the path and the private-directory check refuses it at start. macOS /tmp and os.tmpdir() still resolve. Test: voice-agent.test.ts 'a link above the state directory in a directory other users can write is not followed'. Untested: the 'you or root own the link' rule needs a link owned by another uid, which a test cannot make without root. Follow-up: createCodexWorkbench runs mkdirSync recursive on the owner and coordinator directories before the storage check (owner/workbench.ts:112-113), so it can create empty 0700 directories where a link points; start still refuses such a path.
+
+README review (review/voice-readme): quickstart run from the packed tarball outside the repository; @types/bun is an optional type peer (b7af5a60f); Requirements name Node.js or bun run for the codex.js shebang, recordPrefix row, React ^19.2.8, start() concurrency, neutral entry rows (c77752f2f, 3d5ba38bd). Left: start() and a second start() reject with internal wording ('The production Codex workbench did not become ready', 'already installed' with no code); VoiceAgentOptions.context TSDoc says nothing beyond the conversation but the default lists the admitted checkouts.
 <!-- SECTION:NOTES:END -->
