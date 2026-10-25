@@ -85,7 +85,7 @@ function refuseAsFailed(context: StartContext, reason: string): WorkhorseStartRe
 
 /**
  * Refuse the start with an inspect-only snapshot: something may have happened in Codex that
- * Archboard cannot prove, so the workhorse is left visible but undriveable.
+ * the workbench cannot prove, so the workhorse is left visible but undriveable.
  * @param context - The start context.
  * @param reason - What could not be proven.
  * @param threadId - The thread involved, when there is one.
@@ -257,7 +257,7 @@ async function startWorkhorseThread(
 
 /**
  * Take durable ownership of the started thread and prove the committed record says so. Without
- * that record Archboard cannot claim the thread on a later run, so the start settles as unknown.
+ * that record the workbench cannot claim the thread on a later run, so the start settles as unknown.
  * @param context - The start context.
  * @param transaction - The staged transaction.
  * @param started - The validated start.

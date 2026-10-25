@@ -254,8 +254,8 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 						prompt: boundedText(16_384),
 						status: QueueStatusSchema,
 						/**
-						 * The Archboard operation that queued this submission, or null when
-						 * Archboard did not queue it. The server recovers it from the
+						 * The workbench operation that queued this submission, or null when
+						 * the workbench did not queue it. The server recovers it from the
 						 * submission's clientUserMessageId, which the queue port sets to the
 						 * serialized OperationId on every add it makes.
 						 */

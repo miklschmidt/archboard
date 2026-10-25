@@ -7,7 +7,9 @@ function ended(): never {
 }
 
 function call(tool: string, args: unknown) {
-	return { params: { namespace: TEST_TOOLS.workhorse.namespace.name, tool, arguments: args } } as never;
+	return {
+		params: { namespace: TEST_TOOLS.workhorse.namespace.name, tool, arguments: args },
+	} as never;
 }
 
 const checkoutNamedBy = (named: string) =>
@@ -47,8 +49,18 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 		workhorseOf,
 		checkoutNamedBy,
 	);
-	await readyDelegatedWorkhorse(call("delegate_to_workhorse", {}), TEST_TOOLS, workhorseOf, checkoutNamedBy);
-	await readyDelegatedWorkhorse(call("stop_workhorses", {}), TEST_TOOLS, workhorseOf, checkoutNamedBy);
+	await readyDelegatedWorkhorse(
+		call("delegate_to_workhorse", {}),
+		TEST_TOOLS,
+		workhorseOf,
+		checkoutNamedBy,
+	);
+	await readyDelegatedWorkhorse(
+		call("stop_workhorses", {}),
+		TEST_TOOLS,
+		workhorseOf,
+		checkoutNamedBy,
+	);
 	expect(started).toEqual([repository]);
 
 	// A start that fails leaves the delegation itself to answer.

@@ -1,6 +1,6 @@
 // What a write may write: the board read, the stated version checked, the
 // change applied and the candidate admitted under the vault's policy and the
-// board's own address. Nothing here takes a lease or writes a file.
+// board's own address. Nothing here takes a lease or writes the candidate.
 //
 // The write's own pass runs these checks under the lease (`write.ts`). A
 // preparation runs them with a read that holds no lease (`prepare.ts`), so a
@@ -237,8 +237,8 @@ function versionRefusal(
 
 /**
  * Read the board, check the stated version, apply the change and admit the
- * candidate. A refusal leaves the file as it was, and so does success: this
- * writes nothing.
+ * candidate. This writes no candidate, refused or admitted: only a read under
+ * the lease persists a schema migration it finds.
  * @param location Where the board lives.
  * @param command The vault, the change and the version the writer read.
  * @param at The timestamp to stamp the change with.

@@ -42,7 +42,7 @@ function emptySnapshot(state: "unbound" | "failed", reason: string | null): Coor
  * @param childId - The Codex child it runs on.
  * @param epoch - That child's epoch.
  * @param operationId - The issued operation identity.
- * @param configured - The settings Archboard asked for.
+ * @param configured - The settings the workbench asked for.
  * @returns The frozen snapshot.
  */
 function startingSnapshot(
@@ -108,10 +108,10 @@ function snapshotSettings(settings: CoordinatorSettings | null): SnapshotSetting
 
 /**
  * The snapshot for a coordinator thread that exists but must not be driven: it could not be
- * proven to be Archboard's own. It keeps everything that was read so a person can inspect it.
+ * proven to be the workbench's own. It keeps everything that was read so a person can inspect it.
  * @param threadId - The thread that was inspected.
  * @param operationId - The issued operation identity.
- * @param configured - The settings Archboard asked for.
+ * @param configured - The settings the workbench asked for.
  * @param settings - The settings that were read, when they were.
  * @param review - The reviewed instruction and manifest hashes, when they are known.
  * @param reason - Why the thread cannot be driven.
@@ -141,7 +141,7 @@ function inspectSnapshot(
 }
 
 /**
- * The snapshot for a coordinator that started, was proven to be Archboard's own, and is bound to
+ * The snapshot for a coordinator that started, was proven to be the workbench's own, and is bound to
  * the workbench.
  * @param persistence - The durable state the coordinator was proven against.
  * @returns The frozen snapshot.

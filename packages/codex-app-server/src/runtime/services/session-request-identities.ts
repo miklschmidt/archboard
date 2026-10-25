@@ -76,7 +76,7 @@ function createIdentitySerializers(
 		loginId: (value: unknown): unknown =>
 			decoder.serializeCodexIdentity(decoder.parseLoginId(value)),
 		/**
-		 * Accept a realtime session identity, which Codex names rather than Archboard issues.
+		 * Accept a realtime session identity, which Codex names rather than the client issues.
 		 * @param value - The caller's value.
 		 * @returns The parsed identity.
 		 */

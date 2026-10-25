@@ -3,11 +3,11 @@ import { isAbsolute, resolve } from "node:path";
 import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import { CodexEpochError, type CodexEpochErrorCode } from "#runtime/store/epoch/contract.ts";
 
-const CHILD_PATTERN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
+const CHILD_PATTERN = /^([a-z][a-z0-9-]{0,15}):child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const EPOCH_PATTERN =
-	/^archboard:epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
-const THREAD_PATTERN = /^archboard:thread:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
-const TURN_PATTERN = /^archboard:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
+	/^([a-z][a-z0-9-]{0,15}):epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
+const THREAD_PATTERN = /^[a-z][a-z0-9-]{0,15}:thread:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
+const TURN_PATTERN = /^[a-z][a-z0-9-]{0,15}:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
 const OPERATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._~:/-]{0,255}$/u;
 const TOKEN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._~:/-]{0,255}$/u;
 const HASH_PATTERN = /^[0-9a-f]{64}$/u;
@@ -72,7 +72,12 @@ function canonicalEpoch(value: unknown, childId: ChildId, label: string): ChildE
 	}
 	const match = EPOCH_PATTERN.exec(value);
 	const childMatch = CHILD_PATTERN.exec(childId);
-	if (match === null || childMatch === null || match[1] !== childMatch[1]) {
+	if (
+		match === null ||
+		childMatch === null ||
+		match[1] !== childMatch[1] ||
+		match[2] !== childMatch[2]
+	) {
 		throw epochError("invalid_input", `${label} must be bound to the supplied child identity`);
 	}
 	return adoptIdentity(value);

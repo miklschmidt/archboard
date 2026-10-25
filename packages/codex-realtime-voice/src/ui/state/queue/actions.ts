@@ -19,12 +19,12 @@ import type {
 } from "#ui/state/queue/transport-port.ts";
 
 const DELIVERED_MESSAGES = {
-	add: "The Archboard server queued the submission and republished the queue.",
-	list: "The Archboard server re-read and republished the authoritative queue for this thread link.",
-	edit: "The Archboard server updated the queued submission and republished the queue.",
-	cancel: "The Archboard server deleted the queued submission and republished the queue.",
-	reorder: "The Archboard server applied the submitted order and republished the queue.",
-	start: "The Archboard server started the queued submission and republished the queue.",
+	add: "The server queued the submission and republished the queue.",
+	list: "The server re-read and republished the authoritative queue for this thread link.",
+	edit: "The server updated the queued submission and republished the queue.",
+	cancel: "The server deleted the queued submission and republished the queue.",
+	reorder: "The server applied the submitted order and republished the queue.",
+	start: "The server started the queued submission and republished the queue.",
 } as const satisfies Record<WorkbenchQueueControl, string>;
 
 const UNKNOWN_MESSAGES = {
@@ -80,7 +80,7 @@ function settle(
 		control,
 		state: "refused",
 		code: result.code,
-		message: result.message ?? "The Archboard server refused the queue command.",
+		message: result.message ?? "The server refused the queue command.",
 		submissionId,
 	});
 }

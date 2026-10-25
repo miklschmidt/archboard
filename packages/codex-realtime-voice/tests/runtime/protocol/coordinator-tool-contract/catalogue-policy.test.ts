@@ -1,8 +1,7 @@
 import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
-import {
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import {} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	VOICE_TOOL_CONTRACTS,
 	WORKHORSE_TOOL_CONTRACTS,

@@ -1,15 +1,16 @@
 import { isAbsolute, resolve } from "node:path";
 
+// An identity is `<record prefix>:<domain>:<token>`, the prefix being the host's.
 const CANONICAL_IDENTITY_PATTERNS = Object.freeze({
-	child: /^archboard:child:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
-	thread: /^archboard:thread:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
-	turn: /^archboard:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
+	child: /^[a-z][a-z0-9-]{0,15}:child:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
+	thread: /^[a-z][a-z0-9-]{0,15}:thread:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
+	turn: /^[a-z][a-z0-9-]{0,15}:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
 	epoch:
-		/^archboard:epoch:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}\.[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
+		/^[a-z][a-z0-9-]{0,15}:epoch:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}\.[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u,
 });
-const CHILD_TOKEN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
+const CHILD_TOKEN = /^([a-z][a-z0-9-]{0,15}):child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const EPOCH_CHILD_TOKEN =
-	/^archboard:epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
+	/^([a-z][a-z0-9-]{0,15}):epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u;
 const BOUNDED_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~:/-]{0,255}$/u;
 const SHA256_HEX = /^[0-9a-f]{64}$/u;
 const MAX_PATH_LENGTH = 4096;
@@ -68,7 +69,7 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
 }
 
 /**
- * Whether a value is an Archboard identity of the given kind.
+ * Whether a value is a canonical identity of the given kind.
  * @param value The value.
  * @param kind Which identity it should be.
  * @returns True when it matches that kind's minted form.
@@ -88,9 +89,14 @@ function epochBelongsToChild(epoch: unknown, child: unknown): boolean {
 	if (!isNonEmptyString(epoch) || !isNonEmptyString(child)) {
 		return false;
 	}
-	const childToken = CHILD_TOKEN.exec(child)?.[1];
-	const epochChild = EPOCH_CHILD_TOKEN.exec(epoch)?.[1];
-	return childToken !== undefined && epochChild === childToken;
+	const childMatch = CHILD_TOKEN.exec(child);
+	const epochMatch = EPOCH_CHILD_TOKEN.exec(epoch);
+	return (
+		childMatch !== null &&
+		epochMatch !== null &&
+		epochMatch[1] === childMatch[1] &&
+		epochMatch[2] === childMatch[2]
+	);
 }
 
 /**

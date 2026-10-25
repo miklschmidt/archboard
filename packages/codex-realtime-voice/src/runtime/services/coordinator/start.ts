@@ -108,7 +108,7 @@ interface CoordinatorStartHooks {
  * Build the step that starts one coordinator thread and proves it is the reviewed one: stage the
  * durable operation, start the thread, apply the reviewed settings, wait for Codex to confirm
  * them, then commit ownership. Every step that cannot prove what happened leaves the thread
- * inspect-only rather than claiming a coordinator Archboard cannot drive.
+ * inspect-only rather than claiming a coordinator the workbench cannot drive.
  * @param options - The session, epoch store and identity authority.
  * @param hooks - How the starter publishes snapshots and retains durable state.
  * @returns The start step and the notification handler its settings handshake needs.
