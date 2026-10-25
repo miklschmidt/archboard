@@ -1,1 +1,2928 @@
-{"picture":{"grammar":"architecture","drawing":{"direction":"down","width":1417.095002746582,"height":1355,"cards":[{"measured":{"node":{"id":"tFTiAUKg","order":2000,"name":"Handshake and request path","kind":"function","responsibility":"Runs the handshake once, then is the one path every call takes: serialize, send, decode, adopt","description":"createCodexSession: initialize, write initialized, read the config requirements and the config as the child's working directory sees it (workingDirectory: the coordinator's own directory, which is no checkout), prove storage, and advance the explicit session phase; notifications are buffered until the session is ready. requestDecoded serializes the parameters, decodes them against the protocol, sends them on the transport, checks the epoch, decodes the answer and adopts its identities, reporting any failure of a mutation as a delivery outcome.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts"}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Handshake and request path","width":192.75,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Runs the handshake once, then is the one path","width":241.17999267578125,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"every call takes: serialize, send, decode, adopt","width":237.2899932861328,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":677.5300015258789,"y":428,"width":340,"height":88},"depth":0},{"measured":{"node":{"id":"Ly6hUU5o","order":3000,"name":"Prove isolated storage","kind":"function","responsibility":"Verify prepared child paths","description":"Compares handshake storage facts with canonical, non-symlinked CODEX_HOME, SQLite, and config paths before the session becomes usable.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/store/storage-proof.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Prove isolated storage","width":150.5399932861328,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Verify prepared child paths","width":138.8699951171875,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":493.5300015258789,"y":647,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"JBu1uGdl","order":4000,"name":"Gate protocol operations","kind":"function","responsibility":"Expose allowed reads and mutations","description":"Implements the reviewed login, thread, turn, queue, timeline, and realtime methods as reads or mutations of the request path, behind login-capable and thread-capable gates.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Gate protocol operations","width":167.16000366210938,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Expose allowed reads and mutations","width":187.86000061035156,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":307.5300015258789,"y":187,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"X6j6fViI","order":5000,"name":"Serialize request identities","kind":"function","responsibility":"Prove IDs before wire encoding","description":"Validates every identity-bearing request field against the current child authority and serializes only issued identities for the wire.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Serialize request identities","width":176.86000061035156,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Prove IDs before wire encoding","width":161.13999938964844,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":493.5300015258789,"y":854,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"aRDbMlep","order":6000,"name":"Response contracts","kind":"function","responsibility":"Which identity kinds each method's result carries, derived from the protocol schemas","description":"Defines the response shapes of the session's methods from the codex-protocol schemas and SESSION_PROTOCOL_METHODS, the identity kinds each result contains, which the adoption step collects.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/schemas/session-responses.ts"}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Response contracts","width":133.2100067138672,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Which identity kinds each method's result carries,","width":254.92999267578125,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"derived from the protocol schemas","width":179.05999755859375,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":357.5300015258789,"y":1247,"width":340,"height":88},"depth":0},{"measured":{"node":{"id":"M3mPynLe","order":7000,"name":"Adopt response identities","kind":"function","responsibility":"Brand returned IDs atomically","description":"Collects all raw identities in a decoded response, adopts them in one authority transaction, and overlays their trusted brands.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Adopt response identities","width":171.82000732421875,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Brand returned IDs atomically","width":152.38999938964844,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":545.5300015258789,"y":1060,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"3FR6mev4","order":8000,"name":"Answer reverse requests","kind":"function","responsibility":"Handle child-originated calls","description":"Routes current-time requests for owned threads and explicitly refuses unsupported token refresh and attestation requests.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-reverse-requests.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Answer reverse requests","width":166.3300018310547,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Handle child-originated calls","width":145.61000061035156,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":793.5300015258789,"y":854,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"8QpDaiD6","order":9000,"name":"Classify request failures","kind":"function","responsibility":"State mutation delivery outcome","description":"Distinguishes invalid inputs and failures that were not delivered from mutations whose remote outcome is unknown and requires inspection.","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-failures.ts"}},"width":260,"height":72,"headerHeight":0,"runs":[{"text":"Classify request failures","width":160.5,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"State mutation delivery outcome","width":168.33999633789062,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":58.5300015258789,"y":1060,"width":260,"height":72},"depth":0},{"measured":{"node":{"id":"FPKa6YCR","order":10000,"name":"Workhorse start","kind":"module","responsibility":"The caller that opens a thread on this session under an epoch transaction","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/runtime/services/workhorse-start"},"drillDown":{"board":"Codex workhorse","variant":{"kind":"current"}}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Workhorse start","width":108.13999938964844,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"The caller that opens a thread on this session under","width":265.6099853515625,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"an epoch transaction","width":108.70999908447266,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":267.5300015258789,"y":20,"width":340,"height":88},"depth":0},{"measured":{"node":{"id":"ql0DevMk","order":11000,"name":"Codex transport","kind":"module","responsibility":"The wire under the session: one newline-framed JSON object at a time, each way","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/clients"}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Codex transport","width":108.66999816894531,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"The wire under the session: one newline-framed","width":247.22999572753906,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"JSON object at a time, each way","width":168.3800048828125,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":955.5000015258789,"y":647,"width":340,"height":88},"depth":0},{"measured":{"node":{"id":"Sk7GfGta","order":12000,"name":"Codex protocol","kind":"module","responsibility":"The pinned app-server contract every request and response is decoded against","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/protocol"}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Codex protocol","width":102.3499984741211,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"The pinned app-server contract every request and","width":260.4200134277344,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"response is decoded against","width":147,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":1048.5000015258788,"y":1060,"width":340,"height":88},"depth":0},{"measured":{"node":{"id":"xtHoCCnF","order":13000,"name":"Generation hooks","kind":"module","responsibility":"Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/server/services/generation/hooks.ts"}},"width":340,"height":122,"headerHeight":0,"runs":[{"text":"Generation hooks","width":117.55999755859375,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"Takes the child's epoch, with the coordinator's own","width":263.010009765625,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"directory as its workspace root, then initializes the","width":258.6099853515625,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"session and reads the account before a generation","width":261.4100036621094,"x":52,"y":83,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"is ready","width":40.59000015258789,"x":52,"y":100,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":677.5300015258789,"y":187,"width":340,"height":122},"depth":0},{"measured":{"node":{"id":"99KMASDs","order":14000,"name":"Reviewed login policy","kind":"config","responsibility":"States which reviewed login variants the session supports or refuses","binding":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/schemas/authored-schemas.ts","symbol":"LOGIN_POLICIES"}},"width":340,"height":88,"headerHeight":0,"runs":[{"text":"Reviewed login policy","width":145.6699981689453,"x":52,"y":30,"font":{"family":"sans","weight":500},"fontSize":14,"role":"title"},{"text":"States which reviewed login variants the session","width":250.61000061035156,"x":52,"y":49,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"},{"text":"supports or refuses","width":100.45999908447266,"x":52,"y":66,"font":{"family":"sans","weight":400},"fontSize":11,"role":"note"}]},"box":{"x":267.5300015258789,"y":428,"width":340,"height":88},"depth":0}],"containers":[],"edges":[{"edge":{"id":"qQrqNYdt","order":1000,"from":"xtHoCCnF","to":"tFTiAUKg","kind":"call","label":"initialize, once","description":"The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.","emphasis":"hero","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/server/services/generation/hooks.ts","symbol":"initialize"}},"curve":{"from":{"x":854.5300015258789,"y":309},"segments":[{"kind":"line","to":{"x":854.5300015258789,"y":428}}]},"path":"M854.53,309 L854.53,428","label":{"measured":{"width":87.36000061035156,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"initialize, once","width":67.36000061035156,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":810.8500012207031,"y":353,"width":87.36000061035156,"height":31}}},{"edge":{"id":"SI5PTs6X","order":3000,"from":"tFTiAUKg","to":"X6j6fViI","kind":"call","label":"serialize issued identities","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"createRequestParamsSerializer"}},"curve":{"from":{"x":713.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":713.5300015258789,"y":540}},{"kind":"cubic","first":{"x":713.5300015258789,"y":544.4184},"second":{"x":709.9484015258789,"y":548},"to":{"x":705.5300015258789,"y":548}},{"kind":"line","to":{"x":481.5300015258789,"y":548}},{"kind":"cubic","first":{"x":477.1116015258789,"y":548},"second":{"x":473.5300015258789,"y":551.5816},"to":{"x":473.5300015258789,"y":556}},{"kind":"line","to":{"x":473.5300015258789,"y":818}},{"kind":"cubic","first":{"x":473.5300015258789,"y":822.4184},"second":{"x":477.1116015258789,"y":826},"to":{"x":481.5300015258789,"y":826}},{"kind":"line","to":{"x":505.5300015258789,"y":826}},{"kind":"cubic","first":{"x":509.9484015258789,"y":826},"second":{"x":513.5300015258789,"y":829.5816},"to":{"x":513.5300015258789,"y":834}},{"kind":"line","to":{"x":513.5300015258789,"y":854}}]},"path":"M713.53,516 L713.53,540 C713.53,544.42 709.95,548 705.53,548 L481.53,548 C477.11,548 473.53,551.58 473.53,556 L473.53,818 C473.53,822.42 477.11,826 481.53,826 L505.53,826 C509.95,826 513.53,829.58 513.53,834 L513.53,854","label":{"measured":{"width":138.8499984741211,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"serialize issued identities","width":118.8499984741211,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":404.10500228881835,"y":779,"width":138.8499984741211,"height":31}}},{"edge":{"id":"HlhfxXJm","order":5000,"from":"tFTiAUKg","to":"M3mPynLe","kind":"call","label":"adopt returned identities","emphasis":"normal","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"adoptSessionResponse"}},"curve":{"from":{"x":772,"y":516},"segments":[{"kind":"line","to":{"x":772,"y":1060}}]},"path":"M772,516 L772,1060","label":{"measured":{"width":139.1699981689453,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"adopt returned identities","width":119.16999816894531,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":702.4150009155273,"y":977.5,"width":139.1699981689453,"height":31}}},{"edge":{"id":"mpJAeANo","order":6000,"from":"tFTiAUKg","to":"8QpDaiD6","kind":"call","label":"settle mutation failure","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"mutationFailure"}},"curve":{"from":{"x":697.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":697.5300015258789,"y":524}},{"kind":"cubic","first":{"x":697.5300015258789,"y":528.4184},"second":{"x":693.9484015258789,"y":532},"to":{"x":689.5300015258789,"y":532}},{"kind":"line","to":{"x":229.46487636677836,"y":532}},{"kind":"cubic","first":{"x":225.04647636677836,"y":532},"second":{"x":221.46487636677836,"y":535.5816},"to":{"x":221.46487636677836,"y":540}},{"kind":"line","to":{"x":221.46487636677836,"y":1060}}]},"path":"M697.53,516 L697.53,524 C697.53,528.42 693.95,532 689.53,532 L229.46,532 C225.05,532 221.46,535.58 221.46,540 L221.46,1060","label":{"measured":{"width":124.56999969482422,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"settle mutation failure","width":104.56999969482422,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":159.17987651936625,"y":874.5,"width":124.56999969482422,"height":31}}},{"edge":{"id":"7dDHchT9","order":9000,"from":"FPKa6YCR","to":"JBu1uGdl","kind":"call","label":"thread/start for a new workhorse","description":"The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/runtime/services/workhorse-start/start.ts","symbol":"threadStart"}},"curve":{"from":{"x":437.5300015258789,"y":108},"segments":[{"kind":"line","to":{"x":437.5300015258789,"y":187}}]},"path":"M437.53,108 L437.53,187","label":{"measured":{"width":179.80999755859375,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"thread/start for a new workhorse","width":159.80999755859375,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":347.625002746582,"y":132,"width":179.80999755859375,"height":31}}},{"edge":{"id":"EAKN00R4","order":10000,"from":"tFTiAUKg","to":"ql0DevMk","kind":"rpc","label":"one request frame","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"request"}},"curve":{"from":{"x":986.5150015258789,"y":516},"segments":[{"kind":"line","to":{"x":986.5150015258789,"y":647}}]},"path":"M986.52,516 L986.52,647","label":{"measured":{"width":107.44000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"one request frame","width":87.44000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":932.7950003051758,"y":592,"width":107.44000244140625,"height":31}}},{"edge":{"id":"blvoJ8p8","order":12000,"from":"ql0DevMk","to":"3FR6mev4","kind":"event","label":"a request the child made of us","description":"createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"onServerRequest"}},"curve":{"from":{"x":986.5150015258789,"y":735},"segments":[{"kind":"line","to":{"x":986.5150015258789,"y":743}},{"kind":"cubic","first":{"x":986.5150015258789,"y":747.4184},"second":{"x":982.9334015258789,"y":751},"to":{"x":978.5150015258789,"y":751}},{"kind":"line","to":{"x":920.375002746582,"y":751}},{"kind":"cubic","first":{"x":915.956602746582,"y":751},"second":{"x":912.375002746582,"y":754.5816},"to":{"x":912.375002746582,"y":759}},{"kind":"line","to":{"x":912.375002746582,"y":854}}]},"path":"M986.52,735 L986.52,743 C986.52,747.42 982.93,751 978.52,751 L920.38,751 C915.96,751 912.38,754.58 912.38,759 L912.38,854","label":{"measured":{"width":163.69000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"a request the child made of us","width":143.69000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":830.5300015258789,"y":779,"width":163.69000244140625,"height":31}}},{"edge":{"id":"jhNZqAiD","order":13000,"from":"JBu1uGdl","to":"tFTiAUKg","kind":"call","label":"read or mutate, behind its gate","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"mutate"}},"curve":{"from":{"x":547.5300015258789,"y":259},"segments":[{"kind":"line","to":{"x":547.5300015258789,"y":392}},{"kind":"cubic","first":{"x":547.5300015258789,"y":396.4184},"second":{"x":551.1116015258789,"y":400},"to":{"x":555.5300015258789,"y":400}},{"kind":"line","to":{"x":689.5300015258789,"y":400}},{"kind":"cubic","first":{"x":693.9484015258789,"y":400},"second":{"x":697.5300015258789,"y":403.5816},"to":{"x":697.5300015258789,"y":408}},{"kind":"line","to":{"x":697.5300015258789,"y":428}}]},"path":"M547.53,259 L547.53,392 C547.53,396.42 551.11,400 555.53,400 L689.53,400 C693.95,400 697.53,403.58 697.53,408 L697.53,428","label":{"measured":{"width":167.60000610351562,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"read or mutate, behind its gate","width":147.60000610351562,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":463.7299984741211,"y":353,"width":167.60000610351562,"height":31}}},{"edge":{"id":"d2caVqCr","order":14000,"from":"tFTiAUKg","to":"Sk7GfGta","kind":"call","label":"decode parameters and answer","emphasis":"normal","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"decodeResponse"}},"curve":{"from":{"x":1002.5150015258789,"y":516},"segments":[{"kind":"line","to":{"x":1002.5150015258789,"y":524}},{"kind":"cubic","first":{"x":1002.5150015258789,"y":528.4184},"second":{"x":1006.0966015258789,"y":532},"to":{"x":1010.5150015258789,"y":532}},{"kind":"line","to":{"x":1303.5000015258788,"y":532}},{"kind":"cubic","first":{"x":1307.9184015258788,"y":532},"second":{"x":1311.5000015258788,"y":535.5816},"to":{"x":1311.5000015258788,"y":540}},{"kind":"line","to":{"x":1311.5000015258788,"y":1060}}]},"path":"M1002.52,516 L1002.52,524 C1002.52,528.42 1006.1,532 1010.52,532 L1303.5,532 C1307.92,532 1311.5,535.58 1311.5,540 L1311.5,1060","label":{"measured":{"width":171.19000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"decode parameters and answer","width":151.19000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1225.9050003051757,"y":592,"width":171.19000244140625,"height":31}}},{"edge":{"id":"JOmIweJF","order":15000,"from":"M3mPynLe","to":"aRDbMlep","kind":"dependency","label":"which identities each result holds","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts","symbol":"SESSION_PROTOCOL_METHODS"}},"curve":{"from":{"x":730.3355251104205,"y":1132},"segments":[{"kind":"line","to":{"x":730.3355251104205,"y":1211}},{"kind":"cubic","first":{"x":730.3355251104205,"y":1215.4184},"second":{"x":726.7539251104205,"y":1219},"to":{"x":722.3355251104205,"y":1219}},{"kind":"line","to":{"x":685.5300015258789,"y":1219}},{"kind":"cubic","first":{"x":681.1116015258789,"y":1219},"second":{"x":677.5300015258789,"y":1222.5816},"to":{"x":677.5300015258789,"y":1227}},{"kind":"line","to":{"x":677.5300015258789,"y":1247}}]},"path":"M730.34,1132 L730.34,1211 C730.34,1215.42 726.75,1219 722.34,1219 L685.53,1219 C681.11,1219 677.53,1222.58 677.53,1227 L677.53,1247","label":{"measured":{"width":179.44000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"which identities each result holds","width":159.44000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":640.6155238897173,"y":1172,"width":179.44000244140625,"height":31}}},{"edge":{"id":"JTrBju8L","order":16000,"from":"tFTiAUKg","to":"Ly6hUU5o","kind":"call","label":"prove storage after config/read","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"proveCodexStorage"}},"curve":{"from":{"x":729.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":729.5300015258789,"y":556}},{"kind":"cubic","first":{"x":729.5300015258789,"y":560.4184},"second":{"x":725.9484015258789,"y":564},"to":{"x":721.5300015258789,"y":564}},{"kind":"line","to":{"x":673.5300015258789,"y":564}},{"kind":"cubic","first":{"x":669.1116015258789,"y":564},"second":{"x":665.5300015258789,"y":567.5816},"to":{"x":665.5300015258789,"y":572}},{"kind":"line","to":{"x":665.5300015258789,"y":647}}]},"path":"M729.53,516 L729.53,556 C729.53,560.42 725.95,564 721.53,564 L673.53,564 C669.11,564 665.53,567.58 665.53,572 L665.53,647","label":{"measured":{"width":171.86000061035156,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"prove storage after config/read","width":151.86000061035156,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":579.6000012207031,"y":592,"width":171.86000061035156,"height":31}}},{"edge":{"id":"bEmVBBGp","order":17000,"from":"3FR6mev4","to":"ql0DevMk","kind":"call","label":"answer the clock, refuse the rest","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-reverse-requests.ts","symbol":"respond"}},"curve":{"from":{"x":1033.5300015258788,"y":854},"segments":[{"kind":"line","to":{"x":1033.5300015258788,"y":834}},{"kind":"cubic","first":{"x":1033.5300015258788,"y":829.5816},"second":{"x":1037.1116015258788,"y":826},"to":{"x":1041.5300015258788,"y":826}},{"kind":"line","to":{"x":1097.8300045776366,"y":826}},{"kind":"cubic","first":{"x":1102.2484045776366,"y":826},"second":{"x":1105.8300045776366,"y":822.4184},"to":{"x":1105.8300045776366,"y":818}},{"kind":"line","to":{"x":1105.8300045776366,"y":735}}]},"path":"M1033.53,854 L1033.53,834 C1033.53,829.58 1037.11,826 1041.53,826 L1097.83,826 C1102.25,826 1105.83,822.42 1105.83,818 L1105.83,735","label":{"measured":{"width":175.22000122070312,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"answer the clock, refuse the rest","width":155.22000122070312,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1018.2200039672852,"y":779,"width":175.22000122070312,"height":31}}},{"edge":{"id":"cDYih9Cs","order":18000,"from":"tFTiAUKg","to":"3FR6mev4","kind":"call","label":"install the answers to the child's requests","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"createReverseRequestHandlers"}},"curve":{"from":{"x":854.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":854.5300015258789,"y":743}},{"kind":"cubic","first":{"x":854.5300015258789,"y":747.4184},"second":{"x":850.9484015258789,"y":751},"to":{"x":846.5300015258789,"y":751}},{"kind":"line","to":{"x":822.5300015258789,"y":751}},{"kind":"cubic","first":{"x":818.1116015258789,"y":751},"second":{"x":814.5300015258789,"y":754.5816},"to":{"x":814.5300015258789,"y":759}},{"kind":"line","to":{"x":814.5300015258789,"y":854}}]},"path":"M854.53,516 L854.53,743 C854.53,747.42 850.95,751 846.53,751 L822.53,751 C818.11,751 814.53,754.58 814.53,759 L814.53,854","label":{"measured":{"width":121.9800033569336,"height":46,"chips":[{"y":0,"height":46}],"runs":[{"text":"install the answers to","width":101.9800033569336,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"},{"text":"the child's requests","width":93,"x":14.490001678466797,"y":33,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":793.5399998474121,"y":668,"width":121.9800033569336,"height":46}}},{"edge":{"id":"7wUmdcxh","order":19000,"from":"X6j6fViI","to":"aRDbMlep","kind":"dependency","label":"which fields each request issues","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"SESSION_PROTOCOL_METHODS"}},"curve":{"from":{"x":529.3605266362994,"y":926},"segments":[{"kind":"line","to":{"x":529.3605266362994,"y":1247}}]},"path":"M529.36,926 L529.36,1247","label":{"measured":{"width":174.50999450683594,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"which fields each request issues","width":154.50999450683594,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":442.1055293828814,"y":1172,"width":174.50999450683594,"height":31}}},{"edge":{"id":"wVgRmbf8","order":20000,"from":"JBu1uGdl","to":"8QpDaiD6","kind":"call","label":"did a failed logout reach the child","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"mutationOutcome"}},"curve":{"from":{"x":325.68999755859375,"y":259},"segments":[{"kind":"line","to":{"x":325.68999755859375,"y":317}},{"kind":"cubic","first":{"x":325.68999755859375,"y":321.4184},"second":{"x":322.10839755859377,"y":325},"to":{"x":317.68999755859375,"y":325}},{"kind":"line","to":{"x":117.5250015258789,"y":325}},{"kind":"cubic","first":{"x":113.1066015258789,"y":325},"second":{"x":109.5250015258789,"y":328.5816},"to":{"x":109.5250015258789,"y":333}},{"kind":"line","to":{"x":109.5250015258789,"y":1060}}]},"path":"M325.69,259 L325.69,317 C325.69,321.42 322.11,325 317.69,325 L117.53,325 C113.11,325 109.53,328.58 109.53,333 L109.53,1060","label":{"measured":{"width":179.0500030517578,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"did a failed logout reach the child","width":159.0500030517578,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":20,"y":456.5,"width":179.0500030517578,"height":31}}},{"edge":{"id":"40GtFaKL","order":21000,"from":"JBu1uGdl","to":"99KMASDs","kind":"dependency","label":"supported and refused login variants","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"LOGIN_POLICIES"}},"curve":{"from":{"x":341.68999755859375,"y":259},"segments":[{"kind":"line","to":{"x":341.68999755859375,"y":428}}]},"path":"M341.69,259 L341.69,428","label":{"measured":{"width":196.0800018310547,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"supported and refused login variants","width":176.0800018310547,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":243.64999664306637,"y":353,"width":196.0800018310547,"height":31}}},{"edge":{"id":"OjFVoTcz","order":22000,"from":"ql0DevMk","to":"Sk7GfGta","kind":"dependency","label":"decode each inbound frame","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/operations/inbound-router.ts","symbol":"decodeServerNotification"}},"curve":{"from":{"x":1218.5000015258788,"y":735},"segments":[{"kind":"line","to":{"x":1218.5000015258788,"y":1060}}]},"path":"M1218.5,735 L1218.5,1060","label":{"measured":{"width":153.4199981689453,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"decode each inbound frame","width":133.4199981689453,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1141.7900024414062,"y":874.5,"width":153.4199981689453,"height":31}}},{"edge":{"id":"s0Qx9DbR","order":23000,"from":"X6j6fViI","to":"8QpDaiD6","kind":"call","label":"refuse params that are no object","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"requestParams"}},"curve":{"from":{"x":513.5300015258789,"y":926},"segments":[{"kind":"line","to":{"x":513.5300015258789,"y":934}},{"kind":"cubic","first":{"x":513.5300015258789,"y":938.4184},"second":{"x":509.9484015258789,"y":942},"to":{"x":505.5300015258789,"y":942}},{"kind":"line","to":{"x":433.62052877252984,"y":942}},{"kind":"cubic","first":{"x":429.2021287725298,"y":942},"second":{"x":425.62052877252984,"y":945.5816},"to":{"x":425.62052877252984,"y":950}},{"kind":"line","to":{"x":425.62052877252984,"y":1024}},{"kind":"cubic","first":{"x":425.62052877252984,"y":1028.4184},"second":{"x":422.03892877252986,"y":1032},"to":{"x":417.62052877252984,"y":1032}},{"kind":"line","to":{"x":306.5300015258789,"y":1032}},{"kind":"cubic","first":{"x":302.1116015258789,"y":1032},"second":{"x":298.5300015258789,"y":1035.5816},"to":{"x":298.5300015258789,"y":1040}},{"kind":"line","to":{"x":298.5300015258789,"y":1060}}]},"path":"M513.53,926 L513.53,934 C513.53,938.42 509.95,942 505.53,942 L433.62,942 C429.2,942 425.62,945.58 425.62,950 L425.62,1024 C425.62,1028.42 422.04,1032 417.62,1032 L306.53,1032 C302.11,1032 298.53,1035.58 298.53,1040 L298.53,1060","label":{"measured":{"width":175.47999572753906,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"refuse params that are no object","width":155.47999572753906,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":337.8805309087603,"y":977.5,"width":175.47999572753906,"height":31}}},{"edge":{"id":"cGImVr7b","order":24000,"from":"X6j6fViI","to":"Sk7GfGta","kind":"dependency","label":"request methods and their parameters","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"isClientRequestMethodWithoutParams"}},"curve":{"from":{"x":618.5,"y":926},"segments":[{"kind":"line","to":{"x":618.5,"y":1024}},{"kind":"cubic","first":{"x":618.5,"y":1028.4184},"second":{"x":622.0816,"y":1032},"to":{"x":626.5,"y":1032}},{"kind":"line","to":{"x":1060.5000015258788,"y":1032}},{"kind":"cubic","first":{"x":1064.9184015258788,"y":1032},"second":{"x":1068.5000015258788,"y":1035.5816},"to":{"x":1068.5000015258788,"y":1040}},{"kind":"line","to":{"x":1068.5000015258788,"y":1060}}]},"path":"M618.5,926 L618.5,1024 C618.5,1028.42 622.08,1032 626.5,1032 L1060.5,1032 C1064.92,1032 1068.5,1035.58 1068.5,1040 L1068.5,1060","label":{"measured":{"width":119.83000183105469,"height":46,"chips":[{"y":0,"height":46}],"runs":[{"text":"request methods","width":80.77999877929688,"x":19.525001525878906,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"},{"text":"and their parameters","width":99.83000183105469,"x":10,"y":33,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":558.5849990844727,"y":970,"width":119.83000183105469,"height":46}}}],"bridged":{"edges":[{"edge":{"id":"qQrqNYdt","order":1000,"from":"xtHoCCnF","to":"tFTiAUKg","kind":"call","label":"initialize, once","description":"The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.","emphasis":"hero","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/server/services/generation/hooks.ts","symbol":"initialize"}},"curve":{"from":{"x":854.5300015258789,"y":309},"segments":[{"kind":"line","to":{"x":854.5300015258789,"y":428}}]},"path":"M854.53,309 L854.53,428","label":{"measured":{"width":87.36000061035156,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"initialize, once","width":67.36000061035156,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":810.8500012207031,"y":353,"width":87.36000061035156,"height":31}}},{"edge":{"id":"SI5PTs6X","order":3000,"from":"tFTiAUKg","to":"X6j6fViI","kind":"call","label":"serialize issued identities","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"createRequestParamsSerializer"}},"curve":{"from":{"x":713.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":713.5300015258789,"y":540}},{"kind":"cubic","first":{"x":713.5300015258789,"y":544.4184},"second":{"x":709.9484015258789,"y":548},"to":{"x":705.5300015258789,"y":548}},{"kind":"line","to":{"x":481.5300015258789,"y":548}},{"kind":"cubic","first":{"x":477.1116015258789,"y":548},"second":{"x":473.5300015258789,"y":551.5816},"to":{"x":473.5300015258789,"y":556}},{"kind":"line","to":{"x":473.5300015258789,"y":818}},{"kind":"cubic","first":{"x":473.5300015258789,"y":822.4184},"second":{"x":477.1116015258789,"y":826},"to":{"x":481.5300015258789,"y":826}},{"kind":"line","to":{"x":505.5300015258789,"y":826}},{"kind":"cubic","first":{"x":509.9484015258789,"y":826},"second":{"x":513.5300015258789,"y":829.5816},"to":{"x":513.5300015258789,"y":834}},{"kind":"line","to":{"x":513.5300015258789,"y":854}}]},"path":"M713.53,516 L713.53,540 C713.53,544.42 709.95,548 705.53,548 L481.53,548 C477.11,548 473.53,551.58 473.53,556 L473.53,818 C473.53,822.42 477.11,826 481.53,826 L505.53,826 C509.95,826 513.53,829.58 513.53,834 L513.53,854","label":{"measured":{"width":138.8499984741211,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"serialize issued identities","width":118.8499984741211,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":404.10500228881835,"y":779,"width":138.8499984741211,"height":31}}},{"edge":{"id":"HlhfxXJm","order":5000,"from":"tFTiAUKg","to":"M3mPynLe","kind":"call","label":"adopt returned identities","emphasis":"normal","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"adoptSessionResponse"}},"curve":{"from":{"x":772,"y":516},"segments":[{"kind":"line","to":{"x":772,"y":1025}},{"kind":"cubic","first":{"x":775.8659932488156,"y":1025},"second":{"x":779,"y":1028.1340067511844},"to":{"x":779,"y":1032}},{"kind":"cubic","first":{"x":779,"y":1035.8659932488156},"second":{"x":775.8659932488156,"y":1039},"to":{"x":772,"y":1039}},{"kind":"line","to":{"x":772,"y":1060}}]},"path":"M772,516 L772,1025 C775.87,1025 779,1028.13 779,1032 C779,1035.87 775.87,1039 772,1039 L772,1060","label":{"measured":{"width":139.1699981689453,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"adopt returned identities","width":119.16999816894531,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":702.4150009155273,"y":977.5,"width":139.1699981689453,"height":31}}},{"edge":{"id":"mpJAeANo","order":6000,"from":"tFTiAUKg","to":"8QpDaiD6","kind":"call","label":"settle mutation failure","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"mutationFailure"}},"curve":{"from":{"x":697.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":697.5300015258789,"y":524}},{"kind":"cubic","first":{"x":697.5300015258789,"y":528.4184},"second":{"x":693.9484015258789,"y":532},"to":{"x":689.5300015258789,"y":532}},{"kind":"line","to":{"x":229.46487636677836,"y":532}},{"kind":"cubic","first":{"x":225.04647636677836,"y":532},"second":{"x":221.46487636677836,"y":535.5816},"to":{"x":221.46487636677836,"y":540}},{"kind":"line","to":{"x":221.46487636677836,"y":1060}}]},"path":"M697.53,516 L697.53,524 C697.53,528.42 693.95,532 689.53,532 L229.46,532 C225.05,532 221.46,535.58 221.46,540 L221.46,1060","label":{"measured":{"width":124.56999969482422,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"settle mutation failure","width":104.56999969482422,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":159.17987651936625,"y":874.5,"width":124.56999969482422,"height":31}}},{"edge":{"id":"7dDHchT9","order":9000,"from":"FPKa6YCR","to":"JBu1uGdl","kind":"call","label":"thread/start for a new workhorse","description":"The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/workbench/src/runtime/services/workhorse-start/start.ts","symbol":"threadStart"}},"curve":{"from":{"x":437.5300015258789,"y":108},"segments":[{"kind":"line","to":{"x":437.5300015258789,"y":187}}]},"path":"M437.53,108 L437.53,187","label":{"measured":{"width":179.80999755859375,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"thread/start for a new workhorse","width":159.80999755859375,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":347.625002746582,"y":132,"width":179.80999755859375,"height":31}}},{"edge":{"id":"EAKN00R4","order":10000,"from":"tFTiAUKg","to":"ql0DevMk","kind":"rpc","label":"one request frame","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"request"}},"curve":{"from":{"x":986.5150015258789,"y":516},"segments":[{"kind":"line","to":{"x":986.5150015258789,"y":647}}]},"path":"M986.52,516 L986.52,647","label":{"measured":{"width":107.44000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"one request frame","width":87.44000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":932.7950003051758,"y":592,"width":107.44000244140625,"height":31}}},{"edge":{"id":"blvoJ8p8","order":12000,"from":"ql0DevMk","to":"3FR6mev4","kind":"event","label":"a request the child made of us","description":"createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"onServerRequest"}},"curve":{"from":{"x":986.5150015258789,"y":735},"segments":[{"kind":"line","to":{"x":986.5150015258789,"y":743}},{"kind":"cubic","first":{"x":986.5150015258789,"y":747.4184},"second":{"x":982.9334015258789,"y":751},"to":{"x":978.5150015258789,"y":751}},{"kind":"line","to":{"x":920.375002746582,"y":751}},{"kind":"cubic","first":{"x":915.956602746582,"y":751},"second":{"x":912.375002746582,"y":754.5816},"to":{"x":912.375002746582,"y":759}},{"kind":"line","to":{"x":912.375002746582,"y":854}}]},"path":"M986.52,735 L986.52,743 C986.52,747.42 982.93,751 978.52,751 L920.38,751 C915.96,751 912.38,754.58 912.38,759 L912.38,854","label":{"measured":{"width":163.69000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"a request the child made of us","width":143.69000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":830.5300015258789,"y":779,"width":163.69000244140625,"height":31}}},{"edge":{"id":"jhNZqAiD","order":13000,"from":"JBu1uGdl","to":"tFTiAUKg","kind":"call","label":"read or mutate, behind its gate","emphasis":"hero","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"mutate"}},"curve":{"from":{"x":547.5300015258789,"y":259},"segments":[{"kind":"line","to":{"x":547.5300015258789,"y":392}},{"kind":"cubic","first":{"x":547.5300015258789,"y":396.4184},"second":{"x":551.1116015258789,"y":400},"to":{"x":555.5300015258789,"y":400}},{"kind":"line","to":{"x":689.5300015258789,"y":400}},{"kind":"cubic","first":{"x":693.9484015258789,"y":400},"second":{"x":697.5300015258789,"y":403.5816},"to":{"x":697.5300015258789,"y":408}},{"kind":"line","to":{"x":697.5300015258789,"y":428}}]},"path":"M547.53,259 L547.53,392 C547.53,396.42 551.11,400 555.53,400 L689.53,400 C693.95,400 697.53,403.58 697.53,408 L697.53,428","label":{"measured":{"width":167.60000610351562,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"read or mutate, behind its gate","width":147.60000610351562,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":463.7299984741211,"y":353,"width":167.60000610351562,"height":31}}},{"edge":{"id":"d2caVqCr","order":14000,"from":"tFTiAUKg","to":"Sk7GfGta","kind":"call","label":"decode parameters and answer","emphasis":"normal","traffic":{"speed":40,"volume":0.5},"anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"decodeResponse"}},"curve":{"from":{"x":1002.5150015258789,"y":516},"segments":[{"kind":"line","to":{"x":1002.5150015258789,"y":524}},{"kind":"cubic","first":{"x":1002.5150015258789,"y":528.4184},"second":{"x":1006.0966015258789,"y":532},"to":{"x":1010.5150015258789,"y":532}},{"kind":"line","to":{"x":1303.5000015258788,"y":532}},{"kind":"cubic","first":{"x":1307.9184015258788,"y":532},"second":{"x":1311.5000015258788,"y":535.5816},"to":{"x":1311.5000015258788,"y":540}},{"kind":"line","to":{"x":1311.5000015258788,"y":1060}}]},"path":"M1002.52,516 L1002.52,524 C1002.52,528.42 1006.1,532 1010.52,532 L1303.5,532 C1307.92,532 1311.5,535.58 1311.5,540 L1311.5,1060","label":{"measured":{"width":171.19000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"decode parameters and answer","width":151.19000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1225.9050003051757,"y":592,"width":171.19000244140625,"height":31}}},{"edge":{"id":"JOmIweJF","order":15000,"from":"M3mPynLe","to":"aRDbMlep","kind":"dependency","label":"which identities each result holds","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts","symbol":"SESSION_PROTOCOL_METHODS"}},"curve":{"from":{"x":730.3355251104205,"y":1132},"segments":[{"kind":"line","to":{"x":730.3355251104205,"y":1211}},{"kind":"cubic","first":{"x":730.3355251104205,"y":1215.4184},"second":{"x":726.7539251104205,"y":1219},"to":{"x":722.3355251104205,"y":1219}},{"kind":"line","to":{"x":685.5300015258789,"y":1219}},{"kind":"cubic","first":{"x":681.1116015258789,"y":1219},"second":{"x":677.5300015258789,"y":1222.5816},"to":{"x":677.5300015258789,"y":1227}},{"kind":"line","to":{"x":677.5300015258789,"y":1247}}]},"path":"M730.34,1132 L730.34,1211 C730.34,1215.42 726.75,1219 722.34,1219 L685.53,1219 C681.11,1219 677.53,1222.58 677.53,1227 L677.53,1247","label":{"measured":{"width":179.44000244140625,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"which identities each result holds","width":159.44000244140625,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":640.6155238897173,"y":1172,"width":179.44000244140625,"height":31}}},{"edge":{"id":"JTrBju8L","order":16000,"from":"tFTiAUKg","to":"Ly6hUU5o","kind":"call","label":"prove storage after config/read","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"proveCodexStorage"}},"curve":{"from":{"x":729.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":729.5300015258789,"y":556}},{"kind":"cubic","first":{"x":729.5300015258789,"y":560.4184},"second":{"x":725.9484015258789,"y":564},"to":{"x":721.5300015258789,"y":564}},{"kind":"line","to":{"x":673.5300015258789,"y":564}},{"kind":"cubic","first":{"x":669.1116015258789,"y":564},"second":{"x":665.5300015258789,"y":567.5816},"to":{"x":665.5300015258789,"y":572}},{"kind":"line","to":{"x":665.5300015258789,"y":647}}]},"path":"M729.53,516 L729.53,556 C729.53,560.42 725.95,564 721.53,564 L673.53,564 C669.11,564 665.53,567.58 665.53,572 L665.53,647","label":{"measured":{"width":171.86000061035156,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"prove storage after config/read","width":151.86000061035156,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":579.6000012207031,"y":592,"width":171.86000061035156,"height":31}}},{"edge":{"id":"bEmVBBGp","order":17000,"from":"3FR6mev4","to":"ql0DevMk","kind":"call","label":"answer the clock, refuse the rest","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-reverse-requests.ts","symbol":"respond"}},"curve":{"from":{"x":1033.5300015258788,"y":854},"segments":[{"kind":"line","to":{"x":1033.5300015258788,"y":834}},{"kind":"cubic","first":{"x":1033.5300015258788,"y":829.5816},"second":{"x":1037.1116015258788,"y":826},"to":{"x":1041.5300015258788,"y":826}},{"kind":"line","to":{"x":1097.8300045776366,"y":826}},{"kind":"cubic","first":{"x":1102.2484045776366,"y":826},"second":{"x":1105.8300045776366,"y":822.4184},"to":{"x":1105.8300045776366,"y":818}},{"kind":"line","to":{"x":1105.8300045776366,"y":735}}]},"path":"M1033.53,854 L1033.53,834 C1033.53,829.58 1037.11,826 1041.53,826 L1097.83,826 C1102.25,826 1105.83,822.42 1105.83,818 L1105.83,735","label":{"measured":{"width":175.22000122070312,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"answer the clock, refuse the rest","width":155.22000122070312,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1018.2200039672852,"y":779,"width":175.22000122070312,"height":31}}},{"edge":{"id":"cDYih9Cs","order":18000,"from":"tFTiAUKg","to":"3FR6mev4","kind":"call","label":"install the answers to the child's requests","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session.ts","symbol":"createReverseRequestHandlers"}},"curve":{"from":{"x":854.5300015258789,"y":516},"segments":[{"kind":"line","to":{"x":854.5300015258789,"y":743}},{"kind":"cubic","first":{"x":854.5300015258789,"y":747.4184},"second":{"x":850.9484015258789,"y":751},"to":{"x":846.5300015258789,"y":751}},{"kind":"line","to":{"x":822.5300015258789,"y":751}},{"kind":"cubic","first":{"x":818.1116015258789,"y":751},"second":{"x":814.5300015258789,"y":754.5816},"to":{"x":814.5300015258789,"y":759}},{"kind":"line","to":{"x":814.5300015258789,"y":854}}]},"path":"M854.53,516 L854.53,743 C854.53,747.42 850.95,751 846.53,751 L822.53,751 C818.11,751 814.53,754.58 814.53,759 L814.53,854","label":{"measured":{"width":121.9800033569336,"height":46,"chips":[{"y":0,"height":46}],"runs":[{"text":"install the answers to","width":101.9800033569336,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"},{"text":"the child's requests","width":93,"x":14.490001678466797,"y":33,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":793.5399998474121,"y":668,"width":121.9800033569336,"height":46}}},{"edge":{"id":"7wUmdcxh","order":19000,"from":"X6j6fViI","to":"aRDbMlep","kind":"dependency","label":"which fields each request issues","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"SESSION_PROTOCOL_METHODS"}},"curve":{"from":{"x":529.3605266362994,"y":926},"segments":[{"kind":"line","to":{"x":529.3605266362994,"y":1247}}]},"path":"M529.36,926 L529.36,1247","label":{"measured":{"width":174.50999450683594,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"which fields each request issues","width":154.50999450683594,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":442.1055293828814,"y":1172,"width":174.50999450683594,"height":31}}},{"edge":{"id":"wVgRmbf8","order":20000,"from":"JBu1uGdl","to":"8QpDaiD6","kind":"call","label":"did a failed logout reach the child","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"mutationOutcome"}},"curve":{"from":{"x":325.68999755859375,"y":259},"segments":[{"kind":"line","to":{"x":325.68999755859375,"y":317}},{"kind":"cubic","first":{"x":325.68999755859375,"y":321.4184},"second":{"x":322.10839755859377,"y":325},"to":{"x":317.68999755859375,"y":325}},{"kind":"line","to":{"x":117.5250015258789,"y":325}},{"kind":"cubic","first":{"x":113.1066015258789,"y":325},"second":{"x":109.5250015258789,"y":328.5816},"to":{"x":109.5250015258789,"y":333}},{"kind":"line","to":{"x":109.5250015258789,"y":1060}}]},"path":"M325.69,259 L325.69,317 C325.69,321.42 322.11,325 317.69,325 L117.53,325 C113.11,325 109.53,328.58 109.53,333 L109.53,1060","label":{"measured":{"width":179.0500030517578,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"did a failed logout reach the child","width":159.0500030517578,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":20,"y":456.5,"width":179.0500030517578,"height":31}}},{"edge":{"id":"40GtFaKL","order":21000,"from":"JBu1uGdl","to":"99KMASDs","kind":"dependency","label":"supported and refused login variants","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-operations.ts","symbol":"LOGIN_POLICIES"}},"curve":{"from":{"x":341.68999755859375,"y":259},"segments":[{"kind":"line","to":{"x":341.68999755859375,"y":428}}]},"path":"M341.69,259 L341.69,428","label":{"measured":{"width":196.0800018310547,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"supported and refused login variants","width":176.0800018310547,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":243.64999664306637,"y":353,"width":196.0800018310547,"height":31}}},{"edge":{"id":"OjFVoTcz","order":22000,"from":"ql0DevMk","to":"Sk7GfGta","kind":"dependency","label":"decode each inbound frame","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/operations/inbound-router.ts","symbol":"decodeServerNotification"}},"curve":{"from":{"x":1218.5000015258788,"y":735},"segments":[{"kind":"line","to":{"x":1218.5000015258788,"y":1060}}]},"path":"M1218.5,735 L1218.5,1060","label":{"measured":{"width":153.4199981689453,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"decode each inbound frame","width":133.4199981689453,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":1141.7900024414062,"y":874.5,"width":153.4199981689453,"height":31}}},{"edge":{"id":"s0Qx9DbR","order":23000,"from":"X6j6fViI","to":"8QpDaiD6","kind":"call","label":"refuse params that are no object","emphasis":"muted","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"requestParams"}},"curve":{"from":{"x":513.5300015258789,"y":926},"segments":[{"kind":"line","to":{"x":513.5300015258789,"y":934}},{"kind":"cubic","first":{"x":513.5300015258789,"y":938.4184},"second":{"x":509.9484015258789,"y":942},"to":{"x":505.5300015258789,"y":942}},{"kind":"line","to":{"x":433.62052877252984,"y":942}},{"kind":"cubic","first":{"x":429.2021287725298,"y":942},"second":{"x":425.62052877252984,"y":945.5816},"to":{"x":425.62052877252984,"y":950}},{"kind":"line","to":{"x":425.62052877252984,"y":1024}},{"kind":"cubic","first":{"x":425.62052877252984,"y":1028.4184},"second":{"x":422.03892877252986,"y":1032},"to":{"x":417.62052877252984,"y":1032}},{"kind":"line","to":{"x":306.5300015258789,"y":1032}},{"kind":"cubic","first":{"x":302.1116015258789,"y":1032},"second":{"x":298.5300015258789,"y":1035.5816},"to":{"x":298.5300015258789,"y":1040}},{"kind":"line","to":{"x":298.5300015258789,"y":1060}}]},"path":"M513.53,926 L513.53,934 C513.53,938.42 509.95,942 505.53,942 L433.62,942 C429.2,942 425.62,945.58 425.62,950 L425.62,1024 C425.62,1028.42 422.04,1032 417.62,1032 L306.53,1032 C302.11,1032 298.53,1035.58 298.53,1040 L298.53,1060","label":{"measured":{"width":175.47999572753906,"height":31,"chips":[{"y":0,"height":31}],"runs":[{"text":"refuse params that are no object","width":155.47999572753906,"x":10,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":337.8805309087603,"y":977.5,"width":175.47999572753906,"height":31}}},{"edge":{"id":"cGImVr7b","order":24000,"from":"X6j6fViI","to":"Sk7GfGta","kind":"dependency","label":"request methods and their parameters","emphasis":"normal","anchor":{"repo":"github.com/miklschmidt/archboard","path":"packages/codex-app-server/src/runtime/services/session-request-identities.ts","symbol":"isClientRequestMethodWithoutParams"}},"curve":{"from":{"x":618.5,"y":926},"segments":[{"kind":"line","to":{"x":618.5,"y":1024}},{"kind":"cubic","first":{"x":618.5,"y":1028.4184},"second":{"x":622.0816,"y":1032},"to":{"x":626.5,"y":1032}},{"kind":"line","to":{"x":1060.5000015258788,"y":1032}},{"kind":"cubic","first":{"x":1064.9184015258788,"y":1032},"second":{"x":1068.5000015258788,"y":1035.5816},"to":{"x":1068.5000015258788,"y":1040}},{"kind":"line","to":{"x":1068.5000015258788,"y":1060}}]},"path":"M618.5,926 L618.5,1024 C618.5,1028.42 622.08,1032 626.5,1032 L1060.5,1032 C1064.92,1032 1068.5,1035.58 1068.5,1040 L1068.5,1060","label":{"measured":{"width":119.83000183105469,"height":46,"chips":[{"y":0,"height":46}],"runs":[{"text":"request methods","width":80.77999877929688,"x":19.525001525878906,"y":18,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"},{"text":"and their parameters","width":99.83000183105469,"x":10,"y":33,"font":{"family":"sans","weight":500},"fontSize":10,"role":"label"}]},"box":{"x":558.5849990844727,"y":970,"width":119.83000183105469,"height":46}}}],"bridges":[{"edgeId":"HlhfxXJm","under":["cGImVr7b"],"curve":{"from":{"x":772,"y":1025},"segments":[{"kind":"cubic","first":{"x":775.8659932488156,"y":1025},"second":{"x":779,"y":1028.1340067511844},"to":{"x":779,"y":1032}},{"kind":"cubic","first":{"x":779,"y":1035.8659932488156},"second":{"x":775.8659932488156,"y":1039},"to":{"x":772,"y":1039}}]}}]}},"appearances":{"tFTiAUKg":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"Ly6hUU5o":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"JBu1uGdl":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"X6j6fViI":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"aRDbMlep":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"M3mPynLe":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"3FR6mev4":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"8QpDaiD6":{"container":false,"typeColor":"cyan","icon":"RiCodeLine","typeName":"Function","typeKind":"function","drill":null},"FPKa6YCR":{"container":false,"typeColor":"violet","icon":"RiBox3Line","typeName":"Module","typeKind":"module","drill":"across"},"ql0DevMk":{"container":false,"typeColor":"violet","icon":"RiBox3Line","typeName":"Module","typeKind":"module","drill":null},"Sk7GfGta":{"container":false,"typeColor":"violet","icon":"RiBox3Line","typeName":"Module","typeKind":"module","drill":null},"xtHoCCnF":{"container":false,"typeColor":"violet","icon":"RiBox3Line","typeName":"Module","typeKind":"module","drill":null},"99KMASDs":{"container":false,"typeColor":"rose","icon":"RiSettings3Line","typeName":"Configuration","typeKind":"config","drill":null}},"lines":{"qQrqNYdt":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"SI5PTs6X":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"HlhfxXJm":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"mpJAeANo":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"7dDHchT9":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"EAKN00R4":{"name":"RPC","color":"violet","dash":"solid","arrowhead":"filled","evidence":["call","configured-path"]},"blvoJ8p8":{"name":"Event","color":"fuchsia","dash":"dashed","arrowhead":"open","evidence":["call","configured-path"]},"jhNZqAiD":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"d2caVqCr":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"JOmIweJF":{"name":"Dependency","dash":"dotted","arrowhead":"open","evidence":["call","configured-path","import","build-dependency"]},"JTrBju8L":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"bEmVBBGp":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"cDYih9Cs":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"7wUmdcxh":{"name":"Dependency","dash":"dotted","arrowhead":"open","evidence":["call","configured-path","import","build-dependency"]},"wVgRmbf8":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"40GtFaKL":{"name":"Dependency","dash":"dotted","arrowhead":"open","evidence":["call","configured-path","import","build-dependency"]},"OjFVoTcz":{"name":"Dependency","dash":"dotted","arrowhead":"open","evidence":["call","configured-path","import","build-dependency"]},"s0Qx9DbR":{"name":"Call","dash":"solid","arrowhead":"filled","evidence":["call"]},"cGImVr7b":{"name":"Dependency","dash":"dotted","arrowhead":"open","evidence":["call","configured-path","import","build-dependency"]}},"steps":[],"groups":{"writes":"orange","drawing":"violet","panes":"teal","walkthrough":"cyan","voice":"yellow","workhorse":"sky","child":"indigo","agent":"fuchsia","checks":"pink","grading":"purple"},"farSize":20.5},"page":{"plain":true,"unsettled":[],"unbuilt":false,"frame":{}},"document":{"name":"Architecture diagram: 13 nodes, 19 connections","fonts":"linked","farViewSwapMs":280},"icons":{"RiQuestionLine":["M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM13 13.3551V14H11V12.5C11 11.9477 11.4477 11.5 12 11.5C12.8284 11.5 13.5 10.8284 13.5 10C13.5 9.17157 12.8284 8.5 12 8.5C11.2723 8.5 10.6656 9.01823 10.5288 9.70577L8.56731 9.31346C8.88637 7.70919 10.302 6.5 12 6.5C13.933 6.5 15.5 8.067 15.5 10C15.5 11.5855 14.4457 12.9248 13 13.3551Z"],"RiFlowChart":["M6 21.5C4.067 21.5 2.5 19.933 2.5 18C2.5 16.067 4.067 14.5 6 14.5C7.5852 14.5 8.92427 15.5539 9.35481 16.9992L15 16.9994V15L17 14.9994V9.24339L14.757 6.99938H9V9.00003H3V3.00003H9V4.99939H14.757L18 1.75739L22.2426 6.00003L19 9.24139V14.9994L21 15V21H15V18.9994L9.35499 19.0003C8.92464 20.4459 7.58543 21.5 6 21.5ZM6 16.5C5.17157 16.5 4.5 17.1716 4.5 18C4.5 18.8285 5.17157 19.5 6 19.5C6.82843 19.5 7.5 18.8285 7.5 18C7.5 17.1716 6.82843 16.5 6 16.5ZM19 17H17V19H19V17ZM18 4.58581L16.5858 6.00003L18 7.41424L19.4142 6.00003L18 4.58581ZM7 5.00003H5V7.00003H7V5.00003Z"],"RiCodeLine":["M23 12L15.9289 19.0711L14.5147 17.6569L20.1716 12L14.5147 6.34317L15.9289 4.92896L23 12ZM3.82843 12L9.48528 17.6569L8.07107 19.0711L1 12L8.07107 4.92896L9.48528 6.34317L3.82843 12Z"],"RiBox3Line":["M12 1L21.5 6.5V17.5L12 23L2.5 17.5V6.5L12 1ZM5.49388 7.0777L12.0001 10.8444L18.5062 7.07774L12 3.311L5.49388 7.0777ZM4.5 8.81329V16.3469L11.0001 20.1101V12.5765L4.5 8.81329ZM13.0001 20.11L19.5 16.3469V8.81337L13.0001 12.5765V20.11Z"],"RiSettings3Line":["M3.33946 17.0002C2.90721 16.2515 2.58277 15.4702 2.36133 14.6741C3.3338 14.1779 3.99972 13.1668 3.99972 12.0002C3.99972 10.8345 3.3348 9.824 2.36353 9.32741C2.81025 7.71651 3.65857 6.21627 4.86474 4.99001C5.7807 5.58416 6.98935 5.65534 7.99972 5.072C9.01009 4.48866 9.55277 3.40635 9.4962 2.31604C11.1613 1.8846 12.8847 1.90004 14.5031 2.31862C14.4475 3.40806 14.9901 4.48912 15.9997 5.072C17.0101 5.65532 18.2187 5.58416 19.1346 4.99007C19.7133 5.57986 20.2277 6.25151 20.66 7.00021C21.0922 7.7489 21.4167 8.53025 21.6381 9.32628C20.6656 9.82247 19.9997 10.8336 19.9997 12.0002C19.9997 13.166 20.6646 14.1764 21.6359 14.673C21.1892 16.2839 20.3409 17.7841 19.1347 19.0104C18.2187 18.4163 17.0101 18.3451 15.9997 18.9284C14.9893 19.5117 14.4467 20.5941 14.5032 21.6844C12.8382 22.1158 11.1148 22.1004 9.49633 21.6818C9.55191 20.5923 9.00929 19.5113 7.99972 18.9284C6.98938 18.3451 5.78079 18.4162 4.86484 19.0103C4.28617 18.4205 3.77172 17.7489 3.33946 17.0002ZM8.99972 17.1964C10.0911 17.8265 10.8749 18.8227 11.2503 19.9659C11.7486 20.0133 12.2502 20.014 12.7486 19.9675C13.1238 18.8237 13.9078 17.8268 14.9997 17.1964C16.0916 16.5659 17.347 16.3855 18.5252 16.6324C18.8146 16.224 19.0648 15.7892 19.2729 15.334C18.4706 14.4373 17.9997 13.2604 17.9997 12.0002C17.9997 10.74 18.4706 9.5632 19.2729 8.6665C19.1688 8.4405 19.0538 8.21822 18.9279 8.00021C18.802 7.78219 18.667 7.57148 18.5233 7.36842C17.3457 7.61476 16.0911 7.43414 14.9997 6.80405C13.9083 6.17395 13.1246 5.17768 12.7491 4.03455C12.2509 3.98714 11.7492 3.98646 11.2509 4.03292C10.8756 5.17671 10.0916 6.17364 8.99972 6.80405C7.9078 7.43447 6.65245 7.61494 5.47428 7.36803C5.18485 7.77641 4.93463 8.21117 4.72656 8.66637C5.52881 9.56311 5.99972 10.74 5.99972 12.0002C5.99972 13.2604 5.52883 14.4372 4.72656 15.3339C4.83067 15.5599 4.94564 15.7822 5.07152 16.0002C5.19739 16.2182 5.3324 16.4289 5.47612 16.632C6.65377 16.3857 7.90838 16.5663 8.99972 17.1964ZM11.9997 15.0002C10.3429 15.0002 8.99972 13.6571 8.99972 12.0002C8.99972 10.3434 10.3429 9.00021 11.9997 9.00021C13.6566 9.00021 14.9997 10.3434 14.9997 12.0002C14.9997 13.6571 13.6566 15.0002 11.9997 15.0002ZM11.9997 13.0002C12.552 13.0002 12.9997 12.5525 12.9997 12.0002C12.9997 11.4479 12.552 11.0002 11.9997 11.0002C11.4474 11.0002 10.9997 11.4479 10.9997 12.0002C10.9997 12.5525 11.4474 13.0002 11.9997 13.0002Z"]}}
+{
+	"picture": {
+		"grammar": "architecture",
+		"drawing": {
+			"direction": "down",
+			"width": 1417.095002746582,
+			"height": 1355,
+			"cards": [
+				{
+					"measured": {
+						"node": {
+							"id": "tFTiAUKg",
+							"order": 2000,
+							"name": "Handshake and request path",
+							"kind": "function",
+							"responsibility": "Runs the handshake once, then is the one path every call takes: serialize, send, decode, adopt",
+							"description": "createCodexSession: initialize, write initialized, read the config requirements and the config as the child's working directory sees it (workingDirectory: the coordinator's own directory, which is no checkout), prove storage, and advance the explicit session phase; notifications are buffered until the session is ready. requestDecoded serializes the parameters, decodes them against the protocol, sends them on the transport, checks the epoch, decodes the answer and adopts its identities, reporting any failure of a mutation as a delivery outcome.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts"
+							}
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Handshake and request path",
+								"width": 192.75,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Runs the handshake once, then is the one path",
+								"width": 241.17999267578125,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "every call takes: serialize, send, decode, adopt",
+								"width": 237.2899932861328,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 677.5300015258789, "y": 428, "width": 340, "height": 88 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "Ly6hUU5o",
+							"order": 3000,
+							"name": "Prove isolated storage",
+							"kind": "function",
+							"responsibility": "Verify prepared child paths",
+							"description": "Compares handshake storage facts with canonical, non-symlinked CODEX_HOME, SQLite, and config paths before the session becomes usable.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/store/storage-proof.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Prove isolated storage",
+								"width": 150.5399932861328,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Verify prepared child paths",
+								"width": 138.8699951171875,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 493.5300015258789, "y": 647, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "JBu1uGdl",
+							"order": 4000,
+							"name": "Gate protocol operations",
+							"kind": "function",
+							"responsibility": "Expose allowed reads and mutations",
+							"description": "Implements the reviewed login, thread, turn, queue, timeline, and realtime methods as reads or mutations of the request path, behind login-capable and thread-capable gates.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-operations.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Gate protocol operations",
+								"width": 167.16000366210938,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Expose allowed reads and mutations",
+								"width": 187.86000061035156,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 307.5300015258789, "y": 187, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "X6j6fViI",
+							"order": 5000,
+							"name": "Serialize request identities",
+							"kind": "function",
+							"responsibility": "Prove IDs before wire encoding",
+							"description": "Validates every identity-bearing request field against the current child authority and serializes only issued identities for the wire.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Serialize request identities",
+								"width": 176.86000061035156,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Prove IDs before wire encoding",
+								"width": 161.13999938964844,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 493.5300015258789, "y": 854, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "aRDbMlep",
+							"order": 6000,
+							"name": "Response contracts",
+							"kind": "function",
+							"responsibility": "Which identity kinds each method's result carries, derived from the protocol schemas",
+							"description": "Defines the response shapes of the session's methods from the codex-protocol schemas and SESSION_PROTOCOL_METHODS, the identity kinds each result contains, which the adoption step collects.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/schemas/session-responses.ts"
+							}
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Response contracts",
+								"width": 133.2100067138672,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Which identity kinds each method's result carries,",
+								"width": 254.92999267578125,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "derived from the protocol schemas",
+								"width": 179.05999755859375,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 357.5300015258789, "y": 1247, "width": 340, "height": 88 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "M3mPynLe",
+							"order": 7000,
+							"name": "Adopt response identities",
+							"kind": "function",
+							"responsibility": "Brand returned IDs atomically",
+							"description": "Collects all raw identities in a decoded response, adopts them in one authority transaction, and overlays their trusted brands.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Adopt response identities",
+								"width": 171.82000732421875,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Brand returned IDs atomically",
+								"width": 152.38999938964844,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 545.5300015258789, "y": 1060, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "3FR6mev4",
+							"order": 8000,
+							"name": "Answer reverse requests",
+							"kind": "function",
+							"responsibility": "Handle child-originated calls",
+							"description": "Routes current-time requests for owned threads and explicitly refuses unsupported token refresh and attestation requests.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Answer reverse requests",
+								"width": 166.3300018310547,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Handle child-originated calls",
+								"width": 145.61000061035156,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 793.5300015258789, "y": 854, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "8QpDaiD6",
+							"order": 9000,
+							"name": "Classify request failures",
+							"kind": "function",
+							"responsibility": "State mutation delivery outcome",
+							"description": "Distinguishes invalid inputs and failures that were not delivered from mutations whose remote outcome is unknown and requires inspection.",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-failures.ts"
+							}
+						},
+						"width": 260,
+						"height": 72,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Classify request failures",
+								"width": 160.5,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "State mutation delivery outcome",
+								"width": 168.33999633789062,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 58.5300015258789, "y": 1060, "width": 260, "height": 72 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "FPKa6YCR",
+							"order": 10000,
+							"name": "Workhorse start",
+							"kind": "module",
+							"responsibility": "The caller that opens a thread on this session under an epoch transaction",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/workbench/src/runtime/services/workhorse-start"
+							},
+							"drillDown": { "board": "Codex workhorse", "variant": { "kind": "current" } }
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Workhorse start",
+								"width": 108.13999938964844,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "The caller that opens a thread on this session under",
+								"width": 265.6099853515625,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "an epoch transaction",
+								"width": 108.70999908447266,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 267.5300015258789, "y": 20, "width": 340, "height": 88 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "ql0DevMk",
+							"order": 11000,
+							"name": "Codex transport",
+							"kind": "module",
+							"responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/clients"
+							}
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Codex transport",
+								"width": 108.66999816894531,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "The wire under the session: one newline-framed",
+								"width": 247.22999572753906,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "JSON object at a time, each way",
+								"width": 168.3800048828125,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 955.5000015258789, "y": 647, "width": 340, "height": 88 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "Sk7GfGta",
+							"order": 12000,
+							"name": "Codex protocol",
+							"kind": "module",
+							"responsibility": "The pinned app-server contract every request and response is decoded against",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/protocol"
+							}
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Codex protocol",
+								"width": 102.3499984741211,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "The pinned app-server contract every request and",
+								"width": 260.4200134277344,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "response is decoded against",
+								"width": 147,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 1048.5000015258788, "y": 1060, "width": 340, "height": 88 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "xtHoCCnF",
+							"order": 13000,
+							"name": "Generation hooks",
+							"kind": "module",
+							"responsibility": "Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/workbench/src/server/services/generation/hooks.ts"
+							}
+						},
+						"width": 340,
+						"height": 122,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Generation hooks",
+								"width": 117.55999755859375,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "Takes the child's epoch, with the coordinator's own",
+								"width": 263.010009765625,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "directory as its workspace root, then initializes the",
+								"width": 258.6099853515625,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "session and reads the account before a generation",
+								"width": 261.4100036621094,
+								"x": 52,
+								"y": 83,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "is ready",
+								"width": 40.59000015258789,
+								"x": 52,
+								"y": 100,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 677.5300015258789, "y": 187, "width": 340, "height": 122 },
+					"depth": 0
+				},
+				{
+					"measured": {
+						"node": {
+							"id": "99KMASDs",
+							"order": 14000,
+							"name": "Reviewed login policy",
+							"kind": "config",
+							"responsibility": "States which reviewed login variants the session supports or refuses",
+							"binding": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/schemas/authored-schemas.ts",
+								"symbol": "LOGIN_POLICIES"
+							}
+						},
+						"width": 340,
+						"height": 88,
+						"headerHeight": 0,
+						"runs": [
+							{
+								"text": "Reviewed login policy",
+								"width": 145.6699981689453,
+								"x": 52,
+								"y": 30,
+								"font": { "family": "sans", "weight": 500 },
+								"fontSize": 14,
+								"role": "title"
+							},
+							{
+								"text": "States which reviewed login variants the session",
+								"width": 250.61000061035156,
+								"x": 52,
+								"y": 49,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							},
+							{
+								"text": "supports or refuses",
+								"width": 100.45999908447266,
+								"x": 52,
+								"y": 66,
+								"font": { "family": "sans", "weight": 400 },
+								"fontSize": 11,
+								"role": "note"
+							}
+						]
+					},
+					"box": { "x": 267.5300015258789, "y": 428, "width": 340, "height": 88 },
+					"depth": 0
+				}
+			],
+			"containers": [],
+			"edges": [
+				{
+					"edge": {
+						"id": "qQrqNYdt",
+						"order": 1000,
+						"from": "xtHoCCnF",
+						"to": "tFTiAUKg",
+						"kind": "call",
+						"label": "initialize, once",
+						"description": "The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/generation/hooks.ts",
+							"symbol": "initialize"
+						}
+					},
+					"curve": {
+						"from": { "x": 854.5300015258789, "y": 309 },
+						"segments": [{ "kind": "line", "to": { "x": 854.5300015258789, "y": 428 } }]
+					},
+					"path": "M854.53,309 L854.53,428",
+					"label": {
+						"measured": {
+							"width": 87.36000061035156,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "initialize, once",
+									"width": 67.36000061035156,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 810.8500012207031, "y": 353, "width": 87.36000061035156, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "SI5PTs6X",
+						"order": 3000,
+						"from": "tFTiAUKg",
+						"to": "X6j6fViI",
+						"kind": "call",
+						"label": "serialize issued identities",
+						"emphasis": "hero",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "createRequestParamsSerializer"
+						}
+					},
+					"curve": {
+						"from": { "x": 713.5300015258789, "y": 516 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 713.5300015258789, "y": 540 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 713.5300015258789, "y": 544.4184 },
+								"second": { "x": 709.9484015258789, "y": 548 },
+								"to": { "x": 705.5300015258789, "y": 548 }
+							},
+							{ "kind": "line", "to": { "x": 481.5300015258789, "y": 548 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 477.1116015258789, "y": 548 },
+								"second": { "x": 473.5300015258789, "y": 551.5816 },
+								"to": { "x": 473.5300015258789, "y": 556 }
+							},
+							{ "kind": "line", "to": { "x": 473.5300015258789, "y": 818 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 473.5300015258789, "y": 822.4184 },
+								"second": { "x": 477.1116015258789, "y": 826 },
+								"to": { "x": 481.5300015258789, "y": 826 }
+							},
+							{ "kind": "line", "to": { "x": 505.5300015258789, "y": 826 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 509.9484015258789, "y": 826 },
+								"second": { "x": 513.5300015258789, "y": 829.5816 },
+								"to": { "x": 513.5300015258789, "y": 834 }
+							},
+							{ "kind": "line", "to": { "x": 513.5300015258789, "y": 854 } }
+						]
+					},
+					"path": "M713.53,516 L713.53,540 C713.53,544.42 709.95,548 705.53,548 L481.53,548 C477.11,548 473.53,551.58 473.53,556 L473.53,818 C473.53,822.42 477.11,826 481.53,826 L505.53,826 C509.95,826 513.53,829.58 513.53,834 L513.53,854",
+					"label": {
+						"measured": {
+							"width": 138.8499984741211,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "serialize issued identities",
+									"width": 118.8499984741211,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 404.10500228881835, "y": 779, "width": 138.8499984741211, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "HlhfxXJm",
+						"order": 5000,
+						"from": "tFTiAUKg",
+						"to": "M3mPynLe",
+						"kind": "call",
+						"label": "adopt returned identities",
+						"emphasis": "normal",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "adoptSessionResponse"
+						}
+					},
+					"curve": {
+						"from": { "x": 772, "y": 516 },
+						"segments": [{ "kind": "line", "to": { "x": 772, "y": 1060 } }]
+					},
+					"path": "M772,516 L772,1060",
+					"label": {
+						"measured": {
+							"width": 139.1699981689453,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "adopt returned identities",
+									"width": 119.16999816894531,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 702.4150009155273, "y": 977.5, "width": 139.1699981689453, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "mpJAeANo",
+						"order": 6000,
+						"from": "tFTiAUKg",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "settle mutation failure",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "mutationFailure"
+						}
+					},
+					"curve": {
+						"from": { "x": 697.5300015258789, "y": 516 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 697.5300015258789, "y": 524 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 697.5300015258789, "y": 528.4184 },
+								"second": { "x": 693.9484015258789, "y": 532 },
+								"to": { "x": 689.5300015258789, "y": 532 }
+							},
+							{ "kind": "line", "to": { "x": 229.46487636677836, "y": 532 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 225.04647636677836, "y": 532 },
+								"second": { "x": 221.46487636677836, "y": 535.5816 },
+								"to": { "x": 221.46487636677836, "y": 540 }
+							},
+							{ "kind": "line", "to": { "x": 221.46487636677836, "y": 1060 } }
+						]
+					},
+					"path": "M697.53,516 L697.53,524 C697.53,528.42 693.95,532 689.53,532 L229.46,532 C225.05,532 221.46,535.58 221.46,540 L221.46,1060",
+					"label": {
+						"measured": {
+							"width": 124.56999969482422,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "settle mutation failure",
+									"width": 104.56999969482422,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": {
+							"x": 159.17987651936625,
+							"y": 874.5,
+							"width": 124.56999969482422,
+							"height": 31
+						}
+					}
+				},
+				{
+					"edge": {
+						"id": "7dDHchT9",
+						"order": 9000,
+						"from": "FPKa6YCR",
+						"to": "JBu1uGdl",
+						"kind": "call",
+						"label": "thread/start for a new workhorse",
+						"description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+						"emphasis": "hero",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+							"symbol": "threadStart"
+						}
+					},
+					"curve": {
+						"from": { "x": 437.5300015258789, "y": 108 },
+						"segments": [{ "kind": "line", "to": { "x": 437.5300015258789, "y": 187 } }]
+					},
+					"path": "M437.53,108 L437.53,187",
+					"label": {
+						"measured": {
+							"width": 179.80999755859375,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "thread/start for a new workhorse",
+									"width": 159.80999755859375,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 347.625002746582, "y": 132, "width": 179.80999755859375, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "EAKN00R4",
+						"order": 10000,
+						"from": "tFTiAUKg",
+						"to": "ql0DevMk",
+						"kind": "rpc",
+						"label": "one request frame",
+						"emphasis": "hero",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "request"
+						}
+					},
+					"curve": {
+						"from": { "x": 986.5150015258789, "y": 516 },
+						"segments": [{ "kind": "line", "to": { "x": 986.5150015258789, "y": 647 } }]
+					},
+					"path": "M986.52,516 L986.52,647",
+					"label": {
+						"measured": {
+							"width": 107.44000244140625,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "one request frame",
+									"width": 87.44000244140625,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 932.7950003051758, "y": 592, "width": 107.44000244140625, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "blvoJ8p8",
+						"order": 12000,
+						"from": "ql0DevMk",
+						"to": "3FR6mev4",
+						"kind": "event",
+						"label": "a request the child made of us",
+						"description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "onServerRequest"
+						}
+					},
+					"curve": {
+						"from": { "x": 986.5150015258789, "y": 735 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 986.5150015258789, "y": 743 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 986.5150015258789, "y": 747.4184 },
+								"second": { "x": 982.9334015258789, "y": 751 },
+								"to": { "x": 978.5150015258789, "y": 751 }
+							},
+							{ "kind": "line", "to": { "x": 920.375002746582, "y": 751 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 915.956602746582, "y": 751 },
+								"second": { "x": 912.375002746582, "y": 754.5816 },
+								"to": { "x": 912.375002746582, "y": 759 }
+							},
+							{ "kind": "line", "to": { "x": 912.375002746582, "y": 854 } }
+						]
+					},
+					"path": "M986.52,735 L986.52,743 C986.52,747.42 982.93,751 978.52,751 L920.38,751 C915.96,751 912.38,754.58 912.38,759 L912.38,854",
+					"label": {
+						"measured": {
+							"width": 163.69000244140625,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "a request the child made of us",
+									"width": 143.69000244140625,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 830.5300015258789, "y": 779, "width": 163.69000244140625, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "jhNZqAiD",
+						"order": 13000,
+						"from": "JBu1uGdl",
+						"to": "tFTiAUKg",
+						"kind": "call",
+						"label": "read or mutate, behind its gate",
+						"emphasis": "hero",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+							"symbol": "mutate"
+						}
+					},
+					"curve": {
+						"from": { "x": 547.5300015258789, "y": 259 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 547.5300015258789, "y": 392 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 547.5300015258789, "y": 396.4184 },
+								"second": { "x": 551.1116015258789, "y": 400 },
+								"to": { "x": 555.5300015258789, "y": 400 }
+							},
+							{ "kind": "line", "to": { "x": 689.5300015258789, "y": 400 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 693.9484015258789, "y": 400 },
+								"second": { "x": 697.5300015258789, "y": 403.5816 },
+								"to": { "x": 697.5300015258789, "y": 408 }
+							},
+							{ "kind": "line", "to": { "x": 697.5300015258789, "y": 428 } }
+						]
+					},
+					"path": "M547.53,259 L547.53,392 C547.53,396.42 551.11,400 555.53,400 L689.53,400 C693.95,400 697.53,403.58 697.53,408 L697.53,428",
+					"label": {
+						"measured": {
+							"width": 167.60000610351562,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "read or mutate, behind its gate",
+									"width": 147.60000610351562,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 463.7299984741211, "y": 353, "width": 167.60000610351562, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "d2caVqCr",
+						"order": 14000,
+						"from": "tFTiAUKg",
+						"to": "Sk7GfGta",
+						"kind": "call",
+						"label": "decode parameters and answer",
+						"emphasis": "normal",
+						"traffic": { "speed": 40, "volume": 0.5 },
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "decodeResponse"
+						}
+					},
+					"curve": {
+						"from": { "x": 1002.5150015258789, "y": 516 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 1002.5150015258789, "y": 524 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 1002.5150015258789, "y": 528.4184 },
+								"second": { "x": 1006.0966015258789, "y": 532 },
+								"to": { "x": 1010.5150015258789, "y": 532 }
+							},
+							{ "kind": "line", "to": { "x": 1303.5000015258788, "y": 532 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 1307.9184015258788, "y": 532 },
+								"second": { "x": 1311.5000015258788, "y": 535.5816 },
+								"to": { "x": 1311.5000015258788, "y": 540 }
+							},
+							{ "kind": "line", "to": { "x": 1311.5000015258788, "y": 1060 } }
+						]
+					},
+					"path": "M1002.52,516 L1002.52,524 C1002.52,528.42 1006.1,532 1010.52,532 L1303.5,532 C1307.92,532 1311.5,535.58 1311.5,540 L1311.5,1060",
+					"label": {
+						"measured": {
+							"width": 171.19000244140625,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "decode parameters and answer",
+									"width": 151.19000244140625,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 1225.9050003051757, "y": 592, "width": 171.19000244140625, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "JOmIweJF",
+						"order": 15000,
+						"from": "M3mPynLe",
+						"to": "aRDbMlep",
+						"kind": "dependency",
+						"label": "which identities each result holds",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts",
+							"symbol": "SESSION_PROTOCOL_METHODS"
+						}
+					},
+					"curve": {
+						"from": { "x": 730.3355251104205, "y": 1132 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 730.3355251104205, "y": 1211 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 730.3355251104205, "y": 1215.4184 },
+								"second": { "x": 726.7539251104205, "y": 1219 },
+								"to": { "x": 722.3355251104205, "y": 1219 }
+							},
+							{ "kind": "line", "to": { "x": 685.5300015258789, "y": 1219 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 681.1116015258789, "y": 1219 },
+								"second": { "x": 677.5300015258789, "y": 1222.5816 },
+								"to": { "x": 677.5300015258789, "y": 1227 }
+							},
+							{ "kind": "line", "to": { "x": 677.5300015258789, "y": 1247 } }
+						]
+					},
+					"path": "M730.34,1132 L730.34,1211 C730.34,1215.42 726.75,1219 722.34,1219 L685.53,1219 C681.11,1219 677.53,1222.58 677.53,1227 L677.53,1247",
+					"label": {
+						"measured": {
+							"width": 179.44000244140625,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "which identities each result holds",
+									"width": 159.44000244140625,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 640.6155238897173, "y": 1172, "width": 179.44000244140625, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "JTrBju8L",
+						"order": 16000,
+						"from": "tFTiAUKg",
+						"to": "Ly6hUU5o",
+						"kind": "call",
+						"label": "prove storage after config/read",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "proveCodexStorage"
+						}
+					},
+					"curve": {
+						"from": { "x": 729.5300015258789, "y": 516 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 729.5300015258789, "y": 556 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 729.5300015258789, "y": 560.4184 },
+								"second": { "x": 725.9484015258789, "y": 564 },
+								"to": { "x": 721.5300015258789, "y": 564 }
+							},
+							{ "kind": "line", "to": { "x": 673.5300015258789, "y": 564 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 669.1116015258789, "y": 564 },
+								"second": { "x": 665.5300015258789, "y": 567.5816 },
+								"to": { "x": 665.5300015258789, "y": 572 }
+							},
+							{ "kind": "line", "to": { "x": 665.5300015258789, "y": 647 } }
+						]
+					},
+					"path": "M729.53,516 L729.53,556 C729.53,560.42 725.95,564 721.53,564 L673.53,564 C669.11,564 665.53,567.58 665.53,572 L665.53,647",
+					"label": {
+						"measured": {
+							"width": 171.86000061035156,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "prove storage after config/read",
+									"width": 151.86000061035156,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 579.6000012207031, "y": 592, "width": 171.86000061035156, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "bEmVBBGp",
+						"order": 17000,
+						"from": "3FR6mev4",
+						"to": "ql0DevMk",
+						"kind": "call",
+						"label": "answer the clock, refuse the rest",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+							"symbol": "respond"
+						}
+					},
+					"curve": {
+						"from": { "x": 1033.5300015258788, "y": 854 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 1033.5300015258788, "y": 834 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 1033.5300015258788, "y": 829.5816 },
+								"second": { "x": 1037.1116015258788, "y": 826 },
+								"to": { "x": 1041.5300015258788, "y": 826 }
+							},
+							{ "kind": "line", "to": { "x": 1097.8300045776366, "y": 826 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 1102.2484045776366, "y": 826 },
+								"second": { "x": 1105.8300045776366, "y": 822.4184 },
+								"to": { "x": 1105.8300045776366, "y": 818 }
+							},
+							{ "kind": "line", "to": { "x": 1105.8300045776366, "y": 735 } }
+						]
+					},
+					"path": "M1033.53,854 L1033.53,834 C1033.53,829.58 1037.11,826 1041.53,826 L1097.83,826 C1102.25,826 1105.83,822.42 1105.83,818 L1105.83,735",
+					"label": {
+						"measured": {
+							"width": 175.22000122070312,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "answer the clock, refuse the rest",
+									"width": 155.22000122070312,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 1018.2200039672852, "y": 779, "width": 175.22000122070312, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "cDYih9Cs",
+						"order": 18000,
+						"from": "tFTiAUKg",
+						"to": "3FR6mev4",
+						"kind": "call",
+						"label": "install the answers to the child's requests",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session.ts",
+							"symbol": "createReverseRequestHandlers"
+						}
+					},
+					"curve": {
+						"from": { "x": 854.5300015258789, "y": 516 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 854.5300015258789, "y": 743 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 854.5300015258789, "y": 747.4184 },
+								"second": { "x": 850.9484015258789, "y": 751 },
+								"to": { "x": 846.5300015258789, "y": 751 }
+							},
+							{ "kind": "line", "to": { "x": 822.5300015258789, "y": 751 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 818.1116015258789, "y": 751 },
+								"second": { "x": 814.5300015258789, "y": 754.5816 },
+								"to": { "x": 814.5300015258789, "y": 759 }
+							},
+							{ "kind": "line", "to": { "x": 814.5300015258789, "y": 854 } }
+						]
+					},
+					"path": "M854.53,516 L854.53,743 C854.53,747.42 850.95,751 846.53,751 L822.53,751 C818.11,751 814.53,754.58 814.53,759 L814.53,854",
+					"label": {
+						"measured": {
+							"width": 121.9800033569336,
+							"height": 46,
+							"chips": [{ "y": 0, "height": 46 }],
+							"runs": [
+								{
+									"text": "install the answers to",
+									"width": 101.9800033569336,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								},
+								{
+									"text": "the child's requests",
+									"width": 93,
+									"x": 14.490001678466797,
+									"y": 33,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 793.5399998474121, "y": 668, "width": 121.9800033569336, "height": 46 }
+					}
+				},
+				{
+					"edge": {
+						"id": "7wUmdcxh",
+						"order": 19000,
+						"from": "X6j6fViI",
+						"to": "aRDbMlep",
+						"kind": "dependency",
+						"label": "which fields each request issues",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+							"symbol": "SESSION_PROTOCOL_METHODS"
+						}
+					},
+					"curve": {
+						"from": { "x": 529.3605266362994, "y": 926 },
+						"segments": [{ "kind": "line", "to": { "x": 529.3605266362994, "y": 1247 } }]
+					},
+					"path": "M529.36,926 L529.36,1247",
+					"label": {
+						"measured": {
+							"width": 174.50999450683594,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "which fields each request issues",
+									"width": 154.50999450683594,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 442.1055293828814, "y": 1172, "width": 174.50999450683594, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "wVgRmbf8",
+						"order": 20000,
+						"from": "JBu1uGdl",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "did a failed logout reach the child",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+							"symbol": "mutationOutcome"
+						}
+					},
+					"curve": {
+						"from": { "x": 325.68999755859375, "y": 259 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 325.68999755859375, "y": 317 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 325.68999755859375, "y": 321.4184 },
+								"second": { "x": 322.10839755859377, "y": 325 },
+								"to": { "x": 317.68999755859375, "y": 325 }
+							},
+							{ "kind": "line", "to": { "x": 117.5250015258789, "y": 325 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 113.1066015258789, "y": 325 },
+								"second": { "x": 109.5250015258789, "y": 328.5816 },
+								"to": { "x": 109.5250015258789, "y": 333 }
+							},
+							{ "kind": "line", "to": { "x": 109.5250015258789, "y": 1060 } }
+						]
+					},
+					"path": "M325.69,259 L325.69,317 C325.69,321.42 322.11,325 317.69,325 L117.53,325 C113.11,325 109.53,328.58 109.53,333 L109.53,1060",
+					"label": {
+						"measured": {
+							"width": 179.0500030517578,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "did a failed logout reach the child",
+									"width": 159.0500030517578,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 20, "y": 456.5, "width": 179.0500030517578, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "40GtFaKL",
+						"order": 21000,
+						"from": "JBu1uGdl",
+						"to": "99KMASDs",
+						"kind": "dependency",
+						"label": "supported and refused login variants",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+							"symbol": "LOGIN_POLICIES"
+						}
+					},
+					"curve": {
+						"from": { "x": 341.68999755859375, "y": 259 },
+						"segments": [{ "kind": "line", "to": { "x": 341.68999755859375, "y": 428 } }]
+					},
+					"path": "M341.69,259 L341.69,428",
+					"label": {
+						"measured": {
+							"width": 196.0800018310547,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "supported and refused login variants",
+									"width": 176.0800018310547,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 243.64999664306637, "y": 353, "width": 196.0800018310547, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "OjFVoTcz",
+						"order": 22000,
+						"from": "ql0DevMk",
+						"to": "Sk7GfGta",
+						"kind": "dependency",
+						"label": "decode each inbound frame",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
+							"symbol": "decodeServerNotification"
+						}
+					},
+					"curve": {
+						"from": { "x": 1218.5000015258788, "y": 735 },
+						"segments": [{ "kind": "line", "to": { "x": 1218.5000015258788, "y": 1060 } }]
+					},
+					"path": "M1218.5,735 L1218.5,1060",
+					"label": {
+						"measured": {
+							"width": 153.4199981689453,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "decode each inbound frame",
+									"width": 133.4199981689453,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 1141.7900024414062, "y": 874.5, "width": 153.4199981689453, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "s0Qx9DbR",
+						"order": 23000,
+						"from": "X6j6fViI",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "refuse params that are no object",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+							"symbol": "requestParams"
+						}
+					},
+					"curve": {
+						"from": { "x": 513.5300015258789, "y": 926 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 513.5300015258789, "y": 934 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 513.5300015258789, "y": 938.4184 },
+								"second": { "x": 509.9484015258789, "y": 942 },
+								"to": { "x": 505.5300015258789, "y": 942 }
+							},
+							{ "kind": "line", "to": { "x": 433.62052877252984, "y": 942 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 429.2021287725298, "y": 942 },
+								"second": { "x": 425.62052877252984, "y": 945.5816 },
+								"to": { "x": 425.62052877252984, "y": 950 }
+							},
+							{ "kind": "line", "to": { "x": 425.62052877252984, "y": 1024 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 425.62052877252984, "y": 1028.4184 },
+								"second": { "x": 422.03892877252986, "y": 1032 },
+								"to": { "x": 417.62052877252984, "y": 1032 }
+							},
+							{ "kind": "line", "to": { "x": 306.5300015258789, "y": 1032 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 302.1116015258789, "y": 1032 },
+								"second": { "x": 298.5300015258789, "y": 1035.5816 },
+								"to": { "x": 298.5300015258789, "y": 1040 }
+							},
+							{ "kind": "line", "to": { "x": 298.5300015258789, "y": 1060 } }
+						]
+					},
+					"path": "M513.53,926 L513.53,934 C513.53,938.42 509.95,942 505.53,942 L433.62,942 C429.2,942 425.62,945.58 425.62,950 L425.62,1024 C425.62,1028.42 422.04,1032 417.62,1032 L306.53,1032 C302.11,1032 298.53,1035.58 298.53,1040 L298.53,1060",
+					"label": {
+						"measured": {
+							"width": 175.47999572753906,
+							"height": 31,
+							"chips": [{ "y": 0, "height": 31 }],
+							"runs": [
+								{
+									"text": "refuse params that are no object",
+									"width": 155.47999572753906,
+									"x": 10,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 337.8805309087603, "y": 977.5, "width": 175.47999572753906, "height": 31 }
+					}
+				},
+				{
+					"edge": {
+						"id": "cGImVr7b",
+						"order": 24000,
+						"from": "X6j6fViI",
+						"to": "Sk7GfGta",
+						"kind": "dependency",
+						"label": "request methods and their parameters",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+							"symbol": "isClientRequestMethodWithoutParams"
+						}
+					},
+					"curve": {
+						"from": { "x": 618.5, "y": 926 },
+						"segments": [
+							{ "kind": "line", "to": { "x": 618.5, "y": 1024 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 618.5, "y": 1028.4184 },
+								"second": { "x": 622.0816, "y": 1032 },
+								"to": { "x": 626.5, "y": 1032 }
+							},
+							{ "kind": "line", "to": { "x": 1060.5000015258788, "y": 1032 } },
+							{
+								"kind": "cubic",
+								"first": { "x": 1064.9184015258788, "y": 1032 },
+								"second": { "x": 1068.5000015258788, "y": 1035.5816 },
+								"to": { "x": 1068.5000015258788, "y": 1040 }
+							},
+							{ "kind": "line", "to": { "x": 1068.5000015258788, "y": 1060 } }
+						]
+					},
+					"path": "M618.5,926 L618.5,1024 C618.5,1028.42 622.08,1032 626.5,1032 L1060.5,1032 C1064.92,1032 1068.5,1035.58 1068.5,1040 L1068.5,1060",
+					"label": {
+						"measured": {
+							"width": 119.83000183105469,
+							"height": 46,
+							"chips": [{ "y": 0, "height": 46 }],
+							"runs": [
+								{
+									"text": "request methods",
+									"width": 80.77999877929688,
+									"x": 19.525001525878906,
+									"y": 18,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								},
+								{
+									"text": "and their parameters",
+									"width": 99.83000183105469,
+									"x": 10,
+									"y": 33,
+									"font": { "family": "sans", "weight": 500 },
+									"fontSize": 10,
+									"role": "label"
+								}
+							]
+						},
+						"box": { "x": 558.5849990844727, "y": 970, "width": 119.83000183105469, "height": 46 }
+					}
+				}
+			],
+			"bridged": {
+				"edges": [
+					{
+						"edge": {
+							"id": "qQrqNYdt",
+							"order": 1000,
+							"from": "xtHoCCnF",
+							"to": "tFTiAUKg",
+							"kind": "call",
+							"label": "initialize, once",
+							"description": "The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+							"emphasis": "hero",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/workbench/src/server/services/generation/hooks.ts",
+								"symbol": "initialize"
+							}
+						},
+						"curve": {
+							"from": { "x": 854.5300015258789, "y": 309 },
+							"segments": [{ "kind": "line", "to": { "x": 854.5300015258789, "y": 428 } }]
+						},
+						"path": "M854.53,309 L854.53,428",
+						"label": {
+							"measured": {
+								"width": 87.36000061035156,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "initialize, once",
+										"width": 67.36000061035156,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 810.8500012207031, "y": 353, "width": 87.36000061035156, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "SI5PTs6X",
+							"order": 3000,
+							"from": "tFTiAUKg",
+							"to": "X6j6fViI",
+							"kind": "call",
+							"label": "serialize issued identities",
+							"emphasis": "hero",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "createRequestParamsSerializer"
+							}
+						},
+						"curve": {
+							"from": { "x": 713.5300015258789, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 713.5300015258789, "y": 540 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 713.5300015258789, "y": 544.4184 },
+									"second": { "x": 709.9484015258789, "y": 548 },
+									"to": { "x": 705.5300015258789, "y": 548 }
+								},
+								{ "kind": "line", "to": { "x": 481.5300015258789, "y": 548 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 477.1116015258789, "y": 548 },
+									"second": { "x": 473.5300015258789, "y": 551.5816 },
+									"to": { "x": 473.5300015258789, "y": 556 }
+								},
+								{ "kind": "line", "to": { "x": 473.5300015258789, "y": 818 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 473.5300015258789, "y": 822.4184 },
+									"second": { "x": 477.1116015258789, "y": 826 },
+									"to": { "x": 481.5300015258789, "y": 826 }
+								},
+								{ "kind": "line", "to": { "x": 505.5300015258789, "y": 826 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 509.9484015258789, "y": 826 },
+									"second": { "x": 513.5300015258789, "y": 829.5816 },
+									"to": { "x": 513.5300015258789, "y": 834 }
+								},
+								{ "kind": "line", "to": { "x": 513.5300015258789, "y": 854 } }
+							]
+						},
+						"path": "M713.53,516 L713.53,540 C713.53,544.42 709.95,548 705.53,548 L481.53,548 C477.11,548 473.53,551.58 473.53,556 L473.53,818 C473.53,822.42 477.11,826 481.53,826 L505.53,826 C509.95,826 513.53,829.58 513.53,834 L513.53,854",
+						"label": {
+							"measured": {
+								"width": 138.8499984741211,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "serialize issued identities",
+										"width": 118.8499984741211,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 404.10500228881835, "y": 779, "width": 138.8499984741211, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "HlhfxXJm",
+							"order": 5000,
+							"from": "tFTiAUKg",
+							"to": "M3mPynLe",
+							"kind": "call",
+							"label": "adopt returned identities",
+							"emphasis": "normal",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "adoptSessionResponse"
+							}
+						},
+						"curve": {
+							"from": { "x": 772, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 772, "y": 1025 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 775.8659932488156, "y": 1025 },
+									"second": { "x": 779, "y": 1028.1340067511844 },
+									"to": { "x": 779, "y": 1032 }
+								},
+								{
+									"kind": "cubic",
+									"first": { "x": 779, "y": 1035.8659932488156 },
+									"second": { "x": 775.8659932488156, "y": 1039 },
+									"to": { "x": 772, "y": 1039 }
+								},
+								{ "kind": "line", "to": { "x": 772, "y": 1060 } }
+							]
+						},
+						"path": "M772,516 L772,1025 C775.87,1025 779,1028.13 779,1032 C779,1035.87 775.87,1039 772,1039 L772,1060",
+						"label": {
+							"measured": {
+								"width": 139.1699981689453,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "adopt returned identities",
+										"width": 119.16999816894531,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 702.4150009155273,
+								"y": 977.5,
+								"width": 139.1699981689453,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "mpJAeANo",
+							"order": 6000,
+							"from": "tFTiAUKg",
+							"to": "8QpDaiD6",
+							"kind": "call",
+							"label": "settle mutation failure",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "mutationFailure"
+							}
+						},
+						"curve": {
+							"from": { "x": 697.5300015258789, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 697.5300015258789, "y": 524 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 697.5300015258789, "y": 528.4184 },
+									"second": { "x": 693.9484015258789, "y": 532 },
+									"to": { "x": 689.5300015258789, "y": 532 }
+								},
+								{ "kind": "line", "to": { "x": 229.46487636677836, "y": 532 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 225.04647636677836, "y": 532 },
+									"second": { "x": 221.46487636677836, "y": 535.5816 },
+									"to": { "x": 221.46487636677836, "y": 540 }
+								},
+								{ "kind": "line", "to": { "x": 221.46487636677836, "y": 1060 } }
+							]
+						},
+						"path": "M697.53,516 L697.53,524 C697.53,528.42 693.95,532 689.53,532 L229.46,532 C225.05,532 221.46,535.58 221.46,540 L221.46,1060",
+						"label": {
+							"measured": {
+								"width": 124.56999969482422,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "settle mutation failure",
+										"width": 104.56999969482422,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 159.17987651936625,
+								"y": 874.5,
+								"width": 124.56999969482422,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "7dDHchT9",
+							"order": 9000,
+							"from": "FPKa6YCR",
+							"to": "JBu1uGdl",
+							"kind": "call",
+							"label": "thread/start for a new workhorse",
+							"description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+							"emphasis": "hero",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+								"symbol": "threadStart"
+							}
+						},
+						"curve": {
+							"from": { "x": 437.5300015258789, "y": 108 },
+							"segments": [{ "kind": "line", "to": { "x": 437.5300015258789, "y": 187 } }]
+						},
+						"path": "M437.53,108 L437.53,187",
+						"label": {
+							"measured": {
+								"width": 179.80999755859375,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "thread/start for a new workhorse",
+										"width": 159.80999755859375,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 347.625002746582, "y": 132, "width": 179.80999755859375, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "EAKN00R4",
+							"order": 10000,
+							"from": "tFTiAUKg",
+							"to": "ql0DevMk",
+							"kind": "rpc",
+							"label": "one request frame",
+							"emphasis": "hero",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "request"
+							}
+						},
+						"curve": {
+							"from": { "x": 986.5150015258789, "y": 516 },
+							"segments": [{ "kind": "line", "to": { "x": 986.5150015258789, "y": 647 } }]
+						},
+						"path": "M986.52,516 L986.52,647",
+						"label": {
+							"measured": {
+								"width": 107.44000244140625,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "one request frame",
+										"width": 87.44000244140625,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 932.7950003051758, "y": 592, "width": 107.44000244140625, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "blvoJ8p8",
+							"order": 12000,
+							"from": "ql0DevMk",
+							"to": "3FR6mev4",
+							"kind": "event",
+							"label": "a request the child made of us",
+							"description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "onServerRequest"
+							}
+						},
+						"curve": {
+							"from": { "x": 986.5150015258789, "y": 735 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 986.5150015258789, "y": 743 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 986.5150015258789, "y": 747.4184 },
+									"second": { "x": 982.9334015258789, "y": 751 },
+									"to": { "x": 978.5150015258789, "y": 751 }
+								},
+								{ "kind": "line", "to": { "x": 920.375002746582, "y": 751 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 915.956602746582, "y": 751 },
+									"second": { "x": 912.375002746582, "y": 754.5816 },
+									"to": { "x": 912.375002746582, "y": 759 }
+								},
+								{ "kind": "line", "to": { "x": 912.375002746582, "y": 854 } }
+							]
+						},
+						"path": "M986.52,735 L986.52,743 C986.52,747.42 982.93,751 978.52,751 L920.38,751 C915.96,751 912.38,754.58 912.38,759 L912.38,854",
+						"label": {
+							"measured": {
+								"width": 163.69000244140625,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "a request the child made of us",
+										"width": 143.69000244140625,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 830.5300015258789, "y": 779, "width": 163.69000244140625, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "jhNZqAiD",
+							"order": 13000,
+							"from": "JBu1uGdl",
+							"to": "tFTiAUKg",
+							"kind": "call",
+							"label": "read or mutate, behind its gate",
+							"emphasis": "hero",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+								"symbol": "mutate"
+							}
+						},
+						"curve": {
+							"from": { "x": 547.5300015258789, "y": 259 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 547.5300015258789, "y": 392 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 547.5300015258789, "y": 396.4184 },
+									"second": { "x": 551.1116015258789, "y": 400 },
+									"to": { "x": 555.5300015258789, "y": 400 }
+								},
+								{ "kind": "line", "to": { "x": 689.5300015258789, "y": 400 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 693.9484015258789, "y": 400 },
+									"second": { "x": 697.5300015258789, "y": 403.5816 },
+									"to": { "x": 697.5300015258789, "y": 408 }
+								},
+								{ "kind": "line", "to": { "x": 697.5300015258789, "y": 428 } }
+							]
+						},
+						"path": "M547.53,259 L547.53,392 C547.53,396.42 551.11,400 555.53,400 L689.53,400 C693.95,400 697.53,403.58 697.53,408 L697.53,428",
+						"label": {
+							"measured": {
+								"width": 167.60000610351562,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "read or mutate, behind its gate",
+										"width": 147.60000610351562,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 463.7299984741211, "y": 353, "width": 167.60000610351562, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "d2caVqCr",
+							"order": 14000,
+							"from": "tFTiAUKg",
+							"to": "Sk7GfGta",
+							"kind": "call",
+							"label": "decode parameters and answer",
+							"emphasis": "normal",
+							"traffic": { "speed": 40, "volume": 0.5 },
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "decodeResponse"
+							}
+						},
+						"curve": {
+							"from": { "x": 1002.5150015258789, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 1002.5150015258789, "y": 524 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 1002.5150015258789, "y": 528.4184 },
+									"second": { "x": 1006.0966015258789, "y": 532 },
+									"to": { "x": 1010.5150015258789, "y": 532 }
+								},
+								{ "kind": "line", "to": { "x": 1303.5000015258788, "y": 532 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 1307.9184015258788, "y": 532 },
+									"second": { "x": 1311.5000015258788, "y": 535.5816 },
+									"to": { "x": 1311.5000015258788, "y": 540 }
+								},
+								{ "kind": "line", "to": { "x": 1311.5000015258788, "y": 1060 } }
+							]
+						},
+						"path": "M1002.52,516 L1002.52,524 C1002.52,528.42 1006.1,532 1010.52,532 L1303.5,532 C1307.92,532 1311.5,535.58 1311.5,540 L1311.5,1060",
+						"label": {
+							"measured": {
+								"width": 171.19000244140625,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "decode parameters and answer",
+										"width": 151.19000244140625,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 1225.9050003051757,
+								"y": 592,
+								"width": 171.19000244140625,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "JOmIweJF",
+							"order": 15000,
+							"from": "M3mPynLe",
+							"to": "aRDbMlep",
+							"kind": "dependency",
+							"label": "which identities each result holds",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts",
+								"symbol": "SESSION_PROTOCOL_METHODS"
+							}
+						},
+						"curve": {
+							"from": { "x": 730.3355251104205, "y": 1132 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 730.3355251104205, "y": 1211 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 730.3355251104205, "y": 1215.4184 },
+									"second": { "x": 726.7539251104205, "y": 1219 },
+									"to": { "x": 722.3355251104205, "y": 1219 }
+								},
+								{ "kind": "line", "to": { "x": 685.5300015258789, "y": 1219 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 681.1116015258789, "y": 1219 },
+									"second": { "x": 677.5300015258789, "y": 1222.5816 },
+									"to": { "x": 677.5300015258789, "y": 1227 }
+								},
+								{ "kind": "line", "to": { "x": 677.5300015258789, "y": 1247 } }
+							]
+						},
+						"path": "M730.34,1132 L730.34,1211 C730.34,1215.42 726.75,1219 722.34,1219 L685.53,1219 C681.11,1219 677.53,1222.58 677.53,1227 L677.53,1247",
+						"label": {
+							"measured": {
+								"width": 179.44000244140625,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "which identities each result holds",
+										"width": 159.44000244140625,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 640.6155238897173,
+								"y": 1172,
+								"width": 179.44000244140625,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "JTrBju8L",
+							"order": 16000,
+							"from": "tFTiAUKg",
+							"to": "Ly6hUU5o",
+							"kind": "call",
+							"label": "prove storage after config/read",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "proveCodexStorage"
+							}
+						},
+						"curve": {
+							"from": { "x": 729.5300015258789, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 729.5300015258789, "y": 556 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 729.5300015258789, "y": 560.4184 },
+									"second": { "x": 725.9484015258789, "y": 564 },
+									"to": { "x": 721.5300015258789, "y": 564 }
+								},
+								{ "kind": "line", "to": { "x": 673.5300015258789, "y": 564 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 669.1116015258789, "y": 564 },
+									"second": { "x": 665.5300015258789, "y": 567.5816 },
+									"to": { "x": 665.5300015258789, "y": 572 }
+								},
+								{ "kind": "line", "to": { "x": 665.5300015258789, "y": 647 } }
+							]
+						},
+						"path": "M729.53,516 L729.53,556 C729.53,560.42 725.95,564 721.53,564 L673.53,564 C669.11,564 665.53,567.58 665.53,572 L665.53,647",
+						"label": {
+							"measured": {
+								"width": 171.86000061035156,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "prove storage after config/read",
+										"width": 151.86000061035156,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 579.6000012207031, "y": 592, "width": 171.86000061035156, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "bEmVBBGp",
+							"order": 17000,
+							"from": "3FR6mev4",
+							"to": "ql0DevMk",
+							"kind": "call",
+							"label": "answer the clock, refuse the rest",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+								"symbol": "respond"
+							}
+						},
+						"curve": {
+							"from": { "x": 1033.5300015258788, "y": 854 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 1033.5300015258788, "y": 834 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 1033.5300015258788, "y": 829.5816 },
+									"second": { "x": 1037.1116015258788, "y": 826 },
+									"to": { "x": 1041.5300015258788, "y": 826 }
+								},
+								{ "kind": "line", "to": { "x": 1097.8300045776366, "y": 826 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 1102.2484045776366, "y": 826 },
+									"second": { "x": 1105.8300045776366, "y": 822.4184 },
+									"to": { "x": 1105.8300045776366, "y": 818 }
+								},
+								{ "kind": "line", "to": { "x": 1105.8300045776366, "y": 735 } }
+							]
+						},
+						"path": "M1033.53,854 L1033.53,834 C1033.53,829.58 1037.11,826 1041.53,826 L1097.83,826 C1102.25,826 1105.83,822.42 1105.83,818 L1105.83,735",
+						"label": {
+							"measured": {
+								"width": 175.22000122070312,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "answer the clock, refuse the rest",
+										"width": 155.22000122070312,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 1018.2200039672852,
+								"y": 779,
+								"width": 175.22000122070312,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "cDYih9Cs",
+							"order": 18000,
+							"from": "tFTiAUKg",
+							"to": "3FR6mev4",
+							"kind": "call",
+							"label": "install the answers to the child's requests",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session.ts",
+								"symbol": "createReverseRequestHandlers"
+							}
+						},
+						"curve": {
+							"from": { "x": 854.5300015258789, "y": 516 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 854.5300015258789, "y": 743 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 854.5300015258789, "y": 747.4184 },
+									"second": { "x": 850.9484015258789, "y": 751 },
+									"to": { "x": 846.5300015258789, "y": 751 }
+								},
+								{ "kind": "line", "to": { "x": 822.5300015258789, "y": 751 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 818.1116015258789, "y": 751 },
+									"second": { "x": 814.5300015258789, "y": 754.5816 },
+									"to": { "x": 814.5300015258789, "y": 759 }
+								},
+								{ "kind": "line", "to": { "x": 814.5300015258789, "y": 854 } }
+							]
+						},
+						"path": "M854.53,516 L854.53,743 C854.53,747.42 850.95,751 846.53,751 L822.53,751 C818.11,751 814.53,754.58 814.53,759 L814.53,854",
+						"label": {
+							"measured": {
+								"width": 121.9800033569336,
+								"height": 46,
+								"chips": [{ "y": 0, "height": 46 }],
+								"runs": [
+									{
+										"text": "install the answers to",
+										"width": 101.9800033569336,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									},
+									{
+										"text": "the child's requests",
+										"width": 93,
+										"x": 14.490001678466797,
+										"y": 33,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 793.5399998474121, "y": 668, "width": 121.9800033569336, "height": 46 }
+						}
+					},
+					{
+						"edge": {
+							"id": "7wUmdcxh",
+							"order": 19000,
+							"from": "X6j6fViI",
+							"to": "aRDbMlep",
+							"kind": "dependency",
+							"label": "which fields each request issues",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+								"symbol": "SESSION_PROTOCOL_METHODS"
+							}
+						},
+						"curve": {
+							"from": { "x": 529.3605266362994, "y": 926 },
+							"segments": [{ "kind": "line", "to": { "x": 529.3605266362994, "y": 1247 } }]
+						},
+						"path": "M529.36,926 L529.36,1247",
+						"label": {
+							"measured": {
+								"width": 174.50999450683594,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "which fields each request issues",
+										"width": 154.50999450683594,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 442.1055293828814,
+								"y": 1172,
+								"width": 174.50999450683594,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "wVgRmbf8",
+							"order": 20000,
+							"from": "JBu1uGdl",
+							"to": "8QpDaiD6",
+							"kind": "call",
+							"label": "did a failed logout reach the child",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+								"symbol": "mutationOutcome"
+							}
+						},
+						"curve": {
+							"from": { "x": 325.68999755859375, "y": 259 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 325.68999755859375, "y": 317 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 325.68999755859375, "y": 321.4184 },
+									"second": { "x": 322.10839755859377, "y": 325 },
+									"to": { "x": 317.68999755859375, "y": 325 }
+								},
+								{ "kind": "line", "to": { "x": 117.5250015258789, "y": 325 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 113.1066015258789, "y": 325 },
+									"second": { "x": 109.5250015258789, "y": 328.5816 },
+									"to": { "x": 109.5250015258789, "y": 333 }
+								},
+								{ "kind": "line", "to": { "x": 109.5250015258789, "y": 1060 } }
+							]
+						},
+						"path": "M325.69,259 L325.69,317 C325.69,321.42 322.11,325 317.69,325 L117.53,325 C113.11,325 109.53,328.58 109.53,333 L109.53,1060",
+						"label": {
+							"measured": {
+								"width": 179.0500030517578,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "did a failed logout reach the child",
+										"width": 159.0500030517578,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 20, "y": 456.5, "width": 179.0500030517578, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "40GtFaKL",
+							"order": 21000,
+							"from": "JBu1uGdl",
+							"to": "99KMASDs",
+							"kind": "dependency",
+							"label": "supported and refused login variants",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+								"symbol": "LOGIN_POLICIES"
+							}
+						},
+						"curve": {
+							"from": { "x": 341.68999755859375, "y": 259 },
+							"segments": [{ "kind": "line", "to": { "x": 341.68999755859375, "y": 428 } }]
+						},
+						"path": "M341.69,259 L341.69,428",
+						"label": {
+							"measured": {
+								"width": 196.0800018310547,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "supported and refused login variants",
+										"width": 176.0800018310547,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 243.64999664306637, "y": 353, "width": 196.0800018310547, "height": 31 }
+						}
+					},
+					{
+						"edge": {
+							"id": "OjFVoTcz",
+							"order": 22000,
+							"from": "ql0DevMk",
+							"to": "Sk7GfGta",
+							"kind": "dependency",
+							"label": "decode each inbound frame",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
+								"symbol": "decodeServerNotification"
+							}
+						},
+						"curve": {
+							"from": { "x": 1218.5000015258788, "y": 735 },
+							"segments": [{ "kind": "line", "to": { "x": 1218.5000015258788, "y": 1060 } }]
+						},
+						"path": "M1218.5,735 L1218.5,1060",
+						"label": {
+							"measured": {
+								"width": 153.4199981689453,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "decode each inbound frame",
+										"width": 133.4199981689453,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 1141.7900024414062,
+								"y": 874.5,
+								"width": 153.4199981689453,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "s0Qx9DbR",
+							"order": 23000,
+							"from": "X6j6fViI",
+							"to": "8QpDaiD6",
+							"kind": "call",
+							"label": "refuse params that are no object",
+							"emphasis": "muted",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+								"symbol": "requestParams"
+							}
+						},
+						"curve": {
+							"from": { "x": 513.5300015258789, "y": 926 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 513.5300015258789, "y": 934 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 513.5300015258789, "y": 938.4184 },
+									"second": { "x": 509.9484015258789, "y": 942 },
+									"to": { "x": 505.5300015258789, "y": 942 }
+								},
+								{ "kind": "line", "to": { "x": 433.62052877252984, "y": 942 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 429.2021287725298, "y": 942 },
+									"second": { "x": 425.62052877252984, "y": 945.5816 },
+									"to": { "x": 425.62052877252984, "y": 950 }
+								},
+								{ "kind": "line", "to": { "x": 425.62052877252984, "y": 1024 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 425.62052877252984, "y": 1028.4184 },
+									"second": { "x": 422.03892877252986, "y": 1032 },
+									"to": { "x": 417.62052877252984, "y": 1032 }
+								},
+								{ "kind": "line", "to": { "x": 306.5300015258789, "y": 1032 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 302.1116015258789, "y": 1032 },
+									"second": { "x": 298.5300015258789, "y": 1035.5816 },
+									"to": { "x": 298.5300015258789, "y": 1040 }
+								},
+								{ "kind": "line", "to": { "x": 298.5300015258789, "y": 1060 } }
+							]
+						},
+						"path": "M513.53,926 L513.53,934 C513.53,938.42 509.95,942 505.53,942 L433.62,942 C429.2,942 425.62,945.58 425.62,950 L425.62,1024 C425.62,1028.42 422.04,1032 417.62,1032 L306.53,1032 C302.11,1032 298.53,1035.58 298.53,1040 L298.53,1060",
+						"label": {
+							"measured": {
+								"width": 175.47999572753906,
+								"height": 31,
+								"chips": [{ "y": 0, "height": 31 }],
+								"runs": [
+									{
+										"text": "refuse params that are no object",
+										"width": 155.47999572753906,
+										"x": 10,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": {
+								"x": 337.8805309087603,
+								"y": 977.5,
+								"width": 175.47999572753906,
+								"height": 31
+							}
+						}
+					},
+					{
+						"edge": {
+							"id": "cGImVr7b",
+							"order": 24000,
+							"from": "X6j6fViI",
+							"to": "Sk7GfGta",
+							"kind": "dependency",
+							"label": "request methods and their parameters",
+							"emphasis": "normal",
+							"anchor": {
+								"repo": "github.com/miklschmidt/archboard",
+								"path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+								"symbol": "isClientRequestMethodWithoutParams"
+							}
+						},
+						"curve": {
+							"from": { "x": 618.5, "y": 926 },
+							"segments": [
+								{ "kind": "line", "to": { "x": 618.5, "y": 1024 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 618.5, "y": 1028.4184 },
+									"second": { "x": 622.0816, "y": 1032 },
+									"to": { "x": 626.5, "y": 1032 }
+								},
+								{ "kind": "line", "to": { "x": 1060.5000015258788, "y": 1032 } },
+								{
+									"kind": "cubic",
+									"first": { "x": 1064.9184015258788, "y": 1032 },
+									"second": { "x": 1068.5000015258788, "y": 1035.5816 },
+									"to": { "x": 1068.5000015258788, "y": 1040 }
+								},
+								{ "kind": "line", "to": { "x": 1068.5000015258788, "y": 1060 } }
+							]
+						},
+						"path": "M618.5,926 L618.5,1024 C618.5,1028.42 622.08,1032 626.5,1032 L1060.5,1032 C1064.92,1032 1068.5,1035.58 1068.5,1040 L1068.5,1060",
+						"label": {
+							"measured": {
+								"width": 119.83000183105469,
+								"height": 46,
+								"chips": [{ "y": 0, "height": 46 }],
+								"runs": [
+									{
+										"text": "request methods",
+										"width": 80.77999877929688,
+										"x": 19.525001525878906,
+										"y": 18,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									},
+									{
+										"text": "and their parameters",
+										"width": 99.83000183105469,
+										"x": 10,
+										"y": 33,
+										"font": { "family": "sans", "weight": 500 },
+										"fontSize": 10,
+										"role": "label"
+									}
+								]
+							},
+							"box": { "x": 558.5849990844727, "y": 970, "width": 119.83000183105469, "height": 46 }
+						}
+					}
+				],
+				"bridges": [
+					{
+						"edgeId": "HlhfxXJm",
+						"under": ["cGImVr7b"],
+						"curve": {
+							"from": { "x": 772, "y": 1025 },
+							"segments": [
+								{
+									"kind": "cubic",
+									"first": { "x": 775.8659932488156, "y": 1025 },
+									"second": { "x": 779, "y": 1028.1340067511844 },
+									"to": { "x": 779, "y": 1032 }
+								},
+								{
+									"kind": "cubic",
+									"first": { "x": 779, "y": 1035.8659932488156 },
+									"second": { "x": 775.8659932488156, "y": 1039 },
+									"to": { "x": 772, "y": 1039 }
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		"appearances": {
+			"tFTiAUKg": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"Ly6hUU5o": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"JBu1uGdl": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"X6j6fViI": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"aRDbMlep": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"M3mPynLe": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"3FR6mev4": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"8QpDaiD6": {
+				"container": false,
+				"typeColor": "cyan",
+				"icon": "RiCodeLine",
+				"typeName": "Function",
+				"typeKind": "function",
+				"drill": null
+			},
+			"FPKa6YCR": {
+				"container": false,
+				"typeColor": "violet",
+				"icon": "RiBox3Line",
+				"typeName": "Module",
+				"typeKind": "module",
+				"drill": "across"
+			},
+			"ql0DevMk": {
+				"container": false,
+				"typeColor": "violet",
+				"icon": "RiBox3Line",
+				"typeName": "Module",
+				"typeKind": "module",
+				"drill": null
+			},
+			"Sk7GfGta": {
+				"container": false,
+				"typeColor": "violet",
+				"icon": "RiBox3Line",
+				"typeName": "Module",
+				"typeKind": "module",
+				"drill": null
+			},
+			"xtHoCCnF": {
+				"container": false,
+				"typeColor": "violet",
+				"icon": "RiBox3Line",
+				"typeName": "Module",
+				"typeKind": "module",
+				"drill": null
+			},
+			"99KMASDs": {
+				"container": false,
+				"typeColor": "rose",
+				"icon": "RiSettings3Line",
+				"typeName": "Configuration",
+				"typeKind": "config",
+				"drill": null
+			}
+		},
+		"lines": {
+			"qQrqNYdt": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"SI5PTs6X": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"HlhfxXJm": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"mpJAeANo": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"7dDHchT9": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"EAKN00R4": {
+				"name": "RPC",
+				"color": "violet",
+				"dash": "solid",
+				"arrowhead": "filled",
+				"evidence": ["call", "configured-path"]
+			},
+			"blvoJ8p8": {
+				"name": "Event",
+				"color": "fuchsia",
+				"dash": "dashed",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path"]
+			},
+			"jhNZqAiD": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"d2caVqCr": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"JOmIweJF": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			},
+			"JTrBju8L": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"bEmVBBGp": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"cDYih9Cs": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"7wUmdcxh": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			},
+			"wVgRmbf8": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"40GtFaKL": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			},
+			"OjFVoTcz": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			},
+			"s0Qx9DbR": { "name": "Call", "dash": "solid", "arrowhead": "filled", "evidence": ["call"] },
+			"cGImVr7b": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			}
+		},
+		"steps": [],
+		"groups": {
+			"writes": "orange",
+			"drawing": "violet",
+			"panes": "teal",
+			"walkthrough": "cyan",
+			"voice": "yellow",
+			"workhorse": "sky",
+			"child": "indigo",
+			"agent": "fuchsia",
+			"checks": "pink",
+			"grading": "purple"
+		},
+		"farSize": 20.5
+	},
+	"page": { "plain": true, "unsettled": [], "unbuilt": false, "frame": {} },
+	"document": {
+		"name": "Architecture diagram: 13 nodes, 19 connections",
+		"fonts": "linked",
+		"farViewSwapMs": 280
+	},
+	"icons": {
+		"RiQuestionLine": [
+			"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM13 13.3551V14H11V12.5C11 11.9477 11.4477 11.5 12 11.5C12.8284 11.5 13.5 10.8284 13.5 10C13.5 9.17157 12.8284 8.5 12 8.5C11.2723 8.5 10.6656 9.01823 10.5288 9.70577L8.56731 9.31346C8.88637 7.70919 10.302 6.5 12 6.5C13.933 6.5 15.5 8.067 15.5 10C15.5 11.5855 14.4457 12.9248 13 13.3551Z"
+		],
+		"RiFlowChart": [
+			"M6 21.5C4.067 21.5 2.5 19.933 2.5 18C2.5 16.067 4.067 14.5 6 14.5C7.5852 14.5 8.92427 15.5539 9.35481 16.9992L15 16.9994V15L17 14.9994V9.24339L14.757 6.99938H9V9.00003H3V3.00003H9V4.99939H14.757L18 1.75739L22.2426 6.00003L19 9.24139V14.9994L21 15V21H15V18.9994L9.35499 19.0003C8.92464 20.4459 7.58543 21.5 6 21.5ZM6 16.5C5.17157 16.5 4.5 17.1716 4.5 18C4.5 18.8285 5.17157 19.5 6 19.5C6.82843 19.5 7.5 18.8285 7.5 18C7.5 17.1716 6.82843 16.5 6 16.5ZM19 17H17V19H19V17ZM18 4.58581L16.5858 6.00003L18 7.41424L19.4142 6.00003L18 4.58581ZM7 5.00003H5V7.00003H7V5.00003Z"
+		],
+		"RiCodeLine": [
+			"M23 12L15.9289 19.0711L14.5147 17.6569L20.1716 12L14.5147 6.34317L15.9289 4.92896L23 12ZM3.82843 12L9.48528 17.6569L8.07107 19.0711L1 12L8.07107 4.92896L9.48528 6.34317L3.82843 12Z"
+		],
+		"RiBox3Line": [
+			"M12 1L21.5 6.5V17.5L12 23L2.5 17.5V6.5L12 1ZM5.49388 7.0777L12.0001 10.8444L18.5062 7.07774L12 3.311L5.49388 7.0777ZM4.5 8.81329V16.3469L11.0001 20.1101V12.5765L4.5 8.81329ZM13.0001 20.11L19.5 16.3469V8.81337L13.0001 12.5765V20.11Z"
+		],
+		"RiSettings3Line": [
+			"M3.33946 17.0002C2.90721 16.2515 2.58277 15.4702 2.36133 14.6741C3.3338 14.1779 3.99972 13.1668 3.99972 12.0002C3.99972 10.8345 3.3348 9.824 2.36353 9.32741C2.81025 7.71651 3.65857 6.21627 4.86474 4.99001C5.7807 5.58416 6.98935 5.65534 7.99972 5.072C9.01009 4.48866 9.55277 3.40635 9.4962 2.31604C11.1613 1.8846 12.8847 1.90004 14.5031 2.31862C14.4475 3.40806 14.9901 4.48912 15.9997 5.072C17.0101 5.65532 18.2187 5.58416 19.1346 4.99007C19.7133 5.57986 20.2277 6.25151 20.66 7.00021C21.0922 7.7489 21.4167 8.53025 21.6381 9.32628C20.6656 9.82247 19.9997 10.8336 19.9997 12.0002C19.9997 13.166 20.6646 14.1764 21.6359 14.673C21.1892 16.2839 20.3409 17.7841 19.1347 19.0104C18.2187 18.4163 17.0101 18.3451 15.9997 18.9284C14.9893 19.5117 14.4467 20.5941 14.5032 21.6844C12.8382 22.1158 11.1148 22.1004 9.49633 21.6818C9.55191 20.5923 9.00929 19.5113 7.99972 18.9284C6.98938 18.3451 5.78079 18.4162 4.86484 19.0103C4.28617 18.4205 3.77172 17.7489 3.33946 17.0002ZM8.99972 17.1964C10.0911 17.8265 10.8749 18.8227 11.2503 19.9659C11.7486 20.0133 12.2502 20.014 12.7486 19.9675C13.1238 18.8237 13.9078 17.8268 14.9997 17.1964C16.0916 16.5659 17.347 16.3855 18.5252 16.6324C18.8146 16.224 19.0648 15.7892 19.2729 15.334C18.4706 14.4373 17.9997 13.2604 17.9997 12.0002C17.9997 10.74 18.4706 9.5632 19.2729 8.6665C19.1688 8.4405 19.0538 8.21822 18.9279 8.00021C18.802 7.78219 18.667 7.57148 18.5233 7.36842C17.3457 7.61476 16.0911 7.43414 14.9997 6.80405C13.9083 6.17395 13.1246 5.17768 12.7491 4.03455C12.2509 3.98714 11.7492 3.98646 11.2509 4.03292C10.8756 5.17671 10.0916 6.17364 8.99972 6.80405C7.9078 7.43447 6.65245 7.61494 5.47428 7.36803C5.18485 7.77641 4.93463 8.21117 4.72656 8.66637C5.52881 9.56311 5.99972 10.74 5.99972 12.0002C5.99972 13.2604 5.52883 14.4372 4.72656 15.3339C4.83067 15.5599 4.94564 15.7822 5.07152 16.0002C5.19739 16.2182 5.3324 16.4289 5.47612 16.632C6.65377 16.3857 7.90838 16.5663 8.99972 17.1964ZM11.9997 15.0002C10.3429 15.0002 8.99972 13.6571 8.99972 12.0002C8.99972 10.3434 10.3429 9.00021 11.9997 9.00021C13.6566 9.00021 14.9997 10.3434 14.9997 12.0002C14.9997 13.6571 13.6566 15.0002 11.9997 15.0002ZM11.9997 13.0002C12.552 13.0002 12.9997 12.5525 12.9997 12.0002C12.9997 11.4479 12.552 11.0002 11.9997 11.0002C11.4474 11.0002 10.9997 11.4479 10.9997 12.0002C10.9997 12.5525 11.4474 13.0002 11.9997 13.0002Z"
+		]
+	}
+}
