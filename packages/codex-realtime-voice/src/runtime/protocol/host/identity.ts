@@ -10,7 +10,10 @@ interface VoiceAgentIdentity {
 	readonly serviceName: string;
 	/** The thread source Codex records, and the voice agent requires, on each of its threads. */
 	readonly threadSource: string;
-	/** What the user talks with, as the workhorse is told: "while they talk with <product> by voice". */
+	/**
+	 * What the user talks with, as the workhorse is told ("while they talk with <product> by voice")
+	 * and as the spoken-approval prompt names it.
+	 */
 	readonly productName: string;
 	/**
 	 * The Codex tool namespace of each built-in role, each `^[a-z][a-z0-9_]{0,63}$`: the coordinator's

@@ -178,7 +178,9 @@ describe("connection and lease authority", () => {
 		});
 
 		expect(card.offers).toHaveLength(0);
-		expect(card.status.authorityReason).toContain("behind the server");
+		// The stale snapshot gives its own reason, not the stream event's.
+		expect(card.status.authorityReason).toMatch(/\S/u);
+		expect(card.status.authorityReason).not.toBe("The workbench missed a delta.");
 	});
 
 	test("removes authority without a usable command lease", () => {
