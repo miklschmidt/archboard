@@ -124,18 +124,20 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      every member.
   3. **Where can the code take more work than it should?** The design
      questions of the variant on screen (TASK-537). Each question is a heading
-     with its count and the question to the reader under it. Under the
-     question, one row lights its answer on the picture (ADR 0057): every
-     result and the containers that hold it stay as drawn, and the rest
-     recedes. A result that the view does not draw stands through the nearest
-     container that the view draws, and the row says how many results the view
-     hides. Choosing the row again, a group or a walkthrough lets the question
-     go. A pick shows its own light, and letting go of the pick brings the
-     answer's light back. Escape with nothing picked lets the question go.
-     Then one row for each result, named by its part and its container. The
-     first question lists the entry points that only pass one call on (ADR
-     0044). A row under the pointer lights its part. Choosing it picks the
-     part out and shows it on the picture. Ask the agent, beside the row, sends
+     with its count and the question to the reader under it. Then one
+     row for each result, named by its part and its container. The first
+     question lists the entry points that only pass one call on (ADR 0044).
+     Each row is a step through the answer (ADR 0057). Choosing it lights every
+     result and the containers that hold them, with the result's own
+     relationships and the parts at their other ends, and the rest recedes.
+     The result carries the ring of attention, and its row is pressed. The
+     camera frames the result with those parts. If the view does not draw the
+     result, the pane opens Everything first. The Board tab stays open, so the
+     next row is one click away. Choosing the pressed row again, a group or a
+     walkthrough lets the question go. A pick shows its own light and ring,
+     and letting go of the pick brings the step back. Escape with nothing
+     picked lets the question go. A row under the pointer lights its part,
+     except the pressed row. Ask the agent, beside the row, sends
      the deletion question about that part to the agent of the pane's
      checkout. A page with no agent, such as a recording page, has no Ask the
      agent. A region with no result is absent. The region states counts and
@@ -248,8 +250,8 @@ check.
 The pane header shows the number of warnings from the last code pass for the
 board, variant and version on screen (TASK-436.10). Each press selects the next
 warning and focuses the camera on its subject. After the last warning, the
-control returns to the first. If a view hides the subject, the pane opens the
-whole board. A pass with no warnings shows zero and disables the control.
+control returns to the first. If a view hides the subject, the pane opens
+Everything. A pass with no warnings shows zero and disables the control.
 Before a pass reads this version, the header shows no count.
 
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
