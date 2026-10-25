@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:01:00Z'
+updated_date: '2026-10-25T04:19:00Z'
 labels: []
 dependencies: []
 references:
@@ -46,4 +46,6 @@ The double-click (use-drill-open.ts) and the inspector (use-drill-place.ts with 
 Built in 09b7922b7. use-drill-target.ts holds one reading (placeOf, then destinationOf/variantOf, all private) behind useDrillTarget (inspector, subscribes and follows the board's news under its current name) and useDrillTargetReader (double-click, promise that never rejects). DrillTarget: ready {board, variant, there} | reading | listing-failed | unregistered | unreachable | unreadable | no-variant | no-current.
 Decisions: a query error counts over cached data in the subscribing adapter, because fetchQuery in the promise adapter would refetch and fail; so both agree. A document fetch failure and an unparsable document are one state, unreadable (the inspector now says 'could not be read' for both). GoDeeper draws each unresolved state under data-slot semantic-drill-<kind>, which keeps the existing semantic-drill-unregistered and -unreachable slots. drill-target.ts keeps only the shared types; drillDownAsked moved into GoDeeper, its only user. The inspection test's 'could not be opened' wording check became a check of the semantic-drill-unreadable slot.
 Evidence: apps/web/tests/ui/hooks/semantic-board-canvas/drill-target.test.tsx (7 tests, both adapters over one QueryClient; the failed-listing case fails when the reading guesses a vault, checked by mutation). Double-click and late-answer cases stay in semantic-board-levels.test.tsx. Checks: type-check 0, lint 0, UI semantic-board-canvas tests 245 pass, repository-policy 153 pass.
+
+Review (review/drill-target, 76cc8f695): behaviour as specified; fixed the listing-failed copy (the link, not the board, names the repository). A test that a newer double-click wins over an older one answered later is being added (the current() guard was untested; predates this change). Vault: Board viewer still binds drillPlace and resolveDrillDown, which are gone; rebind in the closing step.
 <!-- SECTION:NOTES:END -->

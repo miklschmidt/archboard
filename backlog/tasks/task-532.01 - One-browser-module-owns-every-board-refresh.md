@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:02:00Z'
+updated_date: '2026-10-25T04:18:00Z'
 labels: []
 dependencies: []
 references:
@@ -45,4 +45,6 @@ Four browser paths each assemble the same document-before-picture refresh: use-s
 
 <!-- SECTION:NOTES:BEGIN -->
 Built reads/board-refresh.ts (boardChanged, boardsChanged, listingsChanged, policyChanged, readEverythingAgain, repositoriesChanged; reads-only boardsListed, boardGoneStale) and reads/board-keys.ts (keys plus cachedReadings, the one key decoder). read-again.ts folded into board-refresh. Callers (pane hook, catalog commands, policy refresh, local-pictures, queries.ts) name no key and order nothing. Decision: board-refresh also names the catalog's panes and repositories keys, so readAgain has no second user outside reads/; the catalog client keeps owning those keys and options. Divergence fixed as a real bug: boardsChanged (released panes, settled agent work) matched only the server's exact spelling, so a reading asked by another case or a former name (a GoDeeper preview in a vault no pane is in) stayed old; now every asked name whose spelling, cached document name/formerNames or picture board matches is read again. Proven by board-refresh.test.ts; mutation runs (no cancel, exact name, no listing refresh, pictures before documents) each fail a test. Dropped the board-catalog refresh-vs-reload key assertions; reload documents coverage moved to local-pictures.test via readEverythingAgain.
+
+Review (review/board-refresh, 1738ffc4c): behaviour unchanged except the named fix; restored five cases the deleted tests held (own-vault listing and panes on let-go, unchanged version left alone, other-spelling listing match, refresh vs reload repositories, policy change reads no document) and showed each mutation fails a test. Boundary review with TASK-532.03 (review/web-refresh-drill, 9d0a71422): a listing now also refreshes a reading asked by a former name (the name the cached document gives); test in drill-target.test.tsx fails without it. Left: check.test.tsx still imports the private semanticBoardKeys (predates this change); no test proves drawing ahead only marks readings stale (predates this change).
 <!-- SECTION:NOTES:END -->
