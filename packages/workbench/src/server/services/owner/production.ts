@@ -4,10 +4,8 @@ import type { CreateCodexWorkbenchOptions } from "@archboard/codex-realtime-voic
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "#server/services/host/listener-address.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
@@ -75,7 +73,7 @@ export function createServerCodexWorkbenchInstallation(
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
-	const executablePath = verifyCodexExecutable(resolveProjectCodexExecutable()).executablePath;
+	const executablePath = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
 	const storage = createWorkbenchStorage(server.sourceRoot);
 
 	return {

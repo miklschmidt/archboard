@@ -5,13 +5,14 @@ import { resolve } from "node:path";
 import { CODEX_PROCESS_MODULE_PATH as modulePath } from "../../support/codex-process-module.ts";
 
 const actual = await import(modulePath);
+// Mocking updates the imported namespace in place, so the stand-in keeps the real function.
+const { resolveCodexExecutable } = actual;
 const executable = process.env["ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE"];
 if (executable !== undefined) {
 	await Promise.resolve(
 		mock.module(modulePath, () => ({
 			...actual,
-			resolveProjectCodexExecutable: () => executable,
-			verifyCodexExecutable:
+			resolveCodexExecutable:
 				process.env["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] === "verification_timeout"
 					? () => {
 							throw new actual.CodexExecutableError({
@@ -20,7 +21,7 @@ if (executable !== undefined) {
 								message: `Codex ${CODEX_PROTOCOL_BINARY_VERSION} did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.`,
 							});
 						}
-					: actual.verifyCodexExecutable,
+					: () => resolveCodexExecutable({ executablePath: executable }),
 		})),
 	);
 }

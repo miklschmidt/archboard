@@ -4,10 +4,7 @@ import { createServer } from "node:http";
 import { basename, join } from "node:path";
 import { createCodexWorkbench } from "@archboard/codex-realtime-voice/server";
 import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
 import type { ExampleOptions } from "#server/rules/startup/options.ts";
 import { attachBrowserSockets, sameOrigin } from "#server/sockets/browser/browser.ts";
 import { WORKBENCH_SOCKET_PATH, type ExampleConfiguration } from "#shared/protocol/application.ts";
@@ -63,9 +60,9 @@ export async function startExample(
 	signal: AbortSignal,
 ) {
 	requireAssets(options.browserDirectory);
-	const executablePath = verifyCodexExecutable(
-		options.codex ?? resolveProjectCodexExecutable(),
-	).executablePath;
+	const executablePath = resolveCodexExecutable(
+		options.codex === undefined ? {} : { executablePath: options.codex },
+	);
 	const workbench = createCodexWorkbench({
 		storage: { rootDirectory: options.state },
 		process: { executablePath },

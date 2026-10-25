@@ -12,12 +12,7 @@ import { holderOf, vaultIn } from "./test-vault.ts";
 const thisFile = import.meta.path;
 
 if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
-	const lock = path.join(
-		stateDir(),
-		"codex-workbench",
-		"codex-home",
-		".archboard-codex-process.lock",
-	);
+	const lock = path.join(stateDir(), "codex-workbench", "codex-home", ".codex-process.lock");
 	fs.mkdirSync(path.dirname(lock), { recursive: true, mode: 0o700 });
 	fs.writeFileSync(lock, `${process.pid}\n`, { flag: "wx", mode: 0o600 });
 	const descendant = Bun.spawn([process.execPath, "-e", "setInterval(() => {}, 1000)"], {
