@@ -46,6 +46,22 @@ class RefusedSocket extends FakeSocket {
 	}
 }
 
+/** A pane socket that opens and that the server closes, with a reason, before its first answer. */
+class ClosedSocket extends FakeSocket {
+	/** Open the socket, then close it on its first request. */
+	constructor() {
+		super();
+		queueMicrotask(() => this.dispatchEvent(new Event("open")));
+		/** Close the socket as the server does, with its reason. */
+		this.onRequest = () => {
+			this.readyState = 3;
+			this.dispatchEvent(new CloseEvent("close", { code: 1011, reason: SERVER_REASON }));
+		};
+	}
+}
+
+const SERVER_REASON = "server-reason";
+
 /** One delayed run the client asked for. */
 interface Timer {
 	readonly delayMs: number;
@@ -224,6 +240,8 @@ interface GatewayBehaviour {
 	readonly unreadable?: readonly number[];
 	/** The sockets that are lost when a command arrives on them, before it is answered. */
 	readonly lostOnCommand?: readonly number[];
+	/** The sockets the server closes before its first answer. */
+	readonly closed?: readonly number[];
 }
 
 /**
@@ -233,6 +251,7 @@ interface GatewayBehaviour {
  * @param behaviour.refused The sockets the server refuses.
  * @param behaviour.unreadable The sockets whose subscribe answer this browser cannot read.
  * @param behaviour.lostOnCommand The sockets that are lost when a command arrives.
+ * @param behaviour.closed The sockets the server closes before its first answer.
  * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
 function gateway({
@@ -240,6 +259,7 @@ function gateway({
 	refused = [],
 	unreadable = [],
 	lostOnCommand = [],
+	closed = [],
 }: GatewayBehaviour = {}) {
 	const sockets: FakeSocket[] = [];
 	const urls: string[] = [];
@@ -297,8 +317,10 @@ function gateway({
 			 */
 			openSocket: (url) => {
 				urls.push(url);
-				if (refused.includes(sockets.length)) {
-					const socket = new RefusedSocket();
+				if (refused.includes(sockets.length) || closed.includes(sockets.length)) {
+					const socket = refused.includes(sockets.length)
+						? new RefusedSocket()
+						: new ClosedSocket();
 					sockets.push(socket);
 					return socket;
 				}
@@ -438,6 +460,19 @@ test("a reconnect stops for good when the server speaks a contract this browser 
 	expect(timers.filter((timer) => !timer.cancelled)).toHaveLength(0);
 	expect(client.snapshot().connection).toBe("stopped");
 	expect(client.snapshot().failure?.uncertain).toBe(false);
+	await client.dispose();
+});
+
+test("a socket the server closes before its first snapshot fails with the server's reason and opens again", async () => {
+	const { client, sockets, calls, timers } = gateway({ closed: [0] });
+	expect(await client.connect()).toBe(false);
+	expect(client.snapshot().failure?.message).toBe(SERVER_REASON);
+	expect(client.snapshot().connection).toBe("reconnecting");
+	expect(calls).toEqual([]);
+	await fire(timers);
+	expect(sockets).toHaveLength(2);
+	expect(client.snapshot().connection).toBe("connected");
+	expect(client.snapshot().failure).toBeNull();
 	await client.dispose();
 });
 

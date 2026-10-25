@@ -47,6 +47,8 @@ interface VoiceClientOwners {
 
 const UNCERTAIN = "Delivery is uncertain. Refresh the conversation before trying another action.";
 const TAB_SESSION_KEY = "codex-realtime-voice:tab";
+/** The `readyState` of a socket whose close has begun; `CLOSED` is 3. */
+const SOCKET_CLOSING = 2;
 
 /**
  * Connect one page view to the voice server through the real browser.
@@ -97,6 +99,8 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const listeners = new Set<() => void>();
 	let socket: VoiceClientSocket | null = null;
 	let failure: VoiceClientFailure | null = null;
+	/** Whether `failure` came from a `connect` that did not open, which a later opening clears. */
+	let failedToConnect = false;
 	let pending = 0;
 	let disposed = false;
 	let cancelReconnect: (() => void) | null = null;
@@ -160,6 +164,7 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const run = async (operation: () => Promise<unknown>, interrupt = false): Promise<boolean> => {
 		if ((pending > 0 && !interrupt) || disposed) return false;
 		failure = null;
+		failedToConnect = false;
 		return busyWith(operation, (error) => {
 			failure = failureOf(error);
 		});
@@ -196,13 +201,21 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		previous.close();
 	};
 
-	/** Open a socket and attach the owners to it. */
+	/**
+	 * Open a socket and attach the owners to it. A socket that closes before the
+	 * server's first snapshot fails with the reason the server closed it with.
+	 */
 	const open = async () => {
 		const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
 		socket = next;
+		const closed = closeReasonOf(next);
 		await opened(next);
 		if (disposed) return;
-		await transport.attach(next);
+		const attached = await transport.attach(next);
+		if (attached.kind === "connection") {
+			const reason = next.readyState >= SOCKET_CLOSING ? await closed : "";
+			throw new Error(reason || attached.reason);
+		}
 		await media.attach(transport);
 		await transport.accountRead();
 	};
@@ -220,7 +233,11 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 * Open the socket again and attach the owners to it.
 	 * @returns Whether it opened.
 	 */
-	const connect = async () => (await run(reopen)) && !disposed;
+	const connect = async () => {
+		const completed = await run(reopen);
+		failedToConnect = !completed && failure !== null;
+		return completed && !disposed;
+	};
 
 	/**
 	 * Connect again after a delay, unless the socket is connected by then, and
@@ -256,7 +273,12 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 */
 	const reconnect = async () => {
 		const idle = pending === 0 && !disposed;
-		if (idle && (await busyWith(reopen, ignore))) return;
+		if (idle && (await busyWith(reopen, ignore))) {
+			if (failedToConnect) failure = null;
+			failedToConnect = false;
+			publish();
+			return;
+		}
 		if (!unreadableServer()) reconnectAfter(PANE_MS.socketReconnect);
 	};
 	const unsubscribeLoss = transport.subscribe(() => {
@@ -502,6 +524,21 @@ function failureOf(error: unknown): VoiceClientFailure {
 	return Object.freeze({
 		message: error instanceof Error ? error.message : String(error),
 		uncertain: false,
+	});
+}
+
+/**
+ * The reason a socket's close names, such as the server's words for a refusal.
+ * @param socket The socket.
+ * @returns The reason once the socket closed, empty when its close names none.
+ */
+function closeReasonOf(socket: VoiceClientSocket): Promise<string> {
+	return new Promise((resolve) => {
+		socket.addEventListener(
+			"close",
+			(event) => resolve("reason" in event && typeof event.reason === "string" ? event.reason : ""),
+			{ once: true },
+		);
 	});
 }
 

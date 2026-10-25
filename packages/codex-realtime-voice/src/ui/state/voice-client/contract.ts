@@ -98,10 +98,13 @@ interface VoiceClient {
 	 * socket that was open closes, the client reconnects by itself: `connection`
 	 * reads `reconnecting`, the client opens a new socket after a short wait,
 	 * and it tries again after each attempt that fails, until one opens or the
-	 * client is disposed. The attempts leave `failure` as it is, so an uncertain
-	 * delivery stays visible. A server whose contract this browser cannot read
-	 * ends them: `connection` reads `stopped`, and `failure` says why unless it
-	 * already holds another failure. A first `connect` that fails is not
+	 * client is disposed. A socket that the server closes before its first
+	 * snapshot also counts as open, and `failure` names the server's reason. The
+	 * attempts leave an action's failure as it is, so an uncertain delivery stays
+	 * visible; an attempt that opens clears the failure of a `connect` that did
+	 * not. A server whose contract this browser cannot read ends them:
+	 * `connection` reads `stopped`, and `failure` says why unless it already
+	 * holds another failure. A first `connect` whose socket never opens is not
 	 * retried; the host calls `connect` again.
 	 */
 	readonly connect: () => Promise<boolean>;
