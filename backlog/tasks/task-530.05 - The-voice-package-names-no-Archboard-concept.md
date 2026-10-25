@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: In Progress
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-25T15:10:00Z'
+updated_date: '2026-10-25T17:06:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -44,4 +44,6 @@ Then the heavy Blocks budget for Codex realtime voice (TASK-536), bun run check,
 
 <!-- SECTION:NOTES:BEGIN -->
 Names chosen by the user (2026-10-25): pane, as one place in the page that shows the conversation, becomes chat and chatId; the walkthrough presentation becomes narrative (VoiceNarrative, realtimeStart.narrative), and the queue's own narratives take another name; recording becomes unattended, one hook; repositoryOfCheckout becomes checkoutLabel and the workhorse entry's repository becomes label. Board news becomes a context change that a host announces with agent.announce to any combination of workhorse, coordinator and voice (the user's requirement).
+
+Review decisions (host boundary review, 11c2047b7): kept as named changes: the voice details' start brief is now the coordinator's start context (Archboard's catalogue, what Codex is given), where it was the on-screen board's brief that only the page saw; a change told to the coordinator and the voice shows one entry per audience; speech or quiet is chosen when a change is announced, not at delivery (differs only while a news item waits in the voice queue and the narrated board changes); a stale Archboard brief answers withheld instead of stale_event. Fixed: a payload that is not JSON data is refused before anybody is told (bad3a41c9); the withheld detail reaches the page again (in progress).
 <!-- SECTION:NOTES:END -->
