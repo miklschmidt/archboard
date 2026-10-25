@@ -443,7 +443,7 @@ export function isDisabledCapabilityError(error: unknown): error is ProtocolDeco
 			Array.isArray(issue["path"]) &&
 			issue["path"].length === 1 &&
 			issue["path"][0] === "method" &&
-			issue["message"] === "capability was explicitly disabled by Archboard",
+			issue["message"] === "capability was explicitly disabled by this client",
 	);
 }
 

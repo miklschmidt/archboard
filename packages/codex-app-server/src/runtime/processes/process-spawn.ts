@@ -143,7 +143,7 @@ const STORAGE_RECOVERY: Readonly<Record<CodexStorageFailureCode, string>> = {
 	collision: FRESH_ROOTS,
 	lock: "stop the process named above, then retry; a lock whose owner has exited is set aside by the next start",
 	config_conflict:
-		"move that config.toml aside and retry, so archboard's config is written again; the login and sessions beside it are kept",
+		"move that config.toml aside and retry, so this client's config is written again; the login and sessions beside it are kept",
 	config_read: HOME_ACCESS,
 	config_write: HOME_ACCESS,
 	config_fsync: HOME_ACCESS,

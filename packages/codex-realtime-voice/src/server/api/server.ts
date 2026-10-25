@@ -1,4 +1,5 @@
 export { createCodexWorkbench } from "#server/services/owner/workbench.ts";
+export { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 export type { CreateCodexWorkbenchOptions } from "#server/services/owner/workbench.ts";
 
 export type {

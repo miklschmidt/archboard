@@ -29,8 +29,8 @@ import { createSessionOperations, type SessionGate } from "#runtime/services/ses
 import { proveCodexStorage } from "#runtime/store/storage-proof.ts";
 
 const CLIENT_INFO = Object.freeze({
-	name: "archboard",
-	title: "archboard server",
+	name: "codex-realtime-voice",
+	title: "Codex realtime voice",
 	version: "0.1.0",
 });
 const INITIALIZE_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });

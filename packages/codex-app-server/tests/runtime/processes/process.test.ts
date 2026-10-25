@@ -338,9 +338,9 @@ describe("Codex process owner", () => {
 			const stopped = await owner.stop();
 			expect(stopped.state).toBe("stopped");
 			expect(owner.currentChild()).toBeNull();
-			expect(
-				fs.existsSync(path.join(root, "storage", "codex-home", ".archboard-codex-process.lock")),
-			).toBe(false);
+			expect(fs.existsSync(path.join(root, "storage", "codex-home", ".codex-process.lock"))).toBe(
+				false,
+			);
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);
@@ -383,9 +383,9 @@ describe("Codex process owner", () => {
 			const stopped = await owner.stop();
 			expect(stopped.state).toBe("stopped");
 			expect(owner.currentChild()).toBeNull();
-			expect(
-				fs.existsSync(path.join(root, "storage", "codex-home", ".archboard-codex-process.lock")),
-			).toBe(false);
+			expect(fs.existsSync(path.join(root, "storage", "codex-home", ".codex-process.lock"))).toBe(
+				false,
+			);
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);

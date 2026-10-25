@@ -19,10 +19,7 @@ import {
 	removePidFile,
 	removePidFileIfOwnerGone,
 } from "#runtime/store/pidfile.ts";
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import {
 	SERVER_STARTUP_READINESS_MS,
@@ -138,7 +135,7 @@ function refuseUnstartableServer(): void {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	try {
-		verifyCodexExecutable(resolveProjectCodexExecutable());
+		resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
 	} catch (cause) {
 		throw startupRefusal(
 			cause instanceof Error
