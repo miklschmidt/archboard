@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 60,
+	"version": 65,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-25T00:26:24.713Z",
+	"updatedAt": "2026-10-25T04:10:12.344Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -78,7 +78,7 @@
 			"id": "p2X6k1Aa",
 			"name": "Engine and graph",
 			"grammar": "architecture",
-			"summary": "How a render's engine is named, the graph it lays out and the worker that solves it.",
+			"summary": "How a render's engine is named, the graph it lays out and the worker that solves it: Track in the renderer core, Blocks in TypeScript.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -86,7 +86,8 @@
 					"JwgvpLYJ",
 					"ZRFUJrjD",
 					"nmyK8UOO",
-					"oycxx6G2"
+					"oycxx6G2",
+					"H0PF4BhI"
 				],
 				"edges": [],
 				"flows": []
@@ -105,7 +106,6 @@
 					"Wp2usbe5",
 					"mkxpJuY7",
 					"skrvk25Y",
-					"jLUi9ZuH",
 					"JwgvpLYJ",
 					"ZRFUJrjD",
 					"KdNM1Q56",
@@ -9683,7 +9683,7 @@
 		{
 			"id": "gcpBze89",
 			"name": "TASK-520.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "PeEDfJ9u",
 			"summary": "Measure, settle, route and paint: how a drawing is sized, laid out, its trunks routed and handed to the painter",
 			"content": {
@@ -11189,9 +11189,1571 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "KGKsTE6n",
+			"name": "TASK-520.04",
+			"lifecycle": "current",
+			"parent": "gcpBze89",
+			"summary": "Measure, settle, route and paint: how a drawing is sized, laid out (Track in the renderer core, Blocks in TypeScript), its trunks routed and handed to the painter",
+			"content": {
+				"nodes": [
+					{
+						"id": "nmyK8UOO",
+						"order": 1000,
+						"name": "View dispatcher",
+						"kind": "module",
+						"responsibility": "Measures, settles and paints one drawing, in that order",
+						"description": "The renderer's entry point, drawn here only as the caller of the layout. Follow it for the rest of the renderer.",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "kHpIix5b",
+						"order": 2000,
+						"name": "Measured text",
+						"kind": "function",
+						"responsibility": "Wraps every card, note and label and measures what the SVG will paint",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts"
+						}
+					},
+					{
+						"id": "H0xU45vp",
+						"order": 4000,
+						"name": "Architecture painter",
+						"kind": "function",
+						"responsibility": "Paints the settled drawing into a scene in the renderer core, and decides no geometry of its own",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-scene/src/paint/architecture.rs"
+						}
+					},
+					{
+						"id": "RvOyWmEb",
+						"order": 5000,
+						"name": "Pretext",
+						"kind": "external",
+						"responsibility": "Breaks a prepared string into lines at a given width"
+					},
+					{
+						"id": "dYxhsEhY",
+						"order": 6000,
+						"name": "Host canvas",
+						"kind": "external",
+						"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded",
+						"description": "An @napi-rs/canvas canvas installed as OffscreenCanvas under Bun, the tab's own canvas in a browser. Both the line breaking and the painted runs are measured through it, so a line and its words agree (TASK-247)."
+					},
+					{
+						"id": "ZRFUJrjD",
+						"order": 7000,
+						"name": "Compound graph",
+						"kind": "function",
+						"responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
+						"parent": "e10t6gst",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/layout/compound-graph.ts"
+						}
+					},
+					{
+						"id": "JwgvpLYJ",
+						"order": 8000,
+						"name": "Layout engine",
+						"kind": "function",
+						"responsibility": "Lays one graph out inside a layout worker: a Track solve in the renderer core, a Blocks solve through block placement",
+						"description": "createLayoutEngine binds the initialized Graphviz WebAssembly engine and hands it to the core as its GraphvizHost. A solve names its stage in archboard.stage, track or blocks, and any other is refused. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+						"parent": "e10t6gst",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
+						}
+					},
+					{
+						"id": "KdNM1Q56",
+						"order": 10000,
+						"name": "Graphviz",
+						"kind": "external",
+						"responsibility": "Ranks and orders the cards of a block",
+						"description": "@viz-js/viz: Graphviz compiled to WebAssembly, loaded by the layout worker."
+					},
+					{
+						"id": "mHYMkWdE",
+						"order": 12000,
+						"name": "Layout engines",
+						"kind": "module",
+						"responsibility": "Names the engine a render asked for, Track or Blocks, behind one seam",
+						"description": "Nothing outside this seam knows which engine drew. Track is the default; Blocks stays selectable. The Graphviz engine that stood here beside them is gone (ADR 0040).",
+						"parent": "e10t6gst",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts"
+						}
+					},
+					{
+						"id": "oycxx6G2",
+						"order": 13000,
+						"name": "Block engine",
+						"kind": "function",
+						"responsibility": "Lays the board out as blocks, keeps the solve that reads best and makes its geometry the drawing",
+						"description": "Join candidates run in parallel and retain the same comparison order. When a kept candidate changes the remaining choices, the renderer cancels obsolete queued candidates. Active solves finish normally.",
+						"parent": "tppVDaSZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts"
+						}
+					},
+					{
+						"id": "qtwaBhit",
+						"order": 14000,
+						"name": "Block placement",
+						"kind": "function",
+						"responsibility": "Lays every block of a Blocks solve out innermost first, then puts each where its parent placed it",
+						"description": "Blocks only: the renderer core lays out every Track solve (TASK-520.04). A block's size is final before its parent places it as one box. A block of cards may wrap its widest rank into rows or fold its ranks into columns where that reads better; last, each relationship's lines are joined end to end.",
+						"parent": "tppVDaSZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts"
+						}
+					},
+					{
+						"id": "Wp2usbe5",
+						"order": 15000,
+						"name": "Card blocks",
+						"kind": "function",
+						"responsibility": "Ranks a block's cards, labels and ports with Graphviz, then routes its lines on tracks between the ranks",
+						"description": "Blocks only since TASK-520.04: the renderer core ranks and routes the cards of a Track solve. Each channel between ranks grows to fit its tracks, so the block's size is final when it answers. Graphviz is asked once for each graph a layout gives it (graphviz-once.ts), and its answer is read into diagram coordinates by track/graphviz.ts.",
+						"parent": "tppVDaSZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts"
+						}
+					},
+					{
+						"id": "mkxpJuY7",
+						"order": 16000,
+						"name": "Block packing",
+						"kind": "function",
+						"responsibility": "Packs a block of blocks in rows or columns, whichever scores best on fit, crossings and detours",
+						"parent": "tppVDaSZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts"
+						}
+					},
+					{
+						"id": "skrvk25Y",
+						"order": 17000,
+						"name": "Trunk router",
+						"kind": "function",
+						"responsibility": "Routes each trunk between two blocks' ports around the blocks it packs",
+						"parent": "tppVDaSZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts"
+						}
+					},
+					{
+						"id": "jLUi9ZuH",
+						"order": 19000,
+						"name": "Entry row",
+						"kind": "function",
+						"responsibility": "Stands each container's hidden parts below its first entry points, so the parts its callers reach take its first row",
+						"description": "Track only (ADR 0044). A first entry point is one no other part of the container leads to on the variant, as the compound graph marks it. Each other hidden part is held below it by an invisible edge that ranks and pulls nothing; an edge that would close a loop is left out, so a hidden part that calls an entry point stands above it.",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+							"symbol": "entry_row_edges"
+						}
+					},
+					{
+						"id": "5UnSr8ZQ",
+						"order": 20000,
+						"name": "Draw and measure",
+						"kind": "module",
+						"responsibility": "Measures every card and label with the host's canvas, then paints the settled drawing, and decides no geometry of its own"
+					},
+					{
+						"id": "e10t6gst",
+						"order": 21000,
+						"name": "Engine and graph",
+						"kind": "module",
+						"responsibility": "States the board as one graph of containment, sizes and relationship kinds, and lays it out through the engine a render names, inside a layout worker"
+					},
+					{
+						"id": "tppVDaSZ",
+						"order": 22000,
+						"name": "Block layout",
+						"kind": "module",
+						"responsibility": "Lays the board out as blocks: ranks the cards of each block, packs blocks, routes the lines between them and keeps the solve that reads best",
+						"description": "In a layout worker it runs only the Blocks solve; the renderer core runs every Track solve. On the main thread the block engine, solves.ts and what it weighs a solve with still run for both engines (docs/agents/boundaries.md).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks"
+						}
+					},
+					{
+						"id": "PzFXfM5n",
+						"order": 23000,
+						"name": "Orthogonal router",
+						"kind": "module",
+						"responsibility": "Routes orthogonal connectors around rectangles, nudged a lane apart",
+						"description": "archboard-router, linked into the renderer core: an A* search over the grid of the obstacles' buffer edges that pays for each turn and crossing, then nudging that stands the routes on one line a lane apart in the order they part. Written from the published papers it cites, not from libavoid. A connector it cannot route comes back empty, and nothing throws.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-router/src/lib.rs"
+						}
+					},
+					{
+						"id": "H0PF4BhI",
+						"order": 24000,
+						"name": "Track layout",
+						"kind": "module",
+						"responsibility": "Lays out every Track solve in the renderer core: ranks each block's cards with the host's Graphviz, routes their lines on tracks, then wraps, folds, stacks and assembles the drawing",
+						"description": "crates/archboard-layout, linked into the renderer core; its wasm binding exports it as layOutTrack (crates/archboard-renderer-wasm/src/layout.rs). Its interface is one function, lay_out_track, which takes the measured graph as the JSON of an ELK node and answers the root of the drawing, and one trait, Graphviz, which the binding satisfies with the host's viz-js. Every module is private. It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md section 53). The Blocks solve stays in TypeScript until TASK-520.05.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "TPRWw9F4",
+						"order": 1000,
+						"from": "nmyK8UOO",
+						"to": "kHpIix5b",
+						"kind": "call",
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+							"symbol": "measureArchitecture"
+						}
+					},
+					{
+						"id": "19pjtjrv",
+						"order": 2000,
+						"from": "kHpIix5b",
+						"to": "RvOyWmEb",
+						"kind": "call",
+						"label": "prepare and wrap",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+							"symbol": "prepareWithSegments"
+						}
+					},
+					{
+						"id": "aESGqkun",
+						"order": 3000,
+						"from": "RvOyWmEb",
+						"to": "dYxhsEhY",
+						"kind": "dependency",
+						"label": "measures its segments there",
+						"emphasis": "normal"
+					},
+					{
+						"id": "notKnIIz",
+						"order": 4000,
+						"from": "nmyK8UOO",
+						"to": "oycxx6G2",
+						"kind": "call",
+						"label": "content and measured sizes",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts",
+							"symbol": "layoutTracks"
+						}
+					},
+					{
+						"id": "TSsnxsV9",
+						"order": 5000,
+						"from": "kHpIix5b",
+						"to": "dYxhsEhY",
+						"kind": "call",
+						"label": "the width of a painted line",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+							"symbol": "canvasWidth"
+						}
+					},
+					{
+						"id": "lbUaPzWc",
+						"order": 8000,
+						"from": "oycxx6G2",
+						"to": "ZRFUJrjD",
+						"kind": "call",
+						"label": "state the graph",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+							"symbol": "compoundGraph"
+						}
+					},
+					{
+						"id": "wCXK6KYw",
+						"order": 9000,
+						"from": "oycxx6G2",
+						"to": "JwgvpLYJ",
+						"kind": "call",
+						"label": "each solve, through the host",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+							"symbol": "createLayoutEngine"
+						}
+					},
+					{
+						"id": "oYEzQ4k5",
+						"order": 13000,
+						"from": "nmyK8UOO",
+						"to": "H0xU45vp",
+						"kind": "render",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-scene/src/paint/architecture.rs",
+							"symbol": "paint_architecture"
+						}
+					},
+					{
+						"id": "T4hTbGVM",
+						"order": 14000,
+						"from": "JwgvpLYJ",
+						"to": "qtwaBhit",
+						"kind": "call",
+						"label": "lay out a Blocks solve",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+							"symbol": "placeBlocks"
+						}
+					},
+					{
+						"id": "Md6tqK1p",
+						"order": 17000,
+						"from": "Wp2usbe5",
+						"to": "KdNM1Q56",
+						"kind": "call",
+						"label": "rank and order the cards",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+							"symbol": "renderString"
+						}
+					},
+					{
+						"id": "PYJsIDYm",
+						"order": 18000,
+						"from": "skrvk25Y",
+						"to": "PzFXfM5n",
+						"kind": "call",
+						"label": "orthogonal routes around the blocks",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+							"symbol": "routeTrunks"
+						}
+					},
+					{
+						"id": "EOOPngnB",
+						"order": 19000,
+						"from": "nmyK8UOO",
+						"to": "mHYMkWdE",
+						"kind": "call",
+						"label": "the engine the render names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+							"symbol": "layoutEngine"
+						}
+					},
+					{
+						"id": "Gejk3C1W",
+						"order": 20000,
+						"from": "mHYMkWdE",
+						"to": "oycxx6G2",
+						"kind": "dependency",
+						"label": "layoutTracks or layoutBlocks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/layout/engines.ts",
+							"symbol": "layoutBlocks"
+						}
+					},
+					{
+						"id": "fFiMvo56",
+						"order": 21000,
+						"from": "qtwaBhit",
+						"to": "Wp2usbe5",
+						"kind": "call",
+						"label": "a block of cards",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+							"symbol": "CardLayout"
+						}
+					},
+					{
+						"id": "luMz0TJo",
+						"order": 22000,
+						"from": "qtwaBhit",
+						"to": "mkxpJuY7",
+						"kind": "call",
+						"label": "a block of blocks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+							"symbol": "PackLayout"
+						}
+					},
+					{
+						"id": "JBISovVb",
+						"order": 23000,
+						"from": "mkxpJuY7",
+						"to": "skrvk25Y",
+						"kind": "call",
+						"label": "route the trunks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+							"symbol": "TrunkRouter"
+						}
+					},
+					{
+						"id": "4lrR3GdH",
+						"order": 25000,
+						"from": "nmyK8UOO",
+						"to": "ZRFUJrjD",
+						"kind": "call",
+						"label": "each container's entry points on the whole variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+							"symbol": "entryPointsOf"
+						}
+					},
+					{
+						"id": "IDoV3QxP",
+						"order": 26000,
+						"from": "qtwaBhit",
+						"to": "skrvk25Y",
+						"kind": "call",
+						"label": "weigh the routed lines, ports settled or not",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+							"symbol": "routedWeighed"
+						}
+					},
+					{
+						"id": "EGgs1DlZ",
+						"order": 27000,
+						"from": "JwgvpLYJ",
+						"to": "H0PF4BhI",
+						"kind": "call",
+						"label": "lay out a Track solve",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+							"symbol": "layOutTrack"
+						}
+					},
+					{
+						"id": "S2sty0rs",
+						"order": 28000,
+						"from": "H0PF4BhI",
+						"to": "KdNM1Q56",
+						"kind": "call",
+						"label": "rank and order the cards, through the host",
+						"description": "The crate asks for each graph through its Graphviz trait; the wasm binding's GraphvizHost satisfies it with the viz-js that createLayoutEngine bound.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+							"symbol": "render"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "EnnH7t3r",
+						"name": "Measure, settle, paint",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"mHYMkWdE",
+							"oycxx6G2",
+							"H0xU45vp"
+						],
+						"steps": [
+							{
+								"id": "XFEvswz4",
+								"from": "nmyK8UOO",
+								"to": "nmyK8UOO",
+								"label": "Turn flow steps into lines, keeping every id and parent",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+									"symbol": "renderArchitecture"
+								}
+							},
+							{
+								"id": "vaFxgWaQ",
+								"kind": "decision",
+								"question": "Was this content laid out before?",
+								"alternatives": [
+									{
+										"label": "remembered",
+										"steps": [
+											{
+												"id": "WiMnRPRD",
+												"from": "nmyK8UOO",
+												"to": "nmyK8UOO",
+												"label": "Take the remembered layout",
+												"kind": "self",
+												"note": "the last 64 layouts are remembered, by content, standing, engine and policy",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+													"symbol": "layoutRemembered"
+												}
+											}
+										]
+									},
+									{
+										"label": "new",
+										"steps": [
+											{
+												"id": "86rBqUC3",
+												"from": "nmyK8UOO",
+												"to": "kHpIix5b",
+												"label": "Names, responsibilities and edge labels",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+													"symbol": "measureArchitecture"
+												}
+											},
+											{
+												"id": "VvuVMt2N",
+												"from": "kHpIix5b",
+												"to": "nmyK8UOO",
+												"label": "Card sizes, wrapped lines, label sizes",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+													"symbol": "measureArchitecture"
+												}
+											},
+											{
+												"id": "kxYHJhGT",
+												"from": "nmyK8UOO",
+												"to": "mHYMkWdE",
+												"label": "The engine the render names",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+													"symbol": "layoutEngine"
+												}
+											},
+											{
+												"id": "J795yjMO",
+												"kind": "decision",
+												"question": "Which engine does the render name?",
+												"alternatives": [
+													{
+														"label": "Track",
+														"steps": [
+															{
+																"id": "ZPdck4Gv",
+																"from": "mHYMkWdE",
+																"to": "oycxx6G2",
+																"label": "layoutTracks: containers and groups drawn inline",
+																"kind": "sync",
+																"note": "Track unless the render asks for Blocks",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/shared/rules/layout/engines.ts",
+																	"symbol": "layoutTracks"
+																}
+															}
+														]
+													},
+													{
+														"label": "Blocks",
+														"steps": [
+															{
+																"id": "TajM0vVL",
+																"from": "mHYMkWdE",
+																"to": "oycxx6G2",
+																"label": "layoutBlocks: every container a block of its own",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/shared/rules/layout/engines.ts",
+																	"symbol": "layoutBlocks"
+																}
+															}
+														]
+													}
+												]
+											},
+											{
+												"id": "L9F90cm5",
+												"from": "oycxx6G2",
+												"to": "nmyK8UOO",
+												"label": "Boxes, ports, routes and label boxes",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+													"symbol": "drawnBlocks"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "WLZ1TpXI",
+								"from": "nmyK8UOO",
+								"to": "H0xU45vp",
+								"label": "The settled drawing, its text runs and the theme",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/paint/architecture.rs",
+									"symbol": "paint_architecture"
+								}
+							},
+							{
+								"id": "fGx4kjfR",
+								"from": "H0xU45vp",
+								"to": "H0xU45vp",
+								"label": "Paint the supplied lines and geometry",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/paint/architecture.rs",
+									"symbol": "paint_architecture"
+								}
+							},
+							{
+								"id": "UMqwdfOH",
+								"from": "H0xU45vp",
+								"to": "nmyK8UOO",
+								"label": "The scene and the matching atlas",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/paint/architecture.rs",
+									"symbol": "paint_architecture"
+								}
+							}
+						]
+					},
+					{
+						"id": "8bDSfxwQ",
+						"name": "Sizing a card",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"RvOyWmEb",
+							"dYxhsEhY"
+						],
+						"steps": [
+							{
+								"id": "K9SFgjvi",
+								"from": "nmyK8UOO",
+								"to": "kHpIix5b",
+								"label": "Measure title, responsibility and labels",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/render/diagram.ts",
+									"symbol": "measureArchitecture"
+								}
+							},
+							{
+								"id": "D87PmS4z",
+								"kind": "decision",
+								"question": "Is the part a container?",
+								"alternatives": [
+									{
+										"label": "container",
+										"steps": [
+											{
+												"id": "2leWQWCZ",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Size a header slab, narrower by its inset each side",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+													"symbol": "measureNode"
+												}
+											}
+										]
+									},
+									{
+										"label": "card",
+										"steps": [
+											{
+												"id": "bmSCOd8q",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Size a card, at least 260 wide and 72 tall",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+													"symbol": "measureNode"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "T4D1Md6Z",
+								"kind": "decision",
+								"question": "Does the part open another board?",
+								"alternatives": [
+									{
+										"label": "opens a board",
+										"steps": [
+											{
+												"id": "jzt1WWkm",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Keep the name clear of the mark in the corner",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+													"symbol": "measureSlab"
+												}
+											}
+										]
+									},
+									{
+										"label": "no",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "1jTaxmfT",
+								"kind": "loop",
+								"condition": "for the name, then for the responsibility",
+								"steps": [
+									{
+										"id": "25HE191y",
+										"from": "kHpIix5b",
+										"to": "RvOyWmEb",
+										"label": "prepareWithSegments(text, font)",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "prepareWithSegments"
+										}
+									},
+									{
+										"id": "PmcyOckC",
+										"from": "RvOyWmEb",
+										"to": "dYxhsEhY",
+										"label": "Measure the segments",
+										"kind": "sync"
+									},
+									{
+										"id": "BXG2HWcT",
+										"from": "dYxhsEhY",
+										"to": "RvOyWmEb",
+										"label": "Widths in the face the SVG will paint",
+										"kind": "return"
+									},
+									{
+										"id": "4VDj3O5C",
+										"from": "RvOyWmEb",
+										"to": "kHpIix5b",
+										"label": "A reusable prepared handle",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "prepareWithSegments"
+										}
+									},
+									{
+										"id": "5BB225La",
+										"from": "kHpIix5b",
+										"to": "RvOyWmEb",
+										"label": "measureNaturalWidth(handle)",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "measureNaturalWidth"
+										}
+									},
+									{
+										"id": "mYPHaKGi",
+										"from": "RvOyWmEb",
+										"to": "kHpIix5b",
+										"label": "The widest line, unbroken",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "measureNaturalWidth"
+										}
+									}
+								]
+							},
+							{
+								"id": "mY1hDmn2",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Clamp the width: cards 260 to 340",
+								"kind": "self",
+								"note": "a relationship label is clamped the same way, 40 to 200 wide",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+									"symbol": "CARD_WIDTH"
+								}
+							},
+							{
+								"id": "UKKTtBY2",
+								"kind": "loop",
+								"condition": "for the name, then for the responsibility",
+								"steps": [
+									{
+										"id": "pg7iuzfp",
+										"from": "kHpIix5b",
+										"to": "RvOyWmEb",
+										"label": "layoutWithLines(handle, width, lineHeight)",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "layoutWithLines"
+										}
+									},
+									{
+										"id": "Q7y55Dyj",
+										"from": "RvOyWmEb",
+										"to": "kHpIix5b",
+										"label": "Lines, widths, line count and height",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+											"symbol": "layoutWithLines"
+										}
+									},
+									{
+										"id": "PqSb6tfN",
+										"kind": "loop",
+										"condition": "for each wrapped line",
+										"steps": [
+											{
+												"id": "A3bYq29V",
+												"from": "kHpIix5b",
+												"to": "dYxhsEhY",
+												"label": "Measure each wrapped line whole",
+												"kind": "sync",
+												"note": "the painted width wins over the sum of segments, so no character is cut",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
+													"symbol": "canvasWidth"
+												}
+											},
+											{
+												"id": "rLH2nWZg",
+												"from": "dYxhsEhY",
+												"to": "kHpIix5b",
+												"label": "Its width in the painted face",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
+													"symbol": "canvasWidth"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "dcc2Zdl3",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Add padding, icon space and baselines",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+									"symbol": "measureSlab"
+								}
+							},
+							{
+								"id": "k46CuhtA",
+								"from": "kHpIix5b",
+								"to": "nmyK8UOO",
+								"label": "Outer card size and the exact text runs",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/text/measurement.ts",
+									"symbol": "measureArchitecture"
+								}
+							}
+						]
+					},
+					{
+						"id": "zSKT3nqZ",
+						"name": "Lay out a drawing",
+						"participants": [
+							"mHYMkWdE",
+							"oycxx6G2",
+							"ZRFUJrjD",
+							"JwgvpLYJ",
+							"qtwaBhit",
+							"H0PF4BhI"
+						],
+						"steps": [
+							{
+								"id": "iL4N7FNL",
+								"from": "mHYMkWdE",
+								"to": "oycxx6G2",
+								"label": "layoutTracks or layoutBlocks",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/layout/engines.ts",
+									"symbol": "layoutTracks"
+								}
+							},
+							{
+								"id": "fwbm6WZ5",
+								"from": "oycxx6G2",
+								"to": "ZRFUJrjD",
+								"label": "State the graph",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "compoundGraph"
+								}
+							},
+							{
+								"id": "eLtscXpT",
+								"from": "ZRFUJrjD",
+								"to": "oycxx6G2",
+								"label": "Containment, sizes, order and kinds as one graph",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/layout/compound-graph.ts",
+									"symbol": "compoundGraph"
+								}
+							},
+							{
+								"id": "9PtOgYTY",
+								"from": "oycxx6G2",
+								"to": "JwgvpLYJ",
+								"label": "Solve each way to lay it out, through the host",
+								"kind": "sync",
+								"note": "joins kept whole or apart; the solve runs on a layout worker",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "drawnBlocks"
+								}
+							},
+							{
+								"id": "uiYCwnMB",
+								"kind": "decision",
+								"question": "Which stage does the solve name?",
+								"alternatives": [
+									{
+										"label": "track",
+										"steps": [
+											{
+												"id": "C2WAYl64",
+												"from": "JwgvpLYJ",
+												"to": "H0PF4BhI",
+												"label": "Lay out the Track solve in the core",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+													"symbol": "layOutTrack"
+												}
+											},
+											{
+												"id": "fWRYFUaD",
+												"from": "H0PF4BhI",
+												"to": "JwgvpLYJ",
+												"label": "The drawing's geometry, as JSON",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/blocks/place.rs",
+													"symbol": "lay_out_track"
+												}
+											}
+										]
+									},
+									{
+										"label": "blocks",
+										"steps": [
+											{
+												"id": "YLfGDr8O",
+												"from": "JwgvpLYJ",
+												"to": "qtwaBhit",
+												"label": "Lay every block out",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+													"symbol": "placeBlocks"
+												}
+											},
+											{
+												"id": "vLjbpvxS",
+												"from": "qtwaBhit",
+												"to": "JwgvpLYJ",
+												"label": "The drawing's geometry",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+													"symbol": "placeBlocks"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "CDlrijzI",
+								"from": "JwgvpLYJ",
+								"to": "oycxx6G2",
+								"label": "Each solve's cards, frames, regions, routes and label boxes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+									"symbol": "createLayoutEngine"
+								}
+							},
+							{
+								"id": "mpCTSEj5",
+								"from": "oycxx6G2",
+								"to": "oycxx6G2",
+								"label": "Keep the solve that reads best",
+								"kind": "self",
+								"note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "drawnBlocks"
+								}
+							},
+							{
+								"id": "hTLQ3eGY",
+								"kind": "decision",
+								"question": "Does the Track engine gather groups into regions?",
+								"alternatives": [
+									{
+										"label": "regions",
+										"steps": [
+											{
+												"id": "UkATOTsB",
+												"from": "oycxx6G2",
+												"to": "JwgvpLYJ",
+												"label": "Solve again with each group packed as a block",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+													"symbol": "drawnBlocks"
+												}
+											},
+											{
+												"id": "BglCgR5F",
+												"from": "JwgvpLYJ",
+												"to": "H0PF4BhI",
+												"label": "Lay out the packed solve in the core",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+													"symbol": "layOutTrack"
+												}
+											},
+											{
+												"id": "uVAAX22Y",
+												"from": "H0PF4BhI",
+												"to": "JwgvpLYJ",
+												"label": "The drawing's geometry",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/blocks/place.rs",
+													"symbol": "lay_out_track"
+												}
+											},
+											{
+												"id": "UGEXBQJ8",
+												"from": "JwgvpLYJ",
+												"to": "oycxx6G2",
+												"label": "The packed solve",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+													"symbol": "createLayoutEngine"
+												}
+											},
+											{
+												"id": "mVDdGjOV",
+												"from": "oycxx6G2",
+												"to": "oycxx6G2",
+												"label": "Keep the packed solve if it reads better",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+													"symbol": "drawnBlocks"
+												}
+											}
+										]
+									},
+									{
+										"label": "none",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "LxoOhChw",
+								"from": "oycxx6G2",
+								"to": "oycxx6G2",
+								"label": "Cut the page to what it draws",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "drawnBlocks"
+								}
+							},
+							{
+								"id": "5rR69oPZ",
+								"from": "oycxx6G2",
+								"to": "oycxx6G2",
+								"label": "Bridge the crossings as settled geometry",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "drawnBlocks"
+								}
+							},
+							{
+								"id": "C3xBMmQH",
+								"from": "oycxx6G2",
+								"to": "mHYMkWdE",
+								"label": "One drawing: boxes, text, routes, labels",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+									"symbol": "drawnBlocks"
+								}
+							}
+						]
+					},
+					{
+						"id": "KBB38tYG",
+						"name": "Place the blocks",
+						"participants": [
+							"qtwaBhit",
+							"Wp2usbe5",
+							"mkxpJuY7",
+							"skrvk25Y",
+							"KdNM1Q56",
+							"PzFXfM5n"
+						],
+						"steps": [
+							{
+								"id": "MgyCoowR",
+								"kind": "loop",
+								"condition": "for each block, innermost first",
+								"steps": [
+									{
+										"id": "wKrhQEsl",
+										"kind": "decision",
+										"question": "Is the block a block of blocks?",
+										"alternatives": [
+											{
+												"label": "blocks",
+												"steps": [
+													{
+														"id": "2gnYhfVo",
+														"from": "qtwaBhit",
+														"to": "mkxpJuY7",
+														"label": "a block of blocks",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+															"symbol": "PackLayout"
+														}
+													},
+													{
+														"id": "wRIl17Ia",
+														"from": "mkxpJuY7",
+														"to": "mkxpJuY7",
+														"label": "Try each promising packing, keep the best scoring",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+															"symbol": "PackLayout"
+														}
+													},
+													{
+														"id": "JTeN5hfo",
+														"from": "mkxpJuY7",
+														"to": "skrvk25Y",
+														"label": "route the trunks",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+															"symbol": "TrunkRouter"
+														}
+													},
+													{
+														"id": "7IED3t0f",
+														"from": "skrvk25Y",
+														"to": "PzFXfM5n",
+														"label": "orthogonal routes around the blocks",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+															"symbol": "routeTrunks"
+														}
+													},
+													{
+														"id": "Pd3I6jNp",
+														"from": "PzFXfM5n",
+														"to": "skrvk25Y",
+														"label": "a route for each trunk",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+															"symbol": "routeTrunks"
+														}
+													},
+													{
+														"id": "5P2Wruyw",
+														"from": "skrvk25Y",
+														"to": "mkxpJuY7",
+														"label": "the trunks' points",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+															"symbol": "TrunkRouter"
+														}
+													},
+													{
+														"id": "Q7RPOrLo",
+														"from": "mkxpJuY7",
+														"to": "qtwaBhit",
+														"label": "the packed block",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+															"symbol": "PackLayout"
+														}
+													}
+												]
+											},
+											{
+												"label": "cards",
+												"steps": [
+													{
+														"id": "stwt0WlU",
+														"from": "qtwaBhit",
+														"to": "Wp2usbe5",
+														"label": "a block of cards",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+															"symbol": "CardLayout"
+														}
+													},
+													{
+														"id": "WcX3o1Ct",
+														"from": "Wp2usbe5",
+														"to": "KdNM1Q56",
+														"label": "rank and order the cards",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+															"symbol": "renderString"
+														}
+													},
+													{
+														"id": "JcDP3Nuf",
+														"from": "KdNM1Q56",
+														"to": "Wp2usbe5",
+														"label": "ranks and positions",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+															"symbol": "renderString"
+														}
+													},
+													{
+														"id": "iYunIpOr",
+														"from": "Wp2usbe5",
+														"to": "Wp2usbe5",
+														"label": "Route the lines on tracks between the ranks",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+															"symbol": "routed"
+														}
+													},
+													{
+														"id": "w9C23fLY",
+														"from": "Wp2usbe5",
+														"to": "qtwaBhit",
+														"label": "the laid-out block",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+															"symbol": "CardLayout"
+														}
+													}
+												]
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "d0DitITp",
+								"from": "qtwaBhit",
+								"to": "skrvk25Y",
+								"label": "weigh the routed lines, ports settled or not",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+									"symbol": "routedWeighed"
+								}
+							},
+							{
+								"id": "CnttFwBf",
+								"from": "skrvk25Y",
+								"to": "qtwaBhit",
+								"label": "each drawing's weighed lines",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+									"symbol": "routedWeighed"
+								}
+							},
+							{
+								"id": "zOME8YlR",
+								"kind": "decision",
+								"question": "Does the settled drawing score worse than the unsettled?",
+								"alternatives": [
+									{
+										"label": "worse",
+										"steps": [
+											{
+												"id": "zQJVheH1",
+												"from": "qtwaBhit",
+												"to": "qtwaBhit",
+												"label": "Keep the blocks as they were before the ports settled",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+													"symbol": "settledOrNot"
+												}
+											}
+										]
+									},
+									{
+										"label": "as well or better",
+										"steps": []
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "5fTFmh80",
+						"name": "Why the drawing settles once",
+						"beats": [
+							{
+								"id": "4gGw0YbA",
+								"heading": "Words first, then space",
+								"body": "Nothing is placed before it is measured. The size a name needs is a fact the layout is handed, in the face the SVG will paint, so no later pass has to make room it did not reserve.",
+								"subjects": [
+									"kHpIix5b",
+									"RvOyWmEb",
+									"dYxhsEhY"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "rNW1w4av",
+								"heading": "Pretext breaks lines; the renderer owns card policy",
+								"body": "Pretext is given a prepared string and a width and hands back lines. Padding, icon space, baselines and the bounds a card may take are the renderer's, not the library's.",
+								"subjects": [
+									"RvOyWmEb",
+									"kHpIix5b"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "FWMgjXxD",
+								"heading": "One engine places and routes",
+								"body": "Track or Blocks lays the board out, one block at a time from the innermost: the renderer core lays out every Track solve, and TypeScript every Blocks solve. Graphviz ranks a block's cards and its lines run on tracks between the ranks; the orthogonal router of the core routes the trunks between packed blocks. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
+								"subjects": [
+									"oycxx6G2",
+									"wCXK6KYw",
+									"H0PF4BhI",
+									"T4hTbGVM",
+									"Wp2usbe5",
+									"skrvk25Y"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "AOPSXwkc",
+								"heading": "The drawing that reads best is kept",
+								"body": "A board is solved more than one way, and the answers are weighed as drawn: crossings, line length and how well it fits the reference pane, which is as wide as the shell gives a drawing and as tall as the tuned 1.4 page shape makes that width, not the shell's own pane (ADR 0043). A block of cards wraps a wide rank or folds tall ranks into columns only where that reads better. Nobody authors the reading, and every variant is laid out fresh.",
+								"subjects": [
+									"oycxx6G2",
+									"qtwaBhit"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "xfpajsvv",
+								"heading": "The painter decides no geometry",
+								"body": "By the time the painter runs, every box, port, route and label box is settled. It paints what it is given, so the picture a reader points at and the atlas the inspector reads are the same geometry.",
+								"subjects": [
+									"H0xU45vp"
+								],
+								"view": "lHmaM9Zg"
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "gcpBze89",
+	"current": "KGKsTE6n",
 	"adoptions": [
 		{
 			"variant": "8JVuwOvJ",
@@ -11258,6 +12820,12 @@
 			"from": "PeEDfJ9u",
 			"at": "2026-10-25T00:26:14.247Z",
 			"reason": "The core's orthogonal router routes the trunks of Blocks, and libavoid leaves the renderer"
+		},
+		{
+			"variant": "KGKsTE6n",
+			"from": "gcpBze89",
+			"at": "2026-10-25T04:09:54.728Z",
+			"reason": "The renderer core lays out every Track solve (crates/archboard-layout, layOutTrack); the TypeScript placement lays out Blocks only, and the entry row lives in the crate"
 		}
 	]
 }
