@@ -128,7 +128,9 @@ function upgradeOf(request: Request): UpgradeRequest | null {
 /**
  * Adapt Bun's socket to what the browser port sends with. `ws.send` answers the bytes it sent,
  * -1 when it queued the frame under backpressure, which Bun still sends in order, and 0 when it
- * dropped the frame, which is a failed publication.
+ * dropped the frame over the server's `backpressureLimit`. Bun keeps the socket open after a drop,
+ * so the adapter ends it: the browser reconnects and reads the state again instead of missing a
+ * frame on an open socket, and the port releases it instead of waiting for its confirmation.
  * @param ws The open socket.
  * @returns The socket as the browser port's connection.
  */
@@ -142,13 +144,21 @@ function connectionOf(ws: Bun.ServerWebSocket<VoiceSocket>): AdmittedConnection 
 			return ws.readyState;
 		},
 		/**
-		 * Send one text frame and report a dropped one as an error.
+		 * Send one text frame, and end the socket and report the error when Bun dropped it.
 		 * @param data The frame's text.
 		 * @param callback Receives null once Bun took the frame, or the drop.
 		 */
 		send: (data, callback) => {
-			const sent = ws.send(data);
-			callback(sent === 0 ? new Error("The browser socket dropped the message.") : null);
+			if (ws.send(data) !== 0) {
+				callback(null);
+				return;
+			}
+			ws.terminate();
+			callback(
+				new Error(
+					"The browser socket dropped a message over its backpressure limit, so it was closed. The browser reconnects to read the state again.",
+				),
+			);
 		},
 		/**
 		 * Close the socket with a code and reason.

@@ -145,6 +145,41 @@ test("Bun.serve closes a socket that sends a non-JSON frame with 1003", async ()
 	expect(handled).toEqual([]);
 });
 
+test("Bun.serve ends a socket whose frame it dropped over the backpressure limit", async () => {
+	const closed: object[] = [];
+	let dropped: unknown = null;
+	const port: BrowserPort = {
+		accept: () => undefined,
+		handle: async (_instance, _browserId, _input, transport) => {
+			// The first frame outgrows the socket buffers and is queued; Bun drops the next one.
+			await transport.send({ filler: "x".repeat(16 << 20) });
+			await transport.send({ after: true }).catch((error: unknown) => (dropped = error));
+		},
+		close: async (instance) => {
+			closed.push(instance);
+		},
+		drain: async () => undefined,
+	};
+	const { handlers, detach } = serveBunBrowserSockets(port, {
+		path: "/voice",
+		checkout: "/work/checkout",
+		websocket: { backpressureLimit: 1, message: () => undefined },
+	});
+	const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...handlers });
+	try {
+		const socket = await connect(`${server.url.origin.replace("http:", "ws:")}/voice${SURFACE}`);
+		if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
+		const code = closeCode(socket);
+		socket.send(JSON.stringify({ type: "probe" }));
+		expect(await code).not.toBe(1000);
+		expect(dropped).toBeInstanceOf(Error);
+		expect(closed).toHaveLength(1);
+	} finally {
+		await detach();
+		await server.stop(true);
+	}
+});
+
 test("Bun.serve detach closes the open socket in the port and refuses the next", async () => {
 	const { port, closed } = recordingPort();
 	await using host = serve(port);
