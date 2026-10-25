@@ -6,6 +6,9 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 # The deterministic software libm: the same transcendental results on every
 # target, so a native build draws the bytes of the WASM build (ADR 0057).

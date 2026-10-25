@@ -1,0 +1,10 @@
+# The thresholds of the crates' analysis policy (TASK-520.09); Cargo.toml holds
+# the lints, and docs/agents/strict-analysis.md says why.
+
+# The TypeScript caps a function's complexity at 6 (.oxlintrc.jsonc).
+cognitive-complexity-threshold = 6
+# No crate is published, so the lints that keep a public API stable check it too.
+avoid-breaking-exported-api = false
+# A test states what it expects by unwrapping and prints what it compares.
+allow-unwrap-in-tests = true
+allow-print-in-tests = true
