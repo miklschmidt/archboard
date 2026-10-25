@@ -11,6 +11,7 @@ use crate::geometry::{Curve, Point, Segment, coord, vertices_of};
 use crate::js;
 use crate::markup::{Markup, concat, group, tag};
 use crate::paint::standing::MEMBERS_ATTRIBUTE;
+use crate::paint::styles::stroke_width;
 use crate::scene::Role;
 
 /// How far a junction mark reaches past the line it sits on.
@@ -354,15 +355,15 @@ pub fn mark_radius(width: f64) -> f64 {
     width + JUNCTION_REACH
 }
 
-/// The marks for every join, in the ink and weight of the heavier line there.
-pub fn junction_marks(routes: &[&Edge], lines: &[(String, f64)]) -> Markup {
+/// The marks for every join, in the ink and weight of the heavier line there:
+/// each route with the ink its line is drawn in.
+pub fn junction_marks(routes: &[(&Edge, String)]) -> Markup {
     let join_routes: Vec<JoinRoute> = routes
         .iter()
-        .enumerate()
-        .map(|(index, route)| JoinRoute {
+        .map(|(route, _)| JoinRoute {
             corners: vertices_of(&route.curve),
             bends: bends_of(&route.curve),
-            width: lines[index].1,
+            width: stroke_width(route.edge.emphasis),
         })
         .collect();
     let junctions = gathered(joins_of(&join_routes));
@@ -372,12 +373,12 @@ pub fn junction_marks(routes: &[&Edge], lines: &[(String, f64)]) -> Markup {
     let marks = junctions
         .iter()
         .map(|junction| {
-            let ink = lines[junction.route].0.as_str();
+            let ink = routes[junction.route].1.as_str();
             let radius = mark_radius(junction.width);
             let members = junction
                 .routes
                 .iter()
-                .map(|at| routes[*at].edge.id.as_str())
+                .map(|at| routes[*at].0.edge.id.as_str())
                 .collect::<Vec<_>>()
                 .join(" ");
             match junction.until {

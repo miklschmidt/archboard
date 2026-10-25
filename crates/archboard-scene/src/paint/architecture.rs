@@ -28,7 +28,7 @@ use crate::paint::standing::{
     standing_swipe, subject, warning_on_line,
 };
 use crate::paint::styles::{
-    HEAD_LENGTH, Head, Styles, edge_attributes, head_ref_x, head_widths, quietened,
+    HEAD_LENGTH, Head, Styles, drawn_ink, edge_attributes, head_ref_x, head_widths, quietened,
     relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
@@ -93,6 +93,20 @@ fn line_kind(step: bool) -> SubjectKind {
     }
 }
 
+/// The ink a relationship's line, its arrowhead and its junction marks are drawn in.
+fn line_ink(
+    palette: &Palette,
+    standing: Option<Standing>,
+    appearance: &LineAppearance,
+    weight: Emphasis,
+) -> String {
+    drawn_ink(
+        &relationship_ink(palette, standing, appearance),
+        palette,
+        weight,
+    )
+}
+
 /// One final route, its head, its halo and the insides of the ports it runs into.
 #[allow(clippy::too_many_arguments)]
 fn paint_edge_line(
@@ -108,11 +122,8 @@ fn paint_edge_line(
     let styles = Styles::of(palette);
     let width = stroke_width(edge.emphasis);
     let attributes = edge_attributes(edge.emphasis, palette, standing, appearance);
-    let ink = attributes
-        .get("stroke")
-        .map(crate::markup::spelt)
-        .unwrap_or_default();
     let weight = edge.emphasis;
+    let ink = line_ink(palette, standing, appearance, weight);
     let marker_id = format!(
         "edge-head-{}-{}-{}",
         appearance.arrowhead.as_str(),
@@ -512,32 +523,23 @@ pub fn paint_architecture(
             &slots,
         ));
     }
-    let joined: Vec<&Edge> = drawing
+    let joined: Vec<(&Edge, String)> = drawing
         .drawing
         .edges
         .iter()
         .filter(|routed| !removed(&routed.edge.id))
-        .collect();
-    let inks: Vec<(String, f64)> = joined
-        .iter()
         .map(|routed| {
             let edge = &routed.edge;
-            let attributes = edge_attributes(
-                edge.emphasis,
+            let ink = line_ink(
                 palette,
                 standings.of(&edge.id),
                 look_of(vocabulary, &edge.id),
+                edge.emphasis,
             );
-            (
-                attributes
-                    .get("stroke")
-                    .map(crate::markup::spelt)
-                    .unwrap_or_default(),
-                stroke_width(edge.emphasis),
-            )
+            (routed, ink)
         })
         .collect();
-    painted.push(junction_marks(&joined, &inks));
+    painted.push(junction_marks(&joined));
     for routed in edges {
         painted.push(traffic.get(&routed.edge.id).cloned().unwrap_or_default());
     }
