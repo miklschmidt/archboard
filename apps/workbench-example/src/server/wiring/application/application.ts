@@ -1,6 +1,5 @@
 import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { createServer } from "node:http";
 import { basename, join } from "node:path";
 import { createVoiceAgent, resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
 import type { ExampleOptions } from "#server/rules/startup/options.ts";
@@ -30,13 +29,52 @@ function requireAssets(directory: string): void {
 
 /**
  * Compare browser request metadata to the exact loopback listener.
- * @param host The request host header.
- * @param origin The optional browser origin header.
+ * @param request The request.
  * @param expected The listener's HTTP origin.
  * @returns Whether the request belongs to this localhost application.
  */
-function sameOrigin(host: string | undefined, origin: string | undefined, expected: string) {
-	return host === new URL(expected).host && (origin === undefined || origin === expected);
+function sameOrigin(request: Request, expected: string): boolean {
+	const origin = request.headers.get("origin");
+	return (
+		request.headers.get("host") === new URL(expected).host &&
+		(origin === null || origin === expected)
+	);
+}
+
+/**
+ * Answer one of the example's own routes: its configuration and its browser build.
+ * @param request The request, which is no socket upgrade on the socket path.
+ * @param origin The listener's HTTP origin.
+ * @param options The admitted host inputs.
+ * @returns The route's answer.
+ */
+async function route(request: Request, origin: string, options: ExampleOptions): Promise<Response> {
+	if (!sameOrigin(request, origin)) return new Response(null, { status: 403 });
+	if (request.method !== "GET")
+		return new Response(null, { status: 405, headers: { Allow: "GET" } });
+	const path = new URL(request.url).pathname;
+	const headers = { "Cache-Control": "no-store" };
+	if (path === "/api/config") {
+		const configuration: ExampleConfiguration = {
+			checkout: { label: basename(options.checkout), path: options.checkout },
+			socketPath: WORKBENCH_SOCKET_PATH,
+		};
+		return Response.json(configuration, { headers });
+	}
+	const asset = assets.get(path);
+	if (asset === undefined) return new Response(null, { status: 404, headers });
+	try {
+		const body = await readFile(join(options.browserDirectory, asset.file));
+		return new Response(body, { headers: { ...headers, "Content-Type": asset.contentType } });
+	} catch (error) {
+		console.error(error);
+		return new Response(
+			"Cannot read the browser build. Rebuild it and restart the example server.",
+			{
+				status: 500,
+			},
+		);
+	}
 }
 
 /**
@@ -67,43 +105,7 @@ export async function startExample(
 		},
 		onFatal,
 	});
-	let origin = "";
-	const server = createServer((request, response) => {
-		void (async () => {
-			if (!sameOrigin(request.headers.host, request.headers.origin, origin)) {
-				response.writeHead(403).end();
-				return;
-			}
-			if (request.method !== "GET") {
-				response.writeHead(405, { Allow: "GET" }).end();
-				return;
-			}
-			const path = new URL(request.url ?? "/", origin).pathname;
-			response.setHeader("Cache-Control", "no-store");
-			if (path === "/api/config") {
-				const configuration: ExampleConfiguration = {
-					checkout: { label: basename(options.checkout), path: options.checkout },
-					socketPath: WORKBENCH_SOCKET_PATH,
-				};
-				response
-					.writeHead(200, { "Content-Type": "application/json" })
-					.end(JSON.stringify(configuration));
-				return;
-			}
-			const asset = assets.get(path);
-			if (asset === undefined) {
-				response.writeHead(404).end();
-				return;
-			}
-			const body = await readFile(join(options.browserDirectory, asset.file));
-			response.writeHead(200, { "Content-Type": asset.contentType }).end(body);
-		})().catch((error: unknown) => {
-			console.error(error);
-			response
-				.writeHead(500)
-				.end("Cannot read the browser build. Rebuild it and restart the example server.");
-		});
-	});
+	let server: Bun.Server<unknown> | undefined;
 	let stopping: Promise<void> | undefined;
 	/**
 	 * Close only this host's listener, sockets, and private child, once.
@@ -112,17 +114,11 @@ export async function startExample(
 	const shutdown = (): Promise<void> =>
 		(stopping ??= (async () => {
 			signal.removeEventListener("abort", abort);
-			const closed = new Promise<void>((resolve, reject) => {
-				server.close((error) =>
-					error && "code" in error && error.code !== "ERR_SERVER_NOT_RUNNING"
-						? reject(error)
-						: resolve(),
-				);
-			});
+			const stopped = server?.stop();
 			try {
 				await agent.shutdown();
 			} finally {
-				await closed;
+				await stopped;
 			}
 		})());
 	/** Stop the private child without waiting for startup readiness. */
@@ -134,20 +130,21 @@ export async function startExample(
 		signal.throwIfAborted();
 		await agent.start();
 		signal.throwIfAborted();
-		await new Promise<void>((resolve, reject) => {
-			server.once("error", reject);
-			server.listen(options.port, "127.0.0.1", () => {
-				server.off("error", reject);
-				resolve();
-			});
+		server = Bun.serve({
+			hostname: "127.0.0.1",
+			port: options.port,
+			...agent.bunHandlers({
+				path: WORKBENCH_SOCKET_PATH,
+				/**
+				 * Answer the example's own routes for the listener's origin.
+				 * @param request The request.
+				 * @param receiving The server that received it.
+				 * @returns The route's answer.
+				 */
+				fetch: (request, receiving) => route(request, receiving.url.origin, options),
+			}),
 		});
-		const address = server.address();
-		if (address === null || typeof address === "string")
-			throw new Error("The localhost listener has no TCP address.");
-		origin = `http://127.0.0.1:${address.port}`;
-		agent.attach(server, { path: WORKBENCH_SOCKET_PATH, origin });
-		server.on("error", onFatal);
-		return { url: origin, shutdown };
+		return { url: server.url.origin, shutdown };
 	} catch (error) {
 		await shutdown();
 		signal.throwIfAborted();

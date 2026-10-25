@@ -12,6 +12,11 @@ import {
 	type VoiceAgentAttachOptions,
 } from "#server/services/agent/attach.ts";
 import {
+	serveBunBrowserSockets,
+	type VoiceAgentBunHandlers,
+	type VoiceAgentBunOptions,
+} from "#server/services/agent/bun-serve.ts";
+import {
 	createCodexWorkbench,
 	type CodexWorkbenchExtensions,
 	type CreateCodexWorkbenchOptions,
@@ -112,6 +117,21 @@ export interface VoiceAgent {
 	 */
 	readonly attach: (server: Server, options: VoiceAgentAttachOptions) => () => Promise<void>;
 	/**
+	 * Serve browser sockets on one path of a `Bun.serve` server: spread the result into its
+	 * options, as `Bun.serve({ port, ...agent.bunHandlers({ path, fetch }) })`. The admission is
+	 * that of {@link VoiceAgent.attach}. A request that is not a socket upgrade on `path` goes to
+	 * `fetch`, and a socket that `fetch` upgrades itself goes to `websocket`, the host's own
+	 * handlers. Left out, `origin` is the origin of the receiving server's `url`. After
+	 * {@link VoiceAgent.shutdown}, an upgrade on `path` is refused with 503: after a later
+	 * {@link VoiceAgent.start}, call this again and pass the result to the server's `reload`.
+	 * @returns The `fetch` and `websocket` of `Bun.serve` options.
+	 * @throws {TypeError} When the path or a named origin could never admit a socket, or the agent
+	 * admits more than one checkout and the options name none.
+	 */
+	readonly bunHandlers: <HostData = undefined>(
+		options: VoiceAgentBunOptions<HostData>,
+	) => VoiceAgentBunHandlers<HostData>;
+	/**
 	 * Detach every attached server, stop the Codex process and forget every browser tab. After a
 	 * later {@link VoiceAgent.start}, attach again to serve sockets.
 	 */
@@ -186,6 +206,20 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 		...(browserLeaseLedger === undefined ? {} : { browserLeaseLedger }),
 	});
 	const detachers = new Set<() => Promise<void>>();
+	/**
+	 * Remember an attachment's detach for shutdown, until it detaches.
+	 * @param detach The attachment's detach.
+	 * @returns Detach once and forget the attachment.
+	 */
+	const track = (detach: () => Promise<void>) => {
+		/** Detach once and forget the attachment. */
+		const tracked = async (): Promise<void> => {
+			detachers.delete(tracked);
+			await detach();
+		};
+		detachers.add(tracked);
+		return tracked;
+	};
 	return Object.freeze({
 		start: workbench.start,
 		status: workbench.snapshot,
@@ -195,18 +229,25 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 		 * @param attachOptions The path, origin and checkout of its sockets.
 		 * @returns Detach for this attachment.
 		 */
-		attach: (server: Server, attachOptions: VoiceAgentAttachOptions) => {
-			const detach = attachBrowserSockets(server, workbench.browser, {
-				...attachOptions,
-				checkout: socketCheckout(options.checkouts, attachOptions.checkout),
+		attach: (server: Server, attachOptions: VoiceAgentAttachOptions) =>
+			track(
+				attachBrowserSockets(server, workbench.browser, {
+					...attachOptions,
+					checkout: socketCheckout(options.checkouts, attachOptions.checkout),
+				}),
+			),
+		/**
+		 * Serve browser sockets on one path of a Bun.serve server and remember them for shutdown.
+		 * @param bunOptions The path, origin, checkout and the host's own handlers.
+		 * @returns The handlers for Bun.serve.
+		 */
+		bunHandlers: <HostData = undefined>(bunOptions: VoiceAgentBunOptions<HostData>) => {
+			const { handlers, detach } = serveBunBrowserSockets(workbench.browser, {
+				...bunOptions,
+				checkout: socketCheckout(options.checkouts, bunOptions.checkout),
 			});
-			/** Detach once and forget the attachment. */
-			const tracked = async (): Promise<void> => {
-				detachers.delete(tracked);
-				await detach();
-			};
-			detachers.add(tracked);
-			return tracked;
+			track(detach);
+			return handlers;
 		},
 		/** Detach every attachment, then stop the Codex process. */
 		shutdown: async () => {
