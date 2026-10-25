@@ -1,3 +1,16 @@
+export {
+	createVoiceAgent,
+	DEFAULT_VOICE_AGENT_IDENTITY,
+} from "#server/services/agent/voice-agent.ts";
+export type {
+	VoiceAgent,
+	VoiceAgentBrowserPort,
+	VoiceAgentExtensions,
+	VoiceAgentIdentity,
+	VoiceAgentOptions,
+	VoiceAgentStatus,
+} from "#server/services/agent/voice-agent.ts";
+export type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
 export { createCodexWorkbench } from "#server/services/owner/workbench.ts";
 export type { CreateCodexWorkbenchOptions } from "#server/services/owner/workbench.ts";
 
