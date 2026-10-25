@@ -1,4 +1,5 @@
-import type { TabSessions, TabSessionId } from "@archboard/codex-realtime-voice/server";
+import type { TabSessions } from "#runtime/protocol/voice/extension.ts";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 let installed: TabSessions | null = null;
 /**

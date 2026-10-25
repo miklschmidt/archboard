@@ -59,7 +59,7 @@ function startProfileMismatches(
 		"thread.cwd": response.thread.cwd !== options.checkoutRoot,
 		"thread.historyMode": response.thread.historyMode !== "paginated",
 		"thread.source": response.thread.source !== WORKHORSE_THREAD_SOURCE,
-		"thread.threadSource": response.thread.threadSource !== options.profile.threadSource,
+		"thread.threadSource": response.thread.threadSource !== options.profile.identity.threadSource,
 		"thread.ephemeral": response.thread.ephemeral,
 		activePermissionProfile: !Object.hasOwn(response, "activePermissionProfile"),
 	};
@@ -94,7 +94,7 @@ function validateWorkhorseStartResponse(
 		runtimeWorkspaceRoots: [...response.runtimeWorkspaceRoots],
 		historyMode: "paginated",
 		source: WORKHORSE_THREAD_SOURCE,
-		threadSource: options.profile.threadSource,
+		threadSource: options.profile.identity.threadSource,
 		model: response.model,
 		modelProvider: response.modelProvider,
 		serviceTier: response.serviceTier,

@@ -1,6 +1,6 @@
 import {
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+	VOICE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
 	type NamespaceName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import { COORDINATOR_NAMESPACE_NAMES } from "#runtime/protocol/coordinator-tool-contract/contracts.ts";
@@ -218,8 +218,8 @@ function assertCallIdentitiesMatchParams(
 }
 
 const MANIFEST_HASHES: Readonly<Record<NamespaceName, string>> = Object.freeze({
-	archboard_workhorse: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	archboard_voice: ARCHBOARD_VOICE_MANIFEST_SHA256,
+	archboard_workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
+	archboard_voice: VOICE_TOOLS_MANIFEST_SHA256,
 });
 
 const NamespaceNameSchema = z.enum(COORDINATOR_NAMESPACE_NAMES);

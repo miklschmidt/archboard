@@ -22,9 +22,9 @@ interface CanonicalNamespace {
 type NamespaceName = "archboard_workhorse" | "archboard_voice";
 type ManifestName = "workhorse" | "voice";
 
-const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
+const WORKHORSE_TOOLS_MANIFEST_SHA256 =
 	"22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11" as const;
-const ARCHBOARD_VOICE_MANIFEST_SHA256 =
+const VOICE_TOOLS_MANIFEST_SHA256 =
 	"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b" as const;
 
 const MANIFEST_FILES = Object.freeze({
@@ -33,26 +33,26 @@ const MANIFEST_FILES = Object.freeze({
 } satisfies Record<NamespaceName, string>);
 
 const MANIFEST_DIGESTS = Object.freeze({
-	archboard_workhorse: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	archboard_voice: ARCHBOARD_VOICE_MANIFEST_SHA256,
+	archboard_workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
+	archboard_voice: VOICE_TOOLS_MANIFEST_SHA256,
 } satisfies Record<NamespaceName, string>);
 
-const ARCHBOARD_WORKHORSE_TOOL_NAMES = Object.freeze([
+const WORKHORSE_TOOL_NAMES = Object.freeze([
 	"inspect_workhorse",
 	"delegate_to_workhorse",
 	"manage_workhorse_queue",
 	"steer_workhorse",
 	"stop_workhorses",
 ] as const);
-const ARCHBOARD_VOICE_TOOL_NAMES = Object.freeze(["resolve_spoken_approval"] as const);
+const VOICE_TOOL_NAMES = Object.freeze(["resolve_spoken_approval"] as const);
 
-type WorkhorseToolName = (typeof ARCHBOARD_WORKHORSE_TOOL_NAMES)[number];
-type VoiceToolName = (typeof ARCHBOARD_VOICE_TOOL_NAMES)[number];
+type WorkhorseToolName = (typeof WORKHORSE_TOOL_NAMES)[number];
+type VoiceToolName = (typeof VOICE_TOOL_NAMES)[number];
 type CoordinatorToolName = WorkhorseToolName | VoiceToolName;
 
 const EXPECTED_TOOL_NAMES: Readonly<Record<NamespaceName, readonly string[]>> = Object.freeze({
-	archboard_workhorse: ARCHBOARD_WORKHORSE_TOOL_NAMES,
-	archboard_voice: ARCHBOARD_VOICE_TOOL_NAMES,
+	archboard_workhorse: WORKHORSE_TOOL_NAMES,
+	archboard_voice: VOICE_TOOL_NAMES,
 });
 
 const JsonSchemaSchema = z.record(z.string(), z.json());
@@ -255,10 +255,10 @@ function loadManifest(namespace: NamespaceName): LoadedManifest {
 const WORKHORSE = loadManifest("archboard_workhorse");
 const VOICE = loadManifest("archboard_voice");
 
-const ARCHBOARD_WORKHORSE_NAMESPACE = WORKHORSE.manifest;
-const ARCHBOARD_VOICE_NAMESPACE = VOICE.manifest;
-const ARCHBOARD_WORKHORSE_MANIFEST_JSON = WORKHORSE.text;
-const ARCHBOARD_VOICE_MANIFEST_JSON = VOICE.text;
+const WORKHORSE_TOOL_NAMESPACE = WORKHORSE.manifest;
+const VOICE_TOOL_NAMESPACE = VOICE.manifest;
+const WORKHORSE_TOOLS_MANIFEST_JSON = WORKHORSE.text;
+const VOICE_TOOLS_MANIFEST_JSON = VOICE.text;
 
 const COORDINATOR_TOOL_MANIFEST_DIGESTS = Object.freeze({
 	workhorse: WORKHORSE.sha256,
@@ -276,9 +276,7 @@ interface CoordinatorManifestIntegrity {
  * @returns The frozen reviewed namespace.
  */
 function manifestFor(namespace: NamespaceName): CanonicalNamespace {
-	return namespace === "archboard_workhorse"
-		? ARCHBOARD_WORKHORSE_NAMESPACE
-		: ARCHBOARD_VOICE_NAMESPACE;
+	return namespace === "archboard_workhorse" ? WORKHORSE_TOOL_NAMESPACE : VOICE_TOOL_NAMESPACE;
 }
 
 /**
@@ -362,17 +360,17 @@ export {
 	type CanonicalNamespace,
 	type NamespaceName,
 	type ManifestName,
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
-	ARCHBOARD_VOICE_TOOL_NAMES,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
+	VOICE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOL_NAMES,
+	VOICE_TOOL_NAMES,
 	type WorkhorseToolName,
 	type VoiceToolName,
 	type CoordinatorToolName,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
-	ARCHBOARD_VOICE_MANIFEST_JSON,
+	WORKHORSE_TOOL_NAMESPACE,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_JSON,
+	VOICE_TOOLS_MANIFEST_JSON,
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 	type CoordinatorManifestIntegrity,
 	assertCanonicalManifest,

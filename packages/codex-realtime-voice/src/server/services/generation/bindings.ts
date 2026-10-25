@@ -74,7 +74,7 @@ function storageBindings(
 		 * @returns The thread-link binding.
 		 */
 		threadLink: (created) => ({
-			threadSource: context.server.host.instructions.workhorse.threadSource,
+			threadSource: context.server.host.instructions.workhorse.identity.threadSource,
 			/**
 			 * The epoch now active, which a link is only valid within.
 			 * @returns The epoch, or null before one is started.

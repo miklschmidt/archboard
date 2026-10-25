@@ -1,25 +1,29 @@
 import type {
 	CoordinatorCallbackHostPolicy,
-	CoordinatorCallbackCanvas,
-	CoordinatorSemanticCallback,
-	CoordinatorHostCallbackSource,
+	CoordinatorHostContextSource,
 } from "@archboard/codex-realtime-voice/runtime";
-import type { CoordinatorCallbackOptions } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { toHostSource } from "#runtime/rules/coordinator-callbacks/normalize.ts";
+import type {
+	CoordinatorCallbackCanvas,
+	CoordinatorCallbackOptions,
+	CoordinatorPaneNews,
+} from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import {
+	archboardContextOf,
+	toHostSource,
+} from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import { encodeCoordinatorCallback } from "#runtime/rules/coordinator-callbacks/encoding.ts";
 
 /**
  * Select speech only when the news stops the current narration.
- * @param callback The normalized callback.
+ * @param news The pane news.
  * @param canvas The current pane state.
  * @returns The voice channel.
  */
 function channelOf(
-	callback: CoordinatorSemanticCallback,
+	news: CoordinatorPaneNews,
 	canvas: CoordinatorCallbackCanvas,
 ): "speech" | "context" {
-	const news = callback.semantic.news;
-	return news?.stops &&
+	return news.stops &&
 		canvas.narrated !== null &&
 		(news.board === null || news.board === canvas.narrated)
 		? "speech"
@@ -54,7 +58,7 @@ function createArchboardCallbackPolicy(
 		 * @param listener The runtime callback receiver.
 		 * @returns The cleanup for every subscription.
 		 */
-		subscribe(listener: (event: CoordinatorHostCallbackSource) => void) {
+		subscribe(listener: (event: CoordinatorHostContextSource) => void) {
 			const cleanups: Array<() => void> = [];
 			try {
 				cleanups.push(
@@ -74,13 +78,16 @@ function createArchboardCallbackPolicy(
 		},
 		encode: encodeCoordinatorCallback,
 		/**
-		 * Suppress outside writes that no pane shows at arrival.
+		 * Suppress outside writes to a board that no pane shows at arrival, and refuse a payload that
+		 * is not Archboard's.
 		 * @param _event The source event.
 		 * @param callback The normalized callback.
 		 * @returns The refusal reason, or null.
 		 */
 		arrivalRefusal(_event, callback) {
-			const board = callback.semantic.news?.board;
+			const context = archboardContextOf(callback);
+			if (context === null) return "invalid_callback";
+			const board = context.news?.board;
 			return typeof board === "string" && !options.canvas().boards.includes(board)
 				? "not_shown"
 				: null;
@@ -91,11 +98,13 @@ function createArchboardCallbackPolicy(
 		 * @returns The requested channel or a record-only reason.
 		 */
 		delivery(callback) {
-			const news = callback.semantic.news;
+			const context = archboardContextOf(callback);
+			if (context === null) return { reason: "invalid_callback" };
+			const { news } = context;
 			return news === null
 				? { reason: "agent" }
 				: {
-						channel: channelOf(callback, options.canvas()),
+						channel: channelOf(news, options.canvas()),
 						text: news.sentence,
 						reason: news.by === "agent" ? "agent" : null,
 						coordinatorContext: news.by === "agent",

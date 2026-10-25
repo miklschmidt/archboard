@@ -46,7 +46,7 @@ describe("coordinator callbacks", () => {
 		}[];
 		for (const { source, type } of semanticCases) {
 			const callback = normalizeCoordinatorCallback(source, captured, null);
-			expect(callback.kind).toBe("semantic");
+			expect(callback.kind).toBe("host_context");
 			expect(callback.type).toBe(type);
 			expect(Object.isFrozen(callback.correlation)).toBe(true);
 			expect(encodeCoordinatorCallback(callback)).toContain(`"type":"${type}"`);

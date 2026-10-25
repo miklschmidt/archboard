@@ -6,7 +6,10 @@ import {
 	CALLBACK_MAX_STRING_UTF8_BYTES,
 	encodeCoordinatorCallback,
 } from "#runtime/rules/coordinator-callbacks/encoding.ts";
-import { normalizeCoordinatorCallback } from "#runtime/rules/coordinator-callbacks/normalize.ts";
+import {
+	archboardContextOf,
+	normalizeCoordinatorCallback,
+} from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import {
 	identities,
 	link,
@@ -151,15 +154,16 @@ describe("coordinator callback bytes", () => {
 		const ids = identities();
 		const semantic = semanticSources(ids, false);
 		const callback = normalizeCoordinatorCallback(semantic.selection, link(ids), null);
-		if (callback.kind !== "semantic") {
-			throw new TypeError("Expected a semantic callback.");
+		const context = callback.kind === "host_context" ? archboardContextOf(callback) : null;
+		if (callback.kind !== "host_context" || context === null) {
+			throw new TypeError("Expected an Archboard host context callback.");
 		}
 		const forged = {
 			...callback,
-			semantic: {
-				...callback.semantic,
+			context: {
+				...callback.context,
 				// A kind the renderer might draw but no command could act on.
-				selection: [{ kind: "pixel" as never, id: "n1" }],
+				payload: { ...context, selection: [{ kind: "pixel", id: "n1" }] },
 			},
 		};
 

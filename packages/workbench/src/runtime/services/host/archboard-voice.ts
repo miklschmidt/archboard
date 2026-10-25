@@ -1,3 +1,4 @@
+import type { WorkbenchVoicePolicy } from "#runtime/protocol/voice/extension.ts";
 import { z } from "zod";
 import { RecordingNarrationSchema } from "@archboard/walkthrough/recording";
 import {
@@ -10,7 +11,6 @@ import {
 	type RealtimePresentation,
 	type RealtimePresentationChange,
 } from "#runtime/rules/realtime/presentation-mode.ts";
-import type { WorkbenchVoicePolicy } from "@archboard/codex-realtime-voice/runtime";
 
 /**
  *
