@@ -1,11 +1,11 @@
 ---
 id: TASK-520.07
 title: The core shapes text, and every picture draws the glyphs of the core
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:54
-updated_date: '2026-10-25T14:50:00Z'
+updated_date: '2026-10-25T14:51:00Z'
 labels:
   - renderer
 dependencies:
@@ -26,12 +26,12 @@ Today the canvas of the place that draws measures text (Pretext over the browser
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The core measures and breaks every run with harfrust and skrifa on the bundled font files, and Pretext and canvas measurement are gone from the renderer
-- [ ] #2 The scene carries glyph runs with the string of each run, and the SVG painter defines each glyph a picture uses once and writes each string as accessible text
-- [ ] #3 An exported SVG draws its words in Chromium and Firefox with no diagram font installed or embedded, and a search of the page finds them
-- [ ] #4 Card titles, notes and labels at 1920x1080 are compared with the pictures before the change, and the screenshots are recorded in the task notes
-- [ ] #5 No corpus picture is worse on the measures of ADR 0039
-- [ ] #6 AGENTS.md states the new text invariant, and a test holds every painter to the glyph positions of the core in place of tests/system/browser/measured-text.test.ts
+- [x] #1 The core measures and breaks every run with harfrust and skrifa on the bundled font files, and Pretext and canvas measurement are gone from the renderer
+- [x] #2 The scene carries glyph runs with the string of each run, and the SVG painter defines each glyph a picture uses once and writes each string as accessible text
+- [x] #3 An exported SVG draws its words in Chromium and Firefox with no diagram font installed or embedded, and a search of the page finds them
+- [x] #4 Card titles, notes and labels at 1920x1080 are compared with the pictures before the change, and the screenshots are recorded in the task notes
+- [x] #5 No corpus picture is worse on the measures of ADR 0039
+- [x] #6 AGENTS.md states the new text invariant, and a test holds every painter to the glyph positions of the core in place of tests/system/browser/measured-text.test.ts
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -259,3 +259,9 @@ These were corrected in place on Semantic renderer's current variant before the 
 - o1aDteuC: now sequence.rs paint_step. Its line comes from step_path (sequence_messages.rs:112).
 - 7ZIx3pOn: now export.rs entries_of, which legend_of calls.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The core shapes and breaks every run of text. crates/archboard-text (harfrust, skrifa, unicode-linebreak, unicode-segmentation) holds the bundled faces and Noto fallback subsets for Greek, symbols and math (sources, versions, SHA-256 and the subset command in packages/renderer/assets/fonts/README); the layout crates and painters measure through archboard_scene::measure, and measureBoard replaces the TypeScript measurement. Pretext and canvas measurement, @napi-rs/canvas, the font route and the face waits are gone from the renderer. The scene carries glyph runs with their strings; the SVG defines each glyph once and writes each run's words as transparent accessible text, so an exported SVG draws its words with no font installed and a page search finds them (checked in Chromium and Firefox). Widths are hundredths in single precision as the canvas gave them, so only 3 Track and 12 Blocks scorecard drawings changed and the browser and the server now draw the same layout; 9 are slightly worse and one Blocks view trades 38 fewer crossings for about 3% more route length, both accepted by the user on 2026-10-25. Dark screenshots at 1920x1080 before and after are recorded in the notes. tests/system/browser/drawn-glyphs.test.ts holds every painter to the core's glyphs in place of measured-text.test.ts, and AGENTS.md states the new invariant. The WASM grew from 3.7 MB to 5.8 MB. Adopted on Renderer layout v77, Semantic renderer v121, Board rasterizer v77, Board viewer v133 and Browser application v134.
+<!-- SECTION:FINAL_SUMMARY:END -->
