@@ -62,9 +62,12 @@ import { type Definition } from "#runtime/operations/code-facts/facts.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import { nodeSubject } from "@archboard/board/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";
+import type { interfaceMeasures } from "@archboard/board/container-interface";
+
+type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
 
 /** What judging the containers of one board needs. */
 interface InterfaceReading {

@@ -9,10 +9,8 @@ import {
 	soloPane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
-import { statedVariant } from "@archboard/board/address";
+import { listSemanticBoards, readBoardVariant } from "@archboard/board/store-read";
 import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
-import { addressedVariant } from "@archboard/board/document";
 import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
 import { PANE_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
@@ -297,12 +295,11 @@ function stillThere(vault: string, key: string): boolean {
 	if (identity === null) {
 		return false;
 	}
-	const read = readSemanticBoard(vault, identity.board);
+	const opened = readBoardVariant(vault, identity.board, identity.variant);
 	// A bare key names the board, whatever it opens: on a board nobody has built
 	// that is its draft, or a refusal the pane draws naming the drafts to choose
 	// from. Either is the board it was on, said on screen, never another board.
-	const stated = statedVariant(identity);
-	return read.ok && (stated === undefined || addressedVariant(read.board, stated).ok);
+	return opened.ok || opened.code === "VARIANT_UNCHOSEN";
 }
 
 /**

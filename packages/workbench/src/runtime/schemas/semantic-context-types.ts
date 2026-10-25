@@ -7,9 +7,14 @@ import type {
 } from "@archboard/codex-app-server/identity";
 import type { ChangeKind } from "@archboard/board/comparison";
 import type { DiagramGrammar } from "@archboard/board/views";
-import type { VariantLifecycle } from "@archboard/board/document";
-import type { ReconciliationKind } from "@archboard/board/reconciliation";
-import type { SemanticSubjectKind } from "@archboard/board/pane-context";
+import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { z } from "zod";
+import type { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
+import type { ReconciliationKindSchema } from "@archboard/board/reconciliation";
+
+type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
+type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
+type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
 type SemanticChangeOrigin = "human" | "agent" | "mixed";
 type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";

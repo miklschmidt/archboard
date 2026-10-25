@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { symbolLine } from "#server/projections/symbol-line.ts";
+import { symbolLine } from "#runtime/operations/code-facts/symbol-line.ts";
 
 const LEDGER = `// The ledger.
 export const rate = 3;

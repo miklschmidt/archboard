@@ -7,18 +7,18 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
-import {
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CodeFinding,
-	CheckTimingSchema,
-} from "@archboard/code-intel/code-check";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
-	type VaultCheck,
 } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
+
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -177,7 +177,7 @@ test("check --code asks the plain check, then the code check, and a board behind
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check"]);
 	const result = VaultCheckSchema.extend({
-		timings: CheckTimingSchema.array(),
+		timings: CodeCheckAnswerSchema.shape.timings,
 		codeCheck: CodeCheckAnswerSchema,
 	}).parse(JSON.parse(stdout));
 	expect(result.diagnostics).toEqual([]);
@@ -306,7 +306,7 @@ test("check without --code never asks the code check", async () => {
 	const { stdout, stderr, exited } = await run(["check"]);
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check"]);
-	const result = VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).parse(
+	const result = VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings }).parse(
 		JSON.parse(stdout),
 	);
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");

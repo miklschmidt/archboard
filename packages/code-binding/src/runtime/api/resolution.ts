@@ -1,4 +1,4 @@
-// Resolving a binding in a checkout: the snapshot of the registered checkouts, the local target a binding leads to, the checkout that holds a vault, and the link a card opens.
+// Resolving a binding in a checkout: the snapshot of the registered checkouts, the local target a binding leads to, and the checkout that holds a vault.
 export { isPathWithin } from "#runtime/operations/binding-resolver.ts";
 export type {
 	LocalCodeTarget,
@@ -11,5 +11,4 @@ export {
 	snapshotCheckoutAccess,
 } from "#runtime/operations/checkout-snapshot.ts";
 export type { CheckoutSnapshot } from "#runtime/operations/checkout-snapshot.ts";
-export { githubUrlForBinding } from "#runtime/projections/code-target-link.ts";
 export { checkoutsReadFrom, vaultIdentity } from "#runtime/services/vault-checkout.ts";

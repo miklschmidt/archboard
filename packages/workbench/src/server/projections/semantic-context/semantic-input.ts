@@ -15,7 +15,6 @@ import type {
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import type { CodexWorkbenchWorkhorseComponents } from "@archboard/codex-realtime-voice/server";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
@@ -25,6 +24,10 @@ import {
 	semanticBoardContext,
 } from "#server/projections/semantic-context/board-context.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 type FreshBrief = import("#runtime/schemas/semantic-context-types.ts").FreshSemanticBrief;
 

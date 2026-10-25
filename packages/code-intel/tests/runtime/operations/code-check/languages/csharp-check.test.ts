@@ -182,7 +182,7 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	const check = await import("#runtime/api/code-check-run.ts");
+	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);

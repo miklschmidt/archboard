@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { decodeSemanticBoardDocument } from "@archboard/board/store-read";
 import { BoardBehindSchema, type BoardBehind } from "#shared/protocol/code-check.ts";
 import {
@@ -261,7 +261,7 @@ beforeAll(async () => {
 		]),
 	);
 	commit(shop, "a large commit");
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {

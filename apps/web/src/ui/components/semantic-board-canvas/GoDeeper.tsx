@@ -25,7 +25,6 @@ import {
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { DrillDown } from "@archboard/board/content";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { Button, cn } from "@archboard/ui-kit/components";
 import {
@@ -49,6 +48,9 @@ import {
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /** Inputs for one way to go deeper. */
 interface GoProps {

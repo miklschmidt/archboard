@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
-import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
+import type { OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
 import { Button, Dialog, Separator, Technical } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,

@@ -1,10 +1,13 @@
+import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 // What one file tells the code check (ADR 0046): what it defines, what it
 // references and what it imports, or, for a file no grammar reads, its text.
 //
 // A line is 1-based. A file's facts quote names, lines and source offsets, never other text
 // of the file, so a finding built from them never quotes a secret.
 
-import type { EvidenceKind } from "@archboard/board/policy";
 
 /**
  * One definition: a declaration at module level, or a member of one.

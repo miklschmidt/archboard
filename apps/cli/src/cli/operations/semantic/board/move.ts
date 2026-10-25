@@ -12,7 +12,6 @@ import {
 	BoardMoveAnswerSchema,
 	MoveEndSchema,
 	MovedDrillDownSchema,
-	type MovedDrillDown,
 } from "@archboard/board/commands";
 import { moveSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
@@ -30,6 +29,8 @@ import {
 	expectVersionRefusal,
 	SelectorSchema,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+
+type MovedDrillDown = z.infer<typeof MovedDrillDownSchema>;
 
 const MoveInputSchema = z.object({ name: z.string(), to: SelectorSchema });
 

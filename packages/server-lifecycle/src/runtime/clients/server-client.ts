@@ -11,7 +11,6 @@
 // lives in `state/server-client-session.ts` and rides on every request from
 // there rather than from every call site.
 
-import type { BoardIdentity } from "@archboard/board/address";
 import type { SourceState } from "#runtime/services/staleness.ts";
 import {
 	type BoardRefusal,
@@ -41,6 +40,9 @@ import {
 	responseError,
 } from "#runtime/clients/server-client-transport.ts";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
+import type { parseBoardKey } from "@archboard/board/address";
+
+type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
 /**
  * The options for a POST carrying a JSON body.

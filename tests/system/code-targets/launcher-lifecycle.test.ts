@@ -12,7 +12,6 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { planOpenerCommand } from "@archboard/code-opener/opener";
 import { TEST_OPENER_LIFECYCLE } from "../support/timing.ts";
 import {
 	createOpenerFixture,
@@ -285,14 +284,8 @@ describe("shell-free launcher lifecycle", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("hold");
 		resources.defer(() => invocation.releaseAndWaitForNonrunning());
-		const plan = planOpenerCommand(invocation.selection, fixture.checkout, {
-			platform: process.platform,
-		});
-		if (!plan.ok) {
-			throw new Error(`${plan.code}: ${plan.error}`);
-		}
-
-		const owner = Bun.spawn([process.execPath, LAUNCHER_OWNER, JSON.stringify(plan.command)], {
+		const asked = JSON.stringify({ selection: invocation.selection, target: fixture.checkout });
+		const owner = Bun.spawn([process.execPath, LAUNCHER_OWNER, asked], {
 			stdout: "ignore",
 			stderr: "pipe",
 		});
