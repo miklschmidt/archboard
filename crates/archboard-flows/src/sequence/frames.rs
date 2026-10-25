@@ -23,7 +23,9 @@ use crate::sequence::design::{
 };
 use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
 use crate::sequence::messages::step_box;
-use crate::text::{PILL_FONT, Text};
+use archboard_scene::paint::fonts::PILL_FONT;
+
+use crate::text::Text;
 
 /// How wide some words of a frame are drawn.
 fn words_width(text: &impl Text, words: &str) -> f64 {
