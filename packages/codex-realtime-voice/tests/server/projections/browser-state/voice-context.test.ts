@@ -3,6 +3,7 @@ import { projectServerVoiceContext } from "#server/projections/browser-state/voi
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
 } from "#shared/schemas/browser/vocabulary.ts";
 import type { CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
@@ -58,4 +59,64 @@ test("the page is shown a host's words and start context within the wire's limit
 	);
 	expect(entry).toMatchObject({ kind: "voice", topic: null });
 	expect(context?.canonicalBrief).toHaveLength(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES);
+});
+
+// A host that tells an audience nothing says why, and the page is shown that detail only for the
+// delivery that was withheld, cut at the wire's limit.
+test("the page is shown the detail of a withheld change, and only of that one", () => {
+	const identity = {
+		childId: "child",
+		epoch: "epoch",
+		coordinatorThreadId: "coordinator",
+		wireSessionId: "wire",
+		browserSessionId: "browser",
+		browserCorrelationId: "correlation",
+	};
+	const generation = {
+		child: "child",
+		epoch: "epoch",
+		coordinatorThreadId: "coordinator",
+		wireSessionId: "wire",
+		browserSessionId: "browser",
+		browserCorrelationId: "correlation",
+		startBrief: "brief",
+	} as unknown as CodexRealtimeGeneration;
+	const delivery = (sourceOrder: number, reason: string, withheld: string | null) =>
+		({
+			kind: "coordinator_callback_delivery",
+			callback: {
+				kind: "context",
+				audience: "voice",
+				context: { topic: null, withheld },
+				correlation: { realtimeGeneration: identity },
+			},
+			sourceOrder,
+			freshness: { capturedAtMs: 1, freshUntilMs: 2 },
+			path: "silent",
+			reason,
+			text: "{}",
+			realtimeRequest: null,
+			attempted: false,
+			attemptedAtMs: null,
+			outcome: "not_delivered",
+		}) as unknown as CoordinatorCallbackDelivery;
+
+	const context = projectServerVoiceContext(generation, {
+		inspectHistory: () => ({
+			deliveries: [
+				delivery(0, "withheld", "not_shown"),
+				delivery(1, "withheld", `a\0${"é".repeat(BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES)}`),
+				delivery(2, "voice_inactive", "not_shown"),
+			],
+			omittedPrefixCount: 0,
+		}),
+	});
+	const [shown, long, other] = context?.entries ?? [];
+
+	expect(shown?.withheld).toBe("not_shown");
+	expect(long?.withheld?.startsWith("a�é")).toBe(true);
+	expect(new TextEncoder().encode(long?.withheld ?? "").byteLength).toBeLessThanOrEqual(
+		BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
+	);
+	expect(other?.withheld).toBeNull();
 });

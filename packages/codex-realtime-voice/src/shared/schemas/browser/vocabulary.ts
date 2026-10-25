@@ -47,6 +47,8 @@ const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8192;
 const BROWSER_VOICE_CONTEXT_ENTRY_LIMIT = 64;
 /** The longest topic of an announced context change, the browser shows it as the entry's kind. */
 const BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES = 256;
+/** The longest detail of a withheld context change that the browser shows; a longer one is cut. */
+const BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES = 256;
 const BROWSER_PERMISSION_FILE_ACCESS = {
 	deny: "deny",
 	read: "read",
@@ -93,6 +95,7 @@ export {
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
 	BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
 	BROWSER_PERMISSION_FILE_ACCESS,
 	addContextIssue,
 	refineCurrentTarget,

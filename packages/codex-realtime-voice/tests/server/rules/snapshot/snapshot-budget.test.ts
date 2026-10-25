@@ -298,6 +298,7 @@ test("fits voice delivery history in fixed producer records without altering ret
 				attemptedAtMs: 150,
 				outcome: "delivered",
 				reason: null,
+				withheld: null,
 				body,
 			})),
 		},

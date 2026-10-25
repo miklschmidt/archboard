@@ -28,7 +28,8 @@ function entryWords(entry: VoiceContextEntry): string {
 	const delivery = entry.attempted
 		? `${entry.outcome.replaceAll("_", " ")} ${clockTime(entry.attemptedAtMs)}`
 		: "not attempted";
-	return `${clockTime(entry.capturedAtMs)} · ${delivery}${entry.reason === null ? "" : ` · ${entry.reason}`}`;
+	const reason = [entry.reason, entry.withheld].filter((part) => part !== null).join(": ");
+	return `${clockTime(entry.capturedAtMs)} · ${delivery}${reason === "" ? "" : ` · ${reason}`}`;
 }
 
 /**
