@@ -1,8 +1,10 @@
 // The locality route (ADR 0045): the production application answers the
 // hotspots of a board over a vault this owner makes in a Git repository of its
-// own, refuses what it cannot read, and a caller that hangs up cancels the
-// reading, because it runs as checkout work. A stand-in reading proves the
-// cancellation without depending on how long a real reading takes.
+// own, refuses what it cannot read with the status the refusal maps to, and a
+// caller that hangs up cancels the reading, because it runs as checkout work.
+// Which variant the reading reads is its own rule, which its package tests. A
+// stand-in reading proves the cancellation without depending on how long a
+// real reading takes.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import type { Server } from "node:http";
@@ -12,7 +14,7 @@ import { join } from "node:path";
 import express from "express";
 import type * as ServerModule from "#server/wiring/application/application.ts";
 import type * as RouteModule from "#server/routes/locality/locality-route.ts";
-import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
+import { LocalityReplySchema } from "@archboard/code-intel/history";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 const caller = {
@@ -164,8 +166,6 @@ test("a request that cannot be read is refused with the code the command maps to
 	expect(await refused("board=Plan")).toEqual([422, "NO_CURRENT_VARIANT"]);
 	expect(await refused("board=Shop&since=last%20week")).toEqual([400, "BAD_REQUEST"]);
 	expect(await refused("board=Shop&since=")).toEqual([400, "BAD_REQUEST"]);
-	expect(await refused("board=Shop&variant=Before")).toEqual([422, "NOT_A_DRAFT"]);
-	expect(await refused("board=Shop&variant=Nowhere")).toEqual([422, "UNKNOWN_VARIANT"]);
 });
 
 test("a caller that hangs up cancels the reading", async () => {
@@ -176,13 +176,13 @@ test("a caller that hangs up cancels the reading", async () => {
 	});
 	const cancelled = new Promise<unknown>((resolve) => {
 		route.mountLocalityRoute(app, {
-			read: async (_vault, _board, _variant, _since, signal): Promise<LocalityAnswer> => {
+			read: async ({ signal }) => {
 				started();
 				await new Promise<void>((settle) => {
-					signal.addEventListener("abort", () => settle(), { once: true });
+					signal?.addEventListener("abort", () => settle(), { once: true });
 				});
-				resolve(signal.reason);
-				throw signal.reason;
+				resolve(signal?.reason);
+				throw signal?.reason;
 			},
 		});
 	});

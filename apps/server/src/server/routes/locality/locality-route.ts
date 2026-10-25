@@ -9,20 +9,16 @@
 // reading changes nothing, so the route is a GET.
 //
 // The query names the board, and optionally a draft (`variant`) and the start
-// of the period (`since`). It reads the board's current variant when it names
-// no variant. A historical or shelved variant is refused, because only the
-// current variant says that its architecture is built (ADR 0031).
+// of the period (`since`). The route holds the query to a board and a date;
+// the reading takes the board and the variant by name and says itself which
+// variant it reads (`@archboard/code-intel/history-lens`). The route maps a
+// refusal to its status: a missing board is 404, and every other refusal of
+// the reading is 422.
 
 import type { Express, Request, Response } from "express";
 import { createLocalityReading } from "@archboard/code-intel/history-lens";
-import { readSemanticBoard } from "@archboard/board/store-read";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
-import { PeriodStartSchema, type LocalityAnswer } from "@archboard/code-intel/history";
-import {
-	resolveVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
+import { PeriodStartSchema } from "@archboard/code-intel/history";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 
@@ -35,15 +31,12 @@ interface LocalityRouteDependencies {
 		name: string,
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
-	/** Read the hotspots of one variant of one board of a vault. */
-	readonly read: (
-		vault: string,
-		board: SemanticBoard,
-		variant: SemanticVariant,
-		since: Date | undefined,
-		signal: AbortSignal,
-	) => Promise<LocalityAnswer>;
+	/** Read the hotspots of the variant of a board that a request names. */
+	readonly read: LocalityReading["read"];
 }
+
+/** The reading of locality, with the memory of its answers. */
+type LocalityReading = ReturnType<typeof createLocalityReading>;
 
 /** The server's one reading of hotspots, so its memory serves every request. */
 const localityReading = createLocalityReading();
@@ -61,8 +54,8 @@ type Asked =
 	| {
 			readonly ok: true;
 			readonly vault: string;
-			readonly board: SemanticBoard;
-			readonly variant: SemanticVariant;
+			readonly board: string;
+			readonly variant: string | undefined;
 			readonly since: Date | undefined;
 	  }
 	| Refusal;
@@ -142,64 +135,19 @@ function statedQuery(request: Request): { readonly ok: true; readonly query: Que
 }
 
 /**
- * The variant the lens reads: the current one, or the draft that was named.
- * @param board The board.
- * @param asked The variant's id or name, or undefined for the current one.
- * @returns The variant, or why the lens does not read it.
- */
-function readableVariant(
-	board: SemanticBoard,
-	asked: string | undefined,
-): { readonly ok: true; readonly variant: SemanticVariant } | Refusal {
-	const variant = resolveVariant(board, asked);
-	if (variant === undefined) {
-		return asked === undefined
-			? {
-					ok: false,
-					status: 422,
-					code: "NO_CURRENT_VARIANT",
-					error: `"${board.name}" has no current variant: nothing it describes is built. Name a draft with the variant option.`,
-				}
-			: {
-					ok: false,
-					status: 422,
-					code: "UNKNOWN_VARIANT",
-					error: `"${board.name}" has no variant called "${asked}".`,
-				};
-	}
-	if (variant.lifecycle === "current" || variant.lifecycle === "draft") {
-		return { ok: true, variant };
-	}
-	return {
-		ok: false,
-		status: 422,
-		code: "NOT_A_DRAFT",
-		error: `"${variant.name}" is ${variant.lifecycle}: the lens reads only the current variant and a draft.`,
-	};
-}
-
-/**
  * Read what a request asks for.
  * @param request The request.
- * @returns The board, its variant and the start of the period, or the refusal.
+ * @returns The board, its variant and the start of the period, by name, or the refusal.
  */
 function askedLocality(request: Request): Asked {
 	const query = statedQuery(request);
 	if (!query.ok) return query;
-	const vault = vaultOfRequest(request);
-	const read = readSemanticBoard(vault, query.query.board);
-	if (!read.ok) {
-		const status = read.code === "BOARD_MISSING" ? 404 : 422;
-		return { ok: false, status, code: read.code, error: read.problem };
-	}
-	const chosen = readableVariant(read.board, query.query.variant);
-	if (!chosen.ok) return chosen;
-	const { since } = query.query;
+	const { board, variant, since } = query.query;
 	return {
 		ok: true,
-		vault,
-		board: read.board,
-		variant: chosen.variant,
+		vault: vaultOfRequest(request),
+		board,
+		variant,
 		since: since === undefined ? undefined : new Date(since),
 	};
 }
@@ -212,6 +160,20 @@ function askedLocality(request: Request): Asked {
  */
 function callerGone(request: Request, response: Response): boolean {
 	return request.destroyed || response.destroyed || response.headersSent;
+}
+
+/**
+ * Send the answer of a reading, or its refusal: a missing board is 404, and
+ * every other refusal of the reading 422.
+ * @param response The response.
+ * @param reading The answer, or why the reading reads nothing.
+ */
+function send(response: Response, reading: Awaited<ReturnType<LocalityReading["read"]>>): void {
+	if (reading.ok) response.json({ success: true, ...reading.answer });
+	else {
+		const status = reading.code === "BOARD_MISSING" ? 404 : 422;
+		response.status(status).json({ success: false, code: reading.code, error: reading.problem });
+	}
 }
 
 /**
@@ -231,13 +193,14 @@ async function answerLocality(
 			response.status(asked.status).json({ success: false, code: asked.code, error: asked.error });
 			return;
 		}
-		const answer = await dependencies.runCheckout(
+		const { vault, board, variant, since } = asked;
+		const reading = await dependencies.runCheckout(
 			request,
 			response,
 			"GET /api/semantic-boards/locality",
-			(signal) => dependencies.read(asked.vault, asked.board, asked.variant, asked.since, signal),
+			(signal) => dependencies.read({ vault, board, variant, since, signal }),
 		);
-		if (!callerGone(request, response)) response.json({ success: true, ...answer });
+		if (!callerGone(request, response)) send(response, reading);
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });
@@ -267,15 +230,10 @@ function mountLocalityRoute(
 			checkoutWork.trackRequest(request, response, name, work),
 		/**
 		 * Read through the server's one reading, so its memory serves every request.
-		 * @param vault The vault the board lives in.
-		 * @param board The board.
-		 * @param variant The variant.
-		 * @param since The start of the period.
-		 * @param signal Cancels the reading.
-		 * @returns The answer.
+		 * @param asked The board, its variant and the start of the period, by name.
+		 * @returns The answer, or why it reads nothing.
 		 */
-		read: (vault, board, variant, since, signal) =>
-			localityReading.read(vault, board, variant, since, signal),
+		read: (asked) => localityReading.read(asked),
 		...overrides,
 	};
 	app.get("/api/semantic-boards/locality", requireVault, (request, response) => {

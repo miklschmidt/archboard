@@ -1,6 +1,7 @@
 // Which variants a reading of the history lens reads, when a caller names the
 // board and its variants (ADR 0045): the lens reads a live variant, a current
 // one or a draft, and refuses anything else with a code of `HistoryRefusalCode`.
+// A footprint sets a proposal against another variant; locality reads one.
 //
 // The vault is in a checkout of its own, which is registered. `Shop` is built:
 // `Built` is current, `Plan` is a draft of it and `Old plan` is shelved.
@@ -196,4 +197,27 @@ test("a head that no checkout holding a part resolves is refused, and one that r
 	const read = await footprint("Shop", { head: "main" });
 	if (!read.ok) throw new Error(read.problem);
 	expect(read.answer.head).toBe("main");
+});
+
+test("locality reads the current variant or a named draft, and keeps its answer", async () => {
+	const reading = lens.createLocalityReading();
+	const variantOf = async (board: string, variant?: string) => {
+		const read = await reading.read({ vault, board, variant });
+		if (!read.ok) throw new Error(read.problem);
+		return read.answer;
+	};
+	const current = await variantOf("Shop");
+	expect(current.variant.id).toBe("v1");
+	expect(await variantOf("Shop")).toBe(current);
+	expect((await variantOf("Shop", "Plan")).variant.id).toBe("v2");
+	expect((await variantOf("Unbuilt", "Layer two")).variant.id).toBe("u2");
+});
+
+test("locality reads no historical or shelved variant, and needs a variant to read", async () => {
+	const reading = lens.createLocalityReading();
+	const code = (board: string, variant?: string) => codeOf(reading.read({ vault, board, variant }));
+	expect(await code("Nobody")).toBe("BOARD_MISSING");
+	expect(await code("Unbuilt")).toBe(HistoryRefusalCode.NO_CURRENT_VARIANT);
+	expect(await code("Shop", "Nowhere")).toBe(HistoryRefusalCode.UNKNOWN_VARIANT);
+	expect(await code("Shop", "Old plan")).toBe(HistoryRefusalCode.NOT_A_DRAFT);
 });

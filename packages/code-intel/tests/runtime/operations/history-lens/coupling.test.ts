@@ -210,7 +210,7 @@ beforeAll(async () => {
 	const [variant] = value.variants;
 	if (variant === undefined) throw new Error("the board has no variant");
 	answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, value, variant, undefined),
+		await lens.createVariantLocality().read(scratch, value, variant, undefined),
 	);
 });
 

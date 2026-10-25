@@ -12,7 +12,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createBehindReading } from "#runtime/operations/history-lens/behind.ts";
-import { createLocalityReading } from "#runtime/operations/history-lens/locality.ts";
+import { createVariantLocality } from "#runtime/operations/history-lens/locality.ts";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -155,7 +155,7 @@ test("footprint and locality read the part in the checkout that holds the vault"
 	const footprint = await readVariantFootprint({ vault, board, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();
-	const locality = await createLocalityReading().read(vault, board, current, undefined);
+	const locality = await createVariantLocality().read(vault, board, current, undefined);
 	expect(locality.skipped).toEqual([]);
 	expect(locality.hotspots.map((one) => one.subject.id)).toEqual(["pA"]);
 });

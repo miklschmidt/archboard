@@ -273,8 +273,8 @@ async function readLocality(
 	};
 }
 
-/** The reading of locality, with the memory of its answers. */
-interface LocalityReading {
+/** The reading of locality of a variant already chosen (`locality-reading.ts`), with the memory of its answers. */
+interface VariantLocality {
 	/**
 	 * The hotspots and change coupling of one variant of one board.
 	 * @param vault The vault directory the board is in: its own checkout is read for its own repository.
@@ -299,7 +299,7 @@ interface LocalityReading {
  * period, and each checkout with its HEAD.
  * @returns The reading.
  */
-function createLocalityReading(): LocalityReading {
+function createVariantLocality(): VariantLocality {
 	const memory = createAnswerMemory<LocalityAnswer>(KEPT_ANSWERS);
 	return {
 		/**
@@ -342,4 +342,4 @@ function createLocalityReading(): LocalityReading {
 	};
 }
 
-export { type LocalityReading, createLocalityReading };
+export { type VariantLocality, createVariantLocality };
