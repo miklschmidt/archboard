@@ -5,7 +5,7 @@
 use crate::geometry::{Rect, round_coord};
 use crate::names::word;
 use crate::paint::appearance::tray_look;
-use crate::paint::build::{Items, group, lines, point, shape};
+use crate::paint::build::{Items, group, lines, point, shape, text};
 use crate::paint::cards::{halo, header_anchor, paint_header};
 use crate::paint::design::{
     BAND_RADIUS, CARD_THICKNESS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
@@ -104,11 +104,11 @@ fn tab_path(frame: &SequenceFrame, ink: &Colour, face: &Colour) -> Items {
 
 /// The words of one row of a frame, left aligned at a height.
 fn row_words(x: f64, top: f64, height: f64, words: &str, palette: &Palette) -> Items {
-    vec![Item::Text(
+    text(
         Styles::of(palette)
             .pill_text()
             .set(point(x, top + height * PILL_BASELINE), words),
-    )]
+    )
 }
 
 /// Each alternative's label at the start of its operand, and its dashed divider.

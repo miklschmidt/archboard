@@ -11,7 +11,7 @@ use archboard_scene::scene::{Item, Text};
 use archboard_text::{Face, Segment, outline};
 
 use crate::colour::css;
-use crate::xml::{Attributes, close, coord, empty, escape_xml, open};
+use crate::xml::{Attributes, close, empty, escape_xml, open};
 
 /// The glyphs some items draw, each by its face and its id in the face.
 #[derive(Debug, Default)]
@@ -113,8 +113,8 @@ pub(crate) fn write_text(text: &Text, out: &mut String) {
             "transform",
             format!(
                 "translate({} {}) scale({})",
-                coord(text.at.x),
-                coord(text.at.y),
+                js::number(text.at.x),
+                js::number(text.at.y),
                 js::number(scale)
             ),
         )
@@ -133,10 +133,10 @@ pub(crate) fn write_text(text: &Text, out: &mut String) {
     let mut words = Attributes::new();
     words
         .maybe("xml:space", keeps_spaces(&text.words).then_some("preserve"))
-        .set("x", coord(text.at.x))
-        .set("y", coord(text.at.y))
+        .set("x", text.at.x)
+        .set("y", text.at.y)
         .set("font-size", text.size)
-        .maybe("textLength", (text.width > 0.0).then(|| coord(text.width)))
+        .maybe("textLength", (text.width > 0.0).then_some(text.width))
         .maybe(
             "lengthAdjust",
             (text.width > 0.0).then_some("spacingAndGlyphs"),
