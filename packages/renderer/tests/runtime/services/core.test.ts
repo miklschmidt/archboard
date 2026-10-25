@@ -59,6 +59,7 @@ describe("the renderer core under Bun", () => {
 				"package.json",
 				"src/runtime/services/core.ts",
 				"src/runtime/store/core-sources.ts",
+				"src/shared/rules/render/core-guard.ts",
 			]) {
 				const target = join(renderer, file);
 				mkdirSync(dirname(target), { recursive: true });
