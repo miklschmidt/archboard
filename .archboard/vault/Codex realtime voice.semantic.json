@@ -7,9 +7,9 @@
 		"Agent workbench"
 	],
 	"level": "service",
-	"version": 129,
+	"version": 132,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-25T14:48:32.131Z",
+	"updatedAt": "2026-10-25T17:30:25.051Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -67,9 +67,9 @@
 		},
 		{
 			"id": "tliaNnOp",
-			"name": "Board changes reach the workhorse",
+			"name": "A context change reaches a workhorse",
 			"grammar": "sequence",
-			"summary": "What a user changed on a board, told to each linked workhorse without starting a turn.",
+			"summary": "A settled board change, announced to the workhorse of its checkout without starting a turn.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -131,13 +131,16 @@
 			"id": "2ciYgftD",
 			"name": "Per-tab sessions",
 			"grammar": "architecture",
-			"summary": "How a tab session is found, kept alive, ended and told where its coordinator turns are shown.",
+			"summary": "How a tab session is found, kept alive and ended, where its coordinator turns are shown, and how it is told a host's context change.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"iay14AUl",
 					"hCKEBd5f",
-					"qTmIytbT"
+					"qTmIytbT",
+					"8yOrpoeg",
+					"SQjLwRvE",
+					"42Ws0Eeo"
 				],
 				"edges": [],
 				"flows": []
@@ -145,9 +148,9 @@
 		},
 		{
 			"id": "14zLkyGY",
-			"name": "Pane conversations",
+			"name": "Chat conversations",
 			"grammar": "architecture",
-			"summary": "The door a pane uses: commands in, snapshots out, conversations started, workhorses listed, approvals answered.",
+			"summary": "The door a chat uses: commands in, snapshots out, conversations started, workhorses listed, approvals answered.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -164,7 +167,7 @@
 			"id": "KUt3AAxC",
 			"name": "Workhorses",
 			"grammar": "architecture",
-			"summary": "What one workhorse is made of, how a checkout gets one, and how it is told what changed on its boards.",
+			"summary": "What one workhorse is made of, how a checkout gets one, and how it is told a context change.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -177,7 +180,9 @@
 					"DNQTPTxE",
 					"RkhHgrhb",
 					"42Ws0Eeo",
-					"jylkTBp7"
+					"jylkTBp7",
+					"8yOrpoeg",
+					"SQjLwRvE"
 				],
 				"edges": [],
 				"flows": []
@@ -197,7 +202,9 @@
 					"jylkTBp7",
 					"tlC2W839",
 					"iay14AUl",
-					"42Ws0Eeo"
+					"42Ws0Eeo",
+					"8yOrpoeg",
+					"SQjLwRvE"
 				],
 				"edges": [],
 				"flows": []
@@ -219,9 +226,9 @@
 		},
 		{
 			"id": "lpeE7YtS",
-			"name": "Board changes reach the workhorse: logic",
+			"name": "A context change reaches a workhorse: logic",
 			"grammar": "flowchart",
-			"summary": "The checks a board change passes before it is injected, once.",
+			"summary": "The checks a context change passes before it is injected, once.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -317,9 +324,9 @@
 		},
 		{
 			"id": "gAl8TJxm",
-			"name": "A user's change reaches the voice",
+			"name": "A context change reaches the coordinator or the voice",
 			"grammar": "sequence",
-			"summary": "The user's changes, focus and selection, told to the coordinator and the voice model.",
+			"summary": "A board change, focus or selection, worded for the coordinator and the voice and told while voice is live.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -331,9 +338,9 @@
 		},
 		{
 			"id": "4LjFPGnu",
-			"name": "A user's change reaches the voice: logic",
+			"name": "A context change reaches the coordinator or the voice: logic",
 			"grammar": "flowchart",
-			"summary": "Who made the change and which channel carries it.",
+			"summary": "Which audience hears the change, and which channel carries it.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -347,7 +354,7 @@
 			"id": "1fd8CwN8",
 			"name": "A tab session ends",
 			"grammar": "sequence",
-			"summary": "The last pane closes, the grace passes and the session lets go of its threads.",
+			"summary": "The last chat closes, the grace passes and the session lets go of its threads.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -361,7 +368,7 @@
 			"id": "YBKxvjjZ",
 			"name": "A tab session ends: logic",
 			"grammar": "flowchart",
-			"summary": "The grace, and what stays when a pane returns.",
+			"summary": "The grace, and what stays when a chat returns.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -37640,7 +37647,7 @@
 		{
 			"id": "5ou4Zp5Y",
 			"name": "TASK-530",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "UbtMvySf",
 			"summary": "The codex-realtime-voice package as a host uses it: its entry point and browser client, the shared Codex child, tab sessions, checkout workhorses and voice, and the Archboard and example hosts",
 			"documents": [
@@ -41618,9 +41625,9 @@
 		{
 			"id": "KQtKiYDn",
 			"name": "TASK-530.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "5ou4Zp5Y",
-			"summary": "The voice package names no Archboard concept",
+			"summary": "The codex-realtime-voice package as a host uses it: its entry point and browser client, the shared Codex child, tab sessions and the context changes announced to them, checkout workhorses and voice, and the Archboard and example hosts",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -41650,8 +41657,8 @@
 						"order": 3000,
 						"name": "Browser gateway",
 						"kind": "module",
-						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every pane of a tab is carried out by the workhorse of the checkout the tab shows",
-						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every pane of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the panes that show its checkout have shown it, and a coordinator's once every pane of the tab has.",
+						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every chat of a tab is carried out by the workhorse of the checkout the tab shows",
+						"description": "The gateway asks which checkout the chat's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every chat of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the chats that show its checkout have shown it, and a coordinator's once every chat of the tab has.",
 						"parent": "i5AuDn9L",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -41716,7 +41723,7 @@
 						"order": 7000,
 						"name": "Thread link",
 						"kind": "module",
-						"responsibility": "Which workhorse each tab session and checkout is bound to, made by the first message or Talk of the pane's checkout: the binding, and the refusal when two disagree",
+						"responsibility": "Which workhorse each tab session and checkout is bound to, under its link key, made by the first message or Talk in that checkout: the binding, and the refusal when two disagree",
 						"parent": "Fvl3uDPi",
 						"groups": [
 							"workhorse"
@@ -41829,7 +41836,7 @@
 						"order": 14000,
 						"name": "Realtime voice",
 						"kind": "module",
-						"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
+						"responsibility": "Starts the realtime leg on the coordinator's thread, ordinary or for a host's narrative, passes the host voice policy's input to the voice model, and carries its transcript back",
 						"description": "The server never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
 						"parent": "3vO7eN8L",
 						"groups": [
@@ -41846,7 +41853,7 @@
 						"name": "Approvals",
 						"kind": "module",
 						"responsibility": "Every approval the child raises: staged, published to the tab session whose thread asked, answered exactly once, settled",
-						"description": "An approval from a thread that no live tab session owns is cancelled when it arrives. A reload within the grace keeps a tab session's pending approvals, and the end of the session cancels them. A workhorse's approval is shown to the panes of its tab that show its checkout, and the coordinator's to every pane of its tab session.",
+						"description": "An approval from a thread that no live tab session owns is cancelled when it arrives. A reload within the grace keeps a tab session's pending approvals, and the end of the session cancels them. A workhorse's approval is shown to the chats of its tab that show its checkout, and the coordinator's to every chat of its tab session.",
 						"parent": "i5AuDn9L",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -41874,7 +41881,7 @@
 						"order": 17000,
 						"name": "Coordinator callbacks",
 						"kind": "module",
-						"responsibility": "While voice is live, workhorse news for the coordinator, naming the checkout of its workhorse, and pane news for the voice model, each once and in order",
+						"responsibility": "While voice is live, workhorse news for the coordinator, naming the checkout of its workhorse, and a host's context changes for the coordinator or the voice model, in order through the tab's one queue",
 						"parent": "3vO7eN8L",
 						"groups": [
 							"voice"
@@ -41893,10 +41900,10 @@
 					{
 						"id": "RkhHgrhb",
 						"order": 18000,
-						"name": "Board-change delivery",
+						"name": "Context delivery",
 						"kind": "module",
-						"responsibility": "Tells each workhorse what changed in the host's context of its checkout, in Archboard the boards a user changed: one quiet developer message, settled once",
-						"description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+						"responsibility": "Tells one workhorse each context change a host announces for its checkout: one quiet developer message, settled once",
+						"description": "It hears one feed's sequence at most once and refuses a sequence that does not pass the last of its feed. A change the workhorse or its tab's coordinator made is not told, nor one that went stale or whose words the host withheld. Before the write it checks the child, epoch, thread link and freshness again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
 						"parent": "Fvl3uDPi",
 						"groups": [
 							"workhorse"
@@ -41911,9 +41918,9 @@
 						"order": 19000,
 						"name": "Semantic context",
 						"kind": "module",
-						"responsibility": "One per tab session for voice and one per workhorse for the boards of its checkout: turns the panes' gestures and every settled board change into briefs and events",
-						"description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. The voice side hears the board changes of the vaults its tab session's panes are in, and a workhorse hears only those of the vaults in its own checkout, so it is told about the boards it works on.",
-						"parent": "Fvl3uDPi",
+						"responsibility": "One per tab session: turns its panes' gestures and every settled change of the boards in its panes' vaults into briefs and events",
+						"description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. It hears the board changes of the vaults its tab session's panes are in, and drops a cosmetic one, which is no news. Archboard's announcements tell each change only to the workhorse of the board's checkout, so a workhorse is told about the boards it works on.",
+						"parent": "Akuz1a3J",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/runtime/operations/semantic-context-publisher.ts"
@@ -41925,7 +41932,7 @@
 						"name": "Tab sessions",
 						"kind": "module",
 						"responsibility": "What each browser tab owns: its coordinator and voice, and one workhorse for each checkout it works in, found by the thread a notification or tool call names",
-						"description": "One record per tab session, opened when a pane socket of the tab connects and built by sessions/factories.ts. The coordinator, voice, spoken approval, coordinator tools and callbacks are the tab's; the workhorses are built on first use, one for each checkout. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet, and a workhorse thread belongs to its workhorse. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. It notes the conversation shown when each coordinator turn starts and the work each workhorse's operations give. When a session ends, every link is cleared, its approvals are cancelled, its voice and board news stop, and its threads are unsubscribed once no turn runs on them.",
+						"description": "One record per tab session, opened when a chat socket of the tab connects and built by sessions/factories.ts. The coordinator, voice, spoken approval, coordinator tools and callbacks are the tab's; the workhorses are built on first use, one for each checkout. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet, and a workhorse thread belongs to its workhorse. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. It notes the conversation shown when each coordinator turn starts and the work each workhorse's operations give. When a session ends, every link is cleared, its approvals are cancelled, its voice and context delivery stop, and its threads are unsubscribed once no turn runs on them.",
 						"parent": "Akuz1a3J",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -41937,8 +41944,8 @@
 						"order": 21000,
 						"name": "Tab session presence",
 						"kind": "module",
-						"responsibility": "Knows which browser tab each pane on screen belongs to, which checkout's conversation the tab shows, and ends a tab session when no pane of it comes back within 60 seconds",
-						"description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. The shown checkout is pinned on the first read to the checkout of the tab's focused pane, else of the pane that asked, and only the person's own act in the page changes it, through the activation route: an agent's browser show never does, so the dock never moves while somebody types. It ends with the tab.",
+						"responsibility": "Knows which browser tab each chat on screen belongs to, which checkout's conversation the tab shows, and ends a tab session when no chat of it comes back within 60 seconds",
+						"description": "It lives as long as the server process, not as long as one child. A chat of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. A tab that shows no checkout yet is pinned on the first read to the checkout the asker names, and only the person's own act in the page changes it, through the host's activation. In Archboard the pin is the checkout of the tab's focused pane, else of the pane that asked, and an agent's browser show never moves it, so the dock never moves while somebody types. It ends with the tab.",
 						"parent": "Akuz1a3J",
 						"groups": [
 							"panes"
@@ -41953,7 +41960,7 @@
 						"order": 22000,
 						"name": "Conversation start",
 						"kind": "module",
-						"responsibility": "Starts a conversation on a pane's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then board news to it",
+						"responsibility": "Starts a conversation on a chat's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then its context delivery bound to it",
 						"description": "A coordinator that cannot start refuses the message or Talk with its reason, and no workhorse starts. New conversation replaces the workhorse of the shown checkout only and keeps the tab's coordinator, which speaks for every workhorse of the tab. The old workhorse thread is given up and Codex unloads it once no turn runs on it. A delegation to a checkout whose workhorse has no thread that can run turns starts that thread the same way, but leaves the coordinator alone: it is running the turn that gives the work.",
 						"parent": "i5AuDn9L",
 						"binding": {
@@ -41997,8 +42004,8 @@
 						"order": 25000,
 						"name": "Session workhorses",
 						"kind": "module",
-						"responsibility": "One workhorse for each checkout of a tab session: its starter, board news, queue, operations and link actions, built on first use",
-						"description": "A workhorse works in its checkout, the directory that holds its vault, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, not to the repository identity, so a new chosen checkout leaves it linked. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses interrupts that turn for one checkout or for every workhorse of the tab. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice.",
+						"responsibility": "One workhorse for each checkout of a tab session: its starter, context delivery, queue, operations and link actions, built on first use",
+						"description": "A workhorse works in its checkout, a directory the host admitted, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, so it stays linked until its tab session ends. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses interrupts that turn for one checkout or for every workhorse of the tab. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice.",
 						"parent": "Fvl3uDPi",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42011,7 +42018,7 @@
 						"name": "Workhorse checkouts",
 						"kind": "module",
 						"responsibility": "Names the checkout a coordinator call gives work to, and starts that checkout's workhorse when a delegation finds none",
-						"description": "The checkout a path names is the directory that holds the vault the path resolves to, by real path and in the layout the server serves: a directory that holds a .archboard/vault, or the directory that holds a vault the path is. So a checkout reached through a link, and a vault that is itself a link, name the checkout of the pane in it; a vault whose link leads out of the layout names none. Of the coordinator's tools only a delegation starts a workhorse; the other three refuse a checkout that has none. A workhorse that cannot be built or started, because its tab has gone, leaves the delegation to refuse, so the coordinator's turn is always answered.",
+						"description": "A path names a checkout only when the host's resolveCheckout admits it, spelled as a real path, so a checkout reached through a link is the same checkout. Archboard admits the directory that holds the vault the path resolves to, in the layout its server serves: a directory that holds a .archboard/vault, or the directory that holds a vault the path is. Of the coordinator's tools only a delegation starts a workhorse; the other three refuse a checkout that has none. A workhorse that cannot be built or started, because its tab has gone, leaves the delegation to refuse, so the coordinator's turn is always answered.",
 						"parent": "Fvl3uDPi",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42023,8 +42030,8 @@
 						"order": 27000,
 						"name": "Workhorse list",
 						"kind": "module",
-						"responsibility": "Lists the tab session's live workhorses by repository and checkout, with the shown one and a mark for each that waits for an approval or for the person",
-						"description": "The shown checkout is listed even before its first message, as not live, because a typed message goes there. A workhorse is live once its start has a thread. The list is bounded so a snapshot always fits the browser contract, and it is read into the owner projection that every pane of the tab receives.",
+						"responsibility": "Lists the tab session's live workhorses by label and checkout, with the shown one and a mark for each that waits for an approval or for the person",
+						"description": "The shown checkout is listed even before its first message, as not live, because a typed message goes there. A workhorse is live once its start has a thread. The list is bounded so a snapshot always fits the browser contract, and it is read into the owner projection that every chat of the tab receives. The label is the host's checkoutLabel, by default the name of the checkout's directory; Archboard labels a checkout by the repository of the vault it holds.",
 						"parent": "i5AuDn9L",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42036,7 +42043,7 @@
 						"order": 28000,
 						"name": "Coordinator turn homes",
 						"kind": "module",
-						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
+						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the page shows the turn in the right conversation",
 						"description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
 						"parent": "Akuz1a3J",
 						"binding": {
@@ -42056,28 +42063,28 @@
 						"order": 30000,
 						"name": "Per-tab sessions",
 						"kind": "module",
-						"responsibility": "Gives each browser tab its own session: finds the session a call names, knows which tab each pane belongs to, ends a tab no pane returns to, and remembers where each coordinator turn is shown"
+						"responsibility": "Gives each browser tab its own session: finds the one a call names, knows each chat's tab, ends a tab no chat returns to, records where each coordinator turn shows, and announces context changes"
 					},
 					{
 						"id": "i5AuDn9L",
 						"order": 31000,
-						"name": "Pane conversations",
+						"name": "Chat conversations",
 						"kind": "module",
-						"responsibility": "What a pane sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the dock's list of workhorses, and the approvals raised to the person"
+						"responsibility": "What a chat sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the list of the tab's workhorses, and the approvals raised to the person"
 					},
 					{
 						"id": "Fvl3uDPi",
 						"order": 32000,
 						"name": "Workhorses",
 						"kind": "module",
-						"responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and board news, built per tab session on first use, with its tool calls and the context of what changed"
+						"responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and context delivery, built per tab session on first use, with its tool calls"
 					},
 					{
 						"id": "3vO7eN8L",
 						"order": 33000,
 						"name": "Voice",
 						"kind": "module",
-						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live"
+						"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse news and context changes while voice is live"
 					},
 					{
 						"id": "ui4leDPl",
@@ -42219,7 +42226,7 @@
 						"order": 43000,
 						"name": "Application policy",
 						"kind": "module",
-						"responsibility": "Archboard's options for the voice agent: its identity and tool names, domain instructions, context, tools, storage, Codex environment and admitted checkouts",
+						"responsibility": "Archboard's options for the voice agent: identity and tool names, domain instructions, context, tools, storage, Codex environment, admitted checkouts and their labels, and its context announcer",
 						"parent": "SScV6EZR",
 						"groups": [
 							"agent"
@@ -42234,7 +42241,7 @@
 						"order": 44000,
 						"name": "Workbench interface",
 						"kind": "module",
-						"responsibility": "Starts the shared Codex sessions the voice agent asks for and owns their connections, lifecycle, and state through one host contract",
+						"responsibility": "Starts the shared Codex sessions the voice agent asks for and owns their connections, lifecycle, and state through one host contract, and hands each announced change to the live generation",
 						"parent": "wkvnbMs8",
 						"groups": [
 							"agent"
@@ -42262,7 +42269,7 @@
 						"order": 46000,
 						"name": "Voice agent",
 						"kind": "module",
-						"responsibility": "The host's one entry: createVoiceAgent turns its storage, Codex, checkouts, instructions, identity and extensions into one workbench, and serves its browser sockets on node:http or Bun.serve",
+						"responsibility": "The host's one entry: createVoiceAgent turns its storage, Codex, checkouts, instructions, identity and extensions into one workbench, serves sockets on node:http or Bun.serve, and announces changes",
 						"description": "start, status, shutdown and the browser port come from the workbench it creates. attach admits sockets on one path of a node:http server, and bunHandlers wraps the fetch and websocket handlers of Bun.serve; both admit an upgrade only from the one origin and on the one path the host names, and work in the checkout the host names for that path. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other.",
 						"parent": "eOG7Eo1U",
 						"binding": {
@@ -42301,7 +42308,7 @@
 						"name": "Hosts",
 						"kind": "module",
 						"responsibility": "The applications that use the package: Archboard's server policy and browser pane, and the example host",
-						"description": "Archboard's adapters that plug into one mechanism of the package, as its thread tools, board context and tab adapter do, sit with that mechanism instead."
+						"description": "Archboard's adapters that plug into one mechanism of the package, as its thread tools, board context, announcements and tab adapter do, sit with that mechanism instead."
 					},
 					{
 						"id": "eOG7Eo1U",
@@ -42309,6 +42316,32 @@
 						"name": "Public entries",
 						"kind": "module",
 						"responsibility": "What a host imports: the voice agent from ./server and the voice client a page builds on"
+					},
+					{
+						"id": "8yOrpoeg",
+						"order": 51000,
+						"name": "Context announcements",
+						"kind": "module",
+						"responsibility": "Tells the live tab sessions a context change a host announces, each audience it names: the workhorse of each named checkout, the coordinator and the live voice, with one receipt for each",
+						"description": "VoiceAgent.announce is its entry. It refuses a malformed change before anybody is told, and reads every identity itself: each told workhorse's link, child and threads, and the coordinator paired with it. A workhorse hears the change through its own context delivery, and a tab with no workhorse in a named checkout answers no_workhorse. The coordinator and the voice hear it through the tab's one callback queue, and only while voice is live: with none, the receipt says voice_inactive. The audiences are told at the same time, in no fixed order.",
+						"parent": "Akuz1a3J",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts"
+						}
+					},
+					{
+						"id": "SQjLwRvE",
+						"order": 52000,
+						"name": "Archboard announcements",
+						"kind": "module",
+						"responsibility": "Archboard's context changes as the voice agent announces them: each settled board change, and each focus or selection a pane reports",
+						"description": "It keeps one Semantic context publisher per tab session and announces each event it publishes. A settled change's brief goes to the workhorse of the board's checkout, withheld once the brief is stale. The voice hears the news of a board on screen, as speech when it stops the narration, and nothing of a board no pane shows. The coordinator hears only what an agent outside the session did. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
+						"parent": "Akuz1a3J",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts"
+						}
 					}
 				],
 				"edges": [
@@ -42561,7 +42594,7 @@
 						"from": "QGVPyMwG",
 						"to": "u2LFaG7R",
 						"kind": "event",
-						"label": "an approval, to the panes of its tab session or its checkout",
+						"label": "an approval, to the chats of its tab session or its checkout",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42649,7 +42682,7 @@
 						"from": "08zJvPJq",
 						"to": "jylkTBp7",
 						"kind": "rpc",
-						"label": "news as a coordinator turn/start; pane news appended",
+						"label": "news as a turn/start; a context change injected or appended",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42660,29 +42693,29 @@
 					{
 						"id": "Tqxin6z5",
 						"order": 25000,
-						"from": "42Ws0Eeo",
+						"from": "8yOrpoeg",
 						"to": "08zJvPJq",
-						"kind": "event",
-						"label": "the user's changes, focus and selection",
+						"kind": "call",
+						"label": "the coordinator's and the voice's parts, on the tab's queue",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
-							"symbol": "subscribeSettledChange"
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+							"symbol": "enqueue"
 						}
 					},
 					{
 						"id": "7LxiPZOi",
 						"order": 26000,
-						"from": "42Ws0Eeo",
+						"from": "8yOrpoeg",
 						"to": "RkhHgrhb",
-						"kind": "event",
-						"label": "a settled board change",
+						"kind": "call",
+						"label": "each named checkout's workhorse, under identities it reads",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-realtime-voice/src/runtime/services/thread-context/controller.ts",
-							"symbol": "subscribeSettledChange"
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+							"symbol": "deliver"
 						}
 					},
 					{
@@ -42793,7 +42826,7 @@
 						"from": "hCKEBd5f",
 						"to": "iay14AUl",
 						"kind": "call",
-						"label": "end a tab no pane came back to in 60 s",
+						"label": "end a tab no chat came back to in 60 s",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42951,7 +42984,7 @@
 						"from": "JHbKEH3A",
 						"to": "RkhHgrhb",
 						"kind": "call",
-						"label": "move board news to the new workhorse",
+						"label": "move context delivery to the new workhorse",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43217,7 +43250,7 @@
 						"from": "kEF4DfR4",
 						"to": "RkhHgrhb",
 						"kind": "dependency",
-						"label": "its own board news",
+						"label": "its own context delivery",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43260,7 +43293,7 @@
 						"from": "u2LFaG7R",
 						"to": "hCKEBd5f",
 						"kind": "call",
-						"label": "the checkout the pane's tab shows, pinned on first read",
+						"label": "the checkout the chat's tab shows, pinned on first read",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43274,7 +43307,7 @@
 						"from": "hCKEBd5f",
 						"to": "u2LFaG7R",
 						"kind": "event",
-						"label": "the shown conversation changed: present the panes again",
+						"label": "the shown conversation changed: present the chats again",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43288,7 +43321,7 @@
 						"from": "u2LFaG7R",
 						"to": "ME7EbWl8",
 						"kind": "call",
-						"label": "the tab's live workhorses, for the dock's list",
+						"label": "the tab's live workhorses, for the page's list",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43372,7 +43405,7 @@
 						"from": "JHbKEH3A",
 						"to": "byMaoUe0",
 						"kind": "call",
-						"label": "read the pane's link before starting anything",
+						"label": "read the link the chat named before starting anything",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -43454,14 +43487,14 @@
 						"id": "3494fDAK",
 						"order": 81000,
 						"from": "yyFS6UVO",
-						"to": "42Ws0Eeo",
-						"kind": "dependency",
-						"label": "supply board context publishers",
+						"to": "SQjLwRvE",
+						"kind": "call",
+						"label": "announce the tabs' board changes, focus and selection",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/owner/wiring.ts",
-							"symbol": "createSemanticContextPublisher"
+							"symbol": "createArchboardAnnouncements"
 						}
 					},
 					{
@@ -43588,6 +43621,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/workbench-example/src/ui/components/workbench/MountWorkbench.tsx",
 							"symbol": "createVoiceClient"
+						}
+					},
+					{
+						"id": "yql8mIiB",
+						"order": 91000,
+						"from": "42Ws0Eeo",
+						"to": "SQjLwRvE",
+						"kind": "event",
+						"label": "each settled board change, focus and selection it publishes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+							"symbol": "subscribeSettledChange"
+						}
+					},
+					{
+						"id": "GFyFbH49",
+						"order": 92000,
+						"from": "SQjLwRvE",
+						"to": "YiFwU6JS",
+						"kind": "call",
+						"label": "agent.announce, one change at a time",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+							"symbol": "announce"
+						}
+					},
+					{
+						"id": "ZzCMx2ZI",
+						"order": 93000,
+						"from": "k9hxdLjq",
+						"to": "8yOrpoeg",
+						"kind": "call",
+						"label": "announce: to the live generation's tab sessions",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+							"symbol": "announceContextChange"
 						}
 					}
 				],
@@ -43846,9 +43921,12 @@
 					},
 					{
 						"id": "UmUjUWRv",
-						"name": "A board change reaches a workhorse",
+						"name": "A context change reaches a workhorse",
 						"participants": [
 							"42Ws0Eeo",
+							"SQjLwRvE",
+							"YiFwU6JS",
+							"8yOrpoeg",
 							"RkhHgrhb",
 							"byMaoUe0",
 							"Uz2qReYK",
@@ -43857,15 +43935,53 @@
 						],
 						"steps": [
 							{
-								"id": "GOADij5y",
+								"id": "rGWmiQ8v",
 								"from": "42Ws0Eeo",
-								"to": "RkhHgrhb",
-								"label": "a settled change a user made",
+								"to": "SQjLwRvE",
+								"label": "a settled change of a board in the tab's panes' vaults",
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/codex-realtime-voice/src/runtime/services/thread-context/controller.ts",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
 									"symbol": "subscribeSettledChange"
+								}
+							},
+							{
+								"id": "ajT8vki6",
+								"from": "SQjLwRvE",
+								"to": "YiFwU6JS",
+								"label": "announce the brief for the board's checkout",
+								"kind": "sync",
+								"note": "to its workhorse, withheld once the brief is stale",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "announce"
+								}
+							},
+							{
+								"id": "NKUo2Kzs",
+								"from": "YiFwU6JS",
+								"to": "8yOrpoeg",
+								"label": "tell the tab sessions the change names",
+								"kind": "sync",
+								"note": "the agent's announce is its workbench's",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+									"symbol": "announceContextChange"
+								}
+							},
+							{
+								"id": "GOADij5y",
+								"from": "8yOrpoeg",
+								"to": "RkhHgrhb",
+								"label": "deliver it, with the link, child and threads read now",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+									"symbol": "deliver"
 								}
 							},
 							{
@@ -43885,7 +44001,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
-													"symbol": "createDelivery"
+													"symbol": "createCodexThreadContextDelivery"
 												}
 											}
 										]
@@ -43909,7 +44025,7 @@
 												"id": "KHG58q0G",
 												"from": "RkhHgrhb",
 												"to": "byMaoUe0",
-												"label": "read the pane's link",
+												"label": "read the workhorse's link",
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
@@ -44228,6 +44344,42 @@
 										]
 									}
 								]
+							},
+							{
+								"id": "HBlK73c6",
+								"from": "RkhHgrhb",
+								"to": "8yOrpoeg",
+								"label": "the outcome, as the workhorse's receipt",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+									"symbol": "tellWorkhorse"
+								}
+							},
+							{
+								"id": "Ai2fk9xH",
+								"from": "8yOrpoeg",
+								"to": "YiFwU6JS",
+								"label": "one receipt per tab session, audience and checkout",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+									"symbol": "announceContextChange"
+								}
+							},
+							{
+								"id": "N1Y2pwbX",
+								"from": "YiFwU6JS",
+								"to": "SQjLwRvE",
+								"label": "the receipts, unread; a refusal is logged",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "onError"
+								}
 							}
 						]
 					},
@@ -44261,7 +44413,7 @@
 								"id": "K2Z6m4Kt",
 								"from": "JHbKEH3A",
 								"to": "byMaoUe0",
-								"label": "read the pane's link",
+								"label": "read the link the chat named",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -44521,7 +44673,7 @@
 																				"id": "UhMLF2rJ",
 																				"from": "JHbKEH3A",
 																				"to": "RkhHgrhb",
-																				"label": "move board news to the new workhorse",
+																				"label": "move context delivery to the new workhorse",
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
@@ -44948,10 +45100,10 @@
 															{
 																"id": "vaJwQJYG",
 																"kind": "decision",
-																"question": "Does a recording hold the voice?",
+																"question": "Is the live voice session unattended?",
 																"alternatives": [
 																	{
-																		"label": "recording",
+																		"label": "unattended",
 																		"steps": [
 																			{
 																				"id": "S5mhjyrc",
@@ -44968,7 +45120,7 @@
 																		]
 																	},
 																	{
-																		"label": "free",
+																		"label": "attended",
 																		"steps": [
 																			{
 																				"id": "NDdGebjG",
@@ -45022,9 +45174,12 @@
 					},
 					{
 						"id": "fNauRzDy",
-						"name": "A user's change reaches the voice",
+						"name": "A context change reaches the coordinator or the voice",
 						"participants": [
 							"42Ws0Eeo",
+							"SQjLwRvE",
+							"YiFwU6JS",
+							"8yOrpoeg",
 							"08zJvPJq",
 							"byMaoUe0",
 							"jylkTBp7"
@@ -45033,201 +45188,297 @@
 							{
 								"id": "7AB9nJWu",
 								"from": "42Ws0Eeo",
-								"to": "08zJvPJq",
-								"label": "the user's change, focus or selection",
+								"to": "SQjLwRvE",
+								"label": "a settled board change, or a pane's focus or selection",
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
-									"symbol": "subscribeSettledChange"
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "subscribePaneFocus"
 								}
 							},
 							{
-								"id": "TVUgmii8",
-								"from": "08zJvPJq",
-								"to": "byMaoUe0",
-								"label": "classify the workhorse the callback names",
+								"id": "4QO2Hevk",
+								"from": "SQjLwRvE",
+								"to": "SQjLwRvE",
+								"label": "word it for the coordinator and the voice",
+								"kind": "self",
+								"note": "the voice hears a board on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "heard"
+								}
+							},
+							{
+								"id": "pTabQbT0",
+								"from": "SQjLwRvE",
+								"to": "YiFwU6JS",
+								"label": "announce it",
 								"kind": "sync",
+								"note": "a focus or selection the user made carries a topic, so a later one replaces it while it waits",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-									"symbol": "classifyForDelivery"
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "announce"
 								}
 							},
 							{
-								"id": "EVYIPZnO",
-								"from": "byMaoUe0",
-								"to": "08zJvPJq",
-								"label": "the link and its status",
-								"kind": "return",
+								"id": "XDSuIpxN",
+								"from": "YiFwU6JS",
+								"to": "8yOrpoeg",
+								"label": "tell the tab sessions the change names",
+								"kind": "sync",
+								"note": "the agent's announce is its workbench's",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-									"symbol": "classifyForDelivery"
+									"path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+									"symbol": "announceContextChange"
 								}
 							},
 							{
-								"id": "FRvrsZ1V",
-								"kind": "decision",
-								"question": "Does the workhorse link still stand?",
-								"alternatives": [
+								"id": "7YAsSUn3",
+								"kind": "loop",
+								"condition": "for each of the coordinator and the voice it names",
+								"steps": [
 									{
-										"label": "stale",
-										"steps": [
-											{
-												"id": "PifdA8W4",
-												"from": "08zJvPJq",
-												"to": "08zJvPJq",
-												"label": "record: not delivered, stale_link",
-												"kind": "self",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-													"symbol": "refuseBeforeAttempt"
-												}
-											}
-										]
+										"id": "Vz52mSsP",
+										"from": "8yOrpoeg",
+										"to": "08zJvPJq",
+										"label": "queue its part while voice is live",
+										"kind": "sync",
+										"note": "with no voice session its receipt says voice_inactive, and nothing is queued",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+											"symbol": "enqueue"
+										}
 									},
 									{
-										"label": "stands",
-										"steps": [
+										"id": "TVUgmii8",
+										"from": "08zJvPJq",
+										"to": "byMaoUe0",
+										"label": "classify the workhorse voice is bound to",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+											"symbol": "classifyForDelivery"
+										}
+									},
+									{
+										"id": "EVYIPZnO",
+										"from": "byMaoUe0",
+										"to": "08zJvPJq",
+										"label": "the link and its status",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+											"symbol": "classifyForDelivery"
+										}
+									},
+									{
+										"id": "FRvrsZ1V",
+										"kind": "decision",
+										"question": "Does the workhorse link still stand?",
+										"alternatives": [
 											{
-												"id": "dvRKQxJy",
-												"kind": "decision",
-												"question": "Is voice live, and is there news to tell?",
-												"alternatives": [
+												"label": "stale",
+												"steps": [
 													{
-														"label": "no",
-														"steps": [
-															{
-																"id": "WQicCfIG",
-																"from": "08zJvPJq",
-																"to": "08zJvPJq",
-																"label": "record only: voice_inactive",
-																"kind": "self",
-																"anchor": {
-																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-																	"symbol": "recordOnly"
-																}
-															}
-														]
-													},
+														"id": "PifdA8W4",
+														"from": "08zJvPJq",
+														"to": "08zJvPJq",
+														"label": "record: not delivered, stale_link",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+															"symbol": "refuseBeforeAttempt"
+														}
+													}
+												]
+											},
+											{
+												"label": "stands",
+												"steps": [
 													{
-														"label": "yes",
-														"steps": [
+														"id": "dvRKQxJy",
+														"kind": "decision",
+														"question": "Is voice still live, and did the host give it words?",
+														"alternatives": [
 															{
-																"id": "G8YI5GS1",
-																"kind": "decision",
-																"question": "Who made the change?",
-																"alternatives": [
+																"label": "no",
+																"steps": [
 																	{
-																		"label": "an agent",
-																		"steps": [
+																		"id": "WQicCfIG",
+																		"from": "08zJvPJq",
+																		"to": "08zJvPJq",
+																		"label": "record only: voice_inactive or withheld",
+																		"kind": "self",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+																			"symbol": "recordOnly"
+																		}
+																	}
+																]
+															},
+															{
+																"label": "yes",
+																"steps": [
+																	{
+																		"id": "G8YI5GS1",
+																		"kind": "decision",
+																		"question": "Which audience is it?",
+																		"alternatives": [
 																			{
-																				"id": "F9RaXSMN",
-																				"from": "08zJvPJq",
-																				"to": "jylkTBp7",
-																				"label": "thread/inject_items: the change, into the coordinator",
-																				"kind": "sync",
-																				"anchor": {
-																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																					"symbol": "createCoordinatorCallbackContextPort"
-																				}
+																				"label": "the coordinator",
+																				"steps": [
+																					{
+																						"id": "F9RaXSMN",
+																						"from": "08zJvPJq",
+																						"to": "jylkTBp7",
+																						"label": "thread/inject_items: a developer message that starts no turn",
+																						"kind": "sync",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																							"symbol": "createCoordinatorCallbackContextPort"
+																						}
+																					},
+																					{
+																						"id": "iglMXOFu",
+																						"from": "jylkTBp7",
+																						"to": "08zJvPJq",
+																						"label": "injected",
+																						"kind": "return",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																							"symbol": "createCoordinatorCallbackContextPort"
+																						}
+																					},
+																					{
+																						"id": "8ljFJHUe",
+																						"from": "08zJvPJq",
+																						"to": "08zJvPJq",
+																						"label": "check the link and generation again; settle the delivery",
+																						"kind": "self",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+																							"symbol": "deliverToCoordinator"
+																						}
+																					}
+																				]
 																			},
 																			{
-																				"id": "iglMXOFu",
-																				"from": "jylkTBp7",
-																				"to": "08zJvPJq",
-																				"label": "injected",
-																				"kind": "return",
-																				"anchor": {
-																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																					"symbol": "createCoordinatorCallbackContextPort"
-																				}
+																				"label": "the voice",
+																				"steps": [
+																					{
+																						"id": "qZMl8hNQ",
+																						"kind": "decision",
+																						"question": "Did the host ask for speech?",
+																						"alternatives": [
+																							{
+																								"label": "speech",
+																								"steps": [
+																									{
+																										"id": "1ZladZHv",
+																										"from": "08zJvPJq",
+																										"to": "jylkTBp7",
+																										"label": "append the words as speech, after the audio in progress",
+																										"kind": "sync",
+																										"anchor": {
+																											"repo": "github.com/miklschmidt/archboard",
+																											"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																											"symbol": "realtimeAppendSpeech"
+																										}
+																									}
+																								]
+																							},
+																							{
+																								"label": "quiet context",
+																								"steps": [
+																									{
+																										"id": "XARWKQ1a",
+																										"from": "08zJvPJq",
+																										"to": "jylkTBp7",
+																										"label": "append the words as quiet context",
+																										"kind": "sync",
+																										"anchor": {
+																											"repo": "github.com/miklschmidt/archboard",
+																											"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																											"symbol": "realtimeAppendText"
+																										}
+																									}
+																								]
+																							}
+																						]
+																					},
+																					{
+																						"id": "VS1mOJb6",
+																						"from": "jylkTBp7",
+																						"to": "08zJvPJq",
+																						"label": "accepted, rejected, or lost",
+																						"kind": "return",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																							"symbol": "createCoordinatorCallbackRealtimePort"
+																						}
+																					},
+																					{
+																						"id": "xbsGMJXs",
+																						"from": "08zJvPJq",
+																						"to": "08zJvPJq",
+																						"label": "check the voice generation still stands; settle the delivery",
+																						"kind": "self",
+																						"anchor": {
+																							"repo": "github.com/miklschmidt/archboard",
+																							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+																							"symbol": "deliverThroughVoice"
+																						}
+																					}
+																				]
 																			}
 																		]
-																	},
-																	{
-																		"label": "the user",
-																		"steps": []
 																	}
 																]
-															},
-															{
-																"id": "qZMl8hNQ",
-																"kind": "decision",
-																"question": "Does the change stop the board being narrated?",
-																"alternatives": [
-																	{
-																		"label": "yes: speak it",
-																		"steps": [
-																			{
-																				"id": "1ZladZHv",
-																				"from": "08zJvPJq",
-																				"to": "jylkTBp7",
-																				"label": "append the sentence as speech",
-																				"kind": "sync",
-																				"anchor": {
-																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																					"symbol": "realtimeAppendSpeech"
-																				}
-																			}
-																		]
-																	},
-																	{
-																		"label": "no: add it as context",
-																		"steps": [
-																			{
-																				"id": "XARWKQ1a",
-																				"from": "08zJvPJq",
-																				"to": "jylkTBp7",
-																				"label": "append the sentence as developer context",
-																				"kind": "sync",
-																				"anchor": {
-																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																					"symbol": "realtimeAppendText"
-																				}
-																			}
-																		]
-																	}
-																]
-															},
-															{
-																"id": "VS1mOJb6",
-																"from": "jylkTBp7",
-																"to": "08zJvPJq",
-																"label": "accepted, rejected, or lost",
-																"kind": "return",
-																"anchor": {
-																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																	"symbol": "createCoordinatorCallbackRealtimePort"
-																}
-															},
-															{
-																"id": "xbsGMJXs",
-																"from": "08zJvPJq",
-																"to": "08zJvPJq",
-																"label": "check the voice generation still stands; settle the delivery",
-																"kind": "self",
-																"anchor": {
-																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-																	"symbol": "deliverThroughVoice"
-																}
 															}
 														]
 													}
 												]
 											}
 										]
+									},
+									{
+										"id": "bA6ChT5c",
+										"from": "08zJvPJq",
+										"to": "8yOrpoeg",
+										"label": "how it settled, as that audience's receipt",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+											"symbol": "tellThroughCallbacks"
+										}
 									}
 								]
+							},
+							{
+								"id": "L19o03Sf",
+								"from": "8yOrpoeg",
+								"to": "YiFwU6JS",
+								"label": "one receipt per tab session and audience",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+									"symbol": "announceContextChange"
+								}
 							}
 						]
 					},
@@ -45260,14 +45511,14 @@
 							{
 								"id": "lecI5v9m",
 								"kind": "decision",
-								"question": "Is another pane of the tab still open?",
+								"question": "Is another chat of the tab still open?",
 								"alternatives": [
 									{
-										"label": "another pane remains",
+										"label": "another chat remains",
 										"steps": []
 									},
 									{
-										"label": "the last pane went",
+										"label": "the last chat went",
 										"steps": [
 											{
 												"id": "XwJOc75W",
@@ -45284,10 +45535,10 @@
 											{
 												"id": "HOYVTUuk",
 												"kind": "decision",
-												"question": "Does a pane of the tab come back within the grace?",
+												"question": "Does a chat of the tab come back within the grace?",
 												"alternatives": [
 													{
-														"label": "a pane returns",
+														"label": "a chat returns",
 														"steps": [
 															{
 																"id": "r9HIC4rX",
@@ -45503,7 +45754,7 @@
 							{
 								"id": "9Ee1KNBg",
 								"heading": "A tab holds one coordinator and a workhorse for each checkout",
-								"body": "Each browser tab is a tab session with its own lease and its own coordinator. A pane's first message or Talk starts its conversation: the coordinator first, then the workhorse of the checkout that pane shows, which that checkout's link then names. The pane that holds the lease sends its typed message straight to that workhorse as a turn or a steer, and edits that thread's queue. A pane that moves to another checkout reaches the workhorse there instead. The coordinator's work goes through the four operations, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+								"body": "Each browser tab is a tab session with its own lease and its own coordinator. A chat's first message or Talk starts its conversation: the coordinator first, then the workhorse of the checkout the tab shows, which that checkout's link then names. The chat that holds the lease sends its typed message straight to that workhorse as a turn or a steer, and edits that thread's queue. When the tab shows another checkout, its chats reach the workhorse there instead. The coordinator's work goes through the four operations, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
 								"subjects": [
 									"byMaoUe0",
 									"iay14AUl",
@@ -45537,7 +45788,7 @@
 							{
 								"id": "mvh59frt",
 								"heading": "The coordinator hears the workhorse at once",
-								"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while a recording holds the voice, nothing is sent.",
+								"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while an unattended session holds the voice, nothing is sent.",
 								"subjects": [
 									"08zJvPJq",
 									"NztvEtjX",
@@ -45548,10 +45799,11 @@
 							},
 							{
 								"id": "RS10vddw",
-								"heading": "Board changes reach each workhorse quietly",
-								"body": "A settled change a user made goes into the history of the workhorse whose checkout holds the board, as one developer message, after the child, epoch, that workhorse's link and cursor are checked again. It starts no turn. Each delivery settles once as delivered, not delivered or unknown, and is never retried.",
+								"heading": "Context changes reach each workhorse quietly",
+								"body": "A host announces a change with agent.announce and names the checkouts whose workhorses hear it: Archboard announces each settled board change to the workhorse of the checkout that holds the board. It goes into that workhorse's history as one developer message, after the child, epoch, link and freshness are checked again, and it starts no turn. A workhorse hears a feed's sequence once. Each delivery settles as delivered, not delivered or unknown, is never retried, and comes back as a receipt.",
 								"subjects": [
-									"42Ws0Eeo",
+									"SQjLwRvE",
+									"8yOrpoeg",
 									"GOADij5y",
 									"RkhHgrhb",
 									"UmUjUWRv"
@@ -45559,9 +45811,21 @@
 								"view": "tliaNnOp"
 							},
 							{
+								"id": "64RUkciN",
+								"heading": "The coordinator and the voice hear a change as the host words it",
+								"body": "The coordinator and the voice hear a context change through the tab's one callback queue, and only while voice is live. The host words each one's part or withholds it. Archboard tells the voice what changed on a board on screen, as speech when it stops the narration, and tells the coordinator only what an agent outside the session did, as a developer message that starts no turn. Nobody hears a change that their own tab made.",
+								"subjects": [
+									"SQjLwRvE",
+									"Tqxin6z5",
+									"08zJvPJq",
+									"fNauRzDy"
+								],
+								"view": "gAl8TJxm"
+							},
+							{
 								"id": "HdGCnvev",
 								"heading": "Each thread belongs to one tab session",
-								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, and an approval goes to the panes of that session (a workhorse's to those of its checkout), so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
+								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, and an approval goes to the chats of that session (a workhorse's to those of its checkout), so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
 								"subjects": [
 									"iay14AUl",
 									"xPCxyO70",
@@ -45574,8 +45838,8 @@
 							},
 							{
 								"id": "XARzanTh",
-								"heading": "A tab session ends 60 seconds after its last pane closes",
-								"body": "Every pane names its tab when its socket opens. When no pane of the tab comes back for 60 seconds, the session ends: its lease and link go, its pending approvals are cancelled, voice and board news stop, and each of its threads is unsubscribed once no turn runs on it, so Codex unloads it. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
+								"heading": "A tab session ends 60 seconds after its last chat closes",
+								"body": "Every chat names its tab when its socket opens; in Archboard a chat is a pane, and its tab adapter notes it. When no chat of the tab comes back for 60 seconds, the session ends: its lease and link go, its pending approvals are cancelled, voice and context delivery stop, and each of its threads is unsubscribed once no turn runs on it, so Codex unloads it. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
 								"subjects": [
 									"hCKEBd5f",
 									"egDoJ9fH",
@@ -45594,7 +45858,7 @@
 			}
 		}
 	],
-	"current": "5ou4Zp5Y",
+	"current": "KQtKiYDn",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -45673,6 +45937,12 @@
 			"from": "UbtMvySf",
 			"at": "2026-10-25T05:19:40.886Z",
 			"reason": "TASK-530 renamed the agent workbench to the public codex-realtime-voice package: createVoiceAgent is the host entry with attach and bunHandlers, createVoiceClient is its browser client, the example is a second host, and storage, identity and tool names are the host's"
+		},
+		{
+			"variant": "KQtKiYDn",
+			"from": "5ou4Zp5Y",
+			"at": "2026-10-25T17:30:25.051Z",
+			"reason": "TASK-530.05: board news became context announcements (agent.announce), with Archboard's changes as one adapter; the workhorse's delivery became its context delivery; a pane became a chat, a presentation a narrative, a recording an unattended session; checkouts list by label"
 		}
 	],
 	"shelvings": [
