@@ -225,7 +225,7 @@ async function makeAll(
 	await inOrder(needs, prove);
 	if (needs.has("chromium")) {
 		console.log("Building the frontend the takes are filmed from.");
-		await run([process.execPath, "run", "build:frontend"]);
+		await run([process.execPath, "run", "build"]);
 	}
 	const hasher = checkoutHasher(ROOT);
 	let made = manifest;
@@ -239,7 +239,13 @@ async function makeAll(
 			assets: made.assets.map((one) => (one.name === asset.name ? { ...one, hash } : one)),
 		};
 		writeManifest(ROOT, made);
-		await run([join(ROOT, "node_modules/.bin/oxfmt"), MANIFEST_PATH]);
+		await run([
+			join(ROOT, "node_modules/.bin/vp"),
+			"fmt",
+			"--config",
+			join(ROOT, "vite.config.ts"),
+			MANIFEST_PATH,
+		]);
 		console.log(`  made ${sizes(asset)}`);
 		for (const file of producerOf(asset).attachments) say(attachLine(file));
 	});

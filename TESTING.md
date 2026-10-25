@@ -8,6 +8,9 @@ and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
 
 ## 1. Prepare the checkout
 
+Vite+ requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0` for build and validation tools.
+Bun runs the product and its tests.
+
 ```bash
 bun install      # if it fails while it extracts a tarball, run it again
 bun run build    # builds the browser bundle into dist/frontend
@@ -205,7 +208,7 @@ Three facts decide whether the gate can run to its end:
 
 - The checks run one after the other and stop at the first failure. If the gate
   stops early, run the remaining checks and every unrun normal lane separately,
-  using the commands in `package.json`'s `check` and `test` chains. Include
+  using the Vite+ tasks in `vite.config.ts`. Include
   `test:modules` if it has not run, and build the frontend before browser owners.
   Only then call a failure the only one.
 - `bun install` supplies the pinned `agent-browser` CLI. The browser lane resolves it from this checkout.

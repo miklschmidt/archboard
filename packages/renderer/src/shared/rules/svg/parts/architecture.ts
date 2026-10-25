@@ -238,11 +238,15 @@ function paintEdgeWords(
 			? ""
 			: lines([
 					slabSeat(label.box, PILL_RADIUS),
-					// A removed label's ghost; a label's shadow lies under the lines (`labelShadow`).
-					standing === "removed"
-						? slabShadow(label.box, PILL_RADIUS, "chip", palette, standing)
-						: "",
-					slab(label.box, labelLook(palette), palette, standing),
+					...chipsOf(label).map((chip) =>
+						lines([
+							// A removed label's ghost; a label's shadow lies under the lines (`labelShadow`).
+							standing === "removed"
+								? slabShadow(chip, PILL_RADIUS, "chip", palette, standing)
+								: "",
+							slab(chip, labelLook(palette), palette, standing),
+						]),
+					),
 					paintTextRuns(label.measured.runs, label.box, standingPalette(palette, standing)),
 				]);
 	return pill === "" && badge === ""
@@ -252,6 +256,19 @@ function paintEdgeWords(
 				{ ...subjectGroup(lineKind(step), edge.id, standing), [PART_ATTRIBUTE]: "label" },
 				lines([pill, badge]),
 			);
+}
+
+/**
+ * The chips a label stands on, where the picture puts them: one for a label,
+ * one for each relationship a joined line stacks (ADR 0052).
+ * @param label The label's box and its measured chips.
+ * @param label.box Where the label stands.
+ * @param label.measured Its measured chips.
+ * @returns Each chip's box.
+ */
+function chipsOf(label: NonNullable<DrawingEdge["label"]>): Box[] {
+	const { box, measured } = label;
+	return measured.chips.map(({ y, height }) => ({ ...box, y: box.y + y, height }));
 }
 
 /**
@@ -270,7 +287,11 @@ function labelShadow(
 ): string {
 	return routed.label === undefined
 		? ""
-		: shadowUnder(routed.edge.id, routed.label.box, PILL_RADIUS, "chip", palette, standing);
+		: lines(
+				chipsOf(routed.label).map((chip) =>
+					shadowUnder(routed.edge.id, chip, PILL_RADIUS, "chip", palette, standing),
+				),
+			);
 }
 
 /**

@@ -31,12 +31,14 @@ type Node = Record<string, unknown>;
  * @param name What the board is called.
  * @param nodes Its nodes.
  * @param variants Its variants beyond the current one, if any.
+ * @param edges The current variant's relationships.
  * @returns The document.
  */
 function boardOf(
 	name: string,
 	nodes: readonly Node[],
 	variants: readonly Record<string, unknown>[] = [],
+	edges: readonly Record<string, unknown>[] = [],
 ): Record<string, unknown> {
 	return {
 		schemaVersion: "2.0.0",
@@ -50,7 +52,7 @@ function boardOf(
 		views: [],
 		current: "v1",
 		variants: [
-			{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes, edges: [] } },
+			{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes, edges } },
 			...variants,
 		],
 	};
@@ -507,4 +509,44 @@ test("a selection the board no longer holds says so instead of showing a blank p
 	await settled();
 
 	expect(inspector()).toContain("not on the board any more");
+});
+
+test("picking a joined line of the overview shows its drawn ends and every relationship it joins", async () => {
+	// Two parts of Board Runtime reach the Voice Bridge, so the overview joins them into e1.
+	const edges = [
+		{ id: "e1", from: "n1", to: "n3", kind: "call", label: "reads notes" },
+		{ id: "e2", from: "n2", to: "n3", kind: "call", label: "takes the lease" },
+	];
+	server.documents["pipeline"] = boardOf("pipeline", NODES, [], edges);
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage("e1");
+	await settled();
+
+	expect(slot("semantic-inspector")?.dataset["subject"]).toBe("line");
+	const joined = [
+		...document.querySelectorAll<HTMLElement>("[data-slot='semantic-inspector-joined']"),
+	];
+	expect(joined.map((row) => row.dataset["edge"])).toEqual(["e1", "e2"]);
+	expect(slot("semantic-inspector-about")?.textContent).toContain("Board Runtime");
+	expect(slot("semantic-inspector-about")?.textContent).not.toContain("reads notes");
+});
+
+test("the same id in Everything is the one relationship it names", async () => {
+	const edges = [
+		{ id: "e1", from: "n1", to: "n3", kind: "call", label: "reads notes" },
+		{ id: "e2", from: "n2", to: "n3", kind: "call", label: "takes the lease" },
+	];
+	server.documents["pipeline"] = boardOf("pipeline", NODES, [], edges);
+	server.reply = {
+		status: 200,
+		body: {
+			...drawing(1),
+			view: { id: "Everything", name: "Everything", grammar: "architecture" },
+		},
+	};
+	mountStage("e1");
+	await settled();
+
+	expect(slot("semantic-inspector")?.dataset["subject"]).toBe("edge");
+	expect(slot("semantic-inspector-between")?.textContent).toContain("board-io");
 });

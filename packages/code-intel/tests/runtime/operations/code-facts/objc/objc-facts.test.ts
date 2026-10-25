@@ -171,11 +171,10 @@ test("a message to a class runs it, and a selector expression and a constant rea
 	});
 });
 
+const imports = async (relative: string) =>
+	Object.fromEntries((await read(relative)).imports.map((each) => [each.specifier, each.resolved]));
+
 test("#import, #include and @import resolve as a C include does, and a use leads to the pair's implementation", async () => {
-	const imports = async (relative: string) =>
-		Object.fromEntries(
-			(await read(relative)).imports.map((each) => [each.specifier, each.resolved]),
-		);
 	expect(await imports("Shop/Checkout.m")).toEqual({
 		"Ledger+Report.h": "Shop/Ledger+Report.h",
 		"Money.h": "Shop/Money.h",
