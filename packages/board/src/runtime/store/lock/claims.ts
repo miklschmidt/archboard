@@ -9,8 +9,19 @@ import {
 	processRevocations,
 	startRenewing,
 } from "#runtime/store/lock/claim-state.ts";
-import type { Claim, ClaimEntry, ClaimRevocation } from "#runtime/store/lock/contracts.ts";
-import { newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
+import type {
+	Claim,
+	ClaimEntry,
+	ClaimRevocation,
+	LockHolder,
+} from "#runtime/store/lock/contracts.ts";
+import { boardLockState, newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
+
+/** A claim this server lost, with the opening of the sentence its agent is told once. */
+type LostClaim = ClaimRevocation & {
+	/** Why the claim ended, without a full stop, such as `The user at the canvas took "payments" back`. */
+	readonly ended: string;
+};
 
 /**
  * Claim a board for an agent campaign, or extend this server's existing claim.
@@ -113,9 +124,9 @@ function claimWriterId(vault: string, board: string): string | null {
  * Consume the one-shot notice that this server's claim was taken back.
  * @param vault The vault root the board lives in.
  * @param board Board key or alias.
- * @returns The revocation once, or null after it has been consumed.
+ * @returns The revocation and why it ended, once, or null after it has been consumed.
  */
-function takeClaimRevocation(vault: string, board: string): ClaimRevocation | null {
+function takeClaimRevocation(vault: string, board: string): LostClaim | null {
 	// Told once: the next agent act learns what was interrupted and that nothing
 	// was undone; after that, work is ordinary rather than permanently refused.
 	const key = boardMemoryKey(vault, board);
@@ -124,7 +135,39 @@ function takeClaimRevocation(vault: string, board: string): ClaimRevocation | nu
 		return null;
 	}
 	processRevocations.delete(key);
-	return lost;
+	return { ...lost, ended: claimEndReason(lost) };
+}
+
+/**
+ * The person at the canvas takes a board back (ADR 0022).
+ *
+ * The lease is taken with any claim revoked and given straight back, so the
+ * board goes to nobody and the next write takes it as any write does. Nothing
+ * already written is undone. It does not wait: an unclaimed writer holding the
+ * board at that instant refuses it by name, so the person can ask again (TASK-153).
+ * @param request The board, the pane asking for it and the request's cancellation.
+ * @param request.vault The vault root the board lives in.
+ * @param request.board The board's canonical key.
+ * @param request.by The client id of the pane asking.
+ * @param request.signal Cancels waiting for the lease when the caller goes.
+ * @returns The agent's claim that stood when the person asked, or null when none did.
+ */
+async function takeBackBoard(
+	request: Readonly<{ vault: string; board: string; by: string; signal?: Readonly<AbortSignal> }>,
+): Promise<LockHolder | null> {
+	const { vault, board } = request;
+	const standing = boardLockState(vault, board);
+	const hold = await holdBoard({
+		vault,
+		board,
+		holder: { id: request.by, kind: "human" },
+		revokeClaim: true,
+		...(request.signal !== undefined ? { signal: request.signal } : {}),
+	});
+	if (hold.created) {
+		releaseHold(vault, board, hold.holder.id);
+	}
+	return standing?.kind === "agent" && standing.claimed ? standing : null;
 }
 
 /**
@@ -146,4 +189,12 @@ function claimEndReason(lost: ClaimRevocation): string {
 	return `The lease on ${board} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
 }
 
-export { claimBoard, claimEndReason, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };
+export {
+	type LostClaim,
+	claimBoard,
+	claimOn,
+	claimWriterId,
+	releaseClaim,
+	takeBackBoard,
+	takeClaimRevocation,
+};
