@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 92,
+	"version": 96,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-25T14:48:32.626Z",
+	"updatedAt": "2026-10-25T17:30:20.818Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -85,9 +85,9 @@
 		},
 		{
 			"id": "hWOGfWRS",
-			"name": "Pane news for the voice model",
+			"name": "A context change for the coordinator or the voice",
 			"grammar": "sequence",
-			"summary": "How workhorse news and pane news reach the coordinator and the voice model.",
+			"summary": "How a host's context change reaches the coordinator or the voice model.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -190,7 +190,7 @@
 		},
 		{
 			"id": "sX2BG1Gm",
-			"name": "Pane news for the voice model: logic",
+			"name": "A context change for the coordinator or the voice: logic",
 			"grammar": "flowchart",
 			"scope": {
 				"kind": "selection",
@@ -23708,7 +23708,7 @@
 		{
 			"id": "isObiJDh",
 			"name": "TASK-530",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "pSOJWmg9",
 			"summary": "Voice session identity, coordinator lifecycle, ordered workhorse context, and spoken approvals",
 			"documents": [
@@ -26564,9 +26564,9 @@
 		{
 			"id": "VNJBNtWe",
 			"name": "TASK-530.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "isObiJDh",
-			"summary": "The voice package names no Archboard concept",
+			"summary": "Voice session identity, coordinator lifecycle, ordered workhorse news and announced context changes, and spoken approvals",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -26598,7 +26598,7 @@
 						"name": "Coordinator thread",
 						"kind": "module",
 						"responsibility": "Each tab session's separate fast thread that voice attaches to, the voice model's subconscious: its model, its settings, and how it is started",
-						"description": "Started with its tab session's first message or Talk, before the workhorse, on gpt-6-sol at low effort with project_doc_max_bytes 0 and the workhorse and voice tool namespaces the host names (archboard_workhorse and archboard_voice in Archboard). It works in a directory of its own under the server's state directory, which is no checkout and holds no vault: a command it runs without -C is refused, and it gives work in a checkout to that checkout's workhorse. Each tab session has its own, so two tabs can talk at the same time, and it speaks for every workhorse of its tab. If it cannot start, the message or Talk is refused with the reason and no workhorse starts. It carries at most one voice session: a voice start that finds it already carried one starts a fresh thread first, and swaps it in only once it is ready, so the old thread is never driven again. Once the old thread's voice session has closed and no turn runs on it, the coordinator unsubscribes from it, so Codex unloads it. When the tab session ends, its threads are unsubscribed the same way. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
+						"description": "Started with its tab session's first message or Talk, before the workhorse, on gpt-6-sol at low effort with project_doc_max_bytes 0 and the workhorse and voice tool namespaces the host names (archboard_workhorse and archboard_voice in Archboard). It works in a directory of its own under the server's state directory, which is no checkout, so a command it runs finds no checkout's files; in Archboard a command without -C is refused. It gives work in a checkout to that checkout's workhorse. Each tab session has its own, so two tabs can talk at the same time, and it speaks for every workhorse of its tab. If it cannot start, the message or Talk is refused with the reason and no workhorse starts. It carries at most one voice session: a voice start that finds it already carried one starts a fresh thread first, and swaps it in only once it is ready, so the old thread is never driven again. Once the old thread's voice session has closed and no turn runs on it, the coordinator unsubscribes from it, so Codex unloads it. When the tab session ends, its threads are unsubscribed the same way. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
 						"parent": "CkB9Bygm",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26610,8 +26610,8 @@
 						"order": 3000,
 						"name": "Realtime voice",
 						"kind": "module",
-						"responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, a narrated walkthrough's steps, and the transcript",
-						"description": "The server never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made. The start tells the coordinator the [FINAL] and [COMMENTARY] channel rule, or for a recording to write only commentary; the board catalogue, read from the vault of the pane the session presents through, is kept on the coordinator's thread for the session's life.",
+						"responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, the narrative it presents, and the transcript",
+						"description": "The server never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made. The start tells the coordinator the [FINAL] and [COMMENTARY] channel rule, or to write only commentary when the host's voice policy suppresses coordinator speech, as Archboard's does for a recording. The host's coordinator context, in Archboard the board catalogue, is the start's brief and is kept on the coordinator's thread for the session's life.",
 						"parent": "CkB9Bygm",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26648,7 +26648,7 @@
 						"order": 6000,
 						"name": "Coordinator callbacks",
 						"kind": "module",
-						"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, pane news for the voice model",
+						"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, and a host's context changes for the coordinator or the voice model",
 						"description": "Nothing is sent with no voice session. Every callback settles once as delivered, not delivered with a reason, or outcome unknown. A callback is correlated with the workhorse its own thread names, one of the tab session's workhorses.",
 						"parent": "hshxlvQL",
 						"binding": {
@@ -26661,7 +26661,7 @@
 						"order": 7000,
 						"name": "Spoken approval",
 						"kind": "module",
-						"responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to the pane",
+						"responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to an answer on the page",
 						"parent": "CjiN3z5a",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26684,7 +26684,7 @@
 						"order": 9000,
 						"name": "Semantic context",
 						"kind": "module",
-						"responsibility": "What the board says right now and what the user changed on it: the brief a voice start records, and the reports that become pane news",
+						"responsibility": "What changed on the boards of the tab's panes, and what a pane shows or picked out: the events Archboard announces to the coordinator and the voice",
 						"parent": "hshxlvQL",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26762,7 +26762,7 @@
 						"order": 14000,
 						"name": "Callback queue",
 						"kind": "function",
-						"responsibility": "Takes news, operation events and pane reports in order, drops the session's own writes, and delivers one at a time",
+						"responsibility": "Takes workhorse news, operation events and announced context changes in order, drops the tab's own changes, and delivers one at a time",
 						"parent": "B0SAnbtM",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26799,7 +26799,7 @@
 						"order": 17000,
 						"name": "Callback delivery",
 						"kind": "function",
-						"responsibility": "Gives each callback one path: news to a coordinator turn, the user's own pane changes to the voice model, the rest recorded only",
+						"responsibility": "Gives each callback one path: workhorse news to a coordinator turn, a context change to the coordinator's history or the voice model as the host worded it, the rest recorded only",
 						"parent": "B0SAnbtM",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -26811,7 +26811,7 @@
 						"order": 18000,
 						"name": "Outcome report",
 						"kind": "module",
-						"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+						"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while the live voice session is unattended",
 						"description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
 						"parent": "hshxlvQL",
 						"binding": {
@@ -26861,7 +26861,7 @@
 						"order": 22000,
 						"name": "Coordinator turn homes",
 						"kind": "module",
-						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
+						"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the page shows the turn in the right conversation",
 						"description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown.",
 						"parent": "CjiN3z5a",
 						"binding": {
@@ -26888,7 +26888,7 @@
 						"order": 26000,
 						"name": "Coordinator news",
 						"kind": "module",
-						"responsibility": "What the coordinator and the voice model are told while voice is live: workhorse news and pane news, each delivered once and in order, the outcome report and the board context behind pane news"
+						"responsibility": "What the coordinator and the voice model are told while voice is live: workhorse news and announced context changes, in order, the outcome report, and the Archboard context they come from"
 					},
 					{
 						"id": "En8mB6jo",
@@ -26929,6 +26929,45 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts"
+						}
+					},
+					{
+						"id": "ZilfteOF",
+						"order": 30000,
+						"name": "Board catalogue",
+						"kind": "module",
+						"responsibility": "Archboard's context for the coordinator: the catalogue of the boards and variants in the vault of the pane the session presents through, read whole",
+						"description": "Realtime voice reads it as the brief of each voice start, and keeps it on the coordinator's thread while voice is live: when the presenting vault or its boards change, the whole catalogue is read again and replaces the one before.",
+						"parent": "hshxlvQL",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-context-source.ts"
+						}
+					},
+					{
+						"id": "BC9wK59M",
+						"order": 31000,
+						"name": "Archboard announcements",
+						"kind": "module",
+						"responsibility": "Archboard's board changes, focus and selection, worded for the coordinator and the voice and announced through the voice agent",
+						"description": "The voice hears the news of a board on screen, as speech when it stops the narration, and nothing of a board no pane shows. The coordinator hears only what an agent outside the session did: a board it wrote, or a pane it moved with browser show. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
+						"parent": "hshxlvQL",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts"
+						}
+					},
+					{
+						"id": "ccaUoxFa",
+						"order": 32000,
+						"name": "Context announcements",
+						"kind": "module",
+						"responsibility": "Tells a tab session's coordinator and live voice a context change the host announces, each through the tab's one callback queue, and only while voice is live",
+						"description": "With no voice session the receipt says voice_inactive and nothing is queued. Each audience the change names is its own callback, so the coordinator and the voice are told independently, in no fixed order.",
+						"parent": "hshxlvQL",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts"
 						}
 					}
 				],
@@ -27001,14 +27040,14 @@
 						"id": "jKgud5yQ",
 						"order": 5000,
 						"from": "2vHAg1Ei",
-						"to": "qZsXIuQG",
+						"to": "ZilfteOF",
 						"kind": "call",
-						"label": "the brief this start records",
+						"label": "the start's brief: the host's coordinator context",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
-							"symbol": "freshSemanticBrief"
+							"symbol": "coordinatorContext"
 						}
 					},
 					{
@@ -27124,7 +27163,7 @@
 						"from": "eyQ2AZaA",
 						"to": "4A6j6Xk3",
 						"kind": "call",
-						"label": "pane news: realtime/appendText",
+						"label": "a context change: realtime append or thread/inject_items",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -27280,27 +27319,27 @@
 						"from": "AjPVQ0BZ",
 						"to": "2vHAg1Ei",
 						"kind": "call",
-						"label": "is a recording holding the voice?",
+						"label": "is the live session unattended?",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
-							"symbol": "recording"
+							"symbol": "unattended"
 						}
 					},
 					{
 						"id": "wyliCZzQ",
 						"order": 25000,
-						"from": "qZsXIuQG",
+						"from": "ccaUoxFa",
 						"to": "5uPyMgoI",
-						"kind": "event",
-						"label": "the user's changes, focus and selection",
-						"description": "Archboard's callbacks adapter subscribes to the semantic context and turns each settled change, focus and selection into a host-context event with an Archboard payload, on the host port that the public createCodexCoordinatorCallbacks factory subscribes to.",
+						"kind": "call",
+						"label": "the coordinator's and the voice's parts of a change",
+						"description": "The voice agent's announce gives each audience a change names its own callback on the tab's queue, while voice is live.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
-							"symbol": "subscribeSettledChange"
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+							"symbol": "enqueue"
 						}
 					},
 					{
@@ -27632,6 +27671,62 @@
 							"path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
 							"symbol": "toolRoleOf"
 						}
+					},
+					{
+						"id": "at9JRETZ",
+						"order": 50000,
+						"from": "qZsXIuQG",
+						"to": "BC9wK59M",
+						"kind": "event",
+						"label": "each settled board change, focus and selection",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+							"symbol": "subscribeSettledChange"
+						}
+					},
+					{
+						"id": "FQ6Dm2Go",
+						"order": 51000,
+						"from": "BC9wK59M",
+						"to": "ccaUoxFa",
+						"kind": "call",
+						"label": "agent.announce: one change, worded for each audience",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+							"symbol": "announce"
+						}
+					},
+					{
+						"id": "sQ7mZuI3",
+						"order": 52000,
+						"from": "eyQ2AZaA",
+						"to": "YVc05dVh",
+						"kind": "call",
+						"label": "the callback as canonical JSON, kept on its record",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+							"symbol": "canonicalJson"
+						}
+					},
+					{
+						"id": "j3Td3x8x",
+						"order": 53000,
+						"from": "ccaUoxFa",
+						"to": "YVc05dVh",
+						"kind": "dependency",
+						"label": "the execution context's keys, which a payload cannot use",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+							"symbol": "EXECUTION_CONTEXT_KEYS"
+						}
 					}
 				],
 				"flows": [
@@ -27641,7 +27736,7 @@
 						"participants": [
 							"0eYa0szs",
 							"2vHAg1Ei",
-							"qZsXIuQG",
+							"ZilfteOF",
 							"4A6j6Xk3"
 						],
 						"steps": [
@@ -27685,25 +27780,25 @@
 											{
 												"id": "BmISOY1y",
 												"from": "2vHAg1Ei",
-												"to": "qZsXIuQG",
-												"label": "the brief this start records",
+												"to": "ZilfteOF",
+												"label": "read the host's coordinator context",
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
-													"symbol": "freshSemanticBrief"
+													"symbol": "coordinatorContext"
 												}
 											},
 											{
 												"id": "WAKLTova",
-												"from": "qZsXIuQG",
+												"from": "ZilfteOF",
 												"to": "2vHAg1Ei",
-												"label": "the brief",
+												"label": "the catalogue: the start's brief",
 												"kind": "return",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
-													"symbol": "freshSemanticBrief"
+													"path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
+													"symbol": "createArchboardCoordinatorContextSource"
 												}
 											},
 											{
@@ -28427,7 +28522,7 @@
 												"id": "h2WbWg2w",
 												"from": "fEiupnAD",
 												"to": "fEiupnAD",
-												"label": "fall back to the pane's answer",
+												"label": "fall back: the person answers on the page",
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
@@ -28501,7 +28596,7 @@
 																"id": "U6eZSpI9",
 																"from": "fEiupnAD",
 																"to": "fEiupnAD",
-																"label": "fall back to the pane's answer",
+																"label": "fall back: the person answers on the page",
 																"kind": "self",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
@@ -28769,12 +28864,12 @@
 																		"id": "v0P4H3oq",
 																		"from": "AjPVQ0BZ",
 																		"to": "2vHAg1Ei",
-																		"label": "is a recording holding the voice?",
+																		"label": "is the live session unattended?",
 																		"kind": "sync",
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
 																			"path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
-																			"symbol": "recording"
+																			"symbol": "unattended"
 																		}
 																	},
 																	{
@@ -28786,33 +28881,33 @@
 																		"anchor": {
 																			"repo": "github.com/miklschmidt/archboard",
 																			"path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
-																			"symbol": "recording"
+																			"symbol": "unattended"
 																		}
 																	},
 																	{
 																		"id": "rLmXpfUX",
 																		"kind": "decision",
-																		"question": "Does a recording hold the voice?",
+																		"question": "Is the live session unattended?",
 																		"alternatives": [
 																			{
-																				"label": "recording",
+																				"label": "unattended",
 																				"steps": [
 																					{
 																						"id": "NslyBHiv",
 																						"from": "AjPVQ0BZ",
 																						"to": "eyQ2AZaA",
-																						"label": "recording: nothing is sent",
+																						"label": "unattended: nothing is sent",
 																						"kind": "return",
 																						"anchor": {
 																							"repo": "github.com/miklschmidt/archboard",
 																							"path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
-																							"symbol": "recording"
+																							"symbol": "unattended"
 																						}
 																					}
 																				]
 																			},
 																			{
-																				"label": "free",
+																				"label": "attended",
 																				"steps": [
 																					{
 																						"id": "jpwSNOyR",
@@ -28881,9 +28976,11 @@
 					},
 					{
 						"id": "67E4aMeN",
-						"name": "Pane news reaches the voice model",
+						"name": "A context change reaches the coordinator or the voice",
 						"participants": [
 							"qZsXIuQG",
+							"BC9wK59M",
+							"ccaUoxFa",
 							"5uPyMgoI",
 							"eyQ2AZaA",
 							"4A6j6Xk3"
@@ -28892,219 +28989,253 @@
 							{
 								"id": "6jER75L4",
 								"from": "qZsXIuQG",
-								"to": "5uPyMgoI",
-								"label": "the user's change, focus or selection",
+								"to": "BC9wK59M",
+								"label": "a settled board change, or a pane's focus or selection",
 								"kind": "async",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
 									"symbol": "subscribeSettledChange"
 								}
 							},
 							{
-								"id": "dDOLOt4k",
-								"kind": "decision",
-								"question": "Did this session make it, or does no pane show its board?",
-								"alternatives": [
+								"id": "ttrPvGPO",
+								"from": "BC9wK59M",
+								"to": "BC9wK59M",
+								"label": "word it for the coordinator and the voice",
+								"kind": "self",
+								"note": "the voice hears a board on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "heard"
+								}
+							},
+							{
+								"id": "6Frsf6H7",
+								"from": "BC9wK59M",
+								"to": "ccaUoxFa",
+								"label": "agent.announce(change)",
+								"kind": "sync",
+								"note": "through the voice agent, whose announce is its workbench's",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+									"symbol": "announce"
+								}
+							},
+							{
+								"id": "a2bg2d9z",
+								"kind": "loop",
+								"condition": "for each of the coordinator and the voice it names",
+								"steps": [
 									{
-										"label": "yes",
-										"steps": [
-											{
-												"id": "z7c5odxF",
-												"from": "5uPyMgoI",
-												"to": "5uPyMgoI",
-												"label": "refuse it: told to nobody",
-												"kind": "self",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
-													"symbol": "arrivalRefusal"
-												}
-											}
-										]
+										"id": "KhxEodYR",
+										"from": "ccaUoxFa",
+										"to": "5uPyMgoI",
+										"label": "enqueue its part while voice is live",
+										"kind": "sync",
+										"note": "with no voice session its receipt says voice_inactive, and nothing is queued",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+											"symbol": "enqueue"
+										}
 									},
 									{
-										"label": "no",
-										"steps": [
+										"id": "dDOLOt4k",
+										"kind": "decision",
+										"question": "Did this tab session make the change?",
+										"alternatives": [
 											{
-												"id": "zF3GnbGx",
-												"from": "5uPyMgoI",
-												"to": "5uPyMgoI",
-												"label": "queue it: a newer one for the same thing replaces it",
-												"kind": "self",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
-													"symbol": "insertPending"
-												}
-											},
-											{
-												"id": "qkHFddc7",
-												"kind": "loop",
-												"condition": "until the queue is empty",
+												"label": "its own",
 												"steps": [
 													{
-														"id": "LGiXBagG",
+														"id": "z7c5odxF",
 														"from": "5uPyMgoI",
-														"to": "eyQ2AZaA",
-														"label": "deliver one callback, in order",
-														"kind": "sync",
+														"to": "5uPyMgoI",
+														"label": "refuse it: own_change, told to nobody",
+														"kind": "self",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
 															"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
-															"symbol": "deliverOne"
+															"symbol": "arrivalRefusal"
+														}
+													}
+												]
+											},
+											{
+												"label": "another's",
+												"steps": [
+													{
+														"id": "zF3GnbGx",
+														"from": "5uPyMgoI",
+														"to": "5uPyMgoI",
+														"label": "queue it; a later one of its feed and topic replaces it",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+															"symbol": "insertPending"
 														}
 													},
 													{
-														"id": "q6R3uCRb",
-														"kind": "decision",
-														"question": "How is the voice model told?",
-														"alternatives": [
+														"id": "qkHFddc7",
+														"kind": "loop",
+														"condition": "until the queue is empty",
+														"steps": [
 															{
-																"label": "not told",
-																"steps": [
+																"id": "LGiXBagG",
+																"from": "5uPyMgoI",
+																"to": "eyQ2AZaA",
+																"label": "deliver one callback, in order",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+																	"symbol": "deliverOne"
+																}
+															},
+															{
+																"id": "q6R3uCRb",
+																"kind": "decision",
+																"question": "How is it told?",
+																"alternatives": [
 																	{
-																		"id": "o78gfr0K",
-																		"from": "eyQ2AZaA",
-																		"to": "eyQ2AZaA",
-																		"label": "record it, told to nobody: no live voice, or not the user's",
-																		"kind": "self",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-																			"symbol": "recordOnly"
-																		}
+																		"label": "not told",
+																		"steps": [
+																			{
+																				"id": "o78gfr0K",
+																				"from": "eyQ2AZaA",
+																				"to": "eyQ2AZaA",
+																				"label": "record only: voice_inactive or withheld",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+																					"symbol": "recordOnly"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "the voice, as quiet context",
+																		"steps": [
+																			{
+																				"id": "tLuWM1gd",
+																				"from": "eyQ2AZaA",
+																				"to": "4A6j6Xk3",
+																				"label": "append the words as quiet context",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendText"
+																				}
+																			},
+																			{
+																				"id": "Lm7mnz9k",
+																				"from": "4A6j6Xk3",
+																				"to": "eyQ2AZaA",
+																				"label": "appended",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendText"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "the voice, as speech",
+																		"steps": [
+																			{
+																				"id": "buAki6sT",
+																				"from": "eyQ2AZaA",
+																				"to": "4A6j6Xk3",
+																				"label": "append the words as speech, after the audio in progress",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendSpeech"
+																				}
+																			},
+																			{
+																				"id": "ZRmFcJMU",
+																				"from": "4A6j6Xk3",
+																				"to": "eyQ2AZaA",
+																				"label": "appended",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "realtimeAppendSpeech"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "the coordinator",
+																		"steps": [
+																			{
+																				"id": "YHpvYVaV",
+																				"from": "eyQ2AZaA",
+																				"to": "4A6j6Xk3",
+																				"label": "a developer message in the coordinator's history",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "threadInjectItems"
+																				}
+																			},
+																			{
+																				"id": "9JWa3cQa",
+																				"from": "4A6j6Xk3",
+																				"to": "eyQ2AZaA",
+																				"label": "injected",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+																					"symbol": "threadInjectItems"
+																				}
+																			}
+																		]
 																	}
 																]
 															},
 															{
-																"label": "the user's change",
-																"steps": [
-																	{
-																		"id": "tLuWM1gd",
-																		"from": "eyQ2AZaA",
-																		"to": "4A6j6Xk3",
-																		"label": "append the sentence as quiet context",
-																		"kind": "sync",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendText"
-																		}
-																	},
-																	{
-																		"id": "Lm7mnz9k",
-																		"from": "4A6j6Xk3",
-																		"to": "eyQ2AZaA",
-																		"label": "appended",
-																		"kind": "return",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendText"
-																		}
-																	}
-																]
-															},
-															{
-																"label": "the user's change that stops a narration",
-																"steps": [
-																	{
-																		"id": "buAki6sT",
-																		"from": "eyQ2AZaA",
-																		"to": "4A6j6Xk3",
-																		"label": "append the sentence as speech",
-																		"kind": "sync",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendSpeech"
-																		}
-																	},
-																	{
-																		"id": "ZRmFcJMU",
-																		"from": "4A6j6Xk3",
-																		"to": "eyQ2AZaA",
-																		"label": "appended",
-																		"kind": "return",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendSpeech"
-																		}
-																	}
-																]
-															},
-															{
-																"label": "an outside agent's write",
-																"steps": [
-																	{
-																		"id": "YHpvYVaV",
-																		"from": "eyQ2AZaA",
-																		"to": "4A6j6Xk3",
-																		"label": "put the sentence in the coordinator thread's history",
-																		"kind": "sync",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "threadInjectItems"
-																		}
-																	},
-																	{
-																		"id": "9JWa3cQa",
-																		"from": "4A6j6Xk3",
-																		"to": "eyQ2AZaA",
-																		"label": "injected",
-																		"kind": "return",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "threadInjectItems"
-																		}
-																	},
-																	{
-																		"id": "LlnbsAmw",
-																		"from": "eyQ2AZaA",
-																		"to": "4A6j6Xk3",
-																		"label": "append the sentence for the voice model",
-																		"kind": "sync",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendText"
-																		}
-																	},
-																	{
-																		"id": "LOEs67RF",
-																		"from": "4A6j6Xk3",
-																		"to": "eyQ2AZaA",
-																		"label": "appended",
-																		"kind": "return",
-																		"anchor": {
-																			"repo": "github.com/miklschmidt/archboard",
-																			"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
-																			"symbol": "realtimeAppendText"
-																		}
-																	}
-																]
+																"id": "s3bAbPXq",
+																"from": "eyQ2AZaA",
+																"to": "5uPyMgoI",
+																"label": "the delivery record",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+																	"symbol": "deliverOne"
+																}
 															}
 														]
-													},
-													{
-														"id": "s3bAbPXq",
-														"from": "eyQ2AZaA",
-														"to": "5uPyMgoI",
-														"label": "the delivery record",
-														"kind": "return",
-														"anchor": {
-															"repo": "github.com/miklschmidt/archboard",
-															"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
-															"symbol": "deliverOne"
-														}
 													}
 												]
 											}
 										]
+									},
+									{
+										"id": "qYnhuyc3",
+										"from": "5uPyMgoI",
+										"to": "ccaUoxFa",
+										"label": "how it settled, as that audience's receipt",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+											"symbol": "tellThroughCallbacks"
+										}
 									}
 								]
 							}
@@ -29379,13 +29510,14 @@
 							{
 								"id": "9Q8uVxC0",
 								"heading": "Nobody is told without a listener",
-								"body": "With no voice session the coordinator never runs, so no news is sent and tell_coordinator answers that nobody is listening. While a recording holds the voice the outcome report sends nothing, because whatever the coordinator answered would be spoken into the video. Pane news goes to the voice model alone, and only for what the user changed by hand.",
+								"body": "With no voice session the coordinator never runs, so no news is sent and tell_coordinator answers that nobody is listening. While an unattended session holds the voice the outcome report sends nothing, because nobody listens live: in Archboard that is a recording, and whatever the coordinator answered would be spoken into the video. A context change reaches the coordinator and the voice only as the host words it: Archboard tells the voice what changed on a board on screen, and the coordinator only what an agent outside the session did.",
 								"subjects": [
 									"AahDTiw9",
 									"AjPVQ0BZ",
 									"tMugyhPT",
 									"1joDYyhX",
-									"wyliCZzQ"
+									"wyliCZzQ",
+									"BC9wK59M"
 								],
 								"view": "RbD5P0sE"
 							},
@@ -29418,7 +29550,7 @@
 			}
 		}
 	],
-	"current": "isObiJDh",
+	"current": "VNJBNtWe",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -29509,6 +29641,12 @@
 			"from": "pSOJWmg9",
 			"at": "2026-10-25T05:16:31.574Z",
 			"reason": "TASK-530 moved the coordinator into packages/codex-realtime-voice, made the tool namespaces the host's, filled into role templates by the host toolset, matched incoming calls by role, and turned semantic callbacks into host-context events"
+		},
+		{
+			"variant": "VNJBNtWe",
+			"from": "isObiJDh",
+			"at": "2026-10-25T17:30:20.818Z",
+			"reason": "TASK-530.05: the coordinator and the voice hear a host's announced context changes through the callback queue, the voice start's brief is the host's coordinator context, the outcome report sends nothing while the session is unattended, and the callbacks encode canonical JSON"
 		}
 	],
 	"shelvings": [
