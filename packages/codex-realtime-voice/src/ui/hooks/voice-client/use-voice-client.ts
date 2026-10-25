@@ -1,7 +1,7 @@
 // The React reading of one voice client: the client a provider offers, and its
 // published state through `useSyncExternalStore`, whole or by a selector.
 
-import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
 import type { VoiceClient, VoiceClientSnapshot } from "#ui/state/voice-client/contract.ts";
 
@@ -26,8 +26,9 @@ function useVoiceClient(): VoiceClient {
 function useVoiceState(): VoiceClientSnapshot;
 /**
  * Part of the client's state, re-rendering only when that part changes.
- * @param select Picks part of the state. Return a part of the state or a
- *   primitive, never a new object, or the component re-renders without end.
+ * @param select Picks part of the state. It runs once per publication. Return
+ *   a part of the state or a primitive: a new object is a change, so the
+ *   component then re-renders on every publication.
  * @returns The selected part.
  */
 function useVoiceState<Selected>(select: (state: VoiceClientSnapshot) => Selected): Selected;
@@ -40,11 +41,18 @@ function useVoiceState<Selected>(
 	select?: (state: VoiceClientSnapshot) => Selected,
 ): Selected | VoiceClientSnapshot {
 	const client = useVoiceClient();
-	const read = useCallback(
-		() => (select === undefined ? client.snapshot() : select(client.snapshot())),
-		[client, select],
-	);
-	return useSyncExternalStore(client.subscribe, read, read);
+	const read = useMemo(() => {
+		if (select === undefined) return client.snapshot;
+		// One selection per published state, so a selector that builds a new
+		// object still gives React the same value until the state changes.
+		let last: { readonly state: VoiceClientSnapshot; readonly selected: Selected } | null = null;
+		return () => {
+			const state = client.snapshot();
+			if (last?.state !== state) last = { state, selected: select(state) };
+			return last.selected;
+		};
+	}, [client, select]);
+	return useSyncExternalStore<Selected | VoiceClientSnapshot>(client.subscribe, read, read);
 }
 
 export { VoiceClientContext, useVoiceClient, useVoiceState };
