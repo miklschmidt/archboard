@@ -65,7 +65,7 @@ function lease(
 	return {
 		kind: "command_lease",
 		commandId,
-		paneId: "pane-a",
+		chatId: "chat-a",
 		childId: "child-a",
 		epoch: "epoch-a",
 		state,
@@ -133,7 +133,7 @@ function approvalBinding(options: ApprovalOptions): WireRecord {
 	return {
 		child: options.childId ?? "child-a",
 		epoch: options.epoch ?? "epoch-a",
-		link: "pane:pane-a",
+		link: "chat:chat-a",
 		target: "the workhorse shell",
 		effect: "run a command",
 	};

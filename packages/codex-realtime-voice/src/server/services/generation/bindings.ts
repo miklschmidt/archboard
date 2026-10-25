@@ -86,8 +86,8 @@ function storageBindings(
 }
 
 /**
- * Who an approval on one thread is shown to: the panes of the checkout of the workhorse that
- * asked, or every pane of the tab when its coordinator asked. A session that is ending holds
+ * Who an approval on one thread is shown to: the chats of the checkout of the workhorse that
+ * asked, or every chat of the tab when its coordinator asked. A session that is ending holds
  * nothing an approval could be shown on.
  * @param sessions The generation's tab sessions, once they are built.
  * @param threadId The thread the approval was asked on.
@@ -155,7 +155,7 @@ function approvalBindings(
 
 	return {
 		/**
-		 * How ordinary approvals are linked to the pane that must answer them.
+		 * How ordinary approvals are linked to the chat that must answer them.
 		 * @param created What the graph has built so far.
 		 * @returns The approvals binding.
 		 */

@@ -176,7 +176,7 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		expect((await fetch(new URL("/api/conversation", host.url), { method: "POST" })).status).toBe(
 			405,
 		);
-		const rejected = new WebSocket(`${host.url.replace("http:", "ws:")}/api/workbench?paneId=main`);
+		const rejected = new WebSocket(`${host.url.replace("http:", "ws:")}/api/workbench?chatId=main`);
 		rejected.on("error", () => undefined);
 		await new Promise<void>((resolve) => {
 			rejected.once("error", () => resolve());
@@ -185,7 +185,7 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		const open = async (tab: string) => {
 			const endpoint = new URL("/api/workbench", host.url);
 			endpoint.searchParams.set("tabSessionId", tab);
-			endpoint.searchParams.set("paneId", "main");
+			endpoint.searchParams.set("chatId", "main");
 			const socket = await openApplicationSocket(host.url, tab, { endpoint: endpoint.href });
 			resources.defer(() => socket.close());
 			expect(await socket.request("connect")).toMatchObject({ ok: true });

@@ -5,7 +5,7 @@
 // thread: a message, a delegation or New conversation started one. The shown checkout is
 // listed even before that, as not live, because it is where a typed message goes. Each entry says
 // whether a turn runs and whether the workhorse waits for the person: for an approval, or for an
-// answer to a question it asked. What the coordinator asks marks no entry, because every pane of
+// answer to a question it asked. What the coordinator asks marks no entry, because every chat of
 // the tab shows it whatever conversation is shown.
 
 import type { ApprovalFamily, CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";

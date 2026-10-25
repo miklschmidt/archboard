@@ -65,8 +65,8 @@ interface WorkhorseOwner {
  * The tab session, checkout, child epoch and thread a workhorse operation is proven to be
  * running against, refused when any of them is unnamed.
  *
- * No browser command started it, so it names no exact pane: it presents
- * through a pane of the session that started it.
+ * No browser command started it, so it names no exact chat: it presents
+ * through a chat of the session that started it.
  * @param owner The workhorse's tab session, checkout and link key.
  * @param workhorse What starts the workhorse's thread, which says where it is.
  * @returns The target.
@@ -351,7 +351,7 @@ function callbackBindings(
 						identity.operation.issuer.mintOperationId(),
 					),
 				/**
-				 * The canonical context of an outcome report, through an open pane of the tab and the
+				 * The canonical context of an outcome report, through an open chat of the tab and the
 				 * workhorse voice is bound to.
 				 * @param operationId The minted operation identity.
 				 * @returns The context.
@@ -506,7 +506,7 @@ function createWorkhorseBindings(
 			currentCoordinatorCall: () => tab.state.currentCoordinatorCall,
 			/**
 			 * The canonical context one operation runs under, captured against the thread it is
-			 * proven to run on, through an open pane of the tab.
+			 * proven to run on, through an open chat of the tab.
 			 * @param operation The operation.
 			 * @returns The context.
 			 */

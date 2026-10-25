@@ -72,7 +72,7 @@ function harness(options: Partial<DefaultWorkbenchHostInput> = {}) {
 			workhorse: {
 				snapshot: () => ({
 					state: "ready",
-					paneId: key,
+					chatId: key,
 					childId,
 					epoch,
 					threadId,

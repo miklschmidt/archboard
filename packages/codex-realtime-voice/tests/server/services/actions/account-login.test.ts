@@ -32,7 +32,7 @@ function harness(overrides: HarnessOverrides = {}) {
 	});
 	const connection = gateway.connect(
 		value.context.browserId,
-		value.context.paneId,
+		value.context.chatId,
 		value.context.tabSessionId,
 	);
 	const command = (fields: Record<string, unknown>) => {
@@ -40,7 +40,7 @@ function harness(overrides: HarnessOverrides = {}) {
 		return connection.command({
 			kind: "browser_command",
 			commandId: lease.commandId,
-			paneId: lease.paneId,
+			chatId: lease.chatId,
 			childId: lease.childId,
 			epoch: lease.epoch,
 			...fields,

@@ -128,7 +128,7 @@ export function createApprovalGateway(
 				},
 			}),
 		},
-		// Every pane of the fixture is in one checkout.
+		// Every chat of the fixture is in one checkout.
 		checkoutOf: () => "/work/payments",
 		actions,
 	});

@@ -61,7 +61,7 @@ describe("Codex workbench sequenced browser delivery", () => {
 		expect(messages).toEqual([]);
 		expect(connection.snapshot().sequence).toBe(0);
 		// A reconnect snapshot repeats the same sequence and the same state.
-		expect(value.gateway.snapshot(value.browserId, value.paneId)).toEqual(first);
+		expect(value.gateway.snapshot(value.browserId, value.chatId)).toEqual(first);
 	});
 
 	test("each observable change publishes one delta of only its changed fields", () => {

@@ -287,12 +287,12 @@ test("a turn that ends after New conversation left its thread leaves its workhor
 	expect(interrupts).toEqual([]);
 });
 
-test("a workhorse stays linked when its tab's panes move to another checkout of its repository", () => {
+test("a workhorse stays linked when its tab's chats move to another checkout of its repository", () => {
 	const { sessions, a, cleared, startWorkhorseThread } = twoSessions();
 	const before = a.workhorse(PAYMENTS);
 	const thread = startWorkhorseThread(before.key, "thread-payments");
 
-	// A new chosen checkout moves the panes; they show that checkout's workhorse from then on.
+	// A new chosen checkout moves the chats; they show that checkout's workhorse from then on.
 	const after = a.workhorse("/work/payments-feature");
 	expect(after).not.toBe(before);
 	expect(a.workhorse(PAYMENTS)).toBe(before);

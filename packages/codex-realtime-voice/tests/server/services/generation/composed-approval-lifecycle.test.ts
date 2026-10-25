@@ -13,7 +13,7 @@ test("composed child exit publishes one settled approval before closing presente
 	const events: string[] = [];
 	const fixture = createCodexWorkbenchGenerationFixture(events);
 	const identity = fixture.components.identity;
-	const paneId = "pane-child-exit";
+	const chatId = "chat-child-exit";
 	const tabSessionId = parseTabSessionId("tab-one")!;
 	const threadId = identity.identity.decoder.adoptThreadId("thread-child-exit");
 	const { approvals, gateway, responses } = createApprovalGateway(identity, tabSessionId, threadId);
@@ -25,7 +25,7 @@ test("composed child exit publishes one settled approval before closing presente
 		hooks: fixture.hooks,
 	});
 	try {
-		const connection = gateway.connect("browser-child-exit", paneId, tabSessionId);
+		const connection = gateway.connect("browser-child-exit", chatId, tabSessionId);
 		const pending = askApproval(approvals, identity, threadId, "child-exit");
 		connection.snapshot();
 		connection.claimLease();

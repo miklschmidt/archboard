@@ -1,5 +1,5 @@
-// The browser model: the snapshot a pane renders and the DTO union every
-// message on the pane transport must be one of. The DTO families live beside
+// The browser model: the snapshot a chat renders and the DTO union every
+// message on the chat transport must be one of. The DTO families live beside
 // this file in session, thread, approvals, voice and commands; this file
 // composes them and checks the relationships that hold across families.
 

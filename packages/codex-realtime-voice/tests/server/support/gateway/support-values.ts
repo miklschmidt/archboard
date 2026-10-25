@@ -81,14 +81,14 @@ const readyAccount = (): BrowserOwnerProjection["account"] => ({
 
 function commandTarget(lease: {
 	readonly commandId: BrowserCommandId;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 }) {
 	return {
 		kind: "browser_command" as const,
 		commandId: lease.commandId,
-		paneId: lease.paneId,
+		chatId: lease.chatId,
 		childId: lease.childId,
 		epoch: lease.epoch,
 	};

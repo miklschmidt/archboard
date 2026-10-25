@@ -86,7 +86,7 @@ interface ServerBrowserGatewayInput {
 }
 
 /**
- * Forget a workhorse's cached queue, so no pane is shown another link's submissions.
+ * Forget a workhorse's cached queue, so no chat is shown another link's submissions.
  * @param workhorse The workhorse.
  */
 function clearQueue(workhorse: CodexWorkbenchWorkhorse): void {
@@ -131,7 +131,7 @@ function watchSessionTranscripts(
 
 /**
  * Closed browser projection/actions over the already-created runtime owners.
- * @param input The runtime owners, the cached facts they fill in, the pane-side
+ * @param input The runtime owners, the cached facts they fill in, the chat-side
  * owners, and the clock the re-read floor is measured on.
  * @returns The projection and actions half of the gateway's options.
  */
@@ -140,19 +140,19 @@ function createServerBrowserGatewayOptions(
 ): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink" | "checkoutOf"> {
 	const { components, dynamicApprovals, state } = input;
 	/**
-	 * The tab session a pane's command or snapshot belongs to: its own tab's conversation.
-	 * @param context The pane and the tab session it names.
+	 * The tab session a chat's command or snapshot belongs to: its own tab's conversation.
+	 * @param context The chat and the tab session it names.
 	 * @param context.tabSessionId The tab session.
 	 * @returns The session.
 	 */
 	const sessionOf = (context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
 		input.sessions.require(context.tabSessionId);
 	/**
-	 * The workhorse a pane's command is for: the one of its tab session for the checkout the tab
-	 * shows (ADR 0050), built the first time a pane asks for it.
-	 * @param context The pane, its tab session and its checkout.
+	 * The workhorse a chat's command is for: the one of its tab session for the checkout the tab
+	 * shows (ADR 0050), built the first time a chat asks for it.
+	 * @param context The chat, its tab session and its checkout.
 	 * @param context.tabSessionId The tab session.
-	 * @param context.checkout The checkout the pane's tab shows.
+	 * @param context.checkout The checkout the chat's tab shows.
 	 * @returns The workhorse.
 	 */
 	const workhorseOf = (context: {
@@ -198,7 +198,7 @@ function createServerBrowserGatewayOptions(
 		}
 	};
 	/**
-	 * Re-read the authoritative queue for the link this pane is already on.
+	 * Re-read the authoritative queue for the link this chat is already on.
 	 *
 	 * A snapshot request is the browser asking for current state, and the cached
 	 * submissions are exactly what a lost mutation or a workhorse-side drain left
@@ -270,8 +270,8 @@ function createServerBrowserGatewayOptions(
 		onNotification: input.onAccountNotification,
 	});
 	/**
-	 * Run one queue mutation for the pane's workhorse and cache the listing it answers.
-	 * @param context The pane.
+	 * Run one queue mutation for the chat's workhorse and cache the listing it answers.
+	 * @param context The chat.
 	 * @param mutate The mutation, given the workhorse's queue and a fresh operation.
 	 * @returns The browser outcome.
 	 */
@@ -290,30 +290,30 @@ function createServerBrowserGatewayOptions(
 	};
 	const realtime: BrowserRealtimeActions = {
 		/**
-		 * Start voice in the pane's session.
+		 * Start voice in the chat's session.
 		 * @param command The offer.
-		 * @param context The pane.
+		 * @param context The chat.
 		 * @returns What the session's voice answered.
 		 */
 		start: (command, context) => sessionOf(context).actions.realtime.start(command, context),
 		/**
-		 * Say something into the pane's session's voice.
+		 * Say something into the chat's session's voice.
 		 * @param command The handle and the text.
-		 * @param context The pane.
+		 * @param context The chat.
 		 * @returns What the session's voice answered.
 		 */
 		appendText: (command, context) =>
 			sessionOf(context).actions.realtime.appendText(command, context),
 		/**
-		 * Stop the pane's session's voice.
+		 * Stop the chat's session's voice.
 		 * @param command The handle.
-		 * @param context The pane.
+		 * @param context The chat.
 		 * @returns What the session's voice answered.
 		 */
 		stop: (command, context) => sessionOf(context).actions.realtime.stop(command, context),
 		/**
 		 * Stop the voice a browser that has gone was speaking through.
-		 * @param context The pane and its connection.
+		 * @param context The chat and its connection.
 		 * @param reason Why it went.
 		 * @returns When that voice has stopped.
 		 */
@@ -325,8 +325,8 @@ function createServerBrowserGatewayOptions(
 			...account.actions,
 			/**
 			 * Read the account, and the queue with it: an account read is the one
-			 * command a pane sends when it first has a workhorse to ask about.
-			 * @param context The pane.
+			 * command a chat sends when it first has a workhorse to ask about.
+			 * @param context The chat.
 			 * @returns What the account owner answered.
 			 */
 			read: async (context) => {
@@ -341,9 +341,9 @@ function createServerBrowserGatewayOptions(
 		threadLinks: {
 			/**
 			 * Start a new conversation of the workhorse of the shown checkout, with the tab's
-			 * coordinator, and link the panes of that checkout to it.
+			 * coordinator, and link the chats of that checkout to it.
 			 * @param command The creation.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns What the link owner answered.
 			 */
 			create: async (command, context) => {
@@ -363,7 +363,7 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Queue one prompt behind whatever the workhorse is doing.
 			 * @param command The prompt.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns The browser outcome.
 			 */
 			add: (command, context) =>
@@ -373,7 +373,7 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Rewrite one queued prompt.
 			 * @param command Which submission, and its new prompt.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns The browser outcome.
 			 */
 			update: (command, context) =>
@@ -387,7 +387,7 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Drop one queued prompt.
 			 * @param command Which submission.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns The browser outcome.
 			 */
 			delete: (command, context) =>
@@ -397,7 +397,7 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Put the queue in the order the person dragged it into.
 			 * @param command The order.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns The browser outcome.
 			 */
 			reorder: (command, context) =>
@@ -407,7 +407,7 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Run one queued prompt now rather than in turn.
 			 * @param command Which submission.
-			 * @param context The pane.
+			 * @param context The chat.
 			 * @returns The browser outcome.
 			 */
 			start: (command, context) =>
@@ -431,8 +431,8 @@ function createServerBrowserGatewayOptions(
 	const projection: BrowserProjectionPort = {
 		/**
 		 * Bring the queue up to date before the next snapshot is read, for a
-		 * pane whose link can actually run turns.
-		 * @param context The pane.
+		 * chat whose link can actually run turns.
+		 * @param context The chat.
 		 */
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
@@ -443,8 +443,8 @@ function createServerBrowserGatewayOptions(
 			await coalescedReread(workhorse, link.threadId);
 		},
 		/**
-		 * One complete snapshot of the workbench as this pane is shown it.
-		 * @param context The pane, its binding, and its lease.
+		 * One complete snapshot of the workbench as this chat is shown it.
+		 * @param context The chat, its binding, and its lease.
 		 * @returns The projection.
 		 */
 		read: (context) =>
@@ -479,14 +479,14 @@ function createServerBrowserGatewayOptions(
 			};
 		},
 		/**
-		 * Forget the timelines retained for a pane whose browser has gone.
+		 * Forget the timelines retained for a chat whose browser has gone.
 		 * @param disconnect What disconnected.
-		 * @param disconnect.paneId The pane.
+		 * @param disconnect.chatId The chat.
 		 * @param disconnect.connection Its browser connection.
 		 */
-		onBrowserDisconnect: ({ paneId, connection }) => {
-			input.timeline.retire(paneId, connection);
-			input.coordinatorTimeline.retire(paneId, connection);
+		onBrowserDisconnect: ({ chatId, connection }) => {
+			input.timeline.retire(chatId, connection);
+			input.coordinatorTimeline.retire(chatId, connection);
 		},
 	};
 	return {

@@ -60,7 +60,7 @@ The SDK resolves the repository's installed executable when this flag is absent.
 The server makes sure that the executable reports the required version before it starts the workbench.
 
 The browser reads `GET /api/config` for the checkout label, path, and `/api/workbench` socket path.
-The WebSocket URL carries `paneId=main` and the tab's `tabSessionId`.
+The WebSocket URL carries `chatId=main` and the tab's `tabSessionId`.
 The server pins the socket registration to its admitted checkout and forwards the exact socket identity to the shared factory.
 Browser requests use the core workbench envelopes without an application-specific command protocol.
 

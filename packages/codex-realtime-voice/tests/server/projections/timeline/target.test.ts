@@ -75,7 +75,7 @@ test("a target's timeline is read from its own thread, re-read on that thread's 
 	const target = (threadId: typeof first, key: string) => ({ key, threadId, childId, epoch });
 	const connection = {};
 	const read = (threadId: typeof first, key: string) =>
-		owner.readTarget("pane", target(threadId, key), true, connection);
+		owner.readTarget("chat", target(threadId, key), true, connection);
 
 	expect(read(first, "first")).toBeNull();
 	await flush();
@@ -131,7 +131,7 @@ test("a target read shows only the turns its reader keeps, and every turn to a r
 	type Turn = Parameters<typeof decoder.serializeCodexIdentity>[0];
 	const turnsShown = (keepTurn?: (turnId: Turn) => boolean) =>
 		owner
-			.readTarget("pane", target, true, connection, keepTurn)
+			.readTarget("chat", target, true, connection, keepTurn)
 			?.turns.map(({ turn }) => decoder.serializeCodexIdentity(turn.id));
 	turnsShown();
 	await flush();

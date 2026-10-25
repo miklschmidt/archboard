@@ -1,5 +1,5 @@
 // The ordinary (non-dynamic) approval DTO: one envelope every approval kind
-// shares, plus the kind-specific body the pane renders and answers.
+// shares, plus the kind-specific body the chat renders and answers.
 
 import { z } from "zod";
 

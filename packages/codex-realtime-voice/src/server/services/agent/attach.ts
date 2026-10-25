@@ -43,8 +43,8 @@ function requestText(raw: RawData): string {
 /**
  * Serve the agent's browser sockets on one path of a `node:http` server.
  *
- * A socket names its tab session and pane in the query (`?tabSessionId=…&paneId=…`). Its browser
- * identity is derived from those two, so a reconnecting pane replaces its earlier socket.
+ * A socket names its tab session and chat in the query (`?tabSessionId=…&chatId=…`). Its browser
+ * identity is derived from those two, so a reconnecting chat replaces its earlier socket.
  * @param server The HTTP server; Bun runs `node:http` servers.
  * @param browser The agent's browser port.
  * @param options The path, origin and checkout of these sockets.

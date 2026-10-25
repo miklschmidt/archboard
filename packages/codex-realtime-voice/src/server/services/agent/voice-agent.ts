@@ -92,7 +92,7 @@ export type VoiceAgentStatus = ReturnType<Workbench["snapshot"]>;
 /**
  * The browser connection port, for a host that serves the agent's browser messages on a socket
  * of its own instead of {@link VoiceAgent.attach} or {@link VoiceAgent.bunHandlers}: accept a
- * socket with its pane, tab session and checkout, hand it each parsed request, close it, and drain
+ * socket with its chat, tab session and checkout, hand it each parsed request, close it, and drain
  * accepted work.
  */
 export type VoiceAgentBrowserPort = Workbench["browser"];

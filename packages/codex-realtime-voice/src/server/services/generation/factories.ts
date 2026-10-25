@@ -197,7 +197,7 @@ function createProductionCodexWorkbenchFactories(
 		dynamicTools: (created) => bindings.dynamicTools(created),
 		/**
 		 * The tab sessions of this generation, each opened when a browser tab's
-		 * pane first connects to it.
+		 * chat first connects to it.
 		 * @param created What the graph has built so far.
 		 * @returns The sessions.
 		 */

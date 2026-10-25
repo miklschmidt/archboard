@@ -73,24 +73,24 @@ const WORKBENCH_QUEUE_STATE_WORDS = {
 	},
 	disconnected: {
 		label: "Disconnected",
-		detail: "This pane has no workbench socket, so there is nothing to read a queue from.",
+		detail: "This chat has no workbench socket, so there is nothing to read a queue from.",
 		recovery: "Reconnect the workbench; refreshing needs a socket and cannot recover this.",
 	},
 	session_stopped: {
 		label: "Codex session stopped",
-		detail: "This pane is connected, but the server's Codex session is not running.",
+		detail: "This chat is connected, but the server's Codex session is not running.",
 		recovery: "Refresh the list once the server's Codex session is running again.",
 	},
 	session_incompatible: {
 		label: "Codex session incompatible",
 		detail:
-			"This pane is connected, but the server's Codex session reports a contract it cannot serve.",
+			"This chat is connected, but the server's Codex session reports a contract it cannot serve.",
 		recovery:
 			"Install the pinned Codex version and restart the server; refreshing will keep reporting this until then.",
 	},
 	unavailable: {
 		label: "Queue unavailable",
-		detail: "The server is not publishing a queue for the thread link this pane is on.",
+		detail: "The server is not publishing a queue for the thread link this chat is on.",
 		recovery: "Choose an executable thread link, then refresh the list.",
 	},
 	outcome_unknown: {

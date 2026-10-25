@@ -152,7 +152,7 @@ const REFUSAL_MESSAGES: Partial<Record<CodexWorkbenchGatewayError["code"], strin
 	lease_required: "Claim the command lease before sending this command.",
 	lease_expired: "The command lease expired; claim a new lease.",
 	lease_released: "The command lease was released; claim a new lease.",
-	lease_transferred: "The command lease belongs to another pane of this tab.",
+	lease_transferred: "The command lease belongs to another chat of this tab.",
 	child_disconnected: "The Codex child disconnected; inspect state before retrying.",
 	approval_not_pending: "That approval is no longer pending.",
 	dynamic_approval_not_pending: "That coordination approval is no longer pending.",
@@ -190,13 +190,13 @@ function isOversizedDelta(error: unknown): boolean {
 }
 
 /**
- * The key one browser's pane connection is held under.
+ * The key one browser's chat connection is held under.
  * @param browserId The browser.
- * @param paneId The pane.
+ * @param chatId The chat.
  * @returns The key.
  */
-function connectionKey(browserId: string, paneId: string): string {
-	return `${browserId}\u0000${paneId}`;
+function connectionKey(browserId: string, chatId: string): string {
+	return `${browserId}\u0000${chatId}`;
 }
 
 /**
@@ -234,7 +234,7 @@ function isAccountCommand(command: OwnedBrowserCommand): boolean {
 }
 
 /**
- * Whether a command changes the pane's thread link, and so must not be checked
+ * Whether a command changes the chat's thread link, and so must not be checked
  * against the link it is replacing.
  * @param command The command.
  * @returns True for a link mutation.
@@ -275,7 +275,7 @@ function actionContext(record: BrowserLeaseRecord): BrowserActionContext {
 }
 
 /**
- * The pane's thread link, which must be executable for a thread command.
+ * The chat's thread link, which must be executable for a thread command.
  * @param snapshot The snapshot the command is checked against.
  * @returns The executable link.
  */
@@ -283,7 +283,7 @@ function executableLink(snapshot: BrowserSnapshot): BrowserSnapshot["threadLink"
 	if (snapshot.threadLink.state !== "executable")
 		throw new CodexWorkbenchGatewayError(
 			"link_required",
-			"The current pane has no executable thread link.",
+			"The current chat has no executable thread link.",
 		);
 	return snapshot.threadLink;
 }

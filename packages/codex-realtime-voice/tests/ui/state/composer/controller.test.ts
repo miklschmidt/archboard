@@ -332,7 +332,7 @@ describe("refusals, disconnects, and late results", () => {
 		const controller = createWorkbenchComposerController({ transport });
 		expect(await controller.submit({ text: "Go." })).toEqual({
 			outcome: "not_delivered",
-			reason: "The pane moved to another thread link after this message was composed.",
+			reason: "The chat moved to another thread link after this message was composed.",
 		});
 	});
 
@@ -430,7 +430,7 @@ describe("remediations from the fixed-range review", () => {
 		// rather than moving into the inert region.
 		expect(result).toEqual({
 			outcome: "not_delivered",
-			reason: "The pane moved to another thread link after this message was composed.",
+			reason: "The chat moved to another thread link after this message was composed.",
 		});
 		expect(controller.getState().retained).toBeNull();
 	});

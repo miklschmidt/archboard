@@ -103,7 +103,7 @@ function turnFixture(
 	} satisfies SessionTurn;
 }
 
-/** An executable link from a pane to one thread, on the authorities' current child. */
+/** An executable link from a chat to one thread, on the authorities' current child. */
 function executableLink(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
 	return {
 		kind: "thread_link",

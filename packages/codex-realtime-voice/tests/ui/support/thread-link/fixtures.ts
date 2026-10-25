@@ -2,7 +2,7 @@
 // real authority, snapshots, transport states, and a transport double that
 // enforces the captured target the way the real one does, so a caller that
 // forgets to pass its captured target is not silently retargeted onto
-// whatever the pane moved to.
+// whatever the chat moved to.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
 import type {
@@ -13,7 +13,7 @@ import type {
 import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
-	type ThreadLinkPaneCapture,
+	type ThreadLinkChatCapture,
 } from "#ui/state/thread-link/contracts.ts";
 import type {
 	ThreadLinkCommandDraft,
@@ -139,7 +139,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 	};
 }
 
-/** What the double reads of the pane it stands in for: the snapshot it last published. */
+/** What the double reads of the chat it stands in for: the snapshot it last published. */
 interface FakeTransportState {
 	readonly snapshot: BrowserSnapshot | null;
 }
@@ -210,7 +210,7 @@ class FakeTransport implements ThreadLinkTransportPort {
 	readonly commands: RecordedCommand[] = [];
 	leased = true;
 	epoch = epochA;
-	readonly paneId = "pane-a";
+	readonly chatId = "chat-a";
 	nextResult: WorkbenchCommandResult | null = null;
 	nextError: Error | null = null;
 	/** Runs after the command is recorded and before its captured target is checked. */
@@ -253,7 +253,7 @@ class FakeTransport implements ThreadLinkTransportPort {
 	}
 
 	/**
-	 * The exact lease authority as the pane stands now.
+	 * The exact lease authority as the chat stands now.
 	 * @returns The target.
 	 * @throws {FakeTransportError} Without a lease.
 	 */
@@ -264,7 +264,7 @@ class FakeTransport implements ThreadLinkTransportPort {
 		const link = this.current.snapshot?.threadLink ?? unboundLink;
 		return Object.freeze({
 			commandId: commandA,
-			paneId: this.paneId,
+			chatId: this.chatId,
 			childId: childA,
 			epoch: this.epoch,
 			capturedThreadLink: Object.freeze({ ...link }),
@@ -283,15 +283,15 @@ class FakeTransport implements ThreadLinkTransportPort {
 	}
 
 	/**
-	 * Whether the pane moved since a target was captured.
+	 * Whether the chat moved since a target was captured.
 	 * @param target The captured target.
-	 * @returns True when the target no longer matches the pane.
+	 * @returns True when the target no longer matches the chat.
 	 */
 	private moved(target: WorkbenchCommandTarget): boolean {
 		const now = this.captureCommandTarget();
 		return (
 			now.commandId !== target.commandId ||
-			now.paneId !== target.paneId ||
+			now.chatId !== target.chatId ||
 			now.childId !== target.childId ||
 			now.epoch !== target.epoch ||
 			now.capturedThreadLink.state !== target.capturedThreadLink.state ||
@@ -324,7 +324,7 @@ class FakeTransport implements ThreadLinkTransportPort {
 	 * Answer a recorded command against the target it captured.
 	 * @param target The captured target.
 	 * @returns The next result.
-	 * @throws {Error} When the pane moved, or the next error was configured.
+	 * @throws {Error} When the chat moved, or the next error was configured.
 	 */
 	private answer(target: WorkbenchCommandTarget): WorkbenchCommandResult {
 		if (this.moved(target)) {
@@ -357,21 +357,21 @@ class FakeTransport implements ThreadLinkTransportPort {
 }
 
 /**
- * The pane one action is captured against.
+ * The chat one action is captured against.
  * @param transport The double.
  * @returns The capture.
  */
-function pane(transport: FakeTransport): ThreadLinkPaneCapture {
-	return { paneId: transport.paneId, transport };
+function chat(transport: FakeTransport): ThreadLinkChatCapture {
+	return { chatId: transport.chatId, transport };
 }
 
 /**
- * A pane capture over one double, read once per action.
+ * A chat capture over one double, read once per action.
  * @param transport The double.
  * @returns The capture function.
  */
-function capturing(transport: FakeTransport): () => ThreadLinkPaneCapture {
-	return () => pane(transport);
+function capturing(transport: FakeTransport): () => ThreadLinkChatCapture {
+	return () => chat(transport);
 }
 
 export {
@@ -388,7 +388,7 @@ export {
 	inspectOnlyLink,
 	loginA,
 	loginB,
-	pane,
+	chat,
 	snapshot,
 	threadA,
 	threadB,

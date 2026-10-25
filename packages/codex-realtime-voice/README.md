@@ -298,9 +298,9 @@ A workhorse is the Codex thread that does sustained work in one checkout. The co
 
 An admitted checkout is a directory that your server lets a workhorse work in. You list the checkouts, or give a function that admits a checkout by name. Each workhorse reads the repository instructions and the Codex configuration of its checkout.
 
-A tab session is one browser tab's conversation: one coordinator, and one workhorse for each checkout that the tab works in. The browser client keeps the tab session id in `sessionStorage`, so a reload keeps the conversation and another tab gets its own. When 60 seconds pass after the last pane of a tab closes, the tab session ends. The package then settles its open approvals, stops its voice and lets Codex unload its threads. A tab that comes back after that starts a new conversation.
+A tab session is one browser tab's conversation: one coordinator, and one workhorse for each checkout that the tab works in. The browser client keeps the tab session id in `sessionStorage`, so a reload keeps the conversation and another tab gets its own. When 60 seconds pass after the last chat of a tab closes, the tab session ends. The package then settles its open approvals, stops its voice and lets Codex unload its threads. A tab that comes back after that starts a new conversation.
 
-A pane is one view in the page that shows the conversation, named by its pane id. Each pane has one socket. A pane that connects again replaces its earlier socket. All panes of a tab show the same conversation.
+A chat is one view in the page that shows the conversation, named by its chat id. Each chat has one socket. A chat that connects again replaces its earlier socket. All chats of a tab show the same conversation.
 
 An approval is a request from Codex that the person must answer, such as running a command. The page receives each open approval in the server state and answers it with `answerApproval`. The answer carries the `intent` of the state that showed the approval, so the server refuses an answer to a conversation that changed since.
 
@@ -394,7 +394,7 @@ agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
 | Field        | Default  | What it does                                                                                                                               |
 | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `socketPath` | Required | The socket path of the server, or a full URL. A path resolves against the page address. `http:` becomes `ws:` and `https:` becomes `wss:`. |
-| `paneId`     | `"main"` | The pane that this client shows. Use letters, digits, `_` and `-`, at most 128 characters.                                                 |
+| `chatId`     | `"main"` | The chat that this client shows. Use letters, digits, `_` and `-`, at most 128 characters.                                                 |
 
 Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
 
@@ -521,9 +521,9 @@ export async function fileSaved(agent: VoiceAgent, checkout: string, file: strin
 
 ### A host that owns its sockets
 
-`bunHandlers` covers a `Bun.serve` server and `attach` a `node:http` server. A host that serves sockets in another way uses `agent.browser` on the server instead: `accept` registers a socket with its pane, tab session and checkout, `handle` passes each parsed request, `close` ends a socket, and `drain` waits for accepted work. The two adapters in the package source are the reference uses.
+`bunHandlers` covers a `Bun.serve` server and `attach` a `node:http` server. A host that serves sockets in another way uses `agent.browser` on the server instead: `accept` registers a socket with its chat, tab session and checkout, `handle` passes each parsed request, `close` ends a socket, and `drain` waits for accepted work. The two adapters in the package source are the reference uses.
 
-In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts under `createVoiceClient`. Use them to draw your own conversation UI over a socket that you open: the transport and the media owner, the conversation controllers of one pane (the conversation link and sign-in, the composer with queue and steer, the queue and the approvals), and the conversation projected from the server timelines.
+In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts under `createVoiceClient`. Use them to draw your own conversation UI over a socket that you open: the transport and the media owner, the conversation controllers of one chat (the conversation link and sign-in, the composer with queue and steer, the queue and the approvals), and the conversation projected from the server timelines.
 
 ### Entry points
 
@@ -581,7 +581,7 @@ The page shows "The voice connection failed. Reconnect to try again." and `conne
 1. Open the page at exactly the address in `origin`. When `bunHandlers` has no `origin` and the server runs on `0.0.0.0`, on a unix socket or behind a proxy, give it the `origin` that the browser uses.
 2. Serve the page and the socket from the same server. A page from a development server on another port has another origin.
 
-A `400` answer means that the socket URL has no valid `tabSessionId` or `paneId`. `createVoiceClient` always sends both, so look at a custom `paneId`. A socket that closes at once with code `1011` puts the reason the server closed it with in `failure`, such as "The voice agent is unavailable. Restart the server.". It reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit. The client opens a new socket by itself, as after any open socket that closes.
+A `400` answer means that the socket URL has no valid `tabSessionId` or `chatId`. `createVoiceClient` always sends both, so look at a custom `chatId`. A socket that closes at once with code `1011` puts the reason the server closed it with in `failure`, such as "The voice agent is unavailable. Restart the server.". It reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit. The client opens a new socket by itself, as after any open socket that closes.
 
 ### The state directory is in use
 

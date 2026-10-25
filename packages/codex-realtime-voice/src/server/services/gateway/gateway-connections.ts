@@ -33,10 +33,10 @@ import {
 	publishedTerminalIds,
 } from "#server/operations/command/browser-command.ts";
 
-/** One browser's connection to one pane, and everything this process holds about it. */
+/** One browser's connection to one chat, and everything this process holds about it. */
 interface ConnectionState {
 	readonly browserId: BrowserConnectionId;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly tabSessionId: TabSessionId;
 	readonly instance: BrowserConnectionInstance;
 	readonly listeners: Set<(message: BrowserGatewayMessage) => void>;
@@ -78,7 +78,7 @@ interface BrowserConnections {
 	) => ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]>;
 	readonly stateFor: (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		instance?: BrowserConnectionInstance,
 	) => ConnectionState;
 	readonly snapshotFor: (state: ConnectionState) => BrowserSnapshot;
@@ -115,8 +115,8 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		disposed: false,
 
 		/**
-		 * The thread link of the workhorse a connection's pane shows: the one of its tab session
-		 * for the checkout the pane's tab shows now (ADR 0050), refusing a binding that does not
+		 * The thread link of the workhorse a connection's chat shows: the one of its tab session
+		 * for the checkout the chat's tab shows now (ADR 0050), refusing a binding that does not
 		 * describe that workhorse.
 		 * @param state The connection.
 		 * @returns Its binding.
@@ -137,14 +137,14 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		 * The open connection a request names, refusing a closed one and a socket
 		 * that has since been replaced.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param instance The socket the caller believes it is, when it knows.
 		 * @returns The connection.
 		 */
-		stateFor: (browserId, paneId, instance) => {
+		stateFor: (browserId, chatId, instance) => {
 			if (connections.disposed)
 				throw new CodexWorkbenchGatewayError("disposed", "The browser gateway is disposed.");
-			const state = states.get(connectionKey(browserId, paneId));
+			const state = states.get(connectionKey(browserId, chatId));
 			if (state === undefined || state.closed)
 				throw new CodexWorkbenchGatewayError("invalid_input", "The browser connection is closed.");
 			if (instance !== undefined && state.instance !== instance)
@@ -168,7 +168,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 			try {
 				projection = options.projection.read({
 					browserId: state.browserId,
-					paneId: state.paneId,
+					chatId: state.chatId,
 					tabSessionId: state.tabSessionId,
 					checkout: options.checkoutOf(state.browserId),
 					connection: state.instance,
@@ -307,7 +307,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		 * @param payload What it was shown.
 		 */
 		confirmPublished: (state, payload) => {
-			if (state.closed || states.get(connectionKey(state.browserId, state.paneId)) !== state)
+			if (state.closed || states.get(connectionKey(state.browserId, state.chatId)) !== state)
 				return;
 			for (const requestId of publishedTerminalIds(payload))
 				state.publishedTerminals.add(requestId);
@@ -321,7 +321,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		 * @returns Its snapshot afterwards.
 		 */
 		setMediaReady: (state, ready) => {
-			connections.stateFor(state.browserId, state.paneId, state.instance);
+			connections.stateFor(state.browserId, state.chatId, state.instance);
 			if (state.mediaReady !== ready) {
 				state.mediaReady = ready;
 				connections.publishConnection(state);
@@ -344,7 +344,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 			owners.forgetInFlightFor(state.instance);
 			try {
 				options.projection.onBrowserDisconnect?.(
-					{ browserId: state.browserId, paneId: state.paneId, connection: state.instance },
+					{ browserId: state.browserId, chatId: state.chatId, connection: state.instance },
 					reason,
 				);
 			} catch {
@@ -398,7 +398,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	/**
-	 * Whether a connection's pane shows a checkout's conversation now. A pane the server cannot
+	 * Whether a connection's chat shows a checkout's conversation now. A chat the server cannot
 	 * place shows none, so it is shown no workhorse's approval.
 	 * @param state The connection.
 	 * @param checkout The checkout.
@@ -415,10 +415,10 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	/**
 	 * The terminals every open connection they are shown to has been shown,
 	 * which are the ones the approval owner may stop presenting. A terminal is
-	 * shown only to its tab session, and a workhorse's only to the panes that show
+	 * shown only to its tab session, and a workhorse's only to the chats that show
 	 * its checkout now, so a connection of another tab or another checkout never
 	 * holds it back; with none of those open there is nobody left to show it to.
-	 * @param candidates The terminals still being presented, with the panes they are shown to.
+	 * @param candidates The terminals still being presented, with the chats they are shown to.
 	 * @returns The terminals that may be acknowledged.
 	 */
 	function terminalsEverySessionBrowserHasSeen(
@@ -446,7 +446,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	function projectionContext(state: ConnectionState): Parameters<BrowserProjectionPort["read"]>[0] {
 		return {
 			browserId: state.browserId,
-			paneId: state.paneId,
+			chatId: state.chatId,
 			tabSessionId: state.tabSessionId,
 			checkout: options.checkoutOf(state.browserId),
 			connection: state.instance,

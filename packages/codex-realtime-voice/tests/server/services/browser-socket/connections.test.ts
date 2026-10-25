@@ -5,7 +5,7 @@ import { createTabSessions } from "#server/services/sessions/browser-tabs.ts";
 import { createGatewayHarness } from "#tests/server/support/gateway/support.ts";
 import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/generation/generation-fixture.ts";
 
-test("a replaced socket cannot acquire the replacement pane's lease", async () => {
+test("a replaced socket cannot acquire the replacement chat's lease", async () => {
 	const fixture = createCodexWorkbenchGenerationFixture([]);
 	const harness = createGatewayHarness(fixture.components.identity);
 	const tabs = createTabSessions();
@@ -18,7 +18,7 @@ test("a replaced socket cannot acquire the replacement pane's lease", async () =
 	const first = {};
 	const replacement = {};
 	const registration = {
-		paneId: harness.paneId,
+		chatId: harness.chatId,
 		tabSessionId: harness.tabSessionId,
 		checkout: "/work/project",
 	};
@@ -28,7 +28,7 @@ test("a replaced socket cannot acquire the replacement pane's lease", async () =
 		ingress.port.accept(first, harness.browserId, registration);
 		ingress.port.accept(replacement, harness.browserId, {
 			...registration,
-			paneId: "replacement-pane",
+			chatId: "replacement-chat",
 		});
 		await expect(
 			ingress.port.handle(

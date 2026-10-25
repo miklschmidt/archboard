@@ -18,7 +18,7 @@ import type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
 class VoiceSocket {
 	/**
 	 * Keep the admitted surface for the socket's `open`.
-	 * @param surface The socket's pane, tab session and browser id.
+	 * @param surface The socket's chat, tab session and browser id.
 	 */
 	constructor(readonly surface: SocketSurface) {}
 }

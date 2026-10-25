@@ -142,10 +142,10 @@ function clearServerThreadContextForLease(
 }
 
 /**
- * The link a browser command is only allowed to act on: the exact one the pane
+ * The link a browser command is only allowed to act on: the exact one the chat
  * says it is looking at, which is the link of its checkout's workhorse.
  * @param key The workhorse's link key.
- * @param context The pane, its tab session and the link it named.
+ * @param context The chat, its tab session and the link it named.
  * @returns The expected link.
  */
 function expectedBrowserLink(key: string, context: BrowserActionContext): ThreadLinkCasToken {
@@ -159,11 +159,11 @@ function expectedBrowserLink(key: string, context: BrowserActionContext): Thread
 }
 
 /**
- * Refuse a command whose pane no longer sees the link it named: another pane of
+ * Refuse a command whose chat no longer sees the link it named: another chat of
  * its tab changed the workhorse's link while this command waited its turn.
  * @param threadLink What reads the link.
  * @param key The workhorse's link key.
- * @param context The pane, its tab session and the link it named.
+ * @param context The chat, its tab session and the link it named.
  */
 function assertBrowserLinkStands(
 	threadLink: Pick<CodexThreadLinkPort, "read">,
@@ -236,7 +236,7 @@ async function startWorkhorseThread(
 		options.claimThread(started.threadId);
 	}
 	if (started.binding === null) {
-		throw new Error("The created workhorse did not return its adopted pane link.");
+		throw new Error("The created workhorse did not return its adopted thread link.");
 	}
 	const ready = namedTarget(started, started.binding);
 	if (ready === null) {
@@ -250,7 +250,7 @@ async function startWorkhorseThread(
 }
 
 /**
- * Bind one workhorse's thread-link actions: New conversation from a pane of its checkout, and the
+ * Bind one workhorse's thread-link actions: New conversation from a chat of its checkout, and the
  * start a delegation to its checkout needs.
  * @param options The owners.
  * @returns The actions.
@@ -261,7 +261,7 @@ function createServerThreadLinkActions(
 	let linkChanges: Promise<unknown> = Promise.resolve();
 	/**
 	 * Run one link change after every earlier one has settled. A workhorse has one link whichever
-	 * pane or delegation asks, so a start that lost a race must be refused before thread/start:
+	 * chat or delegation asks, so a start that lost a race must be refused before thread/start:
 	 * past it, the loser's failed compare-and-swap would leave the workhorse failed under the link
 	 * the winner made.
 	 * @param change The change.
@@ -274,12 +274,12 @@ function createServerThreadLinkActions(
 	};
 	const threadLinks: BrowserThreadLinkActions = {
 		/**
-		 * Start a new conversation for the pane's checkout and make it its workhorse's link: the
+		 * Start a new conversation for the chat's checkout and make it its workhorse's link: the
 		 * tab's coordinator first, then the workhorse thread, then board-change delivery to it. A
 		 * coordinator that cannot start refuses the create with its reason and starts no workhorse;
 		 * the next message or Talk tries again.
 		 * @param _command The creation, which names nothing to choose.
-		 * @param context The pane and its child epoch.
+		 * @param context The chat and its child epoch.
 		 * @returns The browser outcome.
 		 */
 		create: (_command, context) =>

@@ -8,7 +8,7 @@ import {
 import { createBrowserLeaseLedger } from "#server/services/lease/lease.ts";
 import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
-// One command lease per browser tab session (TASK-373): the panes of one tab hand it to each
+// One command lease per browser tab session (TASK-373): the chats of one tab hand it to each
 // other, and another tab's claim, renewal or expiry never touches it.
 
 const openHarnesses: GatewayHarness[] = [];
@@ -32,13 +32,13 @@ describe("Codex workbench browser command leases", () => {
 	test("a claim releases only its own tab session's lease", async () => {
 		const value = harness();
 		const first = value.open();
-		const sibling = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
-		const otherTab = value.gateway.connect("browser-three", "pane-one", OTHER_TAB);
+		const sibling = value.gateway.connect("browser-two", "chat-two", value.tabSessionId);
+		const otherTab = value.gateway.connect("browser-three", "chat-one", OTHER_TAB);
 		const firstLease = first.claimLease();
 		const otherLease = otherTab.claimLease();
 		expect((await first.command(startCommand(value, firstLease))).outcome).toBe("delivered");
 
-		// The other pane of the same tab takes the lease; the other tab keeps its own.
+		// The other chat of the same tab takes the lease; the other tab keeps its own.
 		const siblingLease = sibling.claimLease();
 		expect(siblingLease.commandId).not.toBe(firstLease.commandId);
 		expect(value.disconnectReasons).toEqual([]);
@@ -53,7 +53,7 @@ describe("Codex workbench browser command leases", () => {
 		const connection = value.open();
 		const lease = connection.claimLease();
 		value.advance(100_000);
-		const otherTab = value.gateway.connect("browser-other", value.paneId, OTHER_TAB);
+		const otherTab = value.gateway.connect("browser-other", value.chatId, OTHER_TAB);
 		const otherLease = otherTab.claimLease();
 		value.advance(50_001);
 		const result = await connection.command(startCommand(value, lease));
@@ -75,10 +75,10 @@ describe("Codex workbench browser command leases", () => {
 		const connection = value.open();
 		const lease = connection.claimLease();
 		value.advance(1_000);
-		value.gateway.connect("browser-other", "pane-other", OTHER_TAB).claimLease();
+		value.gateway.connect("browser-other", "chat-other", OTHER_TAB).claimLease();
 		const renewed = connection.renewLease();
 		expect(renewed.commandId).toBe(lease.commandId);
-		expect(renewed.paneId).toBe(lease.paneId);
+		expect(renewed.chatId).toBe(lease.chatId);
 		expect(renewed.childId).toBe(lease.childId);
 		expect(renewed.epoch).toBe(lease.epoch);
 		expect(renewed.expiresAtMs).toBeGreaterThan(lease.expiresAtMs);
@@ -113,7 +113,7 @@ test("a tab session's end forgets its lease and leaves another tab's", async () 
 	openHarnesses.push(value);
 	const connection = value.open();
 	connection.claimLease();
-	const otherTab = value.gateway.connect("browser-other", value.paneId, OTHER_TAB);
+	const otherTab = value.gateway.connect("browser-other", value.chatId, OTHER_TAB);
 	const otherLease = otherTab.claimLease();
 	await connection.close();
 

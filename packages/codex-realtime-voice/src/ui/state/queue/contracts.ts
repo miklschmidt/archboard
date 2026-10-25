@@ -15,7 +15,7 @@ import type {
  *
  * Five are queue commands the gateway publishes. `list` is not: the closed
  * browser contract has no `queueList` command. Serving a snapshot request
- * re-reads the authoritative queue for the link this pane is on, so a refresh
+ * re-reads the authoritative queue for the link this chat is on, so a refresh
  * is a genuine read of the server's list rather than a redraw of the last
  * command's result.
  */
@@ -87,7 +87,7 @@ interface WorkbenchQueueCorrelation {
 
 type WorkbenchQueueOwnership = "coordinator" | "foreign";
 
-/** One entry as the server holds it, with what this pane may do to it. */
+/** One entry as the server holds it, with what this chat may do to it. */
 interface WorkbenchQueueEntryView {
 	readonly submissionId: WorkbenchQueueSubmissionId;
 	readonly prompt: string;

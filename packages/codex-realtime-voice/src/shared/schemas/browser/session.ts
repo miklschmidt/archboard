@@ -36,7 +36,7 @@ const BrowserWorkhorseSchema = z
 const BrowserWorkhorsesSchema = z
 	.object({
 		kind: z.literal("codex_workhorses"),
-		/** The checkout whose conversation every pane of the tab shows. */
+		/** The checkout whose conversation every chat of the tab shows. */
 		shown: boundedText(4096),
 		entries: z.array(BrowserWorkhorseSchema).max(BROWSER_WORKHORSE_LIMIT),
 	})

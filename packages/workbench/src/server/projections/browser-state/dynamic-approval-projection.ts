@@ -133,7 +133,7 @@ export function projectDynamicApproval(
 		toolResult: null,
 		binding: {
 			commandId: binding.commandId,
-			paneId: binding.paneId,
+			chatId: binding.paneId,
 			capturedLink: {
 				threadId: binding.capturedLink.threadId,
 				childId: binding.capturedLink.childId,

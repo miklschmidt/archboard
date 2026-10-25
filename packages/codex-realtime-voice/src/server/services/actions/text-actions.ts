@@ -15,9 +15,9 @@ import type {
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 
 /**
- * The thread a text command runs against, refused when the pane's lease names
+ * The thread a text command runs against, refused when the chat's lease names
  * no thread that can run turns.
- * @param context The pane and the link it named.
+ * @param context The chat and the link it named.
  * @returns The thread.
  */
 function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
@@ -46,7 +46,7 @@ interface ServerTextActionOptions {
 }
 
 /**
- * The typed-message half of a pane: starting a turn, steering the one running,
+ * The typed-message half of a chat: starting a turn, steering the one running,
  * and interrupting it, each carrying the host's context with it.
  * @param options The identities, the session, and how one operation's context
  * is read.
@@ -71,7 +71,7 @@ export function createServerCanonicalTextActions(
 		/**
 		 * Start a turn on an idle workhorse.
 		 * @param command The prompt.
-		 * @param context The pane and the link it named.
+		 * @param context The chat and the link it named.
 		 * @returns The browser outcome and the turn that started.
 		 */
 		start: async (command, context) => {
@@ -106,7 +106,7 @@ export function createServerCanonicalTextActions(
 		/**
 		 * Steer the turn that is running, rather than queueing behind it.
 		 * @param command The prompt and the turn it steers.
-		 * @param context The pane and the link it named.
+		 * @param context The chat and the link it named.
 		 * @returns The browser outcome.
 		 */
 		steer: async (command, context) => {
@@ -144,7 +144,7 @@ export function createServerCanonicalTextActions(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Stop the turn that is running on the workhorse of the pane's checkout. The gateway admits
+		 * Stop the turn that is running on the workhorse of the chat's checkout. The gateway admits
 		 * the command only when its thread is the link of that workhorse (ADR 0050).
 		 * @param command The thread and the turn.
 		 * @returns The browser outcome.

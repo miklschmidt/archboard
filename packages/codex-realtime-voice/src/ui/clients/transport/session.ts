@@ -1,5 +1,5 @@
 // The socket session: attaching, the subscribe handshake, recovery snapshots,
-// pushed events, close and disposal. One run at a time; the pane session remains
+// pushed events, close and disposal. One run at a time; the chat session remains
 // the only owner that opens or closes the actual socket.
 
 import type {

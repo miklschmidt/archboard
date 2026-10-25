@@ -46,10 +46,10 @@ export interface GatewayHarness {
 	readonly authorities: IdentityAuthorities;
 	readonly model: ReturnType<typeof createCodexBrowserModel>;
 	readonly gateway: CodexWorkbenchGateway;
-	/** Connect the harness's own browser pane, in its own tab session. */
+	/** Connect the harness's own chat, in its own tab session. */
 	readonly open: (instance?: BrowserConnectionInstance) => BrowserWorkbenchConnection;
 	readonly browserId: string;
-	readonly paneId: string;
+	readonly chatId: string;
 	readonly tabSessionId: TabSessionId;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -92,7 +92,7 @@ export interface GatewayHarnessOptions {
 	readonly project?: (projection: BrowserOwnerProjection) => BrowserOwnerProjection;
 	/** The lease ledger the server keeps across generations. */
 	readonly leaseLedger?: BrowserLeaseLedger;
-	/** The checkout of each browser's pane; one checkout for every pane by default. */
+	/** The checkout of each browser's chat; one checkout for every chat by default. */
 	readonly checkoutOf?: (browserId: string) => string;
 	/** The link under one workhorse's link key; the harness's own link by default. */
 	readonly linkFor?: (key: string) => ThreadLinkSnapshot | null;
@@ -124,7 +124,7 @@ export function createGatewayHarness(
 		authorities.identity.decoder.adoptApprovalId("gateway-approval"),
 	);
 	const browserId = "browser-one";
-	const paneId = "pane-one";
+	const chatId = "chat-one";
 	const tabSessionId = parseTabSessionId("tab-one")!;
 	let clock = CLOCK_START;
 	let readiness: BrowserReadiness = readinessFor("thread_capable", loginId);
@@ -250,7 +250,7 @@ export function createGatewayHarness(
 	};
 	const projection: BrowserProjectionPort = {
 		read: ({ mediaReady, checkout }): BrowserOwnerProjection => {
-			// A workhorse's approval is shown only to the panes of its checkout.
+			// A workhorse's approval is shown only to the chats of its checkout.
 			const shown =
 				options.approvalCheckout === undefined || options.approvalCheckout === checkout
 					? ordinaryApproval
@@ -298,7 +298,7 @@ export function createGatewayHarness(
 		identity: authorities,
 		projection,
 		threadLink,
-		// Every pane of the fixture is in one checkout, so it has one workhorse link.
+		// Every chat of the fixture is in one checkout, so it has one workhorse link.
 		checkoutOf: options.checkoutOf ?? (() => "/work/checkout"),
 		actions,
 		...(lifecycle ? { lifecycle } : {}),
@@ -375,7 +375,7 @@ export function createGatewayHarness(
 			delivery: null,
 			toolResult: null,
 			resumable: false,
-			binding: { commandId, paneId, capturedLink: { threadId: targetThreadId, childId, epoch } },
+			binding: { commandId, chatId, capturedLink: { threadId: targetThreadId, childId, epoch } },
 		};
 	};
 
@@ -383,9 +383,9 @@ export function createGatewayHarness(
 		authorities,
 		model,
 		gateway,
-		open: (instance) => gateway.connect(browserId, paneId, tabSessionId, instance),
+		open: (instance) => gateway.connect(browserId, chatId, tabSessionId, instance),
 		browserId,
-		paneId,
+		chatId,
 		tabSessionId,
 		childId,
 		epoch,

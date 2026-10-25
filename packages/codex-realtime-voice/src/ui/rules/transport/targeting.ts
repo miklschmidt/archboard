@@ -24,8 +24,8 @@ const ACCOUNT_COMMANDS: ReadonlySet<BrowserCommandName> = new Set([
 	"accountLogout",
 ]);
 /**
- * Every command that makes a pane's link. None needs an executable link,
- * because making one is exactly what a pane without one does.
+ * Every command that makes a chat's link. None needs an executable link,
+ * because making one is exactly what a chat without one does.
  */
 const THREAD_LINK_COMMANDS: ReadonlySet<BrowserCommandName> = new Set(["threadLinkCreate"]);
 /** These callers already hold authority bound to a request or realtime session. */
@@ -41,7 +41,7 @@ const QUEUE_COMMANDS: ReadonlySet<BrowserCommandName> = new Set([
 	"queueStart",
 ]);
 
-const LEASE_TARGET_FIELDS = ["commandId", "paneId", "childId", "epoch"] as const;
+const LEASE_TARGET_FIELDS = ["commandId", "chatId", "childId", "epoch"] as const;
 const LINK_FIELDS = ["state", "threadId", "childId", "epoch"] as const;
 const DYNAMIC_IDENTITY_FIELDS = [
 	"child",
@@ -167,7 +167,7 @@ function dynamicBindingMatches(
 	return (
 		binding !== null &&
 		binding.commandId === authority.commandId &&
-		binding.paneId === authority.paneId &&
+		binding.chatId === authority.chatId &&
 		sameDynamicLink(binding.capturedLink, link)
 	);
 }

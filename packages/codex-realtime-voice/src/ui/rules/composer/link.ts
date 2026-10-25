@@ -1,5 +1,5 @@
 // What the composer may target right now, read from the transport's published
-// state and nothing else: the pane's link and the authoritative in-progress turn.
+// state and nothing else: the chat's link and the authoritative in-progress turn.
 
 import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
 import type {
@@ -9,7 +9,7 @@ import type {
 } from "#ui/state/composer/contract.ts";
 
 const INSPECT_ONLY = "This Codex history is inspect-only.";
-const UNBOUND = "This pane has no Codex workhorse yet.";
+const UNBOUND = "This chat has no Codex workhorse yet.";
 
 /**
  * The authoritative in-progress turn. The server's own steer owner refuses
@@ -45,7 +45,7 @@ function unavailableReason(state: BrowserWorkbenchState): string {
 
 /**
  * What the composer may target right now. Only a connected, thread-capable
- * workbench whose pane link is `executable` can take a turn command; every
+ * workbench whose thread link is `executable` can take a turn command; every
  * other reachable state is disabled with the server's own reason.
  * @param state The transport state.
  * @returns The link.
@@ -58,7 +58,7 @@ function readComposerLink(state: BrowserWorkbenchState): WorkbenchComposerLink {
 }
 
 /**
- * The composer link of a thread-capable snapshot. An unbound pane has nothing
+ * The composer link of a thread-capable snapshot. An unbound chat has nothing
  * to inspect and nothing to send to, which is a different sentence and a
  * different next action from a workhorse this browser may read but never write.
  * @param snapshot The snapshot.

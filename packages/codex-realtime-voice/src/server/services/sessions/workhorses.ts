@@ -34,7 +34,7 @@ interface CodexWorkbenchWorkhorseComponents {
 
 /** What starts a workhorse's conversation. */
 interface CodexWorkbenchWorkhorseActions {
-	/** New conversation from a pane of the checkout: a fresh thread for this workhorse. */
+	/** New conversation from a chat of the checkout: a fresh thread for this workhorse. */
 	readonly threadLinks: BrowserThreadLinkActions;
 	/** Start this workhorse's thread when it has none that can run turns, as delegation does. */
 	readonly ensureStarted: () => Promise<void>;

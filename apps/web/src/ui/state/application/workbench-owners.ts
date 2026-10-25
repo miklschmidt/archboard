@@ -67,7 +67,7 @@ function approvalDecisions(approvals: ConversationControllers["approvals"]): App
  */
 function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners {
 	const { paneId, transport } = options;
-	const controllers = createConversationControllers({ paneId, transport });
+	const controllers = createConversationControllers({ chatId: paneId, transport });
 	const { approvals } = controllers;
 	return Object.freeze({
 		paneId,

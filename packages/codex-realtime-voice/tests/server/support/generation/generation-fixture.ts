@@ -42,7 +42,7 @@ export type NotificationListener = Parameters<
 export interface CodexWorkbenchGenerationFixture {
 	readonly identityLedger: ReturnType<typeof createIdentityLedger>;
 	readonly components: CodexWorkbenchComponents;
-	/** The owners of the one tab session the fixture opens, as a connecting pane would. */
+	/** The owners of the one tab session the fixture opens, as a connecting chat would. */
 	readonly sessionComponents: CodexWorkbenchSessionComponents;
 	/** That session, open from the start. */
 	readonly tabSession: CodexWorkbenchTabSession;
@@ -288,7 +288,7 @@ export function createCodexWorkbenchGenerationFixture(
 		},
 	});
 	const tabSession = sessions.open(parseTabSessionId("tab-one")!);
-	// One workhorse, in the checkout a connecting pane would show, so its owners settle and stop too.
+	// One workhorse, in the checkout a connecting chat would show, so its owners settle and stop too.
 	tabSession.workhorse("/work/payments");
 	const claimedThread = "fixture-claimed-thread";
 	claims.coordinator?.(identity.identity.decoder.adoptThreadId(claimedThread));

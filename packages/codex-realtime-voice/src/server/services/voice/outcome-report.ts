@@ -34,7 +34,7 @@ interface OutcomeReportParts {
 	 */
 	readonly issue: () => string;
 	/**
-	 * The canonical context of the turn, captured against the voice-linked pane.
+	 * The canonical context of the turn, captured against the voice-linked chat.
 	 * @param operationId The minted operation identity.
 	 * @returns The context.
 	 */

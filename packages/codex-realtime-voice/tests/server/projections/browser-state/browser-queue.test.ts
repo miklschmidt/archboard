@@ -75,7 +75,7 @@ test("a snapshot refresh re-reads the authoritative queue and replaces a stale c
 		},
 	});
 	// The cache the browser would otherwise be shown: a submission the workhorse
-	// has already drained, left behind by the pane's last command.
+	// has already drained, left behind by the chat's last command.
 	harness.workhorse.state.queue = {
 		kind: "codex_queue",
 		submissions: [
@@ -166,7 +166,7 @@ test("a submission's coordinator operation is recovered from its client user mes
 			list: async () => ({
 				operation: "list" as const,
 				queue: [
-					// Queued by this Archboard pane: the add carried the serialized
+					// Queued by this chat: the add carried the serialized
 					// OperationId as its client user message identity.
 					submission(authorities, "ours", ours),
 					// Queued by another client: an identity this authority never issued.

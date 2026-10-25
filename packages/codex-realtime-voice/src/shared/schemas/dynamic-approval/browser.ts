@@ -20,7 +20,7 @@ import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/s
 const EffectHashSchema = z
 	.string()
 	.regex(/^sha256:[0-9a-f]{64}$/u, "effect hash must be sha256 plus 64 lowercase hex characters");
-const PaneIdSchema = boundedText(128);
+const ChatIdSchema = boundedText(128);
 
 /**
  * Records one custom validation issue at a path.
@@ -63,7 +63,7 @@ function sameIdentity(
 	return IDENTITY_FIELDS.every((field) => left[field] === right[field]);
 }
 
-/** The thread a pane captured, and the child epoch it captured it in. */
+/** The thread a chat captured, and the child epoch it captured it in. */
 interface CapturedLinkFacts {
 	readonly threadId: string;
 	readonly childId: string;
@@ -84,7 +84,7 @@ function sameLink(left: CapturedLinkFacts, right: CapturedLinkFacts): boolean {
 
 /**
  * Builds the browser-facing dynamic approval schemas: the approval record the
- * pane shows, the response command it sends back, and the pending-aware
+ * chat shows, the response command it sends back, and the pending-aware
  * response parser that refuses a response for any approval but the one it
  * was minted for.
  * @param identity - The session's identity schemas.
@@ -148,7 +148,7 @@ export function createDynamicApprovalBrowserSchemas(
 	const DynamicApprovalBindingSchema = z
 		.object({
 			commandId: BrowserCommandIdSchema,
-			paneId: PaneIdSchema,
+			chatId: ChatIdSchema,
 			capturedLink: DynamicApprovalLinkSchema,
 		})
 		.strict()
@@ -206,7 +206,7 @@ export function createDynamicApprovalBrowserSchemas(
 			command: z.literal("dynamicApprovalRespond"),
 			// commandId is the lease identity from the browser command lease.
 			commandId: BrowserCommandIdSchema,
-			paneId: PaneIdSchema,
+			chatId: ChatIdSchema,
 			childId: ChildIdSchema,
 			epoch: ChildEpochSchema,
 			capturedLink: DynamicApprovalLinkSchema,
@@ -230,8 +230,8 @@ export function createDynamicApprovalBrowserSchemas(
 
 	/**
 	 * Builds the response schema for one pending approval, so a response is
-	 * accepted only when its lease, pane, link, identity and effect hash all
-	 * match the approval the pane was shown.
+	 * accepted only when its lease, chat, link, identity and effect hash all
+	 * match the approval the chat was shown.
 	 * @param pending - The approval record, parsed again so a caller cannot hand in a forgery.
 	 * @returns The response schema narrowed to that approval.
 	 * @throws {Error} When the approval is not pending or has no binding.
@@ -250,8 +250,8 @@ export function createDynamicApprovalBrowserSchemas(
 					"response command lease does not match pending approval",
 				);
 			}
-			if (response.paneId !== binding.paneId) {
-				addIssue(refinementContext, ["paneId"], "response pane does not match pending approval");
+			if (response.chatId !== binding.chatId) {
+				addIssue(refinementContext, ["chatId"], "response chat does not match pending approval");
 			}
 			if (!sameLink(response.capturedLink, binding.capturedLink)) {
 				addIssue(
@@ -346,7 +346,7 @@ export function createDynamicApprovalBrowserSchemas(
 	}
 
 	/**
-	 * Checks that the effect the pane is shown belongs to the logical call in
+	 * Checks that the effect the chat is shown belongs to the logical call in
 	 * the identity: same tool, same operation, and a target that echoes the
 	 * arguments rather than pointing somewhere else.
 	 * @param approvalIdentity - The logical call the approval is for.

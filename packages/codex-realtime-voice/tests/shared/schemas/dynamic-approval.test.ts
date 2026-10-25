@@ -181,7 +181,7 @@ describe("dynamic coordination approval browser contract", () => {
 		).toBeFalse();
 	});
 
-	test("binds response to the lease, pane, captured link, child epoch, call, operation, and hash", () => {
+	test("binds response to the lease, chat, captured link, child epoch, call, operation, and hash", () => {
 		const fixture = createDynamicFixture();
 		const response = fixture.response;
 		const pendingResponseSchema = fixture.model.createDynamicApprovalResponseSchema(
@@ -192,7 +192,7 @@ describe("dynamic coordination approval browser contract", () => {
 		const swappedTargetLink = { ...response.capturedLink, threadId: fixture.other };
 		const exactPendingMutations = [
 			{ commandId: fixture.authorities.identity.issuer.mintBrowserCommandId() },
-			{ paneId: "pane-other" },
+			{ chatId: "chat-other" },
 			{ capturedLink: swappedTargetLink, identity: swappedTargetIdentity },
 			{ identity: fixture.requests[2]!.identity },
 			{ effectHash: fixture.requests[2]!.effectHash },

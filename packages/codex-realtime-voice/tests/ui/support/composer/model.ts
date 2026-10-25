@@ -29,7 +29,7 @@ const TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-a"));
 const OTHER_TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-b"));
 const ITEM = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-a"));
 const COMMAND_ID = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
-const PANE = "primary";
+const CHAT = "primary";
 
 type TurnStatus = NonNullable<BrowserSnapshot["timeline"]>["turns"][number]["status"];
 
@@ -226,7 +226,7 @@ function notThreadCapable(): BrowserWorkbenchState {
 function commandTarget(): BrowserWorkbenchCommandTarget {
 	return {
 		commandId: COMMAND_ID,
-		paneId: PANE,
+		chatId: CHAT,
 		childId: CHILD,
 		epoch: EPOCH,
 		capturedThreadLink: executableLink(),
@@ -381,7 +381,7 @@ export {
 	ITEM,
 	OTHER_THREAD,
 	OTHER_TURN,
-	PANE,
+	CHAT,
 	THREAD,
 	TURN,
 	commandIntent,

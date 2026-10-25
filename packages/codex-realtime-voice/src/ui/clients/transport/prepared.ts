@@ -132,7 +132,7 @@ function sameOwner(
 		authority === null ||
 		(authority.childId === acquired.childId &&
 			authority.epoch === acquired.epoch &&
-			authority.paneId === acquired.paneId)
+			authority.chatId === acquired.chatId)
 	);
 }
 

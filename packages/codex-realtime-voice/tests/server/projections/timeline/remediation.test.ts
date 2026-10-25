@@ -73,7 +73,7 @@ async function flush(): Promise<void> {
 	}
 }
 
-test("retiring a closed pane drops its refresh and notification eligibility", async () => {
+test("retiring a closed chat drops its refresh and notification eligibility", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("retired-thread");
 	const connection = {};
@@ -102,19 +102,19 @@ test("retiring a closed pane drops its refresh and notification eligibility", as
 			changes += 1;
 		},
 	});
-	owner.read("pane-retired", 1, link(authorities, threadId), true, connection);
+	owner.read("chat-retired", 1, link(authorities, threadId), true, connection);
 	await flush();
 	expect(changes).toBe(1);
-	owner.retire("pane-retired", connection);
+	owner.retire("chat-retired", connection);
 	owner.onNotification(event(authorities, threadId));
 	await flush();
 	expect({ calls, changes }).toEqual({ calls: 1, changes: 1 });
 	owner.dispose();
 });
 
-test("same-pane connections load independently and only the live pair recovers", async () => {
+test("same-chat connections load independently and only the live pair recovers", async () => {
 	const authorities = createIdentityAuthorities();
-	const threadId = authorities.identity.decoder.adoptThreadId("shared-pane-thread");
+	const threadId = authorities.identity.decoder.adoptThreadId("shared-chat-thread");
 	const firstConnection = {};
 	const secondConnection = {};
 	let calls = 0;
@@ -130,7 +130,7 @@ test("same-pane connections load independently and only the live pair recovers",
 				throw new Error("recoverable timeline read");
 			}
 			return {
-				data: [turnFixture(authorities, `shared-pane-turn-${calls}`, [])],
+				data: [turnFixture(authorities, `shared-chat-turn-${calls}`, [])],
 				nextCursor: null,
 				backwardsCursor: null,
 			};
@@ -150,26 +150,26 @@ test("same-pane connections load independently and only the live pair recovers",
 		},
 	});
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-shared", 1, timelineLink, true, firstConnection);
-	owner.read("pane-shared", 1, timelineLink, true, secondConnection);
+	owner.read("chat-shared", 1, timelineLink, true, firstConnection);
+	owner.read("chat-shared", 1, timelineLink, true, secondConnection);
 	await flush();
 	expect({ calls, changes }).toEqual({ calls: 2, changes: 2 });
-	expect(owner.read("pane-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
-		authorities.identity.decoder.adoptTurnId("shared-pane-turn-1"),
+	expect(owner.read("chat-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-chat-turn-1"),
 	);
 	expect(
-		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
-	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-2"));
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-2"));
 	owner.onNotification(event(authorities, threadId));
 	await flush();
 	expect({ calls, changes }).toEqual({ calls: 4, changes: 4 });
-	expect(owner.read("pane-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
-		authorities.identity.decoder.adoptTurnId("shared-pane-turn-3"),
+	expect(owner.read("chat-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-chat-turn-3"),
 	);
 	expect(
-		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
-	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-4"));
-	owner.retire("pane-shared", firstConnection);
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-4"));
+	owner.retire("chat-shared", firstConnection);
 	failNext = true;
 	owner.onNotification(event(authorities, threadId));
 	await flush();
@@ -178,8 +178,8 @@ test("same-pane connections load independently and only the live pair recovers",
 	await flush();
 	expect({ calls, changes }).toEqual({ calls: 6, changes: 5 });
 	expect(
-		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
-	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-6"));
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-6"));
 	owner.dispose();
 });
 
@@ -230,9 +230,9 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-bounded", 1, timelineLink, true, connection);
+	owner.read("chat-bounded", 1, timelineLink, true, connection);
 	await flush();
-	const projection = owner.read("pane-bounded", 1, timelineLink, true, connection);
+	const projection = owner.read("chat-bounded", 1, timelineLink, true, connection);
 	if (projection === null) {
 		throw new Error("bounded timeline was not loaded");
 	}
@@ -314,9 +314,9 @@ test("caps final item chronology after matching and unmatched approvals", async 
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-approval-cap", 1, timelineLink, true, connection);
+	owner.read("chat-approval-cap", 1, timelineLink, true, connection);
 	await flush();
-	const projection = owner.read("pane-approval-cap", 1, timelineLink, true, connection);
+	const projection = owner.read("chat-approval-cap", 1, timelineLink, true, connection);
 	if (projection === null) {
 		throw new Error("approval timeline was not loaded");
 	}
@@ -371,9 +371,9 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-delayed-user", 1, timelineLink, true, connection);
+	owner.read("chat-delayed-user", 1, timelineLink, true, connection);
 	await flush();
-	const projection = owner.read("pane-delayed-user", 1, timelineLink, true, connection);
+	const projection = owner.read("chat-delayed-user", 1, timelineLink, true, connection);
 	if (projection === null) {
 		throw new Error("delayed user timeline was not loaded");
 	}
@@ -460,9 +460,9 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-truncating", 1, timelineLink, true, connection);
+	owner.read("chat-truncating", 1, timelineLink, true, connection);
 	await flush();
-	const projection = owner.read("pane-truncating", 1, timelineLink, true, connection);
+	const projection = owner.read("chat-truncating", 1, timelineLink, true, connection);
 	if (projection === null) {
 		throw new Error("truncating timeline was not loaded");
 	}

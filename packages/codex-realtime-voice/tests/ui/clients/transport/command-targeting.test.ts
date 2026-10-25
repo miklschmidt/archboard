@@ -49,7 +49,7 @@ function approvalDraft(requestId = fixtureIds.requestA): BrowserCommandDraft {
 }
 
 /**
- * The same pane after it navigated onto a thread owned by a newer child epoch.
+ * The same chat after it navigated onto a thread owned by a newer child epoch.
  * @param approvals The approvals still listed.
  * @returns The snapshot.
  */
@@ -167,7 +167,7 @@ test("commands carry the target captured at dispatch, not the one navigation mov
 		kind: "browser_command",
 		command: "start",
 		commandId: "command-a",
-		paneId: "pane-a",
+		chatId: "chat-a",
 		childId: "child-a",
 		epoch: "epoch-a",
 		threadId: wire.threadA,
@@ -180,7 +180,7 @@ test("commands carry the target captured at dispatch, not the one navigation mov
 	expect(String(transport.snapshot()?.threadLink.threadId)).toBe(wire.threadB);
 });
 
-test("an approval read on one child epoch is refused after the pane navigates, never retargeted", async () => {
+test("an approval read on one child epoch is refused after the chat navigates, never retargeted", async () => {
 	const stale = approval();
 	const transport = tracker.track(createBrowserWorkbenchTransport({ now: clockAt(CLOCK) }));
 	const socket = new FakeSocket();
@@ -335,7 +335,7 @@ test("queueAdd must name the target it was composed against, and is refused afte
 		epoch: "epoch-a",
 	});
 
-	// The pane navigates to thread-b, whose queue is present and perfectly
+	// The chat navigates to thread-b, whose queue is present and perfectly
 	// usable. Only the captured target says this submission was not meant for it.
 	const onThreadB = navigatedSnapshot([]);
 	onThreadB.queue = queue("queued", [wire.submissionB]);

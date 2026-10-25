@@ -92,19 +92,19 @@ function createServerCodexBrowserSocketSend(
 
 interface ServerCodexBrowserSocketOwnerOptions {
 	readonly gateway: CodexWorkbenchGateway;
-	/** Resolve the pane from server-owned socket registration, never request bytes. */
-	readonly paneForBrowser: (browserId: string) => string | null;
+	/** Resolve the chat from server-owned socket registration, never request bytes. */
+	readonly chatForBrowser: (browserId: string) => string | null;
 	/** The tab session the browser's socket named when it connected, never request bytes. */
 	readonly tabSessionForBrowser: (browserId: string) => TabSessionId | null;
-	/** Open the conversation of a tab whose pane connects, once; a later pane finds it open. */
+	/** Open the conversation of a tab whose chat connects, once; a later chat finds it open. */
 	readonly openTabSession: (tabSessionId: TabSessionId) => void;
 }
 
 interface ServerCodexBrowserSocketOwner {
 	/**
 	 * Establish replacement ownership at socket acceptance, before the retired
-	 * instance can deliver its close event. A first-time pane may still defer
-	 * connection until it has registered its authoritative pane id.
+	 * instance can deliver its close event. A first-time chat may still defer
+	 * connection until it has registered its chat id.
 	 */
 	readonly accept: (instance: BrowserConnectionInstance, browserId: string) => void;
 	readonly handle: (
@@ -202,7 +202,7 @@ async function failure(
 
 /**
  * Own the public server WebSocket bridge for one installed gateway generation.
- * @param options The gateway, and how a browser's pane is resolved.
+ * @param options The gateway, and how a browser's chat is resolved.
  * @returns The owner.
  */
 function createServerCodexBrowserSocketOwner(
@@ -234,7 +234,7 @@ function createServerCodexBrowserSocketOwner(
 
 	/**
 	 * The gateway connection one socket is served by, replaced when the browser
-	 * has moved to another pane.
+	 * has moved to another chat.
 	 * @param instance The socket.
 	 * @param browserId The browser.
 	 * @returns The connection.
@@ -246,26 +246,26 @@ function createServerCodexBrowserSocketOwner(
 		if (disposed) {
 			throw new Error("The Codex browser socket owner is stopped.");
 		}
-		const paneId = options.paneForBrowser(browserId);
-		if (paneId === null) {
-			throw new Error("The browser has not registered an authoritative canvas pane.");
+		const chatId = options.chatForBrowser(browserId);
+		if (chatId === null) {
+			throw new Error("The browser has not registered a chat.");
 		}
 		const previous = connections.get(instance);
-		if (previous?.paneId === paneId) {
+		if (previous?.chatId === chatId) {
 			return previous;
 		}
 		subscriptions.get(instance)?.();
 		subscriptions.delete(instance);
 		const tabSessionId = tabSessionOf(browserId);
 		options.openTabSession(tabSessionId);
-		const connection = options.gateway.connect(browserId, paneId, tabSessionId, instance);
+		const connection = options.gateway.connect(browserId, chatId, tabSessionId, instance);
 		connections.set(instance, connection);
 		return connection;
 	};
 
 	/**
 	 * Take ownership of one accepted socket, deferring a browser that has not
-	 * registered its pane yet or named no tab session.
+	 * registered its chat yet or named no tab session.
 	 * @param instance The socket.
 	 * @param browserId The browser.
 	 */
@@ -274,7 +274,7 @@ function createServerCodexBrowserSocketOwner(
 			throw new Error("The Codex browser socket owner is stopped.");
 		}
 		if (
-			options.paneForBrowser(browserId) === null ||
+			options.chatForBrowser(browserId) === null ||
 			options.tabSessionForBrowser(browserId) === null
 		) {
 			return;
@@ -300,7 +300,7 @@ function createServerCodexBrowserSocketOwner(
 			(error) => {
 				activePublications.delete(publication);
 				publicationFailure ??= new Error(
-					`Codex browser event publication failed for browser ${JSON.stringify(connection.browserId)}, pane ${JSON.stringify(connection.paneId)}, ${message.kind} sequence ${message.sequence}: ${errorMessage(error)}`,
+					`Codex browser event publication failed for browser ${JSON.stringify(connection.browserId)}, chat ${JSON.stringify(connection.chatId)}, ${message.kind} sequence ${message.sequence}: ${errorMessage(error)}`,
 					{ cause: error },
 				);
 			},
@@ -328,9 +328,9 @@ function createServerCodexBrowserSocketOwner(
 				await connection.close();
 				return;
 			}
-			const paneId = options.paneForBrowser(browserId);
-			if (paneId !== null) {
-				await options.gateway.closeConnection(browserId, paneId, instance);
+			const chatId = options.chatForBrowser(browserId);
+			if (chatId !== null) {
+				await options.gateway.closeConnection(browserId, chatId, instance);
 			}
 		})();
 		closePromises.set(instance, owned);
@@ -355,7 +355,7 @@ function createServerCodexBrowserSocketOwner(
 		Record<BrowserRequest["action"], (call: BrowserRequestCall) => Promise<void>>
 	> = {
 		/**
-		 * Answer with the pane's current snapshot.
+		 * Answer with the chat's current snapshot.
 		 * @param call The request, the connection it acts on, and the socket.
 		 */
 		connect: async (call) => {
@@ -373,7 +373,7 @@ function createServerCodexBrowserSocketOwner(
 			await sendPublishedResult(transport, request, connection, connection.snapshot());
 		},
 		/**
-		 * Take the pane's write lease.
+		 * Take the chat's write lease.
 		 * @param call The request, the connection it acts on, and the socket.
 		 */
 		claimLease: async (call) => {
@@ -381,7 +381,7 @@ function createServerCodexBrowserSocketOwner(
 			await sendResult(transport, request, connection.claimLease());
 		},
 		/**
-		 * Keep the pane's write lease.
+		 * Keep the chat's write lease.
 		 * @param call The request, the connection it acts on, and the socket.
 		 */
 		renewLease: async (call) => {
@@ -389,7 +389,7 @@ function createServerCodexBrowserSocketOwner(
 			await sendResult(transport, request, connection.renewLease());
 		},
 		/**
-		 * Give up the pane's write lease.
+		 * Give up the chat's write lease.
 		 * @param call The request, the connection it acts on, and the socket.
 		 */
 		releaseLease: async (call) => {
@@ -397,7 +397,7 @@ function createServerCodexBrowserSocketOwner(
 			await sendResult(transport, request, connection.releaseLease());
 		},
 		/**
-		 * Say whether this pane can play voice yet.
+		 * Say whether this chat can play voice yet.
 		 * @param call The request, the connection it acts on, and the socket.
 		 */
 		mediaReady: async (call) => {

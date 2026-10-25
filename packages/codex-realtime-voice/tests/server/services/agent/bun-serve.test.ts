@@ -78,7 +78,7 @@ function closeCode(socket: WebSocket) {
 	return new Promise<number>((resolve) => socket.once("close", resolve));
 }
 
-const SURFACE = "?tabSessionId=tab-one&paneId=main";
+const SURFACE = "?tabSessionId=tab-one&chatId=main";
 
 test("Bun.serve sockets on the path are answered, and every other request reaches the host", async () => {
 	const { port, handled } = recordingPort();
@@ -131,7 +131,7 @@ test("Bun.serve gives a socket the host upgrades itself to the host's own handle
 test("Bun.serve refuses a foreign origin with 403 and a missing tab session with 400", async () => {
 	await using host = serve(recordingPort().port);
 	expect(await connect(host.socketUrl, { Origin: "https://other.example" })).toBe(403);
-	expect(await connect(`${host.origin.replace("http:", "ws:")}/voice?paneId=main`)).toBe(400);
+	expect(await connect(`${host.origin.replace("http:", "ws:")}/voice?chatId=main`)).toBe(400);
 });
 
 test("Bun.serve closes a socket that sends a non-JSON frame with 1003", async () => {

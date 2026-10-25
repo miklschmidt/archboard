@@ -2,7 +2,7 @@ import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 // Which checkout a workhorse works in (ADR 0050).
 //
 // A workhorse works in the directory that holds its vault: a checkout root, or the holder of an
-// untracked vault. A pane names its checkout through the vault it is in. The coordinator names one
+// untracked vault. A chat names its checkout through the vault it is in. The coordinator names one
 // in each workhorse tool call, as a path, and the path means the checkout only when it is a
 // directory that holds a vault, or a vault itself. Both are spelled as real paths, so a checkout
 // reached through a link is the same checkout.

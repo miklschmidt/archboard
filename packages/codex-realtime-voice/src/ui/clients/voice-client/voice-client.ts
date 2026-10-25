@@ -26,7 +26,7 @@ import type {
 	VoiceClientVoice,
 } from "#ui/state/voice-client/contract.ts";
 
-/** The socket the client opens: a pane socket it can also close. */
+/** The socket the client opens: a chat socket it can also close. */
 interface VoiceClientSocket extends BrowserWorkbenchSocket {
 	readonly close: () => void;
 }
@@ -52,7 +52,7 @@ const SOCKET_CLOSING = 2;
 
 /**
  * Connect one page view to the voice server through the real browser.
- * @param options The socket path and the pane.
+ * @param options The socket path and the chat.
  * @returns The client. Call `connect()` to open the socket.
  */
 function createVoiceClient(options: VoiceClientOptions): VoiceClient {
@@ -90,7 +90,7 @@ function createVoiceClient(options: VoiceClientOptions): VoiceClient {
 
 /**
  * The client over the owners it is given.
- * @param options The socket path and the pane.
+ * @param options The socket path and the chat.
  * @param owners The transport, the media owner, the socket factory and the tab identity.
  * @returns The client.
  */
@@ -452,8 +452,8 @@ function storedTabSessionId(key: string): string {
 }
 
 /**
- * The socket URL with the pane and tab identity.
- * @param options The socket path and the pane.
+ * The socket URL with the chat and tab identity.
+ * @param options The socket path and the chat.
  * @param pageUrl The page location the path resolves against.
  * @param tabSessionId The tab's session id.
  * @returns The URL.
@@ -462,7 +462,7 @@ function socketUrl(options: VoiceClientOptions, pageUrl: string, tabSessionId: s
 	const url = new URL(options.socketPath, pageUrl);
 	if (url.protocol === "http:") url.protocol = "ws:";
 	if (url.protocol === "https:") url.protocol = "wss:";
-	url.searchParams.set("paneId", options.paneId ?? "main");
+	url.searchParams.set("chatId", options.chatId ?? "main");
 	url.searchParams.set("tabSessionId", tabSessionId);
 	return url.href;
 }

@@ -265,7 +265,7 @@ test("transport snapshots, leases, and captured targets remain immutable across 
 	const result = await transport.command(startDraft());
 	expect(socket.actions("command")[0]?.["command"]).toMatchObject({
 		commandId: "command-a",
-		paneId: "pane-a",
+		chatId: "chat-a",
 		childId: "child-a",
 		epoch: "epoch-a",
 		threadId: wire.threadA,

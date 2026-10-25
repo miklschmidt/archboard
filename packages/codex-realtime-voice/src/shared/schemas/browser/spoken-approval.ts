@@ -333,7 +333,7 @@ function realtimeIdentity<Identity extends RealtimeItemId | RealtimeSessionId>(
 }
 
 /**
- * Builds the schema of the spoken-approval record the pane shows: which
+ * Builds the schema of the spoken-approval record the chat shows: which
  * approval voice may settle, the gate that armed it, what the person said,
  * and how it settled, with the consistency rules between those parts.
  * @param identity - The session's identity schemas.

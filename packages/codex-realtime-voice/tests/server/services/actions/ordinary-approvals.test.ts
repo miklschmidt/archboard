@@ -34,7 +34,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 						: { accepted: true, outcome, reason: "write-error" };
 				},
 			},
-			getCurrentBinding: () => ({ link: "pane:outcome" }),
+			getCurrentBinding: () => ({ link: "chat:outcome" }),
 		});
 		try {
 			const requestId = identity.decoder.adoptJsonRpcRequestId(`request-${outcome}`);
@@ -68,7 +68,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 			const command = {
 				kind: "browser_command",
 				commandId: identity.issuer.mintBrowserCommandId(),
-				paneId: "pane-outcome",
+				chatId: "chat-outcome",
 				childId: pending.child,
 				epoch: pending.epoch,
 				command: "approvalRespond",
@@ -96,7 +96,7 @@ test("the tab session's end settles its approvals; a disconnect does not", async
 		first.claimLease();
 		expect(first.snapshot().snapshot.approvals).toHaveLength(1);
 
-		// The tab's last pane goes; a reload within the grace brings it back.
+		// The tab's last chat goes; a reload within the grace brings it back.
 		await first.close();
 		expect(responses).toEqual([]);
 		const reloaded = gateway.connect("browser-one", "A", tabSessionId);

@@ -151,7 +151,7 @@ test("a thread-link step reports its own settlement, never another action's", ()
 		revision: 2,
 		action: "create",
 		target: {
-			paneId: "pane-a",
+			chatId: "pane-a",
 			childId: null,
 			epoch: null,
 			commandId: null,

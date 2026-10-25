@@ -36,7 +36,7 @@ const OTHER_EPOCH = issuer.mintChildEpoch();
 const COORDINATOR_THREAD_ID = decoder.adoptThreadId("coordinator-a");
 const TURN_ID = decoder.adoptTurnId("turn-a");
 const COMMAND_ID = issuer.mintBrowserCommandId();
-const PANE_ID = "pane-a";
+const CHAT_ID = "chat-a";
 
 /** The fixture name behind each adopted submission id, so assertions read names. */
 const SUBMISSION_NAMES = new Map<SubmissionId, string>();
@@ -315,7 +315,7 @@ function capabilities(
 function commandTarget(overrides: Partial<WorkbenchCommandTarget> = {}): WorkbenchCommandTarget {
 	return {
 		commandId: COMMAND_ID,
-		paneId: PANE_ID,
+		chatId: CHAT_ID,
 		childId: CHILD_ID,
 		epoch: EPOCH,
 		capturedThreadLink: executableLink(),
@@ -399,7 +399,7 @@ export {
 	COORDINATOR_THREAD_ID,
 	EPOCH,
 	OTHER_EPOCH,
-	PANE_ID,
+	CHAT_ID,
 	THREAD_ID,
 	TURN_ID,
 	answering,

@@ -54,17 +54,17 @@ interface LeaseOwner {
 	readonly ensureLinkStands: (state: ConnectionState, record: BrowserLeaseRecord) => void;
 	readonly claim: (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		instance?: BrowserConnectionInstance,
 	) => BrowserCommandLease;
 	readonly renew: (
 		browserId: string,
-		lease: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
+		lease: Pick<BrowserCommandLease, "commandId" | "chatId" | "childId" | "epoch">,
 		instance?: BrowserConnectionInstance,
 	) => BrowserCommandLease;
 	readonly release: (
 		browserId: string,
-		paneId: string,
+		chatId: string,
 		commandId?: BrowserCommandId,
 		instance?: BrowserConnectionInstance,
 	) => BrowserCommandLease | null;
@@ -78,7 +78,7 @@ interface LeaseOwner {
 }
 
 /**
- * Refuse a renewal that does not name the lease's own browser, pane, child
+ * Refuse a renewal that does not name the lease's own browser, chat, child
  * epoch and socket.
  * @param browserId The browser asking.
  * @param lease What it says it holds.
@@ -87,7 +87,7 @@ interface LeaseOwner {
  */
 function ensureRenewable(
 	browserId: string,
-	lease: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
+	lease: Pick<BrowserCommandLease, "commandId" | "chatId" | "childId" | "epoch">,
 	record: BrowserLeaseRecord,
 	state: ConnectionState,
 ): void {
@@ -96,7 +96,7 @@ function ensureRenewable(
 			commandId: lease.commandId,
 		});
 	if (
-		lease.paneId !== record.lease.paneId ||
+		lease.chatId !== record.lease.chatId ||
 		lease.childId !== record.lease.childId ||
 		lease.epoch !== record.lease.epoch
 	)
@@ -270,13 +270,13 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 		finish(record, "released", "link_changed");
 		throw new CodexWorkbenchGatewayError(
 			"link_changed",
-			"The pane link changed during lease ownership.",
+			"The thread link changed during lease ownership.",
 			{ commandId: record.lease.commandId },
 		);
 	};
 
 	/**
-	 * Refuse a command whose pane link has changed since its lease was claimed, or whose tab
+	 * Refuse a command whose thread link has changed since its lease was claimed, or whose tab
 	 * shows another checkout's conversation now, releasing that lease: the browser must claim a
 	 * new one against the link that now stands.
 	 * @param state The connection.
@@ -313,7 +313,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 			const current = manager.current();
 			if (
 				current?.binding.browserId === state.browserId &&
-				current.binding.paneId === state.paneId &&
+				current.binding.chatId === state.chatId &&
 				current.binding.connection === state.instance
 			)
 				return current.lease;
@@ -334,22 +334,22 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 		},
 
 		/**
-		 * Take the command lease for one browser pane, releasing whoever in its tab
+		 * Take the command lease for one chat, releasing whoever in its tab
 		 * session held it.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The lease.
 		 */
-		claim: (browserId, paneId, instance) => {
-			const state = connections.stateFor(browserId, paneId, instance);
+		claim: (browserId, chatId, instance) => {
+			const state = connections.stateFor(browserId, chatId, instance);
 			expireIfDue();
 			owners.ensureAccountReadiness(connections.snapshotFor(state));
 			const previous = manager.current();
 			if (previous !== null) {
 				const released = manager.release(
 					previous.binding.browserId,
-					previous.binding.paneId,
+					previous.binding.chatId,
 					previous.binding.connection,
 					previous.lease.commandId,
 				);
@@ -357,7 +357,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 			}
 			const record = manager.claim(
 				browserId,
-				paneId,
+				chatId,
 				state.tabSessionId,
 				owners.options.checkoutOf(state.browserId),
 				state.instance,
@@ -376,7 +376,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 		 * @returns The renewed lease.
 		 */
 		renew: (browserId, lease, instance) => {
-			const state = connections.stateFor(browserId, lease.paneId, instance);
+			const state = connections.stateFor(browserId, lease.chatId, instance);
 			expireIfDue();
 			const record = currentLeaseOrThrow(manager, lease.commandId, reasons.get(lease.commandId));
 			ensureRenewable(browserId, lease, record, state);
@@ -394,16 +394,16 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 		/**
 		 * Give the command lease back.
 		 * @param browserId The browser.
-		 * @param paneId The pane.
+		 * @param chatId The chat.
 		 * @param commandId The lease, when the caller names one.
 		 * @param instance The socket the caller believes it is.
 		 * @returns The released lease, or null when there was none to release.
 		 */
-		release: (browserId, paneId, commandId, instance) => {
-			const state = connections.stateFor(browserId, paneId, instance);
+		release: (browserId, chatId, commandId, instance) => {
+			const state = connections.stateFor(browserId, chatId, instance);
 			expireIfDue();
 			const asked = commandId ?? state.lease?.commandId;
-			const record = manager.release(browserId, paneId, state.instance, asked);
+			const record = manager.release(browserId, chatId, state.instance, asked);
 			if (record === null) {
 				return null;
 			}
@@ -426,7 +426,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 			}
 			const released = manager.release(
 				state.browserId,
-				state.paneId,
+				state.chatId,
 				state.instance,
 				current.lease.commandId,
 			);

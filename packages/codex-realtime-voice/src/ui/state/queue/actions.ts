@@ -1,7 +1,7 @@
 // The six queue operations, and no others. Five are gateway commands; `list`
 // is a snapshot re-read. Each command goes out against the target captured
 // when the control was offered, so a link or focus change refuses the command
-// instead of retargeting it at whatever the pane moved to.
+// instead of retargeting it at whatever the chat moved to.
 
 import type {
 	WorkbenchQueueCommands,
@@ -235,7 +235,7 @@ function createWorkbenchQueueCommands(
 
 /**
  * Capture the command target for the queue being rendered. It fails when the
- * pane holds no usable snapshot, which is a disabled-control reason rather
+ * chat holds no usable snapshot, which is a disabled-control reason rather
  * than an error the person has to read as a failure.
  * @param transport The transport port.
  * @returns The captured target, or the reason none could be captured.

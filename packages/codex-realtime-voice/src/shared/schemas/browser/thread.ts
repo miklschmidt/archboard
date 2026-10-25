@@ -1,4 +1,4 @@
-// The thread-scoped DTOs: the pane's link to a thread, the timeline it shows,
+// The thread-scoped DTOs: the chat's link to a thread, the timeline it shows,
 // and the queue of pending submissions.
 
 import { z } from "zod";

@@ -44,7 +44,7 @@ type ApprovalResponse =
 /** A command without the envelope the transport adds on dispatch. */
 type Draft<Name extends WorkbenchCommandName> = Omit<
 	Extract<BrowserCommand, { readonly command: Name }>,
-	"kind" | "commandId" | "paneId" | "childId" | "epoch"
+	"kind" | "commandId" | "chatId" | "childId" | "epoch"
 >;
 
 /** The ordinary approval response, with the typed response the transport requires. */
@@ -61,7 +61,7 @@ type ApprovalCommandDraft = ApprovalRespondDraft | DynamicApprovalRespondDraft;
 /** The exact lease authority a command is dispatched under. */
 interface WorkbenchCommandTarget {
 	readonly commandId: BrowserCommandLease["commandId"];
-	readonly paneId: BrowserCommandLease["paneId"];
+	readonly chatId: BrowserCommandLease["chatId"];
 	readonly childId: BrowserCommandLease["childId"];
 	readonly epoch: BrowserCommandLease["epoch"];
 	readonly capturedThreadLink: BrowserThreadLink;

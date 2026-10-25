@@ -151,7 +151,7 @@ interface CreateCodexWorkbenchSessionsOptions {
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */
 	readonly endApprovals: TabSessionEnding["endApprovals"];
-	/** The checkout whose conversation a tab shows now, or null before any pane of it was read. */
+	/** The checkout whose conversation a tab shows now, or null before any chat of it was read. */
 	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	readonly resolveCheckout: (named: string) => string | null;
 	/** Build one session's coordinator and voice. */

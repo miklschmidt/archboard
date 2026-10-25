@@ -21,14 +21,14 @@ describe("Codex workbench durable browser lifecycle", () => {
 		const staleInstance = Object.freeze({ socket: "stale" });
 		const currentInstance = Object.freeze({ socket: "current" });
 		value.gateway
-			.connect(value.browserId, value.paneId, value.tabSessionId, staleInstance)
+			.connect(value.browserId, value.chatId, value.tabSessionId, staleInstance)
 			.claimLease();
 		const current = value.open(currentInstance);
 		const lease = current.claimLease();
 
-		await value.gateway.closeConnection(value.browserId, value.paneId, staleInstance);
+		await value.gateway.closeConnection(value.browserId, value.chatId, staleInstance);
 		expect(current.renewLease()).toMatchObject({ commandId: lease.commandId, state: "active" });
-		await value.gateway.closeConnection(value.browserId, value.paneId, currentInstance);
+		await value.gateway.closeConnection(value.browserId, value.chatId, currentInstance);
 		expect(() => current.snapshot()).toThrow("closed");
 	});
 

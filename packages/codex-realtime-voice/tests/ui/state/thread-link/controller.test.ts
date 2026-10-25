@@ -27,7 +27,7 @@ import {
  * @returns The controller.
  */
 function controllerFor(transport: FakeTransport): ThreadLinkController {
-	return createThreadLinkController({ capturePane: capturing(transport) });
+	return createThreadLinkController({ captureChat: capturing(transport) });
 }
 
 /**
@@ -139,7 +139,7 @@ describe("thread-link action controller", () => {
 		const completion = await controller.create();
 		expect(completion.state).toBe("applied");
 		expect(transport.commands).toHaveLength(1);
-		// The captured epoch went to the wire; the pane's new epoch never did.
+		// The captured epoch went to the wire; the chat's new epoch never did.
 		expect(transport.commands[0]?.target?.epoch).toBe(epochA);
 		const settled = controller.snapshot();
 		expect(settled.state).toBe("failed");
@@ -168,7 +168,7 @@ describe("thread-link action controller", () => {
 		expect(settled.state === "idle" ? null : settled.action).toBe("logout");
 	});
 
-	test("a command that arrives before the pane is ready is refused without reaching the wire", async () => {
+	test("a command that arrives before the chat is ready is refused without reaching the wire", async () => {
 		const transport = new FakeTransport(connected(), capabilities({ supported: [] }));
 		const controller = controllerFor(transport);
 		await controller.create();
@@ -178,7 +178,7 @@ describe("thread-link action controller", () => {
 		expect(announcementOf(settled)).toContain("not ready for threadLinkCreate");
 	});
 
-	test("a pane with no command lease can start the explicit creation action", async () => {
+	test("a chat with no command lease can start the explicit creation action", async () => {
 		const transport = new FakeTransport();
 		transport.leased = false;
 		transport.nextResult = transport.result({

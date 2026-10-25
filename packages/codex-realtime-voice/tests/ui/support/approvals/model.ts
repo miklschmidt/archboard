@@ -42,7 +42,7 @@ const TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-a"));
 const ITEM = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-a"));
 const APPROVAL_ID = model.ApprovalIdSchema.parse(authority.decoder.adoptApprovalId("approval-a"));
 const COMMAND_ID = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
-const PANE = "primary";
+const CHAT = "primary";
 const HASH = `sha256:${"a".repeat(64)}`;
 
 /**
@@ -204,7 +204,7 @@ function approvalsInput(
 function commandTarget(): WorkbenchCommandTarget {
 	return {
 		commandId: COMMAND_ID,
-		paneId: PANE,
+		chatId: CHAT,
 		childId: CHILD,
 		epoch: EPOCH,
 		capturedThreadLink: executableLink(),
@@ -382,7 +382,7 @@ export {
 	ITEM,
 	NOW,
 	OTHER_THREAD,
-	PANE,
+	CHAT,
 	THREAD,
 	TURN,
 	approvalParses,

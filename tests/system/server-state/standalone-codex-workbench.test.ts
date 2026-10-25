@@ -114,7 +114,7 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		const tab = parseTabSessionId("standalone-proof")!;
 
 		const physical = {};
-		const registration = { paneId: "main", tabSessionId: tab, checkout };
+		const registration = { chatId: "main", tabSessionId: tab, checkout };
 		workbench.browser.accept(physical, "browser", registration);
 		type Lease = NonNullable<BrowserSnapshot["lease"]>;
 		interface Snapshot {
@@ -156,7 +156,7 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 					kind: "browser_command",
 					command: name,
 					commandId: lease.commandId,
-					paneId: lease.paneId,
+					chatId: lease.chatId,
 					childId: lease.childId,
 					epoch: lease.epoch,
 					...extra,

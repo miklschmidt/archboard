@@ -108,7 +108,7 @@ function validateCreateInitialTurn(
 
 /**
  * Checks that a browser effect's target echoes the thread its arguments name,
- * so the pane can never show one thread while the call acts on another.
+ * so the chat can never show one thread while the call acts on another.
  * @param effect - A fork or send effect in its browser form.
  * @param refinementContext - Where issues are recorded.
  */

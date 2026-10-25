@@ -96,7 +96,7 @@ function installBrowserGateway(
 		 * @param browserId The browser's client id.
 		 * @returns The pane id, or null while it has no registration.
 		 */
-		paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
+		chatForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 		tabSessionForBrowser: tabSessionOf,
 		/**
 		 * Open a connecting tab's conversation, or find it open.
