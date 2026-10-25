@@ -45,6 +45,11 @@ interface MeasuredLabel {
 	readonly width: number;
 	readonly height: number;
 	readonly runs: readonly TextRun[];
+	/**
+	 * The chips the label stands on, from the top of its box: one for a label,
+	 * and one for each relationship a joined line stacks (ADR 0052).
+	 */
+	readonly chips: readonly { readonly y: number; readonly height: number }[];
 }
 
 /** How a relationship's line is drawn, as the vault's policy says, where crossings are settled. */

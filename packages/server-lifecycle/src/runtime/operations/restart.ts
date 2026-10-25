@@ -2,7 +2,7 @@
 // now. The server reads its TypeScript source once, at start (ADR 0021), and a
 // browser tab loads the vite build in `dist/frontend` (ADR 0014), so a restart
 // that picks up an edit must build that bundle between the stop and the start.
-// The build is package.json's `build:frontend`, so the one place that says how
+// The build is package.json's `build`, so the one place that says how
 // to build stays there.
 
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
@@ -30,7 +30,7 @@ interface RestartResult extends EnsureResult {
  * @throws {Error} `FRONTEND_BUILD_FAILED`, with the build's output, when the build fails.
  */
 async function buildFrontend(): Promise<string | null> {
-	const build = Bun.spawn([process.execPath, "run", "build:frontend"], {
+	const build = Bun.spawn([process.execPath, "run", "build"], {
 		cwd: SOURCE_CHECKOUT,
 		stdin: "ignore",
 		stdout: "pipe",
@@ -43,7 +43,7 @@ async function buildFrontend(): Promise<string | null> {
 	]);
 	if (exit !== 0) {
 		throw codedError(
-			`\`bun run build:frontend\` failed in ${SOURCE_CHECKOUT} (exit ${String(exit)}):\n${stdout}${stderr}\n` +
+			`\`bun run build\` failed in ${SOURCE_CHECKOUT} (exit ${String(exit)}):\n${stdout}${stderr}\n` +
 				"The Archboard server is stopped. Fix the build, then run `archboard restart` again.",
 			"FRONTEND_BUILD_FAILED",
 		);

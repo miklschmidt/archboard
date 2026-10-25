@@ -21,19 +21,21 @@ const VIEWPORT = Object.freeze({ width: 800, height: 600 });
 /** The window the elements measure now: a test may narrow it, and each test starts from VIEWPORT. */
 const room: { width: number; height: number } = { ...VIEWPORT };
 
+/**
+ * How big an element is, in a DOM that does no layout.
+ * @returns The one window these tests measure everything through.
+ */
+function measured(): DOMRect {
+	return new DOMRect(0, 0, room.width, room.height);
+}
+
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 	// This DOM does no layout, and a camera cannot fit or zoom about nothing. The
 	// size is given before anything mounts so that the stage's own first fit is
 	// the one under test rather than a no-op that happens again later.
-	/**
-	 * How big an element is, in a DOM that does no layout.
-	 * @returns The one window these tests measure everything through.
-	 */
-	function measured(): DOMRect {
-		return new DOMRect(0, 0, room.width, room.height);
-	}
+
 	Element.prototype.getBoundingClientRect = measured;
 });
 

@@ -3,8 +3,8 @@
 	"adoptedOutsideUiBy": "TASK-151",
 	"scope": ["packages/**", "apps/**", "scripts/**", "tools/**", "vite.config.ts"],
 	"testsScope": ["tests/**", "packages/*/tests/**", "apps/*/tests/**"],
-	"oxlint": "1.80.0",
-	"tsgolint": "7.0.2001",
+	"oxlint": "1.89.0",
+	"tsgolint": "7.0.2004",
 	"categories": ["correctness", "suspicious", "perf"],
 	"nurseryRules": [
 		"import/named",
@@ -26,5 +26,6 @@
 		"additionalRule": "require-description",
 		"severity": "error",
 		"purpose": "Concise function-purpose, parameter and return descriptions; no duplicate TypeScript type annotations."
-	}
+	},
+	"vitePlus": "1.4.0"
 }

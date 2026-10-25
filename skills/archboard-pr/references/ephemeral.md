@@ -11,7 +11,7 @@ against, and which comparisons work.
 - A board that the repository's vault holds is part of the architecture that
   the vault states. It shows in every pane and, when Git tracks the vault, in
   the vault's history. No command deletes a board, except `semantic record
---discard` after a recording.
+  --discard` after a recording.
 - A command reaches the server at `ARCHBOARD_URL` and names its vault on every
   call. It finds that vault from `-C <dir>`, or else from its working
   directory (see "Make it"). So it reads and writes the vault it names,

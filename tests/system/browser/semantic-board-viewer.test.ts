@@ -254,7 +254,8 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 	).toBe(200);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=moving`]);
+	// Everything draws the two relationships apart; the overview joins them into one line.
+	await browser.run(["open", `${server.base}/?paneA=moving&viewA=Everything`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser),

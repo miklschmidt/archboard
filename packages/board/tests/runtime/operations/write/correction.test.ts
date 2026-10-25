@@ -101,12 +101,13 @@ test("ordinary edits refuse historical changes; correction reconciles drafts, pr
 	expect(again.board.variants[0]!.corrections).toHaveLength(2);
 });
 
+const command = (variant: string) =>
+	correctHistoricalTransition(
+		HistoricalCorrectionInputSchema.parse({ variant, reason: "Correction", revisions, edit: {} }),
+	);
+
 test("correction requires a stated change to an existing historical variant", () => {
 	const before = family();
-	const command = (variant: string) =>
-		correctHistoricalTransition(
-			HistoricalCorrectionInputSchema.parse({ variant, reason: "Correction", revisions, edit: {} }),
-		);
 	expect(command("Implemented").apply(before, at)).toMatchObject({
 		ok: false,
 		code: "VARIANT_NOT_HISTORICAL",

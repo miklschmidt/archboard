@@ -85,18 +85,19 @@ function part(id: string, name: string, file: string, order = 1000) {
 	};
 }
 
+const nodes = (...ids: ("pA" | "pB")[]) =>
+	ids.map((id, index) =>
+		id === "pA"
+			? part("pA", "Checkout", "src/a.ts")
+			: part("pB", "Billing", "src/b.ts", 2000 + index),
+	);
+
 /**
  * A board nobody has built: no current variant, only proposals. `Layer one`
  * has no parent, `Layer two` and `Sibling` derive from it, and `Shelved` was put away.
  * @returns The board document.
  */
 function unbuilt() {
-	const nodes = (...ids: ("pA" | "pB")[]) =>
-		ids.map((id, index) =>
-			id === "pA"
-				? part("pA", "Checkout", "src/a.ts")
-				: part("pB", "Billing", "src/b.ts", 2000 + index),
-		);
 	return {
 		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
