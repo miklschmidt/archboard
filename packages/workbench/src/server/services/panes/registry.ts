@@ -12,7 +12,7 @@ import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-re
 import { statedVariant } from "@archboard/board/address";
 import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
 import { addressedVariant } from "@archboard/board/document";
-import { sleep, watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
+import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
 import { PANE_SETTLE_CAP_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
@@ -509,7 +509,7 @@ async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Prom
 			return;
 		}
 		// oxlint-disable-next-line no-await-in-loop -- polling the registry: each check waits for the previous pause to elapse
-		await sleep(50);
+		await Bun.sleep(50);
 	}
 }
 
