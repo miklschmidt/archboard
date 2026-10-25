@@ -71,11 +71,16 @@ the camera and the flight stay presentation, and each painter owns them
 ([ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md)).
 
 The types of the scene are defined once, in Rust. The TypeScript types are
-generated from them.
+generated from them. They hold what the picture means, not how SVG spells it:
+no element name, attribute, path data or CSS expression. A colour names the
+page's tokens and the operations that mix them, and every id is minted from
+what it names. [The typed scene](../design/typed-scene.md) describes the
+vocabulary and why it has that shape.
 
 ### A painter turns a scene into what a frontend shows
 
-The SVG painter is part of the core. So an export, a README asset and a picture
+The SVG painter is part of the core, in a crate of its own (`archboard-svg`),
+and it holds every SVG and CSS spelling. So an export, a README asset and a picture
 in the browser are the same bytes wherever they are made. The SVG painter
 writes traffic as SMIL for an export, as it does today. The browser viewer
 keeps its classes and Web Animations over that SVG. A native frontend paints
