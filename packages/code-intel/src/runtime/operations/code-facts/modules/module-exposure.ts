@@ -7,7 +7,9 @@
 // what its `package.json` `exports` names, else the files directly in the
 // directory (typescript-exposure.ts). A Python package's root file is its
 // `__init__.py`. A Swift module is a target of its package, and each of its
-// files is a root file (swift-exposure.ts). A C, C++ or Objective-C
+// files is a root file (swift-exposure.ts). A Rust crate's root file is its
+// `lib.rs`, and a module's is its `mod.rs` or the file beside its directory
+// (rust-exposure.ts). A C, C++ or Objective-C
 // module's root files are its public headers (c-exposure.ts): an `.m` file
 // is a source file that pairs with its header, and a class extension in it
 // exposes nothing. A Terraform or OpenTofu module is
@@ -39,6 +41,11 @@ import type {
 import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
 import { isHelmValues } from "#runtime/operations/code-facts/kubernetes/helm-values.ts";
 import type { FactsPass } from "#runtime/services/code-facts/reader.ts";
+import {
+	RUST_FILE,
+	rustHolds,
+	rustRootFiles,
+} from "#runtime/operations/code-facts/rust/rust-exposure.ts";
 import { SWIFT_FILE, swiftRootFiles } from "#runtime/operations/code-facts/swift/swift-exposure.ts";
 import { isTerraformFile } from "#runtime/operations/code-facts/terraform/terraform-address.ts";
 import {
@@ -160,6 +167,28 @@ const SWIFT: ExposureRule = {
 	 */
 	entry: () => false,
 	rootFiles: swiftRootFiles,
+};
+
+/**
+ * Rust's rule: a crate, whose `lib.rs` exposes its `pub` items and what it
+ * passes on, or a module of a crate's tree, whose `mod.rs` or file beside its
+ * directory does (rust-exposure.ts).
+ */
+const RUST: ExposureRule = {
+	/**
+	 * Whether a file is Rust.
+	 * @param file The file.
+	 * @returns True when it is.
+	 */
+	writes: (file) => RUST_FILE.test(file),
+	/**
+	 * Whether a file is a crate's `lib.rs` or a module's `mod.rs`, which stand for their directory.
+	 * @param name The file's name.
+	 * @returns True when it is.
+	 */
+	entry: (name) => name === "lib.rs" || name === "mod.rs",
+	rootFiles: rustRootFiles,
+	holds: rustHolds,
 };
 
 /**
@@ -333,7 +362,17 @@ const HELM: ExposureRule = {
 };
 
 /** The rule of each adapter that reads a language or an infrastructure interface. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP, TERRAFORM, NIX, HELM];
+const RULES: readonly ExposureRule[] = [
+	TYPESCRIPT,
+	PYTHON,
+	SWIFT,
+	RUST,
+	C,
+	CSHARP,
+	TERRAFORM,
+	NIX,
+	HELM,
+];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
