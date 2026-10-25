@@ -24,7 +24,6 @@ import { relayLaps } from "#shared/rules/track/routes/relay.ts";
 import { fitTitleRows } from "#shared/rules/track/labels/title-rows.ts";
 import { clearHeadings, straightenThroughLabels } from "#shared/rules/track/channels/columns.ts";
 import {
-	portsOntoLanes,
 	pullToPorts,
 	straightenIntoContainers,
 	closeLaneSteps,
@@ -442,7 +441,6 @@ function pullOntoPorts(
  */
 function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly Routed[]): void {
 	const routes = routed.map((route) => route.nets);
-	portsOntoLanes(scene, routes.flat());
 	partCollinear(scene, chains, routes);
 	// Closing a jog never stands two lines parted just now back on one column.
 	closeJogs(scene, chains, routes, collinearPairs);

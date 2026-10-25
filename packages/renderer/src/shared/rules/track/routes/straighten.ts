@@ -147,11 +147,9 @@ function fromPort(
  * (straight on for a run to or from a container, else the column of the
  * station it leads into, the one it leaves, or its own lanes', and the free
  * one nearest them), the one that crosses fewest other lines, the first of
- * them on a tie, and, drawn inline, none that crosses more lines than the
- * run where it stands: Graphviz ordered its lanes to cross few lines, and a
- * straight column that crosses more trades a step for a crossing. The Blocks
- * engine packs a block among others after it is routed, and there the
- * crossings it saved cost bends and crossings elsewhere.
+ * them on a tie. A block is packed among others after it is routed, so a
+ * column is not held back for crossing more lines than the run where it
+ * stands: the crossings it saved would cost bends and crossings elsewhere.
  * @param scene The placed scene.
  * @param run The run.
  * @param occupancy What each band holds so far.
@@ -177,9 +175,7 @@ function columnOf(
 	const free = [...columns.filter(fits), ...(found === undefined ? [] : [found])];
 	const crossings = crossingsFor([run.before, ...run.lanes, run.after], bands);
 	const counts = free.map((x) => crossings([run.before.x, ...run.lanes.map(() => x), run.after.x]));
-	const fewest = Math.min(...counts);
-	const crossesMore = scene.inline && fewest > standingCrossings(run, bands);
-	return crossesMore ? undefined : free[counts.indexOf(fewest)];
+	return free[counts.indexOf(Math.min(...counts))];
 }
 
 /**
@@ -210,21 +206,6 @@ function crossingsFor(
 			const [top, bottom] = [meetsAt(own[index]!, below, above), meetsAt(lower, above, below)];
 			return count + others[index]!.filter(([one, two]) => (top - one) * (bottom - two) < 0).length;
 		}, 0);
-}
-
-/**
- * How many other chains a run crosses where its lanes stand.
- * @param run The run.
- * @param bands Every chain's stations, by band.
- * @returns The count.
- */
-function standingCrossings(run: LaneRun, bands: readonly ReadonlyMap<number, Station>[]): number {
-	const own = [run.before, ...run.lanes, run.after];
-	return crossingsOf(
-		own,
-		own.map(({ x }) => x),
-		bands,
-	);
 }
 
 export { crossingsFor, straightenLanes };

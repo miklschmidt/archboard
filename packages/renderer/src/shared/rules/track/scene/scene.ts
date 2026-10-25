@@ -192,26 +192,10 @@ class Scene {
 	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
 	/**
-	 * A block's own ports that may still slide along its top or bottom edge,
-	 * each with the stretch it may stand on: while the block is first routed,
-	 * nothing outside it has read where they stand.
-	 */
-	readonly slides = new Map<Item, readonly [number, number]>();
-	/**
 	 * The blocks of group regions packed whole among the scene's cards, whose
 	 * walls a lane keeps a region's clearance from rather than a card's.
 	 */
 	readonly regionBlocks = new Set<Item>();
-	/**
-	 * Whether the scene's sides are the page's: the whole board drawn inline,
-	 * where a line run beyond everything it holds laps round the drawing.
-	 */
-	edgesPage = false;
-	/**
-	 * Whether the scene is drawn by the Track engine, its containers and group
-	 * regions inline, rather than packed as blocks of their own.
-	 */
-	inline = false;
 	/**
 	 * The stretch of each band that a line drawn straight from a card's side
 	 * to the block's wall runs along (`shared/rules/blocks/packing/walls.ts`), by band. Those lines

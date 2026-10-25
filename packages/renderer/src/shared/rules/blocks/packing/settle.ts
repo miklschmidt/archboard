@@ -7,12 +7,12 @@
 // two ends of every trunk stand in one column where their edges share one,
 // or else as near each other as their edges allow; each block inside is
 // routed again with its ports there, and the block is packed again as it was.
-import type { Box, Point } from "#shared/rules/geometry.ts";
-import { SAME, corners, type Insets, type Laid } from "#shared/rules/blocks/tree/laid.ts";
+import type { Box } from "#shared/rules/geometry.ts";
+import type { Insets, Laid } from "#shared/rules/blocks/tree/laid.ts";
 import { PACK_GAP, PackLayout, type Packing } from "#shared/rules/blocks/packing/pack.ts";
 import { TRUNK_CLEARANCE } from "#shared/rules/blocks/packing/trunks.ts";
 import { headerOf, type Block, type BlockTree, type Line } from "#shared/rules/blocks/tree/tree.ts";
-import { nearestFree, openStretch, type Span } from "#shared/rules/blocks/packing/open-edge.ts";
+import { openStretch, type Span } from "#shared/rules/blocks/packing/open-edge.ts";
 import { LANE } from "#shared/rules/track/routes/chains.ts";
 import { portReach } from "#shared/rules/track/channels/channels.ts";
 import { separateFacingPorts, spread } from "#shared/rules/blocks/packing/port-columns.ts";
@@ -78,31 +78,6 @@ function facing(one: Span, other: Span, now: number): [number, number] {
 	return [nearest(one, other), nearest(other, one)];
 }
 
-/**
- * A routed line's corners, read from the end at a box.
- * @param points The line's points.
- * @param from The box at the end it is read from.
- * @returns The corners, that end first.
- */
-function cornersFrom(points: readonly Point[], from: Box): Point[] {
-	const [first, last] = [points[0]!, points.at(-1)!].map(
-		(point) => Math.abs(point.x - middle(from)) + Math.abs(point.y - from.y - from.height / 2),
-	);
-	return corners(first! <= last! ? points : points.toReversed());
-}
-
-/**
- * The column a routed line first turns to, read from one of its ends: the
- * column of its second corner, or the other end's when it runs straight.
- * @param points The line's points.
- * @param from The box at the end it is read from.
- * @returns The column.
- */
-function turnFrom(points: readonly Point[], from: Box): number {
-	const turned = cornersFrom(points, from);
-	return (turned[2] ?? turned.at(-1)!).x;
-}
-
 /** The top-down walk that settles every block's ports and routes each block again. */
 class Settle {
 	/**
@@ -119,62 +94,6 @@ class Settle {
 	movable(block: Block): boolean {
 		const { laid, packings } = this.settling;
 		return packings.has(block.id) || laid.get(block.id)?.reroute !== undefined;
-	}
-
-	/**
-	 * Whether a block is a block of cards the track engine draws inline: it
-	 * holds cards and other blocks, laid out and routed as one, not packed.
-	 * @param block The block.
-	 * @returns True when it is.
-	 */
-	cardsInline(block: Block): boolean {
-		return this.settling.tree.nesting !== "blocks" && !this.settling.packings.has(block.id);
-	}
-
-	/**
-	 * The columns some lines first turn to from one of their ends, as the
-	 * block routed them.
-	 * @param block The block.
-	 * @param end The end: a port or a pin.
-	 * @param keys The lines.
-	 * @returns The lowest and highest column, or nothing when none is routed.
-	 */
-	turnsOf(block: Block, end: string, keys: readonly string[]): Span | undefined {
-		const inner = this.settling.laid.get(block.id)!;
-		const at = inner.boxes.get(end);
-		const xs = keys.flatMap((key) => {
-			const points = inner.lines.get(key);
-			return points === undefined || at === undefined || points.length < 2
-				? []
-				: [turnFrom(points, at)];
-		});
-		return xs.length === 0 ? undefined : [Math.min(...xs), Math.max(...xs)];
-	}
-
-	/**
-	 * Where a port of a block of cards drawn inline may stand: between the
-	 * columns its lines first turn to, or, when one of them runs straight
-	 * from it, only where it stands, since moving it would bend that line,
-	 * unless that is its one line and carries no label: that one drops
-	 * straight anywhere along the face it reaches ({@link Settle.lineReach}).
-	 * @param block The block.
-	 * @param port The port.
-	 * @param lines Its lines inside the block.
-	 * @returns The span, or nothing when none is routed.
-	 */
-	turnsFrom(block: Block, port: string, lines: readonly Line[]): Span | undefined {
-		const span = this.turnsOf(
-			block,
-			port,
-			lines.map(({ key }) => key),
-		);
-		const x = middle(this.settling.laid.get(block.id)!.boxes.get(port)!);
-		const straight = lines.filter(
-			({ key }) => Math.abs((this.turnsOf(block, port, [key])?.[0] ?? Infinity) - x) < SAME,
-		);
-		if (straight.length === 0) return span;
-		const [only] = lines.length === 1 && !lines[0]!.labelled ? lines : [];
-		return (only === undefined ? undefined : this.lineReach(block, port, only)) ?? [x, x];
 	}
 
 	/**
@@ -222,16 +141,13 @@ class Settle {
 
 	/**
 	 * What a port's one line inside its block reaches: the face of the card it
-	 * runs to, or the span of the port it runs to on a block inside. In a
-	 * block of cards drawn inline, the columns its lines first turn to
-	 * ({@link Settle.turnsFrom}).
+	 * runs to, or the span of the port it runs to on a block inside.
 	 * @param block The block.
 	 * @param port The port.
 	 * @returns The span, or nothing when the port has more lines inside or none.
 	 */
 	reachOf(block: Block, port: string): Span | undefined {
 		const lines = [...block.lines.values()].filter(({ from, to }) => from === port || to === port);
-		if (this.cardsInline(block)) return this.turnsFrom(block, port, lines);
 		return lines.length === 1 ? this.lineReach(block, port, lines[0]!) : undefined;
 	}
 
@@ -297,73 +213,6 @@ class Settle {
 	}
 
 	/**
-	 * Whether a line in a block of blocks is read to settle its pins: every
-	 * line of a packed block, and in a block of cards drawn inline one whose
-	 * ends both stand in the block, as a card or a pin: a line into a
-	 * container gathered into a group region with its own members ends on no
-	 * card of the region's block.
-	 * @param block The block of blocks.
-	 * @param ends The line's ends.
-	 * @returns True when it is.
-	 */
-	settles(block: Block, ends: readonly string[]): boolean {
-		if (!this.cardsInline(block)) return true;
-		const { tree, laid } = this.settling;
-		const { boxes } = laid.get(block.id)!;
-		return ends.every((end) => tree.pins.has(end) || boxes.has(end));
-	}
-
-	/**
-	 * Where one end of a line settling a pin may stand: in a block of cards
-	 * drawn inline, the pin only where the line can reach it straight
-	 * ({@link Settle.clearOf}); else its span ({@link Settle.spanIn}).
-	 * @param block The block of blocks.
-	 * @param line The end, the line's other end and the line's key.
-	 * @param line.end The end.
-	 * @param line.other The line's other end.
-	 * @param line.key The line.
-	 * @param own Where the block's own ports were settled.
-	 * @returns The span.
-	 */
-	endIn(
-		block: Block,
-		line: { end: string; other: string; key: string },
-		own: ReadonlyMap<string, number>,
-	): Span {
-		const { end, other, key } = line;
-		const { pins } = this.settling.tree;
-		const span = this.spanIn(block, end, own);
-		const inline = this.cardsInline(block) && pins.has(end) && !pins.has(other);
-		return inline ? this.clearOf(block, end, key, span) : span;
-	}
-
-	/**
-	 * The stretch of a pin's span its line in a block of cards drawn inline
-	 * can drop into straight from the track it runs along: clear of every
-	 * card and block standing between the track and the pin, the free
-	 * stretch nearest where the pin stands. A pin moved where a card stands
-	 * in the way would only turn its line round that card.
-	 * @param block The block of cards.
-	 * @param pin The pin.
-	 * @param key The line.
-	 * @param span The pin's span.
-	 * @returns The stretch, or where the pin stands when none is free.
-	 */
-	clearOf(block: Block, pin: string, key: string, span: Span): Span {
-		const inner = this.settling.laid.get(block.id)!;
-		const [at, points] = [inner.boxes.get(pin), inner.lines.get(key)];
-		if (at === undefined || points === undefined || points.length < 2) return span;
-		const track = cornersFrom(points, at)[1]!.y;
-		const face = track < at.y ? at.y : at.y + at.height;
-		const [low, high] = [Math.min(track, face), Math.max(track, face)];
-		const between = block.items
-			.flatMap((item) => inner.boxes.get(item) ?? [])
-			.filter((box) => box.y < high && box.y + box.height > low);
-		const x = middle(at);
-		return nearestFree(span, between, LANE, x) ?? [x, x];
-	}
-
-	/**
 	 * Where one end of a trunk in a block of blocks stands now, in the block's
 	 * coordinates.
 	 * @param block The block of blocks.
@@ -421,11 +270,8 @@ class Settle {
 		const wanted = new Map<string, number[]>();
 		for (const line of block.lines.values()) {
 			const ends = [line.tail, line.head];
-			if (!this.settles(block, ends)) continue;
 			const now = this.standing(block, ends, own);
-			const [one, other] = ends.map((end, index) =>
-				this.endIn(block, { end, other: ends[1 - index]!, key: line.key }, own),
-			);
+			const [one, other] = ends.map((end) => this.spanIn(block, end, own));
 			const xs = facing(one!, other!, now);
 			ends.forEach((end, index) => {
 				if (tree.pins.has(end)) wanted.set(end, [...(wanted.get(end) ?? []), xs[index]!]);
@@ -437,11 +283,7 @@ class Settle {
 			if (inner === undefined || !this.movable(inner)) continue;
 			settled.set(item, this.edgesOf(block, inner, wanted));
 		}
-		separateFacingPorts(block, settled, {
-			...this.settling,
-			inline: this.cardsInline(block),
-			spanOf: this.endSpan.bind(this),
-		});
+		separateFacingPorts(block, settled, { ...this.settling, spanOf: this.endSpan.bind(this) });
 		return settled;
 	}
 
@@ -481,18 +323,6 @@ class Settle {
 	}
 
 	/**
-	 * Whether a block of cards drawn inline holds blocks of its own, whose
-	 * ports it settles before it is routed again.
-	 * @param block The block.
-	 * @returns True when it does.
-	 */
-	holdsBlocks(block: Block): boolean {
-		return (
-			this.cardsInline(block) && block.items.some((item) => this.settling.tree.blocks.has(item))
-		);
-	}
-
-	/**
 	 * Settle every block inside a block, where the block settles their ports.
 	 * @param block The block.
 	 * @param own Where its own ports were settled.
@@ -503,18 +333,14 @@ class Settle {
 	}
 
 	/**
-	 * Route a block of cards again: with its own ports where its parent
-	 * settled them, and, drawn inline, after settling the blocks it holds.
+	 * Route a block of cards again with its own ports where its parent settled them.
 	 * @param block The block of cards.
 	 * @param own Where its parent settled its ports.
 	 */
 	cards(block: Block, own: ReadonlyMap<string, number>): void {
 		const { laid } = this.settling;
 		const { reroute } = laid.get(block.id)!;
-		if (reroute === undefined) return;
-		const holds = this.holdsBlocks(block);
-		if (holds) this.inside(block, own);
-		if (holds || own.size > 0) laid.set(block.id, reroute(own));
+		if (reroute !== undefined && own.size > 0) laid.set(block.id, reroute(own));
 	}
 
 	/**

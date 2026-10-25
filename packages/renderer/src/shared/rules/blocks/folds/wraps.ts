@@ -6,7 +6,6 @@ import { LAYOUT_ASPECT } from "#shared/constants/shell-geometry.ts";
 import { CardLayout } from "#shared/rules/blocks/cards/card-layout.ts";
 import type { Insets, Laid } from "#shared/rules/blocks/tree/laid.ts";
 import { layBoth, settled, type Laying } from "#shared/rules/blocks/cards/laying.ts";
-import type { Nesting } from "#shared/rules/blocks/tree/inline.ts";
 import type { Block, BlockTree } from "#shared/rules/blocks/tree/tree.ts";
 import type { Box } from "#shared/rules/geometry.ts";
 import { grids } from "#shared/rules/track/channels/grid.ts";
@@ -109,7 +108,7 @@ function wrapScoring(
 	// stands across the block is settled before its lines are routed, so a
 	// wrap lined up that sinks one is not routed at all.
 	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
-		columnChoices(lowered, tree.nesting)
+		[false, true]
 			.map(
 				(columns) => () => new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }),
 			)
@@ -181,21 +180,6 @@ interface Wrapped {
 function wrapOf(laying: Laying, lowered?: ReadonlyMap<string, number>): Wrapped {
 	const rows = lowered === undefined ? {} : { rows: 1 + Math.max(...lowered.values()) };
 	return { laid: laying.tied, untied: laying.untied, lowered: lowered ?? new Map(), ...rows };
-}
-
-/**
- * Whether a wrap's rows may be laid with their columns free, as well as held.
- * Left free, a lowered card is pushed aside by the lines to every row below
- * it, so on the track engine's ranks a wrap deeper than two rows steps down
- * diagonally: it keeps its columns. The blocks engine packs such a block
- * among others, where holding its columns drew more crossings than it saved.
- * @param lowered How far each wrapped item is lowered.
- * @param nesting How the board's containers and group regions are drawn.
- * @returns The choices to lay the wrap with.
- */
-function columnChoices(lowered: ReadonlyMap<string, number>, nesting: Nesting): boolean[] {
-	const deep = Math.max(0, ...lowered.values()) > 1;
-	return deep && nesting !== "blocks" ? [true] : [false, true];
 }
 
 /**
