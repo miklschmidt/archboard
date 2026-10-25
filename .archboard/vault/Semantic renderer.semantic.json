@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 115,
+	"version": 116,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-25T11:44:42.794Z",
+	"updatedAt": "2026-10-25T14:39:27.227Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -42386,12 +42386,12 @@
 						"from": "L51bfquE",
 						"to": "J7mPrUeP",
 						"kind": "data",
-						"label": "curves and label anchors",
+						"label": "rounded curves",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-scene/src/paint/architecture.rs",
-							"symbol": "label_anchor_of"
+							"symbol": "paint_edge_line"
 						}
 					},
 					{
@@ -42779,12 +42779,12 @@
 						"to": "8jYL9wH6",
 						"kind": "call",
 						"label": "flow heading, and participant content through cards",
-						"description": "flow-frames.ts paintFrame calls paintHeadingViews; dataflow.ts paintFlow calls paintCards, whose cards.ts calls paintCardViews.",
+						"description": "sequence_frames.rs paint_frame calls paint_heading_views; sequence.rs flow_head calls paint_card, whose paint_slab_card in cards.rs calls paint_card_views.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-scene/src/paint/sequence.rs",
-							"symbol": "paint_heading_views"
+							"symbol": "paint_frame"
 						}
 					},
 					{
@@ -43022,7 +43022,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-scene/src/paint/export.rs",
-							"symbol": "standing_pin_at"
+							"symbol": "symbol_of"
 						}
 					},
 					{
@@ -43274,7 +43274,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/services/bun-host.ts",
-							"symbol": "coreBuild"
+							"symbol": "loadCore"
 						}
 					},
 					{
@@ -44212,7 +44212,7 @@
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "crates/archboard-scene/src/paint/sequence.rs",
-																	"symbol": "step_path"
+																	"symbol": "paint_step"
 																}
 															}
 														]
@@ -44387,7 +44387,7 @@
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "crates/archboard-scene/src/paint/export.rs",
-													"symbol": "picture_appearances"
+													"symbol": "entries_of"
 												}
 											},
 											{
