@@ -5,14 +5,15 @@
 //
 // Each result is a step through the answer (ADR 0057): it lights every entry
 // point and the containers that hold them, with what the result calls and what
-// calls it, and the camera brings that in. The Board tab stays open for the next
-// step.
+// calls it, rings the result while nothing is picked, and the camera brings that
+// in. The Board tab stays open for the next step.
 //
 // What these catch: a region that counts or lists a part that passes nothing on,
 // a question that names another board, variant or part, a control that sends
 // where the page has no agent, a region drawn on a board with nothing to ask, a
 // step that picks or leaves the Board tab, a step lit without the rest of the
-// answer, its containers or its own connections, a camera that frames the entry
+// answer, its containers or its own connections, a ring on the wrong subject or
+// beside a pick's, a camera that frames the entry
 // point without what is around it, a pick that does not take the light or does
 // not give it back, and a question that outlives a group or a walkthrough, or a
 // pick or group that outlives the question.
@@ -313,6 +314,16 @@ function pressed(): string[] {
 }
 
 /**
+ * The subjects the picture rings as attended.
+ * @returns Their ids.
+ */
+function ringed(): string[] {
+	return [...surface().querySelectorAll(".is-selected")].map(
+		(group) => group.getAttribute("data-semantic-id") ?? "",
+	);
+}
+
+/**
  * Whether the sidebar's Board tab is the open one.
  * @returns True when it is.
  */
@@ -333,19 +344,20 @@ const AT_TRACK = [...ANSWER, "e6", "e7", "sf", "car"].toSorted();
 /** What a step to Place order lights: the answer, and Place order's relationships with their other ends. */
 const AT_PLACE_ORDER = [...ANSWER, "e1", "e2", "sf", "pay"].toSorted();
 
-test("a result is a step: it lights the answer with its own connections, picks nothing, keeps the Board tab open, and lets go when chosen again", async () => {
+test("a result is a step: it lights the answer with its own connections, rings the result, picks nothing, keeps the Board tab open, and lets go when chosen again", async () => {
 	const { picks } = await served();
 	expect(lit()).toEqual([]);
 	await click(result(TRACK));
 	expect(pressed()).toEqual([TRACK]);
 	expect(lit()).toEqual(AT_TRACK);
 	expect(picks.at(-1) ?? null).toBeNull();
-	expect(surface().querySelectorAll(".is-selected")).toHaveLength(0);
+	expect(ringed()).toEqual([TRACK]);
 	expect(boardTabOpen()).toBe(true);
 
 	await click(result(PLACE_ORDER));
 	expect(pressed()).toEqual([PLACE_ORDER]);
 	expect(lit()).toEqual(AT_PLACE_ORDER);
+	expect(ringed()).toEqual([PLACE_ORDER]);
 
 	await click(result(PLACE_ORDER));
 	expect(pressed()).toEqual([]);
@@ -369,12 +381,14 @@ test("a pick shows its own light, letting go brings the step's back, and letting
 	await click(result(TRACK));
 	await pickOn("pay");
 	expect(picks.at(-1)).toBe("pay");
+	expect(ringed()).toEqual(["pay"]);
 	// Payments' own light: its relationships and what is at their other ends.
 	expect(lit()).toEqual(["bsk", "e2", "e5", "pay", CHECKOUT, PLACE_ORDER].toSorted());
 
 	await escape();
 	expect(picks.at(-1)).toBeNull();
 	expect(lit()).toEqual(AT_TRACK);
+	expect(ringed()).toEqual([TRACK]);
 
 	await escape();
 	expect(lit()).toEqual([]);

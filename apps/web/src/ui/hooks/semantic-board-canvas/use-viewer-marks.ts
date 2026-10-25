@@ -1,5 +1,7 @@
 // What the viewer marks on the picture on screen: attention, drawn as the
-// selection ring, and a presented step's veil.
+// selection ring, and a presented step's veil. The subject a step through a
+// design question's answer is at is ringed as a walkthrough step's subjects
+// are, while nothing is picked: a pick rings itself in its place (ADR 0057).
 //
 // Attention only. What the board says nobody has decided is drawn into the
 // picture by the renderer, from the same reconciliation the sentences above it
@@ -10,6 +12,7 @@
 import { useLayoutEffect, useMemo } from "react";
 
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
+import type { AnswerStep } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
 import {
@@ -30,6 +33,8 @@ interface ViewerMarks {
 	readonly focus: BeatFocus;
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
+	/** Where the person is in the chosen design question's answer, or null while none is chosen. */
+	readonly answer: AnswerStep | null;
 	/** What a presented step's veil, or the light a poke asks for, leaves standing; null for neither. */
 	readonly veil: ReadonlySet<string> | null;
 	/** How many hops beyond the first each subject a trace reached is; null without a trace. */
@@ -46,10 +51,11 @@ interface ViewerMarks {
  * @param marks What to mark.
  */
 function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void {
-	const { selection, focus, group, veil, reach } = marks;
+	const { selection, focus, group, answer, veil, reach } = marks;
+	const ringed = selection ?? answer?.at ?? null;
 	const attended = useMemo(
-		() => subjectMarks(selection, focus, group?.members),
-		[selection, focus, group],
+		() => subjectMarks(ringed, focus, group?.members),
+		[ringed, focus, group],
 	);
 	useLayoutEffect(() => {
 		if (picture !== null) {

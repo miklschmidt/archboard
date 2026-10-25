@@ -358,6 +358,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		selection,
 		focus,
 		group: props.group,
+		answer: props.answer,
 		veil: lighting.standing,
 		reach: lighting.reach,
 	});
