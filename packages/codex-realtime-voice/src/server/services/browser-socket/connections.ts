@@ -5,7 +5,7 @@ import type { TabSessions } from "#server/services/sessions/browser-tabs.ts";
 import { assertOpaqueName } from "#server/operations/command/browser-command.ts";
 import { createServerCodexBrowserSocketOwner } from "#server/services/browser-socket/socket.ts";
 
-interface BrowserRegistration {
+export interface BrowserRegistration {
 	readonly instance: BrowserConnectionInstance;
 	readonly paneId: string;
 	readonly tabSessionId: TabSessionId;
