@@ -11,8 +11,10 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 //
 // Callers derive proposal standings from shared subject identities per render,
 // never authoring or storing them. The renderer core owns how they are drawn:
-// this module lays the content out and hands the drawing to the core, which
+// this module lays an architecture out and hands the drawing to the core, which
 // paints it and writes the document (ADR 0057, `shared/rules/render/paint.ts`).
+// A sequence and a flowchart the core lays out as well as paints
+// (`shared/rules/render/flows.ts`).
 //
 // Nothing here reads a clock, a random number or a file. Text is measured by the
 // canvas of the host that draws, with the diagram faces loaded, and the host
@@ -34,7 +36,6 @@ import {
 	type SemanticViewRenderRequest,
 	type StatedStandings,
 } from "#shared/protocol/render-request.ts";
-import { renderFlowchart } from "#shared/rules/flowchart/flowchart.ts";
 import { layoutEngine } from "#shared/rules/layout/engines.ts";
 import { entryPointsOf } from "#shared/rules/layout/compound-graph.ts";
 import type { PaintedDrawing } from "#shared/rules/render/drawing.ts";
@@ -45,10 +46,9 @@ import {
 	lineLooks,
 	nodeAppearances,
 } from "#shared/rules/render/semantic-appearance.ts";
-import { shownDrawing, shownFlows, unshownOf } from "#shared/rules/render/shown.ts";
+import { shownDrawing, unshownOf } from "#shared/rules/render/shown.ts";
 import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
 import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
-import { layoutDataFlow } from "#shared/rules/layout/sequence/dataflow.ts";
 import {
 	documentRequest,
 	groupColours,
@@ -56,7 +56,7 @@ import {
 	pageRequest,
 	paintDocument,
 } from "#shared/rules/render/paint.ts";
-import { sequenceDrawing } from "#shared/rules/render/sequence-picture.ts";
+import { drawFlowchart, drawSequence } from "#shared/rules/render/flows.ts";
 import { farSizeFor } from "#shared/rules/text/measurement.ts";
 
 /**
@@ -312,25 +312,52 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 			"this content has no flow, so there is no sequence to draw",
 		);
 	}
-	const laid = layoutDataFlow(content.flows, content.nodes);
-	const shown = shownFlows(laid, plain ? told.flows : undefined);
 	// Sequence columns are cards; containment is not depicted in this grammar.
 	const appearances = nodeAppearances(
 		content.nodes.map(({ parent: _parent, ...node }) => node),
 		request.policy,
 		request.level,
 	);
-	return paintDocument({
-		picture: {
-			grammar: "sequence",
-			laid: sequenceDrawing(laid),
-			shown: shown === laid ? undefined : sequenceDrawing(shown),
-			appearances: Object.fromEntries(appearances),
-			clock: { trafficSpeed: DEFAULT_TRAFFIC_SPEED, cycleCapMs: FLOW_CYCLE_CAP_MS },
-		},
+	return drawSequence({
+		flows: content.flows,
+		nodes: content.nodes,
+		held: plain ? told.flows : undefined,
+		appearances: Object.fromEntries(appearances),
+		clock: { trafficSpeed: DEFAULT_TRAFFIC_SPEED, cycleCapMs: FLOW_CYCLE_CAP_MS },
 		page: pageRequest(request, plain),
 		document: documentRequest(request, sequenceTitleFor(told), sequenceDescriptionFor(told)),
 		icons: iconsFor(appearances.values()),
+	});
+}
+
+/**
+ * Every flow of a reading, drawn as a flowchart.
+ *
+ * Laid out from what the picture draws: with its comparison, the reading with
+ * what the variant lost put back; without it, the variant's own reading.
+ * @param request What to draw, and on which ground.
+ * @returns The document, its size and its atlas.
+ * @throws {SemanticRenderError} When no flow is left to draw.
+ */
+async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedDiagram> {
+	const { plain, told } = readingOf(request);
+	if (told.flows.length === 0) {
+		throw new SemanticRenderError(
+			"NOTHING_TO_RENDER",
+			"this content has no flow, so there is no flowchart to draw",
+		);
+	}
+	const { policy } = request;
+	const names = told.flows.map((flow) => flow.name).join(", ");
+	return await drawFlowchart({
+		flows: told.flows,
+		parts: told.nodes,
+		nodeKinds: policy.nodeKinds,
+		groups: groupColours(policy),
+		page: pageRequest(request, plain),
+		document: documentRequest(request, `Flowchart: ${names}`, `Showing the logic of ${names}.`),
+		// Every icon a step's box can be drawn with: the kind of any part.
+		icons: iconsFor(Object.values(policy.nodeKinds)),
 	});
 }
 

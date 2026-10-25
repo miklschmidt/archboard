@@ -383,12 +383,13 @@ two asset paths. It imports `board`, `timing` and `process`. The 2 files of `sha
 only in Bun.
 
 - `shared/` holds the picture code that the browser and Bun both run. `rules/` is the pure code: `render/` has the entry
-  points, the host contract, the hand-off of a drawing to the renderer core (`paint.ts`) and the marks a pane draws
-  itself (`marks.ts`), `text/` the measurement and the fonts, `engine/` the layout engine and its worker pool,
-  `layout/`, `track/` and `blocks/` the three ways to lay a board out, and `flowchart/`. These folders split by
-  behavior (`blocks/tree/`, `track/routes/`), not by a longer file prefix. The renderer core in `crates/` paints
-  every picture (ADR 0057). `constants/` holds the spacing, the typography and `shell-geometry.ts`, and `protocol/`
-  holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
+  points, the host contract, the hand-off of a drawing to the renderer core (`paint.ts`), the hand-off of a board's
+  flows to it (`flows.ts`) and the marks a pane draws itself (`marks.ts`), `text/` the measurement and the fonts,
+  `engine/` the layout engine and its worker pool, and `layout/`, `track/` and `blocks/` the ways to lay an
+  architecture out. These folders split by behavior (`blocks/tree/`, `track/routes/`), not by a longer file prefix.
+  The renderer core in `crates/` paints every picture and lays out every sequence and flowchart
+  (`crates/archboard-flows`, ADR 0057). `constants/` holds the spacing, the typography and `shell-geometry.ts`, and
+  `protocol/` holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
   glue, and the TypeScript types of its contract, generated from its Rust types.
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the
   theme colors and the pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
