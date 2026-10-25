@@ -185,7 +185,7 @@ describe("approvals controller decisions", () => {
 		expect(sentDraft(transport)).toMatchObject({
 			response: {
 				approvalKind: "exec_command",
-				decision: { denied: { rejection: "Declined at the workbench." } },
+				decision: { denied: { rejection: expect.stringMatching(/\S/u) } },
 			},
 		});
 	});

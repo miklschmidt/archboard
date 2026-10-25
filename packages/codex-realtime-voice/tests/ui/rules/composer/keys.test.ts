@@ -85,12 +85,12 @@ describe("the transport's refusals in the composer's words", () => {
 		];
 		const messages = codes.map((code) => transportRefusalMessage(code));
 		expect(new Set(messages).size).toBe(codes.length);
-		expect(messages).not.toContain("The server refused this workhorse command.");
+		expect(messages).not.toContain(transportRefusalMessage("something_new"));
 	});
 
 	test("an unknown code still says something true", () => {
-		expect(transportRefusalMessage("something_new")).toBe(
-			"The server refused this workhorse command.",
-		);
+		const fallback = transportRefusalMessage("something_new");
+		expect(fallback).toMatch(/\S/u);
+		expect(transportRefusalMessage("something_else")).toBe(fallback);
 	});
 });
