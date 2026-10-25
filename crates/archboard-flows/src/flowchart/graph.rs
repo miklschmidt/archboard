@@ -172,10 +172,7 @@ impl<'a> Building<'a> {
     /// to whom under its words.
     fn add_message(&mut self, step: &Message) {
         let from = self.part_name(&step.from);
-        let name = match step.repeat {
-            None => step.label.clone(),
-            Some(repeat) => format!("{} ×{repeat}", step.label),
-        };
+        let name = step.drawn_label();
         let kind = self
             .parts
             .get(step.to.as_str())
