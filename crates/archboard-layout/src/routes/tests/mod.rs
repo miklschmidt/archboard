@@ -1,6 +1,12 @@
 //! Which line rises where two lines cross, where a hop may stand, and how the
-//! crossing pass keeps every route's rounding, on fixed route geometry
-//! (`crossing-hops.test.ts`, `crossing-rounding.test.ts`).
+//! crossing pass keeps every route's rounding, on fixed route geometry, so a
+//! test holds the crossing pass apart from any placement engine. Which of two
+//! lines rises by its look is in `layering`, crossings close along one line
+//! in `clusters`, and a drawing with some subjects left out in `shown`.
+
+mod clusters;
+mod layering;
+mod shown;
 
 use std::collections::BTreeMap;
 
@@ -8,10 +14,11 @@ use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, Chip, DrawingBridge, DrawingEdge, EdgeFacts, Emphasis,
     MeasuredLabel, NodeFacts, PlacedLabel, ReadingDirection,
 };
-use archboard_scene::geometry::{Curve, Point, Rect, curve_bounds, curve_through};
+use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, curve_through};
+use archboard_scene::request::{Arrowhead, Dash};
 
-use super::bridge_crossings;
 use super::clearance::lacks_clearance;
+use super::{LineLook, bridge_crossings};
 
 type Drawing = ArchitectureDrawing<NodeFacts, EdgeFacts>;
 
@@ -35,13 +42,26 @@ fn facts(index: usize) -> EdgeFacts {
     }
 }
 
-/// Rounded routes as they reach the crossing pass (`fixed-routes.ts`).
+/// Rounded routes as they reach the crossing pass, each a normal call.
 fn drawing(routes: &[Vec<Point>]) -> Drawing {
+    drawn(routes, &[])
+}
+
+/// Rounded routes as they reach the crossing pass, the routes named by index
+/// of the kind and emphasis given, every other a normal call.
+fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
     let edges = routes
         .iter()
         .enumerate()
         .map(|(index, route)| DrawingEdge {
-            edge: facts(index),
+            edge: looks.iter().find(|look| look.0 == index).map_or_else(
+                || facts(index),
+                |&(_, kind, emphasis)| EdgeFacts {
+                    kind: kind.to_owned(),
+                    emphasis,
+                    ..facts(index)
+                },
+            ),
             curve: curve_through(route, false),
             path: String::new(),
             label: None,
@@ -58,17 +78,44 @@ fn drawing(routes: &[Vec<Point>]) -> Drawing {
     }
 }
 
-/// The crossings settled, every line drawn solid with a filled head.
+/// How each route's line is drawn: an event's dashed with an open head, as
+/// the default policy draws it, every other solid with a filled head.
+fn lines_of(drawing: &Drawing) -> BTreeMap<String, LineLook> {
+    drawing
+        .edges
+        .iter()
+        .filter(|edge| edge.edge.kind == "event")
+        .map(|edge| {
+            let look = LineLook {
+                dash: Dash::Dashed,
+                arrowhead: Arrowhead::Open,
+            };
+            (edge.edge.id.clone(), look)
+        })
+        .collect()
+}
+
+/// The crossings settled, each line drawn as its kind is.
 fn bridged(drawing: &Drawing) -> Bridged<EdgeFacts> {
-    bridge_crossings(drawing, &BTreeMap::new())
+    bridge_crossings(drawing, &lines_of(drawing))
 }
 
 fn across(y: f64) -> Vec<Point> {
-    points(&[(0.0, y), (100.0, y)])
+    across_from(y, 0.0, 100.0)
 }
 
 fn down(x: f64) -> Vec<Point> {
-    points(&[(x, 0.0), (x, 100.0)])
+    down_from(x, 0.0, 100.0)
+}
+
+/// A straight route across at one height, from one place to another.
+fn across_from(y: f64, from: f64, to: f64) -> Vec<Point> {
+    points(&[(from, y), (to, y)])
+}
+
+/// A straight route down at one place, from one height to another.
+fn down_from(x: f64, from: f64, to: f64) -> Vec<Point> {
+    points(&[(x, from), (x, to)])
 }
 
 /// Whether a bridge is a hop, not a cut.
@@ -331,10 +378,36 @@ fn a_fans_line_that_turns_back_across_its_siblings_lane_drops_a_lane_before_it()
     assert!(ends_kept(&result.edges, &routes));
 }
 
+/// How far across and down each bend of a curve reaches.
+fn bends_of(curve: &Curve) -> Vec<(f64, f64)> {
+    let starts = std::iter::once(curve.from).chain(curve.segments.iter().map(Segment::to));
+    starts
+        .zip(&curve.segments)
+        .filter_map(|(from, segment)| match segment {
+            Segment::Cubic { to, .. } => Some(((to.x - from.x).abs(), (to.y - from.y).abs())),
+            Segment::Line { .. } => None,
+        })
+        .collect()
+}
+
+/// A route with just the room its two turns and its head need.
+fn fitting() -> Vec<Point> {
+    points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)])
+}
+
+#[test]
+fn an_ordinary_bend_rounds_eight_across_on_legs_just_long_enough() {
+    assert_eq!(
+        bends_of(&curve_through(&fitting(), false)),
+        [(8.0, 8.0), (8.0, 8.0)]
+    );
+}
+
 #[test]
 fn a_completed_route_needs_room_for_every_fixed_turn_and_its_head() {
-    let fits = points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)]);
-    assert!(!lacks_clearance(&curve_through(&fits, false), None));
+    assert!(!lacks_clearance(&curve_through(&fitting(), false), None));
+    // A route too short for its turns still rounds them at eight; only the
+    // finished route is refused, so label settlement tries another first.
     for short in [
         points(&[(0.0, 1.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)]),
         points(&[(0.0, 0.0), (0.0, 8.0), (15.0, 8.0), (15.0, 28.0)]),
@@ -351,4 +424,17 @@ fn a_completed_route_needs_room_for_every_fixed_turn_and_its_head() {
     };
     assert!(!lacks_clearance(&labelled, Some(label(8.0))));
     assert!(lacks_clearance(&labelled, Some(label(7.0))));
+}
+
+#[test]
+fn coordinate_jitter_makes_no_rounded_turn() {
+    let jittered = points(&[
+        (1.0, 0.0),
+        (1.0, 25.0),
+        (1.0 + 1e-13, 25.0),
+        (1.0 + 1e-13, 50.0),
+    ]);
+    let curve = curve_through(&jittered, false);
+    assert!(matches!(curve.segments.as_slice(), [Segment::Line { .. }]));
+    assert!(!lacks_clearance(&curve, None));
 }
