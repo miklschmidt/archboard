@@ -6,10 +6,12 @@ This package adds a realtime Codex voice agent to your own Bun project. A person
 
 - Bun 1.4.3 or newer.
 - The `@openai/codex` package at exactly version 0.160.0. The package refuses every other version.
+- Node.js on `PATH`, because `@openai/codex` starts Codex with a Node.js script. A server that you start with `bun run <script>` needs no Node.js: `bun run` puts its own `node` on `PATH`.
 - Linux or macOS.
 - A Codex account that supports realtime voice. The person signs in from the page.
 - For voice: a browser with a microphone and speakers. Browsers give microphone access only to pages on `https` or on a local address such as `127.0.0.1`.
-- For the React entry: React 19.
+- For the React entry: React 19.2.8 or a newer React 19.
+- For TypeScript: `@types/bun`, because the server types use Bun's own types.
 
 ## Install
 
@@ -18,7 +20,7 @@ bun add @archboard/codex-realtime-voice @openai/codex@0.160.0 react react-dom
 bun add -d @types/bun @types/react @types/react-dom
 ```
 
-`@openai/codex` is a peer dependency, so you install it yourself. `react` is an optional peer dependency. You need it only for `@archboard/codex-realtime-voice/react`.
+`@openai/codex` is a peer dependency, so you install it yourself. `react` is an optional peer dependency. You need it only for `@archboard/codex-realtime-voice/react`. `@types/bun` is an optional peer dependency too. You need it only for type checking.
 
 ## Quickstart
 
@@ -290,7 +292,7 @@ await client.connect();
 
 ## Concepts
 
-The coordinator is the Codex thread that the person talks to. It speaks through the realtime voice model, answers short questions, uses ordinary Codex tools for quick looks, and decides what the voice says. It does not do sustained work. It runs in a directory of its own inside the state directory, which is no checkout.
+The coordinator is the Codex thread that the person talks to. It speaks through the realtime voice model, answers short questions, uses ordinary Codex tools for quick looks, and decides what the voice says. It does not do sustained work. It runs in its own directory inside the state directory, and that directory is not a checkout.
 
 A workhorse is the Codex thread that does sustained work in one checkout. The coordinator gives it work with its own tools: it delegates, inspects, steers, queues and stops. A workhorse keeps its own history and never sees the coordinator's history. A text message from the page goes straight to the workhorse of the page's checkout.
 
@@ -332,17 +334,17 @@ The state directory is the directory that you give as `storage.directory`. It ho
 
 The agent that `createVoiceAgent` returns has these members:
 
-| Member                    | What it does                                                                                                                                                                                                                                                               |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `start()`                 | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
-| `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                          |
-| `bunHandlers(options)`    | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the page's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                              |
-| `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work. See [A `node:http` server](#a-nodehttp-server).                                                     |
-| `shutdown()`              | Closes the sockets of every `bunHandlers` and `attach` call, stops the Codex process and forgets every tab session.                                                                                                                                                        |
-| `instructions`            | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                               |
-| `browser`                 | The browser connection port for a host that serves sockets itself. See [Advanced hosting](#advanced-hosting).                                                                                                                                                              |
+| Member                    | What it does                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start()`                 | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. A call while the process is ready, or during `shutdown()`, rejects. |
+| `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                                                                                              |
+| `bunHandlers(options)`    | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the page's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                                                                                                  |
+| `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work. See [A `node:http` server](#a-nodehttp-server).                                                                                                                         |
+| `shutdown()`              | Closes the sockets of every `bunHandlers` and `attach` call, stops the Codex process and forgets every tab session.                                                                                                                                                                                                                            |
+| `instructions`            | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                                                                                                   |
+| `browser`                 | The browser connection port for a host that serves sockets itself. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                                                                  |
 
-`identity` names the agent. A field that you leave out takes its default. Keep every value once threads exist: a thread keeps the names that it started with, and the agent drives only threads with its own thread source.
+`identity` names the agent. A field that you leave out takes its default. Keep every value once threads exist: a thread keeps the names that it started with, a stored record keeps its prefix, and the agent drives only threads with its own thread source.
 
 | Field            | Default                                                                                      | What it does                                                                                                                                                                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -350,6 +352,7 @@ The agent that `createVoiceAgent` returns has these members:
 | `threadSource`   | `"codex-realtime-voice"`                                                                     | The thread source that Codex records on each thread and that the agent requires.                                                                                                                                                                           |
 | `productName`    | `"Codex"`                                                                                    | What the person talks with, as the workhorse is told. One line of 1 to 64 characters without quotes, backslashes or braces.                                                                                                                                |
 | `toolNamespaces` | `{ workhorse: "voice_workhorse", voice: "voice_channel", coordinator: "voice_coordinator" }` | The Codex tool namespaces of the built-in tools: the coordinator's workhorse tools, its spoken-approval tool, and the tool that a workhorse uses to reach the coordinator. Give all three. Each matches `^[a-z][a-z0-9_]{0,63}$`, and no two are the same. |
+| `recordPrefix`   | `"voice"`                                                                                    | The first part of every id that the agent creates and stores, as in `voice:<kind>:<token>`. It matches `^[a-z][a-z0-9-]{0,15}$`.                                                                                                                           |
 
 #### A `Bun.serve` server
 
@@ -494,16 +497,16 @@ In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts un
 
 ### Entry points
 
-| Entry           | What it holds                                                                                                                                                                     |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `./server`      | `createVoiceAgent`, `resolveCodexExecutable` and their types. The remaining exports are seams that Archboard uses. A host that uses `bunHandlers` or `attach` needs none of them. |
-| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                |
-| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                      |
-| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                     |
-| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                             |
-| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                            |
-| `./realtime`    | The phases and transitions of a voice run.                                                                                                                                        |
-| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the realtime adapter.                                                                                                |
+| Entry           | What it holds                                                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `./server`      | `createVoiceAgent`, `resolveCodexExecutable`, `DEFAULT_VOICE_AGENT_IDENTITY` and their types. The remaining exports are lower-level parts for a host that routes its own sockets. A host that uses `bunHandlers` or `attach` needs none of them. |
+| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                                                                               |
+| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                                                                                     |
+| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                                                                                    |
+| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                                                                                            |
+| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                                                                                           |
+| `./realtime`    | The phases and transitions of a voice run.                                                                                                                                                                                                       |
+| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the realtime adapter.                                                                                                                                                               |
 
 ## Troubleshooting
 
