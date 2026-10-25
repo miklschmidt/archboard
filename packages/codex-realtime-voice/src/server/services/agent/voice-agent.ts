@@ -28,7 +28,7 @@ import {
  * passes none.
  */
 export type VoiceAgentExtensions = Omit<CodexWorkbenchExtensions, "onFatal"> & {
-	/** What the coordinator is told about the host page. Default: nothing beyond the conversation. */
+	/** What the coordinator is told about the host page. Default: the admitted checkouts, as data. */
 	readonly context?: WorkbenchContextSource;
 	/** How voice is presented and recorded. Default: plain live voice. */
 	readonly voice?: WorkbenchVoicePolicy;

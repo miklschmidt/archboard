@@ -165,7 +165,7 @@ function terminalShutdown(
 		if (failure !== null) {
 			throw new CodexWorkbenchCompositionError(
 				"shutdown_failed",
-				"The production Codex workbench did not shut down cleanly.",
+				"The voice agent did not shut down cleanly. The cause says why.",
 				failure,
 			);
 		}
@@ -357,7 +357,7 @@ function publishReadySlots(
 			if (!isCurrentRuntime(published, runtime) || published.state !== "ready") {
 				throw new CodexWorkbenchCompositionError(
 					"not_started",
-					"The production Codex workbench browser gateway is not ready.",
+					"The voice agent is not ready for browser sockets until it has started.",
 				);
 			}
 			return generation.gateway;

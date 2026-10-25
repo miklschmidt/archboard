@@ -97,7 +97,6 @@ const LATE_RESULT_REASON =
 	"The pane moved to another thread link before the server answered, so this result is not applied here.";
 
 export {
-	GENERIC_TRANSPORT_REFUSAL,
 	LATE_RESULT_REASON,
 	MAX_PROMPT_BYTES,
 	OUTCOME_MESSAGES,

@@ -244,23 +244,25 @@ interface GatewayBehaviour {
 	readonly closed?: readonly number[];
 }
 
+/** A gateway double that delivers every command and loses, refuses and closes no socket. */
+const PLAIN_GATEWAY: Required<GatewayBehaviour> = {
+	outcome: "delivered",
+	refused: [],
+	unreadable: [],
+	lostOnCommand: [],
+	closed: [],
+};
+
 /**
  * A client over a gateway double that answers every command with one outcome.
- * @param behaviour How the double answers.
- * @param behaviour.outcome What each command result says about delivery.
- * @param behaviour.refused The sockets the server refuses.
- * @param behaviour.unreadable The sockets whose subscribe answer this browser cannot read.
- * @param behaviour.lostOnCommand The sockets that are lost when a command arrives.
- * @param behaviour.closed The sockets the server closes before its first answer.
+ * @param behaviour How the double answers, where it differs from {@link PLAIN_GATEWAY}.
  * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
-function gateway({
-	outcome = "delivered",
-	refused = [],
-	unreadable = [],
-	lostOnCommand = [],
-	closed = [],
-}: GatewayBehaviour = {}) {
+function gateway(behaviour: GatewayBehaviour = {}) {
+	const { outcome, refused, unreadable, lostOnCommand, closed } = {
+		...PLAIN_GATEWAY,
+		...behaviour,
+	};
 	const sockets: FakeSocket[] = [];
 	const urls: string[] = [];
 	const timers: Timer[] = [];

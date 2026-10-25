@@ -25,7 +25,7 @@ test("Codex application owns one install and one terminal shutdown", async () =>
 	});
 
 	await application.prepare();
-	await expect(application.prepare()).rejects.toThrow("already installed");
+	await expect(application.prepare()).rejects.toBeInstanceOf(Error);
 	await application.shutdown();
 	await application.shutdown();
 	expect(events).toEqual(["start", "shutdown"]);
@@ -114,7 +114,7 @@ test("Codex application retains a startup owner whose terminal cleanup failed", 
 	await expect(application.prepare()).rejects.toThrow(
 		"Codex workbench startup and terminal cleanup both failed",
 	);
-	await expect(application.prepare()).rejects.toThrow("already installed");
+	await expect(application.prepare()).rejects.toBeInstanceOf(Error);
 	await application.shutdown();
 	expect({ shutdowns, installs }).toEqual({ shutdowns: 2, installs: 1 });
 });

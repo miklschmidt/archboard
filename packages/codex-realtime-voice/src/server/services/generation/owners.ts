@@ -45,7 +45,7 @@ function requireCreated<Created extends object, Name extends keyof Created & str
 ): NonNullable<Created[Name]> {
 	const component = created[name];
 	if (component === undefined || component === null)
-		throw new Error(`The production Codex ${name} dependency is not ready.`);
+		throw new Error(`The Codex ${name} dependency is not ready.`);
 	return component;
 }
 

@@ -86,14 +86,12 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 		}
 		if (shutdownPromise !== null) {
 			return Promise.reject(
-				new Error(
-					"The Codex workbench is shutting down. Wait for shutdown before preparing again.",
-				),
+				new Error("The voice agent is shutting down. Wait for its shutdown, then start it again."),
 			);
 		}
 		if (installed || owner !== null) {
 			return Promise.reject(
-				new Error("The Codex workbench is already installed; stop it before preparing again."),
+				new Error("The voice agent is already started. Shut it down before starting it again."),
 			);
 		}
 		shutdownRequested = false;

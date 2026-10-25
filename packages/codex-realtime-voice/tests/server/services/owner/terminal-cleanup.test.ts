@@ -59,7 +59,7 @@ describe("production Codex owner terminal cleanup", () => {
 			expect(messages(failure)).toContain(`${stage} cleanup failed`);
 			expect(events).toContain("process:stop");
 			expect(owner.snapshot()).toMatchObject({ state: "failed", ready: false });
-			expect(() => owner.gateway()).toThrow("no active owner dispatch");
+			expect(() => owner.gateway()).toThrow("is not running");
 			const replacement = installFakeCodexWorkbenchOwner({
 				createProcess: () => fakeProcess([]),
 				createGeneration: async () => fakeGeneration([], 3),
@@ -99,7 +99,7 @@ describe("production Codex owner terminal cleanup", () => {
 			"final cleanup failed",
 		])
 			expect(messages(failure)).toContain(message);
-		expect(() => owner.gateway()).toThrow("no active owner dispatch");
+		expect(() => owner.gateway()).toThrow("is not running");
 	});
 
 	test("a failed process stop can perform one fresh terminal retry", async () => {
