@@ -1,11 +1,11 @@
 ---
 id: TASK-520.05
 title: The core lays out Blocks boards
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T11:46:00Z'
+updated_date: '2026-10-25T11:47:00Z'
 labels:
   - renderer
 dependencies:
@@ -26,10 +26,10 @@ Layout moves to Rust one engine at a time, each against the drawing geometry tha
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The core answers the drawing of every corpus board that Blocks lays out, and the drawing is equal to what the TypeScript stage answered
-- [ ] #2 Every corpus picture is the same bytes as before the change
-- [ ] #3 The ported TypeScript rules are gone from packages/renderer
-- [ ] #4 No corpus board renders slower, measured with the same harness before and after
+- [x] #1 The core answers the drawing of every corpus board that Blocks lays out, and the drawing is equal to what the TypeScript stage answered
+- [x] #2 Every corpus picture is the same bytes as before the change
+- [x] #3 The ported TypeScript rules are gone from packages/renderer
+- [x] #4 No corpus board renders slower, measured with the same harness before and after
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -101,4 +101,12 @@ Footprint read against base 66a9c6263, the parent of cd997ea97, found with the t
 archboard check: no diagnostics. Behind (check --code), the boards this task's commits put behind: only Archboard's "Workspace packages" and "renderer" containers, whose descriptions are still right. Renderer layout and Semantic renderer read 0 commits behind.
 
 Pictures (dark): Renderer layout Responsibilities against TASK-520.04 shows the four parts and their edges drawn as removed, Board layout changed and the new choice edge added. The Block layout view, the Layout sequence and the Place the blocks sequence read cleanly, and the Place the blocks sequence has only the core, Graphviz and the router as participants. The Semantic renderer "Layout and measuring" view against TASK-520.10 shows Layout engines changed. Renderer core is not in that view, so its two edges show only on the overview.
+
+Closing (2026-10-25): AC4's nine Track views at 1 to 2 ms slower at a load average of about 6 are accepted under the user's ruling of 2026-10-25 that differences of a few milliseconds do not matter; Blocks fell from about 9.2 s to 8.0 s over the current views. Integrated onto the typed scene: 0 of 2,344 current drawings differ and bun run check passes with every lane.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The core lays out every Track and Blocks solve through one function, lay_out_board(graph, &mut dyn Graphviz) in crates/archboard-layout, exported as layOutBoard with pure choice calls (draws_better, reads_better_packed, stacks_of, joining_of, has_regions). Blocks calls archboard-router inside Rust, so routeTrunks and its hand-coded wire format are gone. Every rule under packages/renderer/src/shared/rules/blocks and track is deleted (about 17,800 lines) except the choosing that runs solves side by side across the worker pool (block-engine.ts, solves.ts, joins-laid.ts). All 2,394 recorded Blocks solves replayed with byte-equal Graphviz graphs and equal answers; 0 of 36,032 corpus drawings differ. Renderer layout@TASK-520.05 (v69) and Semantic renderer@TASK-520.05 (v115) are adopted; ADR 0040 notes that archboard.stage is gone. Open for TASK-520.08: the two JSON type assertions in layout-engine.ts wait for a generated type of the answer.
+<!-- SECTION:FINAL_SUMMARY:END -->

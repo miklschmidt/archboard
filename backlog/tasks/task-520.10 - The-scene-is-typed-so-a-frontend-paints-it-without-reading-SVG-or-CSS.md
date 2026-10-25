@@ -1,7 +1,7 @@
 ---
 id: TASK-520.10
 title: The scene is typed, so a frontend paints it without reading SVG or CSS
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T04:29:00Z'
@@ -21,10 +21,10 @@ ADR 0057 says each frontend paints the core's scene itself. Today the scene leak
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The scene's types hold no SVG element name, attribute string, path-data string or CSS expression; paints name palette tokens and colour operations as values
-- [ ] #2 Ids are minted from scene values, not from serialized markup, and the SVG writer lives only in archboard-svg
-- [ ] #3 archboard-svg writes every corpus picture as the same bytes as before the change
-- [ ] #4 A native Rust test reads the shapes, paints and text of a corpus board's scene without parsing any string
+- [x] #1 The scene's types hold no SVG element name, attribute string, path-data string or CSS expression; paints name palette tokens and colour operations as values
+- [x] #2 Ids are minted from scene values, not from serialized markup, and the SVG writer lives only in archboard-svg
+- [x] #3 archboard-svg writes every corpus picture as the same bytes as before the change
+- [x] #4 A native Rust test reads the shapes, paints and text of a corpus board's scene without parsing any string
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -100,3 +100,9 @@ Behind (check --code), the boards this task's commits put behind:
 
 Pictures (dark, 2026-10-25): Semantic renderer@TASK-520.10 against TASK-520.04. The overview shows Painting and Renderer core changed and the added edge Painting -> Key and export (the generated viewer marks). The Painting view shows SVG document, now a module, and Theme palette changed. Labels and cards read cleanly, with nothing clipped.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The scene is typed: crates/archboard-scene/src/scene holds groups with typed roles and subjects, shapes with typed geometry (rects, circles, lines, paths as steps), fills and strokes, colours as theme tokens, palette colours or colour operations, definitions, text and traffic. Ids are minted as values in the painter; every SVG and CSS spelling (element names, attribute order, path spelling, colours, classes, stylesheet, data attributes, font faces, SMIL pulses, ids) lives in crates/archboard-svg, which writes every picture to the same bytes: 0 of 36,032 corpus drawings and 0 of 17,640 exports differ. crates/archboard-scene/tests/typed_scene.rs reads a corpus board's scene as typed values without parsing a string. The core generates the viewer-mark constants that marks.ts reads; the type exporter prints in a stable order; the unused paintScene export is gone. docs/design/typed-scene.md and ADR 0057 describe it; Semantic renderer@TASK-520.10 is adopted (v110). Open: the picture key is still read back from the SVG (TASK-520.08 moves the render reply into the core), and Item::Break keeps the document's line breaks.
+<!-- SECTION:FINAL_SUMMARY:END -->
