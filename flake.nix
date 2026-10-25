@@ -71,7 +71,12 @@
               # nixpkgs' rustc links wasm32 with lld.
               pkgs.lld
               wasm-bindgen-cli
+              # The language server `archboard check --code` asks about Rust
+              # names, once `repo language-server rust` configures it.
+              pkgs.rust-analyzer
             ];
+            # rust-analyzer reads the standard library's source from here.
+            RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
           };
         }
       ) bunPlatforms;
