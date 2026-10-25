@@ -295,9 +295,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 			}),
 		).toEqual({ checkout: "/work/payments" });
 		// Every workhorse tool names the checkout whose workhorse it works with (ADR 0050).
-		expect(() =>
-			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {}),
-		).toThrow();
+		expect(() => parseCoordinatorToolInput("workhorse", "inspect_workhorse", {})).toThrow();
 		expect(
 			parseCoordinatorToolInput("workhorse", "delegate_to_workhorse", {
 				checkout: "/work/payments",
