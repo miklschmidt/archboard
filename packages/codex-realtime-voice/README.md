@@ -24,18 +24,14 @@ bun add -d @types/bun @types/react @types/react-dom
 
 The quickstart is two files in the root of your project: a server and a React page. The workhorse works in the directory where you start the server.
 
-`server.ts` starts the agent, serves the page and accepts the page's socket:
+`server.ts` starts the agent and a `Bun.serve` server. `agent.bunHandlers` gives the server its `fetch` and `websocket` handlers: the page's socket on `/voice` goes to the agent, and every other request goes to your `fetch`, which serves the page. A host on `node:http`, such as Express, uses [`attach`](#a-nodehttp-server) instead.
 
 <!-- checked: server.ts -->
 
 ```ts
-import { createServer } from "node:http";
 import { homedir } from "node:os";
 import path from "node:path";
 import { createVoiceAgent, resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
-
-const port = 4100;
-const origin = `http://127.0.0.1:${port}`;
 
 const agent = createVoiceAgent({
 	storage: { directory: path.join(homedir(), ".my-voice-agent") },
@@ -55,22 +51,25 @@ const page = await Bun.build({ entrypoints: [path.join(import.meta.dir, "page.ts
 const script = await page.outputs[0]!.text();
 const html = `<!doctype html><title>Voice</title><div id="root"></div><script type="module" src="/page.js"></script>`;
 
-const server = createServer((request, response) => {
-	if (request.url === "/page.js") {
-		response.writeHead(200, { "Content-Type": "text/javascript" }).end(script);
-		return;
-	}
-	response.writeHead(200, { "Content-Type": "text/html" }).end(html);
+const server = Bun.serve({
+	hostname: "127.0.0.1",
+	port: 4100,
+	...agent.bunHandlers({
+		path: "/voice",
+		fetch: (request) =>
+			new URL(request.url).pathname === "/page.js"
+				? new Response(script, { headers: { "Content-Type": "text/javascript" } })
+				: new Response(html, { headers: { "Content-Type": "text/html" } }),
+	}),
 });
 
 const status = await agent.start();
 if (!status.ready) throw new Error(`Codex did not start: ${status.failure}`);
-agent.attach(server, { path: "/voice", origin });
-server.listen(port, "127.0.0.1", () => console.log(`Open ${origin}`));
+console.log(`Open ${server.url}`);
 
 async function stop(): Promise<void> {
-	server.close();
 	await agent.shutdown();
+	await server.stop();
 }
 process.once("SIGINT", () => void stop());
 process.once("SIGTERM", () => void stop());
@@ -249,7 +248,7 @@ bun server.ts
 
 Then do these steps:
 
-1. Open `http://127.0.0.1:4100`. Use this exact address, because the socket accepts only the origin that you give to `attach`.
+1. Open `http://127.0.0.1:4100`. Use this exact address, because the socket accepts only the server's own origin, and `localhost` is another origin.
 2. Select "Sign in with ChatGPT", then "Continue sign-in", and finish the sign-in in that browser. Select "I signed in" when the page still shows the sign-in.
 3. Type a message to the workhorse and select "Send".
 4. Select "Start voice", allow the microphone, and talk to the coordinator.
@@ -331,8 +330,9 @@ The agent that `createVoiceAgent` returns has these members:
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `start()`                 | Starts the private Codex process and waits for it. It resolves with the status. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
 | `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                          |
-| `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server, which Bun runs. Call it after `start()` resolves. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work.                                                   |
-| `shutdown()`              | Detaches every attached server, stops the Codex process and forgets every tab session.                                                                                                                                                                                     |
+| `bunHandlers(options)`    | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the page's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                              |
+| `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work. See [A `node:http` server](#a-nodehttp-server).                                                     |
+| `shutdown()`              | Closes the sockets of every `bunHandlers` and `attach` call, stops the Codex process and forgets every tab session.                                                                                                                                                        |
 | `instructions`            | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                               |
 | `browser`                 | The browser connection port for a host that serves sockets itself. See [Advanced hosting](#advanced-hosting).                                                                                                                                                              |
 
@@ -345,13 +345,29 @@ The agent that `createVoiceAgent` returns has these members:
 | `productName`    | `"Codex"`                                                                                    | What the person talks with, as the workhorse is told. One line of 1 to 64 characters without quotes, backslashes or braces.                                                                                                                                |
 | `toolNamespaces` | `{ workhorse: "voice_workhorse", voice: "voice_channel", coordinator: "voice_coordinator" }` | The Codex tool namespaces of the built-in tools: the coordinator's workhorse tools, its spoken-approval tool, and the tool that a workhorse uses to reach the coordinator. Give all three. Each matches `^[a-z][a-z0-9_]{0,63}$`, and no two are the same. |
 
-`attach` takes these options. It throws a `TypeError` when `path` or `origin` can never admit a socket.
+#### A `Bun.serve` server
 
-| Field      | Default                  | What it does                                                                                                                                                  |
-| ---------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`     | Required                 | The socket path, such as `/voice`. It must start with `/`. The package leaves upgrades to other paths to the other upgrade listeners of the server.           |
-| `origin`   | Required                 | The HTTP origin of your listener exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. See [Security](#security).                     |
-| `checkout` | The only listed checkout | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function. |
+`bunHandlers` takes these options. It throws a `TypeError` when `path`, or an `origin` that you give, can never admit a socket.
+
+| Field       | Default                    | What it does                                                                                                                                                                                                                                                                                 |
+| ----------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`      | Required                   | The socket path, such as `/voice`. It must start with `/`. A request that is not a socket upgrade on this path goes to `fetch`.                                                                                                                                                              |
+| `fetch`     | Answers `404`              | Your handler of every other request. It receives the request and the server, as the `fetch` of `Bun.serve` does, and it can upgrade sockets of its own.                                                                                                                                      |
+| `websocket` | None                       | Your handlers of the sockets that your `fetch` upgrades. Bun has one handler set for each server, so the package tells its own sockets apart by their `data` and gives every other socket to these handlers. Their options, such as `maxPayloadLength`, apply to every socket of the server. |
+| `origin`    | The origin of `server.url` | The HTTP origin of your server exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. The default is the address that the server listens on, so a server on port `0` needs none. Give it when browsers reach the server by another name. See [Security](#security).   |
+| `checkout`  | The only listed checkout   | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function.                                                                                                                                |
+
+When `fetch` upgrades sockets of its own, name the type of their `data`, as in `agent.bunHandlers<{ room: string }>({ path, fetch, websocket })`.
+
+A socket that arrives before `start()` is ready is closed with `1011`. After `shutdown()`, the server answers an upgrade on `path` with `503`. To serve sockets again after a new `start()`, call `bunHandlers` again and give the result to `server.reload`.
+
+#### A `node:http` server
+
+`attach(server, options)` serves the sockets on a `node:http` server, such as one that Express or Node's `http` module makes. It takes the same `path` and `checkout`, and its `origin` is required. It applies the same checks as `bunHandlers`. Upgrades to other paths stay with the other `upgrade` listeners of the server, so a server with no other listener must end them itself. It throws a `TypeError` when `path` or `origin` can never admit a socket.
+
+```ts
+agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
+```
 
 ### `resolveCodexExecutable(options)`
 
@@ -410,9 +426,9 @@ The state has these fields:
 The agent can run commands and change files in the admitted checkouts. Anyone who can use its socket can ask it to.
 
 - Your server owns the listener. The package opens no port. Bind to `127.0.0.1`, as the quickstart does, unless you put your own authentication in front of the socket.
-- `attach` refuses a socket upgrade with `403` when the `Host` header is not the host of `origin`, or when the `Origin` header is present and is not exactly `origin`. This stops other web sites from opening the socket from a browser. A client that sends no `Origin` header, such as a local script, passes this check, so every process that can reach the port can drive the agent.
-- A workhorse works only in an admitted checkout. The browser never chooses the checkout: `attach` fixes it for each socket path. The coordinator can delegate to every admitted checkout.
-- Codex runs with a private `CODEX_HOME` in the state directory, never your own `~/.codex`. At each start, the package adds these settings to `config.toml` in that home when they are missing: `approval_policy = "on-request"`, `approvals_reviewer = "auto_review"`, `sandbox_mode = "workspace-write"` and network access for that sandbox. A setting that the file already has stays. With `auto_review`, Codex gives an action that the sandbox refuses to a reviewer agent instead of asking the person. To answer every approval yourself, stop the server, set `approvals_reviewer = "user"` in `<directory>/codex-home/config.toml`, and start it again. The file must keep mode `0600`.
+- `bunHandlers` and `attach` refuse a socket upgrade with `403` when the `Host` header is not the host of `origin`, or when the `Origin` header is present and is not exactly `origin`. This stops other web sites from opening the socket from a browser. A client that sends no `Origin` header, such as a local script, passes this check, so every process that can reach the port can drive the agent.
+- A workhorse works only in an admitted checkout. The browser never chooses the checkout: `bunHandlers` and `attach` fix it for each socket path. The coordinator can delegate to every admitted checkout.
+- Codex runs with a private `CODEX_HOME` in the state directory, never your own `~/.codex`. The package fixes its policy, and no option changes it: commands run in the `workspace-write` sandbox with network access, approvals are on request, and the approvals reviewer is `auto_review`. With `auto_review`, Codex gives an action that the sandbox refuses to a reviewer agent, which approves or denies it instead of asking the person.
 - The Codex process receives only a fixed list of environment variables from your server: the user and shell (`HOME`, `USER`, `LOGNAME`, `SHELL`, `PATH`), the locale and time zone, the terminal, the temporary and XDG directories, the proxy and certificate variables, and `SSH_AUTH_SOCK`. Other variables, such as API keys, reach Codex only when you pass them in `codex.hostEnvironment`.
 - An approval answer carries the `intent` of the state that showed it. The server refuses the answer when the conversation changed since. Speech alone never settles an approval: a spoken answer is classified and settled once, and an unclear answer goes back to the page.
 
@@ -466,22 +482,22 @@ Pass it as `extensions: { context }` to `createVoiceAgent`.
 
 ### A host that owns its sockets
 
-`attach` covers one `node:http` server. A host that serves sockets in another way uses `agent.browser` on the server instead: `accept` registers a socket with its pane, tab session and checkout, `handle` passes each parsed request, `close` ends a socket, and `drain` waits for accepted work. `attach` in the package source is the reference use.
+`bunHandlers` covers a `Bun.serve` server and `attach` a `node:http` server. A host that serves sockets in another way uses `agent.browser` on the server instead: `accept` registers a socket with its pane, tab session and checkout, `handle` passes each parsed request, `close` ends a socket, and `drain` waits for accepted work. The two adapters in the package source are the reference uses.
 
 In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts under `createVoiceClient`. Use them to draw your own conversation UI over a socket that you open: the transport and the media owner, the conversation controllers of one pane (the conversation link and sign-in, the composer with queue and steer, the queue and the approvals), and the conversation projected from the server timelines.
 
 ### Entry points
 
-| Entry           | What it holds                                                                                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `./server`      | `createVoiceAgent`, `resolveCodexExecutable` and their types. The remaining exports are seams that Archboard uses. A host that uses `attach` needs none of them. |
-| `./browser`     | `createVoiceClient` and its types.                                                                                                                               |
-| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                     |
-| `./controllers` | The transport, media and conversation parts under the client.                                                                                                    |
-| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                            |
-| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                           |
-| `./realtime`    | The phases and transitions of a voice run.                                                                                                                       |
-| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the realtime adapter.                                                                               |
+| Entry           | What it holds                                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `./server`      | `createVoiceAgent`, `resolveCodexExecutable` and their types. The remaining exports are seams that Archboard uses. A host that uses `bunHandlers` or `attach` needs none of them. |
+| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                |
+| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                      |
+| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                     |
+| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                             |
+| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                            |
+| `./realtime`    | The phases and transitions of a voice run.                                                                                                                                        |
+| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the realtime adapter.                                                                                                |
 
 ## Troubleshooting
 
