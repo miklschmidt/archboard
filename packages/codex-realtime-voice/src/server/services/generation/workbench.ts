@@ -44,10 +44,12 @@ function productionGenerationFactory(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchGenerationFactory {
 	return async (input) => {
-		const identityLedger = input.kernel?.identityLedger ?? createIdentityLedger();
+		const bindings = options.bindings(input);
+		const identityLedger =
+			input.kernel?.identityLedger ?? createIdentityLedger(bindings.recordPrefix);
 		return composeCodexWorkbenchGeneration({
 			factories: createProductionCodexWorkbenchFactories(
-				options.bindings(input),
+				bindings,
 				input.kernel,
 				input.adoptedSession,
 				identityLedger,
@@ -72,9 +74,9 @@ function productionKernelFactory(
 	options: InstallProductionCodexWorkbenchOptions,
 ): NonNullable<CodexWorkbenchOwnerOptions["createKernel"]> {
 	return (input) => {
-		const identityLedger = createIdentityLedger();
-		const identity = createIdentityAuthorities(identityLedger);
 		const bindings = options.bindings(input);
+		const identityLedger = createIdentityLedger(bindings.recordPrefix);
+		const identity = createIdentityAuthorities(identityLedger);
 		const transport = createCodexTransport({
 			...bindings.transport({ identity }),
 			identity: identity.identity,

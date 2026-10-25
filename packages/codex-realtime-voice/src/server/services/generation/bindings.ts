@@ -218,6 +218,7 @@ function approvalBindings(
 function createProductionBindings(context: BindingContext): ProductionCodexWorkbenchBindings {
 	return {
 		tools: createVoiceToolset(context.server.host.instructions.coordinator.identity),
+		recordPrefix: context.server.host.instructions.coordinator.identity.recordPrefix,
 		dynamicRegistrations: context.server.host.domainTools?.registrations ?? [],
 		...storageBindings(context),
 		...approvalBindings(context),

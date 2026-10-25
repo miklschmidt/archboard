@@ -2,9 +2,9 @@ import { isAbsolute, resolve } from "node:path";
 
 import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 
-const CHILD_TOKEN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
+const CHILD_TOKEN = /^([a-z][a-z0-9-]{0,15}):child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const EPOCH_TOKENS =
-	/^archboard:epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
+	/^([a-z][a-z0-9-]{0,15}):epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const BOUNDED_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~:/-]{0,255}$/u;
 const SHA256_HEX = /^[0-9a-f]{64}$/u;
 const IDENTITY_MAX_LENGTH = 8193;
@@ -117,7 +117,7 @@ function asBoundedString(value: unknown, label: string, maxLength: number): stri
 }
 
 /**
- * Require a canonical Archboard identity of one domain.
+ * Require a canonical identity of one domain.
  * @param value - The decoded value.
  * @param domain - Which identity domain it must name.
  * @param label - Which field, for the failure message.
@@ -125,9 +125,10 @@ function asBoundedString(value: unknown, label: string, maxLength: number): stri
  */
 function asDomainIdentity(value: unknown, domain: ManifestIdentityDomain, label: string): string {
 	const identity = asBoundedString(value, label, IDENTITY_MAX_LENGTH);
-	const match = new RegExp(`^archboard:${domain}:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$`, "u").exec(
-		identity,
-	);
+	const match = new RegExp(
+		`^[a-z][a-z0-9-]{0,15}:${domain}:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$`,
+		"u",
+	).exec(identity);
 	if (match === null) {
 		throw new Error(`${label} is not a canonical ${domain} identity`);
 	}
@@ -175,9 +176,14 @@ function asTurnId(value: unknown, label: string): TurnId {
 function asEpoch(value: unknown, childValue: unknown, label: string): ChildEpoch {
 	const child = asDomainIdentity(childValue, "child", `${label}.child`);
 	const epoch = asDomainIdentity(value, "epoch", label);
-	const childToken = CHILD_TOKEN.exec(child)?.[1];
+	const childTokens = CHILD_TOKEN.exec(child);
 	const epochTokens = EPOCH_TOKENS.exec(epoch);
-	if (childToken === undefined || epochTokens === null || epochTokens[1] !== childToken) {
+	if (
+		childTokens === null ||
+		epochTokens === null ||
+		epochTokens[1] !== childTokens[1] ||
+		epochTokens[2] !== childTokens[2]
+	) {
 		throw new Error(`${label} does not belong to its child`);
 	}
 	return adoptIdentity(epoch);
