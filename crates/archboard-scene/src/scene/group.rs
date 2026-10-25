@@ -45,7 +45,9 @@ pub struct Subject {
     pub standing: Option<Standing>,
 }
 
-/// A move, then a scale about the origin.
+/// A scale about the origin, followed by a move.
+/// A point `(px, py)` maps to `(px * scale + x, py * scale + y)`.
+/// An absent scale is 1.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
 pub struct Transform {
     /// How far right.
