@@ -7,8 +7,8 @@ use crate::markup::{Markup, group, lines, tag, text_node};
 use crate::paint::Ctx;
 use crate::paint::appearance::{appearance_attributes, card_look};
 use crate::paint::design::{
-    ARCHITECTURE_NOTE_GAP, ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE,
-    PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
+    ARCHITECTURE_NOTE_GAP, CARD_PADDING_X, ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_SIZE,
+    PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
 };
 use crate::paint::far_card::{NearCard, Part, Words, paint_card_views};
 use crate::paint::far_view::Place;
@@ -26,8 +26,6 @@ use crate::scene::{Role, SubjectKind};
 pub const HALO_INSET: f64 = 3.0;
 pub const HALO_WIDTH: f64 = 2.0;
 
-/// A card's padding across, in a sequence.
-const CARD_PADDING_X: f64 = 13.0;
 /// Where a card's name sits when it carries a responsibility under it.
 const TITLE_BASELINE_WITH_NOTE: f64 = 23.0;
 const NOTE_BASELINE: f64 = 39.0;
