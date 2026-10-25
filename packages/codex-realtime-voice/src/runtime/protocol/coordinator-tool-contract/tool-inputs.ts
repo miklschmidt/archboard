@@ -12,8 +12,7 @@ import {
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 
 /**
- * The checkout whose workhorse a tool works with (ADR 0050): the directory that holds the vault,
- * as the board context names it.
+ * The checkout whose workhorse a tool works with: the directory the host names it by.
  */
 const CheckoutSchema = z.string().min(1).max(4_096);
 

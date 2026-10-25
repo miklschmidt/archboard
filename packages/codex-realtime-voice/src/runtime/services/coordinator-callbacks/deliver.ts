@@ -234,7 +234,7 @@ async function deliverThroughVoice(
 /**
  * Whether an operation callback is something the coordinator is told. Only an outcome nobody can
  * vouch for: that a turn ended or waits on the user is workhorse news from the thread itself,
- * whoever started the turn (TASK-321), so telling it here as well would tell it twice.
+ * whoever started the turn, so telling it here as well would tell it twice.
  * @param callback - The normalized callback.
  * @returns True for an operation whose outcome is unknown.
  */
@@ -419,9 +419,9 @@ async function deliverToCoordinator(
 /**
  * What an operation callback does while a voice generation is live. An outcome nobody can vouch
  * for goes to the coordinator at once. The rest reach nobody: that a turn ended or waits on the
- * user is workhorse news (TASK-321), the tool result already told the coordinator how its
+ * user is workhorse news, the tool result already told the coordinator how its
  * delegation went in, progress is what inspect_workhorse reads, and the correlation envelope they
- * used to be appended as is machine text a speech model says out loud (TASK-293).
+ * used to be appended as is machine text a speech model says out loud.
  * @param callback - The normalized operation callback.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -450,7 +450,7 @@ function deliverOperationWhileVoiceIsLive(
  * workhorse news (a turn that ended or waits on the user, whoever started it) and an operation
  * outcome nobody can vouch for go to the coordinator at once, which decides what the user hears;
  * any other operation callback is recorded and told to nobody. With no voice session the
- * coordinator is never run (it is the voice model's subconscious, TASK-321), so neither is sent.
+ * coordinator is never run (it is the voice model's subconscious), so neither is sent.
  *
  * An announced change reaches the coordinator or the voice only as the words the host chose,
  * and only while voice is live. Everything else is recorded and told to nobody.

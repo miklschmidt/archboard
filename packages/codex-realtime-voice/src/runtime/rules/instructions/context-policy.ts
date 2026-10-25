@@ -86,7 +86,7 @@ const producers = [
 	},
 	{
 		// The coordinator is told that delegated work reached a terminal outcome while voice is
-		// live, and decides whether the person hears about it (TASK-291).
+		// live, and decides whether the person hears about it.
 		kind: "workhorse_outcome_report",
 		rpcs: ["turn/start"],
 		operationIdSource: "server_minted",

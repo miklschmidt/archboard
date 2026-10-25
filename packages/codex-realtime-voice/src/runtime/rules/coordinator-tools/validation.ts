@@ -188,7 +188,7 @@ function canonicalQueueInput(value: ManageWorkhorseQueueInput): string {
 /**
  * Canonical text for any tool input, so equal arguments always hash equally. A workhorse tool's
  * text leads with the checkout it names, because the same arguments in another checkout are work
- * for another workhorse (ADR 0050). A stop names none, so its canonical input is empty.
+ * for another workhorse. A stop names none, so its canonical input is empty.
  * @param parsed - The tool and its parsed input.
  * @returns The JSON text to hash.
  */

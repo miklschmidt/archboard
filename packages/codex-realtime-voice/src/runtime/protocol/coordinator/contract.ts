@@ -108,7 +108,6 @@ interface CoordinatorCapabilityPolicy {
 	readonly shell: true;
 	readonly repository: true;
 	readonly approvals: true;
-	readonly boundedBoardAction: true;
 	readonly sustainedWork: "instruction_policy";
 }
 
@@ -117,7 +116,6 @@ const COORDINATOR_CAPABILITY_POLICY: CoordinatorCapabilityPolicy = Object.freeze
 	shell: true,
 	repository: true,
 	approvals: true,
-	boundedBoardAction: true,
 	sustainedWork: "instruction_policy",
 });
 
@@ -151,7 +149,7 @@ interface CodexCoordinatorOptions {
 	readonly threadLink: CoordinatorThreadLinkPort;
 	readonly epoch: CoordinatorEpochPort;
 	readonly identity: CoordinatorIdentityPort;
-	/** The directory of its own the coordinator works in. It is no checkout (ADR 0050). */
+	/** The directory of its own the coordinator works in. It is no checkout. */
 	readonly workingDirectory: string;
 	readonly profile: WorkbenchThreadProfile;
 	readonly persisted?: CoordinatorPersistedState | null;

@@ -52,7 +52,7 @@ interface CodexRealtimeAdapterOptions {
 	readonly currentBinding: () => CodexRealtimeBinding | null;
 	/**
 	 * Hears what a start sent and how Codex answered it, for whoever keeps a trace of voice
-	 * starts. Sizes, identities and messages only; never the SDP, a prompt or board content.
+	 * starts. Sizes, identities and messages only; never the SDP, a prompt or any host content.
 	 */
 	readonly trace?: (
 		stage: string,
