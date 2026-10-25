@@ -176,6 +176,55 @@ test("an id the variant no longer holds is reported rather than passed on", () =
 	expect(context.ambiguity[0]).toContain("ZZZZ");
 });
 
+test("a joined line picked in the overview reaches the agent as every relationship it joins", async () => {
+	const joined = "Joined pipeline";
+	await writeSemanticBoard({
+		vault,
+		board: joined,
+		writer,
+		transition: createBoardTransition(
+			BoardCreateInputSchema.parse({
+				name: joined,
+				level: "system",
+				nodes: [
+					{ name: "Platform", kind: "service" },
+					{ name: "Router", kind: "module", parent: "Platform" },
+					{ name: "Audit", kind: "module", parent: "Platform" },
+					{ name: "Orders", kind: "service" },
+				],
+				edges: [
+					{ from: "Router", to: "Orders", kind: "call", label: "places" },
+					{ from: "Audit", to: "Orders", kind: "call", label: "records" },
+				],
+			}),
+		),
+	});
+	const read = readSemanticBoard(vault, joined);
+	if (!read.ok) throw new Error(read.problem);
+	const variant = currentVariant(read.board)!;
+	const [places, records] = variant.content.edges;
+	const pane = (view: string | null): SemanticPaneContext => ({
+		...reading(null, [places!.id]),
+		board: semanticBoardAddress(joined),
+		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+		view: view === null ? null : { id: view, name: view, grammar: "architecture" },
+		version: read.board.version,
+	});
+
+	expect(semanticBoardContext(read.board, pane(null)).architecture.selection).toEqual({
+		count: 2,
+		subjects: [
+			{ kind: "edge", id: places!.id, name: "places" },
+			{ kind: "edge", id: records!.id, name: "records" },
+		],
+	});
+	// Everything draws each relationship, so the same id is the one relationship.
+	expect(semanticBoardContext(read.board, pane("Everything")).architecture.selection).toEqual({
+		count: 1,
+		subjects: [{ kind: "edge", id: places!.id, name: "places" }],
+	});
+});
+
 test("a proposal reaches the agent with its differences derived, not authored", async () => {
 	await writeSemanticBoard({
 		vault,

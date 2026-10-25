@@ -13,10 +13,12 @@ earlier full-catalogue requirement is superseded.
 
 ## Ordinary commands and repository boundary
 
-`bun run lint` runs the tests configuration and the approved policy sequentially.
-Both commands, and both stages of `bun run fix`, enter through `scripts/lint.ts`.
-This small preflight delegates analysis to ordinary pinned Oxlint; it does not
-implement an analyzer, compiler supervisor, or parallel worker lane.
+`bun run lint` runs the Vite+ `lint:all` task.
+Its test policy, source policy, and CSS boundary check run in order.
+The two Oxlint tasks and both fix stages enter through `scripts/lint.ts`.
+This preflight runs `vp lint` from the pinned Vite+ release.
+It keeps the existing project boundary before the bundled Oxlint starts.
+It implements no analyzer, compiler supervisor, or parallel worker lane.
 
 Every invocation explicitly selects the repository `tsconfig.json` for native
 import resolution. Before any type-aware analysis, the preflight compares the
@@ -32,10 +34,10 @@ UI lint uses the existing repository TypeScript project, with no separate UI
 project. `--tsconfig` alone is not a typed-project boundary, and the tested
 `disableSolutionSearching` option does not block the unmatched-file case.
 
-`lint:tests` uses the pre-policy repository rules and archive guard in
+The `lint:tests` task uses the pre-policy repository rules and archive guard in
 `.oxlintrc.tests.jsonc` with nested lint configuration disabled. It owns
 `tests/**`, `packages/*/tests/**` and `apps/*/tests/**`.
-`lint:policy` uses the approved policy in `.oxlintrc.jsonc`, type-aware analysis
+The `lint:policy` task uses the approved policy in `.oxlintrc.jsonc`, type-aware analysis
 and one worker over `packages`, `apps`, `scripts`, `tools` and `vite.config.ts`; its
 ignore patterns are exactly the tests lane's inventory, so neither lane has a gap
 or overlaps the other. The browser code under `apps/web` is in both TypeScript projects: the
@@ -112,10 +114,9 @@ with a memory limit, no swap and `OOMPolicy=kill`, outside the desktop app's sco
 Resource limits protect the machine; target-membership checks prevent this scope
 failure. Never accept results from overlapping fixer runs on one source copy.
 
-The engine contracts are in the [versioned CLI source](https://github.com/oxc-project/oxc/blob/oxlint_v1.80.0/apps/oxlint/src/command/lint.rs#L154-L161)
+The scope guard was established against the [versioned CLI source](https://github.com/oxc-project/oxc/blob/oxlint_v1.80.0/apps/oxlint/src/command/lint.rs#L154-L161)
 and [typed resolver](https://github.com/oxc-project/tsgolint/blob/v7.0.2001/internal/utils/find_tsconfig.go#L176-L191).
-The complete product/browser gate remains TASK-150.06 after reconstruction and
-integration; it has not passed during quarantine. Archive imports, serving and
-commits remain forbidden. Official shadcn source retains the previously approved,
+`bun run check` runs the complete product and browser gate.
+Archive imports, serving, and commits remain forbidden. Official shadcn source retains the previously approved,
 explicit style/structure exceptions and compiler, type-aware safety, React
 correctness and accessibility checks.

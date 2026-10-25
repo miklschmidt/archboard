@@ -177,6 +177,29 @@ async function sendPublishedResult(
 }
 
 /**
+ * Tell the browser one request failed, and why.
+ * @param transport The socket.
+ * @param requestId What was asked, when the request parsed.
+ * @param action What it asked for, when the request parsed.
+ * @param error What failed.
+ * @returns When the socket has taken the refusal.
+ */
+async function failure(
+	transport: ServerCodexBrowserSocketSend,
+	requestId: string | null,
+	action: string | null,
+	error: unknown,
+): Promise<void> {
+	return transport.send({
+		type: "codex_workbench_result",
+		requestId,
+		action,
+		ok: false,
+		error: errorMessage(error),
+	});
+}
+
+/**
  * Own the public server WebSocket bridge for one installed gateway generation.
  * @param options The gateway, and how a browser's pane is resolved.
  * @returns The owner.
@@ -282,28 +305,6 @@ function createServerCodexBrowserSocketOwner(
 			},
 		);
 	};
-
-	/**
-	 * Tell the browser one request failed, and why.
-	 * @param transport The socket.
-	 * @param requestId What was asked, when the request parsed.
-	 * @param action What it asked for, when the request parsed.
-	 * @param error What failed.
-	 * @returns When the socket has taken the refusal.
-	 */
-	const failure = async (
-		transport: ServerCodexBrowserSocketSend,
-		requestId: string | null,
-		action: string | null,
-		error: unknown,
-	): Promise<void> =>
-		transport.send({
-			type: "codex_workbench_result",
-			requestId,
-			action,
-			ok: false,
-			error: errorMessage(error),
-		});
 
 	/**
 	 * Close one socket's connection, once: a second close is the first one's

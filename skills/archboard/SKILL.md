@@ -216,7 +216,7 @@ recipe names.
 - **Reads.** `archboard semantic show <board>` prints the whole family: every
   variant with its `lifecycle`, `parent`, `content` and the board `version`.
   `archboard semantic` lists the boards. `archboard semantic compare <board>
-[--variant <id|name>] [--against <id|name>]` reads one variant against the
+  [--variant <id|name>] [--against <id|name>]` reads one variant against the
   current one, or on a board nobody has built the one it came from
   ([answer from a saved board](references/read.md) says what it reports).
 - **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
@@ -300,7 +300,7 @@ recipe names.
   final message, naming the question; that report is how the skill gets the
   answer added.
 - **Claims.** For work of several writes, `archboard claim --board <board>
---reason "<campaign>"` first and `archboard release --board <board>` after; the
+  --reason "<campaign>"` first and `archboard release --board <board>` after; the
   reason is what the pane shows the user whose board you took, and a claim
   without one is refused. A claim is on a board the vault already holds, so a
   board you are creating is claimed after the write that makes it. A user can

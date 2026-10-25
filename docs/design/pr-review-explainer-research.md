@@ -354,7 +354,7 @@ source).
   private repository can be seen only by people with access ([GitHub, attaching
   files][gh-attach]). Archboard's MP4 is H.264.
 - **gh `--attach`.** gh 2.100.0 is installed here. It accepts `.png .jpg .jpeg
-.gif .webp .svg .mp4 .mov .webm`, with at most 10 MiB per image and 100 MiB
+  .gif .webp .svg .mp4 .mov .webm`, with at most 10 MiB per image and 100 MiB
   per video. The server refuses the rest (`internal/attachments/userasset.go` in
   [cli/cli][gh-src]). A video "renders as a player and has no alt text"
   (`gh pr create --help`). gh rewrites only Markdown references to an attached

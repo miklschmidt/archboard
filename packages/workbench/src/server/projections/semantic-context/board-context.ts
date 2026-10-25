@@ -21,7 +21,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { findView, scopedContent } from "@archboard/board/views";
+import { findView, overviewLines, scopedContent, type OverviewLine } from "@archboard/board/views";
 import { subjectsOf, type SubjectKind, type VariantContent } from "@archboard/board/content";
 import { everyStep, stepWords } from "@archboard/board/flow";
 import type {
@@ -285,29 +285,44 @@ function unreadAndUnbuilt(board: SemanticBoard, mismatch: string | null): BoardC
  *
  * A stated kind or name is ignored rather than trusted: the board is open here,
  * and a pane that drew a subject before somebody removed it would otherwise
- * have an agent talking about something that is not there.
+ * have an agent talking about something that is not there. A line of the
+ * overview that joins several relationships keeps the id of the first one, so
+ * a pick of it is every relationship it joins (ADR 0052).
  * @param pane What the pane said it was reading, or null.
  * @param subjects Every subject of the variant, by id.
+ * @param lines The lines the pane draws when it shows the overview, else none.
  * @returns The selection as the board sees it, and what could not be resolved.
  */
 function resolvedSelection(
 	pane: SemanticPaneContext | null,
 	subjects: ReadonlyMap<string, NamedSubject>,
+	lines: readonly OverviewLine[],
 ): { selection: SemanticSubjectInput[]; ambiguity: string[] } {
 	const selection: SemanticSubjectInput[] = [];
 	const ambiguity: string[] = [];
-	for (const picked of pane?.selection ?? []) {
-		const found = subjects.get(picked.id);
+	for (const id of (pane?.selection ?? []).flatMap((picked) => pickedIds(lines, picked.id))) {
+		const found = subjects.get(id);
 		if (found === undefined) {
 			ambiguity.push(
-				`the pane has "${picked.id}" selected and the variant it is reading has no such subject; ` +
+				`the pane has "${id}" selected and the variant it is reading has no such subject; ` +
 					"it was drawn before the board moved",
 			);
 			continue;
 		}
-		selection.push({ kind: found.kind, id: picked.id, name: found.name });
+		selection.push({ kind: found.kind, id, name: found.name });
 	}
 	return { selection, ambiguity };
+}
+
+/**
+ * The ids one pick stands for: every relationship a joined line joins, or the
+ * picked id itself.
+ * @param lines The lines the pane draws when it shows the overview, else none.
+ * @param id The picked id.
+ * @returns The ids.
+ */
+function pickedIds(lines: readonly OverviewLine[], id: string): readonly string[] {
+	return lines.find(({ line }) => line.id === id)?.joins.map((edge) => edge.id) ?? [id];
 }
 
 /**
@@ -557,7 +572,11 @@ function semanticBoardContext(
 	// No report, no selection: what a person pointed at in one architecture is
 	// not a fact about another, and a context that borrowed one would have an
 	// agent talking about something nobody had picked out.
-	const picked = resolvedSelection(about.report, subjects);
+	const picked = resolvedSelection(
+		about.report,
+		subjects,
+		view === null ? overviewLines(variant.content) : [],
+	);
 	const against = comparedWith(board, variant);
 	const shown = scopedFor(board, variant.content, view);
 	return {
