@@ -25,6 +25,7 @@ import type { ReconciliationIssue } from "@archboard/board/reconciliation";
 import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { DetailsPanel } from "#ui/components/semantic-board-canvas/DetailsPanel.tsx";
+import { LineBody } from "#ui/components/semantic-board-canvas/SemanticInspectorLine.tsx";
 import type { RememberedReading } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
@@ -60,6 +61,10 @@ import {
 	type StepSubject,
 	type Subject,
 } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import {
+	pickedLine,
+	type LineSubject,
+} from "#ui/rules/semantic-board-canvas/board/overview-line.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
 
@@ -220,7 +225,7 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
 }
 
 /**
- * Whichever of the other three bodies the selected subject calls for. A part
+ * Whichever of the other bodies the selected subject calls for. A part
  * has its own panel, `DetailsPanel`.
  * @param subject What the board says the selection is.
  * @param look How the vault's kinds look.
@@ -228,10 +233,17 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
  * @returns The body.
  */
 function bodyFor(
-	subject: EdgeSubject | FlowSubject | StepSubject,
+	subject: EdgeSubject | LineSubject | FlowSubject | StepSubject,
 	look: KindLook,
 	standing: ReactNode,
 ): JSX.Element {
+	if (subject.kind === "line") {
+		return (
+			<LineBody subject={subject} look={look}>
+				{standing}
+			</LineBody>
+		);
+	}
 	if (subject.kind === "edge") {
 		return (
 			<EdgeBody subject={subject} look={look}>
@@ -254,7 +266,7 @@ interface BodyProps {
 	 */
 	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** What the board says the selection is, or undefined while that is not known. */
-	subject: Subject | undefined;
+	subject: Subject | LineSubject | undefined;
 	/** What to say when there is no subject: still reading, or a reason. */
 	notice: string;
 	/** How the subject stands, and what moved, when this variant is read against another. */
@@ -327,7 +339,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 /** What the board turned out to say about the selection, and what to say instead. */
 interface Explanation {
 	/** The subject, when the board holds one under that id. */
-	readonly subject: Subject | undefined;
+	readonly subject: Subject | LineSubject | undefined;
 	/** What to say when it does not. */
 	readonly notice: string;
 	/** How it stands against the variant this one is read against, when there is one. */
@@ -336,6 +348,8 @@ interface Explanation {
 	readonly open: readonly ReconciliationIssue[];
 	/** The state that holds the subject, when one does. */
 	readonly held: SemanticVariant | undefined;
+	/** The ids the selection stands for: every relationship a joined line joins, else the picked id. */
+	readonly ids: readonly string[];
 	/** The board's level, once it is read. */
 	readonly level?: string | undefined;
 	/** The board, variant and version the subject was read from, for the code check's findings. */
@@ -402,6 +416,7 @@ function comparedSubject(
  * @param read.error Why the read failed, when it did.
  * @param variant The id of the variant the drawing is of.
  * @param selection The picked semantic id.
+ * @param overview Whether the drawing is the overview, whose joined lines are subjects of their own.
  * @returns The subject, or the words that stand in for it.
  */
 function explain(
@@ -409,6 +424,7 @@ function explain(
 	read: { readonly data: unknown; readonly error: Error | null },
 	variant: string,
 	selection: string,
+	overview: boolean,
 ): Explanation {
 	const { data: document } = read;
 	const nothing = {
@@ -416,6 +432,7 @@ function explain(
 		against: null,
 		open: [],
 		held: undefined,
+		ids: [selection],
 		on: null,
 	} as const;
 	if (read.error !== null) {
@@ -433,10 +450,14 @@ function explain(
 		return { ...nothing, notice: `This board cannot say what is on screen: ${opened.problem}.` };
 	}
 	const shown = opened.variant;
+	const compared = comparedSubject(reading.board, shown, selection);
+	const { line, ids } = pickedLine(compared.held, selection, overview);
 	return {
-		...comparedSubject(reading.board, shown, selection),
+		...compared,
+		subject: line ?? compared.subject,
+		ids,
 		level: reading.board.level,
-		open: openOn(shown, selection),
+		open: openOn(shown, ids),
 		on: {
 			vault,
 			board: reading.board.name,
@@ -454,23 +475,23 @@ function explain(
  * come from as well, narrowed to the subject somebody picked out — so the badge
  * in the corner and the words in this panel are two readings of one fact.
  * @param shown The variant the picture is of.
- * @param selection The picked semantic id.
+ * @param ids The ids the selection stands for.
  * @returns Its open disagreements, which is usually none.
  */
-function openOn(shown: SemanticVariant, selection: string): readonly ReconciliationIssue[] {
+function openOn(shown: SemanticVariant, ids: readonly string[]): readonly ReconciliationIssue[] {
 	const issues = shown.reconciliation?.issues ?? [];
-	return issues.filter((issue) => issue.subject === selection);
+	return issues.filter((issue) => ids.includes(issue.subject));
 }
 
 /**
  * What the last code check found about one subject, warnings first.
  * @param reading What the pass found on the board on screen, or null.
- * @param selection The picked semantic id.
+ * @param ids The ids the selection stands for.
  * @returns Its findings and when the pass ran, or null when there are none.
  */
-function codeOn(reading: RememberedReading | null, selection: string): CodeStanding | null {
+function codeOn(reading: RememberedReading | null, ids: readonly string[]): CodeStanding | null {
 	const findings = (reading?.findings ?? [])
-		.filter((finding) => finding.subject?.id === selection)
+		.filter((finding) => finding.subject !== undefined && ids.includes(finding.subject.id))
 		.toSorted((a, b) => Number(b.severity === "warning") - Number(a.severity === "warning"));
 	return reading === null || findings.length === 0
 		? null
@@ -490,6 +511,8 @@ interface SemanticInspectorProps {
 	variant: string;
 	/** The picked semantic id. */
 	selection: string;
+	/** Whether the drawing is the overview (ADR 0052), whose joined lines are subjects of their own. */
+	overview: boolean;
 	/**
 	 * Open the board one level down.
 	 * @param board The target board.
@@ -521,9 +544,9 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
 	useSemanticBoardChanges(vault, props.board);
-	const explained = explain(vault, document, props.variant, props.selection);
+	const explained = explain(vault, document, props.variant, props.selection, props.overview);
 	const { subject } = explained;
-	const code = codeOn(useCodeFindings(explained.on), props.selection);
+	const code = codeOn(useCodeFindings(explained.on), explained.ids);
 
 	return (
 		// A panel of the sidebar, which keeps one width whatever it shows, so

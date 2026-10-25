@@ -91,39 +91,57 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
 	};
 }
 
+/** One line of the overview, and the relationships it stands for. */
+interface OverviewLine {
+	/** What the overview draws. */
+	readonly line: SemanticEdge;
+	/** The relationships it joins, in board order, as the variant states them. */
+	readonly joins: readonly [SemanticEdge, ...SemanticEdge[]];
+}
+
 /**
  * The overview: the root parts, every container drawn closed.
  *
  * A relationship to a hidden part is drawn to the closed card that holds it,
- * because the card stands for everything inside it. All relationships from
- * one drawn part to another are one line: a reader of the overview asks which
- * parts work together, and how often is the views' question. A joined line
- * keeps the identity of the first relationship in board order, so a comparison
- * marks it; it says no label, because no one label speaks for all of them, and
- * it takes the kind most of them have. A relationship inside one closed card,
- * or between a container and a part it holds, is the card's own business and
- * is not drawn. Flows are calls in an order, which the sequence views draw, so
- * the overview draws none.
+ * because the card stands for everything inside it. Flows are calls in an
+ * order, which the sequence views draw, so the overview draws none.
  * @param content The variant's whole content.
  * @returns The overview's content.
  */
 function overviewContent(content: VariantContent): VariantContent {
+	const drawnAs = rootOf(content);
+	return {
+		nodes: content.nodes.filter((node) => drawnAs(node.id) === node.id),
+		edges: overviewLines(content).map(({ line }) => line),
+		flows: [],
+		walkthroughs: content.walkthroughs,
+	};
+}
+
+/**
+ * The lines the overview draws. All relationships from one drawn part to
+ * another are one line: a reader of the overview asks which parts work
+ * together, and what each relationship does is the views' question. A
+ * relationship inside one closed card, or between a container and a part it
+ * holds, is the card's own business and is not drawn (ADR 0052).
+ * @param content The variant's whole content.
+ * @returns Each line, with what it joins.
+ */
+function overviewLines(content: VariantContent): OverviewLine[] {
 	const drawnAs = rootOf(content);
 	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
 	for (const edge of content.edges) {
 		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
 		if (from === to) continue;
 		const key = `${from}\u0000${to}`;
-		const line = joined.get(key);
-		if (line === undefined) joined.set(key, [{ ...edge, from, to }]);
-		else line.push({ ...edge, from, to });
+		const joins = joined.get(key);
+		if (joins === undefined) joined.set(key, [edge]);
+		else joins.push(edge);
 	}
-	return {
-		nodes: content.nodes.filter((node) => drawnAs(node.id) === node.id),
-		edges: [...joined.values()].map(oneLine),
-		flows: [],
-		walkthroughs: content.walkthroughs,
-	};
+	return [...joined.values()].map((joins) => ({
+		line: oneLine(joins, drawnAs(joins[0].from), drawnAs(joins[0].to)),
+		joins,
+	}));
 }
 
 /**
@@ -143,13 +161,26 @@ function rootOf(content: VariantContent): (id: string) => string {
 
 /**
  * Relationships from one drawn part to another, as one line.
- * @param edges The relationships, in board order, re-ended on the drawn parts.
+ *
+ * A lone relationship is drawn as stated. A joined line keeps the identity of
+ * the first relationship in board order, so a comparison marks it, and it
+ * takes the kind most of them have. Its label stacks their labels, each once,
+ * one to a line of the text, because no one of them speaks for all of them; a
+ * relationship with no label adds none. What only one of them says, its
+ * description, emphasis, traffic and anchor, is not said of the line.
+ * @param edges The relationships, in board order.
+ * @param from The drawn part the line starts at.
+ * @param to The drawn part the line ends at.
  * @returns The line.
  */
-function oneLine(edges: readonly [SemanticEdge, ...SemanticEdge[]]): SemanticEdge {
+function oneLine(
+	edges: readonly [SemanticEdge, ...SemanticEdge[]],
+	from: string,
+	to: string,
+): SemanticEdge {
 	const [first] = edges;
 	if (edges.length === 1) {
-		return first;
+		return { ...first, from, to };
 	}
 	const counts = new Map<string, number>();
 	for (const edge of edges) {
@@ -157,8 +188,16 @@ function oneLine(edges: readonly [SemanticEdge, ...SemanticEdge[]]): SemanticEdg
 	}
 	// Map order is board order, so the first kind to reach the most wins a tie.
 	const kind = [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0];
-	const { label: _label, ...unlabelled } = first;
-	return { ...unlabelled, kind };
+	const labels = [...new Set(edges.flatMap(({ label }) => (label === undefined ? [] : [label])))];
+	return {
+		id: first.id,
+		order: first.order,
+		from,
+		to,
+		kind,
+		...(labels.length === 0 ? {} : { label: labels.join("\n") }),
+		emphasis: "normal",
+	};
 }
 
 /**
@@ -244,6 +283,8 @@ export {
 	RESERVED_VIEW_NAMES,
 	findView,
 	overviewContent,
+	overviewLines,
 	scopedContent,
+	type OverviewLine,
 	type ReadingScope,
 };

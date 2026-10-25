@@ -20,10 +20,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const packagesRoot = path.join(repoRoot, "packages");
 const appsRoot = path.join(repoRoot, "apps");
 
-// Layers of docs/design/package-map.md and docs/design/apps-migration.md. A package or an app
-// may import only a lower layer. The table lists planned packages too, so a package that lands
-// later is already placed. An app is written `apps/<name>`, so that it never collides with a
-// package name. Nothing imports an app, and the three apps share the top layer.
+// The agreed layer order of ADR 0055 and docs/agents/boundaries.md. A package
+// imports only a lower layer. Nothing imports an app, and the three apps share
+// the top layer. App ids include their prefix to distinguish them from packages.
 const LAYERS: Record<string, number> = {
 	timing: 0,
 	diagnostics: 0,

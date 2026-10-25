@@ -70,6 +70,17 @@ function attempt(request: () => Promise<void>, settle: (error?: unknown) => void
 }
 
 /**
+ * The error shown for a refused entry.
+ * @param error The refusal, if any.
+ * @returns The message, or null when the entry simply did not happen.
+ */
+function entryFailure(error: unknown): string | null {
+	return error === undefined
+		? null
+		: `Could not start presentation: ${errorMessage(error)}. Try Present again.`;
+}
+
+/**
  * Create the presentation for one root.
  * @param root The element presented fullscreen.
  * @param hearing Who hears a refusal as it is recorded.
@@ -190,17 +201,6 @@ function createFullscreenPresentation(
 		if (error !== null) {
 			hearing.onRefused?.(error, paneId);
 		}
-	}
-
-	/**
-	 * The error shown for a refused entry.
-	 * @param error The refusal, if any.
-	 * @returns The message, or null when the entry simply did not happen.
-	 */
-	function entryFailure(error: unknown): string | null {
-		return error === undefined
-			? null
-			: `Could not start presentation: ${errorMessage(error)}. Try Present again.`;
 	}
 
 	/**

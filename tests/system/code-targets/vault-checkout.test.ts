@@ -27,7 +27,11 @@ test("opens the file of the worktree whose vault holds the board, though the mai
 		["-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "first"],
 		["worktree", "add", "-q", "-b", "feature", worktree],
 	]) {
-		expect(Bun.spawnSync(["git", ...args], { cwd: fixture.checkout }).exitCode).toBe(0);
+		const result = Bun.spawnSync(["git", ...args], {
+			cwd: fixture.checkout,
+			env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+		});
+		expect(result.exitCode, result.stderr.toString()).toBe(0);
 	}
 	// The registered checkout is the chosen one, and lacks the file that the worktree adds.
 	writeFileSync(join(worktree, "src", "worktree-only.ts"), "export {};\n");

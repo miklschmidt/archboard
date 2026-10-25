@@ -3,7 +3,7 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and runs `build:frontend`, then runs four normal
+`bun run test` type-checks and builds the frontend, then runs four normal
 native lanes in this order:
 
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
@@ -25,12 +25,32 @@ native lanes in this order:
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
-`lint:policy` includes `lint:css`, which applies the shared import boundaries to authored CSS.
+`lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.
 The workflow retains its full output as the `validation-log` artifact.
 
-A separate macOS CI job exercises the native process observer, Codex lifecycle,
+`vite.config.ts` owns the Vite+ tasks and their ordered pipelines.
+The package scripts keep the main commands: `build`, `lint`, `fix`, `type-check`, `test`, and `check`.
+Run an individual lane with `bunx vp run <task>`, such as `bunx vp run test:modules`.
+The two lint policies retain their JSONC files and the project guard in `scripts/lint.ts`.
+
+Validation tasks cache successful results from declared source and fixture paths.
+The cache also fingerprints dependency metadata and the environment that affects validation.
+The repository lane fingerprints Git's tracked entries because its owners discover tracked files.
+Validation tasks declare their inputs and restore no fixture files.
+This keeps Vite+ file tracing out of sandboxed Chromium and out of measured tests. The frontend build restores its generated bundle on a cache hit.
+Its source fingerprint travels with the bundle, so checkout and restoration times do not mark valid output as stale.
+Pipeline tasks resolve their children on every call, and fix commands bypass the cache.
+Use `bunx vp run --no-cache check:all` when you need a fresh run of every stage.
+
+The tests still run under Bun. TASK-516 tracks the runtime trial before a move to `vp test`.
+The trial must prove Bun API support, `process.execPath`, and cleanup of fixture servers.
+
+CI restores the Vite+ task cache after dependency installation and saves it after a successful gate.
+The browser version joins the test cache key, so a Chrome update invalidates prior results.
+
+A separate macOS CI job runs `test:macos` and exercises the native process observer, Codex lifecycle,
 Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
 The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
@@ -40,11 +60,11 @@ The supported normal topology is one Archboard server, one package-local bound
 Codex app-server, and one human reader. Short races inside that topology stay in
 their cheapest product owner. These commands contain everything outside it:
 
-| Command                        | Concrete regressions and cheapest interface                                                                                                                                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run test:opt-in:capacity` | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
-| `bun run test:opt-in:tooling`  | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
-| `bun run test:opt-in:topology` | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
+| Command                            | Concrete regressions and cheapest interface                                                                                                                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bunx vp run test:opt-in:capacity` | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
+| `bunx vp run test:opt-in:tooling`  | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
+| `bunx vp run test:opt-in:topology` | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
 reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
@@ -213,8 +233,8 @@ The code-target system owners run after `tests/system/process-contracts`. The
 package browser command runs the whole `BROWSER_TEST_PATHS` inventory:
 
 ```bash
-bun run test:system
-bun run test:serial-browser
+bunx vp run test:system
+bunx vp run test:serial-browser
 ```
 
 Print the executable browser inventory without copying its count into documentation:

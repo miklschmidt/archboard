@@ -121,7 +121,11 @@ test("a vault in a linked worktree of a repository with no origin has the identi
 		["-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-q", "-m", "first"],
 		["worktree", "add", "-q", "-b", "feature", linked],
 	]) {
-		expect(Bun.spawnSync(["git", ...args], { cwd: main }).exitCode).toBe(0);
+		const result = Bun.spawnSync(["git", ...args], {
+			cwd: main,
+			env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+		});
+		expect(result.exitCode, result.stderr.toString()).toBe(0);
 	}
 	mkdirSync(join(linked, ".archboard", "vault"), { recursive: true });
 	await declareDirectory(main);

@@ -57,37 +57,37 @@ describe("registered checkout", () => {
 	});
 });
 
+/**
+ * Resolve one binding of the fixture's file, pinned as given.
+ * @param pin The branch or commit it names.
+ * @returns The local target.
+ */
+async function pinned(pin: { branch?: string; commit?: string }) {
+	const binding = { repo: fixture.repository, path: "src/index.ts", ...pin };
+	return resolveLocalCodeTarget(
+		binding,
+		await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
+	);
+}
+
+/**
+ * Run Git in the fixture checkout.
+ * @param args Its arguments.
+ * @returns What it printed, trimmed.
+ */
+function inCheckout(...args: string[]): string {
+	const run = Bun.spawnSync(
+		["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
+		{
+			cwd: fixture.checkout,
+			env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+		},
+	);
+	if (run.exitCode !== 0) throw new Error(run.stderr.toString());
+	return run.stdout.toString().trim();
+}
+
 describe("a binding pinned to a branch or commit", () => {
-	/**
-	 * Run Git in the fixture checkout.
-	 * @param args Its arguments.
-	 * @returns What it printed, trimmed.
-	 */
-	function inCheckout(...args: string[]): string {
-		const run = Bun.spawnSync(
-			["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
-			{
-				cwd: fixture.checkout,
-				env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
-			},
-		);
-		if (run.exitCode !== 0) throw new Error(run.stderr.toString());
-		return run.stdout.toString().trim();
-	}
-
-	/**
-	 * Resolve one binding of the fixture's file, pinned as given.
-	 * @param pin The branch or commit it names.
-	 * @returns The local target.
-	 */
-	async function pinned(pin: { branch?: string; commit?: string }) {
-		const binding = { repo: fixture.repository, path: "src/index.ts", ...pin };
-		return resolveLocalCodeTarget(
-			binding,
-			await snapshotCheckoutAccess({ vault: null, bindings: [binding] }),
-		);
-	}
-
 	test("opens locally on the bound ref, and names both refs when the checkout is on another", async () => {
 		inCheckout("checkout", "-q", "-b", "work");
 		inCheckout("commit", "-q", "--allow-empty", "-m", "first");

@@ -3,7 +3,8 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
-The history of the move is in `docs/design/package-map.md` and `docs/design/apps-migration.md`.
+The app migration history is in `docs/design/apps-migration.md`.
+`tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
 ## Layout
 
@@ -42,7 +43,7 @@ Do not add implementation to them.
 - **Production code never imports a `tests/` folder.** Cycles are errors.
 
 CSS follows the same package and area boundaries.
-`bun run lint:css` reads authored stylesheets under `packages/` and `apps/`, including `assets/`.
+`bunx vp run lint:css` reads authored stylesheets under `packages/` and `apps/`, including `assets/`.
 It uses Lightning CSS to read imports and URLs, then applies the TypeScript import policy.
 Tailwind `@reference`, `@plugin`, and `@config` file references follow that policy too.
 Local stylesheet imports use `#`, and references to another package use its declared exports.
@@ -189,7 +190,7 @@ the browser imports none of them, though `./session` carries some Zod schemas.
   `src/shared/protocol/generated`, and `scripts/generate-codex-app-server-contract.ts` writes it on
   `bun install` and creates its parent directories. The wrapper imports it with `#` and only as
   types, and no other file of the package or outside it does. The capacity test is opt-in
-  (`bun run test:opt-in:capacity`). `./identity` holds the identity brands, the authorities, the
+  (`bunx vp run test:opt-in:capacity`). `./identity` holds the identity brands, the authorities, the
   correlations and the ledger.
 - `./protocol` is the pinned Codex version and the decode of a server notification. Outside tests
   build their notification fixtures with the decoder. The method lists, the request and response
@@ -199,7 +200,7 @@ the browser imports none of them, though `./session` carries some Zod schemas.
   the types of its requests, notifications and server requests and its error classes.
   `runtime/operations/` settles a request, routes a reverse request and adopts the identities of a
   response. `runtime/protocol/wire.ts` decodes the JSON frames. The write-capacity test of the
-  transport is opt-in too (`bun run test:opt-in:capacity`).
+  transport is opt-in too (`bunx vp run test:opt-in:capacity`).
 - `./session` is the session of `runtime/services/`. It creates the session and carries its
   interface, its options, its errors and its control symbol. It also carries the decoded results of
   a session request, such as `SessionThread`, and the schemas where code outside the package
@@ -599,7 +600,7 @@ grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `
   their defining files, and a test of one of them lives in the package.
 - The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
   fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
-  (`bun run test:opt-in:capacity`).
+  (`bunx vp run test:opt-in:capacity`).
 
 **Server.** `server/` is the workbench on the Archboard server. It reads the runtime and the shared contracts through
 their private files, and no private file imports an api file. The host in `apps/server/` keeps the routes and
