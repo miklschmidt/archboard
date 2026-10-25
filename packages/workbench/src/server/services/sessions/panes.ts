@@ -234,7 +234,6 @@ function changePane(session: CodexWorkbenchTabSession): ContextPane {
 export {
 	boundSessionOf,
 	changePane,
-	deliveryBound,
 	hearsVault,
 	openPaneOf,
 	operationPane,

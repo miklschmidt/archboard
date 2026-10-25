@@ -18,7 +18,7 @@ const CHECKOUT = "/work/shop";
  * @param voiceLive Whether a voice generation is running.
  * @returns The scope and what was delivered.
  */
-function tab(voiceLive = true) {
+function tab(voiceLive = true, coordinatorState = "ready") {
 	const ids = createIdentityAuthorities().identity;
 	const { childId, epoch } = ids.validator;
 	const threadId = ids.decoder.adoptThreadId("workhorse");
@@ -44,7 +44,7 @@ function tab(voiceLive = true) {
 		workhorses: new Map([[CHECKOUT, workhorse]]),
 		voiceWorkhorse: () => workhorse,
 		components: {
-			coordinator: { snapshot: () => ({ state: "ready", threadId: coordinatorId }) },
+			coordinator: { snapshot: () => ({ state: coordinatorState, threadId: coordinatorId }) },
 			realtime: {
 				generation: () =>
 					voiceLive ? { wireSessionId: ids.issuer.mintRealtimeSessionId() } : null,
@@ -121,6 +121,19 @@ describe("announcing a context change", () => {
 			threadLink: { state: "executable", reason: null },
 		});
 		expect(t.queued).toHaveLength(0);
+	});
+
+	test("a workhorse is told the coordinator it is paired with, also while that one starts or can only be inspected", async () => {
+		for (const state of ["starting", "inspect_only"]) {
+			const t = tab(false, state);
+			await t.announce({
+				feed: "editor",
+				sequence: 1,
+				workhorse: { checkouts: [CHECKOUT], text: "File saved." },
+			});
+
+			expect(t.told[0]?.coordinator.threadId).toBe(t.coordinatorId);
+		}
 	});
 
 	test("the coordinator alone is told through the tab's queue, and only while voice is live", async () => {
