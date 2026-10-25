@@ -3,28 +3,22 @@
 //! its region's caption, which invisible edges hold above every member no line
 //! inside the cluster already holds; so the board's cards are ranked across
 //! containers, as the track engine ranks them.
-//! After Graphviz answers, the clusters are read back into the shape the track
-//! scene reads: every frame a node around its members with its title row, and
-//! every region on the block's root.
 //!
-//! The label rules ride here too: where the label of a line entering a
-//! container is held (`anchors.ts`), and how hard the label of a line leaving
-//! one is pulled (`leaving.ts`).
+//! Reading the clusters back after Graphviz answers is `readback.rs`, and the
+//! rules for the labels of lines entering or leaving a container are
+//! `label_rules.rs`.
 
-use crate::constants::{ARCHITECTURE_HEADER_PADDING, CONTAINER_INSET, REGION_INSET};
-use crate::ecma::{abs, js_min, or, sorted_by};
-use crate::geometry::{Point, Rect};
-use crate::placed::{PlacedNode, PlacedRegion};
-use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
+use crate::constants::{CONTAINER_INSET, REGION_INSET};
+use crate::ecma::{js_min, or, sorted_by};
+use crate::track::graphviz::Join;
 use crate::track::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Node, Value, box_node};
 
-use super::laid::{Laid, Size};
-use super::lone::{Card, Head, title_row, title_width};
-use super::tree::{Below, Block, Cluster, ClusterKind, Line};
+use super::cycles::Below;
+use super::laid::Size;
+use super::lone::title_width;
+use super::tree::{Block, Cluster, ClusterKind, Line};
 
-/// The room a card moved into line keeps from its neighbours: half what Graphviz keeps.
-const LINED_UP_GAP: f64 = 20.0;
 /// How strongly a title row holds each member below it.
 const TITLE_WEIGHT: f64 = 10.0;
 /// Horizontal room Graphviz keeps between neighbours in a rank.
@@ -32,7 +26,7 @@ pub(crate) const NODE_GAP: f64 = 40.0;
 
 /// The room a cluster keeps round what it holds, as Graphviz draws it and as
 /// a card inside it may move.
-fn inset_of(cluster: &Cluster) -> f64 {
+pub(super) fn inset_of(cluster: &Cluster) -> f64 {
     (if cluster.kind == ClusterKind::Frame {
         CONTAINER_INSET
     } else {
@@ -121,9 +115,9 @@ pub(crate) struct Clusters<'t> {
     /// Each cluster's graph, in the block's order.
     pub graphs: Vec<ClusterGraph>,
     /// Each cluster's place in `graphs`, by id.
-    index: Map<String, usize>,
+    pub(super) index: Map<String, usize>,
     /// Each Graphviz cluster's name, by the cluster it draws.
-    names: Map<String, String>,
+    pub(super) names: Map<String, String>,
     /// The clusters standing in the block's graph itself, in order.
     pub top: Vec<usize>,
     /// The width of each card evened with the card over or under it.
@@ -415,358 +409,4 @@ impl<'t> Clusters<'t> {
             .filter(|cluster| !theirs.contains(cluster))
             .collect()
     }
-
-    /// The innermost cluster a vendor node stands in.
-    fn holding(&self, name: &str) -> Option<&str> {
-        if let Some(around) = self.block.cluster_of.get(name) {
-            return Some(around);
-        }
-        let at = self
-            .graphs
-            .iter()
-            .position(|graph| graph.nodes.iter().any(|node| node.name == name))?;
-        self.block.clusters.get_index(at).map(|(id, _)| id.as_str())
-    }
-
-    /// The span a card or label may move in: inside its innermost cluster,
-    /// clear of the cluster's inset, or inside the block.
-    fn span_of(&self, name: &str, boxes: &Map<String, Rect>, width: f64) -> Option<(f64, f64)> {
-        if !self.block.items.iter().any(|item| item == name) && !name.starts_with("label:") {
-            return None;
-        }
-        let Some(around) = self.holding(name) else {
-            return Some((0.0, width));
-        };
-        let inset = inset_of(&self.block.clusters[around]);
-        let bounds = boxes[around];
-        Some((bounds.x + inset, bounds.x + bounds.width - inset))
-    }
-
-    /// Line up the joined cards Graphviz stacked a few points out of one column:
-    /// a card or label moves inside its cluster, or the block, and clear of the
-    /// other clusters and the lines.
-    pub(crate) fn line_up(
-        &mut self,
-        joins: &[Join],
-        centres: &mut Map<String, Point>,
-        placed: LinedUp<'_>,
-    ) {
-        let LinedUp {
-            boxes,
-            clusters,
-            polylines,
-            width,
-            cards,
-            lowered,
-        } = placed;
-        for (id, &at) in clusters {
-            boxes.insert(format!("cluster:{id}"), at);
-        }
-        {
-            let within = |name: &str| self.span_of(name, clusters, width);
-            let card = |name: &str| cards.contains_key(name);
-            let around = |card: &str| self.block.cluster_of.get(card).cloned();
-            let room = Room {
-                gap: LINED_UP_GAP,
-                polylines: Some(polylines),
-                within: &within,
-                card: Some(&card),
-                wrap: Some(Wrap {
-                    rows: lowered,
-                    around: &around,
-                }),
-                holds: Some(Holds {
-                    slot: NODE_GAP + 2.0,
-                    around: &around,
-                }),
-            };
-            align_columns(boxes, joins, &room);
-        }
-        for (name, at) in boxes.iter() {
-            if cards.contains_key(name.as_str()) {
-                self.widths.insert(name.clone(), at.width);
-            }
-        }
-        for (name, at) in boxes.iter() {
-            if let Some(centre) = centres.get_mut(name) {
-                *centre = Point {
-                    x: at.x + at.width / 2.0,
-                    y: centre.y,
-                };
-            }
-        }
-    }
-
-    /// Every cluster's box, as Graphviz answered it.
-    ///
-    /// # Errors
-    ///
-    /// When Graphviz answered geometry that is not a number.
-    pub(crate) fn boxes(
-        &self,
-        output: &Output,
-        origin: Point,
-    ) -> Result<Map<String, Rect>, String> {
-        let mut boxes = Map::default();
-        for object in &output.objects {
-            let (Some(id), Some(bb)) = (self.names.get(&object.name), &object.bb) else {
-                continue;
-            };
-            let at = numbers(bb)?;
-            let (x1, y1, x2, y2) = (at[0], at[1], at[2], at[3]);
-            boxes.insert(
-                id.clone(),
-                Rect {
-                    x: js_min(x1, x2) - origin.x,
-                    y: js_min(y1, y2) - origin.y,
-                    width: abs(x2 - x1),
-                    height: abs(y2 - y1),
-                },
-            );
-        }
-        Ok(boxes)
-    }
-
-    /// Every frame as a node of the scene, around nothing yet, with its title row.
-    fn frame_node(
-        cluster: &Cluster,
-        centres: &Map<String, Point>,
-        boxes: &Map<String, Rect>,
-    ) -> PlacedNode {
-        let bounds = boxes[cluster.id.as_str()];
-        let head = Head {
-            centre: centres[title_of(&cluster.id).as_str()].y,
-            height: cluster.header.height,
-            words: cluster.header.width - ARCHITECTURE_HEADER_PADDING,
-            steps: cluster.header.steps.as_deref(),
-        };
-        PlacedNode {
-            id: cluster.id.clone(),
-            x: bounds.x,
-            y: bounds.y,
-            width: bounds.width,
-            height: bounds.height,
-            children: Some(Vec::new()),
-            frame: Some(title_row(bounds, &head, cluster.lone.as_ref())),
-        }
-    }
-
-    /// The placed block's children nested as the track scene reads them: every
-    /// frame a node around its members with its title row, every region a row
-    /// on the root.
-    pub(crate) fn nest(
-        &self,
-        leaves: Vec<PlacedNode>,
-        centres: &Map<String, Point>,
-        boxes: &Map<String, Rect>,
-    ) -> (Vec<PlacedNode>, Vec<PlacedRegion>) {
-        let block = self.block;
-        let frames: Vec<&Cluster> = block
-            .clusters
-            .values()
-            .filter(|cluster| cluster.kind == ClusterKind::Frame)
-            .collect();
-        // What each frame holds, and what the block's root holds, in the order they were put there.
-        let mut held: Map<Option<String>, Vec<Nested>> = Map::default();
-        for (index, cluster) in frames.iter().enumerate() {
-            let frame = block.frame_around(cluster.parent.as_deref());
-            held.entry(frame).or_default().push(Nested::Frame(index));
-        }
-        for (index, leaf) in leaves.iter().enumerate() {
-            let frame = block.frame_around(block.cluster_of.get(&leaf.id).map(String::as_str));
-            held.entry(frame).or_default().push(Nested::Leaf(index));
-        }
-        let mut leaves: Vec<Option<PlacedNode>> = leaves.into_iter().map(Some).collect();
-        let root = held.get(&None).map(Vec::as_slice).unwrap_or_default();
-        let children = Self::nested(root, &frames, &held, &mut leaves, centres, boxes);
-        (children, self.region_rows(centres, boxes))
-    }
-
-    /// What one frame, or the block's root, holds (`entries`), each frame nested with what it holds.
-    fn nested(
-        entries: &[Nested],
-        frames: &[&Cluster],
-        held: &Map<Option<String>, Vec<Nested>>,
-        leaves: &mut [Option<PlacedNode>],
-        centres: &Map<String, Point>,
-        boxes: &Map<String, Rect>,
-    ) -> Vec<PlacedNode> {
-        entries
-            .iter()
-            .map(|entry| match *entry {
-                Nested::Leaf(index) => leaves[index].take().expect("a leaf placed once"),
-                Nested::Frame(index) => {
-                    let cluster = frames[index];
-                    let mut node = Self::frame_node(cluster, centres, boxes);
-                    let inside = held
-                        .get(&Some(cluster.id.clone()))
-                        .map(Vec::as_slice)
-                        .unwrap_or_default();
-                    node.children =
-                        Some(Self::nested(inside, frames, held, leaves, centres, boxes));
-                    node
-                }
-            })
-            .collect()
-    }
-
-    /// Every region as the track scene reads it: its group, frame, direct
-    /// members, band and caption.
-    fn region_rows(
-        &self,
-        centres: &Map<String, Point>,
-        boxes: &Map<String, Rect>,
-    ) -> Vec<PlacedRegion> {
-        let block = self.block;
-        block
-            .clusters
-            .values()
-            .filter(|cluster| cluster.kind == ClusterKind::Region)
-            .map(|cluster| {
-                let bounds = boxes[cluster.id.as_str()];
-                let centre = centres[title_of(&cluster.id).as_str()];
-                let Size { width, height } = cluster.header.size();
-                PlacedRegion {
-                    group: cluster.group.clone().unwrap_or_default(),
-                    parent: block.frame_around(cluster.parent.as_deref()),
-                    members: block
-                        .cluster_of
-                        .iter()
-                        .filter(|&(_, around)| *around == cluster.id)
-                        .map(|(member, _)| member.clone())
-                        .collect(),
-                    bx: [bounds.x, bounds.y, bounds.width, bounds.height],
-                    caption: [
-                        centre.x - width / 2.0,
-                        centre.y - height / 2.0,
-                        width,
-                        height,
-                    ],
-                }
-            })
-            .collect()
-    }
-
-    /// The innermost container a line enters: a frame its lower end stands in
-    /// and its upper end does not. A group region is no boundary a line must go
-    /// round, so a line enters none.
-    pub(crate) fn entered_frame<'a>(&'a self, tail: &'a str, head: &'a str) -> Option<&'a str> {
-        if is_title(head) {
-            return None;
-        }
-        let theirs = self.around(tail);
-        self.around(head)
-            .into_iter()
-            .find(|id| !theirs.contains(id) && self.block.clusters[*id].kind == ClusterKind::Frame)
-    }
-
-    /// The upper end of another labelled line into the same card from inside
-    /// the container a line enters, which its label may be held below.
-    fn anchor_of<'a>(
-        &self,
-        tail: &str,
-        head: &str,
-        entered: &str,
-        links: &'a [Link],
-    ) -> Option<&'a str> {
-        links
-            .iter()
-            .find(|link| {
-                link.head == head
-                    && link.labelled
-                    && link.tail != tail
-                    && self.around(&link.tail).contains(&entered)
-            })
-            .map(|link| link.tail.as_str())
-    }
-
-    /// Whether anchoring would hold some entering line's label below another
-    /// line rather than below its container's title.
-    pub(crate) fn anchorable(&self, links: &[Link]) -> bool {
-        links.iter().any(|link| {
-            let entered = if link.labelled {
-                self.entered_frame(&link.tail, &link.head)
-            } else {
-                None
-            };
-            entered.is_some_and(|entered| {
-                self.anchor_of(&link.tail, &link.head, entered, links)
-                    .is_some()
-            })
-        })
-    }
-
-    /// The containers a line leaves: frames its upper end stands in and its lower end does not.
-    fn left_frames<'a>(&'a self, tail: &'a str, head: &'a str) -> Vec<&'a str> {
-        let theirs = self.around(head);
-        self.around(tail)
-            .into_iter()
-            .filter(|id| {
-                !theirs.contains(id) && self.block.clusters[*id].kind == ClusterKind::Frame
-            })
-            .collect()
-    }
-
-    /// How much harder a line's label is pulled onto its lower end than onto
-    /// its upper: one where the line leaves a container and its block pulls such labels.
-    pub(crate) fn leaving_pull(&self, tail: &str, head: &str) -> f64 {
-        if self.pulls_leaving && !self.left_frames(tail, head).is_empty() {
-            1.0
-        } else {
-            0.0
-        }
-    }
-
-    /// How many lines' labels a laid-out block stands beside a container the line leaves.
-    pub(crate) fn labels_beside(&self, links: &[Link], laid: &Laid) -> usize {
-        let frames: Map<&str, Rect> = laid
-            .frames
-            .iter()
-            .flatten()
-            .map(|frame| (frame.id.as_str(), frame.bx))
-            .collect();
-        links
-            .iter()
-            .filter(|link| {
-                let Some(at) = laid.boxes.get(&link.label) else {
-                    return false;
-                };
-                link.labelled
-                    && self
-                        .left_frames(&link.tail, &link.head)
-                        .iter()
-                        .any(|id| frames.get(id).is_some_and(|frame| beside(at, frame)))
-            })
-            .count()
-    }
-}
-
-/// What a frame or the root holds: a frame, by its place among the block's
-/// frames, or a leaf, by its place among the placed leaves.
-#[derive(Clone, Copy)]
-enum Nested {
-    Frame(usize),
-    Leaf(usize),
-}
-
-/// What lining a block's cards up reads and moves.
-pub(crate) struct LinedUp<'a> {
-    /// Every vendor node's box; the moved ones are replaced.
-    pub boxes: &'a mut Map<String, Rect>,
-    /// Every cluster's box.
-    pub clusters: &'a Map<String, Rect>,
-    /// Every vendor edge's polyline, by id.
-    pub polylines: &'a Map<String, Vec<Point>>,
-    /// The block's width.
-    pub width: f64,
-    /// The block's cards, whose widths may be evened with the card over or under them.
-    pub cards: &'a Map<String, Card>,
-    /// How far a wrap lowered each card of its rank; empty when none.
-    pub lowered: &'a Map<String, usize>,
-}
-
-/// Whether a box stands beside another: on some of its height, wholly left or right of it.
-fn beside(one: &Rect, other: &Rect) -> bool {
-    let level = one.y < other.y + other.height && other.y < one.y + one.height;
-    level && (one.x >= other.x + other.width || one.x + one.width <= other.x)
 }
