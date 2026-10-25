@@ -1,8 +1,7 @@
-import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { BrowserCommandDraft } from "@archboard/codex-realtime-voice/browser";
-
-type ExampleApproval = BrowserSnapshot["approvals"][number];
-type ApprovalResponse = Extract<BrowserCommandDraft, { command: "approvalRespond" }>["response"];
+import type {
+	VoiceApproval as ExampleApproval,
+	VoiceApprovalResponse as ApprovalResponse,
+} from "@archboard/codex-realtime-voice/browser";
 interface ApprovalChoice {
 	readonly label: string;
 	readonly response: ApprovalResponse;
