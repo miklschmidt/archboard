@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-25T21:25:00Z'
-updated_date: '2026-10-25T21:42:00Z'
+updated_date: '2026-10-25T21:49:00Z'
 labels: []
 dependencies: []
 references:
@@ -49,4 +49,6 @@ The owner asked to preserve the agreed UX model before research and named Dolt a
 The owner prefers DoltgreSQL over MySQL-compatible Dolt. Prioritize DoltgreSQL and assess PostgreSQL compatibility, maturity, branching, merge behavior and hosted operation independently of Dolt.
 
 The synthesis and four focused technology reports are complete. The report prioritizes DoltgreSQL, compares TerminusDB and hosted PostgreSQL, and screens native graph, temporal, multimodel and newer options. A disposable DoltgreSQL 1.4.0 run passed recursive reads, branch isolation and disjoint merge, exposed a same-field conflict, and demonstrated that SQL constraints alone allow a containment cycle. The reproduction and outputs are in docs/design/architecture-storage/doltgresql-smoke.md. The owned server stopped cleanly. All seven authored Markdown files pass focused formatting and local links resolve. The full repository gate found additional formatting and renderer timing failures; remaining lanes and failure reproducibility are being collected without changing unrelated files.
+
+Validation result: lint, type-check and frontend build passed. System tests passed (257 tests) and repository tests passed (142 tests). Module tests recorded 4,898 passes, one skip and two timing failures. A focused rerun reproduced Agent workbench (track) at 3,070 ms against its 3,000 ms first-layout bound; Board viewer passed on rerun. The serial-browser aggregate exited 143 after three owners; the remaining owners completed through the documented focused adapter, for all 19 owners and 27 tests passing. The initial full gate stopped on formatting: four in-progress research reports plus 60 third-party skill files under .agents/skills. All seven authored documents now pass focused formatting, and local links resolve. Logs: /tmp/archboard-task543-check.log and /tmp/archboard-task543-wide-boards.log. No unrelated files were changed and no second full gate ran. Research commits: 39fded909 and 1d6ca1a5f. TASK-543 stays In Progress with acceptance boxes unchanged because archboard-dev requires a passing full gate before task closure. The requested research and UX record are available for the owner to evaluate; no database was selected or adopted.
 <!-- SECTION:NOTES:END -->
