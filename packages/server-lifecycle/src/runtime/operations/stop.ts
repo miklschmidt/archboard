@@ -109,7 +109,8 @@ function verifiedServerPid(health: HealthStatus): number | null {
 }
 
 /**
- * Wait for a signalled server to stop answering, refusing if it starts holding work.
+ * Wait for a signalled server to stop answering. Stop never waits for work: every write the
+ * server accepted is on disk before it was answered.
  * @param port The server port, whose pidfile is removed on success.
  * @param pid The pid that was signalled.
  * @returns The stop result once `/health` stops answering.
