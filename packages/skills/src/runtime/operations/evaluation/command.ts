@@ -267,7 +267,10 @@ async function runEvaluationCommand(argv: readonly string[], checkout: string): 
 			chosenGrader,
 		)
 		.option("--chunk <count>", "runs per grading call", positiveInteger, 6)
-		.option("--codex <executable>", "Codex executable matching graders.json; default: codex on PATH")
+		.option(
+			"--codex <executable>",
+			"Codex executable matching graders.json; default: codex on PATH",
+		)
 		.option(
 			"--claude <executable>",
 			"Claude executable matching graders.json; default: claude on PATH",
