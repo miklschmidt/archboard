@@ -1,3 +1,4 @@
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type {
 	CodexEpochStore,
 	EpochExecutionProof,
@@ -85,6 +86,8 @@ interface WorkhorseOperationContextInput {
 }
 
 interface WorkhorseOperationOptions {
+	/** The host's built-in namespaces: an operation runs only for a call through the workhorse one. */
+	readonly tools: VoiceToolset;
 	readonly session: WorkhorseOperationSessionPort;
 	readonly threadLink: WorkhorseOperationThreadLinkPort;
 	readonly queue: CodexWorkhorseQueue<OperationId>;

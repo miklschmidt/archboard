@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 // Workhorse news (TASK-321): the coordinator hears when a turn on the linked workhorse thread ends
 // or starts waiting on the user, whoever started the turn, and what the workhorse tells it, only
 // while voice is live.
@@ -113,7 +114,7 @@ function tellCoordinator(h: Harness, message: string): DynamicServerRequest {
 			threadId: "workhorse",
 			turnId: "workhorse-turn",
 			callId: String(callId),
-			namespace: "archboard_coordinator",
+			namespace: TEST_TOOLS.coordinator.namespace.name,
 			tool: "tell_coordinator",
 			arguments: { message },
 		},
@@ -122,7 +123,7 @@ function tellCoordinator(h: Harness, message: string): DynamicServerRequest {
 			threadId: h.ids.workhorse,
 			turnId: decoder.adoptTurnId("workhorse-turn"),
 			callId,
-			namespace: "archboard_coordinator",
+			namespace: TEST_TOOLS.coordinator.namespace.name,
 			tool: "tell_coordinator",
 			manifestHash: "manifest-hash",
 		}),

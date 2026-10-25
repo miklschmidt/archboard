@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -13,10 +14,6 @@ import {
 	type EpochStageInput,
 } from "#runtime/store/epoch/contract.ts";
 import { type CodexWorkhorseQueue } from "#runtime/services/workhorse-queue/contract.ts";
-import {
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOL_NAMESPACE,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
@@ -230,9 +227,9 @@ export function buildFixture(
 			threadId: coordinatorThreadId,
 			turnId: coordinatorTurnId,
 			callId: identity.decoder.adoptDynamicToolCallId("call-" + tool + "-" + callCount++),
-			namespace: WORKHORSE_TOOL_NAMESPACE.name,
+			namespace: TEST_TOOLS.workhorse.namespace.name,
 			tool,
-			manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
+			manifestHash: TEST_TOOLS.workhorse.sha256,
 		});
 		currentCall = call;
 		return call;
@@ -295,6 +292,7 @@ export function buildFixture(
 		} as unknown as ThreadLinkClassification;
 	};
 	const options: WorkhorseOperationOptions = {
+		tools: TEST_TOOLS,
 		contextCodec: TEST_CONTEXT_CODEC,
 		session,
 		queue: queue as CodexWorkhorseQueue<OperationId>,

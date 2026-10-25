@@ -1,10 +1,7 @@
 import type { Server } from "node:http";
 import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
 import type { WorkbenchDynamicTools } from "#runtime/protocol/host/instructions.ts";
-import {
-	DEFAULT_VOICE_AGENT_IDENTITY,
-	type VoiceAgentIdentity,
-} from "#runtime/protocol/host/identity.ts";
+import type { VoiceAgentIdentity } from "#runtime/protocol/host/identity.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
@@ -63,8 +60,12 @@ export interface VoiceAgentOptions {
 	readonly checkouts: readonly string[] | ((named: string) => string | null);
 	/** The host's own instructions, appended to the built-in coordinator and workhorse roles. */
 	readonly instructions: { readonly coordinator: string; readonly workhorse: string };
-	/** How the agent's threads name themselves to Codex. Default: {@link DEFAULT_VOICE_AGENT_IDENTITY}. */
-	readonly identity?: VoiceAgentIdentity;
+	/**
+	 * How the agent names itself to Codex, to the user and in its records. Each value left out is
+	 * that of `DEFAULT_VOICE_AGENT_IDENTITY`. Keep every value once threads exist: a thread
+	 * keeps the names it started with.
+	 */
+	readonly identity?: Partial<VoiceAgentIdentity>;
 	/** Receives a fault the agent cannot recover from. The host decides whether to stop. */
 	readonly onFatal: (error: unknown) => void;
 	/** Domain extensions; see {@link VoiceAgentExtensions}. */
@@ -130,7 +131,7 @@ function threadProfiles(options: VoiceAgentOptions, tools: VoiceAgentExtensions[
 	 */
 	const profile = (role: "coordinator" | "workhorse") =>
 		createWorkbenchThreadProfile({
-			identity: options.identity ?? DEFAULT_VOICE_AGENT_IDENTITY,
+			identity: options.identity ?? {},
 			role,
 			domainInstructions: options.instructions[role],
 			dynamicTools: tools?.[role] ?? [],

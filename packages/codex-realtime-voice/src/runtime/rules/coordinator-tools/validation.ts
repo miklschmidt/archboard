@@ -4,8 +4,9 @@ import {
 	VOICE_TOOL_NAMES,
 	WORKHORSE_TOOL_NAMES,
 	type CoordinatorToolName,
-	type NamespaceName,
+	type CoordinatorNamespaceRole,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { toolRoleOf } from "#runtime/rules/host/toolset.ts";
 import {
 	DelegateToWorkhorseInputSchema,
 	InspectWorkhorseInputSchema,
@@ -61,16 +62,10 @@ type CoordinatorToolInput =
 	| StopWorkhorsesInput
 	| ResolveSpokenApprovalInput;
 
-/** The reviewed namespace and tool name pair a logical call may carry. */
+/** The reviewed namespace role and tool name pair a logical call may carry. */
 const DeclaredToolSchema = z.union([
-	z.object({
-		namespace: z.literal("archboard_workhorse"),
-		tool: z.enum(WORKHORSE_TOOL_NAMES),
-	}),
-	z.object({
-		namespace: z.literal("archboard_voice"),
-		tool: z.enum(VOICE_TOOL_NAMES),
-	}),
+	z.object({ role: z.literal("workhorse"), tool: z.enum(WORKHORSE_TOOL_NAMES) }),
+	z.object({ role: z.literal("voice"), tool: z.enum(VOICE_TOOL_NAMES) }),
 ]);
 
 type DeclaredTool = z.infer<typeof DeclaredToolSchema>;
@@ -91,7 +86,7 @@ interface ValidatedCallEvidence {
 }
 
 type ValidatedWorkhorseCall = ValidatedCallEvidence & {
-	readonly namespace: "archboard_workhorse";
+	readonly role: "workhorse";
 	readonly workhorseBinding: WorkhorseOperationBinding;
 } & (
 		| {
@@ -121,7 +116,7 @@ type ValidatedWorkhorseCall = ValidatedCallEvidence & {
  * server finds the workhorses of the tab session itself.
  */
 type ValidatedStopCall = ValidatedCallEvidence & {
-	readonly namespace: "archboard_workhorse";
+	readonly role: "workhorse";
 	readonly tool: "stop_workhorses";
 	readonly input: StopWorkhorsesInput;
 	readonly workhorseBinding: null;
@@ -132,7 +127,7 @@ type ValidatedStopCall = ValidatedCallEvidence & {
 type ValidatedOperationCall = ValidatedWorkhorseCall | ValidatedStopCall;
 
 type ValidatedVoiceCall = ValidatedCallEvidence & {
-	readonly namespace: "archboard_voice";
+	readonly role: "voice";
 	readonly tool: "resolve_spoken_approval";
 	readonly input: ResolveSpokenApprovalInput;
 	readonly workhorseBinding: null;
@@ -221,11 +216,11 @@ function canonicalInput(parsed: ParsedToolInput): string {
 /**
  * Hash the namespace, tool and canonical input so a replayed logical call can prove it carries the
  * same arguments as the original without retaining those arguments.
- * @param namespace - The reviewed namespace.
+ * @param namespace - The reviewed namespace, as the host names it.
  * @param parsed - The tool and its parsed input.
  * @returns A hex SHA-256 digest.
  */
-function inputFingerprint(namespace: NamespaceName, parsed: ParsedToolInput): string {
+function inputFingerprint(namespace: string, parsed: ParsedToolInput): string {
 	return createHash("sha256")
 		.update(namespace, "utf8")
 		.update("\0", "utf8")
@@ -260,18 +255,18 @@ function taggedInput(tool: CoordinatorToolName, parsed: unknown): ParsedToolInpu
 
 /**
  * Parse the dynamic tool arguments against the reviewed closed schema.
- * @param namespace - The reviewed namespace.
+ * @param role - The role of the reviewed namespace.
  * @param tool - The reviewed tool name.
  * @param value - The raw arguments from the app-server.
  * @returns The tagged, typed input.
  */
 function parseInput(
-	namespace: NamespaceName,
+	role: CoordinatorNamespaceRole,
 	tool: CoordinatorToolName,
 	value: unknown,
 ): ParsedToolInput {
 	try {
-		return taggedInput(tool, parseCoordinatorToolInput(namespace, tool, value));
+		return taggedInput(tool, parseCoordinatorToolInput(role, tool, value));
 	} catch (error) {
 		return fail(
 			"invalid_call",
@@ -284,11 +279,18 @@ function parseInput(
 /**
  * Resolve the namespace and tool the call declares, refusing anything the reviewed manifests do
  * not declare.
+ * @param options - The dispatcher options carrying the host's built-in namespaces.
  * @param call - The decoded logical call.
- * @returns The declared namespace and tool.
+ * @returns The declared namespace role and tool.
  */
-function declaredTool(call: LogicalToolCallCorrelation): DeclaredTool {
-	const declared = DeclaredToolSchema.safeParse({ namespace: call.namespace, tool: call.tool });
+function declaredTool(
+	options: CodexCoordinatorToolsOptions,
+	call: LogicalToolCallCorrelation,
+): DeclaredTool {
+	const declared = DeclaredToolSchema.safeParse({
+		role: toolRoleOf(options.tools, call),
+		tool: call.tool,
+	});
 	if (!declared.success) {
 		fail("invalid_call", `The reviewed namespace does not declare ${call.tool}.`);
 	}
@@ -330,11 +332,11 @@ function workhorseCall(
 	>,
 	binding: WorkhorseOperationBinding,
 ): ValidatedWorkhorseCall {
-	const namespace = "archboard_workhorse" as const;
+	const role = "workhorse" as const;
 	if (parsed.tool === "steer_workhorse") {
 		return Object.freeze({
 			...evidence,
-			namespace,
+			role,
 			...parsed,
 			workhorseBinding: binding,
 			expectedTurnId: steerExpectedTurnId(options),
@@ -342,7 +344,7 @@ function workhorseCall(
 	}
 	return Object.freeze({
 		...evidence,
-		namespace,
+		role,
 		...parsed,
 		workhorseBinding: binding,
 		expectedTurnId: null,
@@ -362,18 +364,18 @@ function validateCoordinatorToolRequest(
 ): ValidatedCoordinatorToolCall {
 	assertRequestEnvelope(options, request);
 	const call = assertLogicalCall(options, request);
-	const declared = declaredTool(call);
+	const declared = declaredTool(options, call);
 	const coordinator = currentCoordinator(options, call);
-	const parsed = parseInput(declared.namespace, declared.tool, request.params.arguments);
+	const parsed = parseInput(declared.role, declared.tool, request.params.arguments);
 	const evidence: ValidatedCallEvidence = {
 		call,
-		inputFingerprint: inputFingerprint(declared.namespace, parsed),
+		inputFingerprint: inputFingerprint(call.namespace, parsed),
 		coordinator,
 	};
 	if (parsed.tool === "resolve_spoken_approval") {
 		return Object.freeze({
 			...evidence,
-			namespace: "archboard_voice",
+			role: "voice",
 			...parsed,
 			workhorseBinding: null,
 			expectedTurnId: null,
@@ -382,7 +384,7 @@ function validateCoordinatorToolRequest(
 	if (parsed.tool === "stop_workhorses") {
 		return Object.freeze({
 			...evidence,
-			namespace: "archboard_workhorse",
+			role: "workhorse",
 			...parsed,
 			workhorseBinding: null,
 			expectedTurnId: null,

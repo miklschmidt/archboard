@@ -1,10 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
-import { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
-import {
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOL_NAMESPACE,
-	type CanonicalNamespace,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import type { CanonicalNamespace } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type { CoordinatorThreadStartParams } from "#runtime/protocol/coordinator/contract.ts";
 
 type ThreadStartDynamicTool = NonNullable<CoordinatorThreadStartParams["dynamicTools"]>[number];
@@ -93,56 +89,97 @@ function finiteJsonNumber(value: number): number {
 
 /**
  * The two reviewed tool namespaces a coordinator thread is started with, in reviewed order.
+ * @param toolset - The host's built-in namespaces.
  * @returns The dynamic tools for thread/start.
  */
-function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dynamicTools"]> {
+function coordinatorDynamicTools(
+	toolset: VoiceToolset,
+): NonNullable<CoordinatorThreadStartParams["dynamicTools"]> {
 	return [
-		namespaceForThreadStart(WORKHORSE_TOOL_NAMESPACE),
-		namespaceForThreadStart(VOICE_TOOL_NAMESPACE),
+		namespaceForThreadStart(toolset.workhorse.namespace),
+		namespaceForThreadStart(toolset.voice.namespace),
 	];
 }
 
-export { coordinatorDynamicTools };
+/**
+ * The built-in namespaces a role's thread must declare, exactly as reviewed.
+ * @param toolset - The host's built-in namespaces.
+ * @param role - The role.
+ * @returns The role's required namespaces.
+ */
+function requiredNamespaces(
+	toolset: VoiceToolset,
+	role: "coordinator" | "workhorse",
+): readonly ThreadStartDynamicTool[] {
+	return role === "coordinator"
+		? coordinatorDynamicTools(toolset)
+		: [toolset.coordinator.namespace];
+}
 
-const RESERVED_NAMESPACES = [...coordinatorDynamicTools(), COORDINATOR_CALLBACK_NAMESPACE];
+/**
+ * Every namespace the host's built-in roles reserve.
+ * @param toolset - The host's built-in namespaces.
+ * @returns The reserved descriptors.
+ */
+function reservedNamespaces(toolset: VoiceToolset): readonly ThreadStartDynamicTool[] {
+	return [...coordinatorDynamicTools(toolset), toolset.coordinator.namespace];
+}
+
 /**
  * Identify a namespace whose descriptor belongs to the workbench.
+ * @param toolset - The host's built-in namespaces.
  * @param name The namespace name.
  * @returns Whether the name is reserved by the runtime.
  */
-function isReservedWorkbenchNamespace(name: string): boolean {
-	return RESERVED_NAMESPACES.some((namespace) => namespace.name === name);
+function isReservedWorkbenchNamespace(toolset: VoiceToolset, name: string): boolean {
+	return toolRoleOf(toolset, { namespace: name }) !== null;
 }
+
 /**
  * Reject a modified reserved descriptor, even when its supplied hash matches it.
+ * @param reserved The host's reserved descriptors.
  * @param tool The declared namespace or tool.
  */
-function assertReservedNamespace(tool: ThreadStartDynamicTool): void {
-	const canonical = RESERVED_NAMESPACES.find((namespace) => namespace.name === tool.name);
+function assertReservedNamespace(
+	reserved: readonly ThreadStartDynamicTool[],
+	tool: ThreadStartDynamicTool,
+): void {
+	const canonical = reserved.find((namespace) => namespace.name === tool.name);
 	if (canonical !== undefined && !isDeepStrictEqual(tool, canonical))
 		throw new TypeError("A host profile cannot modify a workbench coordination namespace.");
 }
+
 /**
  * Bind unique tool names and canonical reserved descriptors to the known role.
  * @param tools The exact tool descriptors in the profile.
+ * @param toolset The host's built-in namespaces.
  * @param role The known role, when its built-ins must be present.
  */
 function assertWorkbenchThreadTools(
 	tools: readonly ThreadStartDynamicTool[],
+	toolset: VoiceToolset,
 	role?: "coordinator" | "workhorse",
 ): void {
+	const reserved = reservedNamespaces(toolset);
 	const names = new Set<string>();
 	for (const tool of tools) {
 		if (names.has(tool.name))
 			throw new TypeError("A workbench profile cannot declare duplicate tool names.");
 		names.add(tool.name);
-		assertReservedNamespace(tool);
+		assertReservedNamespace(reserved, tool);
 	}
 	if (role === undefined) return;
-	const required =
-		role === "coordinator" ? coordinatorDynamicTools() : [COORDINATOR_CALLBACK_NAMESPACE];
-	const reservedNames = new Set([...names].filter(isReservedWorkbenchNamespace));
+	const reservedNames = new Set(
+		[...names].filter((name) => isReservedWorkbenchNamespace(toolset, name)),
+	);
+	const required = requiredNamespaces(toolset, role);
 	if (!isDeepStrictEqual(reservedNames, new Set(required.map((tool) => tool.name))))
 		throw new TypeError(`The ${role} profile must declare exactly its coordination namespaces.`);
 }
-export { assertWorkbenchThreadTools, isReservedWorkbenchNamespace };
+
+export {
+	assertWorkbenchThreadTools,
+	coordinatorDynamicTools,
+	isReservedWorkbenchNamespace,
+	requiredNamespaces,
+};

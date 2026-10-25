@@ -2,13 +2,16 @@ import { CORE_ROLE_INSTRUCTIONS } from "#runtime/rules/host/authored.ts";
 import {
 	assertWorkbenchThreadTools,
 	isReservedWorkbenchNamespace,
+	requiredNamespaces,
 } from "#runtime/rules/host/tools.ts";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
-import { coordinatorDynamicTools } from "#runtime/rules/host/tools.ts";
-import { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import type { VoiceAgentIdentity } from "#runtime/protocol/host/identity.ts";
+import {
+	captureVoiceAgentIdentity,
+	type VoiceAgentIdentity,
+} from "#runtime/protocol/host/identity.ts";
 import type {
 	WorkbenchDynamicTools,
 	WorkbenchInstructions,
@@ -43,30 +46,25 @@ function composeWorkbenchRoleInstructions(
  * @returns The immutable host profile with its built-in coordination tools.
  */
 function createWorkbenchThreadProfile(input: {
-	readonly identity: VoiceAgentIdentity;
+	readonly identity: Partial<VoiceAgentIdentity>;
 	readonly role: "coordinator" | "workhorse";
 	readonly domainInstructions: string;
 	readonly dynamicTools: WorkbenchDynamicTools;
 }): WorkbenchThreadProfile {
-	const identity: VoiceAgentIdentity = Object.freeze({
-		serviceName: input.identity.serviceName,
-		threadSource: input.identity.threadSource,
-	});
-	if (
-		[identity.serviceName, identity.threadSource, input.domainInstructions].some((value) => !value)
-	) {
-		throw new TypeError("A workbench role requires app identity and domain instructions.");
+	const identity = captureVoiceAgentIdentity(input.identity);
+	if (!input.domainInstructions) {
+		throw new TypeError("A workbench role requires domain instructions.");
 	}
-	const builtIns =
-		input.role === "coordinator" ? coordinatorDynamicTools() : [COORDINATOR_CALLBACK_NAMESPACE];
-	if (input.dynamicTools.some((tool) => isReservedWorkbenchNamespace(tool.name)))
+	const toolset = createVoiceToolset(identity);
+	const builtIns = requiredNamespaces(toolset, input.role);
+	if (input.dynamicTools.some((tool) => isReservedWorkbenchNamespace(toolset, tool.name)))
 		throw new TypeError("Host tools cannot replace workbench coordination tools.");
 	const dynamicTools = cloneAndFreeze(
 		input.role === "coordinator"
 			? [...builtIns, ...input.dynamicTools]
 			: [...input.dynamicTools, ...builtIns],
 	);
-	assertWorkbenchThreadTools(dynamicTools, input.role);
+	assertWorkbenchThreadTools(dynamicTools, toolset, input.role);
 	return Object.freeze({
 		identity,
 		instructions: composeWorkbenchRoleInstructions(input.role, input.domainInstructions),
@@ -87,7 +85,11 @@ function captureThreadProfile(
 	role?: "coordinator" | "workhorse",
 ): WorkbenchThreadProfile {
 	const captured = cloneAndFreeze(profile);
-	assertWorkbenchThreadTools(captured.dynamicTools, role);
+	assertWorkbenchThreadTools(
+		captured.dynamicTools,
+		createVoiceToolset(captureVoiceAgentIdentity(captured.identity)),
+		role,
+	);
 	if (
 		role !== undefined &&
 		!captured.instructions.text.startsWith(`${CORE_ROLE_INSTRUCTIONS[role]}\n`)
