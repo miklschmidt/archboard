@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T02:09:00Z'
+updated_date: '2026-10-25T02:21:00Z'
 labels:
   - renderer
 dependencies:
@@ -28,7 +28,7 @@ Layout moves to Rust one engine at a time, each against the drawing geometry tha
 - [x] #1 The core answers the drawing of every corpus board that sequences and flowcharts lays out, and the drawing is equal to what the TypeScript stage answered
 - [x] #2 Every corpus picture is the same bytes as before the change
 - [x] #3 The ported TypeScript rules are gone from packages/renderer
-- [ ] #4 No corpus board renders slower, measured with the same harness before and after
+- [x] #4 No corpus board renders slower, measured with the same harness before and after
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -95,4 +95,19 @@ A warm in-process bench of the 356 current flowchart drawings agreed: 9,664 to 9
 - test:serial-browser: exit 0.
 
 After commit e9c4bc895, the current variants were drawn again: "0 of 2344 drawings differ" against the timed baseline.
+
+AC4 waived by the user on 2026-10-25: the flowchart slowdown of about 0.85 ms per drawing (the JSON crossing to the TypeScript track engine) does not matter. It is expected to go away when TASK-520.04 brings the track engine into the core.
+
+## Board proposal (2026-10-25)
+
+`Semantic renderer@TASK-520.06` was branched from TASK-520.02 at version 98, drawn to the code as built (versions 100 and 101) and adopted at version 102. Summary: "Meaning to a scene, its SVG and interaction geometry".
+
+- Parts. New "Flows hand-off" (cMXIpraW) bound to render/flows.ts. "Sequence layout" (wLF1X11D) is bound to crates/archboard-flows/src/sequence. "Flowchart" (0idmUHd2) is bound to crates/archboard-flows/src/flowchart/mod.rs, its responsibility now says it lays the flow out for the architecture painter, and it moved from "Render entry" to "Layout and measuring", beside Sequence layout, because the core calls it and it no longer paints. The descriptions of Renderer core, View dispatcher and Measured text name drawSequence and drawFlowchart and the hand-off.
+- Relationships. Added: View dispatcher -> Flows hand-off (diagram.ts drawSequence), Flows hand-off -> Renderer core (flows.ts drawSequence), Flows hand-off -> Renderer host (flows.ts rendererHost; the code check asked for it). Kept ids with their caller moved: IvQqev1K and RSHH7EN4 are Renderer core -> Sequence layout / Flowchart (flows.rs draw_sequence, draw_flowchart); oCH6TGpi and 8WJV0Mer are Flows hand-off -> Measured text / Layout engines (flows.ts measureNoteLines, layoutEngine). Removed: MooLuYkK (one call relationship per pair, oCH6TGpi carries it), LJUm7E1m (the Rust flowchart uses archboard_scene::geometry, not curves.ts) and ignhH2bt (the core paints inside drawFlowchart). 98et92HX is relabelled "paint the settled drawing", because only the architecture reaches the paint hand-off now.
+- Flows. "Draw a view" and "Draw a sequence" now run View dispatcher -> Flows hand-off -> Renderer core -> layout. The core's text and track calls return through the hand-off, and the core paints and writes the document. The comparison filter (HUgQSpyw) is a Sequence layout self step at sequence/mod.rs shown_flows. 1gPGcKRA stays: scene.rs still calls the sequence painter through paint_scene.
+- Code check: `diff <(findings) <(findings --variant TASK-520.06)` adds no line. It clears 15 lines: 12 ANCHOR_PATH_MISSING and 3 ANCHOR_SYMBOL_MISSING on the deleted TypeScript files. Rust files are text-only for the check, so the Rust anchors were read by hand: flows.rs:183 and :192, flowchart/mod.rs:224, :328, :413 and :559, sequence/mod.rs:56 and :61, sequence/rows.rs:71.
+- Footprint against base 2df6736f4 (the parent of 73a1dbb77, found with the trailer command), read before adoption, `current` TASK-520.02 = the proposal's parent. namedAndChanged: View dispatcher, Sequence layout, Measured text, Renderer host, Flowchart, Renderer core, Paint hand-off, Flows hand-off. changedNotNamed: none. namedNotChanged: Edge geometry (curves.ts), named only by the removed LJUm7E1m. That is normal. Skipped: drill-down Layout engines (engines.ts has no commit in the range), plus unbound containers.
+- Renderer layout needs no proposal. Its current variant anchors diagram.ts (layoutEngine, layoutRemembered, measureArchitecture, renderArchitecture, entryPointsOf) and measurement.ts. Every one of them still holds, and the check reports no finding on that board. After adoption, `check --code` lists Renderer layout as behind by one commit: dc63a80dd, on Measured text, which exports measureNode for the flows hand-off. That board draws the architecture layout, not the flows, so it is still right. Archboard's renderer package part (packages/renderer) is still right too.
+- `archboard check`: no diagnostics. After adoption, `check --code` adds no finding over the baseline. The two BINDING_PATH_MISSING warnings of the old current variant are gone.
+- Not seen: `semantic rasterize` refused, because the server could not load the WebAssembly core (`import function ...__wbg_cb_unref... must be callable`). The core build is outside this work, and a corpus render is running from the checkout, so the pictures were not checked.
 <!-- SECTION:NOTES:END -->
