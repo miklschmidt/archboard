@@ -8,7 +8,7 @@
 // has no icon here and is drawn with a plain mark.
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
-import type { AppliedAppearance } from "@archboard/renderer/picture";
+import type { AppliedAppearance } from "@archboard/board/render-reply";
 
 /** How a relationship kind is drawn as a chip: its words, its line colour and its dash. */
 interface RelationshipLook {

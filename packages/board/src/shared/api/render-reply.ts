@@ -14,6 +14,7 @@ export {
 	wasDrawn,
 } from "#shared/protocol/render-reply.ts";
 export type {
+	AppliedAppearance,
 	DiagramAtlas,
 	DiagramBox,
 	DiagramTheme,
@@ -24,6 +25,8 @@ export type {
 	NothingDrawn,
 	NothingDrawnReason,
 	OfferedView,
+	PictureKey,
+	PictureMarks,
 	RenderedChanges,
 	SemanticRenderReply,
 	StandaloneTheme,

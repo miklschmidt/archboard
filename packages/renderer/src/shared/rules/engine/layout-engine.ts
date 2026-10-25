@@ -3,8 +3,7 @@
 // before every solve. The renderer core lays every board out, Track and
 // Blocks, and asks this host's Graphviz for each graph it ranks (ADR 0057,
 // TASK-520.04, TASK-520.05).
-import type { ElkNode } from "@archboard/elk-rs";
-import type { Graph, Viz } from "@viz-js/viz";
+import type { Viz } from "@viz-js/viz";
 import {
 	layOutBoard,
 	type GraphvizHost,
@@ -22,22 +21,15 @@ export function createLayoutEngine(viz: Viz) {
 	const graphviz: GraphvizHost = {
 		/**
 		 * Lay out one graph the core ranks.
-		 * @param graph The graph, as the JSON of a viz-js `Graph`.
+		 * @param graph The graph.
 		 * @returns What Graphviz answers of it as `json0`, y inverted.
 		 */
-		render: (graph) =>
-			viz.renderString(
-				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it writes the viz-js `Graph` it ranks
-				JSON.parse(graph) as Graph,
-				{ yInvert: true, format: "json0" },
-			),
+		render: (graph) => viz.renderString(graph, { yInvert: true, format: "json0" }),
 	};
-	return (graph: ElkNode): ElkNode =>
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it answers the root of an ELK node
-		JSON.parse(layOutBoard(JSON.stringify(graph), graphviz)) as ElkNode;
+	return (graph: string): string => layOutBoard(graph, graphviz);
 }
 
-/** One solve: a measured graph, its root options naming how it is laid out, in; its geometry out. */
+/** One solve: a measured graph, its root options naming how it is laid out, in; its geometry out, each as the core writes it. */
 type LayoutEngine = ReturnType<typeof createLayoutEngine>;
 
 /**

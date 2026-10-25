@@ -34,12 +34,11 @@ import type { RendererHost } from "#shared/rules/render/host.ts";
 
 /** What one solve takes and gives, as the renderer host states it. */
 type Solve = RendererHost["solve"];
-type SolveGraph = Parameters<Solve>[0];
 
-/** What a worker answers one message with. */
+/** What a worker answers one message with: the solved graph, as the core wrote it. */
 interface EngineAnswer {
 	readonly id: number;
-	readonly data?: SolveGraph;
+	readonly data?: string;
 	readonly error?: { readonly message?: string } | string;
 	/** Whether the worker can answer nothing more: its engine aborted or never started. */
 	readonly fatal?: boolean;
@@ -59,10 +58,10 @@ interface EngineWorker {
 
 /** A solve sent to a worker and not yet answered. */
 interface Pending {
-	readonly graph: SolveGraph;
+	readonly graph: string;
 	readonly signal: AbortSignal | undefined;
 	readonly cancel: () => void;
-	readonly resolve: (graph: SolveGraph) => void;
+	readonly resolve: (graph: string) => void;
 	readonly reject: (error: Error) => void;
 	/** Whether it was sent once more after its first worker failed. */
 	readonly retried: boolean;
@@ -285,7 +284,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	}
 
 	return (graph, signal) =>
-		new Promise<SolveGraph>((resolve, reject) => {
+		new Promise<string>((resolve, reject) => {
 			if (signal?.aborted === true) {
 				reject(signal.reason);
 				return;

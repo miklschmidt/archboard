@@ -1,10 +1,11 @@
 // Applied appearance is read from the renderer's picture, so inspection never
-// explains a newer policy than the picture the person actually selected. What
-// the whole picture's key lists is read by the renderer core
-// (`pictureAppearances`, `keyOf`), which an exported legend reads too; this
-// reads one subject from the picture on screen, for its tip.
+// explains a newer policy than the picture the person actually selected. The
+// renderer core reads every subject's appearance and the whole picture's key
+// off the picture it draws, and they arrive with it (`appearances`, `key`);
+// this reads one subject from the picture on screen, for its tip, from the
+// facts the core writes on the group that draws the subject.
 
-import { appearanceFrom, type AppliedAppearance } from "@archboard/renderer/picture";
+import type { AppliedAppearance } from "@archboard/board/render-reply";
 
 /** Where the renderer draws a kind's icon inside a subject's group. */
 const ICON = "[data-type-icon] svg";
@@ -23,7 +24,24 @@ function drawnAppearance(picture: Element, id: string): AppliedAppearance | unde
 	// apart from the frame that carries its type.
 	const icon =
 		group.querySelector(ICON) ?? root.querySelector(`[data-semantic-id="${id}"] ${ICON}`);
-	return appearanceFrom(id, (name) => group.getAttribute(name), icon?.outerHTML ?? "");
+	/**
+	 * One fact the group carries.
+	 * @param name The attribute that carries it.
+	 * @param neutral Its value when the group carries none.
+	 * @returns The fact.
+	 */
+	const read = (name: string, neutral: string): string => group.getAttribute(name) ?? neutral;
+	return {
+		id,
+		iconSvg: icon?.outerHTML ?? "",
+		typeName: read("data-type-name", ""),
+		typeKind: read("data-type-kind", ""),
+		depiction: read("data-depiction", ""),
+		typeColor: read("data-type-color", "neutral"),
+		lineColor: read("data-line-color", "neutral"),
+		dash: read("data-line-dash", "solid"),
+		arrowhead: read("data-arrowhead", "filled"),
+	};
 }
 
 export { drawnAppearance };

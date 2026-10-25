@@ -20,7 +20,16 @@ import {
 	WARNING_GLYPH,
 } from "#shared/protocol/generated/core/marks.ts";
 import type { SubjectStanding } from "#shared/protocol/render-request.ts";
-import { coord } from "#shared/rules/geometry.ts";
+
+/**
+ * A coordinate as a picture writes it: rounded to a hundredth, never minus zero.
+ * @param value The coordinate.
+ * @returns Its spelling.
+ */
+function coord(value: number): string {
+	const rounded = Math.round(value * 100) / 100;
+	return String(Object.is(rounded, -0) ? 0 : rounded);
+}
 
 /** The colour a relationship kind is drawn in: a palette colour's name, or the neutral line. */
 type LineColour = keyof typeof LINE_INK;

@@ -437,29 +437,27 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/` and exposes 9 subpaths with 61 names, where code outside imported 10 module paths and
+`shared/`, `runtime/` and `ui/` and exposes 9 subpaths with 53 names, where code outside imported 10 module paths and
 two asset paths. It imports `board`, `timing` and `process`. The 2 files of `shared/api/` and the
 1 file of `ui/api/` are safe for the browser, with no Node import. The 6 files of `runtime/api/` are Node-bound and run
 only in Bun.
 
-- `shared/` holds the picture code that the browser and Bun both run. `rules/` is the pure code: `render/` has the entry
-  points, the host contract, the hand-off of a drawing to the renderer core (`paint.ts`), the hand-off of a board's
-  flows to it (`flows.ts`) and the marks a pane draws itself (`marks.ts`), `text/` the measurement and the fonts,
-  `engine/` the layout engine and its worker pool, and `layout/` and `blocks/` the ways to lay an architecture out.
-  These folders split by behavior (`blocks/tree/`, `layout/routes/`), not by a longer file prefix.
-  The renderer core in `crates/` paints every picture, lays out every sequence and flowchart
-  (`crates/archboard-flows`) and lays out every solve of an architecture, Track and Blocks (ADR 0057):
-  `crates/archboard-layout` lays a board out one way in one function, `lay_out_board`, and asks the host's Graphviz
-  for each graph it ranks through one trait, `Graphviz`. Each solve tells, with its drawing, what the choices between
-  solves read of it, and the core weighs two such readings (`draws_better`, `reads_better_packed`, `stacks_of`) and
-  names the blocks whose joins a choice turns (`joining_of`, `has_regions`). `blocks/` keeps only the choosing on the
-  main thread: `blocks/tree/solves.ts` asks for the solves side by side, `blocks/tree/joins-laid.ts` runs the joins
-  choice over them, and `blocks/tree/block-engine.ts` makes the answer a drawing. `track/` is gone. `constants/` holds the spacing, the typography and `shell-geometry.ts`, and
-  `protocol/` holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
+- `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
+  measurement: the renderer core in `crates/` draws every picture (ADR 0057). `rules/` is the pure code: `render/` has
+  the entry points (`board.ts` resolves a board's variant, view and comparison into what a render asks, and
+  `diagram.ts` hands that to the core with this host's durations and theme colours), the host contract, the words a
+  pane's key says beside the kinds the core lists (`key-marks.ts`) and the marks a pane draws itself (`marks.ts`), and
+  `engine/` runs the layout's solves on a pool of workers. `constants/` holds `shell-geometry.ts`, and `protocol/`
+  holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
   glue, and the TypeScript types of its contract, generated from its Rust types.
-- `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the
-  theme colors and the pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
-  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render and measure entry points, the
+  The core takes the reading, the vault's policy and the render's choices in one call, `render`
+  (`crates/archboard-render`), and answers the document, its atlas, each subject's appearance and the picture's key.
+  It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
+  as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
+  worker runs one solve with the core's `layOutBoard`, which asks the host's Graphviz for each graph it ranks.
+- `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
+  pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
+  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render entry points, the
   icon paths, the bounds, PNG and receipt of the rasterizer, and in `recipe/` the render recipe in a file. `services/rasterizer/` is the rasterizer,
   `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
   `store/` reads the theme stylesheet and names where the assets are.
@@ -469,8 +467,9 @@ only in Bun.
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
   worker loads the renderer core, whose glue fetches the core's WebAssembly beside it, and then Graphviz.
-- `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
-  with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
+- `./picture` is what a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks
+  the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
+  subject's appearance arrive with the picture (`@archboard/board/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
   `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture. `./recipe` is the render recipe that a board render carries: `readRenderRecipe` reads it from the bytes of an SVG or a PNG, `embedRecipeInPng` writes it into a bitmap, `replaceRenderRecipe` puts another recipe in its place and keeps every other byte, and `recipeRenderRequest` is the render request that draws it again; the Bun `renderBoard` writes it into an SVG when the caller names the vault. `./headless-chromium` is the private Chromium, which the walkthrough recorder
