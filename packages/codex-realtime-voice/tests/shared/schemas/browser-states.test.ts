@@ -168,6 +168,7 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 		capturedAtMs: 100,
 		freshUntilMs: 200,
 		reason: null,
+		withheld: null,
 		body: "exact callback body",
 	} as const;
 	expect(

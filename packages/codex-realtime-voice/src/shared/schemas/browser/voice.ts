@@ -10,6 +10,7 @@ import {
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
 	BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
 	DeliveryOutcomeSchema,
 	TimestampSchema,
 } from "#shared/schemas/browser/vocabulary.ts";
@@ -115,6 +116,8 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 			capturedAtMs: TimestampSchema,
 			freshUntilMs: TimestampSchema,
 			reason: boundedText(512).nullable(),
+			/** The host's detail of why it told nothing; set only when `reason` is `withheld`. */
+			withheld: boundedWireText(BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES).nullable(),
 			body: boundedWireText(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES),
 		})
 		.strict();

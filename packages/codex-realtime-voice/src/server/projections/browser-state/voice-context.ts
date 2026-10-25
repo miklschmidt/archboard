@@ -7,6 +7,7 @@ import type { BrowserVoiceContext } from "#shared/schemas/browser/snapshot.ts";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
 } from "#shared/schemas/browser/vocabulary.ts";
 
 /**
@@ -75,6 +76,18 @@ function entryKind(
 }
 
 /**
+ * The host's detail of why it told an audience nothing, which only a withheld change has.
+ * @param delivery The recorded delivery.
+ * @returns The detail the page is shown, or null.
+ */
+function withheldDetail(delivery: CoordinatorCallbackDelivery): string | null {
+	const callback = delivery.callback;
+	if (callback?.kind !== "context" || delivery.reason !== "withheld") return null;
+	const detail = callback.context.withheld;
+	return detail === null ? null : shownText(detail, BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES);
+}
+
+/**
  * One recorded delivery as the browser shows it, saying whether it was ever
  * attempted and what became of it.
  * @param delivery The recorded delivery.
@@ -90,6 +103,7 @@ function browserEntry(
 		capturedAtMs: delivery.freshness.capturedAtMs,
 		freshUntilMs: delivery.freshness.freshUntilMs,
 		reason: delivery.reason,
+		withheld: withheldDetail(delivery),
 		body: shownText(delivery.text ?? "", BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES),
 	};
 	return delivery.attempted
