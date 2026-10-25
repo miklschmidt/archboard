@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 143,
+	"version": 150,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-25T18:11:14.015Z",
+	"updatedAt": "2026-10-25T19:21:38.144Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -52396,7 +52396,7 @@
 		{
 			"id": "z4FvahFF",
 			"name": "TASK-537.01",
-			"lifecycle": "draft",
+			"lifecycle": "historical",
 			"parent": "XhomNCU5",
 			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
@@ -57091,9 +57091,9 @@
 		{
 			"id": "xIRTIg0t",
 			"name": "TASK-538.01",
-			"lifecycle": "draft",
+			"lifecycle": "historical",
 			"parent": "z4FvahFF",
-			"summary": "A proposal's Board tab says first what it changes about each container's interface",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -61813,9 +61813,9 @@
 		{
 			"id": "a9dJu38M",
 			"name": "TASK-539.02",
-			"lifecycle": "draft",
+			"lifecycle": "historical",
 			"parent": "xIRTIg0t",
-			"summary": "The Selection tab shows the exposed names of a picked container",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -61840,7 +61840,7 @@
 						"order": 3000,
 						"name": "Fetch semantic reads",
 						"kind": "function",
-						"responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+						"responsibility": "Decode the listing, a board, a render, the vault check, the code findings, a container's exposed names and a board's locality",
 						"description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
 						"parent": "kr46TVLf",
 						"binding": {
@@ -66590,9 +66590,9 @@
 		{
 			"id": "94Opxrki",
 			"name": "TASK-538.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "a9dJu38M",
-			"summary": "A part picked in one pane is picked in the pane beside it",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -66617,7 +66617,7 @@
 						"order": 3000,
 						"name": "Fetch semantic reads",
 						"kind": "function",
-						"responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+						"responsibility": "Decode the listing, a board, a render, the vault check, the code findings, a container's exposed names and a board's locality",
 						"description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
 						"parent": "kr46TVLf",
 						"binding": {
@@ -71392,7 +71392,7 @@
 			}
 		}
 	],
-	"current": "kUIUiTmt",
+	"current": "94Opxrki",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -71563,10 +71563,28 @@
 			"reason": "semantic render, rasterize and record draw against a named variant (TASK-478.01, adopted on main while TASK-482 was adopted on feat/derived-overview)"
 		},
 		{
-			"variant": "kUIUiTmt",
+			"variant": "z4FvahFF",
 			"from": "XhomNCU5",
-			"at": "2026-10-25T05:16:39.387Z",
-			"reason": "One drill-down reading and one board refresh module, pane chrome in the viewer, and the replay page published by the walkthrough package"
+			"at": "2026-10-25T19:17:39.270Z",
+			"reason": "The Board tab lists design questions: entry points that pass one call on, each able to ask the agent what deleting it would cost (TASK-537.01)"
+		},
+		{
+			"variant": "xIRTIg0t",
+			"from": "z4FvahFF",
+			"at": "2026-10-25T19:18:10.723Z",
+			"reason": "The Board tab of a proposal lists first what it changes about each container's interface (TASK-538.01)"
+		},
+		{
+			"variant": "a9dJu38M",
+			"from": "xIRTIg0t",
+			"at": "2026-10-25T19:19:38.355Z",
+			"reason": "The Selection tab shows what the code of a picked container exposes, from the server's memory of the last code pass (TASK-539.02)"
+		},
+		{
+			"variant": "94Opxrki",
+			"from": "a9dJu38M",
+			"at": "2026-10-25T19:21:38.144Z",
+			"reason": "A pane names the variant beside that holds a part it lacks, when the two panes are linked (TASK-538.02)"
 		}
 	],
 	"shelvings": [

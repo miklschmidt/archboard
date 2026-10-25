@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:05:00Z'
-updated_date: '2026-10-25T17:57:00Z'
+updated_date: '2026-10-25T19:24:00Z'
 labels:
   - code-check
   - cli
@@ -45,4 +45,6 @@ The CLI is the default surface (ADR 0008), so an agent in the survey or grilling
 
 <!-- SECTION:NOTES:BEGIN -->
 Built in 62b4073c6 (+ style 'format the code check route'). Wire: CLI appends exposed=true to GET /api/vault/code-check; answerOf keeps pass.exposures only then; memory is fed regardless. Decisions: (1) CodeCheckAnswerSchema gained optional exposures and CodeCheckPass was dropped (same type once exposures is optional; the intersection with a readonly field did not type-check). (2) Text line: 'exposed: <module>: N names, M used outside[, K listed] (board@variant, container id)' - counts only; names are in JSON. (3) No board is affected, so no proposal: the option and query parameter add nothing a board draws, and the unadopted TASK-539.01 proposal text for Code check route stays true. (4) Skill: authoring.md and SKILL.md teach the flag; evals/coverage.json has a runtime-owner entry (no author-run scenario; eval:skill check passes, no model run). (5) ADR 0046 carries an amendment. Gate: lint 0, type-check 0, test:modules 4909 pass 2 fail (wide-boards first-layout bound: Board viewer track, TASK-542, and Agent workbench track at 4.4s under load, same assertion), test:system 257/0, test:repository 142/0, test:serial-browser all 0 fail; format:check fails only on 60 third-party files under .agents/.claude (from the skills tracking commit), not on files of this task. Ran archboard check --code --exposed against this worktree's server: 22 exposures; without the flag the answer keys are unchanged.
+
+Behind: Archboard (packages/code-intel in 42e6a1fed) and Skill evaluation (evals coverage) stay true; no board draws the --exposed option.
 <!-- SECTION:NOTES:END -->

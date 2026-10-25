@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 54,
+	"version": 55,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-25T18:26:00.216Z",
+	"updatedAt": "2026-10-25T19:21:56.663Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -6579,7 +6579,7 @@
 		{
 			"id": "Mdlbn36d",
 			"name": "TASK-537.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "LES6yFR6",
 			"summary": "Dispatch and invocation lifetime",
 			"content": {
@@ -8126,7 +8126,7 @@
 			}
 		}
 	],
-	"current": "iekngjyz",
+	"current": "Mdlbn36d",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -8183,16 +8183,10 @@
 			"reason": "a checkout with no vault is told which known vaults hold boards of its code (TASK-480, adopted on main while TASK-482 was adopted on feat/derived-overview)"
 		},
 		{
-			"variant": "aQqg9sy4",
+			"variant": "Mdlbn36d",
 			"from": "LES6yFR6",
-			"at": "2026-10-25T05:11:07.263Z",
-			"reason": "An invocation states itself once through the invocation context, and the vault it addresses is found and registered by one workspace operation that the addressed-vault step calls"
-		},
-		{
-			"variant": "iekngjyz",
-			"from": "aQqg9sy4",
-			"at": "2026-10-26T05:37:14.743Z",
-			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+			"at": "2026-10-25T19:21:56.663Z",
+			"reason": "archboard semantic questions answers the design questions of every current board, and every --board reaches a command that reads it (TASK-537.04)"
 		}
 	]
 }

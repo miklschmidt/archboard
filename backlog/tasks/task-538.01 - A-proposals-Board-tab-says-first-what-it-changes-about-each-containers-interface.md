@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:05:00Z'
-updated_date: '2026-10-25T17:50:00Z'
+updated_date: '2026-10-25T19:18:00Z'
 labels:
   - compare
   - ui
@@ -51,4 +51,6 @@ Built as planned, with these deviations:
 - Moved parts are indented under their container; checked in a dark screenshot of Browser application@TASK-319 after TASK-482.07 on the served checkout.
 - Code check: archboard check --code --variant TASK-538.01 against the run without --variant shows no difference.
 - The footprint waits for the adoption of TASK-537.01, because TASK-538.01 branches from that proposal.
+
+Footprint read against base 27103d10e (the parent of ae9b9d080) once TASK-537.01 was adopted, so its current is the proposal's parent. Named and changed: Render stage states, List interface changes. Changed but not named by this task: Resolve board meaning (board-document.ts in ae9b9d080), whose reading now holds every variant's content by id; that is how it works inside, and no relationship it draws changed. The other parts in that list were changed by TASK-539.02 (242261a9b) and TASK-538.02 (e57e8945b) and are read in their closings.
 <!-- SECTION:NOTES:END -->

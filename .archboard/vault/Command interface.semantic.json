@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 126,
+	"version": 127,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-25T17:54:31.465Z",
+	"updatedAt": "2026-10-25T19:21:56.952Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -48219,7 +48219,7 @@
 		{
 			"id": "WoTPoTO6",
 			"name": "TASK-537.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "qzEzNiJl",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -51712,7 +51712,7 @@
 			}
 		}
 	],
-	"current": "K60P8BZk",
+	"current": "WoTPoTO6",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -51865,16 +51865,10 @@
 			"reason": "TASK-515: restart uses the single build command, backed by the cached Vite+ frontend task"
 		},
 		{
-			"variant": "oaIxEiFM",
+			"variant": "WoTPoTO6",
 			"from": "qzEzNiJl",
-			"at": "2026-10-25T05:16:17.839Z",
-			"reason": "The board, claim and pane clients live in the CLI, the server operations answer for status and browser count, a stated change is read once for edit and resolve, and the invocation context is stated once"
-		},
-		{
-			"variant": "K60P8BZk",
-			"from": "oaIxEiFM",
-			"at": "2026-10-26T05:37:15.265Z",
-			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+			"at": "2026-10-25T19:21:56.952Z",
+			"reason": "archboard semantic questions answers the design questions of every current board, and every --board reaches a command that reads it (TASK-537.04)"
 		}
 	],
 	"shelvings": [

@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:03:00Z'
-updated_date: '2026-10-25T17:36:00Z'
+updated_date: '2026-10-25T19:24:00Z'
 labels:
   - design-questions
   - ui
@@ -59,4 +59,6 @@ Built as planned, with these deviations:
 - Code check: archboard check --code --variant TASK-537.01 against the same run without --variant shows no difference.
 - Footprint read against base 0fa07a5fb (the commit before f50c64dc3). Board viewer: namedAndChanged Render stage states, List design questions, Pane ask; changedNotNamed none; namedNotChanged Pane vault, named only by a relationship. Browser application: namedAndChanged Pane composition, Pane ask; changedNotNamed none; namedNotChanged Application composition and Shown conversation, named only by relationships. Application.tsx, use-pane-views.ts, use-page-recording.ts and use-ask-from-pane.ts are bound by no part of either board.
 - Criterion 6: on this checkout Command interface (current TASK-515) has 14 results, the 13 of Commands and runCommand in Command contract; archboard semantic inspect agrees per container. The live page showed 15 because the repository chosen checkout is the feat-reusable-codex-workbench worktree, whose board differs; the rule gives 15 on that file too.
+
+Adopted on Board viewer and Browser application. Behind: Archboard (packages/board in f50c64dc3) stays true: no import between packages was added.
 <!-- SECTION:NOTES:END -->

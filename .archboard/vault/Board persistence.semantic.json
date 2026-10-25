@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 92,
+	"version": 93,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-25T17:54:54.970Z",
+	"updatedAt": "2026-10-25T19:21:56.293Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -34921,7 +34921,7 @@
 		{
 			"id": "zTWWaOey",
 			"name": "TASK-537.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "IcCJumNs",
 			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
@@ -39179,7 +39179,7 @@
 			}
 		}
 	],
-	"current": "6IsBkqSN",
+	"current": "zTWWaOey",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -39278,16 +39278,10 @@
 			"reason": "Historical content corrections now reconcile inheriting drafts in the same checked write"
 		},
 		{
-			"variant": "Hp8NOOeR",
+			"variant": "zTWWaOey",
 			"from": "IcCJumNs",
-			"at": "2026-10-25T05:14:19.582Z",
-			"reason": "A write is prepared and committed as the same candidate, every write passes one candidate check, a rename carries the claim and the doing lines, and the variant read and the take-back are board operations (TASK-529.01, TASK-532.04)"
-		},
-		{
-			"variant": "6IsBkqSN",
-			"from": "Hp8NOOeR",
-			"at": "2026-10-26T05:37:14.167Z",
-			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+			"at": "2026-10-25T19:21:56.293Z",
+			"reason": "archboard semantic questions answers the design questions of every current board, and every --board reaches a command that reads it (TASK-537.04)"
 		}
 	],
 	"shelvings": [

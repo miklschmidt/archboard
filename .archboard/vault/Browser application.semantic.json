@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 137,
+	"version": 140,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-25T18:11:13.644Z",
+	"updatedAt": "2026-10-25T19:21:38.555Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -22691,7 +22691,7 @@
 		{
 			"id": "pKMdG4qy",
 			"name": "TASK-537.01",
-			"lifecycle": "draft",
+			"lifecycle": "historical",
 			"parent": "6C82GLIe",
 			"summary": "The browser application: the shell, panes and workspace, board drawing, the agent and voice, and recordings",
 			"content": {
@@ -26057,9 +26057,9 @@
 		{
 			"id": "0RcVGuzC",
 			"name": "TASK-538.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "pKMdG4qy",
-			"summary": "A part picked in one pane is picked in the pane beside it",
+			"summary": "The browser application: the shell, panes and workspace, board drawing, the agent and voice, and recordings",
 			"content": {
 				"nodes": [
 					{
@@ -26787,7 +26787,7 @@
 						"name": "Linked panes",
 						"kind": "function",
 						"responsibility": "Pairs the two panes that show one board of one vault, so a pick in one is made in both",
-						"description": "Two panes are linked while both show the same board of the same vault and neither presents a walkthrough. Each pane's status says what is on screen, so a drill-down or another board ends the link. Derived from the pane records on every read, never stored.",
+						"description": "Two panes are linked while both show the same board of the same vault and neither presents a walkthrough. Each pane's status says what is on screen, so a drill-down or another board ends the link. The links are derived in the same state update that stores a pane's status, and stay the same object while they say the same, so pane news that moves no link draws no pane again.",
 						"parent": "HggZR41l",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -29490,7 +29490,7 @@
 			}
 		}
 	],
-	"current": "jkbv1nsL",
+	"current": "0RcVGuzC",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -29577,16 +29577,16 @@
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
 		},
 		{
-			"variant": "HdKXEgPD",
+			"variant": "pKMdG4qy",
 			"from": "6C82GLIe",
-			"at": "2026-10-24T15:04:49.319Z",
-			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
+			"at": "2026-10-25T19:17:39.836Z",
+			"reason": "A pane carries the ask of its checkout's agent to the readers in it (TASK-537.01)"
 		},
 		{
-			"variant": "jkbv1nsL",
-			"from": "HdKXEgPD",
-			"at": "2026-10-25T05:16:42.948Z",
-			"reason": "Voice browser client and controllers from the voice package, the opener settings from the code opener, pages the walkthrough package publishes, one board refresh module, pane chrome and server requests narrowed"
+			"variant": "0RcVGuzC",
+			"from": "pKMdG4qy",
+			"at": "2026-10-25T19:21:38.555Z",
+			"reason": "Two panes on one board of one vault are linked, so a part picked in one is picked in both (TASK-538.02)"
 		}
 	],
 	"shelvings": [

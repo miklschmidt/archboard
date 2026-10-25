@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T18:26:00Z'
+updated_date: '2026-10-25T19:24:00Z'
 labels:
   - design-questions
   - cli
@@ -59,4 +59,6 @@ Built as planned, with these decisions. (1) The route is GET /api/vault/design-q
 Code check: the findings of archboard check --code against the same run with --variant TASK-537.04 differ by one line, a finding that the proposal clears (the old takeBoardFlag anchor). No finding is introduced, and none names a file of this task.
 Footprint, base a463ff7e9 (the commit before the first Refs: TASK-537.04 code commit), read against each proposal parent (TASK-515, TASK-509, TASK-511, TASK-480 after TASK-482.07). Command interface: namedAndChanged Questions; changedNotNamed Command catalogue (run.ts gains one entry in the table, and the board already draws a contract per command) and Commands (a directory that holds the new Questions); namedNotChanged Contract execution and Request transport (named only by relationships). Archboard server routes: Design questions route changed; Vault requirement named only by a relationship. Board persistence: Design questions changed; List boards and Read and validate named only by relationships. Command dispatch: Global flag readers changed; changedNotNamed runCliWith (session.ts: boardsAsOptions gives the flags back, an inside change, and its relationship to the flag readers is restated). Boards behind after these commits and not proposed: Archboard server and Live panes (application.ts mounts one more route; HTTP application still composes the middleware and mounts every route), Archboard (packages/board and skills gain files; no package, layer or wiring changes), Skill evaluation (Evaluation inputs gain scenario S20). Each stays true.
 Gate: bun run check fails only in the first module lane on Board viewer (track) in wide-boards.test.ts (TASK-542). test:system 257 pass, test:repository 142 pass, test:serial-browser exit 0. Lint and type-check pass. Stale copies: run archboard install-skill to refresh the skill in ~/.agents/skills, since references/read.md and SKILL.md changed.
+
+Adopted: Board persistence, Command dispatch and Command interface at TASK-537.04. On Archboard server routes it was restated as 'TASK-537.04 after TASK-539.01' (TASK-539.01 was adopted first); the code check diff for that name is empty, and its footprint against base 50244d6d9 names Design questions route as added and changed. The old TASK-537.04 there is shelved with that reason. Behind: Archboard (packages/board in 492900562), Live panes (application.ts mounts the design questions route, which that board does not draw) and Skill evaluation (scenario S20 in evals) stay true: the branch adds no import between packages, so the undrawn findings on Archboard predate it.
 <!-- SECTION:NOTES:END -->

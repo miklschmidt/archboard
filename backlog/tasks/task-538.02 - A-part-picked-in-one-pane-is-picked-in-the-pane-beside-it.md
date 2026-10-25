@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:06:00Z'
-updated_date: '2026-10-25T18:28:00Z'
+updated_date: '2026-10-25T19:21:00Z'
 labels:
   - compare
   - ui
@@ -60,4 +60,6 @@ Built as planned in e57e8945b.
 Closing:
 - Code check: the findings with and without `--variant TASK-538.02` are the same. The run read Board viewer 94Opxrki and Browser application 0RcVGuzC.
 - Footprint read against base 814c0eedf (the parent of e57e8945b). Named and changed: Render stage states, Pane beside (Board viewer); Application composition, Pane composition, Linked panes, Pane beside (Browser application). Changed but not named, inside changes only: Viewer entry point and Board stage (SemanticBoardStage.tsx gained the optional onLeave and passes whether a part is picked to the group), and Open or leave a board (use-drill-moves.ts calls onLeave in place of onSelect(null)). The relationships they draw are unchanged. Named but not changed: parts of TASK-537.01, TASK-538.01 and TASK-539.02, which this proposal is branched from and which were committed before the base.
+
+After the gate found the dock test failing, c223a3023 moved the link derivation into the records state of usePanes (rules/application/pane-link.ts relinked), and use-pane-links.ts is gone. Footprint read again against base 814c0eedf: Application composition now reads as changed but not named, because e57e8945b gave the empty readings in workspace-port.ts their leave; inside only. The Linked panes description says where the links are derived. Code check diff for TASK-538.02 is still empty. Adopted on Board viewer and Browser application.
 <!-- SECTION:NOTES:END -->

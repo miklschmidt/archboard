@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 288,
+	"version": 289,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-25T17:20:45.621Z",
+	"updatedAt": "2026-10-25T19:21:49.396Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -115026,7 +115026,7 @@
 		{
 			"id": "KH2akXD4",
 			"name": "TASK-539.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "ikFyiS12",
 			"summary": "Archboard server modules and the one write boundary",
 			"documents": [
@@ -118520,7 +118520,7 @@
 			}
 		}
 	],
-	"current": "zNzcVKXg",
+	"current": "KH2akXD4",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -118817,16 +118817,10 @@
 			"reason": "The code check holds each variant's document references to the files at their version (ADR 0054)"
 		},
 		{
-			"variant": "ExVvgeF6",
+			"variant": "KH2akXD4",
 			"from": "ikFyiS12",
-			"at": "2026-10-24T15:04:49.783Z",
-			"reason": "Archboard and an independent browser app use the same Codex workbench with host-owned domain policy and private state (TASK-517)."
-		},
-		{
-			"variant": "zNzcVKXg",
-			"from": "ExVvgeF6",
-			"at": "2026-10-25T05:29:49.542Z",
-			"reason": "The server hosts the voice agent through createVoiceAgent, the code check is one run call, and a rename and a take-back are board operations (TASK-529, TASK-530, TASK-532)"
+			"at": "2026-10-25T19:21:49.396Z",
+			"reason": "The code check route answers the exposed names of a container, from the server's memory of the last pass (TASK-539.01)"
 		}
 	],
 	"shelvings": [

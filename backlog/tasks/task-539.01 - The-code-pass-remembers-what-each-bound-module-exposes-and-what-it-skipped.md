@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T17:20:00Z'
+updated_date: '2026-10-25T19:24:00Z'
 labels:
   - code-check
 dependencies: []
@@ -47,4 +47,6 @@ A code pass reads each bound module (`module-reading.ts`) and drops the reading 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented in 31498e388 and 40ffe6b5b. Plan was written after the code (late); the proposals were drawn after the build and compared against the code check: no finding introduced or cleared (diff of archboard check --code with and without --variant TASK-539.01 is empty). Footprint against base e11885fa9: namedAndChanged Code check route, Code findings memory, Code check (routes board); Code check, Code findings memory (server board); changedNotNamed and namedNotChanged empty.
 Decisions: (1) A separate 'Exposure route' part bound to answerExposure was drawn first and dropped: it needed two more relationships (RELATIONSHIP_UNDRAWN for Vault requirement and for the mount) for a function in the same file. The Code check route responsibility names the new answer instead. (2) The Code check description was at 1997 of 2000 characters; the stale sentence about src/shared/code-check/index.ts made room for the new one. (3) One entry for each name, deduplicated by name, members not listed: the same rule as EXPOSED_UNUSED, so exposed minus used outside equals its list. (4) Users are files at their first use line; the parts that hold them are the owners of that line. (5) Pass-wide skips (no board) are copied to every remembered reading of the pass. (6) tests/system/server-state/vault-naming.test.ts lists the new route (outside the named scope, one line). (7) New schema fields have defaults so existing fixtures stay valid; web fixtures needed no change.
+
+Adopted on Archboard server routes and Archboard server. Behind: Archboard (packages/code-intel in 31498e388 and 40ffe6b5b) stays true: no import between packages was added.
 <!-- SECTION:NOTES:END -->

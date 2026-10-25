@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T17:52:00Z'
+updated_date: '2026-10-25T19:19:00Z'
 labels:
   - code-check
   - ui
@@ -43,3 +43,9 @@ The person-facing half of TASK-539. A container whose binding names a module sho
 5. Tests: the rule by states; a rendered stage-harness test of the region (counts, order, fold, users, Not drawn, no region for a card).
 6. Docs: the Selection tab section of operator-canvas-shell.md.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Closing: archboard check --code --variant TASK-539.02 against the run without --variant shows no difference. Footprint read against base a463ff7e9 (the parent of 242261a9b) once TASK-538.01 was adopted. Named and changed: Render stage states, Semantic queries, Board reads, List exposed names, and Fetch semantic reads, whose responsibility now names a container's exposed names (it read as changed but not named first). Changed but not named by this task: Walkthrough replay (talk-reads.ts answers no exposure, inside only). Viewer entry point and Open or leave a board were changed by TASK-538.02 (e57e8945b). Named but not changed: Pane vault, named only by a relationship. Adopted on Board viewer at version 148.
+<!-- SECTION:NOTES:END -->
