@@ -12,6 +12,8 @@ export {
 } from "#runtime/protocol/host/identity.ts";
 export type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
 
+// Below: seams that Archboard's pane sockets, domain tools and dynamic approvals still use. A host
+// that serves its browser through `attach` needs none of them.
 export type { CodexWorkbenchSessionComponents } from "#server/protocol/generation/session-contract.ts";
 export type {
 	CodexWorkbenchWorkhorse,
