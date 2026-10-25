@@ -1,5 +1,5 @@
 import type { DynamicWaitOwner } from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
-import type { CodexWaitGraph } from "@archboard/agent-workbench/runtime";
+import type { CodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";

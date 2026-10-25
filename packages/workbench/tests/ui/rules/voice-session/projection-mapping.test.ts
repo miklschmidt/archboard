@@ -4,8 +4,8 @@ import {
 	INITIAL_REALTIME_STATE,
 	REALTIME_PHASES,
 	REALTIME_TRANSITIONS,
-} from "@archboard/agent-workbench/realtime";
-import type { RealtimeState } from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import { projectVoiceSession } from "#ui/rules/voice-session/projection.ts";
 import {
 	VOICE_SESSION_FAILURE_CODES,

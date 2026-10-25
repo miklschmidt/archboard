@@ -14,7 +14,7 @@ import type {
 	BrowserCommandLease,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 import type { CodexLoginAccountParams } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */

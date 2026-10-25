@@ -3,7 +3,7 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
 import type {
 	BrowserWorkbenchMediaOwner,
@@ -11,7 +11,7 @@ import type {
 	RealtimeMediaSnapshot,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 
 /**
  * Every state the persistent voice control may present. `agent_speaking` is the

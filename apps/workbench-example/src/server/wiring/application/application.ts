@@ -2,8 +2,8 @@ import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { basename, join } from "node:path";
-import { createCodexWorkbench } from "@archboard/agent-workbench/server";
-import { createWorkbenchThreadProfile } from "@archboard/agent-workbench/runtime";
+import { createCodexWorkbench } from "@archboard/codex-realtime-voice/server";
+import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,

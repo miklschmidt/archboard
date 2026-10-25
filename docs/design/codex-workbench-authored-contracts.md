@@ -11,7 +11,7 @@ Source modules load, hash, validate, and dispatch the current contracts.
 The source files are the authority for their exact bytes.
 
 TASK-517 splits the shared protocol from Archboard policy.
-The shared role instructions and tools live in `packages/agent-workbench/src/runtime/rules/host`.
+The shared role instructions and tools live in `packages/codex-realtime-voice/src/runtime/rules/host`.
 Archboard supplies its domain instructions through `packages/workbench/src/runtime/services/host/archboard.ts`.
 The shared factory captures both inputs and hashes the exact composed instruction text and tool array.
 Hosts cannot replace the core role instructions or reserved tools.
@@ -1222,7 +1222,7 @@ Operation and pagination semantics are exact:
 ## `archboard_coordinator` manifest
 
 The workhorse is started with a second namespace beside `archboard_app`,
-`packages/agent-workbench/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
+`packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
 Archboard server loads and pins by its digest (TASK-321). It has one tool,
 `tell_coordinator`, that takes one `message` of 1 to 2048 characters. The
 manifest hash that a workhorse start records is the SHA-256 of its exact composed tool array.

@@ -27,13 +27,13 @@ export type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbackHistory,
 	CoordinatorCallbackClassification,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 
 import type {
 	CoordinatorCallbackSource as CoreSource,
 	CoordinatorCallbackOptions as CoreOptions,
 	CoordinatorCallbacks as CoreCallbacks,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -50,7 +50,7 @@ export type CoordinatorCallbackOptions = Omit<CoreOptions, "host"> & {
 		SemanticContextPublisher,
 		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
 	>;
-	readonly canvas: () => import("@archboard/agent-workbench/runtime").CoordinatorCallbackCanvas;
+	readonly canvas: () => import("@archboard/codex-realtime-voice/runtime").CoordinatorCallbackCanvas;
 };
 export type CoordinatorCallbacks = Omit<CoreCallbacks, "enqueue" | "get"> & {
 	readonly enqueue: (event: CoordinatorCallbackSource) => ReturnType<CoreCallbacks["enqueue"]>;

@@ -9,12 +9,12 @@ import { archboardPublisher } from "#server/services/host/archboard-publisher.ts
 import {
 	createCodexWaitGraph,
 	createCodexRealtimeAdapter,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	parseRealtimeSessionId,
 	parseRealtimeCorrelationId,
-} from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
 import {
 	createSemanticContextPublisher,
 	type SemanticContextInput,

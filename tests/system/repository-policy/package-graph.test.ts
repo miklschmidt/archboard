@@ -38,7 +38,7 @@ const LAYERS: Record<string, number> = {
 	"server-lifecycle": 6,
 	"code-opener": 6,
 	walkthrough: 6,
-	"agent-workbench": 6,
+	"codex-realtime-voice": 6,
 	workbench: 7,
 	skills: 7,
 	"apps/cli": 8,
@@ -179,7 +179,7 @@ describe("the package graph", () => {
 			"workspace",
 		]);
 		const violations = edges
-			.filter(({ from, to }) => from === "agent-workbench" && !foundation.has(to))
+			.filter(({ from, to }) => from === "codex-realtime-voice" && !foundation.has(to))
 			.map(({ file, specifier }) => `${file} imports "${specifier}"`);
 		expect(violations).toEqual([]);
 	});

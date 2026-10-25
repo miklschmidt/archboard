@@ -4,7 +4,7 @@ import type {
 	DynamicCallerAuthority,
 	DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { ThreadLinkClassification } from "@archboard/agent-workbench/runtime";
+import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import type { DynamicRefusalReason } from "#runtime/rules/dynamic-tools/vocabulary.ts";
 import { isNonEmptyString } from "#runtime/rules/dynamic-tools/value-shape.ts";
 

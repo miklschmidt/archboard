@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval } from "@archboard/codex-realtime-voice/contract";
 import { approvalDecisionSignature, approvalFocusReturn } from "#ui/rules/approvals/focus.ts";
 import { approvalTarget, projectWorkbenchApprovals } from "#ui/rules/approvals/projection.ts";
 import type {

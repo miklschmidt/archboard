@@ -1,5 +1,5 @@
-import type { WorkbenchVoicePresentationAdapter } from "@archboard/agent-workbench/server";
-import { JsonValueSchema } from "@archboard/agent-workbench/contract";
+import type { WorkbenchVoicePresentationAdapter } from "@archboard/codex-realtime-voice/server";
+import { JsonValueSchema } from "@archboard/codex-realtime-voice/contract";
 import { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 import {
 	narrationFor,

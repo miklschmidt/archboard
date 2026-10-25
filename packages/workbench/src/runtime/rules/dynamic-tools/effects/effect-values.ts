@@ -3,7 +3,7 @@ import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
 	type DynamicApprovalCanonicalEffect,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 import {
 	CodexDynamicToolsError,
 	type DynamicApprovalIdentity,

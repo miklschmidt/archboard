@@ -1,6 +1,6 @@
-import type { EpochExecutionProof } from "@archboard/agent-workbench/runtime";
-import type { EpochOperationRecord } from "@archboard/agent-workbench/runtime";
-import type { ThreadLinkEpochProof } from "@archboard/agent-workbench/runtime";
+import type { EpochExecutionProof } from "@archboard/codex-realtime-voice/runtime";
+import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
+import type { ThreadLinkEpochProof } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,

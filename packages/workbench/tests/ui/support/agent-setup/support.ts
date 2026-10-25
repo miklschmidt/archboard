@@ -4,10 +4,10 @@
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	type BrowserSnapshot,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "@archboard/agent-workbench/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
 
 const { decoder, validator } = createIdentityAuthorities().identity;
 

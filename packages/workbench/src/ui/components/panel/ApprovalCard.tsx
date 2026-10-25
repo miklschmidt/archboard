@@ -5,7 +5,7 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
 
 import { Button } from "@archboard/ui-kit/controls";
 import {

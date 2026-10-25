@@ -16,7 +16,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

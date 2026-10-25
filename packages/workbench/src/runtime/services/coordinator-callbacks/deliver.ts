@@ -3,7 +3,7 @@ import type {
 	CoordinatorCallbackCanvas,
 	CoordinatorSemanticCallback,
 	CoordinatorHostCallbackSource,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type { CoordinatorCallbackOptions } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { toHostSource } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import { encodeCoordinatorCallback } from "#runtime/rules/coordinator-callbacks/encoding.ts";

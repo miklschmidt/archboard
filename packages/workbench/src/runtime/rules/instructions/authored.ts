@@ -2,8 +2,8 @@ import {
 	composeWorkbenchRoleInstructions,
 	assertWorkbenchInstructionBytes,
 	readWorkbenchInstructionDocument,
-} from "@archboard/agent-workbench/runtime";
-import type { WorkbenchInstructions } from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
+import type { WorkbenchInstructions } from "@archboard/codex-realtime-voice/runtime";
 type AuthoredInstructionName = keyof WorkbenchInstructions;
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;

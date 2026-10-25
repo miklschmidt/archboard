@@ -1,4 +1,4 @@
-import type { OwnedWaitCleanupCause, WaitOwner } from "@archboard/agent-workbench/runtime";
+import type { OwnedWaitCleanupCause, WaitOwner } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ChildEpoch,
 	ChildId,

@@ -11,7 +11,7 @@ import {
 	type BrowserConnectionInstance,
 	parseTabSessionId,
 	type TabSessionId,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
 import {
 	agentActivity,

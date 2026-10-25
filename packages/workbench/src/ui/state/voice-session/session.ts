@@ -2,8 +2,8 @@
 // guards around it, and the projection; the media owner and the transport it
 // reads are constructed elsewhere and are never disposed here.
 
-import type { RealtimeState } from "@archboard/agent-workbench/realtime";
-import { JsonValueSchema } from "@archboard/agent-workbench/contract";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import { JsonValueSchema } from "@archboard/codex-realtime-voice/contract";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,

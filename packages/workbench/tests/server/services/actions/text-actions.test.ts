@@ -2,9 +2,9 @@ import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId } from "@archboard/agent-workbench/server";
+import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
-import { createServerCanonicalTextActions } from "@archboard/agent-workbench/server";
+import { createServerCanonicalTextActions } from "@archboard/codex-realtime-voice/server";
 
 test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {
 	const authorities = createIdentityAuthorities();

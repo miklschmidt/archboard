@@ -4,7 +4,7 @@ import { CALLBACK_MAX_UTF8_BYTES } from "#runtime/rules/coordinator-callbacks/en
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 test("the browser voice-context brief fits the Archboard producer contract", () => {
 	expect(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES).toBe(CALLBACK_MAX_UTF8_BYTES);

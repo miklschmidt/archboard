@@ -4,10 +4,10 @@
 
 import { panesInOrder } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/agent-workbench/server";
-import type { CodexWorkbenchTabSession } from "@archboard/agent-workbench/server";
-import type { CodexWorkbenchWorkhorse } from "@archboard/agent-workbench/server";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
+import type { CodexWorkbenchTabSession } from "@archboard/codex-realtime-voice/server";
+import type { CodexWorkbenchWorkhorse } from "@archboard/codex-realtime-voice/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { presentingPane } from "#server/rules/pane/presenting-pane.ts";
 import type {
 	ContextPane,

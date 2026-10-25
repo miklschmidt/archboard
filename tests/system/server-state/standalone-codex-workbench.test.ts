@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { z } from "zod";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join } from "node:path";
-import { createCodexWorkbench, parseTabSessionId } from "@archboard/agent-workbench/server";
-import { createWorkbenchThreadProfile } from "@archboard/agent-workbench/runtime";
+import { createCodexWorkbench, parseTabSessionId } from "@archboard/codex-realtime-voice/server";
+import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
 import { prepareProductionFixture, productionRecords } from "./support/codex-production.ts";
 
 const instructions = {

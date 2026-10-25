@@ -1,16 +1,16 @@
-import type { WorkbenchExecutionContext } from "@archboard/agent-workbench/runtime";
+import type { WorkbenchExecutionContext } from "@archboard/codex-realtime-voice/runtime";
 import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
 import {
 	archboardContextEvent,
 	archboardContextMatchesEvent,
 } from "#runtime/services/host/archboard-context-match.ts";
-import type { WorkbenchContextEvent } from "@archboard/agent-workbench/runtime";
+import type { WorkbenchContextEvent } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	CodexEpochError,
 	EpochExecutionProof,
 	EpochExecutionRequest,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type {
@@ -23,7 +23,7 @@ import type {
 	ThreadLinkReasonCode,
 	ThreadLinkSnapshot,
 	ThreadLinkStatus,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
 import {
 	createIdentityAuthority,
@@ -33,8 +33,8 @@ import {
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
 import { baseContext } from "#tests/runtime/services/thread-context/delivery-context.ts";
-import { createCodexThreadContextDelivery } from "@archboard/agent-workbench/runtime";
-import { createCodexThreadContextController } from "@archboard/agent-workbench/runtime";
+import { createCodexThreadContextDelivery } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexThreadContextController } from "@archboard/codex-realtime-voice/runtime";
 import {
 	type CodexThreadContextBinding,
 	type CodexThreadContextController,
@@ -42,7 +42,7 @@ import {
 	type CodexThreadContextDeliveryOptions,
 	type CodexThreadContextExecution,
 	type CodexThreadContextTarget,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 const PANE_ID = "pane-a";
 const FEED_ID = "feed-1";
 const OPERATION_ID = "operation-1";

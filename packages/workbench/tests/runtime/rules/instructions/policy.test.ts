@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { ADDITIONAL_CONTEXT_POLICY } from "@archboard/agent-workbench/runtime";
+import { ADDITIONAL_CONTEXT_POLICY } from "@archboard/codex-realtime-voice/runtime";
 import {
 	ArchboardContextSchema,
 	encodeCanonicalContext,

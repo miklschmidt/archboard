@@ -20,7 +20,7 @@ import {
 	RECORDING_TAIL_MS,
 	RECORDING_VOICE_START_MS,
 } from "@archboard/timing";
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 
 /**

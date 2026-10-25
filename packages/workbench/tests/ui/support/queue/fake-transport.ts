@@ -19,7 +19,7 @@ import type {
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportState,
 } from "#ui/state/queue/transport-port.ts";
-import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 
 /** The shape the transport's own error class carries, without that class. */
 class FakeTransportError extends Error {

@@ -2,19 +2,19 @@
 // a realtime port with its own output level source, both publishing the way
 // the real owners do.
 
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/agent-workbench/realtime";
-import type { RealtimeCorrelation, RealtimeState } from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeCorrelation, RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import type {
 	RealtimeMediaSnapshot,
 	BrowserWorkbenchMediaState,
 	VoiceOutputLevelSource,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";

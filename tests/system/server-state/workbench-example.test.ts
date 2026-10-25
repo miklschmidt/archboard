@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSyn
 import { join } from "node:path";
 import { request } from "node:http";
 import { WebSocket } from "ws";
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { processExists } from "../support/owned-server.ts";
 import { TEST_SERVER_SHUTDOWN_TIMEOUT_MS } from "../support/timing.ts";
 import {

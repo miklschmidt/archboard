@@ -1,5 +1,5 @@
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
-import { createCodexWorkbench } from "@archboard/agent-workbench/server";
+import { createCodexWorkbench } from "@archboard/codex-realtime-voice/server";
 import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
 import { createArchboardCallbackPolicy } from "#runtime/services/coordinator-callbacks/deliver.ts";
 import {
@@ -27,10 +27,10 @@ import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,
 } from "@archboard/server-lifecycle/startup-terminal";
-import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/agent-workbench/server";
-import type { CodexWorkbenchTabSession } from "@archboard/agent-workbench/server";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
-import { createServerCodexBrowserSocketOwner } from "@archboard/agent-workbench/server";
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
+import type { CodexWorkbenchTabSession } from "@archboard/codex-realtime-voice/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
+import { createServerCodexBrowserSocketOwner } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
 import {
 	canonicalContextFromBrief,
@@ -38,7 +38,7 @@ import {
 	semanticInputFor,
 } from "#server/projections/semantic-context/semantic-input.ts";
 import { waitForTargetsWith } from "#server/services/dynamic-tools/target-wait.ts";
-import { liveWorkhorseCheckouts } from "@archboard/agent-workbench/server";
+import { liveWorkhorseCheckouts } from "@archboard/codex-realtime-voice/server";
 import { checkoutRoot as sourceRoot } from "#server/services/host/module-paths.ts";
 import { narrationChangesOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
 import { canvasOf } from "#server/projections/semantic-context/tab-canvas.ts";

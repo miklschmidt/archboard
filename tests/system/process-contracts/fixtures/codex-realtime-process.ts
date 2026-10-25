@@ -16,7 +16,7 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
 import {
 	createCodexTransport,
@@ -28,7 +28,7 @@ import {
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
-import type { RealtimeSemanticEvent } from "@archboard/agent-workbench/realtime";
+import type { RealtimeSemanticEvent } from "@archboard/codex-realtime-voice/realtime";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const DEFAULTS = {

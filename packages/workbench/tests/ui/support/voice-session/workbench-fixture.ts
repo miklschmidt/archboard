@@ -9,9 +9,9 @@ import {
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
-import type { BrowserSnapshot, CodexBrowserModel } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot, CodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 
 type Coordinator = BrowserSnapshot["coordinator"];
 type Voice = BrowserSnapshot["voice"];

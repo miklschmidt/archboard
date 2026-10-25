@@ -27,7 +27,7 @@ import {
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;

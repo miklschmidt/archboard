@@ -4,14 +4,14 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
 
 import {
 	createIdentityAuthorities,
@@ -22,7 +22,7 @@ import {
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 
 const LINKED_THREAD = "projection-linked-thread";
 const COORDINATOR_THREAD = "projection-coordinator-thread";

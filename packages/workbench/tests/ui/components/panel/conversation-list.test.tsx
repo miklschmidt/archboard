@@ -7,7 +7,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import type { BrowserWorkhorses } from "@archboard/agent-workbench/contract";
+import type { BrowserWorkhorses } from "@archboard/codex-realtime-voice/contract";
 import { ConversationList } from "#ui/components/panel/ConversationList.tsx";
 
 beforeAll(() => {

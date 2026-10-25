@@ -1,20 +1,20 @@
 import {
 	createCodexBrowserModel,
 	type BrowserDynamicApproval,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 import { projectDynamicApproval } from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserDynamicApprovalActions,
-} from "@archboard/agent-workbench/server";
-import type { BrowserDynamicApprovalResponse } from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/server";
+import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/contract";
 import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
 } from "#server/protocol/projection/domain-approval-contract.ts";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type {
 	BrowserCommandId,
 	IdentityAuthorities,

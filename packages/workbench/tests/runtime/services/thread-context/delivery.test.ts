@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexEpochError } from "@archboard/agent-workbench/runtime";
-import type { ThreadInjectItemsParams } from "@archboard/agent-workbench/runtime";
+import { CodexEpochError } from "@archboard/codex-realtime-voice/runtime";
+import type { ThreadInjectItemsParams } from "@archboard/codex-realtime-voice/runtime";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import type { ThreadLinkSnapshot } from "@archboard/agent-workbench/runtime";
+import type { ThreadLinkSnapshot } from "@archboard/codex-realtime-voice/runtime";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
 	createHarness,

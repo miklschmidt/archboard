@@ -1,7 +1,7 @@
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
-import { canonicalSemanticCursorToken } from "@archboard/agent-workbench/runtime";
-import { sameStringValues } from "@archboard/agent-workbench/runtime";
+import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
+import { sameStringValues } from "@archboard/codex-realtime-voice/runtime";
 
 /**
  * Whether the context addresses the event's own pane and board at the event's
@@ -176,7 +176,7 @@ export { archboardContextMatchesEvent };
  * @returns The Archboard domain event.
  */
 function archboardContextEvent(
-	event: import("@archboard/agent-workbench/runtime").WorkbenchContextEvent,
+	event: import("@archboard/codex-realtime-voice/runtime").WorkbenchContextEvent,
 ): SettledSemanticChangeEvent {
 	if (!("board" in event) || !("architecture" in event) || !("pane" in event))
 		throw new TypeError("Archboard context event has no board or pane.");

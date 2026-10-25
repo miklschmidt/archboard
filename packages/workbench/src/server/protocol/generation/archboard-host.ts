@@ -4,7 +4,7 @@ import type {
 	WorkbenchOperationAuthority,
 	CodexWorkbenchDomainScope,
 	BrowserLeaseLedger,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -13,7 +13,7 @@ import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
 } from "#runtime/schemas/semantic-context-types.ts";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
 
 /**

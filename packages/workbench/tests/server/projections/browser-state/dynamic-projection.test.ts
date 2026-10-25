@@ -2,16 +2,16 @@ import { expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/agent-workbench/runtime";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/codex-realtime-voice/runtime";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import {
 	createIdentityAuthorities,
 	IdentityValidationError,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState } from "@archboard/agent-workbench/server";
-import type { BrowserProjectionInput } from "@archboard/agent-workbench/server";
+import { projectCodexBrowserState } from "@archboard/codex-realtime-voice/server";
+import type { BrowserProjectionInput } from "@archboard/codex-realtime-voice/server";
 import { projectDynamicApproval } from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import {
 	type DynamicApprovalOwnerRequest,

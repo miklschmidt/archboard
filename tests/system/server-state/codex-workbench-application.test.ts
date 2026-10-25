@@ -5,12 +5,12 @@ import { WebSocket, WebSocketServer } from "ws";
 import {
 	createCodexApprovalBroker,
 	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
@@ -20,7 +20,7 @@ import {
 	parseTabSessionId,
 	createServerRealtimeActions,
 	createServerCodexBrowserSocketOwner,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 
 async function delivered() {
 	return { outcome: "delivered" as const };

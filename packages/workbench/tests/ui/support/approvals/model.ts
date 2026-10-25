@@ -5,14 +5,14 @@
 import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
 	BrowserSnapshot,
 	DeliveryOutcome,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { WorkbenchApprovalsInput } from "#ui/state/approvals/contracts.ts";

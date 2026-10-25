@@ -7,7 +7,7 @@ import { aggregateKey } from "#server/projections/semantic-context/board-context
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { narratedBoardOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /**
  * What one tab's canvas holds now, read at the moment it is asked: a pane moves, and leaving a

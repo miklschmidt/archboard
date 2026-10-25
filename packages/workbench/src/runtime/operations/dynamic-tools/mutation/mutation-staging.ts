@@ -1,5 +1,5 @@
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 } from "#runtime/rules/instructions/authored.ts";
-import type { EpochTransaction } from "@archboard/agent-workbench/runtime";
+import type { EpochTransaction } from "@archboard/codex-realtime-voice/runtime";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";

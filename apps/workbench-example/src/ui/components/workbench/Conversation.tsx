@@ -1,4 +1,4 @@
-import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
 

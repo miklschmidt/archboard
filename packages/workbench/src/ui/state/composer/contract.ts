@@ -2,12 +2,12 @@
 // person chose, the refusals it makes before anything leaves the browser, and
 // the one state owner the official assistant-ui composer submits through.
 
-import type { BrowserSnapshot, DeliveryOutcome } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot, DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 
 /** The workbench identities this composer targets, taken from the closed model. */
 type Timeline = NonNullable<BrowserSnapshot["timeline"]>;

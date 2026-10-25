@@ -9,21 +9,21 @@ import {
 	ARCHBOARD_WORKHORSE_TOOL_NAMES,
 	assertCanonicalManifest,
 	verifyCoordinatorManifestIntegrity,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	CODEX_QUEUE_OPERATION_CONTRACTS,
 	CODEX_QUEUE_PARAMETER_SCHEMAS,
 	CODEX_QUEUE_PROTOCOL,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
 	DynamicToolEnvelopeSchema,
 	DynamicToolResponseSchema,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	InspectWorkhorseResultSchema,
 	DelegateToWorkhorseResultSchema,
@@ -32,7 +32,7 @@ import {
 	SteerWorkhorseResultSchema,
 	StopWorkhorsesResultSchema,
 	parseCoordinatorToolResult,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	ManageWorkhorseQueueInputSchema,
 	QueueAddInputSchema,
@@ -44,7 +44,7 @@ import {
 	parseCoordinatorToolInput,
 	VOICE_TOOL_INPUT_SCHEMAS,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import {
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,

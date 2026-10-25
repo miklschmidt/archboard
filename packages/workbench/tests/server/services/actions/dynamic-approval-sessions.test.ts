@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { parseTabSessionId } from "@archboard/agent-workbench/server";
+import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
 import type { DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";

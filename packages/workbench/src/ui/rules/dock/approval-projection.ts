@@ -6,7 +6,7 @@ import type {
 	BrowserApproval,
 	BrowserSpokenApproval,
 	BrowserDynamicApproval,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { ApprovalChoice } from "#ui/state/surfaces/contracts.ts";

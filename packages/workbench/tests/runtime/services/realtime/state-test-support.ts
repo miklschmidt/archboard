@@ -1,12 +1,12 @@
 import {
 	INITIAL_REALTIME_STATE,
 	transitionRealtimeState,
-} from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
 import {
 	type RealtimeSemanticEvent,
 	type RealtimeState,
-} from "@archboard/agent-workbench/realtime";
-import type { CodexRealtimeAdapter } from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/realtime";
+import type { CodexRealtimeAdapter } from "@archboard/codex-realtime-voice/runtime";
 
 export function recordReducerCheckedEvents(
 	adapter: CodexRealtimeAdapter,

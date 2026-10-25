@@ -5,7 +5,7 @@ import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/ma
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "#server/services/actions/dynamic-approvals.ts";
-import { parseTabSessionId } from "@archboard/agent-workbench/server";
+import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 
 const TAB_SESSION = parseTabSessionId("tab-one")!;
 
