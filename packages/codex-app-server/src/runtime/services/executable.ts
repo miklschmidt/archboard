@@ -3,7 +3,10 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
+import {
+	CODEX_PROTOCOL_BINARY_VERSION,
+	CODEX_PROTOCOL_VERSION,
+} from "#runtime/protocol/protocol-version.ts";
 import { CODEX_SESSION_MS } from "@archboard/timing";
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
@@ -159,7 +162,7 @@ function installedCodexExecutable(installedIn: string | undefined): string {
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath: "@openai/codex/bin/codex.js",
-			message: `The @openai/codex ${CODEX_PROTOCOL_BINARY_VERSION} package is not installed. Run bun install where it is a dependency, or bun add @openai/codex@${CODEX_PROTOCOL_BINARY_VERSION}, and retry.`,
+			message: `The @openai/codex ${CODEX_PROTOCOL_VERSION} package is not installed. Run bun install where it is a dependency, or bun add @openai/codex@${CODEX_PROTOCOL_VERSION}, and retry.`,
 		});
 	}
 	return installedIn === undefined
