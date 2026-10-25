@@ -76,6 +76,19 @@ fn facing_pins_join_by_a_straight_line() {
 }
 
 #[test]
+fn ends_exactly_one_tolerance_apart_keep_their_own_vertices() {
+    for at in [Point { x: SAME, y: 0.0 }, Point { x: 0.0, y: SAME }] {
+        let from = Point { x: 0.0, y: 0.0 };
+        let scene = Scene {
+            obstacles: Vec::new(),
+            connectors: vec![(End::Free { at: from }, End::Free { at })],
+            params: PARAMS,
+        };
+        assert_eq!(route(&scene), vec![Route::Routed(vec![from, at])]);
+    }
+}
+
+#[test]
 fn a_route_goes_round_an_obstacle_at_its_clearance() {
     let scene = Scene {
         obstacles: vec![

@@ -264,6 +264,6 @@ impl Grid {
 
 /// The index of a coordinate in sorted coordinates, within [`SAME`].
 fn index_of(values: &[f64], value: f64) -> Option<usize> {
-    let at = values.partition_point(|&v| v < value - SAME);
+    let at = values.partition_point(|&v| v < value && value - v >= SAME);
     (at < values.len() && (values[at] - value).abs() < SAME).then_some(at)
 }
