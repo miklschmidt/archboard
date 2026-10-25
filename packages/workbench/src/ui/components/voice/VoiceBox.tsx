@@ -34,13 +34,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import {
-	SUBTITLE_BACK_MS,
-	SUBTITLE_OUT_MS,
-	VOICE_BOX_IN_MS,
-	VOICE_BOX_OUT_MS,
-	VOICE_WORD_IN_MS,
-} from "@archboard/timing/voice";
+import { SUBTITLE_MS, VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot } from "#ui/components/orb/OrbStage.tsx";
 import { SubtitleWords } from "#ui/components/subtitles/VoiceSubtitles.tsx";
@@ -58,11 +52,11 @@ import { VOICE_WORDS, type CircleState } from "#ui/rules/dock/circle-state.ts";
  * fast as they come back.
  */
 const BOX_STYLE: CSSProperties = {
-	"--voice-box-in-ms": `${VOICE_BOX_IN_MS}ms`,
-	"--voice-box-out-ms": `${VOICE_BOX_OUT_MS}ms`,
-	"--voice-word-in-ms": `${VOICE_WORD_IN_MS}ms`,
-	"--subtitle-out-ms": `${SUBTITLE_OUT_MS}ms`,
-	"--subtitle-back-ms": `${SUBTITLE_BACK_MS}ms`,
+	"--voice-box-in-ms": `${VOICE_MS.boxIn}ms`,
+	"--voice-box-out-ms": `${VOICE_MS.boxOut}ms`,
+	"--voice-word-in-ms": `${VOICE_MS.wordIn}ms`,
+	"--subtitle-out-ms": `${SUBTITLE_MS.out}ms`,
+	"--subtitle-back-ms": `${SUBTITLE_MS.back}ms`,
 };
 
 /**
@@ -113,7 +107,7 @@ interface VoiceBoxProps {
  * @returns The box, or null when it is not on the page.
  */
 function VoiceBox(props: VoiceBoxProps): JSX.Element | null {
-	const mounted = useVoiceBoxPresence(props.shown, props.reducedMotion ? 0 : VOICE_BOX_OUT_MS);
+	const mounted = useVoiceBoxPresence(props.shown, props.reducedMotion ? 0 : VOICE_MS.boxOut);
 	return mounted ? <Box {...props} /> : null;
 }
 

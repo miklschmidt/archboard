@@ -8,7 +8,7 @@
 // the board it is showing. This is the boardless account of the same two
 // facts, kept as one snapshot so the navigator can mark every board at once.
 //
-// An entry exists while a claim stands, and for ACTIVITY_LINGER_MS after an
+// An entry exists while a claim stands, and for CLAIM_MS.activityLinger after an
 // unclaimed agent write, so a lone write is on screen long enough to be seen.
 // Human holds are not activity: a person's own hold is what their pane is
 // doing, and it is nobody else's business.
@@ -24,7 +24,7 @@ import type {
 	AgentActivity,
 	AgentActivityMessage,
 } from "@archboard/server-lifecycle/pane-messages";
-import { ACTIVITY_LINGER_MS } from "@archboard/timing";
+import { CLAIM_MS } from "@archboard/timing";
 
 interface Entry {
 	vault: string;
@@ -106,7 +106,7 @@ function createAgentActivity(options: {
 			}
 			entries.delete(key);
 			publish(entry.vault);
-		}, ACTIVITY_LINGER_MS);
+		}, CLAIM_MS.activityLinger);
 		timer.unref();
 		entry.linger = timer;
 	};

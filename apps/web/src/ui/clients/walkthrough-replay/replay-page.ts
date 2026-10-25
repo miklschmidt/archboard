@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { RECORDING_REPLAY_PREROLL_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/timing";
 import {
 	ReplayOptionsSchema,
 	TALK_FRAME_RATE,
@@ -52,7 +52,7 @@ import { talkReads } from "#ui/clients/walkthrough-replay/talk-reads.ts";
 const FRAME_MS = 1000 / TALK_FRAME_RATE;
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(RECORDING_REPLAY_PREROLL_MS / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(REPLAY_MS.preroll / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {

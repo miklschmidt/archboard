@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_GRADER_TIMEOUT_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "@archboard/timing";
 import type { Usage } from "#runtime/protocol/events.ts";
 import { checkoutFlask } from "#runtime/processes/flask.ts";
 import { claudeGrader } from "#runtime/clients/claude-grader.ts";
@@ -272,7 +272,7 @@ async function sendCall(
 		verdictFile: files.verdict,
 		images,
 		sessionId: session.threadId,
-		timeoutMs: SKILL_EVAL_GRADER_TIMEOUT_MS,
+		timeoutMs: SKILL_EVAL_MS.grader,
 		signal: options.signal,
 	});
 	fs.writeFileSync(files.events, outcome.events);

@@ -13,7 +13,7 @@ import { statedVariant } from "@archboard/board/address";
 import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
 import { addressedVariant } from "@archboard/board/document";
 import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
-import { PANE_SETTLE_CAP_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 import { type BrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
@@ -491,13 +491,13 @@ function rejectPendingLayouts(): void {
  * or close and the ones sharing the screen whose rectangle changes with them.
  * A pane that registers meanwhile, or one that has gone since, is not asked
  * and not waited for, and the wait ends the moment the last named pane has
- * re-reported (TASK-153). PANE_SETTLE_CAP_MS is the bound, never the delay.
+ * re-reported (TASK-153). PANE_MS.settleCap is the bound, never the delay.
  * @param askedAt When the layout change was asked for, as an ISO timestamp.
  * @param moved The client ids whose rectangles the change affects.
  */
 async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Promise<void> {
 	const waitedOn = new Set(moved);
-	const deadline = Date.now() + PANE_SETTLE_CAP_MS;
+	const deadline = Date.now() + PANE_MS.settleCap;
 	while (Date.now() < deadline) {
 		for (const clientId of waitedOn) {
 			const pane = panes.get(clientId);
