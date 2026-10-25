@@ -170,23 +170,6 @@ function stretchesBeyond(
 }
 
 /**
- * Lane boundaries within the occupied stretch around a column.
- * @param pins The channel's opposite endpoints.
- * @param x The column to clear.
- * @returns Nearby candidate columns, including boundaries between crowded pins.
- */
-function adjacentColumns(pins: readonly number[], x: number): number[] {
-	const ordered = pins.toSorted((one, other) => one - other);
-	let left = x;
-	let right = x;
-	for (const pin of ordered) if (Math.abs(right - pin) < LANE) right = pin + LANE;
-	for (const pin of ordered.toReversed()) if (Math.abs(left - pin) < LANE) left = pin - LANE;
-	return [...new Set(pins.flatMap((pin) => [pin - LANE, pin + LANE]))].filter(
-		(column) => column >= left && column <= right,
-	);
-}
-
-/**
  * Part one pair of lines that read as one: move the leaving line's upper
  * stretch, or the entering line's lower stretch, a lane aside from the other
  * or onto its own line's column, the nearest move that parts more pairs than
@@ -217,22 +200,11 @@ function part(
 	// A stretch moved onto its own line's column straightens that line as it
 	// parts the pair, so those moves come before a lane aside.
 	const own = new Set([up.bottomX, down.topX]);
-	// A pair can stand beside a third line, so clearing only this pair's
-	// columns can merely transfer the collision to that line.
-	const channel = nets.filter((net) => net.channel === up.channel);
-	const upper = adjacentColumns(
-		channel.map(({ bottomX }) => bottomX),
-		up.topX,
-	);
-	const lower = adjacentColumns(
-		channel.map(({ topX }) => topX),
-		down.bottomX,
-	);
 	const moves = [
-		...[...upper, up.bottomX].flatMap((x) =>
+		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].flatMap((x) =>
 			stretchesBeyond(scene, leaving, "top").map((stretch) => ({ x, from: up.topX, stretch })),
 		),
-		...[...lower, down.topX].flatMap((x) =>
+		...[up.topX - LANE, up.topX + LANE, down.topX].flatMap((x) =>
 			stretchesBeyond(scene, entering, "bottom").map((stretch) => ({
 				x,
 				from: down.bottomX,
