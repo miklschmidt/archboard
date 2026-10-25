@@ -44,7 +44,9 @@ mod tray;
 /// and the icons the host has.
 #[derive(Debug)]
 pub struct Ctx<'a> {
+    /// The host's measure of text in the diagram fonts.
     pub measurer: Measurer<'a>,
+    /// Each icon's path data, by its export name.
     pub icons: &'a BTreeMap<String, Vec<String>>,
 }
 

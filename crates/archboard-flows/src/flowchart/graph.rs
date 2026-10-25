@@ -39,12 +39,20 @@ const DONE: &str = "done";
 /// One node of the graph, as the track engine reads a board's node.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphNode {
+    /// The node's id: a step's own id, or one of the picture's own for a
+    /// frame's terminal.
     pub id: String,
+    /// Where it stands among the graph's nodes, in the order they were built.
     pub order: f64,
+    /// The words the node shows.
     pub name: String,
+    /// What it is drawn as: a flow's frame, a shape, or, for a message box, the kind of the
+    /// part that receives the message.
     pub kind: String,
+    /// The id of the frame that holds it; absent for a frame.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub parent: Option<String>,
+    /// The line under its name, when it has one.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub responsibility: Option<String>,
 }
@@ -52,12 +60,19 @@ pub struct GraphNode {
 /// One line of the graph, as the track engine reads a board's relationship.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct GraphEdge {
+    /// The line's id, one of the picture's own.
     pub id: String,
+    /// Where it stands among the graph's lines, in the order they were built.
     pub order: f64,
+    /// The id of the node it leaves.
     pub from: String,
+    /// The id of the node it enters.
     pub to: String,
+    /// Its kind, which is always one step leading to the next.
     pub kind: &'static str,
+    /// How loudly it is drawn.
     pub emphasis: Emphasis,
+    /// What it says: an alternative's answer, or a loop's "repeat" or "done".
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -65,9 +80,13 @@ pub struct GraphEdge {
 /// The graph as a board's content, which the track engine lays out.
 #[derive(Clone, Debug, Serialize)]
 pub struct Content {
+    /// The frames, steps and terminals.
     pub nodes: Vec<GraphNode>,
+    /// The lines between them.
     pub edges: Vec<GraphEdge>,
+    /// No flows: a board's content carries the list, and the graph has none.
     pub flows: [(); 0],
+    /// No walkthroughs, for the same reason.
     pub walkthroughs: [(); 0],
 }
 
@@ -341,10 +360,15 @@ mod tests {
             ]
         );
         assert_eq!(graph.subjects, ["f", "m", "d", "s", "l", "r"]);
-        assert_eq!(graph.shape("d"), Some(FlowchartShape::Decision));
-        assert_eq!(graph.shape("l"), Some(FlowchartShape::Loop));
-        assert_eq!(graph.shape("f~end"), Some(FlowchartShape::End));
-        assert_eq!(graph.shape("m"), None);
+        assert_eq!(
+            ["d", "l", "f~end", "m"].map(|id| graph.shape(id)),
+            [
+                Some(FlowchartShape::Decision),
+                Some(FlowchartShape::Loop),
+                Some(FlowchartShape::End),
+                None,
+            ]
+        );
     }
 
     #[test]
@@ -358,11 +382,21 @@ mod tests {
                 .find(|node| node.id == id)
                 .unwrap()
         };
-        assert_eq!(node("m").kind, "database");
-        assert_eq!(node("m").responsibility.as_deref(), Some("Shop → Billing"));
-        assert_eq!(node("s").responsibility.as_deref(), Some("Billing"));
-        assert_eq!(node("r").name, "remind ×2");
-        assert_eq!(node("r").parent.as_deref(), Some("f"));
-        assert_eq!(node("f").parent, None);
+        assert_eq!(
+            (
+                node("m").kind.as_str(),
+                node("m").responsibility.as_deref(),
+                node("s").responsibility.as_deref(),
+            ),
+            ("database", Some("Shop → Billing"), Some("Billing"))
+        );
+        assert_eq!(
+            (
+                node("r").name.as_str(),
+                node("r").parent.as_deref(),
+                node("f").parent.as_deref(),
+            ),
+            ("remind ×2", Some("f"), None)
+        );
     }
 }
