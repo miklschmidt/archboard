@@ -307,23 +307,23 @@ The state directory is the directory that you give as `storage.directory`. It ho
 
 ### `createVoiceAgent(options)`
 
-`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory or when an instruction is empty.
+`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an instruction is empty, or when an `identity` value has the wrong shape.
 
-| Field                      | Default                        | What it does                                                                                                                                                                                                                                                            |
-| -------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage.directory`        | Required                       | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and have no symbolic link in its path. Keep it outside every checkout.                                                                        |
-| `storage.ownerDirectory`   | `<directory>/owner`            | Where the process-owner lock and records live.                                                                                                                                                                                                                          |
-| `codex.executablePath`     | Required                       | The absolute path of the Codex executable. Use `resolveCodexExecutable()`.                                                                                                                                                                                              |
-| `codex.hostEnvironment`    | None                           | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                                        |
-| `codex.pathPrefixes`       | None                           | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                                        |
-| `codex.diagnosticSecrets`  | None                           | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                                        |
-| `codex.onGroupOwned`       | None                           | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                                               |
-| `checkouts`                | Required                       | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                                              |
-| `instructions.coordinator` | Required                       | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                                                                                           |
-| `instructions.workhorse`   | Required                       | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                                                                                            |
-| `identity`                 | `DEFAULT_VOICE_AGENT_IDENTITY` | How the agent's threads name themselves to Codex: `serviceName` and `threadSource`, both `"codex-realtime-voice"` by default. The agent drives only threads with its own thread source, so if you change it, the agent no longer reaches the threads it started before. |
-| `onFatal`                  | Required                       | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                                        |
-| `extensions`               | None                           | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                  |
+| Field                      | Default                        | What it does                                                                                                                                                                                     |
+| -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `storage.directory`        | Required                       | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and have no symbolic link in its path. Keep it outside every checkout. |
+| `storage.ownerDirectory`   | `<directory>/owner`            | Where the process-owner lock and records live.                                                                                                                                                   |
+| `codex.executablePath`     | Required                       | The absolute path of the Codex executable. Use `resolveCodexExecutable()`.                                                                                                                       |
+| `codex.hostEnvironment`    | None                           | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                 |
+| `codex.pathPrefixes`       | None                           | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                 |
+| `codex.diagnosticSecrets`  | None                           | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                 |
+| `codex.onGroupOwned`       | None                           | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                        |
+| `checkouts`                | Required                       | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.       |
+| `instructions.coordinator` | Required                       | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                    |
+| `instructions.workhorse`   | Required                       | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                     |
+| `identity`                 | `DEFAULT_VOICE_AGENT_IDENTITY` | How the agent names itself to Codex and to the person. See the next table.                                                                                                                       |
+| `onFatal`                  | Required                       | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                 |
+| `extensions`               | None                           | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                           |
 
 The agent that `createVoiceAgent` returns has these members:
 
@@ -336,12 +336,21 @@ The agent that `createVoiceAgent` returns has these members:
 | `instructions`            | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                               |
 | `browser`                 | The browser connection port for a host that serves sockets itself. See [Advanced hosting](#advanced-hosting).                                                                                                                                                              |
 
-`attach` takes these options:
+`identity` names the agent. A field that you leave out takes its default. Keep every value once threads exist: a thread keeps the names that it started with, and the agent drives only threads with its own thread source.
+
+| Field            | Default                                                                                      | What it does                                                                                                                                                                                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serviceName`    | `"codex-realtime-voice"`                                                                     | The client service name that Codex records on each thread.                                                                                                                                                                                                 |
+| `threadSource`   | `"codex-realtime-voice"`                                                                     | The thread source that Codex records on each thread and that the agent requires.                                                                                                                                                                           |
+| `productName`    | `"Codex"`                                                                                    | What the person talks with, as the workhorse is told. One line of 1 to 64 characters without quotes, backslashes or braces.                                                                                                                                |
+| `toolNamespaces` | `{ workhorse: "voice_workhorse", voice: "voice_channel", coordinator: "voice_coordinator" }` | The Codex tool namespaces of the built-in tools: the coordinator's workhorse tools, its spoken-approval tool, and the tool that a workhorse uses to reach the coordinator. Give all three. Each matches `^[a-z][a-z0-9_]{0,63}$`, and no two are the same. |
+
+`attach` takes these options. It throws a `TypeError` when `path` or `origin` can never admit a socket.
 
 | Field      | Default                  | What it does                                                                                                                                                  |
 | ---------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`     | Required                 | The socket path, such as `/voice`. Upgrades to other paths go to the other listeners of the server.                                                           |
-| `origin`   | Required                 | The HTTP origin of your listener, such as `http://127.0.0.1:4100`. See [Security](#security).                                                                 |
+| `path`     | Required                 | The socket path, such as `/voice`. It must start with `/`. The package leaves upgrades to other paths to the other upgrade listeners of the server.           |
+| `origin`   | Required                 | The HTTP origin of your listener exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. See [Security](#security).                     |
 | `checkout` | The only listed checkout | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function. |
 
 ### `resolveCodexExecutable(options)`
@@ -362,7 +371,7 @@ The agent that `createVoiceAgent` returns has these members:
 | `socketPath` | Required | The socket path of the server, or a full URL. A path resolves against the page address. `http:` becomes `ws:` and `https:` becomes `wss:`. |
 | `paneId`     | `"main"` | The pane that this client shows. Use letters, digits, `_` and `-`, at most 128 characters.                                                 |
 
-Every action returns a promise that resolves to `true` when the action completed and to `false` when it was refused or failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and sets no failure. `stopVoice` and `stopWork` also run while another action runs.
+Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
 
 | Action                                       | What it does                                                                                                 |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -389,12 +398,12 @@ The state has these fields:
 | `server`     | What the server published last: the account, the sign-in, the workhorse timeline, approvals, the queue and the voice transcript. `null` before the first publication. |
 | `voice`      | The voice run: `phase`, `available` (a new voice run can start) and `problem` (why voice cannot start or why the last run failed).                                    |
 | `busy`       | An action is running.                                                                                                                                                 |
-| `failure`    | Why the last action failed: `message` and `uncertain`. `null` after an action succeeds.                                                                               |
+| `failure`    | Why the last action failed: `message` and `uncertain`. The next action clears it when it starts.                                                                      |
 | `intent`     | The value to pass with an approval answer, or `null` while no answer can be sent.                                                                                     |
 
 ### React
 
-`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector must return a part of the state or a primitive value, never a new object, or the component renders without end.
+`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
 
 ## Security
 
@@ -419,7 +428,7 @@ A host without a domain of its own passes no `extensions`. These fields add your
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `context`                              | What the coordinator is told about your application, as text. `read()` returns the current text, and `subscribe(onChange, onError)` calls `onChange` when the text changes. The coordinator receives the text as data, never as a request. The default lists the admitted checkouts. |
 | `voice`                                | How voice starts: `start(presentation)` returns the voice `prompt`, `suppressCoordinatorSpeech` and `delegationAckFiller`. The optional `subscribe` sends extra speech or quiet context to the voice. The default is plain live voice.                                               |
-| `tools.coordinator`, `tools.workhorse` | Extra Codex dynamic tools for each role, in the `dynamicTools` shape of the Codex `thread/start` request. The package adds them after its own coordination tools. A tool cannot reuse a namespace of the built-in tools.                                                             |
+| `tools.coordinator`, `tools.workhorse` | Extra Codex dynamic tools for each role, in the `dynamicTools` shape of the Codex `thread/start` request. The package adds them after its own coordination tools. A tool cannot use a namespace of `identity.toolNamespaces`.                                                        |
 | `domainTools`                          | The handler of your tools: `registrations` lists each namespace with the SHA-256 of its manifest, and `install(scope)` returns the domain whose `dispatch(request)` answers each call and whose `dispose()` cleans up. The agent installs it for each Codex process.                 |
 | `contextCodec`                         | How execution context is encoded into the text that a thread reads.                                                                                                                                                                                                                  |
 | `repositoryOfCheckout`                 | The repository name that the page shows for a checkout.                                                                                                                                                                                                                              |
@@ -532,7 +541,9 @@ The same rejection also names a state directory that the package cannot use:
 
 ### Other errors from `createVoiceAgent` and `attach`
 
-- "A workbench role requires app identity and domain instructions.": an instruction or an identity value is empty. Give text for both roles.
+- "A workbench role requires domain instructions.": an instruction is empty. Give text for both roles.
+- A `TypeError` that starts with "A voice agent": an `identity` value has the wrong shape. The message names the rule.
+- "Name an absolute socket path" or "Name the listener's own origin": `attach` received a `path` without a leading `/`, or an `origin` with a path, a trailing slash or another scheme than `http` or `https`.
 - "The allowed checkout `<path>` is not a readable directory.": a listed checkout does not exist. Create it or remove it from `checkouts`.
 - "Name the checkout these sockets work in: the agent admits more than one.": pass `checkout` to `attach`.
 
