@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:47:00Z'
+updated_date: '2026-10-25T04:04:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,9 +24,9 @@ The historical correction route re-runs the first half of the store's write pass
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The board package offers a prepare operation that applies, accepts and addresses a candidate under the store's own rules, and a commit that writes exactly that candidate under the lease or refuses when the version moved
-- [ ] #2 The correction route and laying.ts no longer apply transitions, call acceptedBoard or replace a transition's apply; acceptedBoard and correctHistoricalTransition are private
-- [ ] #3 Candidate identity and the concurrent-write refusal are tested through the board operations on a temporary vault; the route keeps its HTTP status codes and error codes unchanged
+- [x] #1 The board package offers a prepare operation that applies, accepts and addresses a candidate under the store's own rules, and a commit that writes exactly that candidate under the lease or refuses when the version moved
+- [x] #2 The correction route and laying.ts no longer apply transitions, call acceptedBoard or replace a transition's apply; acceptedBoard and correctHistoricalTransition are private
+- [x] #3 Candidate identity and the concurrent-write refusal are tested through the board operations on a temporary vault; the route keeps its HTTP status codes and error codes unchanged
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,3 +41,11 @@ The historical correction route re-runs the first half of the store's write pass
 7. Tests: board tests on a temporary vault (commit keeps the prepared ids, a moved version is refused, a policy refusal is refused, a concurrent write between prepare and commit is refused); move the race case from the server race test to the board test; server correction tests keep status, evidence refusal and shutdown cancellation.
 8. Checks: type-check, lint, focused tests, repository-policy, fmt; commit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built: packages/board write/candidate.ts holds the store's candidate checks (version, apply, relocation, policy and address admission) as checkedCandidate, run by the lease pass in write.ts and by write/prepare.ts with a lease-free as-leased read. prepareSemanticBoardWrite({vault, board, expectedVersion, transition | correct}) returns {outcome: prepared, board, location, previousVersion, descendants, commit({writer, signal})} or a SemanticWriteRejection; commit writes the prepared board at the prepared timestamp through writeSemanticBoardAt, so version and policy are admitted again under the lease and nothing is re-applied. acceptedTransition (accepted.ts) applies and admits a transition in memory for laying.ts. store-write exports these two in place of acceptedBoard and correctHistoricalTransition; board width stays 188.
+Decisions: prepare refuses a change to an existing board that finds none with BOARD_MISSING (the route answered 422 BOARD_MISSING; the store's version check alone would say BOARD_VERSION_CONFLICT). The route maps prepare refusals: BOARD_VERSION_CONFLICT 409 with its own message and version, INVALID_CONTENT as INVALID_BOARD 422, any other code 422. The server race test is removed: prepare.test.ts owns the concurrent write between prepare and commit. The evidence dependency override was not introduced; the route test keeps spyOn on the code-check namespace, so semantic-board-routes.ts is unchanged.
+Evidence: packages/board/tests/runtime/operations/write/prepare.test.ts (4 tests; a mutation that re-applies the transition at commit fails the id tests); apps/server/tests/server/routes/semantic-boards/semantic-board-correction.test.ts adds missing-board and INVALID_BOARD cases. type-check 0, lint 0, focused tests 772 pass, repository-policy 153 pass.
+<!-- SECTION:NOTES:END -->
