@@ -4,7 +4,7 @@ import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
 	type BrowserWorkbenchCommandIntent,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 import {
 	ExampleConfigurationSchema,
 	type ExampleConfiguration,

@@ -2,7 +2,7 @@
 // whether this browser may still decide it. An unknown outcome stays
 // unknown: nothing here reads a lost answer as either result.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
 
 import type {
 	WorkbenchApprovalPhase,

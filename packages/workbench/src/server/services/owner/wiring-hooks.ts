@@ -2,8 +2,8 @@ import type {
 	SemanticAgentSwitch,
 	SemanticUserChange,
 } from "#runtime/schemas/semantic-context-types.ts";
-import type { BrowserConnectionInstance } from "@archboard/agent-workbench/server";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /** The browser-facing hooks the installed Codex workbench gateway provides, null while none is installed. */
 interface CodexWiring {

@@ -3,16 +3,16 @@ import { expect, test } from "bun:test";
 import {
 	createCodexApprovalBroker,
 	type SpokenApprovalSnapshot,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/agent-workbench/contract";
-import { parseRealtimeItemId, parseRealtimeSessionId } from "@archboard/agent-workbench/realtime";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { parseRealtimeItemId, parseRealtimeSessionId } from "@archboard/codex-realtime-voice/realtime";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 
 const NOW = 1_700_000_000_000;
 

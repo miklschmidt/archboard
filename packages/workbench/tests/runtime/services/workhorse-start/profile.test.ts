@@ -2,9 +2,9 @@ import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, test } from "bun:test";
 
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
-import { createWorkhorseThreadStartParams } from "@archboard/agent-workbench/runtime";
+import { createWorkhorseThreadStartParams } from "@archboard/codex-realtime-voice/runtime";
 import { ARCHBOARD_APP_NAMESPACE } from "#runtime/protocol/thread-tools/manifest.ts";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "@archboard/agent-workbench/runtime";
+import { ARCHBOARD_COORDINATOR_NAMESPACE } from "@archboard/codex-realtime-voice/runtime";
 
 const CHECKOUT_ROOT = "/workspace/archboard";
 

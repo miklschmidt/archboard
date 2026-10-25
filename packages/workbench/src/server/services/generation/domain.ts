@@ -1,8 +1,8 @@
 import type {
 	CodexWorkbenchDomainTools,
 	CodexWorkbenchDomain,
-} from "@archboard/agent-workbench/server";
-import { createCodexWaitGraph } from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/server";
+import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { createCodexDynamicTools } from "#runtime/operations/dynamic-tools/dispatch/dispatcher.ts";
 import {
 	ARCHBOARD_APP_NAMESPACE,

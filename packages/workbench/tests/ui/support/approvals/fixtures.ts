@@ -1,7 +1,7 @@
 // Approval fixtures for every ordinary family and every dynamic effect,
 // parsed through the closed model.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
 
 import {
 	APPROVAL_ID,

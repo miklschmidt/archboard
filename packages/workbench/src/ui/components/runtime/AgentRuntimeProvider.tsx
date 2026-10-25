@@ -5,7 +5,7 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import type { JSX, ReactNode } from "react";
 
 import { useAgentRuntime } from "#ui/hooks/runtime/use-agent-runtime.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
 
 /** Inputs for the provider. */
 interface AgentRuntimeProviderProps {

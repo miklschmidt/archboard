@@ -31,7 +31,7 @@ if (
 	process.env["ARCHBOARD_STARTUP_TERMINAL_FD"] !== undefined &&
 	((Number.isFinite(shutdownDelayMs) && shutdownDelayMs > 0) || shutdownFailure)
 ) {
-	const applicationPath = "@archboard/agent-workbench/server";
+	const applicationPath = "@archboard/codex-realtime-voice/server";
 	const actualApplicationModule = await import(applicationPath);
 	const createApplication = actualApplicationModule.createCodexWorkbench;
 	await Promise.resolve(

@@ -9,7 +9,7 @@ import type { CodeTargetNotice } from "@archboard/code-binding/opening";
 import type {
 	BrowserWorkbenchMediaOwnerOptions,
 	BrowserWorkbenchTransport,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
 import { createPaneMoves } from "#ui/state/application/pane-moves.ts";

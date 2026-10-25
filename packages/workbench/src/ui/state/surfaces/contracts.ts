@@ -7,7 +7,7 @@ import type {
 	BrowserDynamicApproval,
 	DYNAMIC_APPROVAL_DECISIONS,
 	BrowserSnapshot,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";

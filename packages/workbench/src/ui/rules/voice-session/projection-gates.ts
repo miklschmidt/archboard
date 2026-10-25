@@ -2,11 +2,11 @@
 // state machine: the transport, the media owner, and the server's coordinator
 // and voice projections.
 
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchMediaState,
 	BrowserWorkbenchState,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

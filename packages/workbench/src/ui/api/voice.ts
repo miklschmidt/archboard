@@ -1,5 +1,5 @@
 // The voice: the voice session, the browser media it runs over, the measured output level, the orb's stage, the subtitles and the voice box a pane draws. Safe for the browser.
-export { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/agent-workbench/browser";
+export { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/codex-realtime-voice/browser";
 export { OrbHost, OrbStageProvider } from "#ui/components/orb/OrbStage.tsx";
 export { VoiceSubtitles } from "#ui/components/subtitles/VoiceSubtitles.tsx";
 export { TalkControl } from "#ui/components/voice/TalkControl.tsx";

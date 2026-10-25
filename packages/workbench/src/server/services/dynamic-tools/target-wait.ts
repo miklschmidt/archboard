@@ -1,6 +1,6 @@
 import type { DynamicWaitEvent } from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
 import { CODEX_WAIT_TARGET_POLL_MS } from "@archboard/timing";
-import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/agent-workbench/server";
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
 
 type WaitInput = Parameters<ArchboardWorkbenchServer["waitForTargets"]>[0];

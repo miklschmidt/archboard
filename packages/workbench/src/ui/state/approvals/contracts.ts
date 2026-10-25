@@ -7,7 +7,7 @@ import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
 	DeliveryOutcome,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import type {
 	ApprovalCommandDraft,

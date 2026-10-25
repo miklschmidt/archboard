@@ -1,7 +1,7 @@
 // Every sentence the composer says, in one place: its own refusals, the
 // transport's refusals in the composer's words, and the outcome messages.
 
-import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchComposerAction,
 	WorkbenchComposerRefusalCode,

@@ -4,7 +4,7 @@ import type {
 	ChildId,
 	ThreadId,
 } from "@archboard/codex-app-server/identity";
-import type { DeepReadonly } from "@archboard/agent-workbench/runtime";
+import type { DeepReadonly } from "@archboard/codex-realtime-voice/runtime";
 import type { DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
 
 interface DynamicApprovalOwnerBinding {

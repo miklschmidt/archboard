@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { ExampleClient, ExampleClientSnapshot } from "#ui/clients/workbench/client.ts";
 
 /**

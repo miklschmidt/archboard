@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { boundedText } from "@archboard/agent-workbench/contract";
+import { boundedText } from "@archboard/codex-realtime-voice/contract";
 import { RecordingNarrationSchema } from "@archboard/walkthrough/recording";
 
 /** What the browser names when it asks Archboard to narrate a walkthrough. */

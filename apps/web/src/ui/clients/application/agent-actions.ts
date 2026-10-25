@@ -12,7 +12,7 @@ import {
 } from "@archboard/workbench/agent";
 import { gestureTab, openAuthTab } from "#ui/clients/application/agent-setup-ports.ts";
 import type { VoiceOwner, WorkbenchOwners } from "#ui/state/application/workbench-owners.ts";
-import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 
 /** What the actions act on. */
 interface AgentActionTargets {

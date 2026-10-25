@@ -34,7 +34,7 @@ import { paneBoardOf, panes } from "#server/services/panes/registry.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { aggregateKey } from "#server/projections/semantic-context/board-context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /**
  * The board a pane shows: what the pane itself last said is on screen, which

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { createThreadLinkController } from "#ui/state/thread-link/controller.ts";
 import type {
 	ThreadLinkActionSnapshot,

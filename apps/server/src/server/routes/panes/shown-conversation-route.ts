@@ -18,7 +18,7 @@ import {
 	type ShownConversationReply,
 } from "@archboard/workbench/browser-contract";
 import { logger } from "@archboard/diagnostics/logger";
-import { type TabSessionId } from "@archboard/agent-workbench/server";
+import { type TabSessionId } from "@archboard/codex-realtime-voice/server";
 import {
 	codexWiring,
 	paneCheckoutOf,

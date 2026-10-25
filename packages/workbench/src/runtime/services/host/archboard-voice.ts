@@ -10,7 +10,7 @@ import {
 	type RealtimePresentation,
 	type RealtimePresentationChange,
 } from "#runtime/rules/realtime/presentation-mode.ts";
-import type { WorkbenchVoicePolicy } from "@archboard/agent-workbench/runtime";
+import type { WorkbenchVoicePolicy } from "@archboard/codex-realtime-voice/runtime";
 
 /**
  *

@@ -1,6 +1,6 @@
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
-import type { createCodexWaitGraph } from "@archboard/agent-workbench/runtime";
-import type { CodexWorkbenchDomainScope } from "@archboard/agent-workbench/server";
+import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import type { CodexWorkbenchDomainScope } from "@archboard/codex-realtime-voice/server";
 import {
 	createServerDynamicApprovalOwner,
 	type ServerDynamicApprovalOwner,
@@ -14,8 +14,8 @@ import {
 	type ServerDynamicLifecycleOwner,
 } from "#server/services/generation/operation-lifecycle.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
-import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/agent-workbench/server";
-import { closedTransport, requireCreated } from "@archboard/agent-workbench/server";
+import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/codex-realtime-voice/server";
+import { closedTransport, requireCreated } from "@archboard/codex-realtime-voice/server";
 
 interface ArchboardDomainOwners {
 	authority: ServerDynamicAuthorityAdapters | null;

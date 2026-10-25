@@ -3,7 +3,7 @@ import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,
 	type BrowserSnapshot,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 const authorities = createIdentityAuthorities();
 const model = createCodexBrowserModel(authorities);

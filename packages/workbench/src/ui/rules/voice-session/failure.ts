@@ -7,7 +7,7 @@ import type {
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "@archboard/agent-workbench/realtime";
+} from "@archboard/codex-realtime-voice/realtime";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

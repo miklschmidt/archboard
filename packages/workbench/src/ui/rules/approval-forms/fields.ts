@@ -2,7 +2,7 @@
 // the server published it. A secret default is never projected, so it can never
 // be echoed either.
 
-import type { BrowserApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchApprovalControl,
 	WorkbenchApprovalField,

@@ -15,7 +15,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */

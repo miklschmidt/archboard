@@ -2,8 +2,8 @@
 // error class: the facts it carries are read structurally, and a lost
 // response stays uncertain rather than becoming a failure.
 
-import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/agent-workbench/contract";
-import type { DeliveryOutcome } from "@archboard/agent-workbench/contract";
+import { BROWSER_GATEWAY_ERROR_CODES } from "@archboard/codex-realtime-voice/contract";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportErrorFacts,

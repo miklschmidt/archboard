@@ -108,7 +108,7 @@ split by behavior.
   needs a concrete caller outside the package, so a name nobody outside imports stays private.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `agent-workbench` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
@@ -517,7 +517,7 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
   and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
 
-The `agent-workbench` package (`@archboard/agent-workbench`) owns reusable Codex conversations and realtime voice.
+The `codex-realtime-voice` package (`@archboard/codex-realtime-voice`) owns reusable Codex conversations and realtime voice.
 It runs one private app-server process with separate coordinator and workhorse histories.
 Each browser tab has one coordinator and one workhorse per admitted checkout.
 The package sits at layer 6 and reads only its Codex, process, workspace, diagnostics, and timing foundations.
@@ -556,13 +556,13 @@ Application context and agent speech grant no user authority.
 `ui/clients/output-level/` measures playback volume.
 The application owns opening and closing its socket.
 
-Tests move with their behavior into `packages/agent-workbench/tests/`.
+Tests move with their behavior into `packages/codex-realtime-voice/tests/`.
 They retain the matching `shared/`, `runtime/`, `server/`, and `ui/` owners.
 Support files remain private to that test owner.
 Cross-package tests import only public entries.
 
 The `workbench` package (`@archboard/workbench`) owns the Archboard agent integration at layer 7.
-It consumes `agent-workbench` and retains board context, vault admission, domain tools, narration, pane services, and the visual shell.
+It consumes `codex-realtime-voice` and retains board context, vault admission, domain tools, narration, pane services, and the visual shell.
 It adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
 
 `./browser-contract` holds Archboard conversation routes and presentation contracts.
@@ -580,7 +580,7 @@ Pane registration, board request context, semantic projections, and narration re
 
 `./controllers`, `./agent`, and `./voice` expose the Archboard browser shell.
 Conversation, composer, approval cards, sign-in, queue, voice controls, orb, and subtitles remain here.
-The shell imports shared transport and media factories directly from `agent-workbench`.
+The shell imports shared transport and media factories directly from `codex-realtime-voice`.
 The voice-session adapter adds Archboard presentation and narration to shared media state.
 
 The UI uses the role folders in [frontend.md](frontend.md).
@@ -766,7 +766,7 @@ applies safe Oxlint fixes and formats the repository.
 
 `apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
 The server admits one checkout and keeps private state in the supplied directory.
-It reads only public SDK and agent-workbench entries.
+It reads only public SDK and codex-realtime-voice entries.
 Its server forwards exact socket identities through the shared factory browser ingress.
 Its browser uses the shared transport and media owner.
 The two stop controls keep voice and workhorse lifetimes separate.

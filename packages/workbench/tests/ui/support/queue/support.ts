@@ -2,12 +2,12 @@
 // authority, snapshots and transport states. The transport double is in
 // `fake-transport.ts`.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/agent-workbench/contract";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserQueue,
 	BrowserSnapshot,
 	BrowserThreadLink,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { WorkbenchQueueEntry } from "#ui/state/queue/contracts.ts";
 import type {

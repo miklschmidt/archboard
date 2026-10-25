@@ -6,7 +6,7 @@ import {
 import { canonicalContext } from "#runtime/rules/instructions/context.ts";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
-import type { EpochTransaction } from "@archboard/agent-workbench/runtime";
+import type { EpochTransaction } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	SessionParams,
 	SessionThread,

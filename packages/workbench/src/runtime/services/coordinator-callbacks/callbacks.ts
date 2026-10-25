@@ -1,7 +1,7 @@
 import {
 	createCodexCoordinatorCallbacks as createCoreCallbacks,
 	CALLBACK_BUFFER_LIMIT,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type {
 	CoordinatorCallbackSource,
 	CoordinatorCallbackOptions,

@@ -4,7 +4,7 @@
 // effect hash exactly as the server published them. Nothing here can retarget
 // an effect or widen it.
 
-import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
 
 import type {
 	WorkbenchApprovalDraftResult,

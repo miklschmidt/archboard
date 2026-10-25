@@ -5,7 +5,7 @@ import {
 	createServerCodexBrowserSocketSend,
 	parseTabSessionId,
 	type createCodexWorkbench,
-} from "@archboard/agent-workbench/server";
+} from "@archboard/codex-realtime-voice/server";
 import { WORKBENCH_SOCKET_PATH } from "#shared/protocol/application.ts";
 
 /**

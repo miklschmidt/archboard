@@ -1,5 +1,5 @@
 {
-	"name": "@archboard/agent-workbench",
+	"name": "@archboard/codex-realtime-voice",
 	"version": "0.0.0",
 	"private": true,
 	"description": "Reusable Codex sessions with a coordinator, checkout workhorses, approvals, conversation, and realtime voice.",

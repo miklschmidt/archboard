@@ -6,7 +6,7 @@ import {
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,
 	type BrowserSnapshot,
-} from "@archboard/agent-workbench/contract";
+} from "@archboard/codex-realtime-voice/contract";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
@@ -16,7 +16,7 @@ import {
 	type BrowserWorkbenchCommandResult,
 	type BrowserWorkbenchCommandTarget,
 	type BrowserWorkbenchState,
-} from "@archboard/agent-workbench/browser";
+} from "@archboard/codex-realtime-voice/browser";
 import type { WorkbenchComposerTransport } from "#ui/state/composer/contract.ts";
 
 const authorities = createIdentityAuthorities();

@@ -16,7 +16,7 @@ import {
 	createThreadLinkController,
 	type ThreadLinkController,
 } from "@archboard/workbench/controllers";
-import { type BrowserWorkbenchTransport } from "@archboard/agent-workbench/browser";
+import { type BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {

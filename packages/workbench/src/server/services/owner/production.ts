@@ -1,6 +1,6 @@
 import { pinnedCheckoutOf } from "#server/services/sessions/panes.ts";
 import { installWorkbenchTabSessions } from "#server/services/panes/tab-sessions.ts";
-import type { CreateCodexWorkbenchOptions } from "@archboard/agent-workbench/server";
+import type { CreateCodexWorkbenchOptions } from "@archboard/codex-realtime-voice/server";
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 

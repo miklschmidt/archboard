@@ -7,7 +7,7 @@
 import { RiMicLine } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 
 type BrowserVoice = BrowserSnapshot["voice"];
 

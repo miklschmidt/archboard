@@ -1,4 +1,4 @@
-import type { TabSessions, TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessions, TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 let installed: TabSessions | null = null;
 /**

@@ -6,7 +6,7 @@ import {
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackRealtimeGeneration,
 	type CoordinatorSemanticCallback,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,

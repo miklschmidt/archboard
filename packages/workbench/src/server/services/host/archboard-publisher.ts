@@ -1,4 +1,4 @@
-import type { WorkbenchContextPublisher } from "@archboard/agent-workbench/runtime";
+import type { WorkbenchContextPublisher } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	SemanticContextPublisher,
 	SemanticContextPublisherOptions,
@@ -10,7 +10,7 @@ import {
 } from "#runtime/services/host/archboard-context-match.ts";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
-import type { TabSessionId } from "@archboard/agent-workbench/server";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /**
  * Expose domain context through the neutral event and brief contract.

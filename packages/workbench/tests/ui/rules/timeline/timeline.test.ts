@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { BrowserTimeline } from "@archboard/agent-workbench/contract";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	conversationTurnId,

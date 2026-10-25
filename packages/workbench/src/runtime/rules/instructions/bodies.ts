@@ -1,4 +1,4 @@
-import { createTextUserInput } from "@archboard/agent-workbench/runtime";
+import { createTextUserInput } from "@archboard/codex-realtime-voice/runtime";
 import path from "node:path";
 import { z } from "zod";
 

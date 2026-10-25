@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval, BrowserSnapshot } from "@archboard/agent-workbench/contract";
+import type { BrowserApproval, BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 
 import { approvalKicker, projectWorkbenchApprovals } from "#ui/rules/approvals/projection.ts";
 import { validateApprovalForm } from "#ui/rules/approval-forms/form-validation.ts";

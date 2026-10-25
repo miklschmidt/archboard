@@ -1,7 +1,7 @@
 # Standalone Codex workbench
 
 This example runs a Codex conversation and live voice in a localhost browser app.
-It uses the public `@archboard/agent-workbench` and Codex SDK interfaces.
+It uses the public `@archboard/codex-realtime-voice` and Codex SDK interfaces.
 It needs no Archboard server, board, or vault.
 The source runs from this repository. This example is not a published package.
 

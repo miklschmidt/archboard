@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
-} from "@archboard/agent-workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { DiagramGrammarSchema } from "@archboard/board/views";
 import { VariantLifecycleSchema } from "@archboard/board/document";
 import { ReconciliationKindSchema } from "@archboard/board/reconciliation";

@@ -1,5 +1,5 @@
-import type { BrowserSnapshot } from "@archboard/agent-workbench/contract";
-import type { BrowserCommandDraft } from "@archboard/agent-workbench/browser";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserCommandDraft } from "@archboard/codex-realtime-voice/browser";
 
 type ExampleApproval = BrowserSnapshot["approvals"][number];
 type ApprovalResponse = Extract<BrowserCommandDraft, { command: "approvalRespond" }>["response"];
