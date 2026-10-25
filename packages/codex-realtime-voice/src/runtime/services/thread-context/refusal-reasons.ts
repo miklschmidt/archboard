@@ -1,7 +1,7 @@
 import { CodexEpochError } from "#runtime/store/epoch/contract.ts";
 import { ADDITIONAL_CONTEXT_POLICY } from "#runtime/rules/instructions/context-policy.ts";
 import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
-type SemanticCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
+type ContextCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
 import {
 	CodexThreadLinkError,
 	type ThreadLinkReasonCode,
@@ -250,7 +250,7 @@ function ownSessionReason(
  * @returns `invalid_event` for a malformed sequence, `stale_cursor` for another feed, else null.
  */
 function cursorReason(
-	cursor: SemanticCursor,
+	cursor: ContextCursor,
 	eventFeedId: string,
 	expectedFeedId: string,
 ): Reason | null {
@@ -269,7 +269,7 @@ function cursorReason(
  * @param cursor - The event's cursor.
  * @returns `invalid_event` on any disagreement, otherwise null.
  */
-function changeRecordReason(event: WorkbenchContextEvent, cursor: SemanticCursor): Reason | null {
+function changeRecordReason(event: WorkbenchContextEvent, cursor: ContextCursor): Reason | null {
 	if (
 		event.change.feedId !== event.feedId ||
 		event.change.cursor.feedId !== cursor.feedId ||

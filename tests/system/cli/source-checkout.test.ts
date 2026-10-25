@@ -18,7 +18,6 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { z } from "zod";
-import { ARCHBOARD_SERVICE_NAME } from "@archboard/server-lifecycle/server-client";
 import { packageBin } from "./support/package-cli.ts";
 
 const repoRoot = realpathSync.native(resolve(import.meta.dir, "../../.."));
@@ -162,7 +161,7 @@ test("a command that finds a server of another checkout's source refuses and nam
 			contacts.push(`${request.method} ${pathname}`);
 			return pathname === "/health"
 				? Response.json({
-						service: ARCHBOARD_SERVICE_NAME,
+						service: "archboard-server",
 						status: "healthy",
 						source: { checkout: elsewhere, stale: false },
 					})

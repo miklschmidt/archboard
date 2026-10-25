@@ -1,17 +1,15 @@
 import { expect, test } from "bun:test";
 
-import {
-	createCodexRealtimeAdapter,
-	type CodexRealtimeAdapter,
-	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-} from "@archboard/codex-realtime-voice/runtime";
+import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
+import { type CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/codex-realtime-voice/realtime";
+} from "#shared/protocol/realtime-contract.ts";
 
 import {
 	createIdentityAuthorities,
@@ -19,10 +17,8 @@ import {
 	type ChildId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-} from "@archboard/codex-realtime-voice/server";
+import { projectCodexBrowserState } from "#server/projections/browser-state/projection.ts";
+import { type BrowserProjectionInput } from "#server/protocol/projection/projection-contract.ts";
 
 const LINKED_THREAD = "projection-linked-thread";
 const COORDINATOR_THREAD = "projection-coordinator-thread";

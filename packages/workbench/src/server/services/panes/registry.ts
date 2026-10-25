@@ -1,12 +1,8 @@
+import type { BrowserLeaseLedger } from "#runtime/protocol/voice/extension.ts";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import {
-	addressablePanes,
-	panesInOrder,
-	resolvePaneSpec,
-	soloPane,
-} from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { listSemanticBoards, readBoardVariant } from "@archboard/board/store-read";
 import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
@@ -14,7 +10,6 @@ import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
 import { PANE_MS } from "@archboard/timing";
 import type { BrowserConnectionInstance } from "@archboard/codex-realtime-voice/server";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
-import { type BrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
 // is the board and the server holds no copy of one (ADR 0015, ADR 0023).
@@ -340,9 +335,9 @@ function copyableBoards(clientId: string, vault: string): string[] {
  */
 function paneFromRequest(vault: string, spec: unknown): PaneRegistration | null {
 	if (typeof spec === "string" && spec.trim()) {
-		return resolvePaneSpec([...panes.values()], spec);
+		return resolvePane([...panes.values()], spec);
 	}
-	return soloPane(panesOfVault(vault));
+	return resolvePane(panesOfVault(vault));
 }
 
 /**

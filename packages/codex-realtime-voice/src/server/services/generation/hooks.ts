@@ -138,7 +138,7 @@ async function settleOrdinaryRequests(
 	approvals: CodexApprovalBroker,
 	cause: "server_shutdown" | "child_disconnected",
 ): Promise<void> {
-	const reason = cause === "server_shutdown" ? "Archboard server shutdown" : "child disconnected";
+	const reason = cause === "server_shutdown" ? "server shutdown" : "child disconnected";
 	for (const snapshot of approvals.inspect()) {
 		if (snapshot.state === "pending") {
 			// oxlint-disable-next-line no-await-in-loop -- approvals are cancelled one at a time, each fully before the next

@@ -10,14 +10,14 @@ import {
 // file that defines them.
 
 import { z } from "zod";
-import type { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import type { renderSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { CliUsageError, type CommandContext } from "#cli/protocol/contract/contract.ts";
-import { currentExpectedVersion } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import {
 	ReconciliationReportSchema,
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import {
 	addressedVariant,
 	SemanticBoardSchema,
@@ -369,7 +369,7 @@ const expectVersionRefusal = {
  * @throws {CliUsageError} When no version was stated.
  */
 function editedVersion(board: string): number {
-	const stated = currentExpectedVersion();
+	const stated = statedInvocation().expectedVersion;
 	if (typeof stated !== "number") {
 		throw new CliUsageError(
 			`This edit does not say which version of "${board}" it was written against, so there is no ` +

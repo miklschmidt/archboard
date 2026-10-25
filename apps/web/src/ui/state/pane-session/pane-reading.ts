@@ -14,12 +14,10 @@
 // The wire shape is `@archboard/board/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import {
-	SEMANTIC_PANE_CONTEXT_ROUTE,
-} from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
-import { inVault, post } from "@archboard/server-requests";
+import { inVault, requestJson } from "@archboard/server-requests";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
 
@@ -100,7 +98,10 @@ interface ReadingReply {
  * @returns The server's answer.
  */
 function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
-	return post<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), body);
+	return requestJson<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), {
+		method: "POST",
+		payload: body,
+	});
 }
 
 /**
