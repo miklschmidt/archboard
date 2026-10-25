@@ -11,7 +11,7 @@ import {
 
 /**
  * One callback down one of the two routes that send anything: a workhorse outcome to the
- * coordinator, or a pick the user made by hand to the voice model as pane news.
+ * coordinator, or a pick the user made by hand to the voice model as chat news.
  * @param h - The harness.
  * @param route - Which route.
  * @returns The callback source to enqueue.

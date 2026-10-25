@@ -9,7 +9,7 @@ import {
 	EMPTY_LINK,
 	assertExpected,
 	assertLink,
-	assertPaneId,
+	assertLinkKey,
 	invalidInput,
 } from "#runtime/rules/thread-link/link-shape.ts";
 import { isCurrentEpoch } from "#runtime/rules/thread-link/thread-vocabulary.ts";
@@ -34,7 +34,7 @@ interface ThreadLinkBindingAuthorityOptions {
 
 interface ThreadLinkBindingController extends ThreadLinkBindingStore {
 	readonly commitClassified: (
-		paneId: string,
+		linkKey: string,
 		expected: ThreadLinkCasToken | null,
 		classification: ThreadLinkClassification,
 	) => ThreadLinkBindingSnapshot;
@@ -42,15 +42,15 @@ interface ThreadLinkBindingController extends ThreadLinkBindingStore {
 
 /**
  * The CAS token for one binding revision, which names the identities a caller must still hold.
- * @param paneId The pane.
+ * @param linkKey The link key.
  * @param revision The binding revision.
  * @param link The link at that revision.
  * @returns The token.
  */
-function casFor(paneId: string, revision: number, link: ThreadLinkSnapshot): ThreadLinkCasToken {
+function casFor(linkKey: string, revision: number, link: ThreadLinkSnapshot): ThreadLinkCasToken {
 	return Object.freeze({
 		revision,
-		paneId,
+		linkKey,
 		childId: link.childId,
 		epoch: link.epoch,
 		threadId: link.threadId,
@@ -76,13 +76,13 @@ function sameThreadLinkIdentity(left: ThreadLinkSnapshot, right: ThreadLinkSnaps
 }
 
 /**
- * The binding a pane starts with: unbound at revision zero.
- * @param paneId The pane.
+ * The binding a link key starts with: unbound at revision zero.
+ * @param linkKey The link key.
  * @returns The initial snapshot.
  */
-function initialSnapshot(paneId: string): ThreadLinkBindingSnapshot {
-	const cas = casFor(paneId, 0, EMPTY_LINK);
-	return Object.freeze({ paneId, revision: 0, link: EMPTY_LINK, cas });
+function initialSnapshot(linkKey: string): ThreadLinkBindingSnapshot {
+	const cas = casFor(linkKey, 0, EMPTY_LINK);
+	return Object.freeze({ linkKey, revision: 0, link: EMPTY_LINK, cas });
 }
 
 /**
@@ -94,7 +94,7 @@ function initialSnapshot(paneId: string): ThreadLinkBindingSnapshot {
 function sameCas(left: ThreadLinkCasToken, right: ThreadLinkCasToken): boolean {
 	return (
 		left.revision === right.revision &&
-		left.paneId === right.paneId &&
+		left.linkKey === right.linkKey &&
 		left.childId === right.childId &&
 		left.epoch === right.epoch &&
 		left.threadId === right.threadId
@@ -103,13 +103,13 @@ function sameCas(left: ThreadLinkCasToken, right: ThreadLinkCasToken): boolean {
 
 /**
  * The conflict error for a binding that moved under the caller.
- * @param paneId The pane.
+ * @param linkKey The link key.
  * @param revision The revision the binding is actually at.
  * @returns The error.
  */
-function conflict(paneId: string, revision: number): CodexThreadLinkConflictError {
+function conflict(linkKey: string, revision: number): CodexThreadLinkConflictError {
 	return new CodexThreadLinkConflictError(
-		`The thread link for pane ${JSON.stringify(paneId)} changed at revision ${revision}; re-read its snapshot and retry with the returned CAS token.`,
+		`The thread link ${JSON.stringify(linkKey)} changed at revision ${revision}; re-read its snapshot and retry with the returned CAS token.`,
 	);
 }
 
@@ -131,7 +131,7 @@ function liveEpochOf(options: ThreadLinkBindingAuthorityOptions): ThreadLinkCurr
 	} catch (error) {
 		throw new CodexThreadLinkError(
 			"current_epoch_unavailable",
-			"The current Codex child epoch could not be read; the pane binding was not changed.",
+			"The current Codex child epoch could not be read; the link binding was not changed.",
 			error,
 		);
 	}
@@ -140,13 +140,13 @@ function liveEpochOf(options: ThreadLinkBindingAuthorityOptions): ThreadLinkCurr
 /**
  * Refuses to adopt an executable link whose child epoch is no longer the live one.
  * @param options The authority, or null for a binding store with no epoch authority.
- * @param paneId The pane.
+ * @param linkKey The link key.
  * @param revision The binding revision being replaced.
  * @param next The link offered.
  */
 function assertLiveEpoch(
 	options: ThreadLinkBindingAuthorityOptions | null,
-	paneId: string,
+	linkKey: string,
 	revision: number,
 	next: ThreadLinkSnapshot,
 ): void {
@@ -161,7 +161,7 @@ function assertLiveEpoch(
 	const current = liveEpochOf(options);
 	if (current === null || next.childId !== current.childId || next.epoch !== current.epoch) {
 		throw new CodexThreadLinkConflictError(
-			`The executable thread link for pane ${JSON.stringify(paneId)} is stale at binding revision ${revision}; re-read the current child epoch and classify again.`,
+			`The executable thread link ${JSON.stringify(linkKey)} is stale at binding revision ${revision}; re-read the current child epoch and classify again.`,
 		);
 	}
 }
@@ -230,14 +230,14 @@ function authoritativeProofOf(
  * Re-proves an executable link against the live durable authority at the moment of adoption,
  * so a proof that was valid when classified cannot be adopted after the epoch moved.
  * @param options The authority, or null for a binding store with no epoch authority.
- * @param paneId The pane.
+ * @param linkKey The link key.
  * @param revision The binding revision being replaced.
  * @param link The executable link.
  * @param classification The classification the link came from.
  */
 function assertAuthoritativeProof(
 	options: ThreadLinkBindingAuthorityOptions | null,
-	paneId: string,
+	linkKey: string,
 	revision: number,
 	link: ThreadLink,
 	classification: ThreadLinkClassification,
@@ -260,11 +260,11 @@ function assertAuthoritativeProof(
 		});
 		if (!proofStillMatches(liveProof, proof, link, options.epoch.snapshot().manifest)) {
 			throw new CodexThreadLinkConflictError(
-				`The executable thread link for pane ${JSON.stringify(paneId)} changed before adoption at binding revision ${revision}; classify again with the current epoch proof.`,
+				`The executable thread link ${JSON.stringify(linkKey)} changed before adoption at binding revision ${revision}; classify again with the current epoch proof.`,
 			);
 		}
 	} catch (error) {
-		throw adoptionFailure(error, paneId);
+		throw adoptionFailure(error, linkKey);
 	}
 }
 
@@ -272,30 +272,30 @@ function assertAuthoritativeProof(
  * The error a failed re-proof becomes: a conflict when the epoch moved, and an unavailable
  * authority otherwise.
  * @param error What the re-proof threw.
- * @param paneId The pane.
+ * @param linkKey The link key.
  * @returns The error to raise.
  */
-function adoptionFailure(error: unknown, paneId: string): Error {
+function adoptionFailure(error: unknown, linkKey: string): Error {
 	if (error instanceof CodexThreadLinkConflictError) {
 		return error;
 	}
 	if (error instanceof CodexEpochError) {
 		return new CodexThreadLinkConflictError(
-			`The executable thread link for pane ${JSON.stringify(paneId)} is no longer current (${error.code}); classify again before adopting it.`,
+			`The executable thread link ${JSON.stringify(linkKey)} is no longer current (${error.code}); classify again before adopting it.`,
 		);
 	}
 	return new CodexThreadLinkError(
 		"current_epoch_unavailable",
-		"The live epoch proof could not be revalidated; the pane binding was not changed.",
+		"The live epoch proof could not be revalidated; the link binding was not changed.",
 		error,
 	);
 }
 
 /**
- * Refuses the swap unless the caller's expectation still describes the pane: a null
- * expectation means the pane must still be untouched.
+ * Refuses the swap unless the caller's expectation still describes the link: a null
+ * expectation means the link must still be untouched.
  * @param expected The caller's token, or null.
- * @param current The pane's binding.
+ * @param current The link's binding.
  */
 function assertExpectationHolds(
 	expected: ThreadLinkCasToken | null,
@@ -303,18 +303,18 @@ function assertExpectationHolds(
 ): void {
 	if (expected === null) {
 		if (current.revision !== 0 || current.link.state !== "unbound") {
-			throw conflict(current.paneId, current.revision);
+			throw conflict(current.linkKey, current.revision);
 		}
 		return;
 	}
 	assertExpected(expected);
 	if (!sameCas(expected, current.cas)) {
-		throw conflict(current.paneId, current.revision);
+		throw conflict(current.linkKey, current.revision);
 	}
 }
 
 /**
- * Creates the per-pane binding store: one compare-and-swap boundary through which every link
+ * Creates the binding store, one binding per link key: one compare-and-swap boundary through which every link
  * change passes, with executable links additionally re-proved against the live epoch.
  * @param options The epoch authority, or null for a store that refuses executable links.
  * @returns The controller.
@@ -325,24 +325,24 @@ function createBindingController(
 	const bindings = new Map<string, ThreadLinkBindingSnapshot>();
 
 	/**
-	 * The pane's current binding, creating the unbound initial one on first use.
-	 * @param paneId The pane.
+	 * The current binding of a link key, creating the unbound initial one on first use.
+	 * @param linkKey The link key.
 	 * @returns The snapshot.
 	 */
-	const snapshot = (paneId: string): ThreadLinkBindingSnapshot => {
-		assertPaneId(paneId);
-		const existing = bindings.get(paneId);
+	const snapshot = (linkKey: string): ThreadLinkBindingSnapshot => {
+		assertLinkKey(linkKey);
+		const existing = bindings.get(linkKey);
 		if (existing !== undefined) {
 			return existing;
 		}
-		const initial = initialSnapshot(paneId);
-		bindings.set(paneId, initial);
+		const initial = initialSnapshot(linkKey);
+		bindings.set(linkKey, initial);
 		return initial;
 	};
 
 	/**
-	 * Replaces a pane's link under compare-and-swap.
-	 * @param paneId The pane.
+	 * Replaces the link of a key under compare-and-swap.
+	 * @param linkKey The link key.
 	 * @param expected The caller's token, or null for a first binding.
 	 * @param next The link to adopt.
 	 * @param allowExecutable Whether an executable link may be adopted here.
@@ -350,62 +350,62 @@ function createBindingController(
 	 * @returns The new snapshot.
 	 */
 	const compareAndSwapInternal = (
-		paneId: string,
+		linkKey: string,
 		expected: ThreadLinkCasToken | null,
 		next: ThreadLinkSnapshot,
 		allowExecutable: boolean,
 		classification?: ThreadLinkClassification,
 	): ThreadLinkBindingSnapshot => {
-		assertPaneId(paneId);
+		assertLinkKey(linkKey);
 		assertLink(next, allowExecutable);
-		const current = snapshot(paneId);
+		const current = snapshot(linkKey);
 		assertExpectationHolds(expected, current);
-		assertLiveEpoch(options, paneId, current.revision, next);
+		assertLiveEpoch(options, linkKey, current.revision, next);
 		if (classification !== undefined && next.state === "executable") {
-			assertAuthoritativeProof(options, paneId, current.revision, next, classification);
+			assertAuthoritativeProof(options, linkKey, current.revision, next, classification);
 		}
 		const revision = current.revision + 1;
 		const link = copyLink(next);
 		const updated = Object.freeze({
-			paneId,
+			linkKey,
 			revision,
 			link,
-			cas: casFor(paneId, revision, link),
+			cas: casFor(linkKey, revision, link),
 		});
-		bindings.set(paneId, updated);
+		bindings.set(linkKey, updated);
 		return updated;
 	};
 
 	/**
 	 * Adopts a non-executable link offered by a public caller.
-	 * @param input The pane, expectation and link.
+	 * @param input The link key, expectation and link.
 	 * @returns The new snapshot.
 	 */
 	const compareAndSwap = (input: ThreadLinkCompareAndSwapInput): ThreadLinkBindingSnapshot =>
-		compareAndSwapInternal(input.paneId, input.expected, input.next, false);
+		compareAndSwapInternal(input.linkKey, input.expected, input.next, false);
 
 	/**
-	 * Returns a pane to the unbound link.
-	 * @param paneId The pane.
+	 * Returns a link key to the unbound link.
+	 * @param linkKey The link key.
 	 * @param expected The caller's token, or null.
 	 * @returns The new snapshot.
 	 */
-	const clear = (paneId: string, expected: ThreadLinkCasToken | null): ThreadLinkBindingSnapshot =>
-		compareAndSwapInternal(paneId, expected, EMPTY_LINK, false);
+	const clear = (linkKey: string, expected: ThreadLinkCasToken | null): ThreadLinkBindingSnapshot =>
+		compareAndSwapInternal(linkKey, expected, EMPTY_LINK, false);
 
 	/**
 	 * Adopts a freshly classified link, which is the only path an executable link may take.
-	 * @param paneId The pane.
+	 * @param linkKey The link key.
 	 * @param expected The caller's token, or null.
 	 * @param classification The classification to adopt.
 	 * @returns The new snapshot.
 	 */
 	const commitClassified = (
-		paneId: string,
+		linkKey: string,
 		expected: ThreadLinkCasToken | null,
 		classification: ThreadLinkClassification,
 	): ThreadLinkBindingSnapshot =>
-		compareAndSwapInternal(paneId, expected, classification.link, true, classification);
+		compareAndSwapInternal(linkKey, expected, classification.link, true, classification);
 
 	return Object.freeze({
 		snapshot,

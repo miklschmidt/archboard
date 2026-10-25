@@ -234,7 +234,7 @@ export function terminalStateOf(record: ApprovalRecord): TerminalApprovalState {
 
 /**
  * The immutable snapshot of one approval: its identities, its binding, and where it has got to.
- * This is everything the workbench and its panes are told about an approval.
+ * This is everything the workbench and its chats are told about an approval.
  * @param record - The broker's record.
  * @returns The frozen snapshot.
  */

@@ -35,7 +35,7 @@ function sameLink(
 ): boolean {
 	return (
 		left !== null &&
-		left.binding.paneId === right.binding.paneId &&
+		left.binding.linkKey === right.binding.linkKey &&
 		left.checkout === right.checkout &&
 		left.binding.revision === right.binding.revision &&
 		sameThreadLinkIdentity(left.binding.link, right.binding.link) &&

@@ -255,11 +255,11 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			identity,
 			projection,
 			threadLink: {
-				read: (paneId) => ({
-					paneId,
+				read: (linkKey) => ({
+					linkKey,
 					revision: 1,
 					link,
-					cas: { revision: 1, paneId, childId, epoch, threadId },
+					cas: { revision: 1, linkKey, childId, epoch, threadId },
 				}),
 			},
 

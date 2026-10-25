@@ -67,7 +67,7 @@ function startProfileMismatches(
 
 /**
  * Prove a thread/start response is the workhorse the workbench authored, and reduce it to the facts
- * the pane keeps. A response that differs anywhere is refused whole: a workhorse that is not the
+ * the link keeps. A response that differs anywhere is refused whole: a workhorse that is not the
  * authored profile is not one the workbench will drive.
  * @param response - The decoded thread/start response.
  * @param options - The start options carrying the identity authority and checkout root.
@@ -278,10 +278,10 @@ function isExactIdleWorkhorseRoot(
 }
 
 /**
- * Whether the pane's binding is the executable link to this workhorse thread on this child.
+ * Whether the binding of a link key is the executable link to this workhorse thread on this child.
  * `loaded` is not re-checked: an executable link already carries it.
- * @param binding - The pane's thread-link binding.
- * @param paneId - The pane the workhorse belongs to.
+ * @param binding - The thread-link binding.
+ * @param linkKey - The key of the workhorse's link.
  * @param childId - The Codex child it runs on.
  * @param epoch - That child's epoch.
  * @param threadId - The workhorse thread.
@@ -289,14 +289,14 @@ function isExactIdleWorkhorseRoot(
  */
 function isExecutableWorkhorseBinding(
 	binding: ThreadLinkBindingSnapshot,
-	paneId: string,
+	linkKey: string,
 	childId: ChildId,
 	epoch: ChildEpoch,
 	threadId: ThreadId,
 ): boolean {
 	const link: ThreadLinkSnapshot = binding.link;
 	const checks = [
-		binding.paneId === paneId,
+		binding.linkKey === linkKey,
 		link.state === "executable",
 		link.childId === childId,
 		link.epoch === epoch,

@@ -63,7 +63,7 @@ describe("codex thread-link adoption races", () => {
 					epoch: fixture.store,
 				});
 
-				const bound = await port.classifyAndBind("pane-a", null, fixture.target);
+				const bound = await port.classifyAndBind("link-a", null, fixture.target);
 
 				expect(bound.link).toMatchObject({ state: "inspect_only", reason });
 				expect(changing.passes()).toEqual({ persisted: 2, loaded: 2 });
@@ -113,7 +113,7 @@ describe("codex thread-link adoption races", () => {
 				},
 			});
 
-			const bound = await port.classifyAndBind("pane-a", null, target);
+			const bound = await port.classifyAndBind("link-a", null, target);
 
 			expect(bound.link).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
 			expect({ persisted: persistedPasses, loaded: loadedPasses }).toEqual({

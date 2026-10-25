@@ -76,8 +76,8 @@ describe("codex thread context delivery", () => {
 
 		// The news a thread most needs is that what it was told has stopped being
 		// true, and nothing about the change says whose work made it. It used to:
-		// a write stated the pane it was running for, and a change whose stated
-		// pane matched this port's was dropped as an echo. That made a surface a
+		// a write stated the chat it was running for, and a change whose stated
+		// chat matched this port's was dropped as an echo. That made a surface a
 		// person opens and closes decide who hears about an architecture, and it
 		// went quiet in the one case that mattered — two threads on one claimed
 		// board, where the second suppressed the first's change.
@@ -139,7 +139,7 @@ describe("codex thread context delivery", () => {
 		expect(harness.received).toHaveLength(0);
 	});
 
-	test("rechecks the pane link after the final classification and before writing", async () => {
+	test("rechecks the link after the final classification and before writing", async () => {
 		const harness = createHarness();
 		harness.setClassifyEffect(() => harness.setLink(unboundLink()));
 

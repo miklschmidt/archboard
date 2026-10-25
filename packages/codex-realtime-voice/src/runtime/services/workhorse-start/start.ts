@@ -54,7 +54,7 @@ interface StartContext {
 }
 
 /**
- * A start step's refusal, carrying the snapshot the pane is left with. Steps throw this rather
+ * A start step's refusal, carrying the snapshot the link is left with. Steps throw this rather
  * than returning it so the start reads as one sequence, with every refusal settled in one place.
  */
 class WorkhorseStartRefusal extends Error {
@@ -72,14 +72,14 @@ class WorkhorseStartRefusal extends Error {
 }
 
 /**
- * Refuse the start with a snapshot that proves nothing reached Codex, so the pane may try again.
+ * Refuse the start with a snapshot that proves nothing reached Codex, so the link may try again.
  * @param context - The start context.
  * @param reason - Why the start failed.
  * @returns The refusal to throw.
  */
 function refuseAsFailed(context: StartContext, reason: string): WorkhorseStartRefusal {
 	return new WorkhorseStartRefusal(
-		failedSnapshot(context.input.paneId, context.operationId, reason),
+		failedSnapshot(context.input.linkKey, context.operationId, reason),
 	);
 }
 
@@ -100,7 +100,7 @@ function refuseAsUnknown(
 ): WorkhorseStartRefusal {
 	return new WorkhorseStartRefusal(
 		inspectSnapshot({
-			paneId: context.input.paneId,
+			linkKey: context.input.linkKey,
 			childId: context.childId,
 			epoch: context.epoch,
 			threadId,
@@ -344,7 +344,7 @@ function currentOwnershipProof(
 }
 
 /**
- * Bind the pane to the started workhorse. Every failure from here on compensates: the thread was
+ * Bind the link to the started workhorse. Every failure from here on compensates: the thread was
  * created, so it is either cleaned up or left inspect-only, never silently abandoned.
  * @param context - The start context.
  * @param started - The validated start.
@@ -383,7 +383,7 @@ async function bindWorkhorse(
 			operationId,
 			provenance: proof,
 		});
-		binding = await options.threadLink.classifyAndBind(input.paneId, input.expected, target);
+		binding = await options.threadLink.classifyAndBind(input.linkKey, input.expected, target);
 	} catch (error) {
 		throw new WorkhorseStartRefusal(
 			await compensateAfterBindFailure(
@@ -399,7 +399,7 @@ async function bindWorkhorse(
 		);
 	}
 
-	if (!isExecutableWorkhorseBinding(binding, input.paneId, childId, epoch, started.threadId)) {
+	if (!isExecutableWorkhorseBinding(binding, input.linkKey, childId, epoch, started.threadId)) {
 		throw new WorkhorseStartRefusal(
 			await compensateAfterBindFailure(
 				options,
@@ -413,24 +413,24 @@ async function bindWorkhorse(
 			),
 		);
 	}
-	return readySnapshot(input.paneId, childId, epoch, operationId, started.facts, binding);
+	return readySnapshot(input.linkKey, childId, epoch, operationId, started.facts, binding);
 }
 
 /**
  * Mint the operation identity this start runs under and prove it is the current one.
  * @param options - The start options carrying the operation authority.
- * @param paneId - The pane the start belongs to.
+ * @param linkKey - The key of the link the start is for.
  * @returns The issued identity.
  * @throws {WorkhorseStartRefusal} When the identity is not current.
  */
-function issueStartOperation(options: CodexWorkhorseStartOptions, paneId: string): OperationId {
+function issueStartOperation(options: CodexWorkhorseStartOptions, linkKey: string): OperationId {
 	const operationId = options.operation.issuer.mintOperationId();
 	try {
 		options.operation.validator.assertCurrentOperationId(operationId);
 	} catch (error) {
 		throw new WorkhorseStartRefusal(
 			failedSnapshot(
-				paneId,
+				linkKey,
 				operationId,
 				`The workhorse operation identity is not current: ${errorMessage(error)}`,
 			),
@@ -440,9 +440,9 @@ function issueStartOperation(options: CodexWorkhorseStartOptions, paneId: string
 }
 
 /**
- * Build the module that starts exactly one workhorse thread per pane and keeps the snapshot of
+ * Build the module that starts exactly one workhorse thread per link key and keeps the snapshot of
  * what happened. Starts are serialised: a second start waits for the first, so two workhorses can
- * never be created for one pane.
+ * never be created for one link key.
  * @param starterOptions - The session, epoch store, thread-link, identity and operation authorities.
  * @returns The workhorse start module.
  */
@@ -457,14 +457,14 @@ function createCodexWorkhorseStart(
 	let tail: Promise<void> = Promise.resolve();
 
 	/**
-	 * The pane's current workhorse snapshot.
+	 * The current workhorse snapshot.
 	 * @returns The latest snapshot.
 	 */
 	const snapshot = (): WorkhorseSnapshot => latest;
 
 	/**
 	 * Run one start behind every start enqueued before it.
-	 * @param input - The pane and the binding it expects to replace.
+	 * @param input - The link key and the binding it expects to replace.
 	 * @returns The snapshot the start settled as.
 	 */
 	const start = (input: WorkhorseStartInput): Promise<WorkhorseSnapshot> => {
@@ -478,18 +478,18 @@ function createCodexWorkhorseStart(
 
 	/**
 	 * Start one workhorse: issue the operation, stage it durably, create the thread, prove the
-	 * response and the durable record, then bind the pane to it. Every step that cannot prove what
+	 * response and the durable record, then bind the link to it. Every step that cannot prove what
 	 * happened settles the snapshot and stops; nothing is retried or inferred.
-	 * @param input - The pane and the binding it expects to replace.
+	 * @param input - The link key and the binding it expects to replace.
 	 * @returns The snapshot the start settled as.
 	 */
 	async function execute(input: WorkhorseStartInput): Promise<WorkhorseSnapshot> {
 		const childId = options.identity.validator.childId;
 		const epoch = options.identity.validator.epoch;
 		try {
-			const operationId = issueStartOperation(options, input.paneId);
+			const operationId = issueStartOperation(options, input.linkKey);
 			const context: StartContext = { options, input, childId, epoch, operationId };
-			latest = startingSnapshot(input.paneId, childId, epoch, operationId);
+			latest = startingSnapshot(input.linkKey, childId, epoch, operationId);
 			const transaction = stageStartTransaction(context);
 			const params = buildStartParams(context, transaction);
 			const started = await startWorkhorseThread(context, transaction, params);

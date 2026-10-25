@@ -91,13 +91,13 @@ async function expectConflict(promise: Promise<unknown>): Promise<void> {
 	throw new Error("expected a binding conflict");
 }
 
-describe("codex thread-link pane bindings", () => {
+describe("codex thread-link bindings", () => {
 	test("starts with a canonical frozen unbound snapshot", () => {
 		const bindings = createCodexThreadLinkBinding();
-		const snapshot = bindings.snapshot("pane-a");
+		const snapshot = bindings.snapshot("link-a");
 
 		expect(snapshot).toMatchObject({
-			paneId: "pane-a",
+			linkKey: "link-a",
 			revision: 0,
 			link: {
 				kind: "thread_link",
@@ -108,7 +108,7 @@ describe("codex thread-link pane bindings", () => {
 		});
 		expect(snapshot.cas).toEqual({
 			revision: 0,
-			paneId: "pane-a",
+			linkKey: "link-a",
 			childId: null,
 			epoch: null,
 			threadId: null,
@@ -124,7 +124,7 @@ describe("codex thread-link pane bindings", () => {
 
 		expect(() =>
 			bindings.compareAndSwap({
-				paneId: "pane-a",
+				linkKey: "link-a",
 				expected: null,
 				next: fabricated as ThreadLinkNonExecutableSnapshot,
 			}),
@@ -140,7 +140,7 @@ describe("codex thread-link pane bindings", () => {
 		const authority = createIdentityAuthority();
 		const bindings = createCodexThreadLinkBinding();
 		const inspected = bindings.compareAndSwap({
-			paneId: "pane-a",
+			linkKey: "link-a",
 			expected: null,
 			next: inspectOnly(authority) as ThreadLinkNonExecutableSnapshot,
 		});
@@ -148,12 +148,12 @@ describe("codex thread-link pane bindings", () => {
 		expect(inspected.link.state).toBe("inspect_only");
 		expect(() =>
 			bindings.compareAndSwap({
-				paneId: "pane-a",
+				linkKey: "link-a",
 				expected: inspected.cas,
 				next: executable(authority) as ThreadLinkNonExecutableSnapshot,
 			}),
 		).toThrowError(expect.objectContaining({ code: "invalid_input" }));
-		expect(bindings.read("pane-a")).toBe(inspected);
+		expect(bindings.read("link-a")).toBe(inspected);
 	});
 
 	test("classifies, revalidates, and binds a real current-epoch link", async () => {
@@ -171,7 +171,7 @@ describe("codex thread-link pane bindings", () => {
 				session: onePageSession(fixture),
 				epoch,
 			});
-			const bound = await port.classifyAndBind("pane-a", null, fixture.target);
+			const bound = await port.classifyAndBind("link-a", null, fixture.target);
 
 			expect(bound.link).toMatchObject({
 				state: "executable",
@@ -180,7 +180,7 @@ describe("codex thread-link pane bindings", () => {
 				threadId: fixture.target.threadId,
 			});
 			expect(assertions).toBe(3);
-			expect(port.read("pane-a")).toBe(bound);
+			expect(port.read("link-a")).toBe(bound);
 		});
 	});
 
@@ -203,7 +203,7 @@ describe("codex thread-link pane bindings", () => {
 					}),
 				},
 			});
-			const bound = await port.classifyAndBind("pane-a", null, fixture.target);
+			const bound = await port.classifyAndBind("link-a", null, fixture.target);
 
 			expect(bound.link).toMatchObject({
 				state: "inspect_only",
@@ -242,13 +242,13 @@ describe("codex thread-link pane bindings", () => {
 					threadLoadedListPage: async () => ({ data: [row.id], nextCursor: null }),
 				},
 			});
-			const bound = await port.classifyAndBind("pane-a", null, fixture.target);
+			const bound = await port.classifyAndBind("link-a", null, fixture.target);
 
 			expect(bound.link).toMatchObject({ state: "inspect_only", reason: "stale_child" });
 		});
 	});
 
-	test("rechecks durable status at adoption and leaves the pane unchanged", async () => {
+	test("rechecks durable status at adoption and leaves the link unchanged", async () => {
 		await withFixture(async (fixture) => {
 			let assertions = 0;
 			const epoch = {
@@ -270,8 +270,8 @@ describe("codex thread-link pane bindings", () => {
 				epoch,
 			});
 
-			await expectConflict(port.classifyAndBind("pane-a", null, fixture.target));
-			expect(port.snapshot("pane-a").link.state).toBe("unbound");
+			await expectConflict(port.classifyAndBind("link-a", null, fixture.target));
+			expect(port.snapshot("link-a").link.state).toBe("unbound");
 			expect(assertions).toBe(3);
 		});
 	});
@@ -285,12 +285,12 @@ describe("codex thread-link pane bindings", () => {
 				snapshot: () => {
 					injectedCalls += 1;
 					return {
-						paneId: "pane-a",
+						linkKey: "link-a",
 						revision: 1,
 						link: stale,
 						cas: {
 							revision: 1,
-							paneId: "pane-a",
+							linkKey: "link-a",
 							childId: stale.childId,
 							epoch: stale.epoch,
 							threadId: stale.threadId,
@@ -310,8 +310,8 @@ describe("codex thread-link pane bindings", () => {
 			);
 			const port = createCodexThreadLink(options);
 
-			expect(port.snapshot("pane-a").link.state).toBe("unbound");
-			const bound = await port.classifyAndBind("pane-a", null, fixture.target);
+			expect(port.snapshot("link-a").link.state).toBe("unbound");
+			const bound = await port.classifyAndBind("link-a", null, fixture.target);
 			expect(bound.link.state).toBe("executable");
 			expect(bound.link.childId).toBe(fixture.authority.validator.childId);
 			expect(bound.link.childId).not.toBe(stale.childId);
@@ -327,7 +327,7 @@ describe("codex thread-link pane bindings", () => {
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
-			const bound = await port.classifyAndBind("pane-a", null, {
+			const bound = await port.classifyAndBind("link-a", null, {
 				...fixture.target,
 				childId: replacement.validator.childId,
 				epoch: replacement.validator.epoch,
@@ -345,19 +345,19 @@ describe("codex thread-link pane bindings", () => {
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
-			const first = await port.classifyAndBind("pane-a", null, fixture.target);
-			const second = await port.classifyAndBind("pane-a", first.cas, fixture.target);
+			const first = await port.classifyAndBind("link-a", null, fixture.target);
+			const second = await port.classifyAndBind("link-a", first.cas, fixture.target);
 
 			for (const expected of [
 				first.cas,
 				forgedCas(second.cas, { childId: replacement.validator.childId }),
 				forgedCas(second.cas, { epoch: replacement.validator.epoch }),
 				forgedCas(second.cas, { threadId: replacement.decoder.adoptThreadId("late") }),
-				forgedCas(second.cas, { paneId: "other-pane" }),
+				forgedCas(second.cas, { linkKey: "other-link" }),
 			]) {
-				await expectConflict(port.classifyAndBind("pane-a", expected, fixture.target));
+				await expectConflict(port.classifyAndBind("link-a", expected, fixture.target));
 			}
-			expect(port.snapshot("pane-a")).toBe(second);
+			expect(port.snapshot("link-a")).toBe(second);
 		});
 	});
 
@@ -366,7 +366,7 @@ describe("codex thread-link pane bindings", () => {
 		const bindings = createCodexThreadLinkBinding();
 		const source = { custom: "integration" };
 		const link = { ...inspectOnly(authority), source } as ThreadLinkNonExecutableSnapshot;
-		const stored = bindings.compareAndSwap({ paneId: "pane-a", expected: null, next: link });
+		const stored = bindings.compareAndSwap({ linkKey: "link-a", expected: null, next: link });
 
 		source.custom = "mutated-after-bind";
 		expect(stored.link.source).toEqual({ custom: "integration" });
@@ -389,7 +389,7 @@ describe("codex thread-link pane bindings", () => {
 		for (const next of cases) {
 			expect(() =>
 				bindings.compareAndSwap({
-					paneId: "pane-a",
+					linkKey: "link-a",
 					expected: null,
 					next: next as ThreadLinkNonExecutableSnapshot,
 				}),
@@ -404,12 +404,12 @@ describe("codex thread-link pane bindings", () => {
 				session: onePageSession(fixture),
 				epoch: fixture.store,
 			});
-			const bound = await port.classifyAndBind("pane-a", null, fixture.target);
-			const cleared = port.clear("pane-a", bound.cas);
+			const bound = await port.classifyAndBind("link-a", null, fixture.target);
+			const cleared = port.clear("link-a", bound.cas);
 
 			expect(cleared.revision).toBe(2);
 			expect(cleared.link.state).toBe("unbound");
-			expect(() => port.clear("pane-a", null)).toThrowError(
+			expect(() => port.clear("link-a", null)).toThrowError(
 				expect.objectContaining({ code: "conflict" }),
 			);
 		});
@@ -432,7 +432,7 @@ describe("codex thread-link pane bindings", () => {
 
 	test("reports a typed conflict with an actionable re-read message", () => {
 		const bindings = createCodexThreadLinkBinding();
-		const stale = bindings.snapshot("pane-a").cas;
+		const stale = bindings.snapshot("link-a").cas;
 		const empty: ThreadLinkSnapshot = {
 			kind: "thread_link",
 			state: "unbound",
@@ -446,14 +446,14 @@ describe("codex thread-link pane bindings", () => {
 			reason: null,
 		};
 		bindings.compareAndSwap({
-			paneId: "pane-a",
+			linkKey: "link-a",
 			expected: null,
 			next: empty,
 		});
 
 		try {
 			bindings.compareAndSwap({
-				paneId: "pane-a",
+				linkKey: "link-a",
 				expected: stale,
 				next: empty,
 			});

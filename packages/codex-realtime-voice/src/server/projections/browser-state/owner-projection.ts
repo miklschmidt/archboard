@@ -95,7 +95,7 @@ function deliveryIsForBinding(
 	binding: ContextDeliveryBinding,
 ): boolean {
 	return (
-		delivery?.paneId === binding.paneId &&
+		delivery?.linkKey === binding.linkKey &&
 		delivery.targetThreadId === binding.target.threadId &&
 		delivery.targetChildId === binding.target.childId &&
 		delivery.targetEpoch === binding.target.epoch &&

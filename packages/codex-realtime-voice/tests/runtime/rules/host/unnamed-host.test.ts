@@ -64,9 +64,9 @@ test("a host that supplies no identity gives Codex and its records no Archboard 
 });
 
 // A host with no domain of its own announces a change and starts a turn under the default codec:
-// what Codex reads names the change and the execution, never the pane, board or vault of the host
+// what Codex reads names the change and the execution, never the words of the host
 // the package was first built for (TASK-530.05).
-test("a host with no identity and no extensions sends Codex no context naming a pane, board, vault or semantic change", async () => {
+test("a host with no identity and no extensions sends Codex no context in the words of the host the package was first built for", async () => {
 	const profile = (role: "coordinator" | "workhorse") =>
 		createWorkbenchThreadProfile({
 			identity: {},

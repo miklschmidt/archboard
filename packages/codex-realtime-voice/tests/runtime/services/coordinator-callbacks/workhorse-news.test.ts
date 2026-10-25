@@ -271,9 +271,9 @@ function secondWorkhorse(h: Harness, wire: string, checkout: string): void {
 	h.state.others.push({
 		binding: {
 			...first.binding,
-			paneId: `tab\u0000${checkout}`,
+			linkKey: `tab\u0000${checkout}`,
 			link: { ...first.binding.link, threadId },
-			cas: { ...first.binding.cas, paneId: `tab\u0000${checkout}`, threadId },
+			cas: { ...first.binding.cas, linkKey: `tab\u0000${checkout}`, threadId },
 		},
 		target: { ...first.target, threadId },
 		checkout,

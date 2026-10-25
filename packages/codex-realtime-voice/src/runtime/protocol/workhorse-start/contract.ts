@@ -61,8 +61,8 @@ interface WorkhorseIdentityPort {
 type WorkhorseOperationPort = Pick<OperationAuthority, "issuer" | "validator">;
 
 interface WorkhorseStartInput {
-	readonly paneId: string;
-	/** The caller's last pane-binding CAS; null is valid only for an unbound pane. */
+	readonly linkKey: string;
+	/** The caller's last link-binding CAS; null is valid only for an unbound link. */
 	readonly expected: ThreadLinkCasToken | null;
 }
 
@@ -109,7 +109,7 @@ interface WorkhorseCleanupFacts {
 interface WorkhorseSnapshot {
 	readonly kind: "codex_workhorse";
 	readonly state: WorkhorseLifecycleState;
-	readonly paneId: string | null;
+	readonly linkKey: string | null;
 	readonly childId: ChildId | null;
 	readonly epoch: ChildEpoch | null;
 	readonly threadId: ThreadId | null;

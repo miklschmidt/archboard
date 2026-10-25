@@ -75,7 +75,7 @@ function stepFailure<Value>(reason: Reason): Step<Value> {
 /**
  * The immutable outcome record for one change identity.
  * @param event - The announced change.
- * @param options - The delivery options naming pane and target.
+ * @param options - The delivery options naming link key and target.
  * @param state - Whether the event was delivered, refused, or its response was lost.
  * @param reason - The stable reason for anything but a delivery.
  * @param attempted - Whether `thread/inject_items` was called.
@@ -93,7 +93,7 @@ function outcome(
 	return Object.freeze({
 		kind: "thread_context_delivery",
 		event: eventId(event),
-		paneId: options.paneId,
+		linkKey: options.linkKey,
 		targetThreadId: options.target.threadId,
 		targetChildId: options.target.childId,
 		targetEpoch: options.target.epoch,
@@ -168,7 +168,7 @@ function targetAuthorityReason(options: Options): Reason | null {
 }
 
 /**
- * Everything checked before the pane binding is read: the change, its
+ * Everything checked before the link binding is read: the change, its
  * freshness, the target and the live child capability.
  * @param event - The announced change.
  * @param options - The delivery options.
@@ -196,18 +196,18 @@ function preflightReason(
 }
 
 /**
- * Reads the pane's current binding and checks it is executable for the target.
+ * Reads the link's current binding and checks it is executable for the target.
  * @param options - The delivery options.
  * @returns The binding, or the reason it cannot be used.
  */
 function readInitialBinding(options: Options): Step<ThreadLinkBindingSnapshot> {
 	let binding: ThreadLinkBindingSnapshot;
 	try {
-		binding = options.threadLink.read(options.paneId);
+		binding = options.threadLink.read(options.linkKey);
 	} catch {
 		return stepFailure("link_changed");
 	}
-	if (binding.paneId !== options.paneId) {
+	if (binding.linkKey !== options.linkKey) {
 		return stepFailure("link_changed");
 	}
 	const linkFailure = targetLinkReason(binding.link, options.target);

@@ -152,7 +152,7 @@ function validateTarget(target: ThreadLinkTarget): void {
 }
 
 /**
- * Whether a durable record proves this pane started the thread and Codex delivered it.
+ * Whether a durable record proves this link's workhorse started the thread and Codex delivered it.
  * @param record The record, if any.
  * @returns True for a committed, delivered thread/start recorded for a thread the workbench started.
  */
@@ -207,7 +207,7 @@ function isDurableRoot(thread: SessionThread): boolean {
 }
 
 /**
- * Whether a directly read thread is the untouched root this pane created, rather than a fork,
+ * Whether a directly read thread is the untouched root this link's workhorse created, rather than a fork,
  * a child, or a thread whose workspace has moved.
  * @param thread The thread as read.
  * @param target The target.
@@ -251,7 +251,7 @@ function mayBeHiddenRoot(
 }
 
 /**
- * The durable record that proves this pane started the target thread in the current epoch.
+ * The durable record that proves this link's workhorse started the target thread in the current epoch.
  * @param options The classifier options.
  * @param target The target.
  * @returns The record, or null when nothing proves ownership.
@@ -271,7 +271,7 @@ function owningThreadStartRecord(
 }
 
 /**
- * Reads the thread a durable record says this pane created, when Codex's preview-filtered
+ * Reads the thread a durable record says this link's workhorse created, when Codex's preview-filtered
  * history list hides it because it has no turns yet.
  * @param options The classifier options.
  * @param target The target.

@@ -34,7 +34,7 @@ import {
 	type CodexThreadContextTarget,
 	type WorkhorseContextEvent,
 } from "#runtime/services/thread-context/contract.ts";
-const PANE_ID = "pane-a";
+const LINK_KEY = "link-a";
 const FEED_ID = "feed-1";
 const OPERATION_ID = "operation-1";
 type InjectRequest = Parameters<CodexSession["threadInjectItems"]>[0];
@@ -208,12 +208,12 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	const read = (): ThreadLinkBindingSnapshot => {
 		const cas: ThreadLinkCasToken = {
 			revision,
-			paneId: PANE_ID,
+			linkKey: LINK_KEY,
 			childId: link.state === "executable" ? link.childId : null,
 			epoch: link.state === "executable" ? link.epoch : null,
 			threadId: link.state === "unbound" ? null : link.threadId,
 		};
-		return Object.freeze({ paneId: PANE_ID, revision, link, cas });
+		return Object.freeze({ linkKey: LINK_KEY, revision, link, cas });
 	};
 	const threadLink: Pick<CodexThreadLinkPort, "read" | "classify"> = {
 		read,
@@ -283,7 +283,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		controller ??
 		createCodexThreadContextDelivery({
 			...common,
-			paneId: PANE_ID,
+			linkKey: LINK_KEY,
 			target,
 			// The threads this port's own session writes as: its workhorse, and the
 			// coordinator paired with it when a harness names one.
@@ -367,13 +367,13 @@ function createHarness(options: HarnessOptions = {}): Harness {
 }
 function bindingFor(harness: Harness): CodexThreadContextBinding {
 	return Object.freeze({
-		paneId: PANE_ID,
+		linkKey: LINK_KEY,
 		target: harness.target,
 		link: harness.readLink(),
 	});
 }
 export {
-	PANE_ID,
+	LINK_KEY,
 	FEED_ID,
 	type EventOptions,
 	type Harness,

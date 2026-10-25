@@ -62,12 +62,12 @@ function invalidInput(message: string): CodexThreadLinkError {
 }
 
 /**
- * Refuses a pane identity that is missing or empty.
- * @param paneId The pane identity.
+ * Refuses a link key that is missing or empty.
+ * @param linkKey The link key.
  */
-function assertPaneId(paneId: string): void {
-	if (typeof paneId !== "string" || paneId.length === 0) {
-		throw invalidInput("A thread-link binding requires one non-empty pane identity.");
+function assertLinkKey(linkKey: string): void {
+	if (typeof linkKey !== "string" || linkKey.length === 0) {
+		throw invalidInput("A thread-link binding requires one non-empty link key.");
 	}
 }
 
@@ -158,7 +158,7 @@ function namesChildEpoch(link: Record<string, unknown>): boolean {
 }
 
 /**
- * Whether an executable link's source and status are ones a pane may write to directly.
+ * Whether an executable link's source and status are ones a link may write to directly.
  * @param link The link as supplied.
  * @returns True for a top-level allowed source with an executable status.
  */
@@ -267,7 +267,7 @@ function isNullableIdentity(value: unknown): boolean {
 const CAS_TOKEN_FIELDS: readonly (readonly [string, (value: unknown) => boolean])[] = Object.freeze(
 	[
 		["revision", isRevision],
-		["paneId", isNonEmptyString],
+		["linkKey", isNonEmptyString],
 		["childId", isNullableIdentity],
 		["epoch", isNullableIdentity],
 		["threadId", isNullableIdentity],
@@ -281,8 +281,8 @@ const CAS_TOKEN_FIELDS: readonly (readonly [string, (value: unknown) => boolean]
  */
 function assertExpected(expected: unknown): asserts expected is ThreadLinkCasToken {
 	if (!isRecord(expected) || CAS_TOKEN_FIELDS.some(([key, accepts]) => !accepts(expected[key]))) {
-		throw invalidInput("A thread-link CAS token is malformed; re-read the pane binding.");
+		throw invalidInput("A thread-link CAS token is malformed; re-read the link binding.");
 	}
 }
 
-export { EMPTY_LINK, assertExpected, assertLink, assertPaneId, invalidInput, isNonEmptyString };
+export { EMPTY_LINK, assertExpected, assertLink, assertLinkKey, invalidInput, isNonEmptyString };

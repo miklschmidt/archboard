@@ -45,7 +45,7 @@ interface CleanupContext {
 }
 
 /**
- * The pane's snapshot after a failed bind: the thread exists and its start was delivered, so it
+ * The workhorse snapshot after a failed bind: the thread exists and its start was delivered, so it
  * stays inspect-only whatever the cleanup did, with the cleanup's own outcome recorded beside it.
  * @param context - The compensation context.
  * @param reason - What happened, appended to the bind failure.
@@ -58,7 +58,7 @@ function inspectAfterBindFailure(
 	cleanup: WorkhorseCleanupFacts | null,
 ): WorkhorseSnapshot {
 	return inspectSnapshot({
-		paneId: context.input.paneId,
+		linkKey: context.input.linkKey,
 		childId: context.childId,
 		epoch: context.epoch,
 		threadId: context.started.threadId,
@@ -220,7 +220,7 @@ function settleUndeliveredDelete(
 
 /**
  * Settle a delete whose outcome the session could not decide. The thread may be gone, so nothing
- * is retried and the pane is told to inspect it.
+ * is retried and the link is left inspect-only.
  * @param context - The compensation context.
  * @param staged - The staged cleanup operation.
  * @param outcome - The outcome the session asserted.
@@ -308,7 +308,7 @@ function settleCommittedDelete(
 	}
 	return inspectAfterBindFailure(
 		context,
-		`${context.failureReason} The exact new idle root was deleted; the pane remains inspect-only.`,
+		`${context.failureReason} The exact new idle root was deleted; the link remains inspect-only.`,
 		cleanupFacts(staged.operationId, started.threadId, "delivered", null),
 	);
 }
@@ -335,18 +335,18 @@ async function deleteExactIdleRoot(
 }
 
 /**
- * Compensate for a workhorse that was created but could not be bound to its pane. The thread
- * already exists, so the pane is left inspect-only either way; the only question this answers is
+ * Compensate for a workhorse that was created but could not be bound to its link. The thread
+ * already exists, so the link is left inspect-only either way; the only question this answers is
  * whether the exact new idle root could be deleted, and what it can prove about that.
  * @param options - The session, epoch store and operation authorities.
- * @param input - The pane the start was for.
+ * @param input - The link the start was for.
  * @param childId - The Codex child the workhorse runs on.
  * @param epoch - That child's epoch.
  * @param operationId - The start operation identity.
  * @param started - What the start proved about the thread.
  * @param binding - The binding that was attempted, when there was one.
  * @param failureReason - Why the bind failed.
- * @returns The inspect-only snapshot the pane is left with.
+ * @returns The inspect-only snapshot the link is left with.
  */
 async function compensateAfterBindFailure(
 	options: CodexWorkhorseStartOptions,

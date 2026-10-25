@@ -26,7 +26,7 @@ type WorkhorseSnapshot = ReturnType<CodexWorkhorseStart["snapshot"]>;
 
 /** The exact thread a ready workhorse is bound to, with the proof it is bound. */
 interface ReadyWorkhorseTarget {
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly target: {
 		readonly threadId: ThreadId;
 		readonly childId: ChildId;
@@ -39,16 +39,16 @@ interface ReadyWorkhorseTarget {
 /**
  * The target a snapshot names, once every part of it is actually named.
  * @param snapshot The workhorse snapshot, already known to be executable.
- * @param link Its pane link.
+ * @param link Its thread link.
  * @returns The target, or null when the snapshot names only part of one.
  */
 function namedTarget(
 	snapshot: WorkhorseSnapshot,
 	link: ThreadLinkBindingSnapshot,
 ): ReadyWorkhorseTarget | null {
-	const { paneId, threadId, childId, epoch, operationId } = snapshot;
+	const { linkKey, threadId, childId, epoch, operationId } = snapshot;
 	if (
-		paneId === null ||
+		linkKey === null ||
 		threadId === null ||
 		childId === null ||
 		epoch === null ||
@@ -56,11 +56,11 @@ function namedTarget(
 	) {
 		return null;
 	}
-	return { paneId, target: { threadId, childId, epoch, operationId }, link };
+	return { linkKey, target: { threadId, childId, epoch, operationId }, link };
 }
 
 /**
- * The thread a workhorse is bound to, only when it is ready and its pane link
+ * The thread a workhorse is bound to, only when it is ready and its link
  * can actually run turns.
  * @param snapshot The workhorse snapshot.
  * @returns The target, or null when this workhorse names no exact one.
@@ -89,7 +89,7 @@ function bindThreadContextToReadyWorkhorse(
 	}
 	controller.compareAndSwap({
 		expected: controller.snapshot().token,
-		next: { paneId: ready.paneId, target: ready.target, link: ready.link },
+		next: { linkKey: ready.linkKey, target: ready.target, link: ready.link },
 	});
 }
 
@@ -98,7 +98,7 @@ function bindThreadContextToReadyWorkhorse(
  * that is not the proof of that exact adoption.
  * @param controller The controller being moved.
  * @param target The thread, its child epoch, and the operation that owns it.
- * @param link The pane link proving the adoption.
+ * @param link The link proving the adoption.
  * @returns The token the new binding is held under.
  */
 function replaceThreadContextBinding(
@@ -117,7 +117,7 @@ function replaceThreadContextBinding(
 	return controller.compareAndSwap({
 		expected: controller.snapshot().token,
 		next: {
-			paneId: link.paneId,
+			linkKey: link.linkKey,
 			target,
 			link,
 		},
@@ -151,7 +151,7 @@ function clearServerThreadContextForLease(
 function expectedBrowserLink(key: string, context: BrowserActionContext): ThreadLinkCasToken {
 	return {
 		revision: context.linkRevision,
-		paneId: key,
+		linkKey: key,
 		childId: context.link.childId,
 		epoch: context.link.epoch,
 		threadId: context.link.threadId,
@@ -231,7 +231,7 @@ async function startWorkhorseThread(
 	options: ServerThreadLinkActionOptions,
 	expected: ThreadLinkCasToken,
 ): Promise<void> {
-	const started = await options.workhorse.start({ paneId: options.key, expected });
+	const started = await options.workhorse.start({ linkKey: options.key, expected });
 	if (started.threadId !== null) {
 		options.claimThread(started.threadId);
 	}

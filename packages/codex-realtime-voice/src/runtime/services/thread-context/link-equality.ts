@@ -69,14 +69,14 @@ function sameLink(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean 
 }
 
 /**
- * Whether two pane bindings are the same revision of the same link.
- * @param left - One pane binding.
- * @param right - The other pane binding.
- * @returns True when pane, revision and link all agree.
+ * Whether two link bindings are the same revision of the same link.
+ * @param left - One link binding.
+ * @param right - The other link binding.
+ * @returns True when link key, revision and link all agree.
  */
 function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
 	return (
-		left.paneId === right.paneId &&
+		left.linkKey === right.linkKey &&
 		left.revision === right.revision &&
 		sameLink(left.link, right.link)
 	);

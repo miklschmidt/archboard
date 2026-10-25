@@ -194,12 +194,12 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			checkout: HARNESS_CHECKOUT,
 			// A link is keyed by its workhorse: its tab session and its checkout.
 			binding: {
-				paneId: key,
+				linkKey: key,
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId: key,
+					linkKey: key,
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,

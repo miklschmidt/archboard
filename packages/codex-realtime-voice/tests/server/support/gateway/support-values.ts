@@ -34,17 +34,17 @@ function executableLink(
 }
 
 function bindingFor(
-	paneId: string,
+	linkKey: string,
 	revision: number,
 	link: ThreadLinkSnapshot,
 ): ThreadLinkBindingSnapshot {
 	return {
-		paneId,
+		linkKey,
 		revision,
 		link,
 		cas: {
 			revision,
-			paneId,
+			linkKey,
 			childId: link.childId,
 			epoch: link.epoch,
 			threadId: link.threadId,

@@ -164,9 +164,9 @@ function createProductionCodexWorkbenchFactories(
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
 		/**
-		 * The thread links, one per browser tab session: each names the workhorse
-		 * thread that tab's conversation runs on. The port keys a link by its
-		 * `paneId`, which holds the tab session's id.
+		 * The thread links, one per workhorse of a tab session: each names the
+		 * thread that workhorse runs on. The port keys a link by its `linkKey`,
+		 * which names the tab session and the checkout.
 		 * @param created What the graph has built so far.
 		 * @returns The link port.
 		 */

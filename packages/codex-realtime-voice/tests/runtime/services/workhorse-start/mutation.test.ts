@@ -95,7 +95,7 @@ describe("codex workhorse retained-value immutability", () => {
 				activePermissionProfile,
 			});
 			const binding = executableBinding(
-				"pane-1",
+				"link-1",
 				2,
 				fixture.authorities.identity.validator.childId,
 				fixture.authorities.identity.validator.epoch,
@@ -104,7 +104,7 @@ describe("codex workhorse retained-value immutability", () => {
 			fixture.session.startResult = response;
 			fixture.link.outcome = binding;
 
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 			const settled = structuredClone(result);
 
 			expect(result.state).toBe("ready");
@@ -163,11 +163,11 @@ describe("codex workhorse retained-value immutability", () => {
 				sandbox,
 				activePermissionProfile,
 			});
-			const binding = inspectOnlyBinding("pane-1", 2, fixture.thread.id);
+			const binding = inspectOnlyBinding("link-1", 2, fixture.thread.id);
 			fixture.session.startResult = response;
 			fixture.link.outcome = binding;
 
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 			const settled = structuredClone(result);
 
 			expect(result.state).toBe("inspect_only");

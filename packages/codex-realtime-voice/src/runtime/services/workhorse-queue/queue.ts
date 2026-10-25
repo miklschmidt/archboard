@@ -135,7 +135,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 * The coordinator-and-workhorse binding the queue works through, refused when the pane has no linked workhorse yet.
+	 * The coordinator-and-workhorse binding the queue works through, refused when the chat has no linked workhorse yet.
 	 * @returns A frozen copy of the current binding.
 	 */
 	const currentBinding = (): WorkhorseQueueBinding => {

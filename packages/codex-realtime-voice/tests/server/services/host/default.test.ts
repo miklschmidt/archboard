@@ -57,10 +57,10 @@ function harness(options: Partial<DefaultWorkbenchHostInput> = {}) {
 		reason: null,
 	};
 	let binding: ThreadLinkBindingSnapshot = {
-		paneId: key,
+		linkKey: key,
 		revision: 1,
 		link,
-		cas: { paneId: key, revision: 1, childId, epoch, threadId },
+		cas: { linkKey: key, revision: 1, childId, epoch, threadId },
 	};
 	let live = true;
 	const proofRequests: unknown[] = [];

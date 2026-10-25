@@ -7,7 +7,7 @@ import {
 import {
 	bindingFor,
 	createHarness,
-	PANE_ID,
+	LINK_KEY,
 } from "#tests/runtime/services/thread-context/delivery-support.ts";
 
 function controllerHarness() {
@@ -35,7 +35,7 @@ describe("codex thread-context binding controller", () => {
 		const duplicate = await controller.deliver(event);
 
 		expect(unbound).toMatchObject({
-			paneId: null,
+			linkKey: null,
 			attempted: false,
 			outcome: "not_delivered",
 			reason: "unbound",
@@ -50,7 +50,7 @@ describe("codex thread-context binding controller", () => {
 		const binding = bindingFor(harness);
 		const bound = controller.compareAndSwap({ expected: initial.token, next: binding });
 
-		expect(bound.binding).toMatchObject({ paneId: PANE_ID, target: harness.target });
+		expect(bound.binding).toMatchObject({ linkKey: LINK_KEY, target: harness.target });
 		expect(await controller.deliver(harness.events())).toMatchObject({
 			attempted: true,
 			outcome: "delivered",

@@ -78,8 +78,8 @@ function provenWorkhorseTarget(
 	const snapshot = workhorse.snapshot();
 	const { childId, epoch, threadId } = snapshot;
 	const target = { childId, epoch, threadId };
-	if (snapshot.state !== "ready" || snapshot.paneId !== owner.key || !allNamed(target)) {
-		throw new Error("A workhorse operation has no exact proven pane target.");
+	if (snapshot.state !== "ready" || snapshot.linkKey !== owner.key || !allNamed(target)) {
+		throw new Error("A workhorse operation has no exact proven workhorse target.");
 	}
 	return {
 		...target,
