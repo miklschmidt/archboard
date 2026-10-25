@@ -290,15 +290,12 @@ fn first_stops(drawing: &Painted) -> HashMap<&str, f64> {
         .collect()
 }
 
-/// `Array.prototype.sort`'s reading of a comparator's number.
+/// `Array.prototype.sort`'s reading of a comparator's number: no number
+/// (`NaN`) is a tie.
 fn ordering(difference: f64) -> std::cmp::Ordering {
-    if difference < 0.0 {
-        std::cmp::Ordering::Less
-    } else if difference > 0.0 {
-        std::cmp::Ordering::Greater
-    } else {
-        std::cmp::Ordering::Equal
-    }
+    difference
+        .partial_cmp(&0.0)
+        .unwrap_or(std::cmp::Ordering::Equal)
 }
 
 /// The graph's content with each decision's answers in the order a layout that
