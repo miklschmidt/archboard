@@ -16,7 +16,6 @@
 		"./server": "./src/server/api/server.ts",
 		"./panes": "./src/server/api/panes.ts",
 		"./host": "./src/server/api/host.ts",
-		"./controllers": "./src/ui/api/controllers.ts",
 		"./agent": "./src/ui/api/agent.ts",
 		"./voice": "./src/ui/api/voice.ts"
 	}

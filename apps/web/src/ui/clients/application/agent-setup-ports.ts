@@ -15,7 +15,7 @@ import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voic
 import type {
 	ThreadLinkActionCompletion,
 	ThreadLinkController,
-} from "@archboard/workbench/controllers";
+} from "@archboard/codex-realtime-voice/controllers";
 
 /** Why a step reports nothing of its own: a later action on the pane replaced it. */
 const REPLACED = "A later action on this pane replaced this one before it settled.";

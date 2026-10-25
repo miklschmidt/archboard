@@ -15,7 +15,7 @@
 import {
 	browserAudioElements,
 	type BrowserAudioElementPort,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 
 /**
  * The media owner's audio elements, each passing the voice it plays to a recording.

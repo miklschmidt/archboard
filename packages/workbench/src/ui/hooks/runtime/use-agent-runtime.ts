@@ -9,13 +9,13 @@ import { useExternalStoreRuntime, type AssistantRuntime } from "@assistant-ui/re
 import { useMemo, useSyncExternalStore } from "react";
 
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
-import { mergeConversation, projectTimelineTurns } from "#ui/rules/timeline/projection.ts";
-import { type ConversationOwner, type ConversationTurn } from "#ui/state/timeline/contract.ts";
+import { mergeConversation, projectTimelineTurns } from "@archboard/codex-realtime-voice/controllers";
+import { type ConversationOwner, type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 
 /** The conversation, or why it could not be read. */
 interface Conversation {

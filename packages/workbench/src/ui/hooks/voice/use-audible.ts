@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/codex-realtime-voice/browser";
+import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/codex-realtime-voice/controllers";
 import type { AgentVoiceView, VoiceStage } from "#ui/state/surfaces/contracts.ts";
 
 /** The stages in which the model's measured output can make it audible. */

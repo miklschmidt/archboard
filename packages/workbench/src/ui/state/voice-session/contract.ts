@@ -11,7 +11,7 @@ import type {
 	RealtimeMediaSnapshot,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 
 /**
  * Every state the persistent voice control may present. `agent_speaking` is the

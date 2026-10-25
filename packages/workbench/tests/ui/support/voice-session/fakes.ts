@@ -14,7 +14,7 @@ import type {
 	VoiceOutputLevelSource,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";

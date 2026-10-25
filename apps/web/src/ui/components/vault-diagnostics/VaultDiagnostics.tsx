@@ -16,7 +16,7 @@ import {
 import { DiagnosticList } from "#ui/components/vault-diagnostics/DiagnosticList.tsx";
 import { useVaultCheck } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
 import { useVaultRepair } from "#ui/hooks/vault-diagnostics/use-vault-repair.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */
