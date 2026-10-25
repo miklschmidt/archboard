@@ -1,5 +1,8 @@
 import { useContext } from "react";
-import { PaneChromeContext, type PaneChrome } from "#ui/components/PaneChrome.tsx";
+import {
+	PaneChromeContext,
+	type PaneChrome,
+} from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
 
 /**
  * The shell's parts of the header of the pane being drawn.

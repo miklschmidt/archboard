@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
+updated_date: '2026-10-25T01:43:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -20,6 +21,12 @@ Part of TASK-529 for the ui-kit package(s). TASK-500 kept every name callers imp
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The callers use only the package's narrowed public entries, and the package's focused tests, type-check and lint pass
-- [ ] #2 Each public entry exposes operations a caller needs, measured by the names and facts it must learn
+- [x] #1 The callers use only the package's narrowed public entries, and the package's focused tests, type-check and lint pass
+- [x] #2 Each public entry exposes operations a caller needs, measured by the names and facts it must learn
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ui-kit went from 10 subpaths with 85 names to 4 subpaths with 37 names. Each shadcn family is one composite with its parts on its root (Dialog.Content, Select.Item, Tooltip.Provider, Resizable.Panel), and every component comes from ./components. The registry files moved unchanged into ui/components/shadcn/. Dialog.Cancel replaced CANCEL_BUTTON_CLASS; Dialog.Busy, Dialog.Error and Field.Issues replaced ./dialog-parts; ./stepped-clock joined ./frame-clock; the pane chrome moved to apps/web, its one owner. DOM unchanged. Checks: type-check, lint, focused UI tests (979 pass) and repository-policy (149 pass).
+<!-- SECTION:NOTES:END -->

@@ -7,8 +7,7 @@
 import { cn } from "cn";
 import type { JSX, ReactNode } from "react";
 
-import { buttonVariants } from "@archboard/ui-kit/controls";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
+import { buttonVariants, Tooltip } from "@archboard/ui-kit/components";
 
 /** Inputs for the icon action. */
 interface IconActionProps {
@@ -32,7 +31,7 @@ interface IconActionProps {
 function IconAction(props: IconActionProps): JSX.Element {
 	return (
 		<Tooltip>
-			<TooltipTrigger
+			<Tooltip.Trigger
 				className={cn(
 					buttonVariants({ variant: props.variant ?? "ghost", size: "icon-xs" }),
 					"relative rounded-sm after:absolute after:-inset-1",
@@ -45,8 +44,8 @@ function IconAction(props: IconActionProps): JSX.Element {
 				onClick={props.disabled === true ? undefined : props.onClick}
 			>
 				{props.children}
-			</TooltipTrigger>
-			<TooltipContent side={props.tipSide ?? "top"}>{props.label}</TooltipContent>
+			</Tooltip.Trigger>
+			<Tooltip.Content side={props.tipSide ?? "top"}>{props.label}</Tooltip.Content>
 		</Tooltip>
 	);
 }

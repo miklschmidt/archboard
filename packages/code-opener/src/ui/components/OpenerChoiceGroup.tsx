@@ -4,18 +4,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Badge } from "@archboard/ui-kit/display";
-import {
-	Field,
-	FieldContent,
-	FieldDescription,
-	FieldLabel,
-	FieldLegend,
-	FieldSet,
-	RadioGroup,
-	RadioGroupItem,
-} from "@archboard/ui-kit/controls";
-import { Technical } from "@archboard/ui-kit/dialog-parts";
+import { Badge, Field, RadioGroup, Technical } from "@archboard/ui-kit/components";
 import { choiceOfSelection, presetChoice } from "#ui/rules/custom-command.ts";
 import { formatCommand } from "#ui/rules/format-command.ts";
 import type { OpenerChoice } from "#ui/state/opener-settings-contracts.ts";
@@ -37,8 +26,8 @@ function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 	const { settings, onChoice } = props;
 	const handleChange = useCallback((value: OpenerChoice) => onChoice(value), [onChoice]);
 	return (
-		<FieldSet>
-			<FieldLegend variant="label">Opener</FieldLegend>
+		<Field.Set>
+			<Field.Legend variant="label">Opener</Field.Legend>
 			<RadioGroup value={props.choice} onValueChange={handleChange} disabled={props.disabled}>
 				<OpenerOption
 					value="platform"
@@ -65,7 +54,7 @@ function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 					disabled={false}
 				/>
 			</RadioGroup>
-		</FieldSet>
+		</Field.Set>
 	);
 }
 
@@ -90,20 +79,20 @@ function OpenerOption(props: OpenerOptionProps): JSX.Element {
 	const id = useId();
 	return (
 		<Field orientation="horizontal">
-			<RadioGroupItem id={id} value={props.value} disabled={props.disabled} />
-			<FieldContent>
-				<FieldLabel htmlFor={id} className="items-center gap-2">
+			<RadioGroup.Item id={id} value={props.value} disabled={props.disabled} />
+			<Field.Content>
+				<Field.Label htmlFor={id} className="items-center gap-2">
 					{props.label}
 					{props.availability !== null && <AvailabilityBadge availability={props.availability} />}
-				</FieldLabel>
-				<FieldDescription>
+				</Field.Label>
+				<Field.Description>
 					{props.command ? (
 						<Technical>{formatCommand(props.command)}</Technical>
 					) : (
 						"No opener is known for this platform."
 					)}
-				</FieldDescription>
-			</FieldContent>
+				</Field.Description>
+			</Field.Content>
 		</Field>
 	);
 }

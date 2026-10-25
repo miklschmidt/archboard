@@ -1,0 +1,19 @@
+{
+	"board": 231,
+	"code-binding": 45,
+	"code-intel": 41,
+	"code-opener": 13,
+	"codex-app-server": 122,
+	"codex-realtime-voice": 230,
+	"diagnostics": 11,
+	"process": 19,
+	"renderer": 61,
+	"server-lifecycle": 75,
+	"server-requests": 10,
+	"skills": 16,
+	"timing": 146,
+	"ui-kit": 85,
+	"walkthrough": 38,
+	"workbench": 152,
+	"workspace": 58
+}

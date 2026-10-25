@@ -2,30 +2,52 @@
 // then reads on from, so each is judged by whether it explains where the column
 // lives and is gone before the next thing is asked of it. Nothing here loops.
 
-// The conversation slides open beside the navigator and shut again. It is motion
-// a person watches, not waits out: long enough to read as a slide, short enough
-// that opening it to type is not slowed. The pane centre beside it changes size on
-// every frame of the slide, and the board is fitted to it once, at the end. A
-// pane's docked sidebar does the same beside the picture, and in the same time.
+import { durations } from "#shared/constants/durations.ts";
 
-/** How long the conversation takes to slide open or shut, and a docked sidebar with it. */
-const AGENT_PANEL_SLIDE_MS = 220;
+/**
+ * The conversation column and the board beside it, as either changes size.
+ *
+ * The conversation slides open beside the navigator and shut again. It is motion
+ * a person watches, not waits out: long enough to read as a slide, short enough
+ * that opening it to type is not slowed. The pane centre beside it changes size on
+ * every frame of the slide, and the board is fitted to it once, at the end. A
+ * pane's docked sidebar does the same beside the picture, and in the same time.
+ */
+const COLUMN_MS = durations({
+	/** How long the conversation takes to slide open or shut, and a docked sidebar with it. */
+	agentPanelSlide: 220,
+	/**
+	 * How long past its slide a column waits before it calls the slide over: the
+	 * conversation or a pane's sidebar that has left is then unmounted, and the
+	 * easing of one that has arrived is forgotten.
+	 *
+	 * Pulls against the stylesheet's transition of the same length, which ends on
+	 * a frame of its own. A little over one frame at 60 Hz, so what leaves is not
+	 * taken away on its last frame, and short enough that nothing waits on it.
+	 */
+	slideSettled: 20,
+	/**
+	 * How long a board's viewport keeps its size before the camera fits to it: longer than
+	 * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
+	 */
+	boardResizeSettle: 64,
+});
 
 /** The durations of the pane sidebar's coming and going, in milliseconds. */
-const SIDEBAR_MS = Object.freeze({
+const SIDEBAR_MS = durations({
 	/**
 	 * How long a docked sidebar takes to open or shut. Its column eases between
 	 * no width and its own, the picture beside it gives way frame by frame, and
-	 * the board is fitted once, at the end (`BOARD_RESIZE_SETTLE_MS`). The panel
+	 * the board is fitted once, at the end (`COLUMN_MS.boardResizeSettle`). The panel
 	 * keeps its own width throughout, held to the pane's edge, so it slides in
 	 * and never reflows.
 	 *
 	 * Pulls against the picture. It is the conversation's slide
-	 * (`AGENT_PANEL_SLIDE_MS`), so the two columns of the shell move alike: past
+	 * (`COLUMN_MS.agentPanelSlide`), so the two columns of the shell move alike: past
 	 * about 300 ms the board waits behind a moving column, and under about 150 ms
 	 * the column reads as a jump.
 	 */
-	dock: AGENT_PANEL_SLIDE_MS,
+	dock: COLUMN_MS.agentPanelSlide,
 	/**
 	 * How long a floating panel takes to arrive: it fades in while it moves a
 	 * short way from the pane's edge. It is laid over the picture, so only its own
@@ -56,15 +78,4 @@ const SIDEBAR_MS = Object.freeze({
 	subjectIn: 120,
 });
 
-/**
- * How long past its slide a column waits before it calls the slide over: the
- * conversation or a pane's sidebar that has left is then unmounted, and the
- * easing of one that has arrived is forgotten.
- *
- * Pulls against the stylesheet's transition of the same length, which ends on
- * a frame of its own. A little over one frame at 60 Hz, so what leaves is not
- * taken away on its last frame, and short enough that nothing waits on it.
- */
-const SLIDE_SETTLED_MS = 20;
-
-export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS, SLIDE_SETTLED_MS };
+export { COLUMN_MS, SIDEBAR_MS };

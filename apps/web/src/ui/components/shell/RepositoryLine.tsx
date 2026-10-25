@@ -24,17 +24,8 @@ import {
 } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { GitHubMark, shownRepository } from "@archboard/ui-kit/repository-name";
+import { DropdownMenu, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
 import { InsideLamp } from "#ui/components/shell/ActivityLamp.tsx";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuTrigger,
-} from "@archboard/ui-kit/overlays";
 import {
 	TreeRow,
 	TreeRowDisclosure,
@@ -94,7 +85,12 @@ function rowLook(name: string): RowLook {
 	const shown = shownRepository(name);
 	if (!shown.onGitHub)
 		return { icon: RiGitRepositoryLine, marker: "Repository", text: name, whole: undefined };
-	return { icon: GitHubMark, marker: "GitHub repository", text: shown.name, whole: name };
+	return {
+		icon: RepositoryName.GitHubMark,
+		marker: "GitHub repository",
+		text: shown.name,
+		whole: name,
+	};
 }
 
 /**
@@ -209,7 +205,7 @@ function CheckoutMenu(props: CheckoutMenuProps): JSX.Element {
 	);
 	return (
 		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
-			<DropdownMenuTrigger
+			<DropdownMenu.Trigger
 				ref={trigger}
 				tabIndex={-1}
 				onClick={stayInMenu}
@@ -217,8 +213,8 @@ function CheckoutMenu(props: CheckoutMenuProps): JSX.Element {
 				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-chip flex size-5 items-center justify-center"
 			>
 				<RiMoreLine className="size-3.5" aria-hidden="true" />
-			</DropdownMenuTrigger>
-			<DropdownMenuContent
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content
 				align="end"
 				sideOffset={4}
 				finalFocus={rowOfTrigger}
@@ -226,11 +222,11 @@ function CheckoutMenu(props: CheckoutMenuProps): JSX.Element {
 				onKeyDown={stayInMenu}
 				className="w-80"
 			>
-				<DropdownMenuGroup>
-					<DropdownMenuLabel>Checkout</DropdownMenuLabel>
-					<DropdownMenuRadioGroup value={chosen} onValueChange={choose}>
+				<DropdownMenu.Group>
+					<DropdownMenu.Label>Checkout</DropdownMenu.Label>
+					<DropdownMenu.RadioGroup value={chosen} onValueChange={choose}>
 						{entry.checkouts.map((checkout) => (
-							<DropdownMenuRadioItem
+							<DropdownMenu.RadioItem
 								key={checkout.root}
 								value={checkout.root}
 								disabled={!checkout.exists || !checkout.hasVault}
@@ -239,11 +235,11 @@ function CheckoutMenu(props: CheckoutMenuProps): JSX.Element {
 								{/* Worktrees share a long prefix, so a path wraps rather than losing its end. */}
 								<span className="min-w-0 flex-1 break-all">{checkout.root}</span>
 								{checkoutNote(checkout)}
-							</DropdownMenuRadioItem>
+							</DropdownMenu.RadioItem>
 						))}
-					</DropdownMenuRadioGroup>
-				</DropdownMenuGroup>
-			</DropdownMenuContent>
+					</DropdownMenu.RadioGroup>
+				</DropdownMenu.Group>
+			</DropdownMenu.Content>
 		</DropdownMenu>
 	);
 }

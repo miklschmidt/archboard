@@ -23,8 +23,8 @@ import {
 import { usePanelRef, type PanelSize } from "react-resizable-panels";
 
 import { AGENT_PANEL_WIDTH } from "@archboard/renderer/shell-geometry";
-import { AGENT_PANEL_SLIDE_MS, SLIDE_SETTLED_MS } from "@archboard/timing";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@archboard/ui-kit/display";
+import { COLUMN_MS } from "@archboard/timing";
+import { Resizable } from "@archboard/ui-kit/components";
 
 const STORAGE_KEY = "archboard.agent.panel.width";
 
@@ -38,7 +38,7 @@ const MAX_WIDTH = 720;
 const CENTRE_MIN_WIDTH = 560;
 
 /** What the stylesheet slides the content with. */
-const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${AGENT_PANEL_SLIDE_MS}ms` };
+const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${COLUMN_MS.agentPanelSlide}ms` };
 
 /**
  * The width the person last gave the conversation, or the shell's own.
@@ -133,7 +133,7 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 		if (!slide.moving) return undefined;
 		const done = setTimeout(
 			() => setSlide({ open: slide.open, moving: false }),
-			AGENT_PANEL_SLIDE_MS + SLIDE_SETTLED_MS,
+			COLUMN_MS.agentPanelSlide + COLUMN_MS.slideSettled,
 		);
 		return () => clearTimeout(done);
 	}, [slide]);
@@ -158,14 +158,14 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 		storeWidth(size.current);
 	}, []);
 	return (
-		<ResizablePanelGroup
+		<Resizable
 			orientation="horizontal"
 			onLayoutChanged={handleSettled}
 			style={GROUP_STYLE}
 			data-sliding={slide.moving ? "" : undefined}
 			className="min-w-0 flex-1"
 		>
-			<ResizablePanel
+			<Resizable.Panel
 				id="conversation"
 				panelRef={panel}
 				collapsible
@@ -181,16 +181,16 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				<ConversationSlide open={open} moving={slide.moving} width={width}>
 					{props.conversation}
 				</ConversationSlide>
-			</ResizablePanel>
-			<ResizableHandle withHandle disabled={!open} aria-label="Conversation width" />
-			<ResizablePanel
+			</Resizable.Panel>
+			<Resizable.Handle withHandle disabled={!open} aria-label="Conversation width" />
+			<Resizable.Panel
 				id="centre"
 				minSize={CENTRE_MIN_WIDTH}
 				className="flex h-full min-w-0 flex-col"
 			>
 				{props.children}
-			</ResizablePanel>
-		</ResizablePanelGroup>
+			</Resizable.Panel>
+		</Resizable>
 	);
 }
 

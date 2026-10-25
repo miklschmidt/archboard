@@ -8,7 +8,7 @@ import type { JSX } from "react";
 
 import type { BoardMovePreview, MovedDrillDown } from "@archboard/board/commands";
 import { MoveRefusal } from "#ui/components/board-move/MoveRefusal.tsx";
-import { BusyText, Technical } from "@archboard/ui-kit/dialog-parts";
+import { Dialog, Technical } from "@archboard/ui-kit/components";
 
 /** Inputs for the rewrites. */
 interface MoveRewritesProps {
@@ -26,7 +26,7 @@ function MoveRewrites(props: MoveRewritesProps): JSX.Element | null {
 		return <MoveRefusal title="This move would be refused" error={preview.error} />;
 	}
 	if (preview.data === undefined) {
-		return <BusyText busy={preview.isFetching} text="Reading what the move would rewrite…" />;
+		return <Dialog.Busy busy={preview.isFetching} text="Reading what the move would rewrite…" />;
 	}
 	const { rewritten } = preview.data;
 	if (rewritten.length === 0) {

@@ -16,7 +16,7 @@ import {
 	saveOpenerSettings,
 	testOpenerSettings,
 } from "#ui/clients/code-target-requests.ts";
-import type { DialogError } from "@archboard/ui-kit/dialog-parts";
+import type { DialogError } from "@archboard/ui-kit/components";
 
 /** The server calls the flow makes. */
 interface OpenerSettingsApi {

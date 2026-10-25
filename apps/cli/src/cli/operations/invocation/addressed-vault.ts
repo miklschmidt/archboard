@@ -6,37 +6,13 @@
 // (TASK-480).
 
 import type { AnsweredVault, RegisteredVault } from "#cli/protocol/contract/schemas.ts";
-import { declareIfUnknown, type Declared } from "@archboard/workspace/checkouts";
 import { setRequestedVault } from "@archboard/server-lifecycle/request-context";
 import { vaultsBoundTo } from "@archboard/board/store-read";
-import {
-	findVault,
-	type FoundVault,
-	type VaultNotFound,
-	type VaultSearch,
-} from "@archboard/workspace/vault";
+import { findAndRegisterVault } from "@archboard/workspace/vault";
 
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
-	readonly code: VaultNotFound["code"] = "VAULT_NOT_FOUND";
-}
-
-/**
- * What a declaration registered, as the answer names it.
- * @param declared - What the registry recorded.
- * @returns The registration.
- */
-function registrationOf(declared: Declared): RegisteredVault {
-	return declared.kind === "checkout"
-		? {
-				kind: "checkout",
-				repository: declared.checkout.repo,
-				root: declared.checkout.root,
-				chosen: declared.checkout.chosen,
-				worktrees: declared.worktrees.map((each) => each.root),
-				...(declared.renamed === undefined ? {} : { renamed: declared.renamed }),
-			}
-		: { kind: "untracked", name: declared.vault.name, root: declared.vault.root };
+	readonly code = "VAULT_NOT_FOUND";
 }
 
 /**
@@ -61,29 +37,6 @@ function registrationLine(registration: RegisteredVault): string {
 			? ""
 			: ` The untracked vault at ${renamed.root} is called "${renamed.to}" now, because "${renamed.from}" is the name of this repository.`;
 	return `Registered ${registration.root} as ${chosen}${worktrees}.${rename}`;
-}
-
-/**
- * Register the checkout or untracked vault a command found, unless the
- * registry knows it already. A registry that cannot be written is a warning: the
- * command still has its vault.
- * @param found - The vault the command found.
- * @returns What was registered, or undefined when nothing was.
- */
-async function register(found: FoundVault): Promise<RegisteredVault | undefined> {
-	try {
-		const declared = await declareIfUnknown(found.holder);
-		if (declared === undefined || !declared.added) return undefined;
-		const answer = registrationOf(declared);
-		process.stderr.write(`${registrationLine(answer)}\n`);
-		return answer;
-	} catch (error) {
-		const reason = error instanceof Error ? error.message : String(error);
-		process.stderr.write(
-			`Warning: ${found.holder} could not be registered, so the browser does not list it yet. ${reason}\n`,
-		);
-		return undefined;
-	}
 }
 
 /**
@@ -116,21 +69,31 @@ async function findVaultOf(directory: string, option: string): Promise<AnsweredV
 
 /**
  * Find a vault, and register what holds it when the registry does not know it.
+ * A registry that cannot be written is a warning: the command still has its vault.
  * @param search - What named the directory, or null when nothing did.
  * @returns The vault and how it was found, as the answer names it.
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
-async function foundAndRegistered(search: Omit<VaultSearch, "cwd">): Promise<AnsweredVault> {
-	const finding = await findVault({ ...search, cwd: process.cwd() });
-	if (!finding.ok) {
-		throw new VaultNotFoundError(finding.message);
+async function foundAndRegistered(
+	search: Omit<Parameters<typeof findAndRegisterVault>[0], "cwd">,
+): Promise<AnsweredVault> {
+	const vault = await findAndRegisterVault({ ...search, cwd: process.cwd() });
+	if (!vault.ok) {
+		throw new VaultNotFoundError(vault.message);
 	}
-	const { found } = finding;
-	const answer = await register(found);
+	const { registered, unregistered } = vault;
+	if (registered !== undefined) {
+		process.stderr.write(`${registrationLine(registered)}\n`);
+	}
+	if (unregistered !== undefined) {
+		process.stderr.write(
+			`Warning: ${vault.holder} could not be registered, so the browser does not list it yet. ${unregistered}\n`,
+		);
+	}
 	return {
-		path: found.path,
-		origin: found.origin,
-		...(answer === undefined ? {} : { registered: answer }),
+		path: vault.path,
+		origin: vault.origin,
+		...(registered === undefined ? {} : { registered }),
 	};
 }
 

@@ -15,7 +15,7 @@
 import type { JSX } from "react";
 
 import type { SemanticWalkthrough } from "@archboard/board/content";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 
 /** Where a step stands against the one shown. */
 type Place = "before" | "shown" | "after";

@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { GIT_PROCESS_GROUP_CLEANUP_MS } from "@archboard/timing";
+import { GIT_MS } from "@archboard/timing";
 import { readProcessObservation } from "@archboard/process/observation";
 import { git } from "#runtime/clients/git.ts";
 
@@ -67,7 +67,7 @@ function recordedPid(file: string): number {
 }
 
 async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	const deadline = Date.now() + GIT_MS.groupCleanup;
 	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
@@ -221,7 +221,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			await expect(git(root, [mode, marker], { executable })).rejects.toMatchObject({
 				failure: "output",
 			});
-			expect(performance.now() - started).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
+			expect(performance.now() - started).toBeLessThan(GIT_MS.groupCleanup);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -247,7 +247,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
 			{ failure: "cleanup" },
 		);
-		expect(performance.now() - descendantStarted).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
+		expect(performance.now() - descendantStarted).toBeLessThan(GIT_MS.groupCleanup);
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
@@ -280,7 +280,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			if (outcome.kind === "rejected") {
 				expect(outcome.error).toMatchObject({ failure });
 			}
-			expect(performance.now() - started).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
+			expect(performance.now() - started).toBeLessThan(GIT_MS.groupCleanup);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -326,7 +326,7 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 		}
 		const outcome = await Promise.race([
 			stalledOutcome,
-			Bun.sleep(3 * GIT_PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3 * GIT_MS.groupCleanup).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
 		if (outcome.kind === "rejected") {
