@@ -90,11 +90,11 @@ impl<F: Fn(&str) -> Recorded> Solver for Native<F> {
 }
 
 impl<F: Fn(&str) -> Recorded> Host for Native<F> {
-    fn icons(&self, names: &[&str]) -> BTreeMap<String, Vec<String>> {
-        names
+    fn icons(&self, names: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String> {
+        Ok(names
             .iter()
             .filter_map(|name| Some(((*name).to_owned(), self.icons.get(*name)?.clone())))
-            .collect()
+            .collect())
     }
 }
 
