@@ -58,7 +58,7 @@ impl Text {
             font,
             size,
             fill,
-            width: measure::exact_width(words, font, size),
+            width: measure::width(words, font, size),
             units_per_em: face.units_per_em(),
             glyphs: shaped
                 .glyphs

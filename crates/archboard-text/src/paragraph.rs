@@ -10,17 +10,18 @@
 //! runs past the width unless one grapheme does.
 //!
 //! A line fits when the widths of its words and spaces, each shaped on its
-//! own, add up to no more than the width and a two-hundredth of a unit. A word
-//! is a UAX #29 word segment, a run of stops and marks held to the word
-//! beside it, as Pretext measured the segments `Intl.Segmenter` gave it. So a
-//! pair of letters that kerns across a space counts unkerned, and a line is
-//! painted shaped whole, a hair wider or narrower than the sum its fit read.
+//! own and taken to a hundredth of a unit as a canvas gave it, add up to
+//! no more than the width and a two-hundredth of a unit. A word is a UAX #29 word segment, a run of
+//! stops and marks held to the word beside it, as Pretext measured the
+//! segments `Intl.Segmenter` gave it. So a pair of letters that kerns across
+//! a space counts unkerned, and a line is painted shaped whole, a hair wider
+//! or narrower than the sum its fit read.
 
 use unicode_linebreak::linebreaks;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::faces::Face;
-use crate::shape::{scaled, shape};
+use crate::shape::{hundredths, scaled, shape};
 
 /// How much wider than the width a line may be and still fit.
 const FIT_TOLERANCE: f64 = 0.005;
@@ -53,10 +54,10 @@ struct Hard {
     words: String,
     /// The byte each grapheme starts at, and the end of the words.
     bounds: Vec<usize>,
-    /// The advance up to each bound, in the face's units: of the words
+    /// The advance up to each bound, at the paragraph's size: of the words
     /// before it, each shaped on its own, and of the part of its own word
-    /// before it.
-    before: Vec<i64>,
+    /// before it, each to a hundredth of a unit.
+    before: Vec<f64>,
     /// Whether a line may end at each bound without breaking a word.
     opens: Vec<bool>,
     /// The bound the words before each bound end at, the spaces before it left out.
@@ -64,12 +65,12 @@ struct Hard {
 }
 
 impl Hard {
-    fn of(face: Face, words: &str) -> Hard {
+    fn of(face: Face, size: f64, words: &str) -> Hard {
         let mut bounds: Vec<usize> = words.grapheme_indices(true).map(|(at, _)| at).collect();
         bounds.push(words.len());
         Hard {
             words: words.to_owned(),
-            before: advances_before(face, words, &bounds),
+            before: advances_before(face, size, words, &bounds),
             opens: opens(words, &bounds),
             visible: visible(words, &bounds),
             bounds,
@@ -123,8 +124,8 @@ impl Hard {
         self.visible[end].max(start)
     }
 
-    /// The width of the words between two bounds, in the face's units.
-    fn units(&self, start: usize, end: usize) -> i64 {
+    /// The width of the words between two bounds.
+    fn span(&self, start: usize, end: usize) -> f64 {
         self.before[end] - self.before[start]
     }
 
@@ -218,10 +219,12 @@ fn segments(words: &str) -> Vec<(usize, usize)> {
 }
 
 /// The advance up to each bound: of every word before it, each shaped on its
-/// own, and of the glyphs of its own word whose clusters begin before it.
-fn advances_before(face: Face, words: &str, bounds: &[usize]) -> Vec<i64> {
+/// own, and of the glyphs of its own word whose clusters begin before it,
+/// each to a hundredth of a unit.
+fn advances_before(face: Face, size: f64, words: &str, bounds: &[usize]) -> Vec<f64> {
+    let set = |units: i64| hundredths(scaled(units, face, size));
     let mut before = Vec::with_capacity(bounds.len());
-    let mut base = 0;
+    let mut base = 0.0;
     let mut bound = bounds.iter().peekable();
     for (start, end) in segments(words) {
         let shaped = shape(face, &words[start..end]);
@@ -229,10 +232,10 @@ fn advances_before(face: Face, words: &str, bounds: &[usize]) -> Vec<i64> {
             if at >= end {
                 break;
             }
-            before.push(base + shaped.advance_before(at - start));
+            before.push(base + set(shaped.advance_before(at - start)));
             bound.next();
         }
-        base += shaped.advance;
+        base += set(shaped.advance);
     }
     before.extend(bound.map(|_| base));
     before
@@ -255,21 +258,19 @@ impl Paragraph {
         let hards = if words.is_empty() {
             Vec::new()
         } else {
-            words.split('\n').map(|hard| Hard::of(face, hard)).collect()
+            words
+                .split('\n')
+                .map(|hard| Hard::of(face, size, hard))
+                .collect()
         };
         Paragraph { face, size, hards }
-    }
-
-    /// A distance in the face's units, at the paragraph's size.
-    fn scaled(&self, units: i64) -> f64 {
-        scaled(units, self.face, self.size)
     }
 
     /// Walk the lines the words break into at a width.
     fn walk(&self, width: f64, mut line: impl FnMut(&Hard, Span)) {
         let limit = width + FIT_TOLERANCE;
         for hard in &self.hards {
-            let fits = |start: usize, end: usize| self.scaled(hard.units(start, end)) <= limit;
+            let fits = |start: usize, end: usize| hard.span(start, end) <= limit;
             let mut start = 0;
             loop {
                 let (span, next) = hard.next_line(start, &fits);
@@ -314,7 +315,7 @@ impl Paragraph {
     pub fn natural_width(&self) -> f64 {
         self.hards
             .iter()
-            .map(|hard| self.scaled(hard.units(0, hard.visible_end(0, hard.last()))))
+            .map(|hard| hard.span(0, hard.visible_end(0, hard.last())))
             .fold(0.0, f64::max)
     }
 
