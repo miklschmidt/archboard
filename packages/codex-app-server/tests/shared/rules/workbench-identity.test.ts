@@ -360,6 +360,41 @@ describe("codex workbench identities", () => {
 			),
 		).toBe("unissued");
 	});
+
+	test("spells every identity with the ledger's record prefix and refuses another prefix's epoch", () => {
+		const { identity, operation } = createIdentityAuthorities(createIdentityLedger("host-a"));
+		const { validator, issuer, decoder } = identity;
+		for (const value of [
+			validator.childId,
+			validator.epoch,
+			issuer.mintChildEpoch(),
+			issuer.mintJsonRpcRequestId(),
+			decoder.adoptThreadId("thread-1"),
+			operation.issuer.mintOperationId(),
+		]) {
+			expect(value.startsWith("host-a:")).toBeTrue();
+		}
+		const foreign = (value: string): string => value.replace(/^host-a:/u, "host-b:");
+		expect(
+			errorCode(() =>
+				restoreIdentityAuthority({ childId: validator.childId, epoch: foreign(validator.epoch) }),
+			),
+		).toBe("wrong-child");
+		const correlation = decoder.createWireRequestCorrelation({
+			requestId: issuer.mintJsonRpcRequestId(),
+		});
+		expect(
+			errorCode(() =>
+				decoder.parseWireRequestCorrelation({
+					...correlation,
+					child: foreign(correlation.child),
+					epoch: foreign(correlation.epoch),
+				}),
+			),
+		).toBe("wrong-child");
+		expect(() => createIdentityLedger("Host")).toThrow(TypeError);
+		expect(() => createIdentityLedger("p".repeat(17))).toThrow(TypeError);
+	});
 });
 
 function restoreForTest(

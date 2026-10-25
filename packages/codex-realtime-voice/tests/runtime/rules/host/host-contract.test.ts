@@ -212,3 +212,27 @@ test("a host's coordinator and workhorse must name the host the same way to Code
 		captureWorkbenchInstructions({ ...same, workhorse: build("workhorse", "other") }),
 	).toThrow(TypeError);
 });
+
+// A call is matched to its role by namespace name: two roles under one name would route the
+// second role's calls as the first's.
+test("a host whose roles share a tool namespace is refused", () => {
+	const build = (toolNamespaces: { workhorse: string; voice: string; coordinator: string }) =>
+		createWorkbenchThreadProfile({
+			role: "coordinator",
+			identity: { toolNamespaces },
+			domainInstructions: "Host",
+			dynamicTools: [],
+		});
+
+	expect(
+		build({ workhorse: "host_work", voice: "host_voice", coordinator: "host_desk" }).identity
+			.toolNamespaces.voice,
+	).toBe("host_voice");
+	for (const shared of [
+		{ workhorse: "host_x", voice: "host_x", coordinator: "host_desk" },
+		{ workhorse: "host_work", voice: "host_x", coordinator: "host_x" },
+		{ workhorse: "host_x", voice: "host_voice", coordinator: "host_x" },
+	]) {
+		expect(() => build(shared)).toThrow(TypeError);
+	}
+});

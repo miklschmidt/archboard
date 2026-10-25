@@ -319,6 +319,18 @@ describe("codex epoch ownership", () => {
 		});
 	});
 
+	test("refuses an epoch spelled under another record prefix than its child", () => {
+		withState((state) => {
+			const authority = createIdentityAuthority();
+			const input = epochInput(authority, "epoch-start", "epoch_start");
+			const foreign = { ...input, epoch: input.epoch.replace(/^[^:]+:/u, "other:") };
+
+			expect(() => makeStore(state).stageEpoch(foreign)).toThrowError(
+				expect.objectContaining({ code: "invalid_input" }),
+			);
+		});
+	});
+
 	test("refuses an epoch root that overlaps Codex storage", () => {
 		withState((state) => {
 			expect(() =>
