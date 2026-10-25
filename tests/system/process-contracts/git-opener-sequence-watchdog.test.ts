@@ -13,7 +13,7 @@ import {
 
 const ROOT = resolve(import.meta.dir, "../../..");
 const OWNERS = [
-	"packages/workspace/tests/runtime/clients/git-async.test.ts",
+	"packages/process/tests/runtime/processes/git-async.test.ts",
 	"tests/system/code-targets/settings-contract.test.ts",
 	"tests/system/code-targets/activation-contract.test.ts",
 	"tests/system/code-targets/opener-persistence.test.ts",
