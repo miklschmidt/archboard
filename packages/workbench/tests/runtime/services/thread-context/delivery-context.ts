@@ -6,7 +6,7 @@
 
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
-import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
+import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
 
 /** Who the context is built for, and the two fields a test may vary. */
@@ -29,7 +29,7 @@ function baseContext(on: ContextFor, event: SettledSemanticChangeEvent): Archboa
 	const cursor =
 		event.cursor === null
 			? null
-			: canonicalSemanticCursorToken({
+			: canonicalContextCursorToken({
 					feedId: event.cursor.feedId,
 					sequence: on.cursorSequence ?? event.cursor.sequence,
 				});

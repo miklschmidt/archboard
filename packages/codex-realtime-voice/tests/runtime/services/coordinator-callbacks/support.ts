@@ -1,6 +1,6 @@
 import { createCodexCoordinatorCallbacks } from "#runtime/services/coordinator-callbacks/callbacks.ts";
 import { TEST_CALLBACK_POLICY } from "#tests/runtime/support/host.ts";
-import type { CoordinatorHostCallbackSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import type { CoordinatorHostContextSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { createCoordinatorCallbackRealtimePort } from "#runtime/services/coordinator-callbacks/realtime.ts";
 import {
 	type CoordinatorCallbackCurrentChild,
@@ -415,7 +415,7 @@ export {
 	close,
 };
 
-function hostEvent(ids: Identities): CoordinatorHostCallbackSource {
+function hostEvent(ids: Identities): CoordinatorHostContextSource {
 	return {
 		kind: "host",
 		type: "selection",
@@ -424,19 +424,15 @@ function hostEvent(ids: Identities): CoordinatorHostCallbackSource {
 		workhorse: { threadId: ids.workhorse, turnId: null },
 		threadLink: { state: "executable", reason: null },
 		author: null,
-		semantic: {
+		context: {
 			feedId: "test-feed",
 			sequence: 1,
-			origin: "human",
-			significance: null,
 			brief: "Task changed.",
 			capturedAtMs: 100,
 			freshUntilMs: 30100,
-			paneId: "test-surface",
-			focused: true,
-			selection: [{ kind: "item", id: "one" }],
-			detail: null,
-			news: { sentence: "The task changed.", stops: false, by: "user", board: null },
+			identity: "one",
+			coalesces: true,
+			payload: null,
 		},
 	};
 }

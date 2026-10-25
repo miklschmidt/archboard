@@ -3,13 +3,13 @@ import type { WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operat
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import type {
 	CoordinatorCallback,
-	CoordinatorHostCallbackSource,
+	CoordinatorHostContextSource,
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackLinkCorrelation,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
-	CoordinatorSemanticCallback,
+	CoordinatorHostContextCallback,
 	CoordinatorWorkhorseNewsCallback,
 	WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -61,11 +61,11 @@ function operationKind(): "operation" {
 }
 
 /**
- * The discriminant for semantic callbacks, as a function for the same reason as the operation kind.
- * @returns The semantic kind.
+ * The discriminant for host-context callbacks, as a function for the same reason as the operation kind.
+ * @returns The host-context kind.
  */
-function semanticKind(): "semantic" {
-	return "semantic";
+function hostContextKind(): "host_context" {
+	return "host_context";
 }
 
 /**
@@ -182,17 +182,15 @@ function normalizeOperationCallback(
 	return deliveredOperationCallback(base, event.type);
 }
 
-type SemanticSource = CoordinatorHostCallbackSource;
-
 /**
- * Build the correlation a semantic callback carries. A semantic event belongs to no operation and no coordinator turn, so those fields are null by construction.
+ * Build the correlation a host-context callback carries. A host-context event belongs to no operation and no coordinator turn, so those fields are null by construction.
  * @param event - The settled change, focus or selection event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The frozen correlation.
  */
-function semanticCorrelation(
-	event: SemanticSource,
+function hostContextCorrelation(
+	event: CoordinatorHostContextSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorCallbackCorrelation {
@@ -214,39 +212,39 @@ function semanticCorrelation(
 }
 
 /**
- * The fields every semantic callback shares, before its type is set.
- * @param event - The semantic event.
+ * The fields every host-context callback shares, before its type is set.
+ * @param event - The host-context event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The shared fields.
  */
-function semanticBase(
-	event: SemanticSource,
+function hostContextBase(
+	event: CoordinatorHostContextSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ) {
 	return {
-		kind: semanticKind(),
-		correlation: semanticCorrelation(event, workhorseLink, realtimeGeneration),
+		kind: hostContextKind(),
+		correlation: hostContextCorrelation(event, workhorseLink, realtimeGeneration),
 		threadLinkState: event.threadLink.state,
 		threadLinkReason: event.threadLink.reason,
-		semantic: cloneAndFreeze(event.semantic),
+		context: cloneAndFreeze(event.context),
 	};
 }
 
 /**
- * Normalize one semantic event into the callback the coordinator sees.
- * @param event - The settled change, focus or selection event.
+ * Normalize one host-context event into the callback the coordinator sees.
+ * @param event - The change, focus or selection event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.
- * @returns The frozen semantic callback.
+ * @returns The frozen host-context callback.
  */
-function normalizeSemanticCallback(
-	event: SemanticSource,
+function normalizeHostContextCallback(
+	event: CoordinatorHostContextSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
-): CoordinatorSemanticCallback {
-	return freeze({ ...semanticBase(event, workhorseLink, realtimeGeneration), type: event.type });
+): CoordinatorHostContextCallback {
+	return freeze({ ...hostContextBase(event, workhorseLink, realtimeGeneration), type: event.type });
 }
 
 /**
@@ -285,8 +283,8 @@ function normalizeWorkhorseNewsCallback(
 }
 
 /**
- * Normalize whichever source event arrived. A fresh semantic brief is refused here on purpose: only a settled change reaches the coordinator, so an unsettled gesture can never be delivered.
- * @param event - The workhorse or semantic source event.
+ * Normalize whichever source event arrived.
+ * @param event - The workhorse or host-context source event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The frozen callback.
@@ -300,7 +298,7 @@ function normalizeCoordinatorCallback(
 		return normalizeWorkhorseNewsCallback(event, workhorseLink, realtimeGeneration);
 	}
 	if ("kind" in event) {
-		return normalizeSemanticCallback(event, workhorseLink, realtimeGeneration);
+		return normalizeHostContextCallback(event, workhorseLink, realtimeGeneration);
 	}
 	return normalizeOperationCallback(event, workhorseLink, realtimeGeneration);
 }
@@ -315,11 +313,11 @@ function valueOrNull(value: string | null): string {
 }
 
 /**
- * The scope a semantic callback belongs to: its child, epoch, threads, turn, voice session and feed. Two callbacks from different scopes never coalesce.
- * @param callback - The semantic callback.
+ * The scope a host-context callback belongs to: its child, epoch, threads, turn, voice session and feed. Two callbacks from different scopes never coalesce.
+ * @param callback - The host-context callback.
  * @returns The scope as stable text.
  */
-function semanticScope(callback: CoordinatorSemanticCallback): string {
+function hostContextScope(callback: CoordinatorHostContextCallback): string {
 	const correlation = callback.correlation;
 	return JSON.stringify([
 		correlation.childId,
@@ -328,7 +326,7 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
 		correlation.workhorseThreadId,
 		correlation.turnId,
 		correlation.realtimeSessionId,
-		callback.semantic.feedId,
+		callback.context.feedId,
 	]);
 }
 
@@ -362,41 +360,27 @@ function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "workhorse_news") {
 		return workhorseNewsKey(callback);
 	}
-	return semanticKey(callback);
+	return hostContextKey(callback);
 }
 
 /**
- * The identity of one semantic callback: its scope and what the pane reported.
- * @param callback - The semantic callback.
+ * The identity of one host-context callback: its scope and what the host reported. A change is
+ * its sequence; a focus or a selection is its capture time and the host's identity of it.
+ * @param callback - The host-context callback.
  * @returns The key.
  */
-function semanticKey(callback: CoordinatorSemanticCallback): string {
-	const scope = semanticScope(callback);
+function hostContextKey(callback: CoordinatorHostContextCallback): string {
+	const scope = hostContextScope(callback);
+	const { sequence, capturedAtMs, identity } = callback.context;
 	if (callback.type === "change") {
-		return `semantic:change:${scope}:${callback.semantic.sequence ?? "null"}`;
+		return `host_context:change:${scope}:${sequence ?? "null"}`;
 	}
-	if (callback.type === "focus") {
-		return focusKey(callback, scope);
-	}
-	return `semantic:selection:${scope}:${callback.semantic.capturedAtMs}:${JSON.stringify(callback.semantic.selection)}`;
-}
-
-/**
- * The identity of one focus callback. The sentence tells two agents' shows apart that land in
- * one millisecond.
- * @param callback - The focus callback.
- * @param scope - Its scope.
- * @returns The key.
- */
-function focusKey(callback: CoordinatorSemanticCallback, scope: string): string {
-	const { capturedAtMs, focused, news } = callback.semantic;
-	const told = news === null ? "" : news.sentence;
-	return `semantic:focus:${scope}:${capturedAtMs}:${focused ? "1" : "0"}:${told}`;
+	return `host_context:${callback.type}:${scope}:${capturedAtMs}:${identity}`;
 }
 
 /**
  * The key two callbacks must share to coalesce: only same-operation lifecycle updates and
- * same-kind semantic telemetry in the same scope replace one another.
+ * same-kind host-context events in the same scope replace one another.
  * @param callback - The normalized callback.
  * @returns The coalescing key.
  */
@@ -407,17 +391,16 @@ function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string
 	if (callback.kind === "workhorse_news") {
 		return workhorseNewsKey(callback);
 	}
-	// What an outside agent did is told once per thing it did: a write is one whole thing
-	// somebody asked for, so nothing of it is folded into the next (TASK-293.06).
-	if (callback.semantic.news?.by === "agent") {
-		return semanticKey(callback);
+	// An event the host marks as told on its own is never folded into the next.
+	if (!callback.context.coalesces) {
+		return hostContextKey(callback);
 	}
-	return `semantic:${callback.type}:${semanticScope(callback)}`;
+	return `host_context:${callback.type}:${hostContextScope(callback)}`;
 }
 
 export {
 	normalizeOperationCallback,
-	normalizeSemanticCallback,
+	normalizeHostContextCallback,
 	normalizeCoordinatorCallback,
 	coordinatorCallbackKey,
 	coordinatorCallbackCoalescingKey,

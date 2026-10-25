@@ -1,7 +1,6 @@
 export {
 	type CallbackBufferOverflowReason,
 	type CoordinatorCallback,
-	type CoordinatorCallbackCanvas,
 	type CoordinatorCallbackClassification,
 	type CoordinatorCallbackContextPort,
 	type CoordinatorCallbackCorrelation,
@@ -23,13 +22,11 @@ export {
 	type CoordinatorCallbackTurnPort,
 	type CoordinatorCallbackTurnResult,
 	type CoordinatorCallbacks,
-	type CoordinatorHostCallbackSource,
+	type CoordinatorHostContextCallback,
+	type CoordinatorHostContextSource,
 	type CoordinatorOperationCallback,
-	type CoordinatorPaneNews,
-	type CoordinatorSemanticCallback,
-	type CoordinatorSemanticCallbackData,
-	type CoordinatorSemanticSubject,
 	type CoordinatorWorkhorseNewsCallback,
+	type HostContextEvent,
 	type WorkhorseNewsSituation,
 	type WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -141,7 +138,7 @@ export {
 } from "#runtime/services/thread-context/contract.ts";
 export { createCodexThreadContextController } from "#runtime/services/thread-context/controller.ts";
 export { createCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
-export { canonicalSemanticCursorToken } from "#runtime/services/thread-context/event-identity.ts";
+export { canonicalContextCursorToken } from "#runtime/services/thread-context/event-identity.ts";
 export { sameStringValues } from "#runtime/services/thread-context/link-equality.ts";
 export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 export {
