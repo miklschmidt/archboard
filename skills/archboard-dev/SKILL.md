@@ -403,10 +403,10 @@ only at this point: nothing states a version that nobody re-read.
 Only shippable, repository-authored Archboard skills live under `skills/`.
 This directory owns `archboard`, `archboard-pr` and `archboard-dev`.
 `.claude/skills/` and `.agents/skills/` reach them through tracked symlinks, so an edit is live at once.
-A new skill needs both symlinks and their two `!` lines in `.gitignore`.
+A new skill needs both symlinks.
 For other skills, use the exact path in the skill catalog.
 `skills experimental_install` installs the third-party skills listed in `skills-lock.json`.
-Keep those installed skills untracked outside `skills/`. Other repositories use the copies that
+Commit those installed skills where the install puts them. Other repositories use the copies that
 `archboard install-skill` put in `~/.agents/skills/archboard` and `~/.agents/skills/archboard-pr`.
 `BUNDLED_SKILLS` in `apps/cli/src/cli/operations/install-skill/skill-destination.ts` names the skills it ships.
 To refresh those copies, run that command again. Keep the shipped skills free of

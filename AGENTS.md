@@ -53,7 +53,8 @@ Where things are written down:
 - `bun run check` is the complete gate. Only shippable, repository-authored
   Archboard skills live under `skills/`. Tracked symlinks expose them through
   `.claude/skills/` and `.agents/skills/`. For other skills, use the exact path
-  in the skill catalog. Third-party skills stay installed and untracked.
+  in the skill catalog. Third-party skills are tracked under `.agents/skills/`
+  and `.claude/skills/`.
 
 ## Invariants nothing refuses
 
