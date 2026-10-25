@@ -1,7 +1,7 @@
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
 import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
-import { sameStringValues } from "@archboard/codex-realtime-voice/runtime";
+import { isDeepStrictEqual } from "node:util";
 
 /**
  * Whether the context addresses the event's own pane and board at the event's
@@ -127,7 +127,7 @@ function claimMatches(context: ArchboardContext, event: SettledSemanticChangeEve
 	return (
 		context.claim.holder === event.claim.holder &&
 		context.claim.doing === event.claim.doing &&
-		sameStringValues(context.ambiguity, event.ambiguity) &&
+		isDeepStrictEqual(context.ambiguity, event.ambiguity) &&
 		context.operation.id === null
 	);
 }

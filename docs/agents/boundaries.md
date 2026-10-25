@@ -576,11 +576,17 @@ Its public entries separate browser code from Bun code.
 `./runtime` and `./server` run only in Bun.
 All four areas adopt the `api/` role.
 
-The primary server entry is `createCodexWorkbench` from `./server`.
-The caller supplies private storage, the Codex process configuration, instructions, application context, and checkout admission.
-The factory owns process startup, generations, sessions, browser connections, shown conversations, and shutdown.
-Optional domain extensions install application tools and context sources into that same graph.
+The server entry is one factory, `createVoiceAgent` from `./server`.
+The host supplies a storage directory, the Codex process inputs, the admitted checkouts, role instructions as text, an identity, and `onFatal`.
+The agent's `start()`, `attach(server, { path, origin })` and `shutdown()` own process startup, generations, sessions, browser sockets, shown conversations, and shutdown.
+`attach` serves the browser sockets on one path of a `node:http` server, so a host writes no upgrade handling.
+The identity sets the Codex service name and thread source, with the neutral default `codex-realtime-voice`.
+A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, voice presentation, and its own browser routing.
+A host that multiplexes its own socket uses `agent.browser` instead of `attach`.
+That extension contract is one type, and a host derives the parts it names from it.
+`./runtime` holds only what Archboard's domain tools and callbacks still need from the core: epoch, wait-graph and thread-link types, the callback engine and its types, and instruction byte checks.
 A consumer never assembles the internal factories.
+Host context events carry generic fields (feed, sequence, freshness, identity, coalescing) and a payload that only the host's policy reads.
 
 `runtime/` owns execution identity, immutable instruction profiles, thread links, approvals, queues, coordinators, workhorses, and realtime recovery.
 Host context stays separate from execution identity.
@@ -618,7 +624,9 @@ Its board schemas, brief builder, and catalogue formatting stay in this integrat
 `./runtime` exposes application behavior needed by outside callers.
 
 `./server`, `./panes`, and `./host` expose Archboard server integration.
-The production adapter supplies the shared factory with domain instructions, context, admitted vault checkouts, and tool handlers.
+The production adapter calls `createVoiceAgent` like any host: Archboard's identity (`archboard`), its role instructions and app tools, admitted vault checkouts, and its extensions.
+Its pane sockets reach the agent through the extension's own browser routing.
+`src/runtime/protocol/voice/extension.ts` names the extension types Archboard implements, derived from `VoiceAgentExtensions`.
 It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
 The Codex SDK supplies none of those application values by default.
 Pane registration, board request context, semantic projections, and narration remain integration concerns.
@@ -813,7 +821,7 @@ applies safe Oxlint fixes and formats the repository.
 `apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
 The server admits one checkout and keeps private state in the supplied directory.
 It reads only public SDK and codex-realtime-voice entries.
-Its server forwards exact socket identities through the shared factory browser ingress.
+Its server calls `createVoiceAgent` and `agent.attach`, and keeps only its own HTTP routes.
 Its browser uses the shared transport and media owner.
 The two stop controls keep voice and workhorse lifetimes separate.
 
