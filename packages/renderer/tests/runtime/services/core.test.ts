@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { CoreBuildError, loadCore } from "#runtime/services/core.ts";
-import { coreSourceHash } from "#runtime/store/core-sources.ts";
+import { CHECKOUT, CORE_BUILD_DIRECTORY, coreSourceHash } from "#runtime/store/core-sources.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
 
 describe("the renderer core under Bun", () => {
@@ -47,4 +50,47 @@ describe("the renderer core under Bun", () => {
 			expect(refused).toBe(failure);
 		},
 	);
+
+	test("an interrupted core build is refused with a repairable build error", () => {
+		const checkout = mkdtempSync(join(tmpdir(), "archboard-core-build-"));
+		const renderer = join(checkout, "packages/renderer");
+		try {
+			for (const file of [
+				"package.json",
+				"src/runtime/services/core.ts",
+				"src/runtime/store/core-sources.ts",
+			]) {
+				const target = join(renderer, file);
+				mkdirSync(dirname(target), { recursive: true });
+				cpSync(join(CHECKOUT, "packages/renderer", file), target);
+			}
+			const build = join(renderer, "src/shared/protocol/generated/core");
+			cpSync(CORE_BUILD_DIRECTORY, build, { recursive: true });
+			writeFileSync(
+				join(build, "archboard_renderer_wasm_bg.wasm"),
+				new Uint8Array([0, 97, 115, 109]),
+			);
+			// A fresh process must instantiate the truncated build, rather than
+			// reuse the core wasm-bindgen already loaded for this test process.
+			const script = `
+				import { loadCore, CoreBuildError } from ${JSON.stringify(join(renderer, "src/runtime/services/core.ts"))};
+				try {
+					loadCore("unused");
+					process.exitCode = 1;
+				} catch (error) {
+					if (!(error instanceof CoreBuildError)) throw error;
+					console.log(error.code);
+				}
+			`;
+			const result = Bun.spawnSync([process.execPath, "--eval", script], {
+				cwd: checkout,
+				stdout: "pipe",
+				stderr: "pipe",
+			});
+			expect(result.exitCode).toBe(0);
+			expect(result.stdout.toString().trim()).toBe("CORE_BUILD_INVALID");
+		} finally {
+			rmSync(checkout, { recursive: true, force: true });
+		}
+	});
 });
