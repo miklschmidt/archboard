@@ -6,11 +6,7 @@
 // the key's own `markCounts` over it, so the receipt, the key and the panel
 // cannot disagree.
 
-import type {
-	DrawnBoard,
-	MarkedSubjects,
-	RenderedChanges,
-} from "@archboard/board/render-reply";
+import type { DrawnBoard, MarkedSubjects, RenderedChanges } from "@archboard/board/render-reply";
 import { markCounts } from "@archboard/renderer/picture";
 import { drawnAgainst } from "#cli/operations/semantic/input/semantic-input.ts";
 import type { PictureMarksSchema } from "@archboard/board/render-reply";

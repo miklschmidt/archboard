@@ -24,10 +24,7 @@ import type { z } from "zod";
 import { parseBoardKey, semanticBoardAddress } from "@archboard/board/address";
 import { forgetDoing } from "@archboard/board/doing";
 import { BoardMoveInputSchema } from "@archboard/board/commands";
-import {
-	moveSemanticBoard,
-	previewSemanticMove,
-} from "@archboard/board/store-move";
+import { moveSemanticBoard, previewSemanticMove } from "@archboard/board/store-move";
 import { announceDoing } from "#server/projections/board-announcements/board-announcements.ts";
 import {
 	aggregateOf,

@@ -42,8 +42,11 @@ import {
 } from "#server/projections/board-announcements/board-announcements.ts";
 import { vaultOfRequest } from "@archboard/workbench/host";
 
-type DescendantOutcome = Extract<Awaited<ReturnType<typeof writeSemanticBoard>>, { outcome: "applied" }>["descendants"][number];
 type SemanticWriteResult = Awaited<ReturnType<typeof writeSemanticBoard>>;
+type DescendantOutcome = Extract<
+	SemanticWriteResult,
+	{ outcome: "applied" }
+>["descendants"][number];
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for

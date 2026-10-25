@@ -14,9 +14,7 @@
 // The wire shape is `@archboard/board/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import {
-	SEMANTIC_PANE_CONTEXT_ROUTE,
-} from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
 import { inVault, post } from "@archboard/server-requests";

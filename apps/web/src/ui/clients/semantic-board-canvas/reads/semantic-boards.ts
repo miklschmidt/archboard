@@ -21,9 +21,7 @@ import {
 import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
-import {
-	BoardListingSchema,
-} from "@archboard/board/board-listing";
+import { BoardListingSchema } from "@archboard/board/board-listing";
 import {
 	SemanticRenderReplySchema,
 	type DiagramAtlas,

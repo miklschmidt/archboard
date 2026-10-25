@@ -8,7 +8,6 @@ type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 // A line is 1-based. A file's facts quote names, lines and source offsets, never other text
 // of the file, so a finding built from them never quotes a secret.
 
-
 /**
  * One definition: a declaration at module level, or a member of one.
  * `symbol` is qualified by what holds it, as TypeScript spells it:
