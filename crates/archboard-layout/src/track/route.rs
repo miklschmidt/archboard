@@ -107,7 +107,7 @@ impl Track<'_> {
             edge: line.id.as_str().into(),
             order: line.order,
             channel: card.band,
-            kind: line.kind.clone(),
+            kind: Rc::clone(&line.kind),
             top,
             bottom,
             top_x,
@@ -143,10 +143,10 @@ impl Track<'_> {
             .map(|index| {
                 let (top, bottom) = (stations[index], stations[index + 1]);
                 let net = Net {
-                    edge: edge.clone(),
+                    edge: Rc::clone(&edge),
                     order: line.order,
                     channel: self.station(top).band,
-                    kind: kind.clone(),
+                    kind: Rc::clone(&kind),
                     top,
                     bottom,
                     top_x: self.x(top),

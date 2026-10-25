@@ -182,7 +182,10 @@ impl Relay {
             extent,
             bands,
             chains,
-            kinds: kinds.iter().map(|(_, kind)| Some(kind.clone())).collect(),
+            kinds: kinds
+                .iter()
+                .map(|(_, kind)| Some(Rc::clone(kind)))
+                .collect(),
         }
     }
 
@@ -306,7 +309,7 @@ impl Relay {
             .iter()
             .map(|&station| self.mask_of(track, search, station))
             .collect();
-        let chosen = self.cheapest(track, stations, &search.xs, &masks, &search.traffic)?;
+        let chosen = Self::cheapest(track, stations, &search.xs, &masks, &search.traffic)?;
         let mut route = vec![track.x(stations[0])];
         route.extend(chosen);
         route.push(track.x(*stations.last().expect("a station")));
@@ -577,7 +580,6 @@ impl Relay {
     /// The cheapest free route over a chain's middle stations, by estimate:
     /// each middle station's x, or nothing when no route is free.
     fn cheapest(
-        &self,
         track: &Track<'_>,
         stations: &[StationId],
         xs: &[f64],

@@ -48,7 +48,7 @@ fn bar_height(leg: &Leg, core: f64) -> f64 {
 
 /// The box the light of a piece stays inside, spelt as the markup spells it.
 fn box_of(leg: &Leg, core: f64) -> [String; 4] {
-    let reach = (core + GLOW[0].0) / 2.0 + MASK_ROOM;
+    let reach = f64::midpoint(core, GLOW[0].0) + MASK_ROOM;
     let mut points = vec![leg.from, leg.segment.to()];
     if let Segment::Cubic { first, second, .. } = leg.segment {
         points.push(first);

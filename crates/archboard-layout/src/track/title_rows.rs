@@ -50,7 +50,7 @@ fn widest(steps: &[TitleStep], room: f64) -> usize {
 /// Size a band again round its items, about the centre Graphviz ranked them on.
 fn respan(scene: &mut Placement, index: usize) {
     let band = scene.bands[index];
-    let centre = (band.top + band.bottom) / 2.0;
+    let centre = f64::midpoint(band.top, band.bottom);
     let on = |items: &mut dyn Iterator<Item = ItemId>, scene: &Placement| -> Vec<ItemId> {
         items
             .filter(|&item| scene.item(item).band == index)

@@ -64,7 +64,7 @@ impl Graphviz for Refusing {
 }
 
 /// A board of two cards, measured.
-fn two_cards(options: Value) -> String {
+fn two_cards(options: &Value) -> String {
     json!({
         "id": "root",
         "layoutOptions": options,
@@ -81,7 +81,7 @@ fn two_cards(options: Value) -> String {
 fn every_card_stands_at_its_measured_size_inside_the_drawing() {
     let mut graphviz = Column::default();
     let answer: Value =
-        serde_json::from_str(&lay_out_track(&two_cards(json!({})), &mut graphviz).unwrap())
+        serde_json::from_str(&lay_out_track(&two_cards(&json!({})), &mut graphviz).unwrap())
             .unwrap();
     assert!(graphviz.asked > 0);
     let placed: Value = serde_json::from_str(
@@ -118,18 +118,16 @@ fn every_card_stands_at_its_measured_size_inside_the_drawing() {
 
 #[test]
 fn a_solve_fails_when_graphviz_refuses_its_graph() {
-    assert!(lay_out_track(&two_cards(json!({})), &mut Refusing).is_err());
+    lay_out_track(&two_cards(&json!({})), &mut Refusing).unwrap_err();
 }
 
 #[test]
 fn a_board_packed_as_blocks_is_refused_before_graphviz_is_asked() {
     let mut graphviz = Column::default();
-    assert!(
-        lay_out_track(
-            &two_cards(json!({ "archboard.blocks.nesting": "blocks" })),
-            &mut graphviz
-        )
-        .is_err()
-    );
+    lay_out_track(
+        &two_cards(&json!({ "archboard.blocks.nesting": "blocks" })),
+        &mut graphviz,
+    )
+    .unwrap_err();
     assert_eq!(graphviz.asked, 0);
 }

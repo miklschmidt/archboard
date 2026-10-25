@@ -5,6 +5,8 @@
 //! Stations, chains, nets and trunks are kept by place in one [`Track`], since
 //! the router asks of each whether it is the same one as another.
 
+use std::rc::Rc;
+
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
 use crate::geometry::{Point, polyline_x};
 use crate::placed::PlacedEdge;
@@ -200,7 +202,7 @@ impl<'s> Track<'s> {
         let (top, bottom) = (self.scene.bands[band].top, self.scene.bands[band].bottom);
         let (upper, lower) = (*self.scene.item(upper), *self.scene.item(lower));
         let share = (band as f64 - upper.band as f64) / (lower.band as f64 - upper.band as f64);
-        let x = polyline_x(polyline, (top + bottom) / 2.0)
+        let x = polyline_x(polyline, f64::midpoint(top, bottom))
             .unwrap_or_else(|| centre_x(&upper) + (centre_x(&lower) - centre_x(&upper)) * share);
         self.add(Station::new(Kind::Lane, band, None, x))
     }
@@ -511,12 +513,12 @@ pub(crate) struct Occupancy {
     /// The stretch each wall keeps a lane off, on each band, by the wall.
     pub walls: Vec<Map<(String, usize), (f64, f64)>>,
     /// Whether an x is clear of what a run's bands hold for its lanes, by those bands, until a lane is taken.
-    alongs: Map<Vec<usize>, std::rc::Rc<ClearOf>>,
+    alongs: Map<Vec<usize>, Rc<ClearOf>>,
 }
 
 /// [`Occupancy::fitting`]: the test of a column for a run.
 pub(crate) struct Fitting {
-    clear: std::rc::Rc<ClearOf>,
+    clear: Rc<ClearOf>,
     frames: crate::track::scene::KeepsFrames,
 }
 
@@ -619,17 +621,16 @@ impl Occupancy {
             .iter()
             .map(|&lane| track.station(lane).band)
             .collect();
-        let clear = match self.alongs.get(&bands) {
-            Some(clear) => clear.clone(),
-            None => {
-                let stretches = bands
-                    .iter()
-                    .flat_map(|&band| self.along(band, &bands))
-                    .collect();
-                std::rc::Rc::new(ClearOf::new(stretches))
-            }
+        let clear = if let Some(clear) = self.alongs.get(&bands) {
+            Rc::clone(clear)
+        } else {
+            let stretches = bands
+                .iter()
+                .flat_map(|&band| self.along(band, &bands))
+                .collect();
+            Rc::new(ClearOf::new(stretches))
         };
-        self.alongs.insert(bands, clear.clone());
+        self.alongs.insert(bands, Rc::clone(&clear));
         let lanes: Vec<Spot> = run.lanes.iter().map(|&lane| track.spot(lane)).collect();
         let frames =
             track

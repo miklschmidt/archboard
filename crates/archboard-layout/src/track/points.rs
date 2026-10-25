@@ -208,7 +208,7 @@ impl Track<'_> {
         let mut best = orders[0].clone();
         for order in &orders[1..] {
             if self.crossings_below(item, order) < self.crossings_below(item, &best) {
-                best = order.clone();
+                best.clone_from(order);
             }
         }
         best

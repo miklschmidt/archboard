@@ -57,7 +57,7 @@ impl ClearOf {
                 // The last stretch starting left of x is the only one that can hold it.
                 let (mut start, mut end) = (0, lows.len());
                 while start < end {
-                    let middle = (start + end) >> 1;
+                    let middle = usize::midpoint(start, end);
                     if lows[middle] < x {
                         start = middle + 1;
                     } else {

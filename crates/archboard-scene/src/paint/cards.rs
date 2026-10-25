@@ -148,7 +148,7 @@ pub(super) fn paint_slab_card(
     let Part { rect, standing, .. } = *part;
     group(
         Role::Card,
-        subject(part.kind, &part.node.id, standing),
+        Some(subject(part.kind, &part.node.id, standing)),
         appearance_attributes(part.appearance),
         lines(vec![
             slab_seat(rect, SLAB_RADIUS),

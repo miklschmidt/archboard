@@ -72,6 +72,11 @@ fn whole_below(value: f64, limit: usize) -> Option<usize> {
 }
 
 /// Route a scene's connectors around its obstacles.
+///
+/// # Errors
+///
+/// A scene that ends early, or holds a number that is not finite, a count
+/// that is not whole or an end it does not hold.
 #[wasm_bindgen(js_name = routeTrunks)]
 pub fn route_trunks(scene: &[f64]) -> Result<Vec<f64>, JsError> {
     let mut read = Reader {

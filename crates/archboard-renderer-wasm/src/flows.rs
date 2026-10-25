@@ -177,6 +177,11 @@ impl FlowchartHost for FlowchartLayoutHost {
 
 /// A variant's flows laid out as a stack of message sequences and painted:
 /// the JSON of a sequence request in, the JSON of its `PaintedDocument` out.
+///
+/// # Errors
+///
+/// A request that does not read as its type, and a document the SVG painter
+/// refuses (`archboard_svg::document`).
 #[wasm_bindgen(js_name = drawSequence)]
 pub fn draw_sequence(request: &str, text: &LayoutText) -> Result<String, JsError> {
     let request: SequenceRequest = request_of(request, "sequence")?;
@@ -186,6 +191,12 @@ pub fn draw_sequence(request: &str, text: &LayoutText) -> Result<String, JsError
 /// A reading's flows laid out as a flowchart and painted: the JSON of a
 /// flowchart request in, the JSON of its `PaintedDocument` out, once the
 /// host's track engine has laid the graph out.
+///
+/// # Errors
+///
+/// A request that does not read as its type, what the track engine failed
+/// with or answered that does not read as a drawing, and a document the SVG
+/// painter refuses.
 #[wasm_bindgen(js_name = drawFlowchart)]
 pub async fn draw_flowchart(request: String, host: FlowchartLayoutHost) -> Result<String, JsValue> {
     let request = request_of(&request, "flowchart")?;

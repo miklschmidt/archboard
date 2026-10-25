@@ -39,6 +39,10 @@ impl archboard_layout::Graphviz for Host<'_> {
 }
 
 /// Lay a measured Track graph out (`archboard_layout::lay_out_track`).
+///
+/// # Errors
+///
+/// A graph or options the layout cannot read, and a block's graph Graphviz refused.
 #[wasm_bindgen(js_name = layOutTrack)]
 pub fn lay_out_track(graph: &str, graphviz: &GraphvizHost) -> Result<String, JsError> {
     archboard_layout::lay_out_track(graph, &mut Host(graphviz))

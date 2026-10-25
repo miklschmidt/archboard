@@ -112,6 +112,10 @@ fn pulls_down(edges: &[Edge]) -> Map<String, f64> {
 }
 
 /// A block's inline clusters, in its Graphviz graph and read back from it.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "each switch is one remedy a relaying turns on (laying.rs), in any mix with the others"
+)]
 pub(crate) struct Clusters<'t> {
     pub block: &'t Block,
     /// Each cluster's graph, in the block's order.
@@ -525,7 +529,6 @@ impl<'t> Clusters<'t> {
 
     /// Every frame as a node of the scene, around nothing yet, with its title row.
     fn frame_node(
-        &self,
         cluster: &Cluster,
         centres: &Map<String, Point>,
         boxes: &Map<String, Rect>,
@@ -574,38 +577,33 @@ impl<'t> Clusters<'t> {
             held.entry(frame).or_default().push(Nested::Leaf(index));
         }
         let mut leaves: Vec<Option<PlacedNode>> = leaves.into_iter().map(Some).collect();
-        let children = self.nested(None, &frames, &held, &mut leaves, centres, boxes);
+        let root = held.get(&None).map(Vec::as_slice).unwrap_or_default();
+        let children = Self::nested(root, &frames, &held, &mut leaves, centres, boxes);
         (children, self.region_rows(centres, boxes))
     }
 
-    /// What one frame, or the block's root, holds, each frame nested with what it holds.
+    /// What one frame, or the block's root, holds (`entries`), each frame nested with what it holds.
     fn nested(
-        &self,
-        frame: Option<String>,
+        entries: &[Nested],
         frames: &[&Cluster],
         held: &Map<Option<String>, Vec<Nested>>,
         leaves: &mut [Option<PlacedNode>],
         centres: &Map<String, Point>,
         boxes: &Map<String, Rect>,
     ) -> Vec<PlacedNode> {
-        let Some(entries) = held.get(&frame) else {
-            return Vec::new();
-        };
         entries
             .iter()
             .map(|entry| match *entry {
                 Nested::Leaf(index) => leaves[index].take().expect("a leaf placed once"),
                 Nested::Frame(index) => {
                     let cluster = frames[index];
-                    let mut node = self.frame_node(cluster, centres, boxes);
-                    node.children = Some(self.nested(
-                        Some(cluster.id.clone()),
-                        frames,
-                        held,
-                        leaves,
-                        centres,
-                        boxes,
-                    ));
+                    let mut node = Self::frame_node(cluster, centres, boxes);
+                    let inside = held
+                        .get(&Some(cluster.id.clone()))
+                        .map(Vec::as_slice)
+                        .unwrap_or_default();
+                    node.children =
+                        Some(Self::nested(inside, frames, held, leaves, centres, boxes));
                     node
                 }
             })

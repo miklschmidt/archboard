@@ -147,7 +147,7 @@ fn offsets_under(width: f64) -> Vec<f64> {
     if most < 0.0 {
         return Vec::new();
     }
-    (0..2 * most as usize + 1)
+    (0..=(2 * most as usize))
         .map(|index| {
             if index % 2 == 0 {
                 (index / 2) as f64 * SEARCH_STEP

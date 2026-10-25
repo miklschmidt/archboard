@@ -31,19 +31,15 @@ pub(crate) const CARD_RADIUS: f64 = 6.0;
 /// The page shape the renderer lays a board out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;
 
-/// The one viewport the shell supports.
+/// The width of the one viewport the shell supports.
 const SHELL_WIDTH: f64 = 1920.0;
-const SHELL_HEIGHT: f64 = 1080.0;
 const NAVIGATOR_WIDTH: f64 = 320.0;
 const HANDLE_WIDTH: f64 = 1.0;
-const CHROME_HEIGHT: f64 = 40.0;
 const SIDEBAR_WIDTH: f64 = 280.0;
 const FIT_MARGIN: f64 = 24.0;
 
 /// The stage a lone pane draws its picture on.
 const STAGE_WIDTH: f64 = SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH;
-#[allow(dead_code)]
-const STAGE_HEIGHT: f64 = SHELL_HEIGHT - CHROME_HEIGHT;
 /// A lone pane's picture beside its docked sidebar, less the fit margin on either side.
 const REFERENCE_WIDTH: f64 = STAGE_WIDTH - SIDEBAR_WIDTH - 2.0 * FIT_MARGIN;
 /// The reference pane a drawing's fit is measured against.

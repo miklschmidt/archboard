@@ -435,7 +435,7 @@ fn paint_column(
     }));
     group(
         Role::Lifeline,
-        subject(SubjectKind::Node, &column.card.node.id, standing),
+        Some(subject(SubjectKind::Node, &column.card.node.id, standing)),
         attrs! { "opacity": ghost_opacity(standing), PART_ATTRIBUTE: "lifeline" },
         lines(parts),
     )
@@ -462,7 +462,7 @@ fn paint_frame(
     let flow = &layout.flow;
     group(
         Role::Frame,
-        subject(SubjectKind::Flow, &flow.id, standing),
+        Some(subject(SubjectKind::Flow, &flow.id, standing)),
         attrs! {},
         lines(vec![
             slab_seat(frame, BAND_RADIUS),
@@ -611,7 +611,7 @@ fn paint_fragment(
     };
     group(
         Role::Fragment,
-        subject(SubjectKind::Step, &frame.step.id, standing),
+        Some(subject(SubjectKind::Step, &frame.step.id, standing)),
         attrs! { "opacity": ghost_opacity(standing) },
         lines(vec![
             tag(
@@ -743,7 +743,7 @@ fn paint_step_words(
     let plate = placed.label_box;
     group(
         Role::Label,
-        subject(SubjectKind::Step, &placed.step.id, standing),
+        Some(subject(SubjectKind::Step, &placed.step.id, standing)),
         attrs! { PART_ATTRIBUTE: "label" },
         lines(vec![
             paint_label(placed, plate, palette, standing, mark),
@@ -775,7 +775,7 @@ fn paint_step(
     let head = step_head(kind);
     group(
         Role::Line,
-        subject(SubjectKind::Step, &placed.step.id, standing),
+        Some(subject(SubjectKind::Step, &placed.step.id, standing)),
         attrs! { "opacity": ghost_opacity(standing) },
         lines(vec![
             tag(

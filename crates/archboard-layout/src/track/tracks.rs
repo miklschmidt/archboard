@@ -83,6 +83,12 @@ fn keeping_stacks(units: &[Unit], preferred: Vec<usize>) -> Vec<usize> {
     ordered
 }
 
+/// A unit and one it passes, higher first: before the move, each unit passed
+/// stands above a unit moving up, and below one moving down.
+fn ordered<'u>(up: bool, unit: &'u Unit, other: &'u Unit) -> (&'u Unit, &'u Unit) {
+    if up { (other, unit) } else { (unit, other) }
+}
+
 /// What moving the unit at one place of an order to another place saves, or
 /// nothing when it would pass a unit that must stay on its side.
 fn saving(units: &[Unit], order: &[usize], from: usize, to: usize) -> Option<f64> {
@@ -91,16 +97,12 @@ fn saving(units: &[Unit], order: &[usize], from: usize, to: usize) -> Option<f64
     let passed: Vec<&Unit> = (if up {
         &order[to..from]
     } else {
-        &order[from + 1..to + 1]
+        &order[(from + 1)..=to]
     })
     .iter()
     .map(|&other| &units[other])
     .filter(|other| overlap(unit, other))
     .collect();
-    // Before the move, each unit passed stands above a unit moving up, and below one moving down.
-    fn ordered<'u>(up: bool, unit: &'u Unit, other: &'u Unit) -> (&'u Unit, &'u Unit) {
-        if up { (other, unit) } else { (unit, other) }
-    }
     if passed.iter().any(|other| {
         let (higher, lower) = ordered(up, unit, other);
         must_be_above(higher, lower)

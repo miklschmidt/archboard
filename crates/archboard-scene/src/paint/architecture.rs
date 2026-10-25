@@ -164,7 +164,7 @@ fn paint_edge_line(
     }
     group(
         Role::Line,
-        subject(line_kind(step), &edge.id, standing),
+        Some(subject(line_kind(step), &edge.id, standing)),
         attrs! {
             "opacity": ghost_opacity(standing),
             "mask": mask.map(|mask| format!("url(#{mask})")),
@@ -225,7 +225,7 @@ fn paint_edge_words(
     }
     group(
         Role::Label,
-        subject(line_kind(step), &routed.edge.id, standing),
+        Some(subject(line_kind(step), &routed.edge.id, standing)),
         attrs! { PART_ATTRIBUTE: "label" },
         lines(vec![pill, badge]),
     )
@@ -493,7 +493,7 @@ pub(super) fn paint_architecture(
             .by_edge
             .get(id)
             .map(Vec::as_slice)
-            .unwrap_or(&[])
+            .unwrap_or_default()
             .iter()
             .map(|index| (ports.all[*index], plan.wells.get(index) == Some(id)))
             .collect();
