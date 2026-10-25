@@ -45,8 +45,8 @@ fn clear_of_buffers(scene: &Scene, connector: usize, points: &[Point]) -> bool {
         .collect();
     points.windows(2).all(|pair| {
         let middle = Point {
-            x: (pair[0].x + pair[1].x) / 2.0,
-            y: (pair[0].y + pair[1].y) / 2.0,
+            x: f64::midpoint(pair[0].x, pair[1].x),
+            y: f64::midpoint(pair[0].y, pair[1].y),
         };
         scene.obstacles.iter().enumerate().all(|(index, obstacle)| {
             owners.contains(&index)
@@ -378,12 +378,10 @@ fn a_line_crossed_either_way_does_not_turn_the_others_round() {
 /// A scene in the flat numbers of the renderer core's binding:
 /// `clearance, lane, bend, crossing`, the obstacles, then the connectors.
 fn decoded(text: &str) -> Scene {
-    let numbers: Vec<f64> = text
+    let mut next = text
         .trim()
         .split(',')
-        .map(|number| number.parse().unwrap())
-        .collect();
-    let mut next = numbers.into_iter();
+        .map(|number| number.parse::<f64>().unwrap());
     let mut take = || next.next().unwrap();
     let params = Params {
         clearance: take(),

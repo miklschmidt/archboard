@@ -237,8 +237,8 @@ pub(super) struct Words {
 
 /// Measured lines as a block of words, with where they start.
 pub(super) fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words {
-    let anchor = runs.first().map_or(
-        Place {
+    let anchor = runs.first().map_or_else(
+        || Place {
             x: rect.x,
             y: rect.y,
             size: f64::from(NAME_MAX),

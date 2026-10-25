@@ -51,6 +51,10 @@ fn request_of(request: &str) -> Result<PaintRequest, JsError> {
 
 /// One picture painted into a scene: the JSON of a `PaintRequest` in, the
 /// JSON of its `Scene` out.
+///
+/// # Errors
+///
+/// A request that does not read as a `PaintRequest`.
 #[wasm_bindgen(js_name = paintScene)]
 pub fn scene(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
     let scene = paint_scene(&request_of(request)?, measure);
@@ -59,6 +63,11 @@ pub fn scene(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
 
 /// One picture painted and written as an SVG document: the JSON of a
 /// `PaintRequest` in, the JSON of its `PaintedDocument` out.
+///
+/// # Errors
+///
+/// A request that does not read as a `PaintRequest`, and a document the SVG
+/// painter refuses (`archboard_svg::document`).
 #[wasm_bindgen(js_name = paintDocument)]
 pub fn document(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
     painted_document(&request_of(request)?, measure)

@@ -42,6 +42,7 @@ mod tray;
 
 /// What every part of one picture is painted with: the host's measure of text,
 /// and the icons the host has.
+#[derive(Debug)]
 pub struct Ctx<'a> {
     pub measurer: Measurer<'a>,
     pub icons: &'a BTreeMap<String, Vec<String>>,
@@ -133,7 +134,7 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
                 standings: if shapes.is_some() { &painted } else { &held },
                 shapes: shapes
                     .as_ref()
-                    .map(|shapes| shapes as &dyn architecture::Shapes),
+                    .map(|shapes| -> &dyn architecture::Shapes { shapes }),
             };
             let mut painting = architecture::paint_architecture(
                 &ctx,
@@ -294,7 +295,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert!(!traffic.is_empty());
+        assert_ne!(traffic.len(), 0, "the board draws its traffic");
         assert!(traffic.iter().all(|mark| !mark.route.segments.is_empty()
             && matches!(mark.motion, Motion::Steady { speed, .. } if speed > 0.0)));
         assert!(items.iter().all(

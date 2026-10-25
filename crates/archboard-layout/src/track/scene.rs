@@ -487,7 +487,7 @@ impl Placement {
     /// Every frame and group region a band passes through, with its left and right walls.
     pub(crate) fn walled(&self, band: usize) -> Walls {
         if let Some(known) = self.walls.borrow().get(&band) {
-            return known.clone();
+            return Rc::clone(known);
         }
         let mut walls = Map::default();
         for (id, pair) in self
@@ -498,7 +498,7 @@ impl Placement {
             walls.insert(id, pair);
         }
         let walls = Rc::new(walls);
-        self.walls.borrow_mut().insert(band, walls.clone());
+        self.walls.borrow_mut().insert(band, Rc::clone(&walls));
         walls
     }
 

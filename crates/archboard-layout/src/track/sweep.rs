@@ -96,7 +96,7 @@ pub(crate) fn backtrack(steps: &[Vec<i32>], end: usize) -> Vec<usize> {
 pub(crate) fn first_above(sorted: &[f64], bound: f64) -> usize {
     let (mut low, mut high) = (0, sorted.len());
     while low < high {
-        let middle = (low + high) >> 1;
+        let middle = usize::midpoint(low, high);
         if sorted[middle] <= bound {
             low = middle + 1;
         } else {

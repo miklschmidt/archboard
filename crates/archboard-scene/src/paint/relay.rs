@@ -56,7 +56,12 @@ fn seeded(seed: &str) -> f64 {
     }
     let state = state.wrapping_add(0x6d2b_79f5);
     let mut mixed = (state ^ (state >> 15)).wrapping_mul(1 | state);
-    mixed = mixed.wrapping_add((mixed ^ (mixed >> 7)).wrapping_mul(61 | mixed)) ^ mixed;
+    #[expect(
+        clippy::decimal_bitwise_operands,
+        reason = "mulberry32 is published with its constant spelt 61"
+    )]
+    let round = (mixed ^ (mixed >> 7)).wrapping_mul(61 | mixed);
+    mixed = mixed.wrapping_add(round) ^ mixed;
     f64::from(mixed ^ (mixed >> 14)) / 4_294_967_296.0
 }
 
@@ -65,17 +70,19 @@ pub(super) fn within(value: f64, period: f64) -> f64 {
     ((value % period) + period) % period
 }
 
+/// The root of a lane's group in a union-find forest, its path cut short to it.
+fn find(head: &mut [usize], index: usize) -> usize {
+    let mut root = index;
+    while head[root] != root {
+        root = head[root];
+    }
+    head[index] = root;
+    root
+}
+
 /// The lanes that keep each other's time, each group in the order its lanes were given.
 fn chains(lanes: &[Lane]) -> Vec<Vec<&Lane>> {
     let mut head: Vec<usize> = (0..lanes.len()).collect();
-    fn find(head: &mut [usize], index: usize) -> usize {
-        let mut root = index;
-        while head[root] != root {
-            root = head[root];
-        }
-        head[index] = root;
-        root
-    }
     for (from, arriving) in lanes.iter().enumerate() {
         for (to, leaving) in lanes.iter().enumerate() {
             if hands_on(arriving, leaving) {

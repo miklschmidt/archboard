@@ -67,7 +67,7 @@ impl Branch {
     /// It runs on one alternative of one more decision.
     pub(super) fn set(&mut self, decision: &str, alternative: &str) {
         match self.0.iter_mut().find(|(held, _)| held == decision) {
-            Some(held) => held.1 = alternative.to_owned(),
+            Some(held) => alternative.clone_into(&mut held.1),
             None => self.0.push((decision.to_owned(), alternative.to_owned())),
         }
     }
@@ -331,6 +331,33 @@ fn place_column_card(
     }
 }
 
+/// The participants' cards, one on each column, and their height: the heads
+/// are one row of one height, so every lifeline starts level.
+fn head_cards(
+    text: &impl Text,
+    nodes: Vec<Node>,
+    centres: &[f64],
+    top: f64,
+    (column_width, notes): (
+        f64,
+        &HashMap<String, Vec<archboard_scene::drawing::TextRun>>,
+    ),
+) -> (Vec<Card>, f64) {
+    let mut cards: Vec<Card> = nodes
+        .into_iter()
+        .enumerate()
+        .map(|(index, node)| {
+            let held = notes.get(&node.id).cloned().unwrap_or_default();
+            place_column_card(text, node, centres[index], top, column_width, held)
+        })
+        .collect();
+    let tallest = largest(cards.iter().map(|card| card.bounds.height), 0.0);
+    for card in &mut cards {
+        card.bounds.height = tallest;
+    }
+    (cards, tallest)
+}
+
 /// One flow, placed, its frame starting at a height and its messages at a
 /// turn of the drawing's clock.
 fn layout_flow<'a>(
@@ -366,23 +393,7 @@ fn layout_flow<'a>(
     };
     let slab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
     let cards_top = slab_foot + NEST_INSET;
-    let placed_cards: Vec<Card> = nodes
-        .into_iter()
-        .enumerate()
-        .map(|(index, node)| {
-            let held = notes.get(&node.id).cloned().unwrap_or_default();
-            place_column_card(text, node, centres[index], cards_top, column_width, held)
-        })
-        .collect();
-    // The heads are one row of one height, so every lifeline starts level.
-    let tallest = largest(placed_cards.iter().map(|card| card.bounds.height), 0.0);
-    let cards: Vec<Card> = placed_cards
-        .into_iter()
-        .map(|mut card| {
-            card.bounds.height = tallest;
-            card
-        })
-        .collect();
+    let (cards, tallest) = head_cards(text, nodes, &centres, cards_top, (column_width, notes));
     let first_row = cards_top + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
     let centre_of: HashMap<&str, f64> = flow

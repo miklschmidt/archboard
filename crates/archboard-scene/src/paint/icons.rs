@@ -45,7 +45,7 @@ pub fn glyph_group(
         .get(icon)
         .or_else(|| icons.get(FALLBACK_ICON))
         .map(Vec::as_slice)
-        .unwrap_or(&[]);
+        .unwrap_or_default();
     group(
         Role::Icon,
         None,

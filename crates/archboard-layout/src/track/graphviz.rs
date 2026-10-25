@@ -437,7 +437,7 @@ impl<'a, 'r> Columns<'a, 'r> {
         let centres: Vec<f64> = fan.iter().map(middle).collect();
         let at = self.moved(
             name,
-            (min(centres.iter().copied()) + max(centres.iter().copied())) / 2.0,
+            f64::midpoint(min(centres.iter().copied()), max(centres.iter().copied())),
         );
         if abs(middle(&at) - middle(&self.boxes[name])) >= 0.5 && self.free(name, &at) {
             self.boxes.insert(name.to_owned(), at);

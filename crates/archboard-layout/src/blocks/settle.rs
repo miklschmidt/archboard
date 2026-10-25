@@ -45,7 +45,7 @@ fn nearest(span: Span, other: Span) -> f64 {
     if span.0 > other.1 {
         return span.0;
     }
-    (js_max(span.0, other.0) + js_min(span.1, other.1)) / 2.0
+    f64::midpoint(js_max(span.0, other.0), js_min(span.1, other.1))
 }
 
 /// Where two ends of one line stand: in one column where their spans share

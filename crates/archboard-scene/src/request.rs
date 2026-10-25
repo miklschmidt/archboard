@@ -113,7 +113,7 @@ impl DrillDirection {
 }
 
 /// The independent visual channels of a node in this reading.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeAppearance {
     pub container: bool,
@@ -178,7 +178,7 @@ impl Arrowhead {
 
 /// How a drawn line reads: a relationship in its kind's appearance, or a flow
 /// step in its own.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct LineAppearance {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -208,14 +208,14 @@ impl FlowchartShape {
 }
 
 /// One card a flowchart draws as a shape, and its wrapped words.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ShapedCard {
     pub shape: FlowchartShape,
     pub words: Vec<String>,
 }
 
 /// What a flowchart adds to an architecture's painting.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct FlowchartParts {
     /// The cards drawn as shapes of their own, by id.
     pub shapes: BTreeMap<String, ShapedCard>,
@@ -294,7 +294,7 @@ pub enum MessageKind {
 }
 
 /// What the painter reads of a message.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct MessageFacts {
     pub id: String,
     pub kind: MessageKind,
@@ -325,7 +325,7 @@ pub struct StepNote {
 }
 
 /// This message's turn on the drawing's shared clock.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct Slot {
     pub start: u32,
     pub count: u32,
@@ -360,7 +360,7 @@ pub struct SequenceStep {
 }
 
 /// What the painter reads of a decision or a loop.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct StepId {
     pub id: String,
 }
@@ -397,7 +397,7 @@ pub struct SequenceFrame {
 }
 
 /// What the painter reads of a flow.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct FlowFacts {
     pub id: String,
     pub name: String,
@@ -480,7 +480,7 @@ impl LegendLayout {
 }
 
 /// What an export asks to carry beside the drawing.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportFrame {
     /// The words drawn above the picture; none when absent.
@@ -535,7 +535,7 @@ pub enum StandaloneTheme {
 }
 
 /// Every theme colour by theme and custom property name.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ThemeColors {
     pub light: BTreeMap<String, String>,
     pub dark: BTreeMap<String, String>,

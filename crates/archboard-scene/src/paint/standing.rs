@@ -113,12 +113,12 @@ pub const HEAD_ATTRIBUTE: &str = "data-flow-head";
 pub const PART_ATTRIBUTE: &str = "data-semantic-part";
 
 /// The subject a drawn group carries: what it is, which it is, how it stands.
-pub fn subject(kind: SubjectKind, id: &str, standing: Option<Standing>) -> Option<Subject> {
-    Some(Subject {
+pub fn subject(kind: SubjectKind, id: &str, standing: Option<Standing>) -> Subject {
+    Subject {
         kind,
         id: id.to_owned(),
         standing,
-    })
+    }
 }
 
 /// The opacity a removed line's group takes, or none for a line still on the proposal.

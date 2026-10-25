@@ -11,6 +11,7 @@ use crate::paint::palette::Palette;
 use crate::scene::{Atlas, AtlasBox, Boxes, Role};
 
 /// A painted page: its body, its size and where each subject landed on it.
+#[derive(Debug)]
 pub struct PaintedPage {
     pub body: Markup,
     pub width: f64,

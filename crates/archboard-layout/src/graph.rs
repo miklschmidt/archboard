@@ -85,12 +85,12 @@ impl Edge {
 
     /// Its source's id.
     pub(crate) fn source(&self) -> &str {
-        self.sources.first().map(String::as_str).unwrap_or("")
+        self.sources.first().map_or("", String::as_str)
     }
 
     /// Its target's id.
     pub(crate) fn target(&self) -> &str {
-        self.targets.first().map(String::as_str).unwrap_or("")
+        self.targets.first().map_or("", String::as_str)
     }
 
     /// How many labels it carries: `edge.labels?.length ?? 0`.

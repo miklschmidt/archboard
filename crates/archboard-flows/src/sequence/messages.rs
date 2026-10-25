@@ -124,7 +124,10 @@ fn straight_drawn(
 ) -> (f64, f64, Rect, Rect) {
     let (start, end) = ends_for(placed, active, travel);
     let (width, height) = pill_size(placed);
-    let centre = placed.words.centre.unwrap_or((start + end) / 2.0);
+    let centre = placed
+        .words
+        .centre
+        .unwrap_or_else(|| f64::midpoint(start, end));
     let label = Rect {
         x: centre - width / 2.0,
         y: placed.y - MESSAGE_LABEL_GAP - height,

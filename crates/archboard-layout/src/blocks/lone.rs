@@ -266,7 +266,7 @@ fn carried_level(end: Point, x: f64, card: Rect) -> Vec<Point> {
     if on_wall(y, end.y) {
         return vec![Point { x, y }];
     }
-    let step = (end.x + x) / 2.0;
+    let step = f64::midpoint(end.x, x);
     vec![
         Point { x: step, y: end.y },
         Point { x: step, y },

@@ -205,13 +205,10 @@ impl Track<'_> {
     pub(crate) fn bundle_trunks(&mut self, nets: &[NetId]) {
         let line_ends = self.ends_of(nets);
         for side in [End::Top, End::Bottom] {
-            let groups: Vec<Vec<NetId>> = self
+            let pieces: Vec<Vec<NetId>> = self
                 .trunk_groups(nets, side)
                 .into_iter()
                 .map(|one| self.without_twins(one, side, &line_ends))
-                .collect();
-            let pieces: Vec<Vec<NetId>> = groups
-                .into_iter()
                 .flat_map(|one| self.apart(one, nets, side))
                 .collect();
             for group in pieces {
@@ -248,7 +245,7 @@ impl Track<'_> {
         let mut lines: Map<Rc<str>, Vec<NetId>> = Map::default();
         for &net in nets {
             lines
-                .entry(self.net(net).edge.clone())
+                .entry(Rc::clone(&self.net(net).edge))
                 .or_default()
                 .push(net);
         }
@@ -366,7 +363,11 @@ impl Track<'_> {
             if net.trunk.is_some() || station.kind != Kind::Card {
                 continue;
             }
-            let key = (net.channel, net.kind.clone(), station.at.map(number_key));
+            let key = (
+                net.channel,
+                Rc::clone(&net.kind),
+                station.at.map(number_key),
+            );
             groups
                 .entry(station.item.expect("a card"))
                 .or_default()
@@ -376,7 +377,7 @@ impl Track<'_> {
         }
         groups
             .into_values()
-            .flat_map(|by_kind| by_kind.into_values())
+            .flat_map(indexmap::IndexMap::into_values)
             .collect()
     }
 

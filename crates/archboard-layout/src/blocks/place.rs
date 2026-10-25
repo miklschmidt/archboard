@@ -30,7 +30,7 @@ use super::sides::sides_of;
 use super::stacking::{Stacking, Stood, stacked_or_not};
 use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
 use super::weighing::routed_weighed;
-use super::wraps::{Whole, best_wrap, weighed};
+use super::wraps::{Unwrapped, best_wrap, weighed};
 
 /// The root option carrying the placed drawing, as the JSON the assembly answers.
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
@@ -101,7 +101,7 @@ fn lay_cards(
         gv,
         tree,
         block,
-        &Whole {
+        &Unwrapped {
             laid,
             whole: &whole,
             stacked,

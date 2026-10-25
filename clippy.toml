@@ -8,3 +8,5 @@ avoid-breaking-exported-api = false
 # A test states what it expects by unwrapping and prints what it compares.
 allow-unwrap-in-tests = true
 allow-print-in-tests = true
+# Names the documentation spells as words, not as code.
+doc-valid-idents = ["JavaScriptCore", "SameValueZero", ".."]

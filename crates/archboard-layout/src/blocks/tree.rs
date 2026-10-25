@@ -269,15 +269,12 @@ impl BlockTree {
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
         tree.fill(tree.root, graph.kids())?;
-        let edges: Vec<Rc<Edge>> = graph
+        tree.projections = graph
             .edges
             .iter()
             .flatten()
             .filter(|edge| edge.source() != edge.target())
             .cloned()
-            .collect();
-        tree.projections = edges
-            .into_iter()
             .map(|edge| tree.project(edge))
             .collect::<Result<_, _>>()?;
         let back = tree.back_edges();
@@ -628,7 +625,7 @@ impl BlockTree {
             projection
                 .into
                 .first()
-                .or(projection.out.first())
+                .or_else(|| projection.out.first())
                 .copied()
                 .unwrap_or(projection.at)
         };
@@ -685,7 +682,7 @@ impl BlockTree {
             };
             let port = self.port(
                 block,
-                format!("out|{}|{}{along}", side.name(), walled(side, &inner)),
+                &format!("out|{}|{}{along}", side.name(), walled(side, &inner)),
                 side,
             );
             let (tail, head) = if side == Side::Top {
@@ -731,7 +728,7 @@ impl BlockTree {
             let side = self.exit_of(block, "in", face, &along, None);
             let port = self.port(
                 block,
-                format!("in|{}|{}{along}", side.name(), walled(side, &to)),
+                &format!("in|{}|{}{along}", side.name(), walled(side, &to)),
                 side,
             );
             let (tail, head) = if side == Side::Bottom {
@@ -785,7 +782,7 @@ impl BlockTree {
     }
 
     /// A block's port, made on first use.
-    pub(crate) fn port(&mut self, block: BlockId, key: String, side: Side) -> String {
+    pub(crate) fn port(&mut self, block: BlockId, key: &str, side: Side) -> String {
         let id = format!("port:{key}");
         self.get_mut(block).ports.insert(id.clone(), side);
         id

@@ -194,6 +194,10 @@ impl Subgraph {
 
 /// A graph Graphviz lays out.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "the fields are viz-js's graphAttributes, nodeAttributes and edgeAttributes"
+)]
 pub(crate) struct Graph {
     pub graph_attributes: Attrs,
     pub node_attributes: Attrs,

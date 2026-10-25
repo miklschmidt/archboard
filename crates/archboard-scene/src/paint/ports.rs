@@ -388,7 +388,7 @@ pub(super) fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
             .by_edge
             .get(&routed.edge.id)
             .map(Vec::as_slice)
-            .unwrap_or(&[])
+            .unwrap_or_default()
         {
             wells
                 .entry(*index)

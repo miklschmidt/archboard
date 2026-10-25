@@ -190,6 +190,7 @@ pub fn edge_attributes(
 }
 
 /// Every attribute bundle the painter reaches for, resolved against one palette.
+#[derive(Debug)]
 pub struct Styles<'p> {
     palette: &'p Palette,
 }

@@ -38,7 +38,7 @@ pub(crate) fn weighed(laid: &Laid) -> Weighed {
 
 /// What a block is laid out with, beside Graphviz: every block laid out so
 /// far, this one whole, whether it stacks, and its insets.
-pub(crate) struct Whole<'a> {
+pub(crate) struct Unwrapped<'a> {
     pub laid: &'a LaidMap,
     pub whole: &'a Laid,
     pub stacked: bool,
@@ -55,7 +55,7 @@ pub(crate) fn best_wrap(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,
-    laying: &Whole<'_>,
+    laying: &Unwrapped<'_>,
 ) -> Result<Option<Rc<Laid>>, String> {
     let worth = if tree.get(block).kind == Kind::Root {
         WORTH_WRAPPING
@@ -96,10 +96,10 @@ fn wrap_scoring(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,
-    laying: &Whole<'_>,
+    laying: &Unwrapped<'_>,
     needed: f64,
 ) -> Result<Option<Rc<Laid>>, String> {
-    let Whole {
+    let Unwrapped {
         laid,
         whole,
         stacked,

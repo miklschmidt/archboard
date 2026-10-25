@@ -163,8 +163,8 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
             let from = outline[index];
             let to = outline[(index + 1) % count];
             Point {
-                x: (from.x + to.x) / 2.0,
-                y: (from.y + to.y) / 2.0,
+                x: f64::midpoint(from.x, to.x),
+                y: f64::midpoint(from.y, to.y),
             }
         })
         .collect();
@@ -197,6 +197,7 @@ fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Pa
 }
 
 /// The painter of a flowchart's shapes.
+#[derive(Debug)]
 pub struct FlowchartShapes<'a> {
     pub shapes: &'a BTreeMap<String, ShapedCard>,
     pub palette: &'a Palette,
@@ -265,7 +266,7 @@ impl Shapes for FlowchartShapes<'_> {
         };
         group(
             Role::Shape,
-            subject(SubjectKind::Step, &card.measured.node.id, standing),
+            Some(subject(SubjectKind::Step, &card.measured.node.id, standing)),
             attrs! {},
             lines(vec![
                 solid_seat(&outline, look.radius),

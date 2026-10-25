@@ -150,13 +150,13 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     if one.route == other.route || one.across != other.across {
         return None;
     }
-    let near = js::js_max((one.width + other.width) / 2.0, ONWARD);
+    let near = js::js_max(f64::midpoint(one.width, other.width), ONWARD);
     let from = js::js_max(one.from, other.from);
     let to = js::js_min(one.to, other.to);
     if (one.at - other.at).abs() > near || to - from <= near {
         return None;
     }
-    let at = (one.at + other.at) / 2.0;
+    let at = f64::midpoint(one.at, other.at);
     let point = |along: f64| {
         if one.across {
             Point { x: along, y: at }
@@ -164,7 +164,7 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
             Point { x: at, y: along }
         }
     };
-    let middle = (from + to) / 2.0;
+    let middle = f64::midpoint(from, to);
     let inward = |along: f64, at_from: bool| {
         js::js_min(
             (middle - along).abs(),

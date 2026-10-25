@@ -68,7 +68,11 @@ pub(super) fn paint_measured_frame(
     );
     group(
         Role::Frame,
-        subject(SubjectKind::Region, &placed.measured.node.id, standing),
+        Some(subject(
+            SubjectKind::Region,
+            &placed.measured.node.id,
+            standing,
+        )),
         appearance_attributes(appearance),
         lines(vec![
             slab_seat(rect, BAND_RADIUS),
@@ -114,7 +118,7 @@ pub(super) fn paint_measured_header(
     };
     group(
         Role::Header,
-        subject(SubjectKind::Region, &node.id, standing),
+        Some(subject(SubjectKind::Region, &node.id, standing)),
         appearance_attributes(appearance).set(PART_ATTRIBUTE, "header"),
         lines(vec![
             paint_card_views(ctx, &part, palette, near),
