@@ -18,6 +18,9 @@ mod shapes;
 mod write;
 mod xml;
 
+#[cfg(test)]
+mod tests;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 pub use key::{AppliedAppearance, PictureKey, appearances};
@@ -105,38 +108,28 @@ fn name_character(character: char) -> bool {
     character.is_ascii_alphanumeric() || character == '_' || character == '-'
 }
 
-/// The custom properties a document names: each `var(--name)` it refers to,
-/// and each `--name:` it sets itself after a quote or a semicolon.
-fn properties_of(document: &str) -> (Vec<&str>, Vec<&str>) {
-    let mut references = Vec::new();
-    let mut own = Vec::new();
-    let bytes = document.as_bytes();
-    let name_at = |start: usize| {
-        let length = document[start..]
-            .find(|character: char| !name_character(character))
-            .unwrap_or(document.len() - start);
-        &document[start..start + length]
-    };
-    let mut at = 0;
-    while let Some(found) = document[at..].find("var(--") {
-        let start = at + found + 4;
-        let name = name_at(start + 2);
-        let end = start + 2 + name.len();
-        if !name.is_empty() && document[end..].starts_with(')') {
-            references.push(&document[start..end]);
-        }
-        at = start;
-    }
-    for (index, byte) in bytes.iter().enumerate() {
-        if (*byte == b'"' || *byte == b';') && document[index + 1..].starts_with("--") {
-            let name = name_at(index + 3);
-            let end = index + 3 + name.len();
-            if !name.is_empty() && document[end..].starts_with(':') {
-                own.push(&document[index + 1..end]);
-            }
-        }
-    }
-    (references, own)
+/// The theme properties referenced by the writer's CSS, excluding its three
+/// movement properties. XML escapes quotes and tag delimiters in author
+/// text, so only the writer's own style delimiters match here.
+fn properties_of(document: &str) -> BTreeSet<&str> {
+    let sheets = document
+        .split("<style>")
+        .skip(1)
+        .filter_map(|rest| rest.split_once("</style>").map(|(style, _)| style));
+    let attributes = document
+        .split(" style=\"")
+        .skip(1)
+        .filter_map(|rest| rest.split_once('"').map(|(style, _)| style));
+    sheets
+        .chain(attributes)
+        .flat_map(|style| style.split("var(").skip(1))
+        .filter_map(|rest| rest.split_once(')').map(|(name, _)| name))
+        .filter(|name| {
+            name.strip_prefix("--")
+                .is_some_and(|name| !name.is_empty() && name.chars().all(name_character))
+        })
+        .filter(|name| ![NEAR_PLACE, FAR_PLACE, AWAY_PLACE].contains(name))
+        .collect()
 }
 
 /// One token's value in a document that stands alone.
@@ -179,15 +172,7 @@ fn standing_alone(
     theme: StandaloneTheme,
     painted: &str,
 ) -> Result<String, DocumentError> {
-    let (references, own) = properties_of(painted);
-    let own: BTreeSet<&str> = [NEAR_PLACE, FAR_PLACE, AWAY_PLACE]
-        .into_iter()
-        .chain(own)
-        .collect();
-    let names: BTreeSet<&str> = references
-        .into_iter()
-        .filter(|name| !own.contains(name))
-        .collect();
+    let names = properties_of(painted);
     let scheme = match theme {
         StandaloneTheme::Auto => "light dark",
         StandaloneTheme::Light => "light",
