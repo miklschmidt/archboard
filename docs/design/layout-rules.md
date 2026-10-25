@@ -2868,3 +2868,48 @@ cards drawn inline. Also gone are a wrap held to its columns, the cost of a
 lap round the page and the scene flags that chose these rules. What Blocks
 still runs stays in `shared/rules/blocks/` and `shared/rules/track/`, and
 the crate holds a copy of it until TASK-520.05 ports Blocks.
+
+## 54. The core lays out Blocks (2026-10-25, TASK-520.05)
+
+The renderer core answers every solve of an architecture, Track and Blocks.
+The crate `crates/archboard-layout` lays a board out one way in one
+function, `lay_out_board`, for every nesting the solve's root options name:
+packed as blocks, inline, or inline with its groups packed. The Blocks
+branches joined the Track ones: containers as blocks, the cluster of loose
+cards in a block of blocks, the packing of a block of blocks and the trunks
+between its blocks, port settling with packings, held port orders, blocks
+that face their walls, and a container widened round its caption. The
+trunks are routed by `crates/archboard-router` inside the core, so the
+`routeTrunks` binding and its flat number array are gone. Graphviz stays a
+capability of the host behind the trait `Graphviz`.
+
+The choices between the solves of one board stay where the renderer runs,
+because they ask for solves side by side across the worker pool and each
+solve starts from Graphviz as loaded (`solves.ts`, `joins-laid.ts`). What
+they weigh moved into the core. A solve that a choice may weigh tells its
+drawing's reading with the drawing, and the core weighs two readings
+(`draws_better`, `reads_better_packed`, `stacks_of`) and names the blocks a
+joins choice turns (`joining_of`, `has_regions`). The renderer never reads a
+reading. A solve tells one only when it is asked (`archboard.blocks.read`),
+because reading a drawing costs about as much as routing a small one. A
+solve no longer names a stage: its root options name its nesting.
+
+The port was held to the TypeScript stage as Track was (section 53). The
+2,394 Blocks solves of the corpus were recorded with their Graphviz calls
+and replayed through the crate. Each gave Graphviz the same graphs byte for
+byte and answered the same drawing. The one difference was a title box's
+list of header sizes, which the TypeScript drawing carried and nothing read.
+After the switch, none of the 36,032 corpus drawings of both engines, both
+themes and both comparison modes differed from the drawings before it.
+
+Blocks renders faster. The 293 current Blocks views, drawn one at a time
+in three runs before and after, took 9.1 to 9.2 s before and 7.9 to 8.1 s
+after; 60 views were faster in every run and one view of 6 ms was 1 ms
+slower. Track took as long as before, 8.1 to 8.2 s; 10 views were faster
+and 9 slower in every run, by 1 to 2 ms, on a machine shared with other
+work.
+
+Every TypeScript rule of `shared/rules/blocks/` and `shared/rules/track/`
+is gone, about 18,000 lines. `blocks/tree/` keeps the block engine, the
+solves and the joins choice. The unit tests of the removed rules moved
+with them into the crate.
