@@ -300,8 +300,7 @@ fn locate(ring: &Ring, point: Point) -> f64 {
 /// How far the shorter way round the edge of a card is from one place to another.
 pub fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
     let ring = ring_of(rect);
-    let forward =
-        (((locate(&ring, to) - locate(&ring, from)) % ring.length) + ring.length) % ring.length;
+    let forward = within(locate(&ring, to) - locate(&ring, from), ring.length);
     js::js_min(forward, ring.length - forward)
 }
 
