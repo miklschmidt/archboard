@@ -84,14 +84,15 @@ then Noto Sans Math (`crates/archboard-text/src/faces.rs`). The shell does not
 use these files. All three families are licensed under the SIL Open Font
 License 1.1. The license texts sit beside the files.
 
-The repository keeps only the subsets. Each subset is made from the unhinted
-TTF in the release archive with `subset-fallbacks.sh`. Run it with fonttools
-4.63.0 from Nix, after you extract the three archives into one directory:
+The repository keeps only the subsets. Each subset comes from the unhinted
+TTF in the release archive. From the repository root, extract the three archives
+into `noto-sources` and keep their internal directories. Run `subset-fallbacks.sh`
+with fonttools 4.63.0 from the pinned Nix input:
 
 ```sh
 mkdir -p out
-nix shell nixpkgs#python3Packages.fonttools -c \
-  packages/renderer/assets/fonts/subset-fallbacks.sh <extracted directory> out
+nix shell --inputs-from . nixpkgs#python3Packages.fonttools -c \
+  packages/renderer/assets/fonts/subset-fallbacks.sh noto-sources out
 ```
 
 The command keeps the layout features and the names, drops hinting and the
