@@ -268,8 +268,9 @@ package imports:
 
 - `store/` holds files, locks, registries and file formats: the board's identity and key, where a
   note lives, the vault's configuration, the vaults bound to a repository, the line an agent said
-  about its write, `format/` (the decode and the schema migrations) and `lock/` (the one-writer
-  lease, its claims and its announcements). `former-names.ts` is private.
+  about its write, `format/` (the decode and the schema migrations), `lock/` (the one-writer
+  lease, its claims and its announcements) and `memory.ts` (the one forget of everything the
+  process remembers about boards). `former-names.ts` is private.
 - `operations/` is one write or one read that a caller asks for: `write/` (the write boundary and
   the pure transitions it applies), `read/`, `check/`, `edit/` (one batch of stated changes into
   content), `move/`, `rename/`, `settle/` and `variant/` (adopt, shelve, restore, inheritance and
@@ -284,11 +285,16 @@ The seven files of `runtime/api/` are:
 - `./vault-policy` is the vault's configuration, the vault check against its policy and the
   subject a diagnostic names.
 - `./doing` is the line an agent said about its write.
-- `./lock` is the one-writer lease: claims, holds, the lock state and what announces a change of
-  it.
+- `./lock` is the one-writer lease: an agent's claim and its release, the take-back
+  (`takeBackBoard` revokes a claim and gives the lease straight back), the claim this server lost
+  with the reason it is told once, the lock state, what announces a change of it, and
+  `forgetBoardMemory`, which a stopping server calls once. `holdBoard` and `releaseHold` stay public
+  only for the process fixture that holds a lease in a child process.
 - `./store-move` moves a board to another repository's vault and previews that move.
 - `./store-write` is the write boundary, the transitions it applies, the discard and acceptance of
-  a board, the rename and the outcome of a propagation to drill-downs.
+  a board, and the outcome of a propagation to drill-downs. `renameSemanticBoard` is the rename as
+  one operation: it writes the new name and carries this server's claim and the doing lines to it,
+  so a caller only points its panes.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
 reply, the reconciliation and the comparison came from one import. An importer now names the api

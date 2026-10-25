@@ -1,5 +1,5 @@
 // Writing a board: the one write, the transitions it applies, a discarded or accepted board, a rename and the propagation to drill-downs.
-export { renameTransition } from "#runtime/operations/rename/rename.ts";
+export { renameSemanticBoard } from "#runtime/operations/rename/carry.ts";
 export type { DescendantOutcome } from "#runtime/operations/variant/propagate.ts";
 export { acceptedBoard } from "#runtime/operations/write/accepted.ts";
 export { discardSemanticBoard } from "#runtime/operations/write/discard.ts";
