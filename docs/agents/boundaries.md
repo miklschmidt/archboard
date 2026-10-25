@@ -387,8 +387,12 @@ only in Bun.
   flows to it (`flows.ts`) and the marks a pane draws itself (`marks.ts`), `text/` the measurement and the fonts,
   `engine/` the layout engine and its worker pool, and `layout/`, `track/` and `blocks/` the ways to lay an
   architecture out. These folders split by behavior (`blocks/tree/`, `track/routes/`), not by a longer file prefix.
-  The renderer core in `crates/` paints every picture and lays out every sequence and flowchart
-  (`crates/archboard-flows`, ADR 0057). `constants/` holds the spacing, the typography and `shell-geometry.ts`, and
+  The renderer core in `crates/` paints every picture, lays out every sequence and flowchart
+  (`crates/archboard-flows`) and lays out every Track solve (ADR 0057): `crates/archboard-layout` exposes one
+  function, `lay_out_track`, and asks the host's Graphviz for each graph it ranks through one trait, `Graphviz`. In a
+  worker, `blocks/` and `track/` now run only the Blocks solve. On the main thread, `blocks/tree/solves.ts` and the
+  modules it weighs a solve with (`joins.ts`, `weighing.ts`, `stacking.ts`, `track/scene/score.ts`, the `BlockTree`)
+  still run for both engines. `constants/` holds the spacing, the typography and `shell-geometry.ts`, and
   `protocol/` holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
   glue, and the TypeScript types of its contract, generated from its Rust types.
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the

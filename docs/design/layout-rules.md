@@ -13,7 +13,10 @@ The painter is no longer TypeScript. Since TASK-520.03 (2026-10-24) the renderer
 core in Rust paints the drawing that layout answers, bridges and all
 ([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
 so where a rule below says it runs in the painter, it runs in
-`crates/archboard-scene/src/paint/`.
+`crates/archboard-scene/src/paint/`. Since TASK-520.04 (2026-10-25) the core also
+lays out every Track solve (section 52), so where a rule below says Track runs it in
+`shared/rules/blocks/` or `shared/rules/track/`, it runs in
+`crates/archboard-layout/src/blocks/` or `crates/archboard-layout/src/track/`.
 
 Traffic no longer has a place where it rests, so layout owes it nothing. Sections
 40 to 43 once held rules about where a still picture rested a traffic streak
@@ -2832,3 +2835,36 @@ crossing to the track engine. For each of its two or three layouts, the core
 writes the graph as JSON and reads the drawing back as JSON, where the
 TypeScript layout handed the engine its own objects. That crossing ends when
 the core holds the track engine (TASK-520.04).
+
+## 53. The core lays out Track (2026-10-25, TASK-520.04)
+
+The renderer core answers every Track solve. The crate
+`crates/archboard-layout` holds the solve: the block tree, each block of
+cards ranked by Graphviz and routed on tracks, wraps, folds, stacking, port
+settling, the sides each line crosses and the assembly
+([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+Its interface is one function, `lay_out_track`, which takes the measured graph
+as the JSON of an ELK node and answers the root of the drawing. Graphviz stays
+a capability of the host: the crate asks for each graph through the trait
+`Graphviz`, and the wasm binding (`layOutTrack`) satisfies it with the
+host's viz-js. The Blocks solve stays in TypeScript until TASK-520.05.
+
+The port keeps the TypeScript stage's arithmetic: floating point in the same
+order, maps read in the order they were filled, stable sorts and numbers
+spelt as ECMAScript spells them. Every Track solve of the corpus was
+recorded with its Graphviz calls and replayed through the crate. Each one
+gave Graphviz the same graphs byte for byte and answered the same drawing.
+After the switch, none of the 35,560 corpus drawings of both engines, both
+themes and both comparison modes differed from the drawings before it.
+
+Track renders faster. The 293 current Track views, drawn one at a time, took
+12.3 s before and 8.1 s after in each of three runs. No view was more than
+1 ms slower in every run.
+
+The TypeScript branches that only an inline board took are gone. These
+include ports that slide along a block's edge, the entry row, inline frames
+that grow round resized children and the settling of ports in a block of
+cards drawn inline. Also gone are a wrap held to its columns, the cost of a
+lap round the page and the scene flags that chose these rules. What Blocks
+still runs stays in `shared/rules/blocks/` and `shared/rules/track/`, and
+the crate holds a copy of it until TASK-520.05 ports Blocks.
