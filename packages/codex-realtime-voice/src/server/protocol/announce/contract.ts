@@ -18,8 +18,9 @@ type ContextWords<Extra extends object = object> =
 	| { readonly withheld: string };
 
 /**
- * One change a host announces. Name at least one audience. Each audience hears one `feed` and
- * `sequence` at most once.
+ * One change a host announces. Name at least one audience. A workhorse hears one `feed` and
+ * `sequence` at most once. The coordinator and the voice keep no such promise: they answer a repeat
+ * with its first receipt only while it is among the tab's last 64 deliveries.
  */
 interface ContextChange {
 	/** The stream the change belongs to. */
@@ -38,8 +39,9 @@ interface ContextChange {
 	 */
 	readonly author?: string | null;
 	/**
-	 * When the change happened, in milliseconds since the epoch. Default: now. The change is fresh
-	 * for a fixed window from then, and a workhorse is not told a change that went stale.
+	 * When the change happened, in milliseconds since the epoch, never later than now. Default: now.
+	 * The change is fresh for a fixed window from then, and a workhorse is not told a change that
+	 * went stale.
 	 */
 	readonly capturedAtMs?: number;
 	/**

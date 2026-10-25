@@ -221,6 +221,19 @@ describe("the default workbench host", () => {
 		}
 	});
 
+	test("encodes host data that holds an absent value as JSON, as JSON.stringify does", () => {
+		const h = harness();
+		try {
+			const context = h.host.contextForOperation(h.authority, OPERATION);
+			const withData = { ...context, note: undefined, files: ["a", undefined] };
+			expect(JSON.parse(h.host.contextCodec.encode(withData))).toEqual(
+				JSON.parse(JSON.stringify({ ...context, files: ["a", null] })),
+			);
+		} finally {
+			h.close();
+		}
+	});
+
 	test("refuses a stale operation revision before the host can read and a replaced link after capture", () => {
 		const source = contextSource();
 		const h = harness({ context: source.source });

@@ -101,7 +101,14 @@ function parseChange(change: ContextChange): Announced {
 			`This context change cannot be announced: ${z.prettifyError(parsed.error)}`,
 		);
 	}
-	const capturedAtMs = change.capturedAtMs ?? Date.now();
+	const now = Date.now();
+	const capturedAtMs = change.capturedAtMs ?? now;
+	// A delivery is attempted after the change happened: the page refuses a record that says otherwise.
+	if (capturedAtMs > now) {
+		throw new TypeError(
+			"This context change cannot be announced: capturedAtMs is later than now. Pass the time the change happened, or omit it.",
+		);
+	}
 	return {
 		change,
 		author: change.author ?? null,
@@ -325,7 +332,7 @@ function tellSession(
 	announced: Announced,
 ): Promise<ContextReceipt>[] {
 	const { workhorse } = announced.change;
-	const checkouts = workhorse?.checkouts ?? [];
+	const checkouts = [...new Set(workhorse?.checkouts)];
 	const audiences = callbackAudiences(announced.change);
 	if (typeof session === "string") {
 		const missing = notDelivered("no_tab_session");

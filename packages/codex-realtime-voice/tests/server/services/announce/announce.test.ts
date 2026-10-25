@@ -86,7 +86,7 @@ describe("announcing a context change", () => {
 			author: "outside",
 			capturedAtMs: 1_000,
 			workhorse: {
-				checkouts: [CHECKOUT, "/work/none"],
+				checkouts: [CHECKOUT, CHECKOUT, "/work/none"],
 				text: "File saved.",
 				payload: { file: "a" },
 			},
@@ -202,6 +202,7 @@ describe("announcing a context change", () => {
 				workhorse: { checkouts: [CHECKOUT], text: "x", payload: { brief: 1 } },
 			},
 			{ feed: "editor", sequence: 1, voice: { text: "x", withheld: "y" } },
+			{ feed: "editor", sequence: 1, capturedAtMs: Date.now() + 60_000, voice: { text: "x" } },
 		];
 		for (const change of malformed) {
 			await expect(t.announce(change as ContextChange)).rejects.toBeInstanceOf(TypeError);

@@ -284,7 +284,7 @@ test("fits voice delivery history in fixed producer records without altering ret
 			kind: "voice_context",
 			sessionId,
 			ledgerId: "budget-ledger",
-			canonicalBrief: '{"source":"semantic_context"}',
+			canonicalBrief: '{"source":"host_context"}',
 			ownerEntriesTruncated: 2,
 			entriesTruncated: 2,
 			entries: bodies.map((body, sourceOrder) => ({
