@@ -64,7 +64,6 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
                 },
             ),
             curve: curve_through(route, false),
-            path: String::new(),
             label: None,
         })
         .collect();

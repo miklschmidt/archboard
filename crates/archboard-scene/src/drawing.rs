@@ -181,8 +181,6 @@ pub struct DrawingEdge<E> {
     pub edge: E,
     /// Where the route runs, as straight runs and cubic bends.
     pub curve: Curve,
-    /// The same route as an SVG path.
-    pub path: String,
     /// The label that stands on the route, when it has words.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]

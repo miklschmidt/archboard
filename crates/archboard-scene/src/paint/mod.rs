@@ -271,7 +271,7 @@ mod tests {
     }"#;
 
     const EDGE: &str = r#"{"edge": {"id": "ab", "from": "a", "to": "b", "kind": "calls", "emphasis": "normal", "traffic": {"speed": 80, "volume": 1}},
-        "curve": {"from": {"x": 100, "y": 60}, "segments": [{"kind": "line", "to": {"x": 100, "y": 200}}]}, "path": "M100,60 L100,200"}"#;
+        "curve": {"from": {"x": 100, "y": 60}, "segments": [{"kind": "line", "to": {"x": 100, "y": 200}}]}}"#;
 
     /// Every item of a scene, depth first.
     fn every(items: &[Item]) -> Vec<&Item> {

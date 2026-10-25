@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Painted};
-use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment, path_of};
+use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment};
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
 
@@ -81,7 +81,6 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
         let to = shaped(&routed.edge.to);
         let turned = at_shape_points(routed.curve.clone(), pointed(from), pointed(to));
         routed.curve = outlined(turned, from, to);
-        routed.path = path_of(&routed.curve);
     };
     drawing.drawing.edges.iter_mut().for_each(on_shapes);
     drawing.bridged.edges.iter_mut().for_each(on_shapes);

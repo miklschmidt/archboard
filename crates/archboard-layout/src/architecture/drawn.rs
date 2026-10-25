@@ -8,7 +8,7 @@ use archboard_scene::drawing::{
     ArchitectureDrawing, DrawingEdge, DrawingNode, DrawingRegion, EdgeFacts, NodeFacts,
     PlacedLabel, ReadingDirection,
 };
-use archboard_scene::geometry::{Curve, Point, Rect, curve_through, path_of};
+use archboard_scene::geometry::{Curve, Point, Rect, curve_through};
 use indexmap::IndexMap;
 
 use super::choosing::Placed;
@@ -130,7 +130,6 @@ fn edges_of(
             });
         DrawingEdge {
             edge: edge.facts(),
-            path: path_of(&curve),
             curve,
             label,
         }
