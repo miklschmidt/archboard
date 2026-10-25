@@ -49,7 +49,8 @@ fn words_break_after_spaces_that_hang() {
     let two = width(FACE, "alpha beta", 10.0);
     assert_eq!(texts(&paragraph, two), ["alpha beta", "gamma"]);
     assert_eq!(texts(&paragraph, 1000.0), [words]);
-    assert_eq!(paragraph.natural_width(), width(FACE, words, 10.0));
+    // Its words, each set on its own, against the line set whole.
+    assert!((paragraph.natural_width() - width(FACE, words, 10.0)).abs() < 0.05);
 }
 
 #[test]

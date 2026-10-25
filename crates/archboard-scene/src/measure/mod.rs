@@ -34,11 +34,11 @@ pub fn face(font: DiagramFont) -> Face {
 
 /// How wide one line of words is set, to a hundredth of a unit.
 pub fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
-    js::round(exact_width(text, font, size) * 100.0) / 100.0
+    js::round(set_width(text, font, size) * 100.0) / 100.0
 }
 
-/// How wide one line of words is set, unrounded.
-pub(crate) fn exact_width(text: &str, font: DiagramFont, size: f64) -> f64 {
+/// How wide one line of words is set, as the text crate gives it.
+pub(crate) fn set_width(text: &str, font: DiagramFont, size: f64) -> f64 {
     archboard_text::width(face(font), text, size)
 }
 

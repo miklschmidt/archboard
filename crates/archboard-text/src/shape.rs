@@ -112,9 +112,22 @@ fn units(distance: i64) -> i32 {
     i32::try_from(distance).unwrap_or(if distance < 0 { i32::MIN } else { i32::MAX })
 }
 
-/// How wide some words are set in a face at a size, in the units of the size.
+/// How wide some words are set in a face at a size, in the units of the size,
+/// to a hundredth of a unit held in single precision.
 pub fn width(face: Face, words: &str, size: f64) -> f64 {
-    scaled(shape(face, words).advance, face, size)
+    hundredths(scaled(shape(face, words).advance, face, size))
+}
+
+/// A width to a hundredth of a unit, held in single precision: the number a
+/// canvas reported for every width before the core shaped text. Words break
+/// and cards size as they did, to the bit for nearly every run, so a layout
+/// that compares widths makes the choices it made then (TASK-520.07).
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "single precision is the rule: the canvas held its widths so"
+)]
+pub(crate) fn hundredths(width: f64) -> f64 {
+    f64::from(((width * 100.0).round() / 100.0) as f32)
 }
 
 /// A distance in a face's units, at a size.
