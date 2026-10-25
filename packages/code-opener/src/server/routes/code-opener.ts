@@ -44,6 +44,7 @@ import {
 	planOpenerCommand,
 	validateOpenerSelection,
 	type OpenerPlan,
+	type PlanOptions,
 } from "#server/projections/planning.ts";
 
 type BindingLookup =
@@ -378,20 +379,21 @@ function shownCommand(selection: OpenerSelection): OpenerPlan {
 }
 
 /**
- * Plans the opener command for a target and launches it when the plan succeeds.
+ * Opens a target in the person's editor: plans the command the selection makes for it and
+ * launches that command when the plan succeeds.
  * @param selection The opener selection to plan with.
  * @param target The path to open.
- * @param launch The launcher to run the planned command.
- * @param line The line to open at, when the opener can.
+ * @param options The line to open at when the opener can, the platform to plan for, and the
+ * launcher that runs the command, the real one unless a test replaces it.
  * @returns The launch result, or the plan failure that prevented a launch.
  */
-async function planAndLaunch(
+export async function openInEditor(
 	selection: OpenerSelection,
 	target: string,
-	launch: CodeOpenerRouteDependencies["launch"],
-	line?: number,
+	options: PlanOptions & { readonly launch?: CodeOpenerRouteDependencies["launch"] } = {},
 ): Promise<OpenerPlan | LaunchResult> {
-	const plan = planOpenerCommand(selection, target, { line });
+	const { launch = launchOpener, ...planning } = options;
+	const plan = planOpenerCommand(selection, target, planning);
 	return plan.ok ? launch(plan.command) : plan;
 }
 
@@ -532,11 +534,9 @@ export function createCodeOpenerRouter(
 					await snapshotCheckoutAccess({ vault: null, signal }),
 				);
 				if (!checkout.ok) return sendFailure(response, checkout);
-				const launched = await planAndLaunch(
-					parsed.data.selection,
-					checkout.root,
-					dependencies.launch,
-				);
+				const launched = await openInEditor(parsed.data.selection, checkout.root, {
+					launch: dependencies.launch,
+				});
 				if (!launched.ok) return sendFailure(response, launched);
 				response.json({ success: true, code: "OPENER_TESTED", repository: checkout.repository });
 			}),
@@ -571,12 +571,10 @@ export function createCodeOpenerRouter(
 				const current = readOpenerSelection();
 				if (!current.ok)
 					return sendFailure(response, current, statusFor(current.code), found.binding, line);
-				const launched = await planAndLaunch(
-					current.selection,
-					target.target,
-					dependencies.launch,
+				const launched = await openInEditor(current.selection, target.target, {
 					line,
-				);
+					launch: dependencies.launch,
+				});
 				if (!launched.ok)
 					return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
 				response.json(openedReply(target));
