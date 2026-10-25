@@ -7,7 +7,7 @@ import {
 } from "@archboard/codex-realtime-voice/contract";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 const { decoder, validator } = createIdentityAuthorities().identity;
 

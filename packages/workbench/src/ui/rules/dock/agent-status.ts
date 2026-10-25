@@ -10,7 +10,7 @@ import type { AgentPhase } from "#ui/rules/agent-setup/phase.ts";
 import type { AgentView } from "#ui/state/surfaces/contracts.ts";
 import { activityLabel, runSummary } from "#ui/rules/thread/activity-words.ts";
 import type { ActivityItem } from "#ui/rules/runtime/messages.ts";
-import type { ConversationItem, ConversationTurn } from "#ui/state/timeline/contract.ts";
+import type { ConversationItem, ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
 /** How the line is lit. */
 type StatusTone = "quiet" | "working" | "attention" | "failed";

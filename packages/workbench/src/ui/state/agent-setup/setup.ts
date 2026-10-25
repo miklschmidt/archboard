@@ -9,9 +9,9 @@
 
 import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { WorkbenchComposerSubmissionResult } from "#ui/state/composer/contract.ts";
-import type { ThreadLinkLoginParams } from "#ui/state/thread-link/transport-port.ts";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
+import type { WorkbenchComposerSubmissionResult } from "@archboard/codex-realtime-voice/controllers";
+import type { VoiceSignIn as ThreadLinkLoginParams } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 import {
 	arrivedAfterAll,

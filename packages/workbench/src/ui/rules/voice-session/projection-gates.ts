@@ -6,7 +6,7 @@ import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchMediaState,
 	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

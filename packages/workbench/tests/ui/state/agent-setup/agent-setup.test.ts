@@ -5,7 +5,7 @@ import {
 	type AgentSetupPorts,
 	type AuthTab,
 } from "#ui/state/agent-setup/setup.ts";
-import type { WorkbenchComposerSubmissionResult } from "#ui/state/composer/contract.ts";
+import type { WorkbenchComposerSubmissionResult } from "@archboard/codex-realtime-voice/controllers";
 import {
 	STAGES,
 	conversation,

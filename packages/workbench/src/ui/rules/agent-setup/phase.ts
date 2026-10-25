@@ -4,7 +4,7 @@
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 /** Where the agent stands. */
 type AgentPhase =

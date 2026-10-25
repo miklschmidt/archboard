@@ -7,7 +7,7 @@
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SubtitleSource } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */
 type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "recording"> & {

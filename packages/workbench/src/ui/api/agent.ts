@@ -4,7 +4,6 @@ export { AgentPanel } from "#ui/components/panel/AgentPanel.tsx";
 export { useConversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
 export type { Conversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
 export type { AgentPhase } from "#ui/rules/agent-setup/phase.ts";
-export { projectTimelineTurns } from "#ui/rules/timeline/projection.ts";
 export { createAgentSetup } from "#ui/state/agent-setup/setup.ts";
 export type {
 	AgentSetup,
@@ -16,4 +15,3 @@ export type {
 export type { AgentActions, AgentContext, AgentView } from "#ui/state/surfaces/contracts.ts";
 export { createDraftStore } from "#ui/state/surfaces/draft-store.ts";
 export type { DraftStore } from "#ui/state/surfaces/draft-store.ts";
-export type { ConversationTurn } from "#ui/state/timeline/contract.ts";
