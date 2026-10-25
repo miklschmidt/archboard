@@ -144,7 +144,7 @@ const TEST_PANE_MESSAGE_POLL_MS = 20;
  * These panes acknowledge callbacks directly and never render, so a frame
  * that has not arrived in two seconds is missing. It is long enough for a
  * server that waits on a pane's geometry to give up first: it pulls against
- * `PANE_SETTLE_CAP_MS` (1.5 s), which this value must stay above.
+ * `PANE_MS.settleCap` (1.5 s), which this value must stay above.
  */
 const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 
@@ -152,7 +152,7 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
  * Outer bound for one cross-process lock-watch delivery, from the completed
  * ownership change in one server to the matching board_lock frame on the pane
  * of the other. This owner is about that delivery, so it does wait for the
- * product's one-second lock sweep (`LOCK_WATCH_MS`) to fire: a second server
+ * product's one-second lock sweep (`BOARD_LOCK_MS.watch`) to fire: a second server
  * learns of a lock file only by looking at it, and the sweep interval has no
  * test override.
  * The bound is a test number, three seconds: one sweep, then slack for timer
@@ -165,7 +165,7 @@ const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3000;
  * How long the cross-process lock owner waits after a pane takes a claim back
  * through one server, so that the server holding the claim has refused a
  * renewal and recorded the loss. This owner is about that discovery, so it does
- * wait for the product's one-second lease renewal (`LOCK_RENEW_MS`) to fire: the
+ * wait for the product's one-second lease renewal (`BOARD_LOCK_MS.renew`) to fire: the
  * claiming server learns of the take-back only when that renewal is refused,
  * and the interval has no test override. It is a test number, 1.5 seconds: one
  * renewal, then slack for timer phase and a stressed host. A call to that

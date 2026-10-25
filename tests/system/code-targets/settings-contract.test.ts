@@ -2,11 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
 import {
-	CodeTargetOpenFailureSchema,
+	CodeTargetOpenReplySchema,
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
-	OpenerTestReplySchema,
-} from "@archboard/code-binding/opening";
+} from "@archboard/code-opener/opening";
 import { createOpenerFixture, jsonBody } from "./support/opener-fixture.ts";
 
 describe("public opener settings contract", () => {
@@ -144,7 +143,7 @@ describe("public opener settings contract", () => {
 			body: jsonBody({ selection: invocation.selection, repository: fixture.repository }),
 		});
 		expect(result.status).toBe(200);
-		expect(OpenerTestReplySchema.parse(result.body)).toEqual({
+		expect(result.body).toEqual({
 			success: true,
 			code: "OPENER_TESTED",
 			repository: fixture.repository,
@@ -182,7 +181,7 @@ describe("public opener settings contract", () => {
 				body: jsonBody(body),
 			});
 			expect(result.status).toBe(500);
-			expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+			expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 				success: false,
 				code: "OPENER_CONFIG_INVALID",
 			});
@@ -203,7 +202,7 @@ describe("public opener settings contract", () => {
 				body: "{",
 			});
 			expect(result.status).toBe(400);
-			expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+			expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 				success: false,
 				code: "REQUEST_INVALID",
 			});
@@ -220,7 +219,7 @@ describe("public opener settings contract", () => {
 			body: "{",
 		});
 		expect(result.status).toBe(403);
-		expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: false,
 			code: "CROSS_ORIGIN_REFUSED",
 		});
@@ -236,7 +235,7 @@ describe("public opener settings contract", () => {
 			body: oversized,
 		});
 		expect(result.status).toBe(400);
-		expect(CodeTargetOpenFailureSchema.parse(result.body)).toMatchObject({
+		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: false,
 			code: "REQUEST_INVALID",
 		});
@@ -247,7 +246,7 @@ describe("public opener settings contract", () => {
 			body: oversized,
 		});
 		expect(refused.status).toBe(403);
-		expect(CodeTargetOpenFailureSchema.parse(refused.body)).toMatchObject({
+		expect(CodeTargetOpenReplySchema.parse(refused.body)).toMatchObject({
 			code: "CROSS_ORIGIN_REFUSED",
 		});
 	});

@@ -12,7 +12,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as CheckModule from "#runtime/api/code-check-run.ts";
+import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
@@ -250,7 +250,7 @@ beforeAll(async () => {
 			},
 		]);
 	}
-	const check: typeof CheckModule = await import("#runtime/api/code-check-run.ts");
+	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);

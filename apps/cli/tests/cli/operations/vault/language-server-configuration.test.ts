@@ -26,8 +26,7 @@ let checkout = "";
 let registry = "";
 let vault = "";
 let runCli: (argv: string[]) => Promise<void>;
-let checkCode: typeof CodeCheck.checkCode;
-let readBoardsToCheck: typeof CodeCheck.readBoardsToCheck;
+let codeCheck: ReturnType<typeof CodeCheck.createCodeCheck>;
 
 /**
  * Run Git with an owner's identity and no configuration of the machine.
@@ -102,7 +101,7 @@ beforeAll(async () => {
 			variants: [{ id: "v1", name: "Built", lifecycle: "current", content }],
 		}),
 	);
-	({ checkCode, readBoardsToCheck } = await import("@archboard/code-intel/code-check-run"));
+	codeCheck = (await import("@archboard/code-intel/code-check-run")).createCodeCheck();
 	({ runCli } = await import("#cli/operations/invocation/run.ts"));
 });
 
@@ -154,10 +153,15 @@ async function listed(root = checkout): Promise<unknown> {
  * @returns Them.
  */
 async function missingSkips() {
-	const read = readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	const { skipped } = await checkCode(vault, read.boards, new AbortController().signal);
-	return skipped.filter((skip) => skip.reason === "language-server-missing");
+	const answer = await codeCheck.run({
+		vault,
+		variant: undefined,
+		everyDraft: false,
+		plans: [],
+		signal: new AbortController().signal,
+	});
+	if (!("boards" in answer)) throw new Error(answer.error);
+	return answer.skipped.filter((skip) => skip.reason === "language-server-missing");
 }
 
 test("the command a language-server-missing skip names is one the CLI accepts, and the next pass reads what it wrote", async () => {

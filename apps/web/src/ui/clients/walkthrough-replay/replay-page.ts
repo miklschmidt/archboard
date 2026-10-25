@@ -18,18 +18,19 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { RECORDING_REPLAY_PREROLL_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/timing";
 import {
-	ReplayOptionsSchema,
-	TALK_FRAME_RATE,
-	TalkSchema,
-	framesOf,
-	type ReplayPage,
+	SAMPLES_PER_FRAME,
+	TALK_SAMPLE_RATE,
 	type Talk,
+	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
 import { createBoardQueryClient } from "#ui/clients/board-catalog/query-client.ts";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";
+import {
+	createSteppedClock,
+	driveFramesFrom,
+	type SteppedClock,
+} from "@archboard/ui-kit/frame-clock";
 import { chooseLayoutEngine } from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
 import {
 	pictureSource,
@@ -45,11 +46,14 @@ import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.t
 import { TalkPlayback } from "#ui/state/walkthrough-replay/talk-playback.ts";
 import { talkReads } from "#ui/clients/walkthrough-replay/talk-reads.ts";
 
-/** How long one frame lasts, in milliseconds. */
-const FRAME_MS = 1000 / TALK_FRAME_RATE;
+/** What the page does to render a talk, as the replay contract publishes it. */
+type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
+
+/** How long one frame lasts, in milliseconds: a frame is a fixed run of the voice's samples. */
+const FRAME_MS = (SAMPLES_PER_FRAME * 1000) / TALK_SAMPLE_RATE;
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(RECORDING_REPLAY_PREROLL_MS / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(REPLAY_MS.preroll / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {
@@ -171,7 +175,7 @@ async function draw(rendering: Rendering, index: number): Promise<void> {
 /** The page's side of rendering one talk. */
 class WalkthroughReplay {
 	/** What the recorder drives. */
-	readonly page: ReplayPage;
+	readonly page: ReplayRenderer;
 	readonly #root: HTMLElement;
 	#rendering: Rendering | null = null;
 
@@ -186,15 +190,13 @@ class WalkthroughReplay {
 
 	/**
 	 * Put a talk on the page and play the board's entrance through.
-	 * @param value The talk, as `talk.json` holds it.
+	 * @param talk The talk.
 	 * @param options The theme and layout engine to render it in, and how loud its voice is on each frame.
-	 * @returns How many frames it renders to.
-	 * @throws {Error} When the talk cannot be read, the page already has one, or the board never draws.
+	 * @throws {Error} When the page already has a talk, or the board never draws.
 	 */
-	async load(value: unknown, options: unknown): Promise<{ readonly frames: number }> {
+	async load(talk: Talk, options: Parameters<ReplayRenderer["load"]>[1]): Promise<void> {
 		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");
-		const talk = TalkSchema.parse(value);
-		const { theme, layout, levels } = ReplayOptionsSchema.parse(options);
+		const { theme, layout, levels } = options;
 		document.documentElement.dataset["theme"] = theme;
 		chooseLayoutEngine(layout);
 		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS);
@@ -232,7 +234,6 @@ class WalkthroughReplay {
 			// oxlint-disable-next-line no-await-in-loop -- frames are drawn in order: each stands on the clock the last one left
 			await draw(rendering, index);
 		}
-		return { frames: framesOf(talk) };
 	}
 
 	/**

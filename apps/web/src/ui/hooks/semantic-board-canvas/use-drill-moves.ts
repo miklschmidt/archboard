@@ -10,11 +10,14 @@
 
 import { useCallback, useMemo } from "react";
 
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 import type { Destination, Flier } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
 import type { DrillNavigation } from "#ui/hooks/semantic-board-canvas/use-drill-down.ts";
 import type { DepartureWay } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
 /** What a pane's moves between boards are made from. */
 interface DrillMovesInputs {

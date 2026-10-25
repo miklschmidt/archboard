@@ -32,8 +32,7 @@ import {
 	type RefObject,
 } from "react";
 
-import type { SemanticWalkthrough } from "@archboard/board/content";
-import { PRESENTATION_BOX_IN_MS, PRESENTATION_BOX_STEP_MS } from "@archboard/timing";
+import { PRESENTATION_MS } from "@archboard/timing";
 import { PresentationFoot } from "#ui/components/semantic-board-canvas/PresentationFoot.tsx";
 import { PresentationKeys } from "#ui/components/semantic-board-canvas/PresentationKeys.tsx";
 import { PresentationRail } from "#ui/components/semantic-board-canvas/PresentationRail.tsx";
@@ -41,11 +40,14 @@ import { StepFigure, StepWords } from "#ui/components/semantic-board-canvas/Pres
 import { useCaptionReserve } from "#ui/hooks/semantic-board-canvas/use-caption-reserve.ts";
 import { usePresentationKeys } from "#ui/hooks/semantic-board-canvas/use-presentation-keys.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /** The paces the stylesheet eases the box in by, and hands a step to the next by (app.css, `semantic-presentation`). */
 const BOX_STYLE: CSSProperties = {
-	"--presentation-box-in-ms": `${PRESENTATION_BOX_IN_MS}ms`,
-	"--presentation-step-ms": `${PRESENTATION_BOX_STEP_MS}ms`,
+	"--presentation-box-in-ms": `${PRESENTATION_MS.boxIn}ms`,
+	"--presentation-step-ms": `${PRESENTATION_MS.boxStep}ms`,
 };
 
 /** Inputs for a presented walkthrough. */

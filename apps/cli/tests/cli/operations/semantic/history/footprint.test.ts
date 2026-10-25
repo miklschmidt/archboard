@@ -6,8 +6,11 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import { FootprintReplySchema, type FootprintReply } from "@archboard/code-intel/history";
+import { FootprintReplySchema } from "@archboard/code-intel/history";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+
+/** The footprint route's reply. */
+type FootprintReply = z.infer<typeof FootprintReplySchema>;
 
 const subject = (id: string, name: string) => ({ kind: "node" as const, id, name });
 const reply: FootprintReply = {

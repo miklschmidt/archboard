@@ -10,7 +10,6 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		".": "./src/shared/constants/timing.ts",
-		"./voice": "./src/shared/constants/voice.ts"
+		".": "./src/shared/constants/timing.ts"
 	}
 }

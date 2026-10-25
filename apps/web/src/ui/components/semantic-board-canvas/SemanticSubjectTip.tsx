@@ -5,10 +5,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn, Tooltip } from "@archboard/ui-kit/components";
 
 import { lineInk } from "@archboard/renderer/picture";
-import { TooltipContent, Tooltip } from "@archboard/ui-kit/overlays";
 import {
 	RelationshipSample,
 	TypeSample,
@@ -51,7 +50,7 @@ function SemanticSubjectTip(props: {
 	}
 	return (
 		<Tooltip open>
-			<TooltipContent
+			<Tooltip.Content
 				anchor={anchor}
 				sideOffset={10}
 				look="card"
@@ -60,7 +59,7 @@ function SemanticSubjectTip(props: {
 				style={accentOf(tip.appearance)}
 			>
 				<TipLines tip={tip} />
-			</TooltipContent>
+			</Tooltip.Content>
 		</Tooltip>
 	);
 }

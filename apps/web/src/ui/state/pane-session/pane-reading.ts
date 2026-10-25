@@ -16,12 +16,15 @@
 
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
-	type SemanticPaneContext,
-	type SemanticPanePart,
 } from "@archboard/board/pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
 import { inVault, post } from "@archboard/server-requests";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -167,7 +170,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		if (timer !== null) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(flush, SELECTION_DEBOUNCE_MS);
+		timer = setTimeout(flush, PANE_MS.selectionDebounce);
 	}
 
 	/**

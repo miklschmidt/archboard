@@ -11,9 +11,8 @@ import {
 } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@archboard/code-binding/opening";
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
-import { Button, buttonVariants, IconButton } from "@archboard/ui-kit/controls";
+import { GitHubHttpsUrlSchema, type CodeTargetNotice } from "@archboard/code-opener/opening";
+import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/rules/shell/contracts.ts";
 
 /** A 24px outline action with two-pixel corners. */
@@ -56,7 +55,7 @@ function ReportedAction(props: ReportedActionProps): JSX.Element {
 
 /** Inputs for a GitHub link action. */
 interface GitHubActionProps {
-	action: Extract<CodeTargetNoticeAction, { kind: "github" }>;
+	action: Extract<CodeTargetNotice["actions"][number], { kind: "github" }>;
 }
 
 /**
@@ -135,11 +134,11 @@ function Notice(props: NoticeProps): JSX.Element {
 			className="bg-background flex min-h-10 flex-row items-center gap-x-3 rounded-none border-0 px-4 py-1.5 has-data-[slot=alert-action]:pr-3 *:[svg]:translate-y-0"
 		>
 			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
-			<AlertTitle className="shrink-0">{notice.title}</AlertTitle>
-			<AlertDescription className="min-w-0 flex-1 truncate" title={notice.description}>
+			<Alert.Title className="shrink-0">{notice.title}</Alert.Title>
+			<Alert.Description className="min-w-0 flex-1 truncate" title={notice.description}>
 				{notice.description}
-			</AlertDescription>
-			<AlertAction className="static ml-auto flex shrink-0 items-center gap-2">
+			</Alert.Description>
+			<Alert.Action className="static ml-auto flex shrink-0 items-center gap-2">
 				{notice.actions.map((action) => (
 					<NoticeAction
 						key={actionKey(action)}
@@ -155,7 +154,7 @@ function Notice(props: NoticeProps): JSX.Element {
 				>
 					<RiCloseLine />
 				</IconButton>
-			</AlertAction>
+			</Alert.Action>
 		</Alert>
 	);
 }

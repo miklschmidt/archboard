@@ -9,4 +9,3 @@ export type {
 } from "#runtime/processes/process-contract.ts";
 export { createCodexProcess } from "#runtime/processes/process.ts";
 export { CodexExecutableError, resolveCodexExecutable } from "#runtime/services/executable.ts";
-export type { CodexExecutableOptions } from "#runtime/services/executable.ts";

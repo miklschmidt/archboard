@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [
@@ -233,7 +233,7 @@ function reportedVersion(executablePath: string, execute: typeof execFileSync): 
 			encoding: "utf8",
 			env: verificationEnvironment(),
 			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
-			timeout: CODEX_REQUEST_SETTLEMENT_MS,
+			timeout: CODEX_SESSION_MS.requestSettlement,
 			killSignal: "SIGKILL",
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,

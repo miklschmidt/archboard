@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_REALTIME_STOP_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { createRealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
 import type { RealtimeMediaSession } from "#ui/state/realtime/session-contract.ts";
 import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
@@ -64,7 +64,7 @@ describe("realtime browser media stop outcomes", () => {
 			const concurrent = media.stop();
 			if (mode === "paused") {
 				await settle();
-				env.advance(CODEX_REALTIME_STOP_MS);
+				env.advance(CODEX_REALTIME_MS.stop);
 			}
 			const [b, stopped, stoppedAgain] = await Promise.all([second, stopping, concurrent]);
 			expect(b.state).toEqual({ phase: "closed", reason: "stopped" });
@@ -102,7 +102,7 @@ describe("realtime browser media stop outcomes", () => {
 			const restarting = media.start(correlation(2));
 			if (mode === "paused") {
 				await settle();
-				env.advance(CODEX_REALTIME_STOP_MS);
+				env.advance(CODEX_REALTIME_MS.stop);
 			}
 			if (mode === "delivered") {
 				expect((await restarting).correlation).toEqual(correlation(2));
@@ -171,7 +171,7 @@ describe("realtime browser media stop outcomes", () => {
 		});
 		const stopping = media.stop();
 		await settle();
-		env.advance(CODEX_REALTIME_STOP_MS);
+		env.advance(CODEX_REALTIME_MS.stop);
 		await Promise.all([stopping, disposing]);
 		expect(media.getSnapshot()).toMatchObject({
 			correlation: correlation(1),

@@ -7,8 +7,11 @@
 // current variant has no adopted line, and its first drafts stand on the line
 // in its place. Pure.
 
-import type { Adoption, Shelving } from "@archboard/board/document";
 import type { OfferedVariant } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type { SemanticBoard } from "@archboard/board/document";
+
+type Shelving = NonNullable<SemanticBoard["shelvings"]>[number];
+type Adoption = NonNullable<SemanticBoard["adoptions"]>[number];
 
 /** One variant's row on the timeline. */
 interface TimelineEntry {

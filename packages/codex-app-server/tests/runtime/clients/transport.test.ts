@@ -13,7 +13,7 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "#runtime/schemas/authored-schemas.ts";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import {
 	captureRejection,
 	createHarness,
@@ -337,7 +337,7 @@ describe("Codex app-server transport", () => {
 			fakeTimers = true;
 			const timedOut = transport.request("turn/steer", {});
 			const timedOutId = frameAt(child, 0)["id"];
-			jest.advanceTimersByTime(CODEX_REQUEST_SETTLEMENT_MS);
+			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
 			expect(await captureRejection(timedOut)).toMatchObject({
 				reason: "timeout",
 				outcome: "outcome_unknown",
@@ -367,7 +367,7 @@ describe("Codex app-server transport", () => {
 
 			await flushStreams();
 			const idempotent = transport.request("turn/steer", {}, { idempotent: true });
-			jest.advanceTimersByTime(CODEX_REQUEST_SETTLEMENT_MS);
+			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
 			let idempotentError: unknown;
 			try {
 				await idempotent;

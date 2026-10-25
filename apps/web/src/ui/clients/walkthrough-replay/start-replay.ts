@@ -1,6 +1,6 @@
 // Making a page the renderer of a recorded talk.
 
-import { REPLAY_PAGE_GLOBAL } from "@archboard/walkthrough/talk";
+import { publishReplayPage } from "@archboard/walkthrough/talk";
 
 import { WalkthroughReplay } from "#ui/clients/walkthrough-replay/replay-page.ts";
 
@@ -9,7 +9,7 @@ import { WalkthroughReplay } from "#ui/clients/walkthrough-replay/replay-page.ts
  * @param root The element the talk is mounted in.
  */
 function startWalkthroughReplay(root: HTMLElement): void {
-	Reflect.set(window, REPLAY_PAGE_GLOBAL, new WalkthroughReplay(root).page);
+	publishReplayPage(new WalkthroughReplay(root).page);
 }
 
 export { startWalkthroughReplay };

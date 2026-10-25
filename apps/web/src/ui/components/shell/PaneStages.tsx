@@ -7,7 +7,11 @@
 
 import { useMemo, type JSX, type ReactNode } from "react";
 
-import { PaneChromeContext, type PaneChrome, Separator } from "@archboard/ui-kit/display";
+import { Separator } from "@archboard/ui-kit/components";
+import {
+	type PaneChrome,
+	PaneChromeContext,
+} from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
 import { ClaimBanner } from "#ui/components/shell/ClaimBanner.tsx";
 import { PaneControls, PaneLetter } from "#ui/components/shell/PaneControls.tsx";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
