@@ -16,7 +16,7 @@ import { afterAll, expect, jest, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
+import { BOARD_CACHE_MS } from "@archboard/timing";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -177,14 +177,14 @@ test("the locality is asked once for each pick, and never on the poll, a return 
 	jest.useFakeTimers();
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const { choose, unmount } = mountPane(client);
-	await pass(3 * VAULT_CHECK_POLL_MS);
+	await pass(3 * BOARD_CACHE_MS.vaultCheck);
 	expect(asked.vaultCheck).toBeGreaterThan(1);
 	expect(asked.locality).toBe(0);
 
 	await choose(1);
 	expect(asked.locality).toBe(1);
 	const polls = asked.vaultCheck;
-	await pass(3 * VAULT_CHECK_POLL_MS);
+	await pass(3 * BOARD_CACHE_MS.vaultCheck);
 	await act(async () => {
 		focusManager.setFocused(false);
 		focusManager.setFocused(true);
@@ -200,7 +200,7 @@ test("the locality is asked once for each pick, and never on the poll, a return 
 	await choose(2);
 	expect(asked.locality).toBe(2);
 	await choose(null);
-	await pass(3 * VAULT_CHECK_POLL_MS);
+	await pass(3 * BOARD_CACHE_MS.vaultCheck);
 	expect(asked.locality).toBe(2);
 	unmount();
 	client.clear();

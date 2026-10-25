@@ -3,12 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
-import {
-	CLAIM_LEASE_MS,
-	LOCK_POLL_MS,
-	LOCK_RENEW_MS,
-	LOCK_STEAL_GUARD_MS,
-} from "@archboard/timing";
+import { BOARD_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a
@@ -32,8 +27,8 @@ afterEach(() => {
  * @param ms How long.
  */
 async function advanceLockTime(ms: number): Promise<void> {
-	for (let elapsed = 0; elapsed < ms; elapsed += LOCK_POLL_MS) {
-		jest.advanceTimersByTime(Math.min(LOCK_POLL_MS, ms - elapsed));
+	for (let elapsed = 0; elapsed < ms; elapsed += BOARD_LOCK_MS.poll) {
+		jest.advanceTimersByTime(Math.min(BOARD_LOCK_MS.poll, ms - elapsed));
 		await Promise.resolve();
 		await Promise.resolve();
 	}
@@ -44,7 +39,7 @@ async function advanceLockTime(ms: number): Promise<void> {
  * the clock moves and no timer runs.
  */
 function stallServer(): void {
-	jest.setSystemTime(Date.now() + CLAIM_LEASE_MS + LOCK_RENEW_MS);
+	jest.setSystemTime(Date.now() + CLAIM_MS.lease + BOARD_LOCK_MS.renew);
 }
 
 /**
@@ -59,7 +54,7 @@ async function writeUnderClaim(board: string): Promise<void> {
 		{ vault, board, holder: { id: id!, kind: "agent", claimed: true }, waitMs: 0 },
 		() => board,
 	);
-	await advanceLockTime(LOCK_STEAL_GUARD_MS * 2);
+	await advanceLockTime(BOARD_LOCK_MS.stealGuard * 2);
 	expect(await written).toBe(board);
 }
 
@@ -80,7 +75,7 @@ test("claims on several boards of one server stand through a stall while their h
 		// After the pause, half the holders' writes land before the late renewal
 		// runs and half after it.
 		await Promise.all(boards.slice(0, 2).map(writeUnderClaim));
-		await advanceLockTime(LOCK_RENEW_MS);
+		await advanceLockTime(BOARD_LOCK_MS.renew);
 		await Promise.all(boards.slice(2).map(writeUnderClaim));
 	}
 	for (const board of boards) {
@@ -113,7 +108,7 @@ test("a claim that ends without a person names what its renewal found", async ()
 		JSON.stringify({ ...record, id: "elsewhere", claimed: false, token: "elsewhere-token" }),
 	);
 	rmSync(join(vault, ".archboard/locks", `${removed}.lock`));
-	await advanceLockTime(LOCK_RENEW_MS);
+	await advanceLockTime(BOARD_LOCK_MS.renew);
 
 	expect(lock.claimOn(vault, taken)).toBeNull();
 	expect(lock.takeClaimRevocation(vault, taken)).toMatchObject({

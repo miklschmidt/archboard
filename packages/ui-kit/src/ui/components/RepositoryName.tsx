@@ -20,7 +20,7 @@ type RepositoryNameProps = Omit<ComponentProps<"span">, "children"> & {
  * @param props The identity, and the span's own attributes.
  * @returns The name.
  */
-function RepositoryName(props: RepositoryNameProps): JSX.Element {
+function RepositoryNameRoot(props: RepositoryNameProps): JSX.Element {
 	const { identity, className, ...rest } = props;
 	const shown = shownRepository(identity);
 	return (
@@ -41,4 +41,7 @@ function RepositoryName(props: RepositoryNameProps): JSX.Element {
 	);
 }
 
-export { GitHubMark, RepositoryName };
+/** A repository's name, with GitHub's mark, which stands in for the host on GitHub, as its part. */
+const RepositoryName = Object.assign(RepositoryNameRoot, { GitHubMark });
+
+export { RepositoryName };

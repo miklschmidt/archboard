@@ -9,13 +9,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@archboard/ui-kit/controls";
+import { Select } from "@archboard/ui-kit/components";
 import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
 import {
 	LAYOUT_ENGINES,
@@ -42,16 +36,16 @@ function SemanticEngineBar(): JSX.Element {
 				Layout engine
 			</label>
 			<Select items={ENGINE_ITEMS} value={engine} onValueChange={onChange}>
-				<SelectTrigger id={id} size="sm" data-slot="semantic-engine-choice" className="w-full">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
+				<Select.Trigger id={id} size="sm" data-slot="semantic-engine-choice" className="w-full">
+					<Select.Value />
+				</Select.Trigger>
+				<Select.Content>
 					{ENGINE_ITEMS.map(({ value, label }) => (
-						<SelectItem key={value} value={value}>
+						<Select.Item key={value} value={value}>
 							{label}
-						</SelectItem>
+						</Select.Item>
 					))}
-				</SelectContent>
+				</Select.Content>
 			</Select>
 		</div>
 	);

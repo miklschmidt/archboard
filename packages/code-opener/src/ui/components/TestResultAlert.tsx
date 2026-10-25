@@ -4,8 +4,7 @@ import { RiCheckLine, RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import type { CodeTargetOpenFailure } from "#shared/schemas/code-target-open.ts";
-import { Alert, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
-import { Technical } from "@archboard/ui-kit/dialog-parts";
+import { Alert, Technical } from "@archboard/ui-kit/components";
 import type { OpenerTestResult } from "#ui/state/opener-settings-contracts.ts";
 
 /** Inputs for the test result. */
@@ -28,23 +27,23 @@ function TestResultAlert(props: TestResultAlertProps): JSX.Element | null {
 		return (
 			<Alert>
 				<RiCheckLine />
-				<AlertTitle>Opener works</AlertTitle>
-				<AlertDescription>
+				<Alert.Title>Opener works</Alert.Title>
+				<Alert.Description>
 					Opened <Technical>{result.repository}</Technical> with the chosen opener.
-				</AlertDescription>
+				</Alert.Description>
 			</Alert>
 		);
 	}
 	return (
 		<Alert variant="destructive">
 			<RiErrorWarningLine />
-			<AlertTitle>
+			<Alert.Title>
 				Test failed · <Technical>{result.code}</Technical>
-			</AlertTitle>
-			<AlertDescription>
+			</Alert.Title>
+			<Alert.Description>
 				<p>{result.error}</p>
 				<FailureActions actions={result.actions} />
-			</AlertDescription>
+			</Alert.Description>
 		</Alert>
 	);
 }

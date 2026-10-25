@@ -2,79 +2,70 @@ import { describe, expect, test } from "bun:test";
 
 import * as timing from "#shared/constants/timing.ts";
 
-const REVIEWED_VALUES = {
-	CODEX_PROCESS_RESTART_BASE_MS: 1000,
-	CODEX_PROCESS_RESTART_MAX_MS: 30_000,
-	CODEX_REQUEST_SETTLEMENT_MS: 30_000,
-	CODEX_WAIT_TARGET_POLL_MS: 250,
-	CODEX_QUEUE_REREAD_FLOOR_MS: 1000,
-	CODEX_BROWSER_COMMAND_LEASE_MS: 150_000,
-	CODEX_APPROVAL_EXPIRY_MS: 90_000,
-	CODEX_SPOKEN_GATE_EXPIRY_MS: 60_000,
-	CODEX_SEMANTIC_FRESHNESS_MS: 30_000,
-	CODEX_REALTIME_START_MS: 15_000,
-	CODEX_REALTIME_STOP_MS: 3000,
-	CODEX_REALTIME_RECOVERY_MS: 45_000,
-	CODEX_TERM_GRACE_MS: 5000,
-	CODEX_STDIN_EOF_GRACE_MS: 1000,
-	CODEX_GROUP_FREEZE_MS: 500,
-	CODEX_COMPOSED_SHUTDOWN_MS: 10_000,
+const REVIEWED_GROUPS = {
+	CODEX_PROCESS_MS: {
+		restartBase: 1000,
+		restartMax: 30_000,
+		stdinEofGrace: 1000,
+		termGrace: 5000,
+		groupFreeze: 500,
+		composedShutdown: 10_000,
+	},
+	CODEX_SESSION_MS: {
+		requestSettlement: 30_000,
+		waitTargetPoll: 250,
+		queueRereadFloor: 1000,
+	},
+	CODEX_REALTIME_MS: {
+		start: 15_000,
+		stop: 3000,
+		recovery: 45_000,
+		semanticFreshness: 30_000,
+	},
+	CODEX_APPROVAL_MS: {
+		browserCommandLease: 150_000,
+		expiry: 90_000,
+		spokenGate: 60_000,
+	},
 } as const;
 
-const CODEX_WORKBENCH_TIMING_NAMES = Object.keys(REVIEWED_VALUES);
-
 describe("Codex workbench timing policy", () => {
-	test("exports exactly the reviewed workbench names", () => {
-		const exportedNames = Object.keys(timing)
+	test("exports exactly the reviewed groups, frozen", () => {
+		const exportedGroups = Object.keys(timing)
 			.filter((name) => name.startsWith("CODEX_"))
 			.toSorted();
-		expect(exportedNames).toEqual(CODEX_WORKBENCH_TIMING_NAMES.toSorted());
-	});
-
-	test("freezes every reviewed millisecond value", () => {
-		expect({
-			CODEX_PROCESS_RESTART_BASE_MS: timing.CODEX_PROCESS_RESTART_BASE_MS,
-			CODEX_PROCESS_RESTART_MAX_MS: timing.CODEX_PROCESS_RESTART_MAX_MS,
-			CODEX_REQUEST_SETTLEMENT_MS: timing.CODEX_REQUEST_SETTLEMENT_MS,
-			CODEX_WAIT_TARGET_POLL_MS: timing.CODEX_WAIT_TARGET_POLL_MS,
-			CODEX_QUEUE_REREAD_FLOOR_MS: timing.CODEX_QUEUE_REREAD_FLOOR_MS,
-			CODEX_BROWSER_COMMAND_LEASE_MS: timing.CODEX_BROWSER_COMMAND_LEASE_MS,
-			CODEX_APPROVAL_EXPIRY_MS: timing.CODEX_APPROVAL_EXPIRY_MS,
-			CODEX_SPOKEN_GATE_EXPIRY_MS: timing.CODEX_SPOKEN_GATE_EXPIRY_MS,
-			CODEX_SEMANTIC_FRESHNESS_MS: timing.CODEX_SEMANTIC_FRESHNESS_MS,
-			CODEX_REALTIME_START_MS: timing.CODEX_REALTIME_START_MS,
-			CODEX_REALTIME_STOP_MS: timing.CODEX_REALTIME_STOP_MS,
-			CODEX_REALTIME_RECOVERY_MS: timing.CODEX_REALTIME_RECOVERY_MS,
-			CODEX_TERM_GRACE_MS: timing.CODEX_TERM_GRACE_MS,
-			CODEX_STDIN_EOF_GRACE_MS: timing.CODEX_STDIN_EOF_GRACE_MS,
-			CODEX_GROUP_FREEZE_MS: timing.CODEX_GROUP_FREEZE_MS,
-			CODEX_COMPOSED_SHUTDOWN_MS: timing.CODEX_COMPOSED_SHUTDOWN_MS,
-		}).toEqual(REVIEWED_VALUES);
+		expect(exportedGroups).toEqual(Object.keys(REVIEWED_GROUPS).toSorted());
+		for (const [name, reviewed] of Object.entries(REVIEWED_GROUPS)) {
+			const group = timing[name as keyof typeof REVIEWED_GROUPS];
+			expect(group).toEqual(reviewed);
+			expect(Object.isFrozen(group)).toBe(true);
+		}
 	});
 
 	test("keeps the authored timing relationships", () => {
-		expect(timing.CODEX_PROCESS_RESTART_BASE_MS).toBeLessThanOrEqual(
-			timing.CODEX_PROCESS_RESTART_MAX_MS,
-		);
-		expect(timing.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThanOrEqual(
-			timing.CODEX_PROCESS_RESTART_MAX_MS,
-		);
-		expect(timing.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
-		expect(timing.CODEX_REQUEST_SETTLEMENT_MS % timing.CODEX_WAIT_TARGET_POLL_MS).toBe(0);
-		expect(timing.CODEX_QUEUE_REREAD_FLOOR_MS).toBeGreaterThanOrEqual(
-			timing.CODEX_WAIT_TARGET_POLL_MS,
-		);
-		expect(timing.CODEX_QUEUE_REREAD_FLOOR_MS).toBeLessThan(timing.CODEX_REQUEST_SETTLEMENT_MS);
-		expect(timing.CODEX_APPROVAL_EXPIRY_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
-		expect(timing.CODEX_SPOKEN_GATE_EXPIRY_MS).toBeLessThanOrEqual(timing.CODEX_APPROVAL_EXPIRY_MS);
-		expect(timing.CODEX_SEMANTIC_FRESHNESS_MS).toBeLessThan(timing.CODEX_REALTIME_RECOVERY_MS);
-		expect(timing.CODEX_REALTIME_STOP_MS).toBeLessThan(timing.CODEX_TERM_GRACE_MS);
-		expect(timing.CODEX_STDIN_EOF_GRACE_MS).toBeGreaterThan(0);
+		const { CODEX_PROCESS_MS: process, CODEX_SESSION_MS: session } = timing;
+		const { CODEX_REALTIME_MS: realtime, CODEX_APPROVAL_MS: approval } = timing;
+		expect(process.restartBase).toBeLessThanOrEqual(process.restartMax);
+		expect(session.requestSettlement).toBeLessThanOrEqual(process.restartMax);
+		expect(session.requestSettlement).toBeLessThan(approval.browserCommandLease);
+		expect(session.requestSettlement % session.waitTargetPoll).toBe(0);
+		expect(session.queueRereadFloor).toBeGreaterThanOrEqual(session.waitTargetPoll);
+		expect(session.queueRereadFloor).toBeLessThan(session.requestSettlement);
+		expect(approval.expiry).toBeLessThan(approval.browserCommandLease);
+		expect(approval.spokenGate).toBeLessThanOrEqual(approval.expiry);
+		expect(realtime.semanticFreshness).toBeLessThan(realtime.recovery);
+		expect(realtime.stop).toBeLessThan(process.termGrace);
+		expect(process.stdinEofGrace).toBeGreaterThan(0);
 		expect(
-			timing.CODEX_REALTIME_STOP_MS +
-				timing.CODEX_STDIN_EOF_GRACE_MS +
-				timing.CODEX_TERM_GRACE_MS +
-				timing.CODEX_GROUP_FREEZE_MS,
-		).toBeLessThan(timing.CODEX_COMPOSED_SHUTDOWN_MS);
+			realtime.stop + process.stdinEofGrace + process.termGrace + process.groupFreeze,
+		).toBeLessThan(process.composedShutdown);
+	});
+
+	test("doubles the restart delay per failed attempt up to the cap", () => {
+		const { restartBase, restartMax } = timing.CODEX_PROCESS_MS;
+		expect(timing.codexRestartDelayMs(0)).toBe(restartBase);
+		expect(timing.codexRestartDelayMs(1)).toBe(2 * restartBase);
+		expect(timing.codexRestartDelayMs(2)).toBe(4 * restartBase);
+		expect(timing.codexRestartDelayMs(1000)).toBe(restartMax);
 	});
 });

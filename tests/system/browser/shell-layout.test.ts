@@ -132,7 +132,7 @@ test(
 		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
 		expect(proposal).toBeDefined();
 		// The agent's activity row outlives its write by a product linger
-		// (ACTIVITY_LINGER_MS). A restart drops it, so the shell matrix captures the
+		// (CLAIM_MS.activityLinger). A restart drops it, so the shell matrix captures the
 		// idle navigator without waiting that linger out.
 		await server.restart();
 

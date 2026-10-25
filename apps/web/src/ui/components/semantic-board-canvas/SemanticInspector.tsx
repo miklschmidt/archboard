@@ -44,7 +44,7 @@ import {
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import type { CodeStanding } from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import {
 	useCodeFindings,
 	type ReadingOnScreen,
