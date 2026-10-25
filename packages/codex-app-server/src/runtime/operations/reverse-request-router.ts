@@ -170,7 +170,7 @@ function plainOwnedRequest(
 }
 
 /**
- * Re-parses the params of a reverse request whose capability Archboard disabled, so the
+ * Re-parses the params of a reverse request whose capability the client disabled, so the
  * session owner can answer it with the method-not-found error the contract requires.
  * @param value The decoded frame.
  * @param method The reverse method.

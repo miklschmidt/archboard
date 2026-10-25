@@ -16,11 +16,11 @@ import type { QueueCommandName } from "#ui/state/queue/transport-port.ts";
 const ENABLED: WorkbenchQueueAvailability = Object.freeze({ enabled: true, reason: null });
 
 const UNSUPPORTED = {
-	queueAdd: "The Archboard server is not accepting queue add commands for this link.",
-	queueUpdate: "The Archboard server is not accepting queue update commands for this link.",
-	queueDelete: "The Archboard server is not accepting queue delete commands for this link.",
-	queueReorder: "The Archboard server is not accepting queue reorder commands for this link.",
-	queueStart: "The Archboard server is not accepting queue start commands for this link.",
+	queueAdd: "The server is not accepting queue add commands for this link.",
+	queueUpdate: "The server is not accepting queue update commands for this link.",
+	queueDelete: "The server is not accepting queue delete commands for this link.",
+	queueReorder: "The server is not accepting queue reorder commands for this link.",
+	queueStart: "The server is not accepting queue start commands for this link.",
 } as const satisfies Record<QueueCommandName, string>;
 
 const FOREIGN = "Only a submission this coordinator queued can be reordered.";

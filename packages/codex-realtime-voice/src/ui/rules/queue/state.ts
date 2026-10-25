@@ -49,7 +49,7 @@ type Readiness = Extract<WorkbenchTransportState, { readonly kind: "readiness" }
  * Every readiness arm the server can publish, and what it means for the queue.
  *
  * A readiness state always arrives over a live socket, so none of these arms
- * is `disconnected`: they say something about the Archboard server's Codex session, not
+ * is `disconnected`: they say something about the server's Codex session, not
  * about this pane's connection. `null` hands the decision to the queue's own
  * status. The exhaustive map is the point: a new readiness arm fails
  * type-check here rather than falling through to an ordinary label.

@@ -7,7 +7,7 @@
 // - `not_delivered`: left in the live composer. Nothing reached the workhorse,
 //   so resending is safe and is the obvious next action.
 // - `outcome_unknown`: cleared from the live composer and retained beside it
-//   as an inert copy that nothing resubmits. Archboard does not retry an
+//   as an inert copy that nothing resubmits. The workbench does not retry an
 //   unknown mutation (ADR 0019), so leaving the text armed under the send
 //   control would make one keystroke start a second turn whose predecessor
 //   may already be running; clearing it outright would lose the words.

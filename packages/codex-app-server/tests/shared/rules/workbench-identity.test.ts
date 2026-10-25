@@ -5,6 +5,7 @@ import {
 	OPERATION_ID_MAX_BYTES,
 	createIdentityAuthorities,
 	createIdentityAuthority,
+	createIdentityLedger,
 	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
 } from "#shared/rules/workbench-identity.ts";
@@ -104,16 +105,18 @@ describe("codex workbench identities", () => {
 	});
 
 	test("issues unique epoch-bound operation IDs within the authored result bound", () => {
-		const authorities = createIdentityAuthorities();
+		// The longest record prefix a host may name still fits the operation bound.
+		const prefix = "p".repeat(16);
+		const authorities = createIdentityAuthorities(createIdentityLedger(prefix));
 		const { identity, operation } = authorities;
 		const { issuer, validator } = identity;
 		const operationIds = Array.from({ length: 64 }, () => operation.issuer.mintOperationId());
 		const firstOperationId = operationIds[0]!;
-		const epochToken = validator.epoch.slice("archboard:epoch:".length);
+		const epochToken = validator.epoch.slice(`${prefix}:epoch:`.length);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const operationId of operationIds) {
 			expect(operationId).toMatch(
-				new RegExp(`^archboard:operation:${epochToken}\\.h[0-9a-f]{32}$`, "u"),
+				new RegExp(`^${prefix}:operation:${epochToken}\\.h[0-9a-f]{32}$`, "u"),
 			);
 			expect(new TextEncoder().encode(operationId).byteLength).toBeLessThanOrEqual(
 				OPERATION_ID_MAX_BYTES,
@@ -126,7 +129,7 @@ describe("codex workbench identities", () => {
 			operation.validator.assertCurrentOperationId(operationId);
 		}
 
-		const fabricated = `archboard:operation:${epochToken}.h${"a".repeat(32)}`;
+		const fabricated = `${prefix}:operation:${epochToken}.h${"a".repeat(32)}`;
 		const unissued = restoreIdentityAuthorities({
 			childId: validator.childId,
 			epoch: validator.epoch,

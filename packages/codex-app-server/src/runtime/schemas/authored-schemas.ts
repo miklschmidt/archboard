@@ -55,7 +55,7 @@ const LoginPolicySchema = z
  * Builds the schema for one fixed login policy row, so the policy table can only be the
  * reviewed table and nothing else.
  * @param variant - The login variant the row describes.
- * @param policy - Whether Archboard supports or refuses that variant.
+ * @param policy - Whether the client supports or refuses that variant.
  * @returns A closed schema matching exactly that row.
  */
 const ExactLoginPolicySchema = <

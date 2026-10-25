@@ -172,7 +172,7 @@ function fakeGeneration(
 	number: number,
 	control: FakeGenerationControl = {},
 ): CodexWorkbenchGeneration {
-	const identityLedger = createIdentityLedger();
+	const identityLedger = createIdentityLedger("codex");
 	const identity = createIdentityAuthorities(identityLedger);
 	let transportState: "open" | "closed" = "open";
 	const transport = {

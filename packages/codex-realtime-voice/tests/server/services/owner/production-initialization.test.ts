@@ -139,7 +139,7 @@ describe("production Codex activation guards", () => {
 			let accountEntered!: () => void;
 			const accountStarted = new Promise<void>((resolve) => void (accountEntered = resolve));
 			let active = true;
-			const identity = createIdentityAuthorities(createIdentityLedger());
+			const identity = createIdentityAuthorities(createIdentityLedger("codex"));
 			const input = {
 				generation: 1,
 				child: {
@@ -229,7 +229,7 @@ describe("production Codex activation guards", () => {
 			accountRead: async () => ({ account: { type: "chatgpt" } }),
 		};
 		const components = {
-			identity: createIdentityAuthorities(createIdentityLedger()),
+			identity: createIdentityAuthorities(createIdentityLedger("codex")),
 			epoch: {
 				snapshot: () => ({ manifest: { activeEpoch: null } }),
 				startEpoch: () => undefined,

@@ -59,7 +59,7 @@ function createSettlement(result: WorkbenchCommandResult): Settlement {
 	if (link.state !== "executable") {
 		return {
 			state: "inspect_only",
-			announcement: `The create completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The Archboard server named no reason."}`,
+			announcement: `The create completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The server named no reason."}`,
 		};
 	}
 	return { state: "succeeded", announcement: "Agent connected." };

@@ -51,7 +51,7 @@ interface Harness {
 const COORDINATOR_THREAD = "atomic-recovery-coordinator";
 
 function harness(): Harness {
-	const ledger = createIdentityLedger();
+	const ledger = createIdentityLedger("codex");
 	const identity = createIdentityAuthorities(ledger).identity;
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: ["atomic-recovery-linked", COORDINATOR_THREAD],

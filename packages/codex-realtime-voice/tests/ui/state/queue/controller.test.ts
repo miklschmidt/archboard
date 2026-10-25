@@ -183,7 +183,7 @@ describe("queue controller reorder", () => {
 			onCommand: answering(snapshot({ queue: queue("queued", SEEDS) }), {
 				outcome: "not_delivered",
 				code: "command_failed",
-				message: "The Archboard server refused the reorder.",
+				message: "The server refused the reorder.",
 			}),
 		});
 
@@ -191,7 +191,7 @@ describe("queue controller reorder", () => {
 
 		expect(fake.commands[0]?.draft).toMatchObject({ command: "queueReorder" });
 		expect(renderedOrder(controller)).toEqual(["s1", "s2", "s3"]);
-		expect(controller.view().settlement?.message).toBe("The Archboard server refused the reorder.");
+		expect(controller.view().settlement?.message).toBe("The server refused the reorder.");
 	});
 
 	test("re-renders in the server's new order once the authoritative snapshot arrives", async () => {

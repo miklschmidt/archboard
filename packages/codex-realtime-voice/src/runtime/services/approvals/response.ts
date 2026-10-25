@@ -393,7 +393,7 @@ function assertedFailureOutcome(error: RecordValue): "not_delivered" | "outcome_
 
 /**
  * What a failed response proved about delivery. Only a failure that proves the answer never left
- * Archboard is reported as not delivered; anything else leaves the outcome unknown, because Codex
+ * the workbench is reported as not delivered; anything else leaves the outcome unknown, because Codex
  * may already be acting on the answer.
  * @param error - The thrown value.
  * @param writeAttempted - Whether the write was attempted at all.

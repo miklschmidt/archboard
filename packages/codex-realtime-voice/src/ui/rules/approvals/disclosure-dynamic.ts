@@ -84,7 +84,7 @@ function dynamicEffectRows(approval: BrowserDynamicApproval): Rows {
 		row("Expires", timestampText(approval.expiresAtMs), true),
 		row("Server summary", effect.visualSummary),
 		approval.toolResult === null
-			? row("Tool result", "The Archboard server published no tool result yet.")
+			? row("Tool result", "The server published no tool result yet.")
 			: row("Tool result", approval.toolResult, true),
 	]);
 }

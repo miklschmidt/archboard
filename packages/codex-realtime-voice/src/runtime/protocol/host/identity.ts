@@ -21,6 +21,12 @@ interface VoiceAgentIdentity {
 		readonly voice: string;
 		readonly coordinator: string;
 	};
+	/**
+	 * The first segment of every identity the server mints and stores, `<prefix>:<domain>:<token>`,
+	 * matching `^[a-z][a-z0-9-]{0,15}$`. A record keeps the prefix it was written with, so a host
+	 * keeps its prefix once it has stored records.
+	 */
+	readonly recordPrefix: string;
 }
 
 /** The identity of a host that names none of its own. */
@@ -33,11 +39,26 @@ const DEFAULT_VOICE_AGENT_IDENTITY: VoiceAgentIdentity = Object.freeze({
 		voice: "voice_channel",
 		coordinator: "voice_coordinator",
 	}),
+	recordPrefix: "voice",
 });
 
 const TOOL_NAMESPACE = /^[a-z][a-z0-9_]{0,63}$/u;
 /** One line a JSON string and a prompt can hold verbatim: no quote, backslash, brace or control. */
 const PRODUCT_NAME = /^[^"\\{}\p{Cc}]{1,64}$/u;
+/** The record prefix shape the identity ledger accepts. */
+const RECORD_PREFIX = /^[a-z][a-z0-9-]{0,15}$/u;
+
+/**
+ * Check the three built-in tool namespaces of one host.
+ * @param names The host's namespaces, one per role.
+ * @throws {TypeError} When a namespace is not of its shape, or two roles share one.
+ */
+function assertToolNamespaces(names: readonly string[]): void {
+	if (!names.every((name) => TOOL_NAMESPACE.test(name)))
+		throw new TypeError("A voice agent tool namespace must match ^[a-z][a-z0-9_]{0,63}$.");
+	if (new Set(names).size !== names.length)
+		throw new TypeError("Each voice agent role needs a tool namespace of its own.");
+}
 
 /**
  * Copy and check a host's identity, so what reaches Codex and the records is what the host named.
@@ -52,15 +73,15 @@ function captureVoiceAgentIdentity(named: Partial<VoiceAgentIdentity>): VoiceAge
 		throw new TypeError("A voice agent identity requires a service name and a thread source.");
 	if (!PRODUCT_NAME.test(identity.productName))
 		throw new TypeError("A voice agent product name is one line of 1 to 64 plain characters.");
-	if (![workhorse, voice, coordinator].every((name) => TOOL_NAMESPACE.test(name)))
-		throw new TypeError("A voice agent tool namespace must match ^[a-z][a-z0-9_]{0,63}$.");
-	if (new Set([workhorse, voice, coordinator]).size !== 3)
-		throw new TypeError("Each voice agent role needs a tool namespace of its own.");
+	assertToolNamespaces([workhorse, voice, coordinator]);
+	if (!RECORD_PREFIX.test(identity.recordPrefix))
+		throw new TypeError("A voice agent record prefix must match ^[a-z][a-z0-9-]{0,15}$.");
 	return Object.freeze({
 		serviceName: identity.serviceName,
 		threadSource: identity.threadSource,
 		productName: identity.productName,
 		toolNamespaces: Object.freeze({ workhorse, voice, coordinator }),
+		recordPrefix: identity.recordPrefix,
 	});
 }
 

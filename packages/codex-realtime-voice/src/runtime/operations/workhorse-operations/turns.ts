@@ -59,7 +59,7 @@ function assertEncodablePrompt(prompt: string): void {
 }
 
 /**
- * Re-classify the link and require an Archboard-created workhorse that is still active, the
+ * Re-classify the link and require a workbench-created workhorse that is still active, the
  * only state in which a delegate may be queued behind the running turn.
  * @param runtime - The operations runtime.
  * @param binding - The captured binding.

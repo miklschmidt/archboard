@@ -300,7 +300,7 @@ describe("the draft policy for each settled outcome", () => {
 		expect(controller.getState().retained).toEqual({
 			text: "Rename the node.",
 			threadId: THREAD,
-			reason: "The Archboard server never answered, so the command's outcome is unknown.",
+			reason: "The server never answered, so the command's outcome is unknown.",
 		});
 	});
 
@@ -364,7 +364,7 @@ describe("refusals, disconnects, and late results", () => {
 		expect(result).toEqual({
 			outcome: "outcome_unknown",
 			reason:
-				"The pane moved to another thread link before the Archboard server answered, so this result is not applied here.",
+				"The pane moved to another thread link before the server answered, so this result is not applied here.",
 		});
 		expect(controller.getState().retained?.threadId).toBe(THREAD);
 	});
@@ -467,7 +467,7 @@ describe("remediations from the fixed-range review", () => {
 		const controller = createWorkbenchComposerController({ transport });
 		expect((await controller.submit({ text: "Go." })).outcome).toBe("not_delivered");
 		expect(controller.getState().status.message).toBe(
-			"The Archboard server refused this command for the workhorse's current state. Read the timeline, then send again.",
+			"The server refused this command for the workhorse's current state. Read the timeline, then send again.",
 		);
 	});
 

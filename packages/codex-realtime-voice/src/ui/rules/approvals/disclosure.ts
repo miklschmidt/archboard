@@ -15,23 +15,22 @@ type Permissions = Extract<BrowserApproval, { readonly approvalKind: "permission
 type UserInput = Extract<BrowserApproval, { readonly approvalKind: "user_input" }>;
 type Rows = readonly WorkbenchApprovalDisclosure[];
 
-const NO_TURN = "The Archboard server published no turn identity for this request.";
-const NO_ITEM = "The Archboard server published no item identity for this request.";
-const NO_APPROVAL_ID = "The Archboard server issued no ApprovalId for this request.";
-const NO_LINK = "The Archboard server published no link presentation for this request.";
-const NO_REASON = "The Archboard server published no reason.";
-const NO_COMMAND = "The Archboard server did not publish the command text.";
+const NO_TURN = "The server published no turn identity for this request.";
+const NO_ITEM = "The server published no item identity for this request.";
+const NO_APPROVAL_ID = "The server issued no ApprovalId for this request.";
+const NO_LINK = "The server published no link presentation for this request.";
+const NO_REASON = "The server published no reason.";
+const NO_COMMAND = "The server did not publish the command text.";
 const NO_SAFE_URL =
-	"The Archboard server published no safe http or https URL, so nothing here can be opened.";
+	"The server published no safe http or https URL, so nothing here can be opened.";
 const NO_FIELDS =
-	"The Archboard server published no reviewed fields for this form, so it cannot be answered here.";
+	"The server published no reviewed fields for this form, so it cannot be answered here.";
 const SECRET_NOTICE = "A secret answer is never shown back, never defaulted, and never spoken.";
 const NOTHING_GRANTABLE_NOTICE =
 	"This request names no permission this browser can grant, so the only honest answer here is to grant nothing.";
 const FILE_ACCESS_NOTICE =
-	"The Archboard server published which file-access modes were asked for but no paths. Archboard never invents a path list, so only network access, grant scope, and strict auto review can be granted here.";
-const NO_DECISIONS_NOTICE =
-	"The Archboard server offered no decisions, so this request can only be read.";
+	"The server published which file-access modes were asked for but no paths. This page never invents a path list, so only network access, grant scope, and strict auto review can be granted here.";
+const NO_DECISIONS_NOTICE = "The server offered no decisions, so this request can only be read.";
 
 /**
  * One row.

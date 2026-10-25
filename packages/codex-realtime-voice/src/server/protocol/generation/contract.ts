@@ -126,6 +126,8 @@ interface CodexWorkbenchSessionBindings {
 interface ProductionCodexWorkbenchBindings {
 	/** The host's built-in tool namespaces, registered with every transport. */
 	readonly tools: VoiceToolset;
+	/** The host's record prefix, which a fresh identity ledger mints its child with. */
+	readonly recordPrefix: string;
 	readonly dynamicRegistrations?: readonly {
 		readonly namespace: string;
 		readonly manifestHash: string;

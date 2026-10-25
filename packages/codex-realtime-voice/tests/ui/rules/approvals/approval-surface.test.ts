@@ -243,7 +243,7 @@ describe("ordinary approval families", () => {
 		const missing = only(safeUrlElicitation({ url: null }));
 		expect(missing.links).toEqual([]);
 		expect(missing.notices).toContain(
-			"The Archboard server published no safe http or https URL, so nothing here can be opened.",
+			"The server published no safe http or https URL, so nothing here can be opened.",
 		);
 		expect(missing.offers.map((offer) => offer.id)).toEqual(["decline", "cancel"]);
 	});
