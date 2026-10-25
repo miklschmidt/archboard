@@ -89,7 +89,7 @@ function createGatewayBinding(
 					operation,
 				);
 			},
-			repositoryOf: server.host.repositoryOfCheckout,
+			checkoutLabel: server.host.checkoutLabel,
 			/**
 			 * Watch what the browser is shown, which a change of a tab's shown conversation changes
 			 * too: every pane of the tab shows that checkout's workhorse (ADR 0050).

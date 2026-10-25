@@ -30,7 +30,7 @@ const WORKTREE = "/work/shop-feature";
 function idle(checkout: string): BrowserWorkhorses["entries"][number] {
 	return {
 		checkout,
-		repository: "github.com/acme/shop",
+		label: "github.com/acme/shop",
 		live: true,
 		running: false,
 		waitingForApproval: false,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
@@ -162,7 +162,7 @@ const OPERATION = {
 } as const;
 
 describe("the default workbench host", () => {
-	test("admits real checkout directories without a vault and captures the allowed list", () => {
+	test("admits real checkout directories without a vault, labels each by its directory and captures the allowed list", () => {
 		const h = harness();
 		try {
 			expect(h.host.resolveCheckout(h.root)).toBe(h.root);
@@ -174,6 +174,7 @@ describe("the default workbench host", () => {
 				rmSync(alias);
 			}
 			expect(h.host.resolveCheckout(tmpdir())).toBeNull();
+			expect(h.host.checkoutLabel(h.root)).toBe(basename(h.root));
 			expect(h.host.coordinatorContextFor(h.id).read()).toContain(h.root);
 			expect(h.host.voiceFor(h.id).start(null)).toMatchObject({
 				suppressCoordinatorSpeech: false,

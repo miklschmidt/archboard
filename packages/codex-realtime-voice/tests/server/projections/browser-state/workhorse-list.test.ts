@@ -1,5 +1,5 @@
 // The agent dock's list of a tab's workhorses (ADR 0050). What is guarded: it names the shown
-// checkout and every workhorse with a thread, once each, in repository order; it marks a running
+// checkout and every workhorse with a thread, once each, in label order; it marks a running
 // turn, an approval and a question by the workhorse that asked; and the coordinator's own
 // approvals mark no workhorse.
 
@@ -48,10 +48,10 @@ function listOf(
 	workhorses: ReturnType<typeof workhorse>[],
 	approvals: { link: string; family: string; state: string }[] = [],
 ) {
-	const repositories = new Map([
-		["/work/payments", "github.com/acme/payments"],
-		["/work/payments-fix", "github.com/acme/payments"],
-		["/work/docs", "github.com/acme/docs"],
+	const labels = new Map([
+		["/work/payments", "acme/payments"],
+		["/work/payments-fix", "acme/payments"],
+		["/work/docs", "acme/docs"],
 	]);
 	return readWorkhorseList({
 		tabSessionId: TAB,
@@ -61,11 +61,11 @@ function listOf(
 				approvals.map(({ link, family, state }) => ({ binding: { link }, family, state })),
 		},
 		shown,
-		repositoryOf: (checkout: string) => repositories.get(checkout) ?? null,
+		checkoutLabel: (checkout: string) => labels.get(checkout) ?? checkout.slice("/work/".length),
 	} as unknown as WorkhorseListInput);
 }
 
-test("the list names the shown checkout and each workhorse with a thread, by repository then checkout", () => {
+test("the list names the shown checkout and each workhorse with a thread, by label then checkout", () => {
 	const list = listOf("/work/notes", [
 		workhorse("/work/payments-fix", "thread-fix"),
 		workhorse("/work/payments", "thread-payments"),
@@ -76,15 +76,13 @@ test("the list names the shown checkout and each workhorse with a thread, by rep
 	]);
 
 	expect(list.shown).toBe("/work/notes");
-	expect(
-		list.entries.map(({ checkout, repository, live }) => [checkout, repository, live]),
-	).toEqual([
-		// A checkout no repository lists sorts by its own path.
-		["/work/notes", null, false],
-		["/work/zeta", null, true],
-		["/work/docs", "github.com/acme/docs", true],
-		["/work/payments", "github.com/acme/payments", true],
-		["/work/payments-fix", "github.com/acme/payments", true],
+	expect(list.entries.map(({ checkout, label, live }) => [checkout, label, live])).toEqual([
+		["/work/docs", "acme/docs", true],
+		// Two checkouts of one label sort by path.
+		["/work/payments", "acme/payments", true],
+		["/work/payments-fix", "acme/payments", true],
+		["/work/notes", "notes", false],
+		["/work/zeta", "zeta", true],
 	]);
 });
 
@@ -94,7 +92,7 @@ test("the shown checkout is listed once, live once its workhorse has a thread", 
 	expect(list.entries).toEqual([
 		{
 			checkout: "/work/payments",
-			repository: "github.com/acme/payments",
+			label: "acme/payments",
 			live: true,
 			running: false,
 			waitingForApproval: false,

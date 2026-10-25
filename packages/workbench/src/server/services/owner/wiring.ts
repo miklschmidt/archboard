@@ -1,3 +1,4 @@
+import { basename } from "node:path";
 import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,
@@ -239,11 +240,14 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			contextCodec: ARCHBOARD_CONTEXT_CODEC,
 			resolveCheckout: checkoutNamedBy,
 			/**
-			 * Resolve the repository that owns a checkout through the Archboard integration.
+			 * Name a checkout by the repository of the vault it holds, else by its directory.
 			 * @param checkout The checkout directory.
-			 * @returns The registered repository name, or null when none owns the checkout.
+			 * @returns The registered repository's name, or the checkout directory's name.
 			 */
-			repositoryOfCheckout: (checkout) => integration.repositoryOfCheckout(checkout),
+			checkoutLabel: (checkout) => {
+				const vault = vaultIn(checkout);
+				return (vault === null ? null : repositoryOfVault(vault)) ?? basename(checkout);
+			},
 			presentation: ARCHBOARD_VOICE_PRESENTATION,
 			recording: isArchboardRecording,
 			domainTools: {
@@ -342,15 +346,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @returns How to stop listening.
 		 */
 		onShownChange: (listener) => onShownChange(() => listener()),
-		/**
-		 * The repository a checkout is listed under: that of the vault it holds.
-		 * @param checkout The checkout.
-		 * @returns The repository's name, or null when no registered directory holds it.
-		 */
-		repositoryOfCheckout: (checkout) => {
-			const vault = vaultIn(checkout);
-			return vault === null ? null : repositoryOfVault(vault);
-		},
 		narrationChangesFor: narrationChangesOf,
 		canvasFor: canvasOf,
 		/**

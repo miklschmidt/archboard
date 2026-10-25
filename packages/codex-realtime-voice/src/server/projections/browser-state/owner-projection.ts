@@ -62,8 +62,8 @@ interface ServerOwnerProjectionInput {
 	readonly coordinatorTimeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
-	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
-	readonly repositoryOf: (checkout: string) => string | null;
+	/** The name the workhorse list shows for a checkout. */
+	readonly checkoutLabel: (checkout: string) => string;
 }
 
 /**
@@ -360,7 +360,7 @@ function readBrowserOwnerProjection(
 			session: input.session,
 			approvals: input.approvals,
 			shown: context.checkout,
-			repositoryOf: input.repositoryOf,
+			checkoutLabel: input.checkoutLabel,
 		}),
 	};
 }

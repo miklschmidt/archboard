@@ -27,7 +27,7 @@ export interface ArchboardWorkbenchServer {
 				| "coordinatorContextFor"
 				| "voiceFor"
 				| "contextForOperation"
-				| "repositoryOfCheckout"
+				| "checkoutLabel"
 			>
 		> & {
 			readonly resolveCheckout: (named: string) => string | null;
@@ -51,8 +51,6 @@ export interface ArchboardWorkbenchServer {
 	readonly shownConversationOf: (tabSessionId: TabSessionId) => string | null;
 	/** Hear every change of a tab's shown conversation, after which `shownCheckoutOf` names another. */
 	readonly onShownChange: (listener: () => void) => () => void;
-	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
-	readonly repositoryOfCheckout: (checkout: string) => string | null;
 	/**
 	 * The context an operation of one workhorse runs under, refused once that workhorse's link has
 	 * moved. A browser command names the exact pane that sent it by `clientId`; work nobody's

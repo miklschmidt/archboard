@@ -79,8 +79,6 @@ interface HarnessOverrides {
 	readonly coordinator?: Partial<FixtureSessionComponents["coordinator"]>;
 	/** The clock the authoritative re-read floor reads. */
 	readonly now?: () => number;
-	/** The repository each checkout is listed under; none by default. */
-	readonly repositoryOf?: (checkout: string) => string | null;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
 	readonly workhorse?: Partial<FixtureWorkhorseComponents["workhorse"]>;
 	readonly queue?: Partial<FixtureWorkhorseComponents["queue"]>;
@@ -164,7 +162,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	const options = createServerBrowserGatewayOptions({
 		contextCodec: TEST_CONTEXT_CODEC,
 		components,
-		repositoryOf: overrides.repositoryOf ?? (() => null),
+		checkoutLabel: (checkout) => checkout,
 		sessions,
 		dynamicApprovals: null,
 		state,

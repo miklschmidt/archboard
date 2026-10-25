@@ -116,7 +116,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const budget = createServerBrowserProjectionBudget();
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
-		repositoryOf: () => null,
+		checkoutLabel: (checkout: string) => checkout,
 		sessions,
 		dynamicApprovals: null,
 		recording: (presentation) => {
@@ -234,7 +234,7 @@ test("a pane's snapshot carries its own tab's coordinator turns, never another t
 	});
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
-		repositoryOf: () => null,
+		checkoutLabel: (checkout: string) => checkout,
 		sessions,
 		dynamicApprovals: null,
 		state: {
