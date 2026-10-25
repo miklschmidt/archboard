@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T01:43:00Z'
+updated_date: '2026-10-25T02:16:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -29,4 +29,6 @@ Part of TASK-529 for the ui-kit package(s). TASK-500 kept every name callers imp
 
 <!-- SECTION:NOTES:BEGIN -->
 ui-kit went from 10 subpaths with 85 names to 4 subpaths with 37 names. Each shadcn family is one composite with its parts on its root (Dialog.Content, Select.Item, Tooltip.Provider, Resizable.Panel), and every component comes from ./components. The registry files moved unchanged into ui/components/shadcn/. Dialog.Cancel replaced CANCEL_BUTTON_CLASS; Dialog.Busy, Dialog.Error and Field.Issues replaced ./dialog-parts; ./stepped-clock joined ./frame-clock; the pane chrome moved to apps/web, its one owner. DOM unchanged. Checks: type-check, lint, focused UI tests (979 pass) and repository-policy (149 pass).
+
+Review (review/ui-kit, merged): the Select composite wrote its parts onto Base UI's own Select.Root export; fixed with a package-owned SelectRoot and a test that fails on the old code (28958a7bc). Dialog.Close had no caller and was removed (72a1d2d5d).
 <!-- SECTION:NOTES:END -->
