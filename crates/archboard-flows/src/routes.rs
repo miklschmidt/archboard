@@ -48,6 +48,10 @@ struct Run {
 
 /// A whole number as a crossing's place is keyed by: `Math.round`, negative
 /// zero written as zero.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "a rounded coordinate of a drawing, far inside an i64"
+)]
 fn place(value: f64) -> i64 {
     js::round(value) as i64
 }

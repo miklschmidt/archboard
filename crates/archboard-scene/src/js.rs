@@ -111,24 +111,31 @@ pub fn plain_decimal(value: f64) -> String {
         None => ("", mantissa),
     };
     let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    let point = mantissa.find('.').unwrap_or(mantissa.len()) as i32 + exponent;
-    let written = if point <= 0 {
-        format!("0.{}{digits}", "0".repeat((-point) as usize))
-    } else if point as usize >= digits.len() {
-        format!("{digits}{}", "0".repeat(point as usize - digits.len()))
+    // The point stands after the mantissa's whole digits, moved by the exponent:
+    // `point` digits stand before it, or `zeros` zeros between it and the digits.
+    let whole = mantissa.find('.').unwrap_or(mantissa.len());
+    let shift = exponent.unsigned_abs() as usize;
+    let (point, zeros) = if exponent >= 0 {
+        (whole + shift, 0)
     } else {
-        format!(
-            "{}.{}",
-            &digits[..point as usize],
-            &digits[point as usize..]
-        )
+        match whole.checked_sub(shift) {
+            Some(point) if point > 0 => (point, 0),
+            _ => (0, shift - whole),
+        }
+    };
+    let written = if point == 0 {
+        format!("0.{}{digits}", "0".repeat(zeros))
+    } else if point >= digits.len() {
+        format!("{digits}{}", "0".repeat(point - digits.len()))
+    } else {
+        format!("{}.{}", &digits[..point], &digits[point..])
     };
     format!("{sign}{written}")
 }
 
 /// Two to a power, exactly.
 const fn power_of_two(exponent: i64) -> f64 {
-    f64::from_bits(((1023 + exponent) as u64) << 52)
+    f64::from_bits((1023 + exponent).cast_unsigned() << 52)
 }
 
 /// `Math.hypot(a, b)` as Bun computes it on Linux, where JavaScriptCore calls
@@ -242,6 +249,11 @@ pub fn powi(base: f64, exponent: u32) -> f64 {
 /// `Math.pow` and `**`.
 pub fn pow(base: f64, exponent: f64) -> f64 {
     if exponent.fract() == 0.0 && (0.0..=1000.0).contains(&exponent) {
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "a whole exponent from 0 to 1000, as the line above checks"
+        )]
         return powi(base, exponent as u32);
     }
     libm::pow(base, exponent)

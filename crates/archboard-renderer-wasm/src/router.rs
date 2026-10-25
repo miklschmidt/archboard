@@ -67,6 +67,11 @@ impl Reader<'_> {
 }
 
 /// A number as an index below `limit`, if it is a whole number that is one.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the value is read as an index only once it is whole and in range"
+)]
 fn whole_below(value: f64, limit: usize) -> Option<usize> {
     (value >= 0.0 && value.fract() == 0.0 && value < limit as f64).then_some(value as usize)
 }

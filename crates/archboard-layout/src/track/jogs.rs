@@ -175,10 +175,16 @@ impl Track<'_> {
             net,
             end,
         }];
-        let onward: isize = if end == End::Bottom { 1 } else { -1 };
-        let mut at = index as isize + onward;
-        while at >= 0 && (at as usize) < route.len() {
-            let next = route[at as usize];
+        let onward = |at: usize| {
+            if end == End::Bottom {
+                Some(at + 1).filter(|&below| below < route.len())
+            } else {
+                at.checked_sub(1)
+            }
+        };
+        let mut at = onward(index);
+        while let Some(here) = at {
+            let next = route[here];
             if step(self, next) > STRAIGHT {
                 break;
             }
@@ -187,7 +193,7 @@ impl Track<'_> {
                 net: next,
                 end,
             });
-            at += onward;
+            at = onward(here);
         }
         stretch
     }

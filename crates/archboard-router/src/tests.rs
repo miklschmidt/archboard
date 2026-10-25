@@ -377,6 +377,11 @@ fn a_line_crossed_either_way_does_not_turn_the_others_round() {
 
 /// A scene in the flat numbers of the renderer core's binding:
 /// `clearance, lane, bend, crossing`, the obstacles, then the connectors.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the binding wrote every count and index of the scene as a whole number"
+)]
 fn decoded(text: &str) -> Scene {
     let mut next = text
         .trim()

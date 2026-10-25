@@ -147,7 +147,13 @@ fn offsets_under(width: f64) -> Vec<f64> {
     if most < 0.0 {
         return Vec::new();
     }
-    (0..=(2 * most as usize))
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a whole, non-negative number of steps, as the floor and the check above make it"
+    )]
+    let most = most as usize;
+    (0..=(2 * most))
         .map(|index| {
             if index % 2 == 0 {
                 (index / 2) as f64 * SEARCH_STEP
