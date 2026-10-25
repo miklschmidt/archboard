@@ -8,9 +8,10 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-use crate::grid::{Grid, SAME, stub_end};
+use crate::grid::{Grid, SAME, close, stub_end};
 use crate::{Dir, End, Point, Scene};
 
+/// Every direction, each at the index of its discriminant.
 const DIRS: [Dir; 4] = [Dir::Up, Dir::Right, Dir::Down, Dir::Left];
 
 /// Which vertices earlier routes run straight through, by axis.
@@ -153,15 +154,6 @@ fn distance(a: Point, b: Point) -> f64 {
     (a.x - b.x).abs() + (a.y - b.y).abs()
 }
 
-fn dir_index(dir: Dir) -> usize {
-    match dir {
-        Dir::Up => 0,
-        Dir::Right => 1,
-        Dir::Down => 2,
-        Dir::Left => 3,
-    }
-}
-
 /// The cheapest route of one connector, its points simplified to its turns,
 /// or nothing when no route through free space reaches its head.
 pub fn shortest(
@@ -191,7 +183,7 @@ pub fn shortest(
     };
     let heuristic = |vertex: usize| distance(grid.point(vertex), target);
     for &dir in &start.dirs {
-        let state = start.vertex * 4 + dir_index(dir);
+        let state = start.vertex * 4 + dir as usize;
         cost[state] = start.paid;
         push(
             &mut queue,
@@ -235,7 +227,7 @@ pub fn shortest(
             } else if vertex != start.vertex && taken.crosses(vertex, dir) {
                 step += params.crossing;
             }
-            let state = next * 4 + dir_index(dir);
+            let state = next * 4 + dir as usize;
             if here + step < cost[state] {
                 cost[state] = here + step;
                 prev[state] = item.state;
@@ -267,10 +259,7 @@ fn path_of(grid: &Grid, tail: End, head: End, prev: &[usize], last: usize) -> Ve
 pub fn simplified(points: Vec<Point>) -> Vec<Point> {
     let mut kept: Vec<Point> = Vec::with_capacity(points.len());
     for point in points {
-        if let Some(last) = kept.last()
-            && (last.x - point.x).abs() < SAME
-            && (last.y - point.y).abs() < SAME
-        {
+        if kept.last().is_some_and(|last| close(*last, point)) {
             continue;
         }
         if kept.len() >= 2 {

@@ -9,7 +9,7 @@
 //! contradict each other.
 
 use crate::Point;
-use crate::grid::SAME;
+use crate::grid::{SAME, sign};
 
 /// A route's points, read from its tail or from its head.
 #[derive(Clone, Copy)]
@@ -40,16 +40,6 @@ impl View<'_> {
             },
             self.len() - 2 - index,
         )
-    }
-}
-
-fn sign(value: f64) -> i32 {
-    if value > SAME {
-        1
-    } else if value < -SAME {
-        -1
-    } else {
-        0
     }
 }
 

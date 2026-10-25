@@ -9,6 +9,22 @@ use crate::{Dir, End, Point, Rect, Scene};
 /// Two coordinates closer than this are one.
 pub const SAME: f64 = 1e-6;
 
+/// Whether two points are one point.
+pub fn close(a: Point, b: Point) -> bool {
+    (a.x - b.x).abs() < SAME && (a.y - b.y).abs() < SAME
+}
+
+/// The sign of a difference: 1, -1, or 0 within [`SAME`].
+pub fn sign(value: f64) -> i32 {
+    if value > SAME {
+        1
+    } else if value < -SAME {
+        -1
+    } else {
+        0
+    }
+}
+
 /// A buffered obstacle: the space no route may enter.
 #[derive(Clone, Copy, Debug)]
 pub struct Buffer {
