@@ -70,9 +70,7 @@ async function route(request: Request, origin: string, options: ExampleOptions):
 		console.error(error);
 		return new Response(
 			"Cannot read the browser build. Rebuild it and restart the example server.",
-			{
-				status: 500,
-			},
+			{ status: 500, headers },
 		);
 	}
 }

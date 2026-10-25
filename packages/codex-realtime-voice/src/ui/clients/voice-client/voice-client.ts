@@ -3,7 +3,8 @@
 // state, and runs each page action once. An uncertain delivery stays in that
 // state as a failure the page shows; nothing retries it. A lost socket is
 // opened again at the time the transport names, and again after each failed
-// attempt, until one opens or the client is disposed.
+// attempt, until one opens, the server's contract proves unreadable, or the
+// client is disposed. The attempts leave the page's failure as it is.
 
 import { PANE_MS } from "@archboard/timing";
 import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
@@ -127,6 +128,30 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const unsubscribeMedia = media.subscribe(publish);
 
 	/**
+	 * Run an operation as a running action, publishing `busy` around it.
+	 * @param operation The operation.
+	 * @param fail Takes what the operation threw.
+	 * @returns Whether it completed.
+	 */
+	const busyWith = async (
+		operation: () => Promise<unknown>,
+		fail: (error: unknown) => void,
+	): Promise<boolean> => {
+		pending++;
+		publish();
+		try {
+			await operation();
+			return true;
+		} catch (error) {
+			fail(error);
+			return false;
+		} finally {
+			pending--;
+			publish();
+		}
+	};
+
+	/**
 	 * Run one action, keeping its failure visible.
 	 * @param operation The action.
 	 * @param interrupt Whether it may run during another action.
@@ -134,19 +159,10 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 */
 	const run = async (operation: () => Promise<unknown>, interrupt = false): Promise<boolean> => {
 		if ((pending > 0 && !interrupt) || disposed) return false;
-		pending++;
 		failure = null;
-		publish();
-		try {
-			await operation();
-			return true;
-		} catch (error) {
+		return busyWith(operation, (error) => {
 			failure = failureOf(error);
-			return false;
-		} finally {
-			pending--;
-			publish();
-		}
+		});
 	};
 
 	/**
@@ -192,17 +208,19 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	/**
-	 * Open the socket again and attach the owners to it. A dispose while it
-	 * runs opens no socket, or closes the one it opened.
+	 * Release the socket, then open a new one and attach the owners to it. A
+	 * dispose while it runs opens no socket, or closes the one it opened.
+	 */
+	const reopen = async () => {
+		await release();
+		if (!disposed) await open();
+	};
+
+	/**
+	 * Open the socket again and attach the owners to it.
 	 * @returns Whether it opened.
 	 */
-	const connect = async () => {
-		const completed = await run(async () => {
-			await release();
-			if (!disposed) await open();
-		});
-		return completed && !disposed;
-	};
+	const connect = async () => (await run(reopen)) && !disposed;
 
 	/**
 	 * Connect again after a delay, unless the socket is connected by then, and
@@ -218,9 +236,28 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		});
 	};
 
-	/** Connect once, and wait to try again when the socket does not open. */
+	/**
+	 * Whether the server spoke a contract this browser cannot read, which no
+	 * attempt heals. The page then shows why, unless it shows another failure.
+	 * @returns True when attempts must stop.
+	 */
+	const unreadableServer = () => {
+		const state = transport.state();
+		if (state.kind !== "connection" || state.state !== "incompatible_contract") return false;
+		failure ??= Object.freeze({ message: state.reason, uncertain: false });
+		publish();
+		return true;
+	};
+
+	/**
+	 * Connect once while no action runs, and wait to try again when the socket
+	 * does not open. The attempt keeps the failure the page shows, such as an
+	 * uncertain delivery.
+	 */
 	const reconnect = async () => {
-		if (!(await connect())) reconnectAfter(PANE_MS.socketReconnect);
+		const idle = pending === 0 && !disposed;
+		if (idle && (await busyWith(reopen, ignore))) return;
+		if (!unreadableServer()) reconnectAfter(PANE_MS.socketReconnect);
 	};
 	const unsubscribeLoss = transport.subscribe(() => {
 		const state = transport.state();
@@ -365,6 +402,11 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		dispose,
 	};
 	return Object.freeze(client);
+}
+
+/** A reconnect attempt that fails leaves the page's failure as it is. */
+function ignore(): void {
+	// The next attempt, or the connection state, says what happens next.
 }
 
 /** The id this page names while storage cannot hold one; a reload then starts another. */

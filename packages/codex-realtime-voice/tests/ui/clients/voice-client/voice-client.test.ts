@@ -11,6 +11,7 @@ import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import {
 	FakeSocket,
 	record,
+	type Answerer,
 	type FakeSocketRequest,
 } from "#tests/ui/support/transport/fake-socket.ts";
 import {
@@ -182,15 +183,64 @@ function recordingMedia(): { media: BrowserWorkbenchMediaOwner; calls: string[] 
 }
 
 /**
+ * An answerer that handles one action itself and hands every other request on.
+ * @param action The gateway action it handles.
+ * @param handle What it does with that action's request.
+ * @param answer How every other request is answered.
+ * @returns The answerer.
+ */
+function intercept(action: string, handle: Answerer, answer: Answerer): Answerer {
+	return (request, socket) => {
+		if (request["action"] === action) handle(request, socket);
+		else answer(request, socket);
+	};
+}
+
+/**
+ * Answer with a value that is no snapshot this browser can read.
+ * @param request The request.
+ * @param socket The socket it came on.
+ */
+function replyUnreadable(request: FakeSocketRequest, socket: FakeSocket): void {
+	socket.reply(request, { unreadable: true });
+}
+
+/**
+ * Lose the socket instead of answering.
+ * @param _request The request.
+ * @param socket The socket it came on.
+ */
+function closeSocket(_request: FakeSocketRequest, socket: FakeSocket): void {
+	socket.close();
+}
+
+/** How the gateway double answers; each socket is counted from 0 in the order it opens. */
+interface GatewayBehaviour {
+	/** What each command result says about delivery. */
+	readonly outcome?: "delivered" | "outcome_unknown";
+	/** The sockets the server refuses: they close without opening. */
+	readonly refused?: readonly number[];
+	/** The sockets whose subscribe answer this browser cannot read. */
+	readonly unreadable?: readonly number[];
+	/** The sockets that are lost when a command arrives on them, before it is answered. */
+	readonly lostOnCommand?: readonly number[];
+}
+
+/**
  * A client over a gateway double that answers every command with one outcome.
- * @param outcome What each command result says about delivery.
- * @param refused Which socket opens, counted from 0, the server refuses.
+ * @param behaviour How the double answers.
+ * @param behaviour.outcome What each command result says about delivery.
+ * @param behaviour.refused The sockets the server refuses.
+ * @param behaviour.unreadable The sockets whose subscribe answer this browser cannot read.
+ * @param behaviour.lostOnCommand The sockets that are lost when a command arrives.
  * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
-function gateway(
-	outcome: "delivered" | "outcome_unknown" = "delivered",
-	refused: readonly number[] = [],
-) {
+function gateway({
+	outcome = "delivered",
+	refused = [],
+	unreadable = [],
+	lostOnCommand = [],
+}: GatewayBehaviour = {}) {
 	const sockets: FakeSocket[] = [];
 	const urls: string[] = [];
 	const timers: Timer[] = [];
@@ -225,6 +275,16 @@ function gateway(
 			});
 		}
 	};
+	/**
+	 * How one socket is answered.
+	 * @param index The socket, counted from 0.
+	 * @returns The answerer.
+	 */
+	const answererOf = (index: number): Answerer => {
+		if (unreadable.includes(index)) return intercept("subscribe", replyUnreadable, answer);
+		if (lostOnCommand.includes(index)) return intercept("command", closeSocket, answer);
+		return answer;
+	};
 	const client = openVoiceClient(
 		{ socketPath: "/api/voice", paneId: "pane-a" },
 		{
@@ -243,7 +303,7 @@ function gateway(
 					return socket;
 				}
 				const socket = new OpeningSocket(url);
-				socket.onRequest = answer;
+				socket.onRequest = answererOf(sockets.length);
 				sockets.push(socket);
 				return socket;
 			},
@@ -328,14 +388,15 @@ test("a dispose during connect or reconnect leaves no socket open", async () => 
 });
 
 test("a lost socket opens again by itself, also after failed attempts", async () => {
-	const { client, sockets, timers } = gateway("delivered", [1, 2]);
+	const { client, sockets, timers } = gateway({ refused: [1, 2] });
 	expect(await client.connect()).toBe(true);
 	expect(timers).toHaveLength(0);
 	sockets[0]?.close();
 	expect(client.snapshot().connection).toBe("reconnecting");
 	await fire(timers);
 	await fire(timers);
-	expect(client.snapshot().connection).not.toBe("connected");
+	expect(client.snapshot().connection).toBe("reconnecting");
+	expect(client.snapshot().failure).toBeNull();
 	await fire(timers);
 	expect(sockets).toHaveLength(4);
 	expect(client.snapshot().connection).toBe("connected");
@@ -350,15 +411,38 @@ test("a dispose ends a reconnect that waits, and a first connect that fails is n
 	await lost.client.dispose();
 	expect(lost.timers.map((timer) => timer.cancelled)).toEqual([true]);
 	expect(lost.sockets).toHaveLength(1);
-	const first = gateway("delivered", [0]);
+	const first = gateway({ refused: [0] });
 	expect(await first.client.connect()).toBe(false);
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	expect(first.timers).toHaveLength(0);
 	await first.client.dispose();
 });
 
+test("a reconnect keeps the uncertain failure of the action that the lost socket ended", async () => {
+	const { client, timers } = gateway({ lostOnCommand: [0] });
+	await client.connect();
+	expect(await client.send("Investigate the checkout")).toBe(false);
+	expect(client.snapshot().failure?.uncertain).toBe(true);
+	await fire(timers);
+	expect(client.snapshot().connection).toBe("connected");
+	expect(client.snapshot().failure?.uncertain).toBe(true);
+	await client.dispose();
+});
+
+test("a reconnect stops for good when the server speaks a contract this browser cannot read", async () => {
+	const { client, sockets, timers } = gateway({ unreadable: [1] });
+	await client.connect();
+	sockets[0]?.close();
+	await fire(timers);
+	expect(sockets).toHaveLength(2);
+	expect(timers.filter((timer) => !timer.cancelled)).toHaveLength(0);
+	expect(client.snapshot().connection).toBe("stopped");
+	expect(client.snapshot().failure?.uncertain).toBe(false);
+	await client.dispose();
+});
+
 test("an uncertain delivery stays visible and is never sent again", async () => {
-	const { client, commands } = gateway("outcome_unknown");
+	const { client, commands } = gateway({ outcome: "outcome_unknown" });
 	await client.connect();
 	expect(await client.send("Investigate the checkout")).toBe(false);
 	expect(commands).toEqual(["start"]);
