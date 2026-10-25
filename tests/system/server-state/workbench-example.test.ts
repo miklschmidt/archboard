@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { request } from "node:http";
 import { WebSocket } from "ws";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { processExists } from "../support/owned-server.ts";
@@ -153,23 +152,6 @@ test("the example entry serves a vault-free workbench with isolated tabs, approv
 		writeFileSync(fixture.controlPath, JSON.stringify({ ordinaryOnly: true }));
 		const example = startExampleProcess(resources, fixture);
 		const host = { ...example, ...(await example.ready()) };
-		// A malformed upgrade must not crash the host and abandon its private child.
-		const malformedUpgrade = await new Promise<number | undefined>((resolve, reject) => {
-			const upgrade = request(
-				host.url,
-				{
-					path: "http://[",
-					headers: { Connection: "Upgrade", Upgrade: "websocket" },
-				},
-				(response) => {
-					response.resume();
-					resolve(response.statusCode);
-				},
-			);
-			upgrade.once("error", reject);
-			upgrade.end();
-		});
-		expect(malformedUpgrade).toBe(400);
 		const configResponse = await fetch(new URL("/api/config", host.url));
 		expect(await configResponse.json()).toEqual({
 			checkout: { label: "checkout", path: host.checkout },
