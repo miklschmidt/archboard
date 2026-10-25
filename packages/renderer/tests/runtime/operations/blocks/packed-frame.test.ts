@@ -26,7 +26,7 @@ function frame(id: string, width: number, height: number) {
 }
 
 test("a small block late in the order fills the room a short row leaves", async () => {
-	await loadCore();
+	loadCore();
 	const solve = createLayoutEngine(await instance());
 	const call = { "archboard.relationship.kind": "call" };
 	const placed = solve(
@@ -49,7 +49,7 @@ test("a small block late in the order fills the room a short row leaves", async 
 });
 
 test("a block alone on its row stands under the block its line comes from", async () => {
-	await loadCore();
+	loadCore();
 	const solve = createLayoutEngine(await instance());
 	const placed = solve(
 		{

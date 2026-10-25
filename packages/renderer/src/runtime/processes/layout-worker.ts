@@ -16,7 +16,10 @@ interface Request {
 // from the engine's memory as loaded. The core loads first, outside the
 // engine's load, and the worker refuses to start on a core built from other
 // sources (ADR 0057).
-const ready = loadCore().then(() => loadLayoutEngine(instance));
+const ready = (async () => {
+	loadCore();
+	return await loadLayoutEngine(instance);
+})();
 let initFailure = false;
 void ready.catch(() => {
 	initFailure = true;

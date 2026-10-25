@@ -75,7 +75,7 @@ function spawn(
 
 const hash = coreSourceHash();
 try {
-	await loadCore(hash);
+	loadCore(hash);
 	console.log(`The renderer core is built from these sources (${hash}).`);
 } catch (error) {
 	if (!(error instanceof CoreBuildError)) throw error;
