@@ -12,6 +12,9 @@
 // never lands as fresh. A board's document is marked before its pictures,
 // because a picture reads its board the moment it is asked for again and a
 // document not yet marked is the one from before the write.
+//
+// `boardsListed` and `boardGoneStale` serve the module's own listing query and
+// drawing ahead; nothing outside `reads/` calls them.
 
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 

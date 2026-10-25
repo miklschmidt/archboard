@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:47:00Z'
+updated_date: '2026-10-25T04:02:00Z'
 labels: []
 dependencies: []
 references:
@@ -25,9 +25,9 @@ Four browser paths each assemble the same document-before-picture refresh: use-s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Callers report a changed board, a received listing, a changed policy or a reconnect; none of them names a query key or orders invalidation
-- [ ] #2 Query-key layout, cancellation order and readAgain are private to the reads module
-- [ ] #3 Tests on a real QueryClient with delayed reads prove that the next read is of the new version, across former names and per vault
+- [x] #1 Callers report a changed board, a received listing, a changed policy or a reconnect; none of them names a query key or orders invalidation
+- [x] #2 Query-key layout, cancellation order and readAgain are private to the reads module
+- [x] #3 Tests on a real QueryClient with delayed reads prove that the next read is of the new version, across former names and per vault
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,3 +40,9 @@ Four browser paths each assemble the same document-before-picture refresh: use-s
 5. Replace key-invalidation tests (boards-changed.test.ts, listed-versions.test.ts, board-catalog refresh test) with real-QueryClient tests with delayed reads: delayed old answer does not win, next read is of the new version, a former name refreshes, another vault untouched. Keep local-pictures drawing coverage.
 6. type-check, lint, focused tests, fmt; commit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built reads/board-refresh.ts (boardChanged, boardsChanged, listingsChanged, policyChanged, readEverythingAgain, repositoriesChanged; reads-only boardsListed, boardGoneStale) and reads/board-keys.ts (keys plus cachedReadings, the one key decoder). read-again.ts folded into board-refresh. Callers (pane hook, catalog commands, policy refresh, local-pictures, queries.ts) name no key and order nothing. Decision: board-refresh also names the catalog's panes and repositories keys, so readAgain has no second user outside reads/; the catalog client keeps owning those keys and options. Divergence fixed as a real bug: boardsChanged (released panes, settled agent work) matched only the server's exact spelling, so a reading asked by another case or a former name (a GoDeeper preview in a vault no pane is in) stayed old; now every asked name whose spelling, cached document name/formerNames or picture board matches is read again. Proven by board-refresh.test.ts; mutation runs (no cancel, exact name, no listing refresh, pictures before documents) each fail a test. Dropped the board-catalog refresh-vs-reload key assertions; reload documents coverage moved to local-pictures.test via readEverythingAgain.
+<!-- SECTION:NOTES:END -->
