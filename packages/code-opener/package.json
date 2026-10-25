@@ -2,7 +2,7 @@
 	"name": "@archboard/code-opener",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Opening the code a node binds in the person's editor: the server routes that plan and launch the opener, the browser-origin guard they sit behind, and the browser-safe activation and settings dialog that ask for it.",
+	"description": "Opening the code a node binds in the person's editor: the server routes that plan and launch the opener, the browser-origin guard they sit behind, the wire contract of the open, and the browser-safe activation and settings dialog that ask for it.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -10,6 +10,7 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
+		"./opening": "./src/shared/api/opening.ts",
 		"./opener": "./src/server/api/opener.ts",
 		"./browser-origin": "./src/server/api/browser-origin.ts",
 		"./code-target": "./src/ui/api/code-target.ts",

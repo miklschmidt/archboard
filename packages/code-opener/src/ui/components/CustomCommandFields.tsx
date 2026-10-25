@@ -2,7 +2,7 @@
 
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
-import { LINE_TOKEN, PATH_TOKEN } from "@archboard/code-binding/opening";
+import { LINE_TOKEN, PATH_TOKEN } from "#shared/schemas/opener-settings.ts";
 import {
 	Field,
 	FieldDescription,

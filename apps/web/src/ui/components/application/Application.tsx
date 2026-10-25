@@ -6,7 +6,7 @@
 import { VaultDiagnostics } from "#ui/components/vault-diagnostics/VaultDiagnostics.tsx";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { livePanesOver } from "#ui/rules/application/live-panes.ts";
 import {

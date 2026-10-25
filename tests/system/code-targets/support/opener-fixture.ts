@@ -21,7 +21,11 @@ import {
 	type CodeOpenerRouteDependencies,
 } from "@archboard/code-opener/opener";
 import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { OpenerSelection } from "@archboard/code-binding/opening";
+import type { z } from "zod";
+import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
+
+/** An opener selection, as the settings routes answer it. */
+type OpenerSelection = z.infer<typeof OpenerSelectionReplySchema>["selection"];
 import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 import {
 	assertBefore,

@@ -6,7 +6,7 @@ import {
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
 	OpenerTestReplySchema,
-} from "@archboard/code-binding/opening";
+} from "@archboard/code-opener/opening";
 import { createOpenerFixture, jsonBody } from "./support/opener-fixture.ts";
 
 describe("public opener settings contract", () => {
