@@ -265,7 +265,7 @@ type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "record
  * answers it, so work that ended would sit unheard until the user asked again. The coordinator
  * is the one that knows whether the work came from a voice request, so it is given the outcome
  * at once, in the turn it is running or in a new one, and its reply decides what the user hears.
- * The Archboard server owns the message: its identity and its canonical context.
+ * The server owns the message: its identity and its canonical context.
  */
 interface CoordinatorCallbackTurnPort {
 	readonly report: (request: {

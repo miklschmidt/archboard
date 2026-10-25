@@ -113,7 +113,7 @@ function snapshot(data: readonly SessionQueuedSubmission[]): QueueSnapshot {
 }
 
 /**
- * Whether the submission a queue add returned is the one Archboard asked for: our exact client
+ * Whether the submission a queue add returned is the one the workbench asked for: our exact client
  * identity, our exact input, and an identity the queue did not already hold.
  * @param added - The submission the response carried, or null when it carried none.
  * @param before - The queue as it was before the add.

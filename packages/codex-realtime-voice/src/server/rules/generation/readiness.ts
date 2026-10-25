@@ -151,7 +151,7 @@ const INCOMPATIBLE_CODES = new Set([
 
 /**
  * The readiness a refused installation reports: refused storage, or a Codex
- * app server this Archboard server cannot speak to. Every binary_* code comes from the
+ * app server this server cannot speak to. Every binary_* code comes from the
  * one verifyExecutable refusal, and the server startup boundary groups them
  * the same way.
  * @param failure What the process failed with.

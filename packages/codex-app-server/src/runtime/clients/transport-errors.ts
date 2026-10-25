@@ -29,7 +29,7 @@ interface CodexRemoteError {
 
 /**
  * Shortens a remote error message to the shared text bound so a hostile child cannot fill
- * Archboard's diagnostics.
+ * the client's diagnostics.
  * @param message The message as received.
  * @returns The message, truncated with an ellipsis when it exceeds the bound.
  */
@@ -42,7 +42,7 @@ function truncateRemoteMessage(message: string): string {
 }
 
 /**
- * Reduces a JSON-RPC error to what Archboard retains: code, bounded message, and whether
+ * Reduces a JSON-RPC error to what the client retains: code, bounded message, and whether
  * data was attached, since the data itself is unbounded and untrusted.
  * @param error The JSON-RPC error as received.
  * @returns The frozen summary.

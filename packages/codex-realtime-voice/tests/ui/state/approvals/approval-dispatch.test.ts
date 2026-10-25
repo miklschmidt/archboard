@@ -271,7 +271,7 @@ describe("ordinary approval payloads", () => {
 		});
 		expect(responseOf(silent.sent)).toEqual({
 			approvalKind: "exec_command",
-			decision: { denied: { rejection: "Declined at the Archboard workbench." } },
+			decision: { denied: { rejection: "Declined at the workbench." } },
 		});
 	});
 });

@@ -143,7 +143,7 @@ type CodexTokenUsageBreakdown = CodexJsonWire<TokenUsageBreakdown>;
 type CodexCommandExecutionApprovalDecision = CodexJsonWire<CommandExecutionApprovalDecision>;
 type CodexFileChangeApprovalDecision = CodexJsonWire<FileChangeApprovalDecision>;
 
-/** Client requests Archboard implements, checked against the generated request union. */
+/** Client requests this client implements, checked against the generated request union. */
 const CODEX_CLIENT_REQUEST_METHODS = [
 	"initialize",
 	"config/read",
@@ -180,7 +180,7 @@ const CODEX_CLIENT_REQUEST_METHODS = [
 	"thread/timeline/list",
 ] as const satisfies readonly (keyof CodexClientRequestParamsByMethod)[];
 
-/** Reverse requests Archboard implements, checked against the generated request union. */
+/** Reverse requests this client implements, checked against the generated request union. */
 const CODEX_SERVER_REQUEST_METHODS = [
 	"item/commandExecution/requestApproval",
 	"item/fileChange/requestApproval",

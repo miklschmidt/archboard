@@ -54,7 +54,7 @@ type SessionPhase =
 type RequestOptions = typeof READ_OPTIONS | typeof MUTATION_OPTIONS | typeof INITIALIZE_OPTIONS;
 
 /**
- * The initialize parameters Archboard sends, built from the authored capability policy inside
+ * The initialize parameters the client sends, built from the authored capability policy inside
  * the session so the public wire decoder still checks what this session asked for.
  * @returns The initialize parameters.
  */
@@ -77,7 +77,7 @@ function rethrowRequestFailure(method: string, error: unknown, mutation: boolean
 }
 
 /**
- * Build the one Codex app-server session Archboard holds: it owns initialization and the storage
+ * Build the one Codex app-server session the client holds: it owns initialization and the storage
  * proof, gates every call on how far initialization got, proves each request's identities against
  * the current child, and reports a failed mutation as delivered, not delivered, or unknown.
  * @param options - The transport, identity authority, storage paths, lifecycle callbacks,
@@ -375,7 +375,7 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 
 	/**
 	 * Run the app-server handshake exactly once: initialize, write `initialized`, read the config
-	 * requirements and config, and prove that the child is using Archboard's own storage before
+	 * requirements and config, and prove that the child is using the client's own storage before
 	 * any call is allowed out. A failure here is terminal for the session.
 	 * @returns The initialize result.
 	 */

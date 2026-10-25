@@ -74,8 +74,7 @@ const SPOKEN_REASONS = {
 	url: "Visual only: this request hands over a URL.",
 	permission_scope: "Visual only: this request asks for a scoped permission grant.",
 	coordinator_blocking: "Visual only: answering this would block the voice coordinator.",
-	unsupported_schema:
-		"Visual only: the Archboard server could not reduce this request to a spoken effect.",
+	unsupported_schema: "Visual only: the server could not reduce this request to a spoken effect.",
 	broader_grant: "Visual only: one of the offered decisions grants more than this one action.",
 	not_binary: "Visual only: this request is not a plain accept or decline.",
 } as const satisfies Record<BrowserApproval["spoken"]["reason"], string>;
@@ -107,12 +106,12 @@ const TRANSPORT_REFUSALS: ReadonlyMap<string, string> = new Map([
 	["socket_unavailable", "The workbench lost its connection before the decision was sent."],
 	[
 		"incompatible_contract",
-		"The Archboard server answered with a workbench contract this browser cannot read.",
+		"The server answered with a workbench contract this browser cannot read.",
 	],
-	["response_lost", "The Archboard server never answered, so the decision's outcome is unknown."],
+	["response_lost", "The server never answered, so the decision's outcome is unknown."],
 ]);
 
-const GENERIC_REFUSAL = "The Archboard server refused this decision.";
+const GENERIC_REFUSAL = "The server refused this decision.";
 
 /**
  * The words for a refusal code.

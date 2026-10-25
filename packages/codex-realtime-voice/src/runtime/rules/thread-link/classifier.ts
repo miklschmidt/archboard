@@ -154,7 +154,7 @@ function validateTarget(target: ThreadLinkTarget): void {
 /**
  * Whether a durable record proves this pane started the thread and Codex delivered it.
  * @param record The record, if any.
- * @returns True for a committed, delivered thread/start recorded for an Archboard thread.
+ * @returns True for a committed, delivered thread/start recorded for a thread the workbench started.
  */
 function provesOwnedThreadStart(
 	record: EpochOperationRecord | null,
@@ -169,7 +169,7 @@ function provesOwnedThreadStart(
 
 /**
  * Whether a thread is the one the owning record describes: the same thread, opened by
- * Archboard, in the workspace the record recorded.
+ * the workbench, in the workspace the record recorded.
  * @param thread The thread as read.
  * @param target The target.
  * @param record The durable record that claims to own it.

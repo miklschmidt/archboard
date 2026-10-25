@@ -88,7 +88,7 @@ function isSpokenPropertyName(name: string): boolean {
 }
 
 /**
- * Whether an elicitation form could be answered aloud at all. Archboard does not resolve forms by
+ * Whether an elicitation form could be answered aloud at all. The workbench does not resolve forms by
  * voice, but the shape decides which refusal the person is told.
  * @param schema - The requested form schema.
  * @returns True when every property is answerable aloud.
