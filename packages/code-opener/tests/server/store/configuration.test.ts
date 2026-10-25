@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { OpenerSelection } from "@archboard/code-binding/opening";
+import type { OpenerSelection } from "#shared/schemas/opener-settings.ts";
 import { planOpenerCommand } from "#server/projections/planning.ts";
 import {
 	readOpenerSelection,

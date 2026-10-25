@@ -6,8 +6,8 @@ import {
 	OpenerSelectionSchema,
 	PATH_TOKEN,
 	type OpenerSelection,
-	isAbsoluteOrBareOpenerExecutable,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
+import { isAbsoluteOrBareOpenerExecutable } from "#shared/rules/opener-executable.ts";
 import type {
 	CustomCommandCheck,
 	CustomCommandDraft,

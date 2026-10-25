@@ -3,7 +3,7 @@
 // application and the pane core agree on one shape without importing each
 // other's internals.
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type {
 	AgentActivityEntry,

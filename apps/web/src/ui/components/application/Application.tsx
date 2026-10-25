@@ -6,7 +6,7 @@
 import { VaultDiagnostics } from "#ui/components/vault-diagnostics/VaultDiagnostics.tsx";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { livePanesOver } from "#ui/rules/application/live-panes.ts";
 import {
@@ -14,7 +14,7 @@ import {
 	infoNotice,
 	presentationNotice,
 } from "#ui/rules/application/notices.ts";
-import { OpenerSettings } from "#ui/components/application/OpenerSettings.tsx";
+import { OpenerSettings } from "@archboard/code-opener/opener-settings";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
 import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";

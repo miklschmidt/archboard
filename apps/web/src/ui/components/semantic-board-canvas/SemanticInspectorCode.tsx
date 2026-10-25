@@ -10,13 +10,19 @@
 
 import { useMemo, type JSX } from "react";
 
-import type { CodeEvidence, CodeFinding } from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { lineWarning } from "@archboard/renderer/picture";
 import {
 	SidebarGlyph,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { cn } from "@archboard/ui-kit/components";
+
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
+
+/** One piece of evidence behind a finding. */
+type CodeEvidence = NonNullable<CodeFinding["evidence"]>[number];
 
 /** What the code check said about one subject, and when. */
 interface CodeStanding {

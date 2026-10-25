@@ -2,13 +2,13 @@
 // the wire is the shared Zod contract's; this file only names the dialog's
 // own state and the callbacks the host satisfies.
 
+import type { CodeTargetOpenFailure } from "#shared/schemas/code-target-open.ts";
 import type {
-	CodeTargetOpenFailure,
 	OpenerSelection,
 	OpenerSettingsReply,
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
 import type { DialogError } from "@archboard/ui-kit/components";
 
 /** The three actions, each with its own in-flight state. */

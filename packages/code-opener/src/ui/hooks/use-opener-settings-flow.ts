@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "#shared/schemas/code-target-open.ts";
 import {
 	createOpenerSettingsFlow,
 	type OpenerSettingsFlow,

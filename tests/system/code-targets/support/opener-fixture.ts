@@ -15,19 +15,24 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Server } from "node:http";
 
-import {
-	createCodeOpenerPreguard,
-	createCodeOpenerRouter,
-	type CodeOpenerRouteDependencies,
-} from "@archboard/code-opener/opener";
+import { createCodeOpenerPreguard, createCodeOpenerRouter } from "@archboard/code-opener/opener";
 import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { OpenerSelection } from "@archboard/code-binding/opening";
+import type { z } from "zod";
+import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
 import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 import {
 	assertBefore,
 	type ProcessCompletion,
 	waitForProcessCompletion,
 } from "./process-evidence.ts";
+
+/** An opener selection, as the settings routes answer it. */
+type OpenerSelection = z.infer<typeof OpenerSelectionReplySchema>["selection"];
+
+/** What the opener routes need, which a fixture replaces. */
+type CodeOpenerRouteDependencies = Required<
+	NonNullable<Parameters<typeof createCodeOpenerRouter>[1]>
+>;
 
 const FAKE_OPENER = join(import.meta.dir, "../fixtures/fake-opener.ts");
 
