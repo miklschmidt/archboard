@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T02:10:00Z'
+updated_date: '2026-10-25T02:18:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -31,4 +31,6 @@ A host writes a 272-line client to combine the transport and media owners, and g
 
 <!-- SECTION:NOTES:BEGIN -->
 createVoiceClient (./browser) owns the socket, tab session id, transport, media owner, one frozen state and the page actions; uncertain delivery stays visible as failure.uncertain. ./react: VoiceClientProvider, useVoiceClient, useVoiceState. The example uses only these; its private client is deleted. The generic thread-link, composer, queue, approval and timeline controllers moved from packages/workbench into the voice package; ./controllers serves a socket-owning host (Archboard) with the transport and media owners, createConversationControllers and the timeline projection. ./contract is the 6 snapshot types a UI renders; ./schemas holds the model schemas and dynamic approval wire rules for the host server. Voice 230 -> 229 names (browser+react 14, contract 6), workbench 152 -> 140. Left: Archboard's panes still compose transport + media + controllers through ./controllers instead of the client (AC #3 open for Archboard).
+
+Merged 9e5844d6a (createVoiceAgent). Ceilings lowered: codex-realtime-voice 158, workbench 138. AC #3 for Archboard stays open by design finding: Archboard's panes are a richer client than VoiceClient (steer vs queue, held drafts, queue reorder, dynamic approvals, decision errors, per-socket transport generations, 14 transport readers). Moving them onto VoiceClient means either growing VoiceClient to the controllers' width or keeping Archboard on ./controllers, which an outside developer building a full UI would also use. Next step if wanted: a host-socket mode in which the client owns the pane socket owner's generations (apps/web clients/pane-session/workbench-socket.ts) and exposes the controllers as client state.
 <!-- SECTION:NOTES:END -->
