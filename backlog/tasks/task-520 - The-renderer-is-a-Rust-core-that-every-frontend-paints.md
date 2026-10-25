@@ -4,8 +4,8 @@ title: The renderer is a Rust core that every frontend paints
 status: In Progress
 assignee:
   - '@claude'
-created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 14:34'
+created_date: 2026-10-24 12:53
+updated_date: '2026-10-25T19:53:00Z'
 labels:
   - renderer
   - performance
@@ -30,3 +30,27 @@ A native desktop frontend (GPUI with Vello, later) cannot draw today's pictures:
 - [ ] #3 A native Rust program links the core and gets the scene of a board without a JavaScript engine
 - [ ] #4 The development tools come from the Nix flake of the repository
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25, Rust code-check findings settled on the boards (with the merged Rust adapter at 8a38b9288 and rust-analyzer configured for this checkout). `check --code` went from 84 findings (28 ANCHOR_MISMATCH, 8 ANCHOR_SYMBOL_MISSING, 25 RELATIONSHIP_UNDRAWN, 1 CALLER_UNDRAWN, 22 EXPOSED_UNUSED) to 43 (0, 4, 16, 1, 22). `archboard check` is clean.
+
+Semantic renderer@TASK-520 code check (adopted at version 128; then Browser core loader taken out of Browser application in place at 129, because a line from a container to its own part is refused):
+- New part Picture painter (paint/mod.rs#paint), the painter's one public call. View dispatcher calls it; it calls Architecture painter, Sequence painter and Export frame (same relationship ids, new `from`), takes the palette from Theme palette (Palette::of_page) and the standings from Subject standing marks. The three flows go through it. This clears the 8 `paint` anchors.
+- New part Key entries (legend_entries.rs): Picture key, Export legend and Export frame call it; the export flow's two self steps became calls to it.
+- New part Browser core loader (ui/clients/core.ts, from a0047b5cb): Browser application and Browser layout worker load the core through it (was initCore, ANCHOR_SYMBOL_MISSING).
+- Picture key binds key.rs whole, and calls SVG document (write_icon).
+- Re-anchored: picture as flowchart.picture and sequence.picture; slab_shadow, shadow_under; colour (export-marks); standing_pin_at in legend_symbols.rs; draw for the settled drawing; paint_heading_views; Item in write.rs; SemanticLegend; paint_flow and framed_for_export for self steps.
+- Removed Edge geometry -> Architecture painter: the curves reach the painter in the settled drawing, not from geometry.rs.
+- Drawn: Sequence layout -> Layout engines (Node), Flowchart -> Edge geometry, Near and far content -> Measured text and -> Subject standing marks, Scene -> Measured text, Subject standing marks -> Theme palette, Architecture painter -> Near and far content.
+
+Renderer layout@TASK-520 code check (adopted at version 84): View dispatcher -> Board layout (dependency, MeasuredGroups and LineLook, the layout's input types); the painter's relationship and step anchor lib.rs#drawn; the self steps anchor draw and placed_blocks.
+
+Footprint against the merge base with main: current was the parent (TASK-520.08) on both. The changedNotNamed parts are TASK-520 changes that its adopted variants already draw; this proposal corrects only what the code check reads.
+
+Left on purpose:
+- Scene RELATIONSHIP_UNDRAWN: every painter helper builds scene values; the board keeps Scene as the product of the two grammar painters, and eleven lines from helpers would say nothing new.
+- Crossing pass CALLER_UNDRAWN: the flowchart is the layout's second caller, drawn on Semantic renderer (Flowchart -> Layout engines); Renderer layout follows the architecture render.
+- Board layout EXPOSED_UNUSED: archboard-layout's lib.rs re-exports InProcess (used only by tests) and Laying, and nothing outside the crate uses either. A code matter, not a board one.
+<!-- SECTION:NOTES:END -->
