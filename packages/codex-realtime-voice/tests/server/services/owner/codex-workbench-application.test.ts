@@ -2,25 +2,21 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
-import {
-	createCodexApprovalBroker,
-	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-} from "@archboard/codex-realtime-voice/runtime";
+import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import {
-	type BrowserOwnerProjection,
-	type BrowserWorkbenchActions,
-	createCodexWorkbenchGateway,
-	parseTabSessionId,
-	createServerRealtimeActions,
-	createServerCodexBrowserSocketOwner,
-} from "@archboard/codex-realtime-voice/server";
+import { type BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
+import { type BrowserWorkbenchActions } from "#server/protocol/gateway/contract.ts";
+import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
+import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+import { createServerRealtimeActions } from "#server/services/voice/realtime-actions.ts";
+import { createServerCodexBrowserSocketOwner } from "#server/services/browser-socket/socket.ts";
 
 async function delivered() {
 	return { outcome: "delivered" as const };

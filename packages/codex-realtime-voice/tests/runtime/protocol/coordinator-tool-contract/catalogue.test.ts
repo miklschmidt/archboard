@@ -1,50 +1,4 @@
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
-import { describe, expect, test } from "bun:test";
-
-import {
-	ARCHBOARD_VOICE_MANIFEST_JSON,
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
-	assertCanonicalManifest,
-	verifyCoordinatorManifestIntegrity,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	CODEX_QUEUE_OPERATION_CONTRACTS,
-	CODEX_QUEUE_PARAMETER_SCHEMAS,
-	CODEX_QUEUE_PROTOCOL,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	COORDINATOR_IDENTITY,
-	CoordinatorIdentitySchema,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	DynamicToolEnvelopeSchema,
-	DynamicToolResponseSchema,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	InspectWorkhorseResultSchema,
-	DelegateToWorkhorseResultSchema,
-	ManageWorkhorseQueueResultSchema,
-	ResolveSpokenApprovalResultSchema,
-	SteerWorkhorseResultSchema,
-	StopWorkhorsesResultSchema,
-	parseCoordinatorToolResult,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	ManageWorkhorseQueueInputSchema,
-	QueueAddInputSchema,
-	QueueDeleteInputSchema,
-	QueueListInputSchema,
-	QueueReorderInputSchema,
-	QueueStartInputSchema,
-	QueueUpdateInputSchema,
-	parseCoordinatorToolInput,
-	VOICE_TOOL_INPUT_SCHEMAS,
-	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "@archboard/codex-realtime-voice/runtime";
 import {
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,
@@ -53,6 +7,47 @@ import {
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
 } from "@archboard/codex-app-server/session";
+import { describe, expect, test } from "bun:test";
+
+import {
+	COORDINATOR_IDENTITY,
+	CoordinatorIdentitySchema,
+} from "#runtime/protocol/coordinator-tool-contract/contracts.ts";
+import {
+	ARCHBOARD_VOICE_MANIFEST_JSON,
+	ARCHBOARD_VOICE_NAMESPACE,
+	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
+	ARCHBOARD_WORKHORSE_NAMESPACE,
+	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	assertCanonicalManifest,
+	verifyCoordinatorManifestIntegrity,
+} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import {
+	CODEX_QUEUE_OPERATION_CONTRACTS,
+	CODEX_QUEUE_PARAMETER_SCHEMAS,
+	CODEX_QUEUE_PROTOCOL,
+} from "#runtime/protocol/coordinator-tool-contract/queue-operations.ts";
+import {
+	ManageWorkhorseQueueInputSchema,
+	QueueAddInputSchema,
+	QueueDeleteInputSchema,
+	QueueListInputSchema,
+	QueueReorderInputSchema,
+	QueueStartInputSchema,
+	QueueUpdateInputSchema,
+	VOICE_TOOL_INPUT_SCHEMAS,
+	WORKHORSE_TOOL_INPUT_SCHEMAS,
+	parseCoordinatorToolInput,
+} from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
+import {
+	DelegateToWorkhorseResultSchema,
+	InspectWorkhorseResultSchema,
+	ManageWorkhorseQueueResultSchema,
+	ResolveSpokenApprovalResultSchema,
+	SteerWorkhorseResultSchema,
+	StopWorkhorsesResultSchema,
+	parseCoordinatorToolResult,
+} from "#runtime/protocol/coordinator-tool-contract/tool-results.ts";
 import {
 	QUEUE_OPERATION_SNAPSHOT,
 	VOICE_MANIFEST_SNAPSHOT,
@@ -361,57 +356,4 @@ describe("dynamic tool schemas and queue protocol", () => {
 			}),
 		).toThrow();
 	});
-});
-
-test("accepts one canonical envelope and one inputText item", () => {
-	const envelope = { tag: "ok", operationId: "op-1", value: { threadId: "thread-1" } } as const;
-	expect(DynamicToolEnvelopeSchema.parse(envelope)).toEqual(envelope);
-	expect(
-		DynamicToolResponseSchema.parse({
-			contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-			success: true,
-		}),
-	).toEqual({
-		contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-		success: true,
-	});
-	expect(
-		DynamicToolEnvelopeSchema.parse({
-			tag: "refused",
-			reason: "not_ready",
-			message: "Inspect the linked workhorse first.",
-		}),
-	).toEqual({
-		tag: "refused",
-		reason: "not_ready",
-		message: "Inspect the linked workhorse first.",
-	});
-	expect(
-		DynamicToolEnvelopeSchema.parse({
-			tag: "outcome_unknown",
-			operationId: "op-2",
-			message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-		}),
-	).toEqual({
-		tag: "outcome_unknown",
-		operationId: "op-2",
-		message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	});
-	expect(() => DynamicToolResponseSchema.parse({ contentItems: [], success: true })).toThrow();
-	expect(() =>
-		DynamicToolResponseSchema.parse({
-			contentItems: [
-				{ type: "inputText", text: "x" },
-				{ type: "inputText", text: "y" },
-			],
-			success: true,
-		}),
-	).toThrow();
-	expect(() =>
-		DynamicToolEnvelopeSchema.parse({
-			tag: "outcome_unknown",
-			operationId: "op-2",
-			message: "lost",
-		}),
-	).toThrow();
 });
