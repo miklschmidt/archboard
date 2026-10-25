@@ -14,8 +14,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
-import type { BehindSkip } from "@archboard/code-intel/code-check";
-import type { LocalityAnswer, LocalityCommit, LocalityPeriod } from "@archboard/code-intel/history";
+import type { LocalityAnswer } from "@archboard/code-intel/history";
 import type { SemanticNode } from "@archboard/board/content";
 import type { SemanticVariant } from "@archboard/board/document";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
@@ -38,6 +37,15 @@ import {
 } from "#ui/rules/semantic-board-canvas/board/part-locality.ts";
 import { localityQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+
+/** A part the reading did not read, and why. */
+type BehindSkip = LocalityAnswer["skipped"][number];
+
+/** One commit in the period. */
+type LocalityCommit = LocalityAnswer["commits"][number];
+
+/** One period of the reading. */
+type LocalityPeriod = LocalityAnswer["periods"][number];
 
 /** How many of a part's commits show before the person asks for the rest. */
 const FIRST_COMMITS = 5;

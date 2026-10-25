@@ -26,18 +26,13 @@
 // as it was.
 
 import type { Express, Request, Response } from "express";
-import {
-	createCodeCheck,
-	type CodeCheckRefusal,
-	type CodeCheckRequest,
-} from "@archboard/code-intel/code-check-run";
+import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
 } from "#server/state/code-findings/code-findings-memory.ts";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
-import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
@@ -50,7 +45,7 @@ interface CodeCheckRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Run the code check, or say that no board has the named draft or that a plan is refused. */
-	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | CodeCheckRefusal>;
+	readonly check: ReturnType<typeof createCodeCheck>["run"];
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;
 }

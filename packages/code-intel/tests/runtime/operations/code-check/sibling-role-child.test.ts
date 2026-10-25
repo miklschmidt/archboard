@@ -83,7 +83,8 @@ test("a relationship can cite an endpoint's bound child in a sibling role folder
 			},
 		},
 	]);
-	const { readBoardsToCheck, checkCode } = await import("#tests/runtime/support/code-check/pass.ts");
+	const { readBoardsToCheck, checkCode } =
+		await import("#tests/runtime/support/code-check/pass.ts");
 	const read = readBoardsToCheck(vault, undefined);
 	if (!read.ok || read.boards.length !== 1)
 		throw new Error(`fixture board did not load: ${JSON.stringify(read)}`);

@@ -6,4 +6,3 @@ export {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "#server/routes/code-opener.ts";
-export type { CodeOpenerRouteDependencies } from "#server/routes/code-opener.ts";
