@@ -296,7 +296,7 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
-	/** Speech the voice model answers now: pane news during a narration (TASK-293.05). */
+	/** Speech the voice model answers now, on the host policy's choice (TASK-293.05). */
 	| "realtime_appendSpeech"
 	/** The coordinator's running turn or a new one, for a workhorse outcome while voice is live. */
 	| "coordinator_turn";
@@ -402,8 +402,8 @@ interface CoordinatorCallbackOptions {
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	/**
 	 * The link of every ready workhorse of the tab session, one for each checkout (ADR 0050). A
-	 * callback is correlated with the workhorse its thread names, and pane news with the one voice
-	 * is bound to, which the host names.
+	 * callback is correlated with the workhorse its thread names, and a host-context event with
+	 * the one voice is bound to, which the host names.
 	 */
 	readonly workhorseLinks: () => readonly CoordinatorCallbackLinkCorrelation[];
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
