@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T02:34:00Z'
+updated_date: '2026-10-25T04:11:00Z'
 labels:
   - renderer
 dependencies:
@@ -83,4 +83,44 @@ Decisions:
 - Clusters in clusters.ts and the inline-cluster paths of card-layout.ts stay. Under Blocks a block holds no inline cluster, so these paths get empty input. TASK-520.05 removes them with the rest of the Blocks code.
 - placeBlocks no longer reads archboard.blocks.nesting. solves.ts names the stage from the nesting, so a blocks solve is always nesting "blocks".
 - The crate names the Track structure `Placement`, as the task's naming note asks.
+
+Board proposals (closing steps 1 to 7, read against the code at 0255cbe59):
+
+Adopted: Renderer layout@TASK-520.04 (variant KGKsTE6n, adopted at version 64; the shared views were then edited at version 65) and Semantic renderer@TASK-520.04 (variant GJtbsPFm, adopted at version 105). Both were branched from the current variant (TASK-520.02 gcpBze89, and TASK-520.06 SDuSi3Cg).
+
+Renderer layout, changes and evidence:
+- Added the part Track layout (H0PF4BhI, module), bound to crates/archboard-layout/src. lib.rs:20 re-exports lay_out_track, lib.rs:25 holds the trait Graphviz, and place.rs:284 defines lay_out_track. The binding is the crate's source directory, not place.rs: the part stands for the whole solve across the crate's modules. This follows the Renderer core (crates/archboard-renderer-wasm/src) and Sequence layout (crates/archboard-flows/src/sequence).
+- Added Layout engine -> Track layout, "lay out a Track solve" (call), anchored at layout-engine.ts layOutTrack (layout-engine.ts:8 imports it, layout-engine.ts:40 calls it for stage "track").
+- Added Track layout -> Graphviz, "rank and order the cards, through the host" (call). CORRECTED anchor: crates/archboard-layout/src/blocks/card_layout.rs render. Engine::render (card_layout.rs:64) calls the host's Graphviz::render at card_layout.rs:69. The proposed layout.rs GraphvizHost is code of neither end (it is the wasm binding), so the relationship's description names it instead.
+- Rebound Entry row (jLUi9ZuH) to crates/archboard-layout/src/blocks/card_layout.rs, symbol entry_row_edges (defined at card_layout.rs:752, called at card_layout.rs:361 in CardLayout's build). Moved it into Track layout (parent), because the board cannot leave it in Block layout, the TypeScript blocks directory.
+- CORRECTED c6EtTjBt: removed instead of moved. Card blocks no longer calls the entry row (69a9588bf removed the call and entry-row.ts). The Rust caller is CardLayout inside Track layout, which now holds Entry row, so a relationship from Track layout to its own child would only restate the containment. The flow "Place the blocks" also lost its two entry row steps (GR20PFCl, KaqU7Mos).
+- T4hTbGVM (Layout engine -> Block placement, placeBlocks) is now labelled "lay out a Blocks solve". Block placement now reads "Lays every block of a Blocks solve out" and its description says Blocks only (place.ts:321 placeBlocks with no inline argument, place.ts:162 BlockTree with nesting "blocks").
+- CORRECTED Layout engine: it is not narrowed to Blocks only, because it still dispatches both stages (layout-engine.ts:37-45). Its responsibility now says Track goes to the renderer core and Blocks to block placement, and its description says it hands Graphviz to the core as GraphvizHost (layout-engine.ts:23-35).
+- Also changed (footprint): the Card blocks description now says Blocks only. The Block layout description says it runs only the Blocks solve in a worker, and that block-engine.ts, solves.ts and what they weigh still run on the main thread for both engines (docs/agents/boundaries.md; solves.ts:96 names stage "track" for every nesting other than "blocks").
+- Flow "Lay out a drawing": the solve now branches on "Which stage does the solve name?". The track branch is Layout engine -> Track layout (layOutTrack), with the drawing back (place.rs lay_out_track). The blocks branch is the old YLfGDr8O/vLjbpvxS. In the regions branch, BglCgR5F and uVAAX22Y now go to Track layout, because the "groups" nesting is a track stage (solves.ts:96, solves.ts:269).
+- Walkthrough beat FWMgjXxD now says the core lays out Track and TypeScript lays out Blocks, and names the orthogonal router in place of libavoid. Every beat names the view Responsibilities, which clears WALKTHROUGH_VIEW_MISSING.
+- Views, after adoption: Engine and graph now shows Track layout, and Block layout no longer shows Entry row.
+- Summary: "Measure, settle, route and paint: how a drawing is sized, laid out (Track in the renderer core, Blocks in TypeScript), its trunks routed and handed to the painter".
+
+Semantic renderer, changes and evidence:
+- Renderer core (OEslPPbt) responsibility: "...it lays out every sequence, flowchart and Track solve and paints every picture". Its description names layOutTrack (crates/archboard-renderer-wasm/src/layout.rs:42-45) and GraphvizHost (layout.rs:13, layout.rs:21-22). It now says only text and the Blocks layout are still to move.
+- Added Layout engines -> Renderer core, "lay out a Track solve" (call), anchored at layout-engine.ts layOutTrack. Its description says the call is made from inside a layout worker. Layout engines already carries anchors in layout code beyond engines.ts (F5mgUBCT at solves.ts), and no part of this board binds layout-engine.ts.
+- The Layout engines description now says the renderer core lays out every Track solve and Blocks runs in TypeScript.
+- Summary kept: "Meaning to a scene, its SVG and interaction geometry".
+
+Code check, diff method (`findings` against `findings --variant TASK-520.04`): no `>` line. The `<` lines (cleared):
+- ANCHOR_PATH_MISSING Renderer layout flows.KBB38tYG.steps.KaqU7Mos (entry-row.ts)
+- ANCHOR_SYMBOL_MISSING Renderer layout edges.c6EtTjBt (entryRowEdges in card-layout.ts)
+- ANCHOR_SYMBOL_MISSING Renderer layout flows.KBB38tYG.steps.GR20PFCl (entryRowEdges in card-layout.ts)
+The binding warning of Entry row (entry-row.ts missing) on the current variant is also gone after adoption.
+Read by hand: the check has no Rust adapter, so anchors and bindings in .rs files were tested by name only. I read card_layout.rs:64-69, card_layout.rs:752 and place.rs:284. Track layout is skipped as exposure-unknown (no root file that the check reads in crates/archboard-layout/src). layOutTrack crosses a worker and the wasm boundary, and the anchor cites the calling code in layout-engine.ts.
+
+Footprint, read against base 7dd1846c193848f3378422462be58d687c5ace55 (the parent of 748c5962b, found with the trailer command). current was the proposal's parent on both boards:
+- Renderer layout: namedAndChanged Layout engine, Block placement, Card blocks, Entry row, Block layout, Track layout; changedNotNamed none; namedNotChanged none. Skipped: View dispatcher (drill-down), and Pretext, Host canvas, Graphviz, Draw and measure, Engine and graph (unbound).
+- Semantic renderer: namedAndChanged Renderer core; changedNotNamed none; namedNotChanged none. Skipped: Layout engines (drill-down to Renderer layout, which has its own proposal, read above), Archboard server, Browser application and Board viewer (drill-down), and Host canvas, Render entry, Layout and measuring, Painting, Key and export (unbound).
+- The large commit is 748c5962b (61 files). It is this task's port, not a sweep.
+
+Behind (step 7): after adoption, Renderer layout and Semantic renderer read 0 commits. The only other board that the task's commits put behind is Archboard: Workspace packages (packages) and renderer (packages/renderer), changed by 748c5962b, 69a9588bf and 3db2970b5. That board is still right. The renderer package still "Draws a board as a picture, in the browser or under Bun", the task changed no package import, and the board draws no crate. Its findings are the same in both runs, and none is about these commits.
+
+`archboard check`: no diagnostics. Pictures (dark): the Responsibilities, Layout sequence, Engine and graph and Place the blocks views of Renderer layout, and the Everything view of Semantic renderer. They read as intended.
 <!-- SECTION:NOTES:END -->
