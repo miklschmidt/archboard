@@ -302,6 +302,13 @@ answers the names of one container from the same memory. Like the other route,
 it requires a vault (ADR 0049), reads memory alone and never starts a pass. It
 answers 404 when no pass has judged that container since the server started.
 
+Amended by TASK-539.06 (2026-10-25): `archboard check --code --exposed` is the
+option of its own. It sends `exposed=true` to the code check route, and the
+answer then carries the readings as `exposures`, with the caps above; it needs
+`--code`. Without the option the answer has no `exposures` key. Agents asked
+for it by opting in, so an ordinary check stays small. The text output adds one
+line for each container with its counts.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an

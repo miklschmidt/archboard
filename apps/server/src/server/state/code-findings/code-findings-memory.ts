@@ -23,7 +23,7 @@
 // on a board, and a pane shows it only over the version it was found on.
 
 import type {
-	CodeCheckPass,
+	CodeCheckAnswer,
 	ContainerExposure,
 	RememberedExposure,
 	RememberedFindings,
@@ -39,7 +39,7 @@ interface CodeFindingsMemory {
 	 * @param pass The pass's answer, and what each container it judged exposes.
 	 * @param checkedAt When the pass ran.
 	 */
-	remember(vault: string, pass: CodeCheckPass, checkedAt: Date): void;
+	remember(vault: string, pass: CodeCheckAnswer, checkedAt: Date): void;
 	/**
 	 * Everything remembered of one vault.
 	 * @param vault The vault.
@@ -101,7 +101,7 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 * @param pass The pass's answer, and what each container it judged exposes.
 	 * @param checkedAt When the pass ran.
 	 */
-	function remember(vault: string, pass: CodeCheckPass, checkedAt: Date): void {
+	function remember(vault: string, pass: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
 		for (const read of pass.boards) {
 			const exposures = (pass.exposures ?? []).filter((each) => isAbout(each, read));

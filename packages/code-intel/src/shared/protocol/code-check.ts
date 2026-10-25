@@ -49,8 +49,9 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054). TASK-539.01 keeps what each
 // judged container exposes, name by name, with the files that use each name
-// (`ContainerExposureSchema`). It is no part of this answer: the server
-// remembers it for the panes, and `archboard check --code` does not carry it.
+// (`ContainerExposureSchema`). The server remembers it for the panes. The
+// answer carries it as `exposures` only on request (`archboard check --code
+// --exposed`, TASK-539.06).
 
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
@@ -420,6 +421,8 @@ const ContainerCountsSchema = ContainerExposureSchema.pick({
 /**
  * The whole answer of one code check. The route answers it beside
  * `success: true`, as every route does, and a parse keeps only the answer.
+ * `exposures` is what each judged container exposes, with the caps of a pane,
+ * and is present only when the request asked for it (`--exposed`, TASK-539.06).
  */
 const CodeCheckAnswerSchema = z.object({
 	timings: z.array(CheckTimingSchema),
@@ -427,6 +430,7 @@ const CodeCheckAnswerSchema = z.object({
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
 	behind: z.array(BoardBehindSchema),
+	exposures: z.array(ContainerExposureSchema).optional(),
 });
 
 /**
@@ -468,11 +472,6 @@ const RememberedExposureSchema = z.object({
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type ContainerExposure = z.infer<typeof ContainerExposureSchema>;
 type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
-/**
- * A finished pass as the server remembers it: its answer, and what each
- * container it judged exposes, which the answer never carries.
- */
-type CodeCheckPass = CodeCheckAnswer & { readonly exposures?: readonly ContainerExposure[] };
 type RememberedReading = z.infer<typeof RememberedReadingSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
@@ -489,7 +488,6 @@ export {
 	EXPOSED_USER_LIMIT,
 	ContainerExposureSchema,
 	type ContainerExposure,
-	type CodeCheckPass,
 	RememberedExposureSchema,
 	type RememberedExposure,
 	CheckTimingSchema,

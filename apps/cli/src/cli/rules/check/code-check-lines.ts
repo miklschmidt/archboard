@@ -1,9 +1,16 @@
 // The lines `archboard check code` writes beside its JSON answer: each
 // finding as a diagnostic line with the evidence it rests on, what the code
-// check skipped, one line for each reason with a count, and how far each board
-// is behind its code, per board and per part (ADR 0045, ADR 0046).
+// check skipped, one line for each reason with a count, one line for each
+// container whose exposed names were asked for (`--exposed`), and how far each
+// board is behind its code, per board and per part (ADR 0045, ADR 0046).
 
-import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import type {
+	BoardBehind,
+	CodeCheckAnswer,
+	CodeCheckSkip,
+	CodeFinding,
+	ContainerExposure,
+} from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/board/policy";
 
 /** How far one board is behind its code. */
@@ -147,6 +154,18 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
 }
 
 /**
+ * One line for a container's exposure: the counts the pane shows. The names
+ * and their users are in the JSON answer.
+ * @param exposure What one judged container exposes.
+ * @returns Its line.
+ */
+function exposureLine(exposure: ContainerExposure): string {
+	const listed =
+		exposure.names.length < exposure.exposed ? `, ${exposure.names.length} listed` : "";
+	return `exposed: ${exposure.module}: ${plural(exposure.exposed, "name")}, ${exposure.usedOutside} used outside${listed} (${exposure.board}@${exposure.variant}, container ${exposure.container})`;
+}
+
+/**
  * Every line the code check writes beside its answer.
  * @param answer The code check's answer.
  * @returns The lines.
@@ -156,6 +175,7 @@ function codeCheckLines(answer: CodeCheckAnswer | undefined): string[] {
 	return [
 		...answer.findings.flatMap(findingLines),
 		...skippedLines(answer.skipped),
+		...(answer.exposures ?? []).map(exposureLine),
 		...answer.behind.flatMap(behindLines),
 	];
 }

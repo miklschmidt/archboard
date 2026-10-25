@@ -10,7 +10,6 @@ export type {
 	BoardBehind,
 	CheckTiming,
 	CodeCheckAnswer,
-	CodeCheckPass,
 	CodeCheckSkip,
 	CodeEvidence,
 	CodeFinding,

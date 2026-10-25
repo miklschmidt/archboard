@@ -1,5 +1,5 @@
 // The code check's route,
-// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
+// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>][&exposed=true]...`
 // (ADR 0046).
 //
 // `archboard check code` and `archboard check all` ask it. It reads code and
@@ -26,7 +26,9 @@
 // as it was. The memory also holds what each container the pass judged
 // exposes (TASK-539.01). `GET /api/vault/code-findings/exposure?board=&variant=&container=`
 // answers one container's names and users from it, for a pane that a person
-// asked. The answer of the check itself never carries them.
+// asked. The answer of the check carries them as `exposures` only when the
+// request says `exposed=true` (`archboard check --code --exposed`, TASK-539.06),
+// so an ordinary check stays small.
 
 import type { Express, Request, Response } from "express";
 import { createCodeCheck } from "@archboard/code-intel/code-check-run";
@@ -39,7 +41,6 @@ import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
-	type CodeCheckPass,
 } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
@@ -53,7 +54,7 @@ interface CodeCheckRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Run the code check, or say that no board has the named draft or that a plan is refused. */
-	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckPass | CodeCheckRefusal>;
+	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | CodeCheckRefusal>;
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;
 }
@@ -72,7 +73,7 @@ const codeFindings = createCodeFindingsMemory();
  * @returns The answer and what each judged container exposes, the drafts that
  * exist when no board has the named one, or the plan the check refuses.
  */
-async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckPass | CodeCheckRefusal> {
+async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckAnswer | CodeCheckRefusal> {
 	const { vault } = request;
 	const read = request.everyDraft
 		? readEveryDraftToCheck(vault)
@@ -89,7 +90,7 @@ async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckPass | 
 			.read(vault, [...files.values()], request.signal)
 			.then((behind) => ({ behind, elapsedMs: performance.now() - historyStarted })),
 	]);
-	const answer = CodeCheckAnswerSchema.parse({
+	return CodeCheckAnswerSchema.parse({
 		timings: [...code.timings, { check: "history", elapsedMs: history.elapsedMs }],
 		boards: read.boards.map(({ board, variant }) => ({
 			board: board.name,
@@ -99,8 +100,8 @@ async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckPass | 
 		findings: code.findings,
 		skipped: [...read.skipped, ...code.skipped],
 		behind: history.behind,
+		exposures: code.exposures,
 	});
-	return { ...answer, exposures: code.exposures };
 }
 
 /**
@@ -137,14 +138,15 @@ function refusalOf(refused: CodeCheckRefusal): { code: string; error: string } {
 }
 
 /**
- * The answer a caller reads: the pass without what its containers expose, which
- * only a pane asks for, one container at a time.
+ * The answer a caller reads: the pass, with what its containers expose only
+ * when the caller asked.
  * @param pass The pass.
+ * @param exposed Whether the caller asked for the exposed names.
  * @returns The answer.
  */
-function answerOf(pass: CodeCheckPass): CodeCheckAnswer {
+function answerOf(pass: CodeCheckAnswer, exposed: boolean): CodeCheckAnswer {
 	const { exposures: _exposures, ...answer } = pass;
-	return answer;
+	return exposed ? pass : answer;
 }
 
 /**
@@ -227,6 +229,7 @@ async function answerCodeCheck(
 	const vault = vaultOfRequest(request);
 	const variant = variantOf(request);
 	const everyDraft = queryString(request, "every-draft") === "true";
+	const exposed = queryString(request, "exposed") === "true";
 	const plans = plansOf(request);
 	const checkedAt = new Date();
 	try {
@@ -244,7 +247,7 @@ async function answerCodeCheck(
 			},
 		);
 		if (callerGone(request, response)) return;
-		if ("boards" in answer) response.json({ success: true, ...answerOf(answer) });
+		if ("boards" in answer) response.json({ success: true, ...answerOf(answer, exposed) });
 		else response.status(422).json({ success: false, ...refusalOf(answer) });
 	} catch (error) {
 		if (!callerGone(request, response)) {

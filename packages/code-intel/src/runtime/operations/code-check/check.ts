@@ -105,7 +105,7 @@ interface CodeCheckOutcome {
 	readonly timings: CheckTiming[];
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
-	/** The answer never carries it (ADR 0046); the server remembers it for the panes (TASK-539.01). */
+	/** The server remembers it for the panes (TASK-539.01); the answer carries it only on request (TASK-539.06). */
 	readonly exposures: ContainerExposure[];
 }
 

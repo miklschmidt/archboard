@@ -8,7 +8,7 @@
 // The pass also leaves what each container it judged exposes (TASK-539.01): the
 // panes poll its counts with the findings, and `GET
 // /api/vault/code-findings/exposure` answers the names of one container from
-// the same memory. `archboard check --code` never carries them.
+// the same memory. `archboard check --code` carries them only with `--exposed`.
 //
 // A stand-in pass counts how often it runs, so "a read starts no pass" is
 // observed rather than assumed.
@@ -25,7 +25,7 @@ import {
 	CodeCheckAnswerSchema,
 	RememberedExposureSchema,
 	RememberedFindingsSchema,
-	type CodeCheckPass,
+	type CodeCheckAnswer,
 	type ContainerExposure,
 } from "@archboard/code-intel/code-check";
 
@@ -75,8 +75,8 @@ async function listen(app: express.Express): Promise<string> {
 function answerOver(
 	boards: readonly string[],
 	warned: readonly string[],
-	exposures: readonly ContainerExposure[] = [],
-): CodeCheckPass {
+	exposures: ContainerExposure[] = [],
+): CodeCheckAnswer {
 	return {
 		exposures,
 		timings: [],
@@ -103,7 +103,7 @@ function answerOver(
  * @returns How to read the server, and how many passes ran.
  */
 async function serverWith(
-	answers: CodeCheckPass[],
+	answers: CodeCheckAnswer[],
 	cancel = false,
 ): Promise<{ base: string; passes: () => number }> {
 	const app = express();
@@ -304,14 +304,34 @@ test("the exposure route refuses a call that names no vault or no container, and
 	}
 });
 
-test("the answer of the check itself carries no exposure", async () => {
-	const { base } = await serverWith([answerOver(["orders"], [], [exposing("Orders")])]);
-	const body = (await (await fetch(`${base}/api/vault/code-check?${named()}`)).json()) as Record<
-		string,
-		unknown
-	>;
+test("the answer of the check carries exposures only when the request says exposed=true", async () => {
+	const exposures = [exposing("Orders")];
+	const { base } = await serverWith([
+		answerOver(["orders"], [], exposures),
+		answerOver(["orders"], [], exposures),
+	]);
+	const read = async (query: string) =>
+		(await (await fetch(`${base}/api/vault/code-check?${named()}${query}`)).json()) as Record<
+			string,
+			unknown
+		>;
 
-	expect(Object.keys(body).toSorted()).toEqual(
-		["success", ...Object.keys(CodeCheckAnswerSchema.shape)].toSorted(),
+	const plain = await read("");
+	const { exposures: _optional, ...answerKeys } = CodeCheckAnswerSchema.shape;
+	expect(Object.keys(plain).toSorted()).toEqual(["success", ...Object.keys(answerKeys)].toSorted());
+
+	const asked = await read("&exposed=true");
+	expect(Object.keys(asked).toSorted()).toEqual(
+		["success", "exposures", ...Object.keys(answerKeys)].toSorted(),
 	);
+	expect(asked["exposures"]).toEqual(exposures);
+});
+
+test("a pass that was not asked for its exposures still leaves them in memory for the panes", async () => {
+	const { base } = await serverWith([answerOver(["orders"], [], [exposing("Orders")])]);
+	await fetch(`${base}/api/vault/code-check?${named()}`);
+	const kept = await fetch(
+		`${base}/api/vault/code-findings/exposure?${named()}&board=orders&variant=v1&container=Orders`,
+	);
+	expect(kept.status).toBe(200);
 });

@@ -55,35 +55,65 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
  * @param reading What to read.
  * @param reading.variant The draft to read on every board that has one.
  * @param reading.everyDraft Whether to read every draft of every board.
- * @param reading.plan The plan JSON files named, resolved against this directory,
+ * @param reading.exposed Whether the answer keeps the exposed names of each judged container.
+ * @param plans The plan JSON files named, resolved against this directory,
  * because the server runs elsewhere.
  * @param signal Cancels the request, which cancels the check.
  * @returns Its answer.
  */
 async function codeCheckOnServer(
-	reading: CodeCheckInput,
+	reading: {
+		readonly variant?: string | undefined;
+		readonly everyDraft?: boolean | undefined;
+		readonly exposed?: boolean | undefined;
+	},
+	plans: readonly string[],
 	signal: AbortSignal,
 ): Promise<CodeCheckAnswer> {
 	const asked = new URLSearchParams(
 		reading.variant === undefined ? [] : [["variant", reading.variant]],
 	);
 	if (reading.everyDraft === true) asked.append("every-draft", "true");
-	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
+	if (reading.exposed === true) asked.append("exposed", "true");
+	for (const plan of plans) asked.append("plan", path.resolve(plan));
 	const query = asked.toString() === "" ? "" : `?${asked}`;
 	return CodeCheckAnswerSchema.parse(
 		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
 	);
 }
 
-/** What the embeds check reads: `--fix`. */
-const FixInputSchema = z.object({ fix: z.boolean().optional() });
-type FixInput = z.output<typeof FixInputSchema>;
+const CheckInputSchema = z.object({
+	code: z.boolean().optional(),
+	variant: z.string().optional(),
+	everyDraft: z.boolean().optional(),
+	exposed: z.boolean().optional(),
+	plan: z.array(z.string()).optional(),
+});
 
-/** One draft and every draft are two readings, so `--variant` and `--every-draft` exclude each other. */
-const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape).refine(
-	(input) => input.everyDraft !== true || input.variant === undefined,
-	"--every-draft reads every draft, and --variant one name: use one of them",
-);
+/**
+ * `--variant`, `--every-draft`, `--plan` and `--exposed` shape the code check,
+ * so they mean nothing without `--code`; one draft and every draft are two readings.
+ */
+const CheckRequestSchema = CheckInputSchema.refine(
+	(input) => input.variant === undefined || input.code === true,
+	"--variant names the draft the code check reads: use it with --code",
+)
+	.refine(
+		(input) => input.everyDraft !== true || input.code === true,
+		"--every-draft makes the code check read every draft: use it with --code",
+	)
+	.refine(
+		(input) => input.everyDraft !== true || input.variant === undefined,
+		"--every-draft reads every draft, and --variant one name: use one of them",
+	)
+	.refine(
+		(input) => input.plan === undefined || input.code === true,
+		"--plan names a plan JSON the code check reads: use it with --code",
+	)
+	.refine(
+		(input) => input.exposed !== true || input.code === true,
+		"--exposed asks the code check for the exposed names: use it with --code",
+	);
 
 const noSuchDraftRefusal = {
 	code: "NO_SUCH_DRAFT",
@@ -121,148 +151,83 @@ function timingLine(timing: CheckTiming): string {
 const SemanticsPartSchema = VaultCheckSchema.extend({
 	timings: CodeCheckAnswerSchema.shape.timings,
 });
-type SemanticsPart = z.output<typeof SemanticsPartSchema>;
-
-/**
- * One part for each check. A command fills the parts of the checks it ran and
- * leaves the others out (ADR 0057).
- */
-const CheckAnswerSchema = z.object({
-	semantics: SemanticsPartSchema.optional(),
-	code: CodeCheckAnswerSchema.optional(),
-	embeds: EmbedsPartSchema.optional(),
-	/**
-	 * The checks that read a vault and did not run, and why: the command ran in
-	 * a Git checkout that holds no vault, where only the embeds check runs.
-	 */
-	skipped: z
-		.object({ checks: z.array(z.enum(["semantics", "code"])), message: z.string() })
-		.optional(),
-});
-type CheckAnswer = z.output<typeof CheckAnswerSchema>;
-
-/**
- * Run the semantics check on the Archboard server.
- * @param signal Cancels the request.
- * @returns The vault check and its elapsed time.
- */
-async function semanticsCheckOnServer(signal: AbortSignal): Promise<SemanticsPart> {
-	const started = performance.now();
-	const result = await checkSemanticVaultOnServer(signal);
-	return { ...result, timings: [{ check: "board", elapsedMs: performance.now() - started }] };
-}
-
-/**
- * Whether a part makes the command exit 1: the semantics check has a diagnostic,
- * or the code check or the embeds check a warning. Information, behind
- * included, never does.
- * @param answer The parts that ran.
- * @returns True when the command exits 1.
- */
-function failsCheck(answer: CheckAnswer): boolean {
-	return (
-		(answer.semantics?.diagnostics.length ?? 0) > 0 || warns(answer.code) || warns(answer.embeds)
-	);
-}
-
-/**
- * Whether a part that reports findings has a warning.
- * @param part The part, when its check ran.
- * @param part.findings Its findings.
- * @returns True when one finding is a warning.
- */
-function warns(part: { readonly findings: readonly { severity: string }[] } | undefined): boolean {
-	return part?.findings.some((finding) => finding.severity === "warning") ?? false;
-}
-
-/** Which checks a command runs. They run, and print, in the order semantics, code, embeds. */
-type CheckName = "semantics" | "code" | "embeds";
-
-/**
- * The checks that read a vault, which a command that runs in a Git checkout
- * without one leaves out, and why.
- * @param checks The checks the command runs.
- * @param checkout The checkout without a vault, or null when the command found a vault.
- * @returns What the answer says it left out, or undefined when it left out nothing.
- */
-function skippedWithoutVault(
-	checks: readonly CheckName[],
-	checkout: string | null,
-): CheckAnswer["skipped"] {
-	const skipped = checks.filter((check): check is "semantics" | "code" => check !== "embeds");
-	if (checkout === null || skipped.length === 0) return undefined;
-	return {
-		checks: skipped,
-		message: `${checkout} holds no ${VAULT_DIRECTORY}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
-	};
-}
-
-/**
- * The lines of a command's stderr: for each part that ran, its times, then its
- * diagnostics or findings.
- * @param answer The parts that ran.
- * @returns The lines, in the order of the parts.
- */
-function checkLines(answer: CheckAnswer): string[] {
-	const { semantics, code, embeds, skipped } = answer;
-	return [
-		...(skipped === undefined ? [] : [`skipped: ${skipped.checks.join(", ")}: ${skipped.message}`]),
-		...(semantics === undefined
-			? []
-			: [...semantics.timings.map(timingLine), ...semantics.diagnostics.map(diagnosticLine)]),
-		...(code === undefined ? [] : code.timings.map(timingLine)),
-		...codeCheckLines(code),
-		...embedsCheckLines(embeds),
-	];
-}
-
-/**
- * Run the named checks and gather what the command answers: one part for each,
- * the exit status, and the lines for stderr.
- * @param checks The checks to run.
- * @param reading What the code check reads, when it runs, and whether the embeds check fixes.
- * @param context Runtime prerequisites.
- * @returns Check results and a failure exit when issues remain.
- */
-async function runChecks(
-	checks: readonly CheckName[],
-	reading: CodeCheckInput & FixInput,
-	context: CommandContext,
-): Promise<CommandExecution<CheckAnswer>> {
-	await context.require("server", "check");
-	const skipped = skippedWithoutVault(checks, context.checkout);
-	// In a checkout without a vault, only the embeds check runs.
-	const ran = context.checkout === null ? checks : checks.filter((check) => check === "embeds");
-	const semantics = ran.includes("semantics")
-		? await semanticsCheckOnServer(context.signal)
-		: undefined;
-	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
-	const embeds = ran.includes("embeds")
-		? await checkEmbeds(context, reading.fix === true)
-		: undefined;
-	const answer = { semantics, code, embeds, skipped };
-	return {
-		result: answer,
-		...(failsCheck(answer) ? { outcome: "issues" } : {}),
-		diagnostics: checkLines(answer),
-	};
-}
-
-const CheckNamespaceInputSchema = z.object({
-	action: z.string().optional(),
-	tail: z.array(z.string()).default([]),
-});
-
-/** The options of the code check, which `check`, `check all` and `check code` read. */
-const codeCheckParameters = [
-	{
-		kind: "option",
-		key: "variant",
-		spellings: ["--variant"],
-		value: "required",
-		placeholder: "draft",
-		description:
-			"Read this draft on every board that has one, and the current variant elsewhere, in the code check",
+const checkContract = defineCommand({
+	path: ["check"],
+	shared: ["url", "directory"],
+	summary: "Check configuration and every board family in the vault",
+	description:
+		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, a bound symbol that the bound file or directory does not define, and an anchor whose symbol is defined outside the bound code of both ends or that the file uses only as evidence the relationship's kind does not accept (ANCHOR_MISMATCH), each a warning. From the code that joins the bound parts of a board it reports a part whose code other bound parts run, calling or constructing it, with no relationship between them (RELATIONSHIP_UNDRAWN), a warning unless its evidence is only matched by name, and, as information, a relationship with no anchor whose accepted evidence runs only the other way (RELATIONSHIP_BACKWARDS) or does not join its ends (RELATIONSHIP_UNSUPPORTED); the evidence list of each relationship kind in the vault configuration says what it accepts. Across a network hop it joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code and sets the value to another part's address, as configured-path evidence: a compose service runs the directory it builds, and any of them runs the code drawn inside the part bound to it; the evidence is a candidate where the infrastructure leaves a choice, and an unsupported relationship whose kind accepts it names the side with no evidence, code or infrastructure, in missing. For a container bound to a module (a directory, or the index.ts or __init__.py that stands for it) it holds the interface the board derives against what the module exposes: an entry point that owns nothing the module exposes while the code of a caller drawn to it reaches it from outside the module (ENTRY_POINT_UNEXPOSED) and a hidden part whose exposed code a file outside the module that no part binds runs (CALLER_UNDRAWN) are warnings, and the exposed names that no file outside the module uses (EXPOSED_UNUSED) are information; a module whose root files it cannot read is skipped (exposure-unknown). A Terraform or OpenTofu module, a directory of .tf or .tofu files, exposes its variables and outputs, which a call of it uses; as information it names the variables the module passes unchanged to one argument of a resource (VARIABLE_PASSED_THROUGH), or says that the module wraps one resource and passes every variable through (MODULE_SHALLOW). It reads the languages and formats it knows by their syntax, such as TypeScript, Python, C#, Swift, docker-compose files and Terraform, and every other file as text, only files Git does not ignore, in the checkout that holds the vault for its own repository and in the chosen checkout of every other, and lists what it skipped with the reason, such as a symbol found only in code that did not parse (symbol-unparsed), and once for a checkout and language with no configured language server (language-server-missing; `repo language-server` configures one, and it runs that repository's code as an editor does), a project its server cannot answer about, such as a Swift directory with no Package.swift, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json (language-server-unready), or a checkout where its server did not answer (language-server-failed). A part bound to a Terraform or OpenTofu root module, a directory of .tf or .tofu files, names an address there as its symbol, such as module.queue.aws_sqs_queue.this: the check reads the root module and the local modules it calls, never state, a variable file or .terraform, and never runs terraform or tofu; a reference that joins two such parts is configured-path evidence, and an address inside a remote module is skipped (module-not-read) unless --plan names a plan for that root. It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. --every-draft reads every draft of every board instead, each as a named draft. Every variant it reads is also held to its document references (ADR 0054): a referenced file that is not at the branch or commit the reference names, read as a binding of the same repository and ref is, gets DOCUMENT_PATH_MISSING, a warning at variants.<id>.documents.<index>. A draft read either way that lacks a bound node the variant it was branched from holds, while the code it describes still holds that node's path and symbol, gets INHERITED_PART_DROPPED, a warning whose dropped field names the earlier variant, the ref, the commit and where the code holds it. That code is the ref the draft's bindings name (branch or commit) that no earlier variant names, else the one ref they name, read from Git without checking it out, or the checkout's files when they name none; a checkout without that ref (draft-ref-missing) or several refs (draft-refs-ambiguous) skips the draft. A binding that names a branch or commit its checkout does not have out (any variant) is read at that ref from Git without checking it out, for its bound path and symbol, its anchors, the evidence between parts and module interfaces: a language server reads files on disk, so a use that no import resolves there stays as code facts read it (ref-without-language-server), a draft reads every part of a repository at its own ref, which holds the layers below it, except a part that pins a ref that one does not hold, and a relationship whose ends are then read at different code is skipped (refs-differ), and only a ref the checkout cannot resolve is skipped as ref-not-checked-out, which names the ref. --exposed adds, for each container the check judged against a module, the names the module exposes with the files outside it that use each, as exposures in the answer, and one line for each container to stderr. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
+	examples: [
+		"archboard check",
+		"archboard check --code",
+		"archboard check --code --variant TASK-123",
+		"archboard check --code --every-draft",
+		"archboard check --code --plan infra/plan.json",
+		"archboard check --code --exposed",
+	],
+	parameters: [
+		{
+			kind: "option",
+			key: "code",
+			spellings: ["--code"],
+			value: "none",
+			requiredWhen: "with --variant, --every-draft, --plan or --exposed",
+			description:
+				"Then run the code check, which reads the code and Git history of the checkout that holds the vault and of the chosen checkout of every other repository",
+		},
+		{
+			kind: "option",
+			key: "variant",
+			spellings: ["--variant"],
+			value: "required",
+			placeholder: "draft",
+			description:
+				"With --code, read this draft on every board that has one, and the current variant elsewhere",
+		},
+		{
+			kind: "option",
+			key: "everyDraft",
+			spellings: ["--every-draft"],
+			value: "none",
+			description:
+				"With --code, read every draft of every board, each against the ref its bindings name, and no current variant",
+		},
+		{
+			kind: "option",
+			key: "exposed",
+			spellings: ["--exposed"],
+			value: "none",
+			description:
+				"With --code, add the names each judged container exposes, most used first, with the files outside it that use each name and the files that pass it on, as exposures, with exact counts where the lists are capped. Without it the answer stays small",
+		},
+		{
+			kind: "option",
+			key: "plan",
+			spellings: ["--plan"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "file",
+			description:
+				"With --code, read this plan JSON from terraform show -json or tofu show -json, inside the checkout that holds the vault or the chosen checkout of another repository, for the root module of its directory: only its addresses and references, for the modules the check does not read",
+		},
+	],
+	input: {
+		ingress: CheckInputSchema,
+		stages: [
+			{
+				name: "code-check-variant",
+				when: "before-server",
+				description:
+					"A named draft, every draft, a named plan and the exposed names are asked of the code check only",
+				rules: [
+					"Refuse --variant without --code",
+					"Refuse --every-draft without --code or with --variant",
+					"Refuse --plan without --code",
+					"Refuse --exposed without --code",
+				],
+				schema: CheckRequestSchema,
+			},
+		],
 	},
 	{
 		kind: "option",
