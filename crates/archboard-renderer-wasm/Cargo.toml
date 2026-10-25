@@ -13,9 +13,14 @@ crate-type = ["cdylib"]
 # Cargo.lock decides the version, and the Nix dev shell carries the
 # wasm-bindgen CLI of that version, which refuses a module of any other.
 wasm-bindgen = "0.2.129"
+# A flowchart's layout awaits the host's track engine (src/flows.rs).
+js-sys = "0.3.106"
+wasm-bindgen-futures = "0.4.79"
+archboard-flows = { path = "../archboard-flows" }
 archboard-router = { path = "../archboard-router" }
 archboard-scene = { path = "../archboard-scene" }
 archboard-svg = { path = "../archboard-svg" }
+serde = "1"
 # Every number the host writes is read back to the same double: the layout's
 # coordinates are painted to a hundredth, and a last-bit error moves one.
 serde_json = { version = "1", features = ["float_roundtrip"] }
