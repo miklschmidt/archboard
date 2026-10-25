@@ -3,7 +3,11 @@
 // the one state owner the official assistant-ui composer submits through.
 
 import type { BrowserSnapshot, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserCommandDraft, BrowserWorkbenchState, BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
+import type {
+	BrowserCommandDraft,
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "#ui/state/transport/contract.ts";
 
 /** The workbench identities this composer targets, taken from the closed model. */
 type Timeline = NonNullable<BrowserSnapshot["timeline"]>;

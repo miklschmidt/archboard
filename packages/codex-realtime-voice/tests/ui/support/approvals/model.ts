@@ -5,7 +5,11 @@
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
 
-import type { BrowserApproval, BrowserSnapshot, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserApproval,
+	BrowserSnapshot,
+	DeliveryOutcome,
+} from "#shared/schemas/browser/snapshot.ts";
 import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
