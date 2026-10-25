@@ -6,7 +6,7 @@
 // lifecycle; where rust-analyzer runs, the real server answers a call across
 // the crates of the fixture workspace.
 
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cargoWorkspaceOf } from "#runtime/operations/language-servers/cargo-workspace.ts";
@@ -33,8 +33,16 @@ const ANALYZER = (() => {
 })();
 
 let current: Workspace | undefined;
+let active: ReturnType<typeof openLanguageServers> | undefined;
+let controller = new AbortController();
 
-afterEach(() => {
+beforeEach(() => {
+	controller = new AbortController();
+});
+afterEach(async () => {
+	controller.abort();
+	await active?.close();
+	active = undefined;
 	for (const pid of current?.pids().filter(running) ?? []) process.kill(pid, "SIGKILL");
 	current?.remove();
 	current = undefined;
@@ -64,11 +72,11 @@ test("rust-analyzer starts in the workspace that holds a member's file, and is a
 			character: 7,
 		},
 	});
-	const session = openLanguageServers({
+	const session = (active = openLanguageServers({
 		servers: current.table("needs-open,primes", "rust"),
-		signal: new AbortController().signal,
+		signal: controller.signal,
 		stopMs: STOP_MS,
-	});
+	}));
 	expect(await session.definition({ root: current.root, ...BOOK })).toEqual({
 		status: "answered",
 		locations: [{ path: join(current.root, "crates/ledger/src/entry.rs"), line: 27, character: 7 }],
@@ -86,11 +94,11 @@ test("rust-analyzer starts in the workspace that holds a member's file, and is a
 
 test("a Rust file no Cargo.toml holds starts no server, and is said once", async () => {
 	current = workspace({ "scripts/tool.rs": "fn main() {\n    helper();\n}\nfn helper() {}\n" });
-	const session = openLanguageServers({
+	const session = (active = openLanguageServers({
 		servers: current.table("needs-open,primes", "rust"),
-		signal: new AbortController().signal,
+		signal: controller.signal,
 		stopMs: STOP_MS,
-	});
+	}));
 	const asked = { root: current.root, file: "scripts/tool.rs", line: 2, symbol: "helper" };
 	expect(await session.definition(asked)).toEqual({ status: "unasked" });
 	await session.close();
@@ -110,18 +118,35 @@ test("a nested Cargo workspace keeps its server separate from the enclosing work
 	});
 });
 
+test("cancellation stops Rust cache priming that never finishes without asking for definitions", async () => {
+	current = workspace(rustShop());
+	const session = (active = openLanguageServers({
+		servers: current.table("needs-open,primes,indexes-never", "rust"),
+		signal: controller.signal,
+		stopMs: STOP_MS,
+	}));
+	const answer = session.definition({ root: current.root, ...BOOK });
+	while (!current.methods().includes("textDocument/didOpen")) await Bun.sleep(5);
+	controller.abort();
+	expect(await answer).toEqual({ status: "unasked" });
+	await session.close();
+	expect(current.methods()).not.toContain("textDocument/definition");
+	expect(current.pids().filter(running)).toEqual([]);
+	expect(session.unavailable()).toEqual([]);
+});
+
 test.skipIf(ANALYZER === undefined)(
 	"the real rust-analyzer resolves a renamed import across the crates of a workspace to the function it names",
 	async () => {
 		current = workspace(rustShop());
 		const program = ANALYZER ?? "";
-		const session = openLanguageServers({
+		const session = (active = openLanguageServers({
 			servers: (language) =>
 				language === "rust"
 					? { status: "command", argv: [program] }
 					: { status: "missing", detail: `no ${language} server` },
-			signal: new AbortController().signal,
-		});
+			signal: controller.signal,
+		}));
 		const answer = await session.definition({ root: current.root, ...BOOK });
 		await session.close();
 		// The answer and why none came, together, so a failure says which.
