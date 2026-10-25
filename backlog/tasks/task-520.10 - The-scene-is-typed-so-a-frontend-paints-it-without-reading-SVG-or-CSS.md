@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T04:29:00Z'
-updated_date: '2026-10-25T11:40:00Z'
+updated_date: '2026-10-25T11:47:00Z'
 labels: []
 dependencies:
   - TASK-520.09
@@ -97,4 +97,6 @@ Behind (check --code), the boards this task's commits put behind:
 - Board viewer: "Render stage states" through 21b0b5d12. SemanticTypeSamples.tsx and SemanticSubjectTip.tsx now read the generated marks through the renderer. The part's responsibility and relationships are unchanged, and the Semantic renderer edges into Viewer marks (N8eFnJ9p, bwa7JRYk) still hold.
 - Renderer layout: Architecture painter through f2d1769b5. It changed inside only, and the part still "paints the settled drawing into a scene and decides no geometry".
 - Archboard: the renderer package. That container is still right.
+
+Pictures (dark, 2026-10-25): Semantic renderer@TASK-520.10 against TASK-520.04. The overview shows Painting and Renderer core changed and the added edge Painting -> Key and export (the generated viewer marks). The Painting view shows SVG document, now a module, and Theme palette changed. Labels and cards read cleanly, with nothing clipped.
 <!-- SECTION:NOTES:END -->
