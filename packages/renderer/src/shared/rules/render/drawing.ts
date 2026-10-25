@@ -16,10 +16,7 @@ type MeasuredNode = Core.MeasuredNode<SemanticNode>;
 type MeasuredLabel = Core.MeasuredLabel;
 
 /** How a relationship's line is drawn, as the vault's policy says, where crossings are settled. */
-interface LineLook {
-	readonly dash: Core.Dash;
-	readonly arrowhead: Core.Arrowhead;
-}
+type LineLook = Pick<Core.LineAppearance, "dash" | "arrowhead">;
 
 /** All measured subjects, keyed by their existing architectural identities. */
 interface MeasuredArchitecture {
