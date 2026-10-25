@@ -133,9 +133,7 @@ function tipOver(
 function accentOf(appearance: AppliedAppearance | undefined): CSSProperties | undefined {
 	if (appearance === undefined) return undefined;
 	const ink =
-		appearance.depiction === ""
-			? lineInk(paletteInk(appearance.lineColor, "--diagram-edge"))
-			: paletteInk(appearance.typeColor);
+		appearance.depiction === "" ? lineInk(appearance.lineColor) : paletteInk(appearance.typeColor);
 	return { borderLeftColor: ink, borderLeftWidth: 3 };
 }
 
