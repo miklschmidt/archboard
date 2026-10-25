@@ -1,3 +1,6 @@
+import type { parseBoardKey } from "@archboard/board/address";
+
+type BoardIdentity = ReturnType<typeof parseBoardKey>;
 // What the panes are and where they sit.
 //
 // A pane is known to the server only while its socket is open (see server.ts):
@@ -5,7 +8,6 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import type { BoardIdentity } from "@archboard/board/address";
 
 /** A rectangle in page coordinates. */
 interface Rect {

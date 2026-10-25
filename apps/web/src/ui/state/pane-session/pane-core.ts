@@ -6,7 +6,6 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { takeBoardBack } from "#ui/clients/pane-session/pane-requests.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
@@ -42,6 +41,10 @@ import type {
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
 /** What the core reads out of React and writes back into it. */
 interface PaneCorePorts<Transport extends WorkbenchTransportPort> {

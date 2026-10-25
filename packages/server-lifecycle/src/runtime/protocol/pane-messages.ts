@@ -5,8 +5,11 @@
 // on two boards, so a pane showing board A has to be able to tell that news
 // about board B is not its business.
 
-import type { DoingEntry } from "@archboard/board/doing";
-import type { LockHolder } from "@archboard/board/lock";
+import type { boardLockState } from "@archboard/board/lock";
+import type { recentDoing } from "@archboard/board/doing";
+
+type DoingEntry = ReturnType<typeof recentDoing>[number];
+type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
 
 /** The shape every JSON route answers with. */
 interface ApiResponse<T = unknown> {

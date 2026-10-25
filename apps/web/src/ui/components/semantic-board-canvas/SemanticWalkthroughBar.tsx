@@ -30,7 +30,6 @@
 import { RiMicLine, RiPlayCircleLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import { IconButton } from "@archboard/ui-kit/components";
 import {
 	SidebarChoice,
@@ -40,6 +39,9 @@ import {
 	SidebarMeta,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /** Inputs for the walkthrough bar. */
 interface SemanticWalkthroughBarProps {

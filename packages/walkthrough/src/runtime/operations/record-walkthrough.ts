@@ -25,7 +25,6 @@ import { join } from "node:path";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
-import type { VaultCheck } from "@archboard/board/policy";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDER_MS } from "@archboard/timing";
 import {
@@ -61,6 +60,10 @@ import {
 import { renderTalk } from "#runtime/operations/render-talk.ts";
 import { writeSilence } from "#runtime/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/store/talk-files.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** What to record, and where. */
 interface WalkthroughRecordingRequest {

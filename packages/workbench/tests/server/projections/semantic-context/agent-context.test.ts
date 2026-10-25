@@ -28,7 +28,10 @@ import {
 } from "@archboard/board/commands";
 import { type SemanticBoard, findVariant, currentVariant } from "@archboard/board/document";
 import { findView } from "@archboard/board/views";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));
 

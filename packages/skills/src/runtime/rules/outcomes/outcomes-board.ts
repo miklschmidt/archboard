@@ -5,7 +5,6 @@
 import {
 	EdgeTrafficSchema,
 	effectiveTraffic,
-	type DrillDown,
 	type SemanticNode,
 	type VariantContent,
 } from "@archboard/board/content";
@@ -23,6 +22,8 @@ import {
 	type Reading,
 } from "#runtime/rules/outcomes/reading.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 type Check = (check: OutcomeCheck, content: VariantContent) => Finding;
 

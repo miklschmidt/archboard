@@ -17,7 +17,7 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
-import { type BoardIdentity, paneBoardAddress, parseBoardKey } from "@archboard/board/address";
+import { paneBoardAddress, parseBoardKey } from "@archboard/board/address";
 import {
 	type Arrangement,
 	type PaneContext,
@@ -38,6 +38,8 @@ import {
 	resolvePaneSpec,
 	soloPane,
 } from "#runtime/rules/panes-addressing.ts";
+
+type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
 /**
  * What the read-out says beyond naming the panes: the things an agent needs

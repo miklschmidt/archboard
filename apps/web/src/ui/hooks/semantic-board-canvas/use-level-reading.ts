@@ -18,9 +18,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 import type { DrillNavigation } from "#ui/hooks/semantic-board-canvas/use-drill-down.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
 /** What the shell says about the pane's own board. */
 interface OwnReading {
