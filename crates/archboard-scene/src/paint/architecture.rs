@@ -28,11 +28,12 @@ use crate::paint::standing::{
     standing_swipe, subject, warning_on_line,
 };
 use crate::paint::styles::{
-    HEAD_LENGTH, Styles, edge_attributes, head_widths, quietened, relationship_ink, stroke_width,
+    HEAD_LENGTH, Head, Styles, edge_attributes, head_ref_x, head_widths, quietened,
+    relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
 use crate::paint::traffic::{TrafficLine, paint_traffic};
-use crate::request::{Arrowhead, LineAppearance, NodeAppearance, PaletteColor, Standing};
+use crate::request::{LineAppearance, NodeAppearance, PaletteColor, Standing};
 use crate::scene::{Atlas, Role, SubjectKind};
 
 /// Width added to a connection's invisible selection halo.
@@ -42,33 +43,21 @@ const MARKER_BOX: f64 = 10.0;
 /// How thick the open head's arms are drawn, in marker units.
 const OPEN_ARM: f64 = 1.7;
 
-/// Where each head form puts the line's end, and where its ink reaches back to.
-fn marker_form(head: Arrowhead) -> (f64, f64) {
-    match head {
-        Arrowhead::Open => (10.0, 2.0 - OPEN_ARM / 2.0),
-        Arrowhead::Filled | Arrowhead::None => (8.0, 0.0),
-    }
-}
-
 /// How far back from a route's end its arrowhead's ink reaches.
-fn arrowhead_reach(head: Arrowhead) -> f64 {
-    if head == Arrowhead::None {
-        return 0.0;
-    }
-    let (ref_x, back) = marker_form(head);
-    ((ref_x - back) * HEAD_LENGTH) / MARKER_BOX
+fn arrowhead_reach(head: Head) -> f64 {
+    let back = match head {
+        Head::Open => 2.0 - OPEN_ARM / 2.0,
+        Head::Filled => 0.0,
+    };
+    ((head_ref_x(head) - back) * HEAD_LENGTH) / MARKER_BOX
 }
 
-/// A head in the line's ink, in SVG's proportional stroke-width units.
-fn edge_marker(id: &str, head: Arrowhead, weight: Emphasis, ink: &str) -> Markup {
-    if head == Arrowhead::None {
-        return Markup::new();
-    }
+/// An arrowhead marker in one ink, in SVG's proportional stroke-width units.
+pub(super) fn arrowhead_marker(id: &str, head: Head, weight: Emphasis, ink: &str) -> Markup {
     let side = coord(head_widths(weight));
-    let shape = if head == Arrowhead::Filled {
-        tag("path", attrs! { "d": "M0,0 L10,5 L0,10 z", "fill": ink })
-    } else {
-        tag(
+    let shape = match head {
+        Head::Filled => tag("path", attrs! { "d": "M0,0 L10,5 L0,10 z", "fill": ink }),
+        Head::Open => tag(
             "path",
             attrs! {
                 "d": "M2,1 L10,5 L2,9",
@@ -78,24 +67,20 @@ fn edge_marker(id: &str, head: Arrowhead, weight: Emphasis, ink: &str) -> Markup
                 "stroke-linecap": "round",
                 "stroke-linejoin": "round",
             },
-        )
+        ),
     };
     wrap(
-        "defs",
-        attrs! {},
-        wrap(
-            "marker",
-            attrs! {
-                "id": id,
-                "viewBox": format!("0 0 {} {}", crate::js::number(MARKER_BOX), crate::js::number(MARKER_BOX)),
-                "refX": marker_form(head).0,
-                "refY": MARKER_BOX / 2.0,
-                "markerWidth": side.as_str(),
-                "markerHeight": side.as_str(),
-                "orient": "auto-start-reverse",
-            },
-            shape,
-        ),
+        "marker",
+        attrs! {
+            "id": id,
+            "viewBox": format!("0 0 {} {}", crate::js::number(MARKER_BOX), crate::js::number(MARKER_BOX)),
+            "refX": head_ref_x(head),
+            "refY": MARKER_BOX / 2.0,
+            "markerWidth": side.as_str(),
+            "markerHeight": side.as_str(),
+            "orient": "auto-start-reverse",
+        },
+        shape,
     )
 }
 
@@ -134,8 +119,15 @@ fn paint_edge_line(
         weight.as_str(),
         colour_id(&ink)
     );
+    let head = Head::of(appearance.arrowhead);
     let mut parts = vec![
-        edge_marker(&marker_id, appearance.arrowhead, weight, &ink),
+        head.map_or_else(Markup::new, |head| {
+            wrap(
+                "defs",
+                attrs! {},
+                arrowhead_marker(&marker_id, head, weight, &ink),
+            )
+        }),
         standing_swipe(&routed.path, width, standing, palette),
         tag(
             "path",
@@ -152,7 +144,7 @@ fn paint_edge_line(
             "path",
             attrs! {
                 "d": routed.path.as_str(),
-                "marker-end": (appearance.arrowhead != Arrowhead::None).then(|| format!("url(#{marker_id})")),
+                "marker-end": head.map(|_| format!("url(#{marker_id})")),
             }
             .with(attributes.clone()),
         ),
@@ -387,10 +379,11 @@ pub fn paint_architecture(
             Some(TrafficLine {
                 routed,
                 traffic,
-                head_reach: if ends_in_port(&routed.curve, &into_ports) {
-                    0.0
-                } else {
-                    arrowhead_reach(appearance.arrowhead)
+                head_reach: match Head::of(appearance.arrowhead) {
+                    Some(head) if !ends_in_port(&routed.curve, &into_ports) => {
+                        arrowhead_reach(head)
+                    }
+                    _ => 0.0,
                 },
                 into: ride_into(&routed.curve, &into_ports),
                 ink: quietened(
