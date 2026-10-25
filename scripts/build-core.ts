@@ -2,14 +2,14 @@
 // wasm-bindgen into the renderer package, recording the hash of the sources
 // the build was made from, and beside it the TypeScript types of the core's
 // contract, generated from its Rust types, and the marks a pane draws beside a
-// picture, generated from its painter. A build that already records the hash of the
+// picture, generated from its painter. A complete build that records the hash of the
 // sources in this checkout is kept, so a run without a change needs no Rust
 // tools.
 //
 // Run from the repository root, inside `nix develop`:
 //   bun run build:core
 
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	CHECKOUT,
@@ -76,12 +76,31 @@ function spawn(
 	}
 }
 
+/**
+ * Whether the core and every generated TypeScript file are ready for this checkout.
+ * @param hash The source hash the core must hold.
+ * @returns Whether the build can be kept without running the generators.
+ * @throws {Error} When loading the core fails for a reason other than a missing or stale build.
+ */
+function currentBuild(hash: string): boolean {
+	try {
+		loadCore(hash);
+		return [
+			TYPES,
+			MARKS,
+			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm.d.ts"),
+			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm.d.ts"),
+		].every(existsSync);
+	} catch (error) {
+		if (!(error instanceof CoreBuildError)) throw error;
+		return false;
+	}
+}
+
 const hash = coreSourceHash();
-try {
-	loadCore(hash);
+if (currentBuild(hash)) {
 	console.log(`The renderer core is built from these sources (${hash}).`);
-} catch (error) {
-	if (!(error instanceof CoreBuildError)) throw error;
+} else {
 	run(["cargo", "build", "--release", "--locked", "--target", TARGET, "--package", CRATE], {
 		ARCHBOARD_CORE_SOURCE_HASH: hash,
 	});
