@@ -500,3 +500,25 @@ pub(super) fn lay_out<'a>(flows: &'a [Flow], nodes: &[Node]) -> DataFlowLayout<'
         flows: placed,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn large_repeat_counts_keep_their_label_and_cap_the_animation() {
+        let flow: Flow = serde_json::from_str(
+            r#"{"id":"f","name":"F","participants":["a"],"steps":[
+                {"id":"m","kind":"self","from":"a","to":"a","label":"work","repeat":9007199254740991}]}"#,
+        )
+        .unwrap();
+        let flows = [flow];
+        let drawing = lay_out(&flows, &[]);
+        let step = &drawing.flows[0].steps[0];
+        assert_eq!(step.step.drawn_label(), "work ×9007199254740991");
+        assert_eq!(
+            step.slot.count,
+            crate::sequence::design::MAX_PULSES_PER_STEP
+        );
+    }
+}

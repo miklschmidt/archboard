@@ -25,7 +25,7 @@ pub struct Message {
     /// A note set under the message, when it has one.
     pub note: Option<String>,
     /// How many times it happens in one run; absent for once.
-    pub repeat: Option<u32>,
+    pub repeat: Option<u64>,
 }
 
 impl Message {
@@ -107,7 +107,7 @@ struct StepFields {
     #[serde(default)]
     note: Option<String>,
     #[serde(default)]
-    repeat: Option<u32>,
+    repeat: Option<u64>,
     #[serde(default)]
     question: Option<String>,
     #[serde(default)]

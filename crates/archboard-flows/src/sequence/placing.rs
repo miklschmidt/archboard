@@ -47,7 +47,9 @@ fn row_top(y: f64) -> f64 {
 impl<'a> Placing<'a, '_> {
     /// Place one message on its row and move the walk below it.
     fn place_message(&mut self, step: &'a Message, branch: &Branch) {
-        let count = step.repeat.unwrap_or(1).min(MAX_PULSES_PER_STEP);
+        let count = u32::try_from(step.repeat.unwrap_or(1))
+            .unwrap_or(MAX_PULSES_PER_STEP)
+            .min(MAX_PULSES_PER_STEP);
         let from_x = self
             .centre_of
             .get(step.from.as_str())
