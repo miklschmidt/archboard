@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/board/render-reply";
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -76,8 +76,9 @@ function paintedBox(markup: string): DiagramBox {
 	};
 }
 
-test("a crossing step explanation stays clear of the receiver's activation bar", () => {
-	const rendered = renderDataFlow({
+test("a crossing step explanation stays clear of the receiver's activation bar", async () => {
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture({
 			nodes: [
@@ -124,13 +125,15 @@ test("a crossing step explanation stays clear of the receiver's activation bar",
 	expect(note.y + note.height).toBeLessThan(nextLabel.y);
 });
 
-test("a self step's note is drawn whole under its loop, and the next message makes room for it", () => {
-	const plain = renderDataFlow({
+test("a self step's note is drawn whole under its loop, and the next message makes room for it", async () => {
+	const plain = await renderSemanticView({
+		grammar: "sequence",
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: startup(),
 		theme: "light",
 	});
-	const rendered = renderDataFlow({
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: startup(NOTE),
 		theme: "light",

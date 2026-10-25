@@ -3,7 +3,7 @@
 
 import { expect, test } from "bun:test";
 
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
@@ -30,10 +30,11 @@ const content = orderedFixture({
 	],
 });
 
-test("a participant card with a responsibility holds its chip in the top corner", () => {
-	const card = subjectGroups(renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content }).svg).find(
-		(group) => group.id === "a" && group.markup.includes("ab-chip"),
-	)!;
+test("a participant card with a responsibility holds its chip in the top corner", async () => {
+	const card = subjectGroups(
+		(await renderSemanticView({ policy: DEFAULT_SEMANTIC_POLICY, content, grammar: "sequence" }))
+			.svg,
+	).find((group) => group.id === "a" && group.markup.includes("ab-chip"))!;
 	const slab = /<rect x="([\d.]+)" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"/.exec(
 		card.markup,
 	)!;

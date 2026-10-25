@@ -9,7 +9,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { APCA, lightnessContrast, seenIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
@@ -111,9 +111,13 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 		}
 	});
 
-	test.each(THEMES)("a message and a lifeline (%s)", (theme) => {
+	test.each(THEMES)("a message and a lifeline (%s)", async (theme) => {
 		const { svg } = seenIn(
-			renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			await renderSemanticView({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: CONTENT,
+				grammar: "sequence",
+			}),
 			theme,
 		);
 		const { page, floor } = grounds(theme);

@@ -14,7 +14,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import {
 	corridorPoints,
 	routeEnds,
@@ -26,6 +25,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import containerDetour from "#tests/runtime/support/fixtures/container-detour.json";
 import variantReconciliation from "#tests/runtime/support/fixtures/variant-reconciliation.json";
 import sunkWrap from "#tests/runtime/support/fixtures/sunk-wrap.json";
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 const TARGETS = ["one", "two", "three", "four", "five"];
 /** How far past its ends a line may stand: one lane, where it turns beside a port. */

@@ -4,6 +4,8 @@
 // it, so that is how these tests find one too: the assertions are about what a
 // pane could pick out of the returned string, not about the string.
 
+import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";
+
 /** One subject group the renderer emitted. */
 interface DrawnGroup {
 	/** What sort of subject it is. */
@@ -112,6 +114,23 @@ function groupOf(svg: string, kind: string, id: string): DrawnGroup | undefined 
 	return subjectGroups(svg).find((group) => group.kind === kind && group.id === id);
 }
 
+/**
+ * Where a container's header ends, on the page: the foot of its header slab,
+ * the first rect its group draws with a slab's corners
+ * (archboard_scene::paint::design::SLAB_RADIUS).
+ * @param svg The drawn document.
+ * @param id The container.
+ * @returns The page coordinate of the slab's foot.
+ */
+function headerFoot(svg: string, id: string): number {
+	const group = groupOf(svg, "region", id);
+	const slab = /<rect x="[\d.-]+" y="([\d.-]+)" width="[\d.]+" height="([\d.]+)" rx="8"/.exec(
+		group?.markup ?? "",
+	);
+	if (slab === null) throw new Error(`container ${id} drew no header slab`);
+	return Number(slab[1]) + Number(slab[2]) + bodyShift(svg).y;
+}
+
 /** The standing pin: a translated group holding a disc and the mark on it. */
 const PIN = /<g transform="translate\([^"]*\)"><circle[\s\S]*?<\/g>/;
 
@@ -194,6 +213,7 @@ export {
 	type DrawnStroke,
 	subjectGroups,
 	groupOf,
+	headerFoot,
 	rowMarkOf,
 	withoutColour,
 	withoutMark,

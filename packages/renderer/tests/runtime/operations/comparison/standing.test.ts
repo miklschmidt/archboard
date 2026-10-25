@@ -115,7 +115,7 @@ describe("a picture nobody stated a standing for", () => {
 		// can put on the page appears anywhere in the document.
 		expect((await drawn()).svg).toBe((await drawn(undefined)).svg);
 		expect((await drawn()).svg).not.toContain("data-semantic-standing");
-		expect(drawnSequence().svg).not.toContain("data-semantic-standing");
+		expect((await drawnSequence()).svg).not.toContain("data-semantic-standing");
 
 		// And every subject is still there to be selected, unlabelled.
 		const groups = subjectGroups((await drawn()).svg);
@@ -156,8 +156,8 @@ describe("a picture nobody stated a standing for", () => {
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
 		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);
 
-		const sequence = arrangementOf(drawnSequence());
-		const comparedSequence = arrangementOf(drawnSequence(SEQUENCE_STANDING));
+		const sequence = arrangementOf(await drawnSequence());
+		const comparedSequence = arrangementOf(await drawnSequence(SEQUENCE_STANDING));
 		expect(comparedSequence).toEqual(sequence);
 	});
 });
