@@ -466,7 +466,7 @@ only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 16 names, where code outside
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
 imported 5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
 The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
@@ -475,8 +475,8 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
   the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
   contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, the
-  plan of an opener command and its launch. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
+  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
 - `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and

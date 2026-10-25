@@ -162,6 +162,7 @@ export {
 	type OpenerPlanFailure,
 	type OpenerPlan,
 	type OpenerSelectionInvalid,
+	type PlanOptions,
 	validateOpenerSelection,
 	planOpenerCommand,
 };
