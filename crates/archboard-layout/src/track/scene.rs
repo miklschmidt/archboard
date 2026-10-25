@@ -287,15 +287,20 @@ impl Placement {
 
     /// Group items into bands, one per distinct centre height, top to bottom.
     fn group_bands(&mut self, items: &[ItemId]) {
-        let keys: Vec<f64> = items.iter().map(|&id| centre_key(self.item(id))).collect();
-        let centres = ecma::sorted_by(&ecma::unique(&keys), |one, other| one - other);
-        for centre in centres {
-            let on: Vec<ItemId> = items
-                .iter()
-                .zip(&keys)
-                .filter(|&(_, key)| *key == centre)
-                .map(|(&id, _)| id)
-                .collect();
+        let mut grouped: Map<u64, (f64, Vec<ItemId>)> = Map::default();
+        for &id in items {
+            let centre = centre_key(self.item(id));
+            let (_, on) = grouped
+                .entry(ecma::number_key(centre))
+                .or_insert_with(|| (centre, Vec::new()));
+            // A nonnumeric centre has a band, but no item compares equal to it.
+            if !centre.is_nan() {
+                on.push(id);
+            }
+        }
+        let mut groups: Vec<_> = grouped.into_values().collect();
+        ecma::sort_by(&mut groups, |one, other| one.0 - other.0);
+        for (_, on) in groups {
             let band = self.bands.len();
             for &id in &on {
                 self.item_mut(id).band = band;
@@ -461,5 +466,38 @@ impl Placement {
     /// An item's box after its band moved, by id.
     pub(crate) fn moved_id(&self, id: ItemId, left: f64) -> Rect {
         self.moved(self.item(id), left)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bands_follow_rounded_centres_and_span_every_item_on_the_rank() {
+        let mut scene = Placement::default();
+        let items: Vec<ItemId> = [(100.0, 20.0), (0.0, 20.0), (101.125, 18.0), (-5.0, 10.0)]
+            .into_iter()
+            .map(|(y, height)| {
+                scene.add(Item::new(
+                    Rect {
+                        x: 0.0,
+                        y,
+                        width: 40.0,
+                        height,
+                    },
+                    NO_BAND,
+                ))
+            })
+            .collect();
+        scene.group_bands(&items);
+        let ranks: Vec<usize> = items.iter().map(|&id| scene.item(id).band).collect();
+        assert_eq!(ranks, [2, 1, 2, 0]);
+        let bounds: Vec<(f64, f64)> = scene
+            .bands
+            .iter()
+            .map(|band| (band.top, band.bottom))
+            .collect();
+        assert_eq!(bounds, [(-5.0, 5.0), (0.0, 20.0), (100.0, 120.0)]);
     }
 }
