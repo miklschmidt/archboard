@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const vp = path.join(repoRoot, "node_modules/.bin/vp");
 const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.ts");
 
 interface CommandResult {
@@ -47,6 +47,10 @@ async function withProject<T>(
 ): Promise<T> {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boundaries-"));
 	try {
+		fs.writeFileSync(
+			path.join(root, "package.json"),
+			JSON.stringify({ name: "lint-fixture", private: true }),
+		);
 		fs.writeFileSync(path.join(root, ".oxlintrc.jsonc"), repositoryOxlintConfig());
 		for (const [relative, content] of Object.entries(files)) {
 			const target = path.join(root, relative);
@@ -60,7 +64,7 @@ async function withProject<T>(
 }
 
 function lintCommand(relativePaths: string[]): string[] {
-	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...relativePaths];
+	return [vp, "lint", "--config=.oxlintrc.jsonc", "--format=default", ...relativePaths];
 }
 
 function lint(root: string, relativePaths: string[]): CommandResult {
@@ -90,7 +94,13 @@ interface Diagnostic {
  * @returns The diagnostics of all the files.
  */
 function diagnosticsOf(root: string, relativePaths: string[]): Diagnostic[] {
-	const result = run(root, [oxlint, "--config=.oxlintrc.jsonc", "--format=json", ...relativePaths]);
+	const result = run(root, [
+		vp,
+		"lint",
+		"--config=.oxlintrc.jsonc",
+		"--format=json",
+		...relativePaths,
+	]);
 	const parsed: unknown = JSON.parse(result.output);
 	const list =
 		typeof parsed === "object" && parsed !== null && "diagnostics" in parsed

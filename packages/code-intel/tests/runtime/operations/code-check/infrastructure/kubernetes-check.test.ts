@@ -201,16 +201,17 @@ test("anchors, binding symbols and the relationships between parts bound to Kube
 	expect(template?.reason).toBe("expression-not-followed");
 });
 
+const undrawn = (id: string) =>
+	outcome.findings
+		.find((each) => each.code === "RELATIONSHIP_UNDRAWN" && each.subject?.id === id)
+		?.evidence?.map((piece) => [
+			piece.from,
+			piece.kind,
+			piece.resolution,
+			`${piece.path}:${piece.line}`,
+		]);
+
 test("a Service's selector joins it to its workload, and a Service no part binds passes the reference on to the workloads it picks", () => {
-	const undrawn = (id: string) =>
-		outcome.findings
-			.find((each) => each.code === "RELATIONSHIP_UNDRAWN" && each.subject?.id === id)
-			?.evidence?.map((piece) => [
-				piece.from,
-				piece.kind,
-				piece.resolution,
-				`${piece.path}:${piece.line}`,
-			]);
 	expect(undrawn("pW")).toEqual([["pR", "configured-path", "resolved", "k8s/web.yaml:27"]]);
 	expect(undrawn("pL")).toEqual([["pW", "configured-path", "resolved", "k8s/web.yaml:16"]]);
 });

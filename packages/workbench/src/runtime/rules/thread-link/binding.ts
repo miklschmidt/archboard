@@ -292,6 +292,28 @@ function adoptionFailure(error: unknown, paneId: string): Error {
 }
 
 /**
+ * Refuses the swap unless the caller's expectation still describes the pane: a null
+ * expectation means the pane must still be untouched.
+ * @param expected The caller's token, or null.
+ * @param current The pane's binding.
+ */
+function assertExpectationHolds(
+	expected: ThreadLinkCasToken | null,
+	current: ThreadLinkBindingSnapshot,
+): void {
+	if (expected === null) {
+		if (current.revision !== 0 || current.link.state !== "unbound") {
+			throw conflict(current.paneId, current.revision);
+		}
+		return;
+	}
+	assertExpected(expected);
+	if (!sameCas(expected, current.cas)) {
+		throw conflict(current.paneId, current.revision);
+	}
+}
+
+/**
  * Creates the per-pane binding store: one compare-and-swap boundary through which every link
  * change passes, with executable links additionally re-proved against the live epoch.
  * @param options The epoch authority, or null for a store that refuses executable links.
@@ -316,28 +338,6 @@ function createBindingController(
 		const initial = initialSnapshot(paneId);
 		bindings.set(paneId, initial);
 		return initial;
-	};
-
-	/**
-	 * Refuses the swap unless the caller's expectation still describes the pane: a null
-	 * expectation means the pane must still be untouched.
-	 * @param expected The caller's token, or null.
-	 * @param current The pane's binding.
-	 */
-	const assertExpectationHolds = (
-		expected: ThreadLinkCasToken | null,
-		current: ThreadLinkBindingSnapshot,
-	): void => {
-		if (expected === null) {
-			if (current.revision !== 0 || current.link.state !== "unbound") {
-				throw conflict(current.paneId, current.revision);
-			}
-			return;
-		}
-		assertExpected(expected);
-		if (!sameCas(expected, current.cas)) {
-			throw conflict(current.paneId, current.revision);
-		}
 	};
 
 	/**

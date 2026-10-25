@@ -15,6 +15,7 @@ You need these things:
 
 - Linux or macOS, Bash, Git, and Bun 1.4.3 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
+- Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.

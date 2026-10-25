@@ -4,6 +4,7 @@ import {
 	ARCHITECTURE_NOTE_GAP,
 	ARCHITECTURE_LABEL_PADDING_X,
 	ARCHITECTURE_LABEL_PADDING_Y,
+	ARCHITECTURE_LABEL_STACK_GAP,
 } from "#shared/constants/spacing.ts";
 import {
 	HEADER_SLAB_INSET,
@@ -259,30 +260,48 @@ const LABEL_MIN_WIDTH = 40;
 /**
  * Settle a relationship's complete words and padded plate before routing it.
  * The words wrap balanced, the plate hugs the widest line, and every line is
- * centred, so the text sits on the line the plate is centred on.
+ * centred, so the text sits on the line the plate is centred on. A line of the
+ * overview that joins several relationships stacks their labels, one to a
+ * line of the text (ADR 0052): each wraps on its own on a chip of its own,
+ * padded as a lone label's is, and the chips stand one above the next, as wide
+ * as the widest, with the ground between them.
  * @param text The connection label.
  * @returns Its box and the relative positions of its lines.
  */
 function measureLabel(text: string): MeasuredLabel {
-	const prepared = prepare(text, LABEL);
 	const limit = LABEL_MAX_WIDTH - 2 * ARCHITECTURE_LABEL_PADDING_X;
-	// A hanging space is not painted, so it neither widens nor off-centres the plate.
-	const lines = layoutWithLines(prepared, balancedWrapWidth(prepared, limit), LABEL.lineHeight)
-		.lines.map(({ text: line }) => line.trimEnd())
-		.map((line) => ({ text: line, width: exactWidth(line, LABEL) }));
-	const widest = lines.reduce((most, line) => Math.max(most, line.width), 0);
+	const blocks = text.split("\n").map((words) => {
+		const prepared = prepare(words, LABEL);
+		// A hanging space is not painted, so it neither widens nor off-centres the plate.
+		return layoutWithLines(prepared, balancedWrapWidth(prepared, limit), LABEL.lineHeight)
+			.lines.map(({ text: line }) => line.trimEnd())
+			.map((line) => ({ text: line, width: exactWidth(line, LABEL) }));
+	});
+	const widest = Math.max(0, ...blocks.flat().map((line) => line.width));
 	const width = Math.max(LABEL_MIN_WIDTH, widest + 2 * ARCHITECTURE_LABEL_PADDING_X);
+	const chips: MeasuredLabel["chips"][number][] = [];
+	for (const block of blocks) {
+		const last = chips.at(-1);
+		chips.push({
+			y: last === undefined ? 0 : last.y + last.height + ARCHITECTURE_LABEL_STACK_GAP,
+			height: Math.max(1, block.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
+		});
+	}
+	const bottom = chips.at(-1)!;
 	return {
 		width,
-		height: Math.max(1, lines.length) * LABEL.lineHeight + 2 * ARCHITECTURE_LABEL_PADDING_Y,
-		runs: lines.map((line, index) => ({
-			...line,
-			x: (width - line.width) / 2,
-			y: ARCHITECTURE_LABEL_PADDING_Y + LABEL.fontSize + index * LABEL.lineHeight,
-			font: LABEL.font,
-			fontSize: LABEL.fontSize,
-			role: LABEL.role,
-		})),
+		height: bottom.y + bottom.height,
+		chips,
+		runs: blocks.flatMap((block, at) =>
+			block.map((line, index) => ({
+				...line,
+				x: (width - line.width) / 2,
+				y: chips[at]!.y + ARCHITECTURE_LABEL_PADDING_Y + LABEL.fontSize + index * LABEL.lineHeight,
+				font: LABEL.font,
+				fontSize: LABEL.fontSize,
+				role: LABEL.role,
+			})),
+		),
 	};
 }
 
@@ -471,6 +490,7 @@ function measureCaption(name: string): MeasuredLabel {
 	return {
 		width: width + 2 * CAPTION_PADDING.x,
 		height: CAPTION.lineHeight + 2 * CAPTION_PADDING.y,
+		chips: [{ y: 0, height: CAPTION.lineHeight + 2 * CAPTION_PADDING.y }],
 		runs: [
 			{
 				text: name,

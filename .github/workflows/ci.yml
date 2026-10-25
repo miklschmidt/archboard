@@ -25,17 +25,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Vite+, Node.js, and Bun
+        uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          version-file: package.json
+          node-version: "26"
+          cache: true
+          run-install: false
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Restore validation task cache
+        id: task-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vite-task-${{ runner.os }}-${{ runner.arch }}-
 
       # Ubuntu's AppArmor policy permits the installed Chrome Stable sandbox.
       # Isolated test servers discover their renderer through PATH.
       - name: Use sandboxed Chrome for board rendering
         run: |
-          /opt/google/chrome/chrome --version
+          chrome_version=$(/opt/google/chrome/chrome --version)
+          echo "$chrome_version"
+          echo "ARCHBOARD_TEST_BROWSER_VERSION=$chrome_version" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/archboard-renderer-bin"
           ln -s /opt/google/chrome/chrome "$RUNNER_TEMP/archboard-renderer-bin/chromium"
           echo "$RUNNER_TEMP/archboard-renderer-bin" >> "$GITHUB_PATH"
@@ -57,6 +73,13 @@ jobs:
           path: ${{ runner.temp }}/archboard-check.log
           if-no-files-found: error
 
+      - name: Save validation task cache
+        if: success()
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: ${{ steps.task-cache.outputs.cache-primary-key }}
+
   macos-processes:
     name: macOS native process ownership
     runs-on: macos-latest
@@ -65,25 +88,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Vite+, Node.js, and Bun
+        uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          version-file: package.json
+          node-version: "26"
+          cache: true
+          run-install: false
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Restore validation task cache
+        id: task-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vite-task-${{ runner.os }}-${{ runner.arch }}-
+
       - name: Verify native ownership, storage, and board paths
-        run: >-
-          bun test --isolate --max-concurrency=1
-          packages/process/tests packages/codex-app-server/tests/runtime/processes
-          packages/codex-app-server/tests/runtime/store
-          packages/codex-app-server/tests/runtime/services/diagnostics.test.ts
-          packages/codex-app-server/tests/runtime/services/executable.test.ts
-          packages/workspace/tests/runtime/clients/git-async.test.ts
-          packages/server-lifecycle/tests/runtime/store/pidfile.test.ts
-          packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts
-          packages/board/tests/runtime/store/policy.test.ts packages/board/tests/runtime/operations/rename/renaming.test.ts
-          packages/code-binding/tests/runtime/operations/resolution.test.ts
-          packages/workbench/tests/server/services/owner/production-initialization.test.ts
-          packages/workbench/tests/server/services/actions/approval-sessions.test.ts
-          apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts
-          tests/system/semantic-boards/lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts
+        run: bunx vp run test:macos
+
+      - name: Save validation task cache
+        if: success()
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: ${{ steps.task-cache.outputs.cache-primary-key }}

@@ -320,18 +320,18 @@ describe("what a reader can address by name", () => {
 	});
 });
 
-describe("one namespace for every subject of a variant", () => {
-	/**
-	 * A variant whose content is stated directly, for cases an edit could not
-	 * produce but a hand-written or copied file can.
-	 * @param content What is on the variant.
-	 * @returns The board document.
-	 */
-	const holding = (content: Record<string, unknown>) =>
-		board({
-			variants: [{ id: "v1", name: "Initial", lifecycle: "current", content }],
-		});
+/**
+ * A variant whose content is stated directly, for cases an edit could not
+ * produce but a hand-written or copied file can.
+ * @param content What is on the variant.
+ * @returns The board document.
+ */
+const holding = (content: Record<string, unknown>) =>
+	board({
+		variants: [{ id: "v1", name: "Initial", lifecycle: "current", content }],
+	});
 
+describe("one namespace for every subject of a variant", () => {
 	const NODE = { id: "n1", name: "A", kind: "module" };
 	const FLOW = {
 		id: "n1",
