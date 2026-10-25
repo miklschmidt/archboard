@@ -325,8 +325,8 @@ The seven files of `runtime/api/` are:
   `forgetBoardMemory`, which a stopping server calls once. `holdBoard` and `releaseHold` stay public
   only for the process fixture that holds a lease in a child process.
 - `./store-move` moves a board to another repository's vault and previews that move.
-- `./store-write` is the write boundary, the transitions it applies, the discard and acceptance of
-  a board, and the outcome of a propagation to drill-downs. `renameSemanticBoard` is the rename as
+- `./store-write` is the write boundary, the transitions it applies, and the discard and acceptance
+  of a board. `renameSemanticBoard` is the rename as
   one operation: it writes the new name and carries this server's claim and the doing lines to it,
   so a caller only points its panes.
 
