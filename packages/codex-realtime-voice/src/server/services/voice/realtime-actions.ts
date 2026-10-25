@@ -3,9 +3,9 @@
 // Voice speaks for the whole tab. A start is bound to the workhorse of the checkout of
 // the chat it came from, for as long as that session runs, and any chat of the tab can stop it.
 //
-// Each tab session has its own coordinator and its own voice, so two tabs talk at once
-// and an unattended session, whose page is a tab session of its own, never stops somebody who is
-// talking in another tab. A start replaces whatever session its own tab was running.
+// Each tab session has its own coordinator and its own voice, so two tabs talk at once, and a
+// session in one tab, attended or unattended, never stops the session of another. A start
+// replaces whatever session its own tab was running.
 //
 // A coordinator carries one voice session. A start that finds the coordinator already
 // carried one has it replaced first, so a turn the last session left running, and whatever that

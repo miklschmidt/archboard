@@ -6,8 +6,9 @@ import type {
 import type { SessionParams } from "@archboard/codex-app-server/session";
 
 /**
- * The channel rule while the host suppresses coordinator speech, as it does when nobody listens
- * live: the coordinator is told it has nobody to speak to until the session ends.
+ * The channel rule while the host's voice policy suppresses coordinator speech, as a host does for
+ * a session nobody listens to live: the coordinator is told it has nobody to speak to until the
+ * session ends.
  */
 const SILENT_COORDINATOR_INSTRUCTIONS = `${CHANNEL_RULE}\nThe host suppresses spoken coordinator replies during this voice session. Until the session ends, begin every message with [COMMENTARY] and never write [FINAL]; nothing you write is to be spoken.`;
 
