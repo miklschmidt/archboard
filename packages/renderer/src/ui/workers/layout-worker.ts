@@ -1,5 +1,5 @@
 import { instance } from "@viz-js/viz";
-import initCore from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+import { loadBrowserCore } from "#ui/clients/core.ts";
 import type { RendererHost } from "#shared/rules/render/host.ts";
 import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
@@ -12,7 +12,7 @@ interface Request {
 
 // The core loads first, outside the engine's load (ADR 0057). Its glue
 // fetches its WebAssembly beside it, as the build serves it.
-const ready = initCore().then(() => loadLayoutEngine(instance));
+const ready = loadBrowserCore().then(() => loadLayoutEngine(instance));
 let initFailure = false;
 void ready.catch(() => {
 	initFailure = true;

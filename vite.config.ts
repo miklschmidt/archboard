@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { coreSourceHash } from "@archboard/renderer/core";
 
 import {
 	FRONTEND_INPUTS_FILE,
@@ -193,6 +194,8 @@ const capacityTests = [
 ];
 
 export default defineConfig({
+	// Both the page and its workers refuse a core from another source build.
+	define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
 	run: {
 		tasks: {
 			contracts: {
