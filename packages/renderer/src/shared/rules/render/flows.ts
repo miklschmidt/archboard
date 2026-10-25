@@ -66,48 +66,95 @@ interface MeasuredEntries {
 	readonly lines: readonly (readonly [string, LineLook])[];
 }
 
-/**
- * A value the core wrote, read from its JSON.
- * @param json The JSON.
- * @returns The value, typed as the core's Rust type says it is.
- */
-function fromCore<T>(json: string): T {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
-	return JSON.parse(json) as T;
-}
-
 /** The host's text, as the core's layout asks for it. */
-const TEXT: LayoutText = {
-	width: TEXT_MEASURE.width,
-	noteLines: (text, width, size, lineHeight) =>
-		JSON.stringify(measureNoteLines(text, width, size, lineHeight)),
-	messageLines: (text, width, size, lineHeight) =>
-		JSON.stringify(measureMessageLines(text, width, size, lineHeight)),
-};
+const TEXT: LayoutText = { ...TEXT_MEASURE, noteLines, messageLines };
 
 /** What the core's flowchart layout asks of this host: its text, and the track engine. */
 const FLOWCHART: FlowchartHost = {
 	...TEXT,
-	measureNode: (node, container) =>
-		JSON.stringify(measureNode(fromCore<SemanticNode>(node), container)),
-	measureLabel: (words) => JSON.stringify(measureLabel(words)),
-	farSize: (subjects) => farSizeFor(fromCore<Parameters<typeof farSizeFor>[0]>(subjects)),
-	track: async (content, measured) => {
-		const entries = fromCore<MeasuredEntries>(measured);
-		const measure: MeasuredArchitecture = {
-			nodes: new Map(entries.nodes),
-			labels: new Map(entries.labels),
-			lines: new Map(entries.lines),
-		};
-		const drawing = await layoutEngine("track")(
-			fromCore<VariantContent>(content),
-			measure,
-			undefined,
-			new Map(),
-		);
-		return JSON.stringify(drawing);
-	},
+	measureNode: nodeMeasured,
+	measureLabel: labelMeasured,
+	farSize,
+	track,
 };
+
+/**
+ * A step note's lines, as the host breaks them.
+ * @param text The note.
+ * @param width The widest a line may be.
+ * @param size Its font size.
+ * @param lineHeight Its line height.
+ * @returns The JSON of its runs.
+ */
+function noteLines(text: string, width: number, size: number, lineHeight: number): string {
+	return JSON.stringify(measureNoteLines(text, width, size, lineHeight));
+}
+
+/**
+ * A message's lines, as the host breaks them.
+ * @param text The message's words.
+ * @param width The widest a line may be.
+ * @param size Its font size.
+ * @param lineHeight Its line height.
+ * @returns The JSON of its lines.
+ */
+function messageLines(text: string, width: number, size: number, lineHeight: number): string {
+	return JSON.stringify(measureMessageLines(text, width, size, lineHeight));
+}
+
+/**
+ * A graph node's box and words, as the host measures them.
+ * @param node The JSON of the node.
+ * @param container Whether it holds other nodes.
+ * @returns The JSON of its measurement.
+ */
+function nodeMeasured(node: string, container: boolean): string {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	return JSON.stringify(measureNode(JSON.parse(node) as SemanticNode, container));
+}
+
+/**
+ * A line's words on their plate, as the host measures them.
+ * @param words The words.
+ * @returns The JSON of their measurement.
+ */
+function labelMeasured(words: string): string {
+	return JSON.stringify(measureLabel(words));
+}
+
+/**
+ * The size every card's name is set at from far away.
+ * @param subjects The JSON of the cards whose names are drawn.
+ * @returns The size.
+ */
+function farSize(subjects: string): number {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	return farSizeFor(JSON.parse(subjects) as Parameters<typeof farSizeFor>[0]);
+}
+
+/**
+ * The flowchart's graph laid out by the track engine.
+ * @param content The JSON of the graph.
+ * @param measured The JSON of its measurement, each entry by id.
+ * @returns The JSON of the drawing.
+ */
+async function track(content: string, measured: string): Promise<string> {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	const entries = JSON.parse(measured) as MeasuredEntries;
+	const measure: MeasuredArchitecture = {
+		nodes: new Map(entries.nodes),
+		labels: new Map(entries.labels),
+		lines: new Map(entries.lines),
+	};
+	const drawing = await layoutEngine("track")(
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+		JSON.parse(content) as VariantContent,
+		measure,
+		undefined,
+		new Map(),
+	);
+	return JSON.stringify(drawing);
+}
 
 /**
  * A variant's flows laid out by the core as a stack of message sequences, and painted.
@@ -115,7 +162,9 @@ const FLOWCHART: FlowchartHost = {
  * @returns The document, its size, its atlas and what it placed.
  */
 function drawSequence(request: SequenceRequest): PaintedDocument {
-	return fromCore(rendererHost().core().drawSequence(JSON.stringify(request), TEXT));
+	const painted = rendererHost().core().drawSequence(JSON.stringify(request), TEXT);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	return JSON.parse(painted) as PaintedDocument;
 }
 
 /**
@@ -124,7 +173,9 @@ function drawSequence(request: SequenceRequest): PaintedDocument {
  * @returns The document, its size, its atlas and what it placed.
  */
 async function drawFlowchart(request: FlowchartRequest): Promise<PaintedDocument> {
-	return fromCore(await rendererHost().core().drawFlowchart(JSON.stringify(request), FLOWCHART));
+	const painted = await rendererHost().core().drawFlowchart(JSON.stringify(request), FLOWCHART);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
+	return JSON.parse(painted) as PaintedDocument;
 }
 
 export { drawFlowchart, drawSequence };
