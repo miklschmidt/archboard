@@ -1,11 +1,11 @@
 ---
 id: TASK-520.04
 title: The core lays out Track boards
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T04:11:00Z'
+updated_date: '2026-10-25T04:12:00Z'
 labels:
   - renderer
 dependencies:
@@ -25,10 +25,10 @@ Layout moves to Rust one engine at a time, each against the drawing geometry tha
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The core answers the drawing of every corpus board that Track lays out, and the drawing is equal to what the TypeScript stage answered
-- [ ] #2 Every corpus picture is the same bytes as before the change
-- [ ] #3 The ported TypeScript rules are gone from packages/renderer
-- [ ] #4 No corpus board renders slower, measured with the same harness before and after
+- [x] #1 The core answers the drawing of every corpus board that Track lays out, and the drawing is equal to what the TypeScript stage answered
+- [x] #2 Every corpus picture is the same bytes as before the change
+- [x] #3 The ported TypeScript rules are gone from packages/renderer
+- [x] #4 No corpus board renders slower, measured with the same harness before and after
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -123,4 +123,12 @@ Footprint, read against base 7dd1846c193848f3378422462be58d687c5ace55 (the paren
 Behind (step 7): after adoption, Renderer layout and Semantic renderer read 0 commits. The only other board that the task's commits put behind is Archboard: Workspace packages (packages) and renderer (packages/renderer), changed by 748c5962b, 69a9588bf and 3db2970b5. That board is still right. The renderer package still "Draws a board as a picture, in the browser or under Bun", the task changed no package import, and the board draws no crate. Its findings are the same in both runs, and none is about these commits.
 
 `archboard check`: no diagnostics. Pictures (dark): the Responsibilities, Layout sequence, Engine and graph and Place the blocks views of Renderer layout, and the Everything view of Semantic renderer. They read as intended.
+
+Closing decisions (2026-10-25). AC3: the TypeScript that only Track ran is gone; the modules listed above under 'Duplicates kept for Blocks' still run the Blocks solve and are deleted by TASK-520.05, whose own AC3 is the same criterion. AC4: the Track views took 12.3 s before and 8.1 s after in each of three runs; six views read 1 ms slower in every run at the harness's 1 ms resolution, which the user ruled immaterial on 2026-10-25 ('Nobody fucking cares'). Replayed onto the rebased branch at 748c5962b..0255cbe59: 0 of 2344 current-variant drawings differ, and bun run check passes with every lane.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The renderer core lays out every Track solve. The crate crates/archboard-layout holds the solve behind one function, lay_out_track(graph, &mut dyn Graphviz), and asks the host's Graphviz through the one-method trait Graphviz, which the wasm binding (layOutTrack, GraphvizHost) satisfies with viz-js. layout-engine.ts sends the track stage to the core and the blocks stage to placeBlocks, which now lays out Blocks only; the Track-only TypeScript is removed. Verified by replaying every recorded Track solve and route through the crate with byte-equal Graphviz graphs and equal answers, by 0 of 35,560 corpus drawings changed, and after the rebase by 0 of 2,344 current-variant drawings changed and a passing gate. Track renders faster (12.3 s to 8.1 s over the current views). Renderer layout@TASK-520.04 (v64) and Semantic renderer@TASK-520.04 (v105) are adopted. Follow-ups: the Blocks duplicates go with TASK-520.05, and a flowchart's track layout still crosses from the flows crate to TypeScript and back into the core.
+<!-- SECTION:FINAL_SUMMARY:END -->
