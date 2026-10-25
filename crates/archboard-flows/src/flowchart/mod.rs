@@ -70,10 +70,13 @@ const FLOW_ICON: &str = "RiFlowChart";
 /// What a vault's policy says one node kind looks like.
 #[derive(Clone, Debug, Deserialize)]
 pub struct KindLook {
+    /// What the kind is called, when the policy names it; the kind's key is shown otherwise.
     #[serde(default)]
     pub name: Option<String>,
+    /// The export name of the kind's icon, when the policy gives one.
     #[serde(default)]
     pub icon: Option<String>,
+    /// The kind's colour, when the policy gives one.
     #[serde(default)]
     pub color: Option<PaletteColor>,
 }
@@ -90,15 +93,20 @@ pub struct FlowchartRequest {
     pub node_kinds: BTreeMap<String, KindLook>,
     /// Each group's colour, by group id, for a group that has one.
     pub groups: BTreeMap<String, PaletteColor>,
+    /// The comparison the picture is read against, and the page around it.
     pub page: PageRequest,
+    /// What the document says about itself and what it needs from its host.
     pub document: DocumentRequest,
+    /// Each icon's path data, by its export name.
     pub icons: BTreeMap<String, Vec<String>>,
 }
 
 /// How a line is drawn: its dash and its head.
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct LineLook {
+    /// How the line is dashed.
     pub dash: Dash,
+    /// Which arrowhead the line ends in.
     pub arrowhead: Arrowhead,
 }
 
@@ -106,15 +114,20 @@ pub struct LineLook {
 /// words, each line's words and look, each by id in the graph's order.
 #[derive(Clone, Debug, Serialize)]
 pub struct Measured {
+    /// Each node's box and words, by node id.
     pub nodes: Vec<(String, MeasuredNode<GraphNode>)>,
+    /// The measured words of each line that has any, by line id.
     pub labels: Vec<(String, MeasuredLabel)>,
+    /// Each line's look, by line id.
     pub lines: Vec<(String, LineLook)>,
 }
 
 /// A card whose name is drawn from far away, and the box it stands in.
 #[derive(Clone, Debug, Serialize)]
 pub struct FarSubject<'a> {
+    /// The card's name, which is set at the far size.
     pub name: &'a str,
+    /// The card's box in the drawing's coordinates, which the far name has to fit.
     #[serde(rename = "box")]
     pub bounds: Rect,
 }

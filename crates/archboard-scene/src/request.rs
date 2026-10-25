@@ -17,9 +17,13 @@ use crate::geometry::Rect;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Standing {
+    /// The proposal has it and the variant it came from did not.
     Added,
+    /// The variant it came from had it and the proposal does not.
     Removed,
+    /// Both have it, and the proposal changed it.
     Changed,
+    /// Both have it, as it was.
     Unchanged,
 }
 
@@ -38,6 +42,10 @@ impl Standing {
 /// One of the vault policy's named colours.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
+#[expect(
+    missing_docs,
+    reason = "each variant is the palette colour its name says, as the vault's policy spells it"
+)]
 pub enum PaletteColor {
     Red,
     Orange,
@@ -94,9 +102,13 @@ impl PaletteColor {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum DrillDirection {
+    /// It lies at a coarser level of the vault's levels than the board drawn.
     Up,
+    /// It lies at a finer level of the vault's levels than the board drawn.
     Down,
+    /// It lies at the same level as the board drawn.
     Across,
+    /// The vault lists no level for the part's kind or for the board drawn, so no way can be said.
     Elsewhere,
 }
 
@@ -116,6 +128,7 @@ impl DrillDirection {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeAppearance {
+    /// Whether the part holds others, and so is drawn as a tray, not a card.
     pub container: bool,
     /// Its body's colour: a card's placing group's (ADR 0038). A container's well
     /// and header are made of what the well is cut into, so it has none (TASK-474).
@@ -126,11 +139,15 @@ pub struct NodeAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub group: Option<String>,
+    /// The colour of its kind, from the vault's policy.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub type_color: Option<PaletteColor>,
+    /// The export name of its kind's icon.
     pub icon: String,
+    /// What its kind is called.
     pub type_name: String,
+    /// The key of its kind in the vault's policy.
     pub type_kind: String,
     /// Which way the board it opens lies, or null when it opens none.
     pub drill: Option<DrillDirection>,
@@ -139,6 +156,7 @@ pub struct NodeAppearance {
 /// How a line is dashed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
+#[expect(missing_docs, reason = "each variant is the dash style its name says")]
 pub enum Dash {
     Solid,
     Dashed,
@@ -159,6 +177,10 @@ impl Dash {
 /// Which arrowhead a line ends in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
+#[expect(
+    missing_docs,
+    reason = "each variant is the arrowhead its name says, or none"
+)]
 pub enum Arrowhead {
     Filled,
     Open,
@@ -180,11 +202,15 @@ impl Arrowhead {
 /// step in its own.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct LineAppearance {
+    /// What its relationship kind is called, which the line carries as `data-type-name`.
     pub name: String,
+    /// Its kind's colour; absent for the neutral line.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub color: Option<PaletteColor>,
+    /// How it is dashed.
     pub dash: Dash,
+    /// Which arrowhead it ends in.
     pub arrowhead: Arrowhead,
 }
 
@@ -192,7 +218,9 @@ pub struct LineAppearance {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum FlowchartShape {
+    /// A decision, drawn as a diamond.
     Decision,
+    /// A loop, drawn as a hexagon.
     Loop,
     /// Where a flow starts.
     Start,
@@ -210,7 +238,9 @@ impl FlowchartShape {
 /// One card a flowchart draws as a shape, and its wrapped words.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ShapedCard {
+    /// Which shape it is drawn as.
     pub shape: FlowchartShape,
+    /// Its name, wrapped into the lines it is set in.
     pub words: Vec<String>,
 }
 
@@ -253,7 +283,9 @@ pub struct ArchitecturePicture {
 /// One stretch of a column where its participant is busy.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Activation {
+    /// The height where the bar begins.
     pub top: f64,
+    /// The height where the bar ends.
     pub bottom: f64,
 }
 
@@ -261,11 +293,15 @@ pub struct Activation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SequenceCard {
+    /// The participant it heads.
     pub node: NodeFacts,
+    /// The card's box.
     #[serde(rename = "box")]
     #[ts(rename = "box")]
     pub bounds: Rect,
+    /// The size its name is set at, fitted to the room it has.
     pub title_size: f64,
+    /// The lines of its responsibility, positioned from the card's box.
     pub notes: Vec<TextRun>,
     /// The run its name has: the text run, less the mark of a part that opens a board.
     pub title_room: f64,
@@ -275,9 +311,13 @@ pub struct SequenceCard {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SequenceColumn {
+    /// The card that heads it.
     pub card: SequenceCard,
+    /// Where its lifeline runs, as a distance from the left edge.
     pub centre_x: f64,
+    /// The height its lifeline starts at.
     pub lifeline_top: f64,
+    /// The stretches where it is working on a call it received.
     pub activations: Vec<Activation>,
 }
 
@@ -285,9 +325,13 @@ pub struct SequenceColumn {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum MessageKind {
+    /// A call whose sender waits for the answer.
     Sync,
+    /// A message that is sent and not waited for.
     Async,
+    /// The answer to an earlier call, which carries a result back.
     Return,
+    /// A step that never leaves its sender; the document spells it `self`.
     #[serde(rename = "self")]
     #[ts(rename = "self")]
     Myself,
@@ -296,38 +340,49 @@ pub enum MessageKind {
 /// What the painter reads of a message.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct MessageFacts {
+    /// The step's id.
     pub id: String,
+    /// What the message does.
     pub kind: MessageKind,
+    /// The id of the node that sends it.
     pub from: String,
+    /// The id of the node that receives it: the sender again for a message to itself.
     pub to: String,
 }
 
 /// One line of a message's words, with its painted width.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct WordLine {
+    /// The words of this line.
     pub text: String,
+    /// How wide the words are painted.
     pub width: f64,
 }
 
 /// A message's words as drawn.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct MessageWords {
+    /// The lines the words wrap to, first line first.
     pub lines: Vec<WordLine>,
 }
 
 /// A step's note, placed under its message.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct StepNote {
+    /// The note's plate.
     #[serde(rename = "box")]
     #[ts(rename = "box")]
     pub bounds: Rect,
+    /// The note's words, positioned from its plate's box.
     pub lines: Vec<TextRun>,
 }
 
 /// This message's turn on the drawing's shared clock.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct Slot {
+    /// The first turn of the clock that it takes.
     pub start: u32,
+    /// How many turns it takes: a repeated step takes its repeat, capped.
     pub count: u32,
 }
 
@@ -335,11 +390,15 @@ pub struct Slot {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SequenceStep {
+    /// The message.
     pub step: MessageFacts,
+    /// Its label, wrapped to the room between the lifelines it stands between.
     pub words: MessageWords,
     /// The height its line runs at.
     pub y: f64,
+    /// Its turn on the drawing's clock.
     pub slot: Slot,
+    /// The note set under it, when it has one.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub note: Option<StepNote>,
@@ -362,14 +421,18 @@ pub struct SequenceStep {
 /// What the painter reads of a decision or a loop.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct StepId {
+    /// The decision's or loop's id.
     pub id: String,
 }
 
 /// One alternative's label row inside a decision's frame.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct FrameGuard {
+    /// The alternative's label.
     pub label: String,
+    /// The height where its row begins.
     pub top: f64,
+    /// The height of the dashed line that parts it from the alternative above; absent on the first.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub divider: Option<f64>,
@@ -379,28 +442,39 @@ pub struct FrameGuard {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum FrameOperator {
+    /// A decision, which the tab spells `alt`.
     Alt,
+    /// A loop, which the tab spells `loop`.
     Loop,
 }
 
 /// A decision's or loop's frame, placed.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct SequenceFrame {
+    /// The decision or loop it frames.
     pub step: StepId,
+    /// The frame's box.
     #[serde(rename = "box")]
     #[ts(rename = "box")]
     pub bounds: Rect,
+    /// The tab at the frame's top left corner, which its operator stands in.
     pub tab: Rect,
+    /// What the tab says.
     pub operator: FrameOperator,
+    /// What the head row says beside the tab: the question, or the condition.
     pub words: String,
+    /// Each alternative's label row, in order; empty for a loop.
     pub guards: Vec<FrameGuard>,
 }
 
 /// What the painter reads of a flow.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct FlowFacts {
+    /// The flow's id.
     pub id: String,
+    /// What the flow is called.
     pub name: String,
+    /// A line on what the flow explains, when it has one.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub summary: Option<String>,
@@ -410,12 +484,19 @@ pub struct FlowFacts {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct SequenceFlow {
+    /// The flow.
     pub flow: FlowFacts,
+    /// The box around the whole exchange.
     pub frame: Rect,
+    /// Where the frame's name and summary go.
     pub header: Rect,
+    /// The header slab the name and summary stand on, its front edge included.
     pub slab: Rect,
+    /// The height where the lifelines stop.
     pub lifeline_bottom: f64,
+    /// Its participants, in the order the flow states them.
     pub columns: Vec<SequenceColumn>,
+    /// Its messages, in the order the flow states them.
     pub steps: Vec<SequenceStep>,
     /// Its decisions' and loops' frames, each after the frames inside it.
     pub frames: Vec<SequenceFrame>,
@@ -424,8 +505,11 @@ pub struct SequenceFlow {
 /// A stack of flows, placed down the page.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct SequenceDrawing {
+    /// The width the frames asked for.
     pub width: f64,
+    /// The height they asked for.
     pub height: f64,
+    /// The flows, in document order, down the page.
     pub flows: Vec<SequenceFlow>,
 }
 
@@ -450,6 +534,7 @@ pub struct SequencePicture {
     pub shown: Option<SequenceDrawing>,
     /// Each participant's appearance.
     pub appearances: BTreeMap<String, NodeAppearance>,
+    /// How the pulses of the exchange are timed.
     pub clock: SequenceClock,
 }
 
@@ -457,13 +542,16 @@ pub struct SequencePicture {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(tag = "grammar", rename_all = "lowercase")]
 pub enum Picture {
+    /// A board of parts and relationships, or a flowchart drawn as one.
     Architecture(Box<ArchitecturePicture>),
+    /// A stack of message sequences.
     Sequence(SequencePicture),
 }
 
 /// How an export's legend is laid out.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
+#[expect(missing_docs, reason = "each variant is the layout its name says")]
 pub enum LegendLayout {
     Horizontal,
     Vertical,
@@ -521,7 +609,9 @@ pub struct PageRequest {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum FontSource {
+    /// The document names its faces by the URL the host serves them at.
     Linked,
+    /// The document carries its faces as base64 data (`font_data`).
     Embedded,
 }
 
@@ -529,15 +619,20 @@ pub enum FontSource {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum StandaloneTheme {
+    /// Drawn in the light theme's colours.
     Light,
+    /// Drawn in the dark theme's colours.
     Dark,
+    /// Drawn in both, and shown in the one the reader's page is in.
     Auto,
 }
 
 /// Every theme colour by theme and custom property name.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ThemeColors {
+    /// The colour of each custom property in the light theme.
     pub light: BTreeMap<String, String>,
+    /// The colour of each custom property in the dark theme.
     pub dark: BTreeMap<String, String>,
 }
 
@@ -551,6 +646,7 @@ pub struct DocumentRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub description: Option<String>,
+    /// Where the document's faces come from.
     pub fonts: FontSource,
     /// How long a picture takes to swap its cards' near and far views.
     pub far_view_swap_ms: f64,
@@ -572,8 +668,11 @@ pub struct DocumentRequest {
 /// Everything one picture is painted from.
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 pub struct PaintRequest {
+    /// What is drawn.
     pub picture: Picture,
+    /// The comparison the picture is read against, and the page around it.
     pub page: PageRequest,
+    /// What the document says about itself and what it needs from its host.
     pub document: DocumentRequest,
     /// Each icon's path data, by its export name: every icon the picture's
     /// appearances name that the host has.

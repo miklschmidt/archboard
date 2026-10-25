@@ -13,9 +13,13 @@ use crate::scene::{Atlas, AtlasBox, Boxes, Role};
 /// A painted page: its body, its size and where each subject landed on it.
 #[derive(Debug)]
 pub struct PaintedPage {
+    /// What is drawn, in page coordinates.
     pub body: Markup,
+    /// The page's width, in diagram units.
     pub width: f64,
+    /// The page's height, in diagram units.
     pub height: f64,
+    /// Where each subject landed on the page.
     pub atlas: Atlas,
 }
 

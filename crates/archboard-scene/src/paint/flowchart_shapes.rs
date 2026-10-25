@@ -199,7 +199,9 @@ fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Pa
 /// The painter of a flowchart's shapes.
 #[derive(Debug)]
 pub struct FlowchartShapes<'a> {
+    /// The cards drawn as shapes of their own, by id.
     pub shapes: &'a BTreeMap<String, ShapedCard>,
+    /// The palette the shapes are inked from.
     pub palette: &'a Palette,
 }
 

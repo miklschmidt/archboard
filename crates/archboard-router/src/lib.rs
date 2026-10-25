@@ -28,21 +28,32 @@ mod vpsc;
 /// A point in diagram units.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
+    /// Distance along the x axis, which grows to the right.
     pub x: f64,
+    /// Distance along the y axis, which grows downward.
     pub y: f64,
 }
 
 /// An axis-aligned rectangle: its top-left corner and its size.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rect {
+    /// The left edge.
     pub x: f64,
+    /// The top edge.
     pub y: f64,
+    /// How wide it is, to the right of `x`.
     pub width: f64,
+    /// How tall it is, below `y`.
     pub height: f64,
 }
 
-/// A direction a route runs in, or the way a pin leaves its obstacle.
+/// A direction a route runs in, or the way a pin leaves its obstacle: up is
+/// toward smaller y.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[expect(
+    missing_docs,
+    reason = "each variant is the compass direction its name says"
+)]
 pub enum Dir {
     Up,
     Right,
@@ -74,12 +85,18 @@ pub enum End {
     /// A point on, or inside, one obstacle, which the route leaves in one
     /// direction until it is clear of that obstacle's buffer.
     Pin {
+        /// Index into [`Scene::obstacles`] of the obstacle it sits on.
         obstacle: usize,
+        /// Where the end stands, on or inside the obstacle.
         at: Point,
+        /// The direction the route runs in as it leaves the obstacle.
         leaves: Dir,
     },
     /// A point the route reaches from any side.
-    Free { at: Point },
+    Free {
+        /// Where the end stands.
+        at: Point,
+    },
 }
 
 impl End {
@@ -107,9 +124,11 @@ pub struct Params {
 /// Everything one routing call reads.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scene {
+    /// The rectangles routes keep clear of, which a pin names by index.
     pub obstacles: Vec<Rect>,
     /// Each connector's two ends, from its tail to its head.
     pub connectors: Vec<(End, End)>,
+    /// What routes pay for and how far they keep from things.
     pub params: Params,
 }
 

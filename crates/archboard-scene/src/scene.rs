@@ -24,13 +24,19 @@ use crate::request::Standing;
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
 #[serde(untagged)]
 pub enum Value {
+    /// A number, which the document spells as ECMAScript does.
     Number(f64),
+    /// Words, such as a colour expression, an id or a path.
     Text(String),
 }
 
 /// Which sort of subject a group draws, for the hook a viewer selects by.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "kebab-case")]
+#[expect(
+    missing_docs,
+    reason = "each variant is the sort of subject its name says"
+)]
 pub enum SubjectKind {
     Node,
     Edge,
@@ -58,8 +64,11 @@ impl SubjectKind {
 /// The subject a group draws: which sort it is, its id, and how it stands.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct Subject {
+    /// Which sort of subject it is.
     pub kind: SubjectKind,
+    /// The subject's id: the group's id for a group region.
     pub id: String,
+    /// How the subject stands against the variant it came from, when the picture is a comparison.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub standing: Option<Standing>,
@@ -132,13 +141,16 @@ pub enum Role {
 /// A group: what it draws, what it is, and its parts.
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
 pub struct Group {
+    /// What the group is to the picture.
     pub role: Role,
+    /// The subject it draws, when it draws one.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub subject: Option<Subject>,
     /// Its attributes besides its subject's, in the order they are written.
     #[ts(type = "Array<[string, Value]>")]
     pub attrs: Vec<(&'static str, Value)>,
+    /// What it holds, in the order it is written.
     pub children: Vec<Item>,
 }
 
@@ -148,8 +160,10 @@ pub struct Element {
     /// Its SVG name.
     #[ts(type = "string")]
     pub name: &'static str,
+    /// Its attributes, in the order they are written.
     #[ts(type = "Array<[string, Value]>")]
     pub attrs: Vec<(&'static str, Value)>,
+    /// What it holds, in the order it is written.
     pub children: Vec<Item>,
     /// Whether it is written as one empty-element tag.
     pub empty: bool,
@@ -174,21 +188,33 @@ pub enum Motion {
     /// A steady train: pulses `spacing` apart flying at `speed`, one `phase`
     /// along the route at time zero.
     Steady {
+        /// How fast the pulses fly, in diagram units a second.
         speed: f64,
+        /// How far apart the pulses are, in diagram units.
         spacing: f64,
+        /// How far along the route the first pulse stands at time zero, in diagram units.
         phase: f64,
     },
     /// One pulse a turn of a clock `cycle` seconds long, leaving the route's
     /// start `start` seconds into it and flying at `speed`.
-    Turn { speed: f64, cycle: f64, start: f64 },
+    Turn {
+        /// How fast the pulse flies, in diagram units a second.
+        speed: f64,
+        /// How long one turn of the clock is, in seconds.
+        cycle: f64,
+        /// How many seconds into the turn the pulse leaves the route's start.
+        start: f64,
+    },
 }
 
 /// A train of pulses on a route (ADR 0027).
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
 pub struct TrafficMark {
+    /// The pulses' colours, and how thick the line they ride is.
     pub look: PulseLook,
     /// The part of the line the pulses ride.
     pub route: Curve,
+    /// How the pulses move.
     pub motion: Motion,
 }
 
@@ -196,14 +222,18 @@ pub struct TrafficMark {
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Item {
+    /// A group, which a painter can light or pick out by its role and subject.
     Group(Group),
+    /// A plain element of the document.
     Element(Element),
     /// Words, inside a text element.
     Text {
+        /// The words.
         text: String,
     },
     /// A line break between two things, where the document has one.
     Break,
+    /// A train of pulses on a route.
     Traffic(TrafficMark),
 }
 
@@ -211,9 +241,13 @@ pub enum Item {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
 #[ts(rename = "DiagramBox")]
 pub struct AtlasBox {
+    /// Distance from the left edge of the document.
     pub x: f64,
+    /// Distance from the top edge of the document.
     pub y: f64,
+    /// How wide the subject's box is.
     pub width: f64,
+    /// How tall the subject's box is.
     pub height: f64,
 }
 
@@ -232,15 +266,20 @@ impl Serialize for Boxes {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, TS)]
 #[ts(rename = "DiagramAtlas")]
 pub struct Atlas {
+    /// The box of each node, by node id.
     pub nodes: Boxes,
+    /// The box of each drawn line, by relationship id.
     pub edges: Boxes,
+    /// The box of each group's region, by the region's id.
     pub regions: Boxes,
 }
 
 /// A whole picture.
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
 pub struct Scene {
+    /// The page's width, in the document's units.
     pub width: f64,
+    /// The page's height, in the document's units.
     pub height: f64,
     /// The accessible name.
     pub title: String,
@@ -256,7 +295,9 @@ pub struct Scene {
     pub background: String,
     /// What the body refers to: arrowheads, gradients, the light of a face.
     pub definitions: Vec<Item>,
+    /// What the page draws, in the order it is drawn.
     pub body: Vec<Item>,
+    /// Where every subject landed.
     pub atlas: Atlas,
     /// Every subject the drawing placed, legend and title aside: what a key counts.
     pub placed: Vec<String>,
