@@ -1,8 +1,11 @@
 // One page view's voice client: it opens the socket with the tab's session
 // id, attaches the transport and the media owner to it, publishes one frozen
 // state, and runs each page action once. An uncertain delivery stays in that
-// state as a failure the page shows; nothing retries it.
+// state as a failure the page shows; nothing retries it. A lost socket is
+// opened again at the time the transport names, and again after each failed
+// attempt, until one opens or the client is disposed.
 
+import { PANE_MS } from "@archboard/timing";
 import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import type { BrowserWorkbenchMediaOwner } from "#ui/clients/media/media-state.ts";
@@ -37,6 +40,8 @@ interface VoiceClientOwners {
 	readonly tabSessionId: () => string;
 	/** The page location that a socket path resolves against. */
 	readonly pageUrl: () => string;
+	/** Run once after a delay in milliseconds. Returns how to cancel it. */
+	readonly after: (delayMs: number, run: () => void) => () => void;
 }
 
 const UNCERTAIN = "Delivery is uncertain. Refresh the conversation before trying another action.";
@@ -67,6 +72,16 @@ function createVoiceClient(options: VoiceClientOptions): VoiceClient {
 		 * @returns The URL.
 		 */
 		pageUrl: () => location.href,
+		/**
+		 * A browser timer.
+		 * @param delayMs How long to wait.
+		 * @param run What runs then.
+		 * @returns How to cancel it.
+		 */
+		after: (delayMs, run) => {
+			const timer = setTimeout(run, delayMs);
+			return () => clearTimeout(timer);
+		},
 	});
 }
 
@@ -83,6 +98,7 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	let failure: VoiceClientFailure | null = null;
 	let pending = 0;
 	let disposed = false;
+	let cancelReconnect: (() => void) | null = null;
 	let current = read();
 
 	/**
@@ -189,6 +205,30 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	/**
+	 * Connect again after a delay, unless the socket is connected by then, and
+	 * try again after each attempt that does not open. One attempt waits at a time.
+	 * @param delayMs How long to wait.
+	 */
+	const reconnectAfter = (delayMs: number) => {
+		if (disposed || cancelReconnect !== null) return;
+		cancelReconnect = owners.after(Math.max(0, delayMs), () => {
+			cancelReconnect = null;
+			if (disposed || transport.state().connection === "connected") return;
+			void reconnect();
+		});
+	};
+
+	/** Connect once, and wait to try again when the socket does not open. */
+	const reconnect = async () => {
+		if (!(await connect())) reconnectAfter(PANE_MS.socketReconnect);
+	};
+	const unsubscribeLoss = transport.subscribe(() => {
+		const state = transport.state();
+		if (state.kind === "connection" && state.state === "backoff")
+			reconnectAfter(state.retryAtMs - Date.now());
+	});
+
+	/**
 	 * Cancel the sign-in the server shows as pending.
 	 * @returns Whether it completed.
 	 */
@@ -248,6 +288,9 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	/** Stop voice, release the socket and end every subscription. */
 	const dispose = async () => {
 		disposed = true;
+		cancelReconnect?.();
+		cancelReconnect = null;
+		unsubscribeLoss();
 		unsubscribeTransport();
 		unsubscribeMedia();
 		listeners.clear();
