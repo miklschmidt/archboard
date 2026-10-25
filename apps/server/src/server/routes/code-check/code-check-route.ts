@@ -38,10 +38,7 @@ import {
 	type CodeFindingsMemory,
 } from "#server/state/code-findings/code-findings-memory.ts";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
-import {
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-} from "@archboard/code-intel/code-check";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
@@ -73,7 +70,9 @@ const codeFindings = createCodeFindingsMemory();
  * @returns The answer and what each judged container exposes, the drafts that
  * exist when no board has the named one, or the plan the check refuses.
  */
-async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckAnswer | CodeCheckRefusal> {
+async function runCodeCheck(
+	request: CodeCheckRequest,
+): Promise<CodeCheckAnswer | CodeCheckRefusal> {
 	const { vault } = request;
 	const read = request.everyDraft
 		? readEveryDraftToCheck(vault)
