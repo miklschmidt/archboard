@@ -13,8 +13,10 @@ use crate::paint::appearance::{card_look, label_look, semantic_ink, tray_look};
 use crate::paint::cards::{halo, header_anchor, paint_card, paint_header};
 use crate::paint::colour::{Share, light_dark, mixed, tinted};
 use crate::paint::design::{
-    BAND_RADIUS, CARD_THICKNESS, DIAGRAM_MARGIN, PILL_HEIGHT, PILL_RADIUS, PILL_TEXT_SIZE,
-    SLAB_RADIUS,
+    ACTIVATION_HALF_WIDTH, BAND_RADIUS, CARD_THICKNESS, DIAGRAM_MARGIN, FRAME_GUARD_HEIGHT,
+    FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS,
+    PILL_TEXT_SIZE, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SLAB_RADIUS,
+    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
 };
 use crate::paint::far_card::{Words, paint_heading_views};
 use crate::paint::fonts::{PILL_FONT, font_attributes};
@@ -22,7 +24,9 @@ use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::relay::PULSE_PACE;
 use crate::paint::shadow::SHADOW_REACH;
-use crate::paint::slab::{Lift, SlabLook, ghost_face, shadow_under, slab, slab_seat, slab_shadow};
+use crate::paint::slab::{
+    Lift, SlabLook, boxed, ghost_face, shadow_under, slab, slab_seat, slab_shadow,
+};
 use crate::paint::standing::{
     HEAD_ATTRIBUTE, MEMBERS_ATTRIBUTE, PART_ATTRIBUTE, PIN_INSET, Standings, Unsettled,
     ghost_opacity, ink_of, marked_box, standing_palette, standing_pin, standing_pin_at, subject,
@@ -44,23 +48,12 @@ const STEP_WEIGHT: Emphasis = Emphasis::Normal;
 const STEP_HALO_EXTRA: f64 = 5.0;
 const STEP_HALO_OPACITY: f64 = 0.3;
 const LIT_TRACE_EXTRA: f64 = 0.5;
-const ACTIVATION_HALF_WIDTH: f64 = 6.0;
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;
 const LIFELINE_DASH: &str = "3 5";
 const LIFELINE_DASH_OFFSET: f64 = SHADOW_REACH + 1.0 - 6.0;
 const HEAD_REACH: f64 = 64.0;
 const HEAD_SHADE_CLASS: &str = "ab-head-shade";
-const SELF_LOOP_REACH: f64 = 52.0;
-const SELF_LOOP_DROP: f64 = 8.0;
-const SELF_LOOP_CORNER: f64 = 8.0;
-const MESSAGE_LINE_STEP: f64 = 12.0;
-const STEP_NOTE_PADDING_X: f64 = 4.0;
-const STEP_NOTE_PADDING_Y: f64 = 2.0;
-const FRAME_HEAD_HEIGHT: f64 = 18.0;
-const FRAME_GUARD_HEIGHT: f64 = 16.0;
-const FRAME_PAD: f64 = 10.0;
-const FRAME_TAB_PADDING: f64 = 6.0;
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
 const BAR_SHADE: f64 = 0.4;
 const NEUTRAL_BAR: Share = Share {
@@ -73,11 +66,11 @@ const NEUTRAL_BAR_EDGE: Share = Share {
 };
 const FRAGMENT_RADIUS: f64 = 3.0;
 const TAB_CUT: f64 = 5.0;
-const WORDS_BASELINE: f64 = 0.68;
 const DIVIDER_DASH: &str = "4 3";
 const MARK_SPACING: f64 = 24.0;
 const ROW_TINT: f64 = 0.08;
 const LIT_RULE_WIDTH: f64 = 1.25;
+/// Where the baseline of a line of pill words stands in its row, as a share of the row.
 const PILL_BASELINE: f64 = 0.68;
 /// The longest a pulse is: the room a clock leaves after its last pulse has left.
 const PULSE_LENGTH: f64 = 3.0 + 12.0 + 56.0 + 2.0;
@@ -85,16 +78,22 @@ const PULSE_LENGTH: f64 = 3.0 + 12.0 + 56.0 + 2.0;
 const AIR: f64 = 1.0;
 
 /// The arrowhead a message of each kind ends in.
+///
+/// A deliberate deviation from strict UML 2, which draws replies with an open
+/// head as well: here the open head is the one mark of "nobody is waiting on
+/// this". The dash already says "this is an answer", so an open-headed reply
+/// would put the asynchronous signature on every reply.
 fn step_head(kind: MessageKind) -> Head {
-    if kind == MessageKind::Async {
-        Head::Open
-    } else {
-        Head::Filled
+    match kind {
+        MessageKind::Async => Head::Open,
+        MessageKind::Sync | MessageKind::Return | MessageKind::Myself => Head::Filled,
     }
 }
 
-/// How far short of a message's end its arrowhead's tip stands.
-fn arrow_standoff(kind: MessageKind) -> f64 {
+/// How far short of the bar or lifeline it arrives at a message's line stops:
+/// exactly the reach of its head, so the tip touches what it points at. Every
+/// message is drawn at one weight: a flow's steps carry no emphasis.
+pub fn arrow_standoff(kind: MessageKind) -> f64 {
     head_reach(step_head(kind))
 }
 
@@ -274,14 +273,7 @@ fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette) -> Markup
     };
     tag(
         "rect",
-        attrs! {
-            "x": coord(rect.x),
-            "y": coord(rect.y),
-            "width": coord(rect.width),
-            "height": coord(rect.height),
-            "fill": ink,
-            "fill-opacity": ROW_TINT,
-        },
+        boxed(rect).set("fill", ink).set("fill-opacity", ROW_TINT),
     )
 }
 
@@ -435,15 +427,10 @@ fn paint_column(
     parts.extend(bars.iter().map(|bar| {
         tag(
             "rect",
-            attrs! {
-                "class": "ab-halo",
-                "x": coord(bar.x),
-                "y": coord(bar.y),
-                "width": coord(bar.width),
-                "height": coord(bar.height),
-                "rx": ACTIVATION_RADIUS,
-            }
-            .with(styles.halo()),
+            attrs! { "class": "ab-halo" }
+                .with(boxed(*bar))
+                .set("rx", ACTIVATION_RADIUS)
+                .with(styles.halo()),
         )
     }));
     group(
@@ -506,12 +493,12 @@ fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palet
     };
     let card = first.card.bounds;
     let floor = floor_of(layout.frame);
-    let shape = attrs! {
-        "x": coord(floor.x),
-        "y": coord(card.y - HEAD_REACH),
-        "width": coord(floor.width),
-        "height": coord(card.height + HEAD_REACH + SHADOW_REACH),
-    };
+    let shape = boxed(Rect {
+        x: floor.x,
+        y: card.y - HEAD_REACH,
+        width: floor.width,
+        height: card.height + HEAD_REACH + SHADOW_REACH,
+    });
     let face = if standing == Some(Standing::Removed) {
         ghost_face(palette)
     } else {
@@ -560,7 +547,7 @@ fn tab_path(frame: &SequenceFrame, ink: &str, face: &str) -> Markup {
 /// The words of one row of a frame, left aligned at a height.
 fn row_words(x: f64, top: f64, height: f64, text: &str, fill: &str) -> Markup {
     text_node(
-        attrs! { "x": coord(x), "y": coord(top + height * WORDS_BASELINE) }
+        attrs! { "x": coord(x), "y": coord(top + height * PILL_BASELINE) }
             .with(font_attributes(PILL_FONT))
             .set("font-size", PILL_TEXT_SIZE)
             .set("fill", fill),
@@ -614,15 +601,9 @@ fn paint_fragment(
 ) -> Markup {
     let rect = frame.bounds;
     let tab = frame.tab;
-    let ink = ink_of(standing, palette).unwrap_or(palette.edge);
+    let ink = full_line_colour(palette, standing);
     let words = standing_palette(palette, standing).pill_text;
-    let outline = attrs! {
-        "x": coord(rect.x),
-        "y": coord(rect.y),
-        "width": coord(rect.width),
-        "height": coord(rect.height),
-        "rx": FRAGMENT_RADIUS,
-    };
+    let outline = boxed(rect).set("rx", FRAGMENT_RADIUS);
     let mark_x = rect.x + rect.width - PIN_INSET;
     let operator = match frame.operator {
         crate::request::FrameOperator::Alt => "alt",
@@ -679,13 +660,7 @@ fn paint_fragment(
 
 /// A rounded plate's geometry.
 fn rect_of(rect: Rect) -> Attrs {
-    attrs! {
-        "x": coord(rect.x),
-        "y": coord(rect.y),
-        "width": coord(rect.width),
-        "height": coord(rect.height),
-        "rx": PILL_RADIUS,
-    }
+    boxed(rect).set("rx", PILL_RADIUS)
 }
 
 /// One message's label, a line at a time, each centred, on a chip.
@@ -712,16 +687,10 @@ fn paint_label(
     };
     let rule = tag(
         "rect",
-        attrs! {
-            "class": "ab-halo",
-            "x": coord(rect.x),
-            "y": coord(rect.y),
-            "width": coord(rect.width),
-            "height": coord(rect.height),
-            "rx": PILL_RADIUS,
-            "stroke-width": LIT_RULE_WIDTH,
-        }
-        .with(styles.halo()),
+        attrs! { "class": "ab-halo" }
+            .with(rect_of(rect))
+            .set("stroke-width", LIT_RULE_WIDTH)
+            .with(styles.halo()),
     );
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
         text_node(
