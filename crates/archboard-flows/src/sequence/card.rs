@@ -64,40 +64,16 @@ pub fn card_notes(text: &impl Text, node: &Node, width: f64) -> Vec<TextRun> {
     )
 }
 
-/// A text's authored lines: split at every line break, as `/\r\n?|\n/` splits it.
-fn authored_lines(text: &str) -> Vec<&str> {
-    let mut lines = Vec::new();
-    let mut start = 0;
-    let bytes = text.as_bytes();
-    let mut at = 0;
-    while at < bytes.len() {
-        match bytes[at] {
-            b'\r' => {
-                lines.push(&text[start..at]);
-                at += if bytes.get(at + 1) == Some(&b'\n') {
-                    2
-                } else {
-                    1
-                };
-                start = at;
-            }
-            b'\n' => {
-                lines.push(&text[start..at]);
-                at += 1;
-                start = at;
-            }
-            _ => at += 1,
-        }
-    }
-    lines.push(&text[start..]);
-    lines
-}
-
 /// The width one participant's card asks for: its chip, its name and its
 /// responsibility's longest authored line, with the card's insets.
 pub fn card_content_width(text: &impl Text, node: &Node) -> f64 {
-    let note_width = authored_lines(node.responsibility.as_deref().unwrap_or(""))
-        .into_iter()
+    // Split at every line break, as `/\r\n?|\n/` splits it: the empty piece
+    // between a `\r` and its `\n` measures nothing.
+    let note_width = node
+        .responsibility
+        .as_deref()
+        .unwrap_or("")
+        .split(['\r', '\n'])
         .fold(0.0, |width, line| {
             js::js_max(width, text.width(line, CARD_NOTE_FONT, NOTE_SIZE))
         });
@@ -108,16 +84,4 @@ pub fn card_content_width(text: &impl Text, node: &Node) -> f64 {
             text.width(&node.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(node),
             note_width,
         )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::authored_lines;
-
-    #[test]
-    fn splits_at_every_kind_of_line_break() {
-        assert_eq!(authored_lines("a\r\nb\rc\nd"), ["a", "b", "c", "d"]);
-        assert_eq!(authored_lines(""), [""]);
-        assert_eq!(authored_lines("a\n"), ["a", ""]);
-    }
 }
