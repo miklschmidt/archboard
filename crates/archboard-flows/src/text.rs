@@ -2,25 +2,9 @@
 //! (TASK-520.07): the width of a line, as the painter measures it, and lines
 //! broken as the host's line breaker breaks them (`text/measurement.ts`).
 
-use archboard_scene::drawing::{DiagramFont, FontFamily, TextRun};
+use archboard_scene::drawing::{DiagramFont, TextRun};
 use archboard_scene::measure::Measure;
 use archboard_scene::request::WordLine;
-
-/// A participant's name, and every face a card's title is set in.
-pub const CARD_TITLE_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 500,
-};
-/// A participant's responsibility, and a step's note.
-pub const CARD_NOTE_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 400,
-};
-/// A message's words, and a frame's.
-pub const PILL_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 500,
-};
 
 /// The host's text: each width to a hundredth of a unit ([`Measure`]), and
 /// lines broken as its line breaker breaks them.
@@ -62,7 +46,7 @@ pub mod fixed {
     use archboard_scene::measure::Measure;
     use archboard_scene::request::WordLine;
 
-    use super::CARD_NOTE_FONT;
+    use archboard_scene::paint::fonts::CARD_NOTE_FONT;
 
     pub struct Monospace;
 
