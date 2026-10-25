@@ -8,11 +8,14 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
-	type DiagnosticSubject,
 	type SharedSymbol,
-	type VaultCheck,
 } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+import type { z } from "zod";
+import type { describeSubject } from "@archboard/board/policy";
+
+type DiagnosticSubject = Parameters<typeof describeSubject>[0];
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
 const sharedSymbol: SharedSymbol = {

@@ -14,7 +14,10 @@ import {
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
 } from "#server/services/panes/context.ts";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /**
  * One report from the same pane.

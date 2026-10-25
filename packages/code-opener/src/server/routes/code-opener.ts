@@ -27,8 +27,7 @@ import {
 	type OtherRef,
 	githubUrlForBinding,
 } from "@archboard/code-binding/resolution";
-import { addressedVariant } from "@archboard/board/document";
-import { readSemanticBoard } from "@archboard/board/store-read";
+import { readBoardVariant } from "@archboard/board/store-read";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
 import {
 	readOpenerSelection,
@@ -131,13 +130,14 @@ export interface CodeOpenerRouteDependencies {
  */
 function canonicalBinding(vault: string, boardKey: string, subjectId: string): BindingLookup {
 	const address = boardAddressOf(boardKey);
-	const read = readSemanticBoard(vault, address.board);
-	if (!read.ok) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: read.problem };
-	}
-	const opened = addressedVariant(read.board, address.variant);
+	const opened = readBoardVariant(vault, address.board, address.variant);
 	if (!opened.ok) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: `${opened.problem}.` };
+		const variantMissing = opened.code === "VARIANT_MISSING" || opened.code === "VARIANT_UNCHOSEN";
+		return {
+			ok: false,
+			code: "BOARD_NOT_FOUND",
+			error: variantMissing ? `${opened.problem}.` : opened.problem,
+		};
 	}
 	const node = opened.variant.content.nodes.find((one) => one.id === subjectId);
 	if (node === undefined) {

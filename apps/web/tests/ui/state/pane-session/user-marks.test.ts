@@ -5,8 +5,11 @@ import {
 	createReadingPublisher,
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 // Which parts of a report are said to be the user's own doing (ADR 0034). What these catch is
 // the feedback loop of 2026-09-20 coming back: a change nobody's hand made being told to the

@@ -1,11 +1,14 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import type { VaultCheck } from "@archboard/board/policy";
 import {
 	semanticBoardKeys,
 	vaultCheckQuery,
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /**
  * Read the shared checker; disk edits become visible without reopening the vault.

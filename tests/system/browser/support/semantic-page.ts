@@ -5,8 +5,10 @@
 // agent uses and the address the shell restores from — so what a test drives is
 // what a person drives, and no owner reaches into the store to arrange a scene.
 
-import type { DrillDown } from "@archboard/board/content";
 import type { JsonResponse } from "../../support/http.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /** One node of the architecture a test seeds. */
 interface SeedNode {

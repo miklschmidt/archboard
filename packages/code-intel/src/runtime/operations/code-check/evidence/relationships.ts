@@ -52,7 +52,11 @@ import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import { messagesOf } from "@archboard/board/flow";
 import type { SemanticEdge } from "@archboard/board/content";
-import { describeSubject, type EvidenceKind, type SemanticPolicy } from "@archboard/board/policy";
+import { describeSubject, type SemanticPolicy } from "@archboard/board/policy";
+import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 
 /** The evidence kinds that are a dependency at run time or at build time. */
 const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([
