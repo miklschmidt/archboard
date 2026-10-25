@@ -153,7 +153,7 @@ test("a footprint includes source-only and settings changes in a project directo
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readFootprint({ vault, board, against: current, base }),
+		await lens.readVariantFootprint({ vault, board, against: current, base }),
 	);
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	expect(answer.changed.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);
