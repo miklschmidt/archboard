@@ -7,7 +7,6 @@
 use std::collections::BTreeSet;
 
 use archboard_scene::js;
-use archboard_scene::measure;
 use archboard_scene::scene::{Item, Text};
 use archboard_text::{Face, Segment, outline};
 
@@ -30,9 +29,8 @@ impl Glyphs {
         for item in items {
             match item {
                 Item::Text(text) => {
-                    let face = measure::face(text.font);
                     self.0
-                        .extend(text.glyphs.iter().map(|glyph| (face, glyph.id)));
+                        .extend(text.glyphs.iter().map(|glyph| (glyph.face, glyph.id)));
                 }
                 Item::Group(group) => self.walk(&group.items),
                 Item::Viewport(viewport) => self.walk(&viewport.items),
@@ -69,6 +67,10 @@ fn glyph_id(face: Face, glyph: u32) -> String {
         Face::SansMedium => "s5",
         Face::MonoRegular => "m4",
         Face::MonoMedium => "m5",
+        Face::GreekRegular => "n4",
+        Face::GreekMedium => "n5",
+        Face::Symbols => "y4",
+        Face::Math => "x4",
     };
     format!("g{code}-{glyph}")
 }
@@ -99,11 +101,10 @@ fn path_data(steps: &[Segment]) -> String {
 
 /// A run of words: its glyphs, then its words over them in no ink.
 pub(crate) fn write_text(text: &Text, out: &mut String) {
-    let face = measure::face(text.font);
     let drawn: Vec<_> = text
         .glyphs
         .iter()
-        .filter(|glyph| !outline(face, glyph.id).is_empty())
+        .filter(|glyph| !outline(glyph.face, glyph.id).is_empty())
         .collect();
     if !drawn.is_empty() {
         let scale = text.size / f64::from(text.units_per_em);
@@ -122,7 +123,7 @@ pub(crate) fn write_text(text: &Text, out: &mut String) {
         open("g", &run, out);
         for glyph in drawn {
             let mut used = Attributes::new();
-            used.set("href", format!("#{}", glyph_id(face, glyph.id)))
+            used.set("href", format!("#{}", glyph_id(glyph.face, glyph.id)))
                 .set("x", f64::from(glyph.x))
                 .maybe("y", (glyph.y != 0).then_some(f64::from(glyph.y)));
             empty("use", &used, out);

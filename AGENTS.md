@@ -150,7 +150,9 @@ rules that will not stop you:
   makes a change look like a deletion and an addition.
 - **The core shapes every word, and nothing else measures text** (ADR 0057,
   TASK-520.07). `crates/archboard-text` shapes a run with the bundled font files
-  and breaks a paragraph to a width. The layout crates ask
+  and breaks a paragraph to a width. A character that Onest or DM Mono lacks
+  comes from the Noto fallback faces, in the one order of `Face::fallbacks`,
+  for measuring, breaking and drawing alike. The layout crates ask
   `archboard_scene::measure`, never the host. The scene carries each run as
   glyphs with its string, and a picture draws those glyphs: an SVG defines each
   glyph it uses once and lays its words over them in no ink, so it needs no font
