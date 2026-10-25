@@ -119,14 +119,6 @@ impl Track<'_> {
         sign(net.bottom_x - net.top_x) != sign(before.bottom_x - before.top_x)
     }
 
-    /// Whether a net's end at a card is a trunk's shared port.
-    fn trunk_at(&self, net: NetId, end: End) -> bool {
-        self.net(net).trunk.is_some_and(|trunk| {
-            let trunk = &self.trunks[trunk.0];
-            trunk.side == end || trunk.whole
-        })
-    }
-
     /// Whether an x stands on a card's face, clear of its corners.
     fn on_face(&self, station: StationId, x: f64) -> bool {
         let item = self.scene.item(self.station(station).item.expect("a card"));
@@ -148,7 +140,7 @@ impl Track<'_> {
         if item.is_some_and(|item| self.scene.slides.contains_key(&item)) {
             return self.slide_port(nets, net, end, x);
         }
-        if self.trunk_at(net, end)
+        if self.shared_at(net, end).is_some()
             || self.station(station).at.is_some()
             || !self.on_face(station, x)
         {
