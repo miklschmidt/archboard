@@ -190,6 +190,15 @@ export default defineConfig({
 					output: ["dist/workbench-example/**"],
 				},
 			},
+			"voice-package": {
+				dependsOn: ["contracts"],
+				command: "bun scripts/pack-codex-realtime-voice.ts",
+				cache: {
+					input: analysisCache.input,
+					env: analysisCache.env,
+					output: ["dist/codex-realtime-voice/**"],
+				},
+			},
 			types: {
 				dependsOn: ["contracts"],
 				command:

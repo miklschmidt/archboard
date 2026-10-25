@@ -96,8 +96,9 @@ A package has no `lib/` folder and no `index.ts` barrel. Name the role of a fold
 `constants`, `schemas`, `rules` or `operations`, and let a folder that grows past about 12 files
 split by behavior.
 
-- **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. There is no build step, no
-  wildcard pattern and no condition object. Import `@archboard/<name>`, or
+- **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. Inside the
+  repository there is no build step, no wildcard pattern and no condition object. The npm build of
+  `codex-realtime-voice` is the one exception, and it leaves the workspace `exports` as they are. Import `@archboard/<name>`, or
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
@@ -179,7 +180,7 @@ the code is not local.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It owns one private Codex app-server session over stdio.
 It holds protocol contracts, the process owner, the stdio transport, and the session.
-It imports the lower process, workspace, diagnostics, and timing packages.
+It imports the lower process, diagnostics, and timing packages.
 It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
 
 The two shared entries are safe for the browser. The four runtime entries run only in Bun.
@@ -520,8 +521,17 @@ Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `r
 The `codex-realtime-voice` package (`@archboard/codex-realtime-voice`) owns reusable Codex conversations and realtime voice.
 It runs one private app-server process with separate coordinator and workhorse histories.
 Each browser tab has one coordinator and one workhorse per admitted checkout.
-The package sits at layer 6 and reads only its Codex, process, workspace, diagnostics, and timing foundations.
+The package sits at layer 6 and reads only its Codex, process, diagnostics, and timing foundations.
 It imports no Archboard board, vault, walkthrough, pane, or server-lifecycle module.
+
+The package and the four packages it reads are MIT-licensed, each with its own `LICENSE`. Every other package is BUSL-1.1.
+`bun run pack:voice` (the `voice-package` Vite+ task, `scripts/pack-codex-realtime-voice.ts`) builds it for npm into ignored `dist/codex-realtime-voice/`.
+It bundles the four MIT packages into ESM and bundled declarations for each public entry, and keeps zod, ws, React, Express and `@openai/codex` external.
+`tsconfig.voice-package.json` names the sources the declarations come from.
+The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
+The owner publishes that directory with `npm publish`.
+`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installedIn: SOURCE_CHECKOUT` to refuse any other install.
+`tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
 `./contract` holds shared snapshots, gateway messages, commands, and their identity-bound schemas.
