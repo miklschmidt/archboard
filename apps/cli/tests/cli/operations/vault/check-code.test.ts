@@ -8,10 +8,7 @@
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import {
-	DEFAULT_SEMANTIC_POLICY,
-	VaultCheckSchema,
-} from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 import type { z } from "zod";
 
