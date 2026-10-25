@@ -4,7 +4,7 @@
 use crate::drawing::{Chip, MeasuredLabel, TextRole, TextRun};
 use crate::js::js_max;
 use crate::measure::cards::{NOTE, Style, runs_for};
-use crate::measure::{exact_width, paragraph};
+use crate::measure::{paragraph, set_width};
 use crate::paint::design::{
     ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, CARD_TITLE_FONT, PILL_FONT,
 };
@@ -45,7 +45,7 @@ fn balanced_lines(words: &str, style: Style, width: f64) -> Vec<WordLine> {
         .lines(prepared.balanced_width(width))
         .into_iter()
         .map(|line| WordLine {
-            width: exact_width(&line.text, style.font, style.size),
+            width: line.width,
             text: line.text,
         })
         .collect()
@@ -113,7 +113,7 @@ pub fn measure_label(text: &str) -> MeasuredLabel {
 
 /// A group's name as the caption its region is drawn with: one line.
 pub fn measure_caption(name: &str) -> MeasuredLabel {
-    let width = exact_width(name, CAPTION.font, CAPTION.size);
+    let width = set_width(name, CAPTION.font, CAPTION.size);
     let height = CAPTION.line + 2.0 * CAPTION_PADDING_Y;
     MeasuredLabel {
         width: width + 2.0 * CAPTION_PADDING_X,

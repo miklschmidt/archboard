@@ -4,7 +4,7 @@
 use archboard_text::Paragraph;
 
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun};
-use crate::measure::{exact_width, paragraph};
+use crate::measure::paragraph;
 use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
     CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE, PART_NOTE_LINE,
@@ -67,7 +67,7 @@ pub(super) fn runs_for(
         .into_iter()
         .enumerate()
         .map(|(index, line)| TextRun {
-            width: exact_width(&line.text, style.font, style.size),
+            width: line.width,
             text: line.text,
             x,
             y: top + style.size + index as f64 * style.line,

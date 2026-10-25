@@ -4,7 +4,7 @@
 use crate::geometry::Rect;
 use crate::js::{js_max, js_min};
 use crate::measure::cards::{Style, TITLE};
-use crate::measure::{exact_width, paragraph};
+use crate::measure::{paragraph, set_width};
 
 /// Room a far name keeps from its card's sides.
 const FAR_PADDING_X: f64 = 16.0;
@@ -109,7 +109,7 @@ fn far_lines(name: &str, bounds: FarBox, size: f64, most: usize) -> Option<Vec<S
         && lines.len() as f64 * style.line <= bounds.height - FAR_PADDING_Y * 2.0
         && lines
             .iter()
-            .all(|line| exact_width(line, style.font, style.size) <= far_room(bounds, size));
+            .all(|line| set_width(line, style.font, style.size) <= far_room(bounds, size));
     fits.then_some(lines)
 }
 
