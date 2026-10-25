@@ -136,6 +136,7 @@ const testCache = {
 	...analysisCache,
 	input: [
 		...analysisCache.input,
+		".archboard/README.md",
 		".archboard/vault/**",
 		"bin/**",
 		"docs/**",
@@ -189,7 +190,10 @@ export default defineConfig({
 			},
 			"format:check": {
 				command: "vp fmt --config vite.config.ts --check",
-				cache: { ...analysisCache, input: testCache.input },
+				cache: {
+					...analysisCache,
+					input: [...testCache.input, ".prettierignore", ".vscode/**", ".impeccable/**/*.json"],
+				},
 			},
 			"lint:tests": {
 				command:
