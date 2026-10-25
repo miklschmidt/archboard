@@ -53,7 +53,7 @@ export interface BrowserSessionLeaseLedger {
 
 /**
  * Process-lifetime lease authority retained while a source generation is replaced: one lease
- * per browser tab session, so two tabs never take the lease from each other (TASK-373).
+ * per browser tab session, so two tabs never take the lease from each other.
  */
 export interface BrowserLeaseLedger {
 	readonly sessions: Map<TabSessionId, BrowserSessionLeaseLedger>;
@@ -118,7 +118,7 @@ export interface BrowserLeaseBinding {
 	readonly chatId: string;
 	/** The tab the socket belongs to, which every chat of that tab shares. */
 	readonly tabSessionId: TabSessionId;
-	/** The checkout the chat's tab shows, whose workhorse the command is for (ADR 0050). */
+	/** The checkout the chat's tab shows, whose workhorse the command is for. */
 	readonly checkout: string;
 	readonly commandId: BrowserCommandId;
 	readonly childId: ChildId;
@@ -131,7 +131,7 @@ export interface BrowserProjectionContext {
 	readonly browserId: BrowserConnectionId;
 	readonly chatId: string;
 	readonly tabSessionId: TabSessionId;
-	/** The checkout the chat's tab shows now, whose workhorse the chat shows (ADR 0050). */
+	/** The checkout the chat's tab shows now, whose workhorse the chat shows. */
 	readonly checkout: string;
 	/** Exact process-local socket identity; never serialized to the browser. */
 	readonly connection: BrowserConnectionInstance;
@@ -284,8 +284,8 @@ export interface BrowserUnpresentedTerminal {
 	readonly requestId: JsonRpcRequestId;
 	readonly tabSessionId: TabSessionId | null;
 	/**
-	 * The checkout whose chats of that tab session are shown it, as a workhorse's approval is
-	 * (ADR 0050), or null when every chat of the tab session is.
+	 * The checkout whose chats of that tab session are shown it, as a workhorse's approval is,
+	 * or null when every chat of the tab session is.
 	 */
 	readonly checkout: string | null;
 }
@@ -342,7 +342,7 @@ export interface CodexWorkbenchGatewayOptions {
 	readonly projection: BrowserProjectionPort;
 	readonly threadLink: Pick<CodexThreadLinkPort, "read">;
 	/**
-	 * The checkout whose conversation a chat's tab shows now (ADR 0050). The person can
+	 * The checkout whose conversation a chat's tab shows now. The person can
 	 * activate another one at any time, so it is asked each time, never kept.
 	 */
 	readonly checkoutOf: (browserId: BrowserConnectionId) => string;

@@ -1,5 +1,5 @@
 // What the tab sessions of one Codex child generation are, and what building one is handed
-// (TASK-373, ADR 0050). The store that keeps them is `services/sessions/sessions.ts`.
+// The store that keeps them is `services/sessions/sessions.ts`.
 
 import type { CoordinatorCallbacks } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CoordinatorToolDispatcher } from "#runtime/protocol/coordinator-tools/contract.ts";
@@ -53,7 +53,7 @@ interface CodexWorkbenchTabSessionActions {
 interface CodexWorkbenchTabSessionState {
 	/** Which coordinator turn delegated each workhorse turn, newest last; bounded. */
 	readonly delegations: Map<TurnId, TurnId>;
-	/** Which conversation each coordinator turn shows in, newest last; bounded (ADR 0050). */
+	/** Which conversation each coordinator turn shows in, newest last; bounded. */
 	readonly coordinatorTurnHomes: Map<TurnId, CoordinatorTurnHome>;
 	/** The coordinator tool call running now, which every owner that asks sees the same. */
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;

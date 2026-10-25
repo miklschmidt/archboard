@@ -41,7 +41,7 @@ interface SessionBindingContext {
 	readonly scope: CodexWorkbenchTabSessionScope;
 	readonly server: CodexWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
-	/** The directory of its own the coordinator works in, which is no checkout (ADR 0050). */
+	/** The directory of its own the coordinator works in, which is no checkout. */
 	readonly coordinatorDirectory: string;
 	/** Tell every browser projection listener that something it shows has changed. */
 	readonly publishProjection: () => void;
@@ -131,9 +131,9 @@ function voiceBindings(
 			},
 		}),
 		/**
-		 * The directory the coordinator runs in. It is its own and holds no vault, so a command
-		 * the coordinator runs without `-C` is refused rather than reading some checkout's boards.
-		 * It inherits nothing: every child epoch starts its coordinators afresh (ADR 0019).
+		 * The directory the coordinator runs in. It is its own and is no checkout, so a command
+		 * the coordinator runs without naming a checkout finds none of a checkout's files. It inherits
+		 * nothing: every child epoch starts its coordinators afresh.
 		 * @returns The coordinator binding.
 		 */
 		coordinator: () => ({
@@ -422,7 +422,7 @@ function createWorkhorseBindings(
 		readyThreadPair(created.workhorse, tab.components.coordinator);
 	return {
 		/**
-		 * The checkout a turn of this workhorse runs in (ADR 0050).
+		 * The checkout a turn of this workhorse runs in.
 		 * @returns The workhorse binding.
 		 */
 		workhorse: () => ({

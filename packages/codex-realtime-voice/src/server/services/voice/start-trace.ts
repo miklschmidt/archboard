@@ -5,8 +5,8 @@
 // failed". The server has no log file, and Codex keeps no line for a start it refused. So the
 // server keeps the last few attempts itself: every stage it went through, what was sent and how
 // large it was, every state the session moved through, and the exact words of whatever refused
-// it. Nothing here decides anything. It holds no audio, no SDP, no prompt text and no board
-// content: identities, sizes, states and messages only.
+// it. Nothing here decides anything. It holds no audio, no SDP, no prompt text and no host
+// context: identities, sizes, states and messages only.
 
 /** One thing that happened during a voice start. */
 interface VoiceStartTraceEntry {

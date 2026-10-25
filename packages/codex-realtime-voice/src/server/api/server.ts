@@ -23,7 +23,7 @@ export type {
 export { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 export type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
-// Below: seams that Archboard's chat sockets, domain tools and dynamic approvals still use. A host
+// Below: seams that chat sockets, domain tools and dynamic approvals still use. A host
 // that serves its browser through `attach` needs none of them.
 export { parseWorkhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 export {

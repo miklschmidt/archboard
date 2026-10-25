@@ -1,4 +1,4 @@
-// The workhorses of one tab session (ADR 0050).
+// The workhorses of one tab session.
 //
 // A tab session has one workhorse for each checkout it works in. A workhorse runs in its checkout,
 // so it reads that repository's agent instructions, skills and Codex configuration. Each one has
@@ -6,8 +6,7 @@
 // operations and its own delivery of context changes. A workhorse is built the first time something
 // asks for its checkout: the tab's shown conversation, or the coordinator giving it work.
 //
-// A workhorse belongs to a checkout, not to a repository identity, so a new chosen checkout of its
-// identity leaves it as it is, linked until its tab session ends.
+// A workhorse belongs to a checkout, so it stays linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { CodexSession } from "@archboard/codex-app-server/session";
@@ -52,7 +51,7 @@ interface CodexWorkbenchWorkhorseState {
 
 /** One workhorse of a tab session: the one for one checkout. */
 interface CodexWorkbenchWorkhorse {
-	/** The directory it works in: a checkout root, or the holder of an untracked vault. */
+	/** The directory it works in: a checkout the host admitted. */
 	readonly checkout: string;
 	/** Its thread-link key, which no other workhorse shares. */
 	readonly key: string;
@@ -140,8 +139,7 @@ function noteActiveTurn(
 
 /**
  * Stop what workhorses are running: interrupt the turn each one runs, and say what each did. A
- * workhorse with no running turn has nothing to interrupt. TASK-446 makes this the stop of the
- * whole work tree that ADR 0048 describes.
+ * workhorse with no running turn has nothing to interrupt.
  * @param workhorses The workhorses to stop.
  * @param session Interrupts a turn.
  * @returns What each one did, in the order given.

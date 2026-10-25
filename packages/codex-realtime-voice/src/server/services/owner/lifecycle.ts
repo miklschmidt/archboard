@@ -59,7 +59,7 @@ import {
  * Install one stable process port for one server application lifetime. Every
  * graph remains only in replaceable source closures, and the publication that
  * dispatches to them is owner-local: nothing outside this call can observe or
- * hand back a previous lifetime's state (ADR 0021).
+ * hand back a previous lifetime's state.
  * @param options How to create the process, the kernel and each generation.
  * @returns The owner.
  */

@@ -1,11 +1,10 @@
 import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
-// Which checkout a workhorse works in (ADR 0050).
+// Which checkout a workhorse works in.
 //
-// A workhorse works in the directory that holds its vault: a checkout root, or the holder of an
-// untracked vault. A chat names its checkout through the vault it is in. The coordinator names one
-// in each workhorse tool call, as a path, and the path means the checkout only when it is a
-// directory that holds a vault, or a vault itself. Both are spelled as real paths, so a checkout
-// reached through a link is the same checkout.
+// A workhorse works in a checkout: a directory the host admits. A chat names its checkout through
+// the host. The coordinator names one in each workhorse tool call, as a path, and the path means
+// a checkout only when the host's `resolveCheckout` admits it. Both are spelled as real paths, so
+// a checkout reached through a link is the same checkout.
 
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { CodexWorkbenchWorkhorseActions } from "#server/services/sessions/workhorses.ts";
@@ -29,7 +28,7 @@ function workhorseOfCheckout<Workhorse extends { readonly checkout: string }>(
 
 /**
  * The checkout a coordinator call gives work to, when it is a delegation naming one: the
- * delegation starts that checkout's workhorse when there is none (ADR 0050).
+ * delegation starts that checkout's workhorse when there is none.
  * @param request The coordinator tool call.
  * @param tools The host's built-in namespaces.
  * @param resolveCheckout The host checkout admission policy.
@@ -50,7 +49,7 @@ function delegatedCheckout(
 /**
  * The checkout a tool call's arguments name.
  * @param args The arguments.
- * @returns The canonical checkout, or null when they name none that holds a vault.
+ * @returns The canonical checkout, or null when they name none the host admits.
  * @param resolveCheckout The host policy for this operation.
  */
 function checkoutArgument(

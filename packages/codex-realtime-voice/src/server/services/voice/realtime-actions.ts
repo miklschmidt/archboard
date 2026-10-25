@@ -1,16 +1,16 @@
 // One browser tab's voice session: started, spoken into and stopped by the tab that holds it.
 //
-// Voice speaks for the whole tab (ADR 0050). A start is bound to the workhorse of the checkout of
+// Voice speaks for the whole tab. A start is bound to the workhorse of the checkout of
 // the chat it came from, for as long as that session runs, and any chat of the tab can stop it.
 //
-// Each tab session has its own coordinator and its own voice (TASK-373), so two tabs talk at once
+// Each tab session has its own coordinator and its own voice, so two tabs talk at once
 // and an unattended session, whose page is a tab session of its own, never stops somebody who is
 // talking in another tab. A start replaces whatever session its own tab was running.
 //
-// A coordinator carries one voice session (TASK-301). A start that finds the coordinator already
+// A coordinator carries one voice session. A start that finds the coordinator already
 // carried one has it replaced first, so a turn the last session left running, and whatever that
 // turn answers, stay on a thread no later session speaks from. Once nothing runs on that thread,
-// the coordinator unsubscribes from it so Codex unloads it (TASK-374), and the trace says how
+// the coordinator unsubscribes from it so Codex unloads it, and the trace says how
 // that went.
 
 import type {
@@ -249,7 +249,7 @@ export function createServerRealtimeActions(
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
 	let voicedCoordinator: ThreadId | null = null;
-	// The chat the last session started from, whose narration a later session replaces.
+	// The chat the last session started from, whose narrative a later session replaces.
 	let voicedChat: string | null = null;
 	let realtimeQueue = Promise.resolve();
 	// The start trace keeps every state the session moves through and every diagnostic it raises.

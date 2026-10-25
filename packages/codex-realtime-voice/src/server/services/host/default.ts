@@ -59,7 +59,7 @@ interface FreshBrief {
 	readonly freshUntilMs: number;
 }
 /**
- * Resolve a real checkout directory without requiring a vault.
+ * Resolve a real checkout directory without requiring anything to be in it.
  * @param named The directory named by the host.
  * @returns Its real path, or null when the directory is unavailable.
  */

@@ -2,8 +2,8 @@
 //
 // A snapshot is published when something says it changed, and nothing said so for the
 // transcript: it reached a browser only when an unrelated change happened to publish, so the
-// words of a live voice arrived late and in bursts, in the dock and in the subtitles alike
-// (TASK-292). This is that missing change source.
+// words of a live voice arrived late and in bursts, in every chat that shows them. This is that
+// missing change source.
 //
 // The realtime adapter publishes the whole transcript, one event per record, for every word
 // that arrives. Those events are one change, so they are told as one: the first of a burst asks
