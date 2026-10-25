@@ -3,7 +3,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from "#ui/components/alert.tsx";
+import { Alert, AlertDescription, AlertTitle } from "#ui/components/shadcn/alert.tsx";
 import type { DialogError } from "#ui/rules/dialog-error.ts";
 
 /** Inputs for the error alert. */

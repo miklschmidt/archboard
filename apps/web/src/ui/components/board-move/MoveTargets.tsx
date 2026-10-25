@@ -5,15 +5,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import {
-	Field,
-	FieldLabel,
-	FieldLegend,
-	FieldSet,
-	RadioGroup,
-	RadioGroupItem,
-} from "@archboard/ui-kit/controls";
-import { RepositoryName } from "@archboard/ui-kit/repository-name";
+import { Field, RadioGroup, RepositoryName } from "@archboard/ui-kit/components";
 
 /** Inputs for the target choice. */
 interface MoveTargetsProps {
@@ -39,14 +31,14 @@ function MoveTargets(props: MoveTargetsProps): JSX.Element {
 		);
 	}
 	return (
-		<FieldSet>
-			<FieldLegend variant="label">Move to</FieldLegend>
+		<Field.Set>
+			<Field.Legend variant="label">Move to</Field.Legend>
 			<RadioGroup value={props.chosen} onValueChange={handleChange} disabled={props.disabled}>
 				{props.targets.map((target) => (
 					<MoveTarget key={target.name} target={target} />
 				))}
 			</RadioGroup>
-		</FieldSet>
+		</Field.Set>
 	);
 }
 
@@ -61,11 +53,11 @@ function MoveTarget(props: { readonly target: RepositoryEntry }): JSX.Element {
 	const { target } = props;
 	return (
 		<Field orientation="horizontal">
-			<RadioGroupItem id={id} value={target.name} />
-			<FieldLabel htmlFor={id} className="items-center gap-2">
+			<RadioGroup.Item id={id} value={target.name} />
+			<Field.Label htmlFor={id} className="items-center gap-2">
 				<RepositoryName identity={target.name} />
 				{target.untracked && <span className="text-muted-foreground">untracked vault</span>}
-			</FieldLabel>
+			</Field.Label>
 		</Field>
 	);
 }

@@ -27,7 +27,7 @@ import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@archboard/timing";
 import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@archboard/timing/voice";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/hooks/orb/use-orb-stage.ts";
 import { SubtitlesToggle } from "#ui/components/subtitles/SubtitlesToggle.tsx";

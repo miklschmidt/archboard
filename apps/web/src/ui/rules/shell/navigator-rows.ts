@@ -11,7 +11,7 @@ import type {
 	OutlineFolder,
 	OutlineNode,
 } from "#ui/rules/board-catalog/outline.ts";
-import { shownRepository } from "@archboard/ui-kit/repository-name";
+import { shownRepository } from "@archboard/ui-kit/components";
 import { repositoryRowId, scopedRowId } from "#ui/rules/shell/row-ids.ts";
 import { matchIn, type TextRange } from "#ui/rules/shell/text-match.ts";
 import { listsVariants, paneOnBoard, variantRows } from "#ui/rules/shell/variant-rows.ts";

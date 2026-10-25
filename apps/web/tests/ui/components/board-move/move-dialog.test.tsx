@@ -12,7 +12,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { cleanup, fireEvent, render, screen, waitFor } = await import("@testing-library/react");
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { createElement } = await import("react");
-const { TooltipProvider } = await import("@archboard/ui-kit/overlays");
+const { Tooltip } = await import("@archboard/ui-kit/components");
 const { MoveBoardControl } = await import("#ui/components/board-move/MoveBoardControl.tsx");
 
 const SHOP = "github.com/acme/shop";
@@ -100,7 +100,7 @@ test("a move under way keeps the dialog open, and its refusal is shown there", a
 			QueryClientProvider,
 			{ client },
 			createElement(
-				TooltipProvider,
+				Tooltip.Provider,
 				null,
 				createElement(MoveBoardControl, { status, boardName: "ledger" }),
 			),
