@@ -4,7 +4,7 @@
 //! laid out one way ([`lay_out_board`]) and read for what the choice weighs;
 //! the host runs the solves ([`Solver`]), side by side where it can, and gives
 //! each its Graphviz ([`Graphviz`]). The chosen drawing is put on a page
-//! fitted to it, and its crossings are settled ([`bridge_crossings`]).
+//! fitted to it, and its crossings are settled before the drawing is returned.
 //!
 //! The layout was first written in TypeScript, and every solve answers what
 //! that engine answered, to the bit: floating point in the same order, maps
@@ -29,7 +29,7 @@ pub use architecture::{
 };
 pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_board;
-pub use routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
+pub use routes::LineLook;
 
 /// Graphviz, as the host runs it: lay out one graph and answer its `json0`
 /// output. The graph is a viz-js `Graph` object given as JSON, and the host
