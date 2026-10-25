@@ -192,7 +192,7 @@ test("Bun.serve detach closes the open socket in the port and refuses the next",
 	expect(await connect(host.socketUrl)).toBe(503);
 });
 
-test("an agent's Bun handlers close a socket with 1011 before start and refuse sockets after shutdown", async () => {
+test("an agent's Bun handlers close a socket with 1011 before start, refuse sockets after shutdown, and new handlers serve again", async () => {
 	await using directory = new AsyncDisposableStack();
 	const state = mkdtempSync(join(tmpdir(), "voice-bun-serve-"));
 	directory.defer(() => rmSync(state, { recursive: true, force: true }));
@@ -217,6 +217,10 @@ test("an agent's Bun handlers close a socket with 1011 before start and refuse s
 	await agent.shutdown();
 	expect(await connect(url)).toBe(503);
 	expect((await fetch(`${server.url.origin}/page`)).status).toBe(404);
+	server.reload({ ...agent.bunHandlers({ path: "/voice" }) });
+	const rearmed = await connect(url);
+	if (typeof rearmed === "number") throw new Error(`The upgrade was refused with ${rearmed}.`);
+	expect(await closeCode(rearmed)).toBe(1011);
 });
 
 test("Bun.serve refuses a path or a named origin that could never admit a socket", () => {
