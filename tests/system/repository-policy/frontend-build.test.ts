@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { ensureFreshFrontend } from "../browser/support/frontend-build.ts";
 import {
 	FRONTEND_INPUTS_FILE,
@@ -47,6 +47,31 @@ test("changed source bytes rebuild even when their modification time is old", as
 		build(root);
 		writeFileSync(source, "export const version = 2;\n");
 		utimesSync(source, 0, 0);
+		let calls = 0;
+		expect(
+			await ensureFreshFrontend(root, async () => {
+				calls += 1;
+				build(root);
+			}),
+		).toBe("built");
+		expect(calls).toBe(1);
+	});
+});
+
+test.each([
+	"crates/archboard-renderer-wasm/src/lib.rs",
+	"Cargo.toml",
+	"Cargo.lock",
+	"scripts/build-core.ts",
+	"flake.nix",
+	"flake.lock",
+])("a changed core input rebuilds the browser bundle: %s", async (input) => {
+	await withBuild(async (root) => {
+		const source = join(root, input);
+		mkdirSync(dirname(source), { recursive: true });
+		writeFileSync(source, "first input");
+		build(root);
+		writeFileSync(source, "changed input");
 		let calls = 0;
 		expect(
 			await ensureFreshFrontend(root, async () => {
