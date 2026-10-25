@@ -33,7 +33,6 @@ import type {
 	SemanticEdge,
 	SemanticNode,
 	VariantContent,
-	SemanticWalkthrough,
 } from "@archboard/board/content";
 import type { SemanticFlow } from "@archboard/board/flow";
 import type { SemanticVariant } from "@archboard/board/document";
@@ -67,6 +66,8 @@ import {
 	comparedSubject,
 	movedField,
 } from "#cli/rules/semantic/compare/compared-subject.ts";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 type VariantComparison = ReturnType<typeof compareVariants>;
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;

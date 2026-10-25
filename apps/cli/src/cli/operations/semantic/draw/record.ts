@@ -13,7 +13,6 @@ import {
 	LayoutEngineSchema,
 } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
@@ -55,6 +54,9 @@ import {
 	UNNAMED_VARIANT,
 	askedVariant,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 const THEMES = DiagramThemeSchema.options;
 /** A video cannot follow its viewer's theme, so it is drawn dark unless asked otherwise (TASK-483). */

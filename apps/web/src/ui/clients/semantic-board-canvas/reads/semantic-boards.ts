@@ -23,7 +23,6 @@ import { VaultCheckSchema } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
 import {
 	BoardListingSchema,
-	type ListedBoard,
 } from "@archboard/board/board-listing";
 import {
 	SemanticRenderReplySchema,
@@ -35,6 +34,8 @@ import {
 	type OfferedView,
 } from "@archboard/board/render-reply";
 import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+
+type ListedBoard = z.infer<typeof BoardListingSchema>["boards"][number];
 
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 type BoardListing = z.infer<typeof BoardListingSchema>;
