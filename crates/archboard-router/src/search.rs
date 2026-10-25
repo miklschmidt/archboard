@@ -154,6 +154,96 @@ fn distance(a: Point, b: Point) -> f64 {
     (a.x - b.x).abs() + (a.y - b.y).abs()
 }
 
+impl Goal {
+    /// What turning into the goal costs a route that arrived in a direction,
+    /// or nothing when the route would have to turn back to enter it.
+    fn turn(&self, arrived: Dir, bend: f64) -> Option<f64> {
+        match self.into {
+            None => Some(0.0),
+            Some(into) if into == arrived => Some(0.0),
+            Some(into) if into == arrived.reverse() => None,
+            Some(_) => Some(bend),
+        }
+    }
+}
+
+/// One connector's search: the cheapest cost found to each state and the state
+/// it came from, and the queue of states still to settle, ties broken by the
+/// order they were pushed in.
+struct Search<'s> {
+    grid: &'s Grid,
+    scene: &'s Scene,
+    taken: &'s Taken,
+    start: Start,
+    target: Point,
+    cost: Vec<f64>,
+    prev: Vec<usize>,
+    queue: BinaryHeap<Item>,
+    seq: u64,
+}
+
+impl Search<'_> {
+    fn push(&mut self, estimate: f64, state: usize, done: bool) {
+        self.queue.push(Item {
+            estimate,
+            seq: self.seq,
+            state,
+            done,
+        });
+        self.seq += 1;
+    }
+
+    /// The length still to go from a vertex, as the crow flies on the grid.
+    fn heuristic(&self, vertex: usize) -> f64 {
+        distance(self.grid.point(vertex), self.target)
+    }
+
+    /// Queue every direction the route may set off in from its start.
+    fn set_off(&mut self) {
+        let (vertex, paid) = (self.start.vertex, self.start.paid);
+        for index in 0..self.start.dirs.len() {
+            let state = vertex * 4 + self.start.dirs[index] as usize;
+            self.cost[state] = paid;
+            self.push(paid + self.heuristic(vertex), state, false);
+        }
+    }
+
+    /// What one step from a vertex in a direction costs a route that arrived
+    /// in another: its length, a turn, or a crossing of an earlier route.
+    fn step_cost(&self, vertex: usize, next: usize, dir: Dir, arrived: Dir) -> f64 {
+        let length = distance(self.grid.point(vertex), self.grid.point(next));
+        if dir != arrived {
+            return length + self.scene.params.bend;
+        }
+        if vertex != self.start.vertex && self.taken.crosses(vertex, dir) {
+            return length + self.scene.params.crossing;
+        }
+        length
+    }
+
+    /// Queue every state one step on from a settled one that it reaches more
+    /// cheaply than any route before.
+    fn step_on(&mut self, state: usize, here: f64) {
+        let (vertex, arrived) = (state / 4, DIRS[state % 4]);
+        for dir in DIRS {
+            let next = self
+                .grid
+                .step(vertex, dir)
+                .filter(|_| dir != arrived.reverse());
+            let Some(next) = next else {
+                continue;
+            };
+            let reached = here + self.step_cost(vertex, next, dir, arrived);
+            let onward = next * 4 + dir as usize;
+            if reached < self.cost[onward] {
+                self.cost[onward] = reached;
+                self.prev[onward] = state;
+                self.push(reached + self.heuristic(next), onward, false);
+            }
+        }
+    }
+}
+
 /// The cheapest route of one connector, its points simplified to its turns,
 /// or nothing when no route through free space reaches its head.
 pub(crate) fn shortest(
@@ -165,74 +255,34 @@ pub(crate) fn shortest(
 ) -> Option<Vec<Point>> {
     let start = start_of(grid, tail)?;
     let goal = goal_of(grid, head)?;
-    let params = scene.params;
-    let target = grid.point(goal.vertex);
     let states = grid.len() * 4;
-    let mut cost = vec![f64::INFINITY; states];
-    let mut prev = vec![usize::MAX; states];
-    let mut queue = BinaryHeap::new();
-    let mut seq = 0u64;
-    let mut push = |queue: &mut BinaryHeap<Item>, estimate: f64, state: usize, done: bool| {
-        queue.push(Item {
-            estimate,
-            seq,
-            state,
-            done,
-        });
-        seq += 1;
+    let mut search = Search {
+        grid,
+        scene,
+        taken,
+        start,
+        target: grid.point(goal.vertex),
+        cost: vec![f64::INFINITY; states],
+        prev: vec![usize::MAX; states],
+        queue: BinaryHeap::new(),
+        seq: 0,
     };
-    let heuristic = |vertex: usize| distance(grid.point(vertex), target);
-    for &dir in &start.dirs {
-        let state = start.vertex * 4 + dir as usize;
-        cost[state] = start.paid;
-        push(
-            &mut queue,
-            start.paid + heuristic(start.vertex),
-            state,
-            false,
-        );
-    }
+    search.set_off();
     let mut finished = vec![false; states];
-    while let Some(item) = queue.pop() {
+    while let Some(item) = search.queue.pop() {
         if item.done {
-            return Some(path_of(grid, tail, head, &prev, item.state));
+            return Some(path_of(grid, tail, head, &search.prev, item.state));
         }
-        if finished[item.state] {
-            continue;
-        }
-        finished[item.state] = true;
-        let (vertex, arrived) = (item.state / 4, DIRS[item.state % 4]);
-        let here = cost[item.state];
-        if vertex == goal.vertex {
-            let turn = match goal.into {
-                None => Some(0.0),
-                Some(into) if into == arrived => Some(0.0),
-                Some(into) if into == arrived.reverse() => None,
-                Some(_) => Some(params.bend),
-            };
+        if !finished[item.state] {
+            finished[item.state] = true;
+            let here = search.cost[item.state];
+            let turn = (item.state / 4 == goal.vertex)
+                .then(|| goal.turn(DIRS[item.state % 4], scene.params.bend))
+                .flatten();
             if let Some(turn) = turn {
-                push(&mut queue, here + turn + goal.paid, item.state, true);
+                search.push(here + turn + goal.paid, item.state, true);
             }
-        }
-        for dir in DIRS {
-            if dir == arrived.reverse() {
-                continue;
-            }
-            let Some(next) = grid.step(vertex, dir) else {
-                continue;
-            };
-            let mut step = distance(grid.point(vertex), grid.point(next));
-            if dir != arrived {
-                step += params.bend;
-            } else if vertex != start.vertex && taken.crosses(vertex, dir) {
-                step += params.crossing;
-            }
-            let state = next * 4 + dir as usize;
-            if here + step < cost[state] {
-                cost[state] = here + step;
-                prev[state] = item.state;
-                push(&mut queue, here + step + heuristic(next), state, false);
-            }
+            search.step_on(item.state, here);
         }
     }
     None
