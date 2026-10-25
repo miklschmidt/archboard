@@ -3,9 +3,11 @@ id: TASK-537.01
 title: >-
   The Board tab lists the board's pass-through entry points, and a result asks
   the agent the deletion question
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-25T17:03:00Z'
+updated_date: '2026-10-25T17:11:00Z'
 labels:
   - design-questions
   - ui
@@ -32,3 +34,15 @@ It also adds the way a pane asks the agent a question. Today only the diagnostic
 - [ ] #5 The answer type holds counts and lists only, so nothing in it can hold a score
 - [ ] #6 On Command interface, the region lists the 13 pass-through entry points of Commands
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Boards: Board viewer@TASK-537.01 adds List design questions and Pane ask under Stage and reads, with four relationships. Browser application@TASK-537.01 adds Pane ask under Board drawing, two relationships, and widens the activation label of Application composition -> Shown conversation.
+2. packages/board: passThroughEntryPoints(content) beside inspectContainer, exported through @archboard/board/container-interface, with a unit test.
+3. Pane ask: hooks/application/use-ask-from-pane.ts activates the pane's checkout, refreshes the transport and asks; the diagnostics bell uses it too. PaneViewSources gains ask, null on a recording page. ApplicationPane provides PaneAskContext (state/semantic-board-canvas/pane-ask.ts), and hooks/semantic-board-canvas/use-pane-ask.ts reads it.
+4. rules/semantic-board-canvas/board/deletion-question.ts builds the message: -C vault, --url, board, variant, part id and name, change nothing.
+5. components/semantic-board-canvas/DesignQuestions.tsx: a Board tab region between the reading region and the key. One question with its count, rows by container and part. Hover lights, choosing shows the part, Ask the agent only where the pane has an ask.
+6. Tests: the board rule; a rendered stage-harness test of the region (count, rows, choose picks, ask sends one message naming the ids, no control without an ask); the message builder by ids and flags, not wording.
+7. Update the Board tab region lists in docs/design/operator-canvas-shell.md and pane-sidebar-hierarchy.md and in the SemanticBoardPanel header.
+<!-- SECTION:PLAN:END -->

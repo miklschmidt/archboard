@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 137,
+	"version": 131,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-25T05:16:39.387Z",
+	"updatedAt": "2026-10-25T17:10:50.461Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -52394,11 +52394,11 @@
 			}
 		},
 		{
-			"id": "kUIUiTmt",
-			"name": "TASK-532",
-			"lifecycle": "current",
+			"id": "z4FvahFF",
+			"name": "TASK-537.01",
+			"lifecycle": "draft",
 			"parent": "XhomNCU5",
-			"summary": "How a pane reads one board from the server, draws it in the page, keeps the camera and what somebody picked out, follows a card's drill-down and reads the board again when it changes. It owns presentation and holds board content only as a read-only cache.",
+			"summary": "The Board tab lists the board's pass-through entry points, and a result asks the agent the deletion question",
 			"content": {
 				"nodes": [
 					{
@@ -52488,12 +52488,12 @@
 						"order": 8000,
 						"name": "Follow drill-downs",
 						"kind": "function",
-						"responsibility": "Reads where a card's drill-down leads, one way for the inspector's Open and the card's double-click",
-						"description": "Finds the vault the target board is in (this one, or the chosen checkout of the repository the link names, read from this vault's listing first), reads the target board there and picks the variant the link names, by a name it has or had. A named variant that is not there is reported, never swapped for the current one. The inspector subscribes to the reading and hears the target board change under the name it goes by now; the double-click asks once and gets a promise.",
+						"responsibility": "Navigate linked board levels, in this vault or another repository's",
+						"description": "Decides where a link lies: the vault it is drawn in, the vault of the chosen checkout of the repository it names, or nowhere this machine can read (not listed, or a checkout that is gone or has no vault). Resolves the exact current or named target variant against the target board's document and says its lifecycle before it is opened; a named variant that is gone is reported, never swapped for the current one.",
 						"parent": "9L5uHzND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts"
+							"path": "apps/web/src/ui/rules/semantic-board-canvas/drilling/drill-target.ts"
 						}
 					},
 					{
@@ -52517,8 +52517,8 @@
 						"order": 10000,
 						"name": "Refresh changed boards",
 						"kind": "function",
-						"responsibility": "Hears the server's news of a board the pane reads and reports it as a changed board",
-						"description": "Hears a board's new version, with the vault it was written in, from the pane socket. For the board on screen in that vault, or the board a drill-down target reads, either by a name it had before a rename, it reports one changed board to the refresh module and names no cache key.",
+						"responsibility": "Invalidate live cached drawings",
+						"description": "Hears a board's new version, with the vault it was written in, from the pane socket and, for the board on screen in that vault (or a name it had before a rename), cancels its reads in flight and invalidates its pictures and its document, keeping the last usable picture on screen.",
 						"parent": "kr46TVLf",
 						"groups": [
 							"panes"
@@ -52594,8 +52594,8 @@
 						"order": 15000,
 						"name": "Semantic queries",
 						"kind": "function",
-						"responsibility": "The query options and freshness of the listing, a board's document, a picture and a board's locality",
-						"description": "No timer: a picture and a document stay fresh until their board announces a new version, and are read again on a reconnect. The last picture of the same board stays as the placeholder while another reading of it is drawn. A board's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a board of the same name. A listing it reads is handed to the refresh module, which reads again what moved since.",
+						"responsibility": "The cache keys and freshness of the listing, a board's document, a picture and a board's locality",
+						"description": "No timer: a picture and a document stay fresh until their board announces a new version, and are read again on a reconnect. The last picture of the same board stays as the placeholder while another reading of it is drawn. A board's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a board of the same name: a board's news invalidates the keys of its own vault only.",
 						"parent": "kr46TVLf",
 						"groups": [
 							"drawing"
@@ -52745,7 +52745,7 @@
 						"name": "Walkthrough replay",
 						"kind": "module",
 						"responsibility": "Mounts one viewer on a recorded talk and steps it frame by frame",
-						"description": "The page a recording's picture is rendered in (drawn on Browser application and Board rasterizer). The walkthrough package publishes the page's side of the contract, so it reads the talk and its options, hands this page the parsed talk and answers how many frames the talk renders to. Loading a talk points the board reads at it, installs the stepped clock and mounts the viewer on the talk's board, its step driven by the talk. A talk recorded with --against has every picture it draws read against that variant.",
+						"description": "The page a recording's picture is rendered in (drawn on Browser application and Board rasterizer). Loading a talk points the board reads at it, installs the stepped clock and mounts the viewer on the talk's board, its step driven by the talk. A talk recorded with --against has every picture it draws read against that variant.",
 						"groups": [
 							"walkthrough"
 						],
@@ -53015,8 +53015,8 @@
 						"order": 45000,
 						"name": "Open a card's board",
 						"kind": "function",
-						"responsibility": "Opens the board one level down from a double-clicked card when its drill-down leads somewhere, unless the reader moved on before the answer came",
-						"description": "Asks the one drill-down reading where the card's link leads, once. A target that leads nowhere opens nothing: the inspector beside the picture reads the same target and says why.",
+						"responsibility": "Opens the board one level down from a card, in its own vault or in the vault of the repository the link names",
+						"description": "Finds where the link lies, reads the target there, and opens the variant the link names. A link into a repository this machine cannot read opens nothing, and the inspector says why.",
 						"parent": "9L5uHzND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -53140,43 +53140,30 @@
 						}
 					},
 					{
-						"id": "OeUYLDxp",
+						"id": "yTXmrBkt",
 						"order": 57000,
-						"name": "Board refresh",
-						"kind": "module",
-						"responsibility": "Decides which readings a report makes stale, under every name the tab asked a board by, and in what order",
-						"description": "Callers report what happened: a board changed, boards of a vault were written or let go, a listing may have moved, a vault's policy changed, the socket came back or a person asked for everything again. Reads in flight are cancelled first, so an answer decided before the event never lands as fresh, then a board's document is marked before its pictures, because a picture reads its board the moment it is asked for again. A reading asked by another spelling of the board, or by a name it had before a rename, is read again too.",
+						"name": "List design questions",
+						"kind": "function",
+						"responsibility": "Lists the board's design questions in the Board tab, and shows or asks the agent about a result",
+						"description": "Reads the variant on screen and lists each entry point that only passes one call on, under its container. A row lights its part while the pointer rests on it, shows it on the picture when chosen, and asks the agent of the pane's checkout what deleting it would cost. A question, never a verdict (ADR 0044).",
 						"parent": "kr46TVLf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts"
+							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
+							"symbol": "DesignQuestions"
 						}
 					},
 					{
-						"id": "nMKLaMje",
+						"id": "AXAHSL3d",
 						"order": 58000,
-						"name": "Board cache keys",
+						"name": "Pane ask",
 						"kind": "function",
-						"responsibility": "The cache keys of the semantic-board resources, spelled once, and the one reading of a cached key back into the board it names",
-						"description": "Private to the reads folder: the queries subscribe under these keys and the refresh module decides which go stale. Nothing outside it names a key or decodes one, so the layout can change here alone.",
+						"responsibility": "Hands a reader the question its pane can ask the agent, or nothing on a page with no agent",
 						"parent": "kr46TVLf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts"
-						}
-					},
-					{
-						"id": "kCxSbcFL",
-						"order": 59000,
-						"name": "Pane chrome",
-						"kind": "function",
-						"responsibility": "The shell's parts of the pane's header, which the stage lays out in its own header",
-						"description": "The pane's letter while two panes share the centre, its own controls, what the shell says about the pane (an agent's claim), whether another pane shares the centre and whether this pane has focus. The shell decides what they are; the stage decides where its header puts them. A pane outside the shell, such as a recording page's, has none.",
-						"parent": "kr46TVLf",
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-chrome.ts",
-							"symbol": "usePaneChrome"
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-ask.ts",
+							"symbol": "usePaneAsk"
 						}
 					}
 				],
@@ -53290,7 +53277,7 @@
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+							"path": "apps/web/src/ui/rules/semantic-board-canvas/drilling/drill-target.ts",
 							"symbol": "readBoard"
 						}
 					},
@@ -53326,14 +53313,14 @@
 						"id": "xpOUXS7t",
 						"order": 12000,
 						"from": "VC7yvPZB",
-						"to": "OeUYLDxp",
+						"to": "TK7SUGoc",
 						"kind": "call",
-						"label": "one changed board, in this vault",
+						"label": "cancel, then read again the board announced in this vault",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
-							"symbol": "boardChanged"
+							"symbol": "semanticBoardKeys"
 						}
 					},
 					{
@@ -53525,12 +53512,12 @@
 						"from": "3KqRuOEN",
 						"to": "yUjSLnkw",
 						"kind": "call",
-						"label": "where the inspector's Open leads, kept up to date",
+						"label": "resolve a link before following it",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/semantic-board-canvas/GoDeeper.tsx",
-							"symbol": "useDrillTarget"
+							"symbol": "resolveDrillDown"
 						}
 					},
 					{
@@ -54274,11 +54261,11 @@
 						"from": "3KqRuOEN",
 						"to": "VC7yvPZB",
 						"kind": "call",
-						"description": "The inspector reads its board on the same terms as the picture and hears it change, so what it explains is read again.",
+						"description": "A card that opens another board hears that board change, so its picture is read again.",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/GoDeeper.tsx",
 							"symbol": "useSemanticBoardChanges"
 						}
 					},
@@ -54582,39 +54569,39 @@
 						"from": "2YI34Bnu",
 						"to": "yUjSLnkw",
 						"kind": "call",
-						"label": "where the double-click leads, asked once",
+						"label": "resolve the link against the target board",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
-							"symbol": "useDrillTargetReader"
+							"symbol": "resolveDrillDown"
 						}
 					},
 					{
 						"id": "61t3maku",
 						"order": 105000,
-						"from": "yUjSLnkw",
+						"from": "2YI34Bnu",
 						"to": "TK7SUGoc",
 						"kind": "call",
 						"label": "the target board's document, in the vault it is in",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 							"symbol": "semanticBoardDocumentQuery"
 						}
 					},
 					{
 						"id": "1mkfOmRs",
 						"order": 106000,
-						"from": "yUjSLnkw",
+						"from": "2YI34Bnu",
 						"to": "51hijVQY",
 						"kind": "call",
 						"label": "the vault the target is read in",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 							"symbol": "usePaneVault"
 						}
 					},
@@ -54691,14 +54678,14 @@
 					{
 						"id": "1YBYgVBE",
 						"order": 112000,
-						"from": "yUjSLnkw",
+						"from": "2YI34Bnu",
 						"to": "bpT0We3s",
 						"kind": "call",
 						"label": "the vault of the repository a link names",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 							"symbol": "RepositoryPlacesContext"
 						}
 					},
@@ -54829,157 +54816,59 @@
 						}
 					},
 					{
-						"id": "51taDpRp",
+						"id": "fN2CeIO6",
 						"order": 122000,
-						"from": "OeUYLDxp",
-						"to": "nMKLaMje",
-						"kind": "call",
-						"label": "every reading the tab holds, and the names it asked by",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-							"symbol": "cachedReadings"
-						}
-					},
-					{
-						"id": "p9gP1ZtC",
-						"order": 123000,
-						"from": "TK7SUGoc",
-						"to": "nMKLaMje",
-						"kind": "data",
-						"label": "the keys its queries subscribe under",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-							"symbol": "semanticBoardKeys"
-						}
-					},
-					{
-						"id": "GNx2x7VX",
-						"order": 124000,
-						"from": "TK7SUGoc",
-						"to": "OeUYLDxp",
-						"kind": "call",
-						"label": "a listing: read again what moved since",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-							"symbol": "boardsListed"
-						}
-					},
-					{
-						"id": "tpK411FR",
-						"order": 125000,
-						"from": "IJkVbMK2",
-						"to": "OeUYLDxp",
-						"kind": "call",
-						"label": "mark a board stale, with no read, before drawing ahead",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-							"symbol": "boardGoneStale"
-						}
-					},
-					{
-						"id": "ld2PjHvA",
-						"order": 126000,
-						"from": "IJkVbMK2",
-						"to": "nMKLaMje",
-						"kind": "call",
-						"label": "every picture and document held, by view",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-							"symbol": "cachedReadings"
-						}
-					},
-					{
-						"id": "4Dov0K46",
-						"order": 127000,
-						"from": "SduOZmuI",
-						"to": "OeUYLDxp",
-						"kind": "call",
-						"label": "boards written or let go, listings, repositories, a reload",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
-							"symbol": "boardsChanged"
-						}
-					},
-					{
-						"id": "WXHpoWFo",
-						"order": 128000,
-						"from": "j9uyTKyA",
-						"to": "OeUYLDxp",
-						"kind": "call",
-						"label": "a vault's policy changed: draw its pictures again",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts",
-							"symbol": "policyChanged"
-						}
-					},
-					{
-						"id": "XFDnxQCC",
-						"order": 129000,
-						"from": "aYC7if1N",
-						"to": "kCxSbcFL",
-						"kind": "call",
-						"label": "does another pane share the centre",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
-							"symbol": "usePaneChrome"
-						}
-					},
-					{
-						"id": "QPqsk43l",
-						"order": 130000,
 						"from": "3KqRuOEN",
-						"to": "kCxSbcFL",
-						"kind": "call",
-						"label": "the pane's letter, controls, notice and focus",
+						"to": "yTXmrBkt",
+						"kind": "render",
+						"label": "the Board tab's design questions",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
-							"symbol": "usePaneChrome"
+							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardPanel.tsx",
+							"symbol": "DesignQuestions"
 						}
 					},
 					{
-						"id": "X1i20uYe",
-						"order": 131000,
-						"from": "yUjSLnkw",
-						"to": "VC7yvPZB",
+						"id": "GKHPCh1f",
+						"order": 123000,
+						"from": "yTXmrBkt",
+						"to": "bofpU6mt",
 						"kind": "call",
-						"label": "hear the target board change, by the name it has now",
-						"emphasis": "muted",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-							"symbol": "useSemanticBoardChanges"
-						}
-					},
-					{
-						"id": "N9rPOyGF",
-						"order": 132000,
-						"from": "nMKLaMje",
-						"to": "tmwUm8BL",
-						"kind": "call",
-						"label": "the comparison part of a drawing's key",
+						"label": "light a result",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts",
-							"symbol": "comparisonKey"
+							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
+							"symbol": "usePeekControl"
+						}
+					},
+					{
+						"id": "YtfTCwJR",
+						"order": 124000,
+						"from": "yTXmrBkt",
+						"to": "AXAHSL3d",
+						"kind": "call",
+						"label": "ask what deleting a part costs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
+							"symbol": "usePaneAsk"
+						}
+					},
+					{
+						"id": "jNZR44Ra",
+						"order": 125000,
+						"from": "xJIh6Jdp",
+						"to": "AXAHSL3d",
+						"kind": "call",
+						"label": "provides the ask of the pane's checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "PaneAskContext"
 						}
 					}
 				],
@@ -55270,8 +55159,6 @@
 							"J6P3Mhjb",
 							"bx5fJdP8",
 							"VC7yvPZB",
-							"OeUYLDxp",
-							"nMKLaMje",
 							"TK7SUGoc",
 							"IJkVbMK2"
 						],
@@ -55316,49 +55203,13 @@
 													{
 														"id": "QUMAWrm1",
 														"from": "VC7yvPZB",
-														"to": "OeUYLDxp",
-														"label": "one changed board, in this vault",
+														"to": "TK7SUGoc",
+														"label": "cancel reads, mark the document and pictures stale",
 														"kind": "sync",
 														"anchor": {
 															"repo": "github.com/miklschmidt/archboard",
 															"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
-															"symbol": "boardChanged"
-														}
-													},
-													{
-														"id": "elCUsFdx",
-														"from": "OeUYLDxp",
-														"to": "nMKLaMje",
-														"label": "the readings held, by every name the board was asked by",
-														"kind": "sync",
-														"anchor": {
-															"repo": "github.com/miklschmidt/archboard",
-															"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-															"symbol": "cachedReadings"
-														}
-													},
-													{
-														"id": "xNqTessT",
-														"from": "OeUYLDxp",
-														"to": "OeUYLDxp",
-														"label": "cancel reads in flight; documents stale before pictures",
-														"kind": "self",
-														"anchor": {
-															"repo": "github.com/miklschmidt/archboard",
-															"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-															"symbol": "readAgain"
-														}
-													},
-													{
-														"id": "tTzVFTB7",
-														"from": "OeUYLDxp",
-														"to": "TK7SUGoc",
-														"label": "the readings on screen are read again",
-														"kind": "async",
-														"anchor": {
-															"repo": "github.com/miklschmidt/archboard",
-															"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-															"symbol": "readAgain"
+															"symbol": "readBoardAgain"
 														}
 													}
 												]
@@ -55387,13 +55238,13 @@
 							{
 								"id": "G0E10MvW",
 								"from": "IJkVbMK2",
-								"to": "OeUYLDxp",
-								"label": "mark the board's readings stale, with no read",
+								"to": "TK7SUGoc",
+								"label": "mark the document and its pictures stale",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-									"symbol": "boardGoneStale"
+									"symbol": "picturesToDrawAhead"
 								}
 							},
 							{
@@ -55448,9 +55299,9 @@
 						"participants": [
 							"3KqRuOEN",
 							"2YI34Bnu",
-							"yUjSLnkw",
 							"bpT0We3s",
 							"TK7SUGoc",
+							"yUjSLnkw",
 							"gIakrnWa",
 							"hc77pwzB",
 							"3KtX2jdA",
@@ -55478,33 +55329,21 @@
 										"label": "it links down",
 										"steps": [
 											{
-												"id": "hxvIUswS",
-												"from": "2YI34Bnu",
-												"to": "yUjSLnkw",
-												"label": "where the link leads, asked once",
-												"kind": "sync",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
-													"symbol": "readTarget"
-												}
-											},
-											{
 												"id": "X8DIQa8g",
-												"from": "yUjSLnkw",
+												"from": "2YI34Bnu",
 												"to": "bpT0We3s",
 												"label": "which vault each listed repository has",
 												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 													"symbol": "RepositoryPlacesContext"
 												}
 											},
 											{
 												"id": "zngsvVks",
 												"from": "bpT0We3s",
-												"to": "yUjSLnkw",
+												"to": "2YI34Bnu",
 												"label": "the repositories it lists",
 												"kind": "return",
 												"anchor": {
@@ -55523,20 +55362,20 @@
 														"steps": [
 															{
 																"id": "jY67brGD",
-																"from": "yUjSLnkw",
+																"from": "2YI34Bnu",
 																"to": "TK7SUGoc",
 																"label": "this vault's repository, from its board list",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 																	"symbol": "semanticBoardListQuery"
 																}
 															},
 															{
 																"id": "rPTJ3qWL",
 																"from": "TK7SUGoc",
-																"to": "yUjSLnkw",
+																"to": "2YI34Bnu",
 																"label": "the listing, with its repository",
 																"kind": "return",
 																"anchor": {
@@ -55554,15 +55393,27 @@
 												]
 											},
 											{
-												"id": "kQbTreOX",
-												"from": "yUjSLnkw",
+												"id": "hxvIUswS",
+												"from": "2YI34Bnu",
 												"to": "yUjSLnkw",
-												"label": "the vault the board is in, or why it cannot be read",
-												"kind": "self",
+												"label": "where the target board lies",
+												"kind": "sync",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
-													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-													"symbol": "placeOf"
+													"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+													"symbol": "drillPlace"
+												}
+											},
+											{
+												"id": "kQbTreOX",
+												"from": "yUjSLnkw",
+												"to": "2YI34Bnu",
+												"label": "its vault, or why it cannot be read",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/web/src/ui/rules/semantic-board-canvas/drilling/drill-target.ts",
+													"symbol": "drillPlace"
 												}
 											},
 											{
@@ -55576,20 +55427,20 @@
 														"steps": [
 															{
 																"id": "3g4p69YC",
-																"from": "yUjSLnkw",
+																"from": "2YI34Bnu",
 																"to": "TK7SUGoc",
 																"label": "the target board, in its vault",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
 																	"symbol": "semanticBoardDocumentQuery"
 																}
 															},
 															{
 																"id": "4AxKlNAx",
 																"from": "TK7SUGoc",
-																"to": "yUjSLnkw",
+																"to": "2YI34Bnu",
 																"label": "the board's document",
 																"kind": "return",
 																"anchor": {
@@ -55600,26 +55451,26 @@
 															},
 															{
 																"id": "inUvyM2C",
-																"from": "yUjSLnkw",
+																"from": "2YI34Bnu",
 																"to": "yUjSLnkw",
-																"label": "the variant the link names, by a name it has or had",
-																"kind": "self",
+																"label": "which variant the link opens",
+																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-																	"symbol": "variantOf"
+																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+																	"symbol": "resolveDrillDown"
 																}
 															},
 															{
 																"id": "73SmSd76",
 																"from": "yUjSLnkw",
 																"to": "2YI34Bnu",
-																"label": "the board and its variant, or why there is none",
+																"label": "the variant, or why there is none",
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
-																	"symbol": "readTarget"
+																	"path": "apps/web/src/ui/rules/semantic-board-canvas/drilling/drill-target.ts",
+																	"symbol": "resolveDrillDown"
 																}
 															},
 															{
@@ -57198,8 +57049,7 @@
 									"AaCxSfhT",
 									"F90402mH",
 									"tmwUm8BL"
-								],
-								"view": "We8qGFsb"
+								]
 							},
 							{
 								"id": "24TKcwIn",
@@ -57213,8 +57063,7 @@
 									"ntOE7caV",
 									"D6ZnKISi",
 									"JYR55KwD"
-								],
-								"view": "9f33sAfM"
+								]
 							},
 							{
 								"id": "PfoDtrad",
@@ -57225,10 +57074,8 @@
 									"z0dvHsUt",
 									"VcgeYlnZ",
 									"yUjSLnkw",
-									"VC7yvPZB",
-									"OeUYLDxp"
-								],
-								"view": "18xHEoAY"
+									"VC7yvPZB"
+								]
 							},
 							{
 								"id": "bSDKR6kZ",
@@ -57237,8 +57084,7 @@
 								"subjects": [
 									"gT3UJ3yd",
 									"xJIh6Jdp"
-								],
-								"view": "TeekAw1f"
+								]
 							},
 							{
 								"id": "mmzQH5te",
@@ -57250,8 +57096,7 @@
 									"XXTC3G6Y",
 									"GnoK0EuT",
 									"3iSHwOiM"
-								],
-								"view": "whO6GNeV"
+								]
 							}
 						]
 					}
