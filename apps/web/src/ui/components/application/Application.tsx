@@ -26,6 +26,7 @@ import {
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
 import { applyTheme, initialTheme } from "#ui/clients/application/theme.ts";
 import { usePaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
+import { usePaneLinks } from "#ui/hooks/application/use-pane-links.ts";
 import { usePaneViews } from "#ui/hooks/application/use-pane-views.ts";
 import { useSubtitleOverlay } from "#ui/hooks/application/use-subtitle-overlay.ts";
 import { useReleasedBoards } from "#ui/hooks/application/use-released-boards.ts";
@@ -300,7 +301,8 @@ function ApplicationBody(): JSX.Element {
 		useCallback(() => openingPaneList(opening), [opening]),
 		recordedMedia(recorder),
 	);
-	const paneReadings = usePaneReadings();
+	const links = usePaneLinks(panes.records, panes.list);
+	const paneReadings = usePaneReadings(links);
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
 	// Choosing a way of reading a board is the person's own move, so it is
@@ -429,6 +431,7 @@ function ApplicationBody(): JSX.Element {
 		panes,
 		theme,
 		readings,
+		links,
 		reducedMotion,
 		onVariantChange,
 		openBoard: selectBoard,

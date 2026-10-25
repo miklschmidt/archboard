@@ -11,9 +11,15 @@
 // state — two panes can read one board two ways at once, and neither choice
 // touches the board (ADR 0023) — so they live here, and go to the server only
 // as context an agent can be grounded in.
+//
+// Two linked panes share a pick (TASK-538.02): the person picks a part in one,
+// and the other picks it too. Only the pane they picked in tells the server
+// that the person changed it (ADR 0034), because only that pane marks it.
 
 import { useCallback, useMemo, useState } from "react";
 
+import type { SemanticSubjectRef } from "@archboard/board/pane-context";
+import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
 import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
@@ -47,11 +53,17 @@ interface PaneReadings {
 	 */
 	readonly pickedIn: (paneId: string) => PickedSubject | null;
 	/**
-	 * The person picked a subject out, or cleared the selection.
+	 * The person picked a subject out, or cleared the selection, in one pane and
+	 * in the pane linked to it.
 	 * @param paneId The pane.
 	 * @param subject The subject, or null.
 	 */
 	readonly pick: (paneId: string, subject: PickedSubject | null) => void;
+	/**
+	 * One pane left the board its pick was made on, so its pick goes, and only its own.
+	 * @param paneId The pane.
+	 */
+	readonly leave: (paneId: string) => void;
 	/**
 	 * A pane moved: clear its selection, retaining the view within one board.
 	 * @param paneId The pane.
@@ -90,19 +102,43 @@ function cleared<Value>(current: ByPane<Value>, paneId: string): ByPane<Value> {
 }
 
 /**
+ * The record with one pane's pick set, or let go.
+ * @param current What the panes hold now.
+ * @param paneId The pane.
+ * @param subject The subject, or null.
+ * @returns The record.
+ */
+function pickedAs(
+	current: ByPane<PickedSubject>,
+	paneId: string,
+	subject: PickedSubject | null,
+): ByPane<PickedSubject> {
+	return subject === null ? cleared(current, paneId) : held(current, paneId, subject);
+}
+
+/**
  * What each pane is reading.
+ * @param links Which panes are linked.
  * @returns The readings and the ways they change.
  */
-function usePaneReadings(): PaneReadings {
+function usePaneReadings(links: PaneLinks): PaneReadings {
 	const [views, setViews] = useState<ByPane<string>>(NONE);
 	const [picked, setPicked] = useState<ByPane<PickedSubject>>(NONE);
 	const showView = useCallback((paneId: string, view: string | null): void => {
 		setViews((current) => (view === null ? cleared(current, paneId) : held(current, paneId, view)));
 	}, []);
-	const pick = useCallback((paneId: string, subject: PickedSubject | null): void => {
-		setPicked((current) =>
-			subject === null ? cleared(current, paneId) : held(current, paneId, subject),
-		);
+	const pick = useCallback(
+		(paneId: string, subject: PickedSubject | null): void => {
+			const linked = links[paneId]?.paneId;
+			setPicked((current) => {
+				const here = pickedAs(current, paneId, subject);
+				return linked === undefined ? here : pickedAs(here, linked, subject);
+			});
+		},
+		[links],
+	);
+	const leave = useCallback((paneId: string): void => {
+		setPicked((current) => cleared(current, paneId));
 	}, []);
 	const boardChanged = useCallback(
 		(paneId: string, boardKey: string, previousKey: string | null): void => {
@@ -121,8 +157,8 @@ function usePaneReadings(): PaneReadings {
 		[picked],
 	);
 	return useMemo(
-		() => ({ viewOf, showView, pickedIn, pick, boardChanged }),
-		[viewOf, showView, pickedIn, pick, boardChanged],
+		() => ({ viewOf, showView, pickedIn, pick, leave, boardChanged }),
+		[viewOf, showView, pickedIn, pick, leave, boardChanged],
 	);
 }
 

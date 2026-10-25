@@ -257,6 +257,13 @@ Picking something out opens the selection tab. Letting go gives back the tab
 that was open before. The sidebar is one panel of one width whichever tab is
 open, so a pick never changes the size of the pane or moves the picture.
 
+Two panes on the same board of the same vault are linked. A part picked in one
+is picked in the other, and letting go clears both. Only the pane where the
+person picked tells the agent that the person changed it. A drill-down, another
+board or a presented walkthrough in either pane ends the link, and each pane
+keeps what it picked. A pane whose variant lacks the part names the variant
+beside that holds it, so a part that a proposal adds is not read as gone.
+
 Where the sidebar is depends on how many panes there are and on what the person
 asked for. One control, at the end of the pane's header, shows and hides it, in
 every state of the pane. It is filled while the sidebar is shown, and its tooltip

@@ -49,6 +49,9 @@ import {
 	type ReadingOnScreen,
 } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts";
+import { usePaneBeside } from "#ui/hooks/semantic-board-canvas/use-pane-beside.ts";
+import { missingNotice } from "#ui/rules/semantic-board-canvas/board/missing-pick.ts";
+import type { VariantBeside } from "#ui/state/semantic-board-canvas/pane-beside.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import { semanticBoardDocumentQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import {
@@ -423,6 +426,7 @@ function comparedSubject(
  * @param variant The id of the variant the drawing is of.
  * @param selection The picked semantic id.
  * @param overview Whether the drawing is the overview, whose joined lines are subjects of their own.
+ * @param beside What the linked pane shows, or null while the pane is not linked.
  * @returns The subject, or the words that stand in for it.
  */
 function explain(
@@ -431,6 +435,7 @@ function explain(
 	variant: string,
 	selection: string,
 	overview: boolean,
+	beside: VariantBeside | null,
 ): Explanation {
 	const { data: document } = read;
 	const nothing = {
@@ -470,7 +475,7 @@ function explain(
 			variant: shown.id,
 			version: reading.board.version,
 		},
-		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
+		notice: missingNotice(reading.board, shown, beside, selection),
 	};
 }
 
@@ -550,7 +555,8 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
 	useSemanticBoardChanges(vault, props.board);
-	const explained = explain(vault, document, props.variant, props.selection, props.overview);
+	const { variant, selection, overview } = props;
+	const explained = explain(vault, document, variant, selection, overview, usePaneBeside());
 	const { subject } = explained;
 	const code = codeOn(useCodeFindings(explained.on), explained.ids);
 

@@ -190,6 +190,11 @@ export interface PaneStatus {
 	 * and reopening it would ask for a view that board has not got.
 	 */
 	view: string | null;
+	/**
+	 * Whether the board on screen is read as a presented walkthrough, which ends
+	 * the link to the other pane (TASK-538.02).
+	 */
+	presenting: boolean;
 	/** When this pane last heard its board change. */
 	lastChangeAt: string | null;
 	/**

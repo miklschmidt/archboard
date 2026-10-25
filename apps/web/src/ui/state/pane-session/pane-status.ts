@@ -15,6 +15,7 @@ interface LivePaneStatus {
 	boardKey: string | null;
 	opened: string | null;
 	view: string | null;
+	presenting: boolean;
 	lastChangeAt: string | null;
 	doing: DoingEntry[];
 	version: number | null;
@@ -51,6 +52,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 		boardKey: null,
 		opened: null,
 		view: null,
+		presenting: false,
 		lastChangeAt: null,
 		doing: [],
 		version: null,
@@ -69,6 +71,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			boardKey: live.boardKey,
 			opened: live.opened,
 			view: live.view,
+			presenting: live.presenting,
 			lastChangeAt: live.lastChangeAt,
 			doing: live.doing,
 			version: live.version,

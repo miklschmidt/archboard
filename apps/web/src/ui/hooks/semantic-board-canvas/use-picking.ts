@@ -4,7 +4,8 @@
 // variant it was chosen on: a walk into another board, or to another state of
 // this one, drops it, while a change of view keeps it. Selecting a group
 // replaces what was picked out and leaves any guided reading; picking anything
-// out lets the group go, and so does an explanation opening, whoever opens it.
+// out lets the group go, and so does an explanation opening, whoever opens it,
+// and a part the linked pane picks (TASK-538.02).
 //
 // What was picked out is reported as what it is, not only as an id. The pane is
 // the one place that knows: it has the board open and has just drawn the thing.
@@ -30,6 +31,8 @@ interface PickingInputs {
 	readonly reading: VariantReading | null;
 	/** Whether a walkthrough is being read. */
 	readonly presenting: boolean;
+	/** Whether a part is picked out, by this pane or by the pane linked to it. */
+	readonly picked: boolean;
 	/**
 	 * Choose the walkthrough to read.
 	 * @param walkthrough Its id, or null to leave the one being read.
@@ -70,7 +73,11 @@ interface Picking {
  */
 function usePicking(inputs: PickingInputs): Picking {
 	const { board, reading, presenting, choose, onSelect } = inputs;
-	const grouped = useGroupSelection(board, reading === null ? null : reading.variant, presenting);
+	const grouped = useGroupSelection(
+		board,
+		reading === null ? null : reading.variant,
+		presenting || inputs.picked,
+	);
 	const chooseGroup = grouped.choose;
 	const held = reading?.subject;
 	const onPick = useCallback(

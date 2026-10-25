@@ -72,6 +72,12 @@ One of several side-by-side slots, each holding its own canvas, so that two
 boards can be worked on at once.
 _Avoid_: split, view, tab, panel, frame, window
 
+**Linked panes**:
+Two panes that show the same board of the same vault while neither presents a
+walkthrough. A part picked in one is picked in the other, and letting go clears
+both. A drill-down or another board in either pane ends the link.
+_Avoid_: synced panes, mirrored panes
+
 **User**:
 Whoever is reading the canvas and talking to it. A user reads, picks things out
 and speaks; agents author.

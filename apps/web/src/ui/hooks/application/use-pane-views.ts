@@ -14,6 +14,7 @@ import {
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
+import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
@@ -39,6 +40,8 @@ interface PaneViewSources {
 	readonly theme: PaneTheme;
 	/** What each pane is reading, and how that changes. */
 	readonly readings: PaneReadings;
+	/** Which panes are linked (TASK-538.02). */
+	readonly links: PaneLinks;
 	readonly reducedMotion: boolean;
 	/**
 	 * The person asked for another variant of one pane's board.
@@ -102,6 +105,10 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function pickHere(subject: PickedSubject | null): void {
 		readings.pick(paneId, subject);
 	}
+	/** This pane left the board its pick was made on. */
+	function leaveHere(): void {
+		readings.leave(paneId);
+	}
 	/**
 	 * The person asked for a different state of this pane's architecture.
 	 * @param variant The variant's id or name, or null for whichever is current.
@@ -130,6 +137,8 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		onViewChange: readThrough,
 		picked: readings.pickedIn(paneId),
 		onPick: pickHere,
+		onLeave: leaveHere,
+		beside: sources.links[paneId] ?? null,
 		onVariantChange: showVariantHere,
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
@@ -187,6 +196,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		panes,
 		theme,
 		readings,
+		links,
 		reducedMotion,
 		onVariantChange,
 		narration,
@@ -204,6 +214,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					panes: { list, callbacks, handles },
 					theme,
 					readings,
+					links,
 					reducedMotion,
 					onVariantChange,
 					narration,
@@ -223,6 +234,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		handles,
 		theme,
 		readings,
+		links,
 		reducedMotion,
 		onVariantChange,
 		narration,

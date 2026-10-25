@@ -109,6 +109,10 @@ const NO_READINGS: PaneReadings = Object.freeze({
 	pick: (): void => {
 		// A caller with no readings has nothing to pick.
 	},
+	/** Nothing to leave. */
+	leave: (): void => {
+		// A caller with no readings has no pick to let go of.
+	},
 	/** Nothing to forget. */
 	boardChanged: (): void => {
 		// A caller with no readings has nothing held against a board.

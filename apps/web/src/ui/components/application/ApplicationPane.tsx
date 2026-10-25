@@ -36,6 +36,10 @@ import {
 } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { NoBoardHeader } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
 import { PaneAskContext, type PaneAsk } from "#ui/state/semantic-board-canvas/pane-ask.ts";
+import {
+	PaneBesideContext,
+	type VariantBeside,
+} from "#ui/state/semantic-board-canvas/pane-beside.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
 import {
@@ -78,6 +82,10 @@ interface ApplicationPaneProps {
 	 * @param subject The subject, or null.
 	 */
 	onPick: (subject: PickedSubject | null) => void;
+	/** The pane left the board its pick was made on: the pick goes, in this pane only. */
+	onLeave: () => void;
+	/** What the pane linked to this one shows, or null while it is not linked (TASK-538.02). */
+	beside: VariantBeside | null;
 	/**
 	 * The person asked for another variant of the board this pane is showing.
 	 * @param variant The variant's id or name, or null for whichever is current.
@@ -257,16 +265,18 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				// question it asks goes to the agent of that vault's checkout (ADR 0050).
 				<PaneVaultContext value={vault}>
 					<PaneAskContext value={props.ask ?? null}>
-						<PaneDiagram
-							address={address}
-							arrival={session.arrivals}
-							openCode={session.openCode}
-							onReading={showReading}
-							onUserChanged={session.userChanged}
-							driven={props.step ?? asked}
-							shown={onScreen?.board ?? null}
-							{...props}
-						/>
+						<PaneBesideContext value={props.beside}>
+							<PaneDiagram
+								address={address}
+								arrival={session.arrivals}
+								openCode={session.openCode}
+								onReading={showReading}
+								onUserChanged={session.userChanged}
+								driven={props.step ?? asked}
+								shown={onScreen?.board ?? null}
+								{...props}
+							/>
+						</PaneBesideContext>
 					</PaneAskContext>
 				</PaneVaultContext>
 			)}
@@ -331,7 +341,7 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { shown, onOpenBoard: openBoard } = props;
+	const { shown, onOpenBoard: openBoard, onLeave: leave } = props;
 	const { boards, outline } = useVaultBoards(usePaneVault());
 	const { places, dive } = useDrillRepositories(openBoard);
 	const onOpenBoard = useCallback(
@@ -379,6 +389,12 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		},
 		[onPick, onUserChanged],
 	);
+	// Leaving the board lets the pick go by the person's hand too, but in this pane only:
+	// the pane linked to it keeps its own (TASK-538.02).
+	const onLeave = useCallback((): void => {
+		onUserChanged("selection");
+		leave();
+	}, [leave, onUserChanged]);
 	const onView = useCallback(
 		(next: string | null): void => {
 			onUserChanged("view");
@@ -402,6 +418,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 				onViewChange={onView}
 				selection={picked === null ? null : picked.id}
 				onSelect={onSelect}
+				onLeave={onLeave}
 				onUserChanged={onUserChanged}
 				onOpenCode={onOpenCode}
 				onReading={props.onReading}

@@ -35,11 +35,8 @@ interface DrillMovesInputs {
 	readonly picked: string | null;
 	/** The view the shell has the pane read its own board through. */
 	readonly ownView: string | undefined;
-	/**
-	 * Clear the selection.
-	 * @param id Nothing is selected.
-	 */
-	readonly onSelect: (id: null) => void;
+	/** Let the pick go, because the pane leaves the board it was made on. */
+	readonly onLeave: () => void;
 	/** The user changed a part of the reading by hand that the shell hears of no other way. */
 	readonly onUserChanged: ((part: SemanticPanePart) => void) | undefined;
 }
@@ -92,7 +89,7 @@ function levelAbove(
  * @returns Following a drill-down, and going back.
  */
 function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
-	const { drill, flier, leave, picked, ownView, onSelect, onUserChanged } = inputs;
+	const { drill, flier, leave, picked, ownView, onLeave, onUserChanged } = inputs;
 	const { into, out } = flier;
 	const above = useMemo(() => levelAbove(drill, ownView), [drill, ownView]);
 	const onOpenDown = useCallback<OpenDown>(
@@ -101,25 +98,25 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 			// pane and tells everybody; the pane reports nothing of its own here.
 			if (there !== undefined) {
 				leave("into", picked);
-				onSelect(null);
+				onLeave();
 				drill.open(board, variant, there);
 				return;
 			}
 			into(picked, { board, variant }, () => {
 				leave("into", picked);
-				onSelect(null);
+				onLeave();
 				onUserChanged?.("board");
 				drill.open(board, variant);
 			});
 		},
-		[drill, into, leave, onSelect, onUserChanged, picked],
+		[drill, into, leave, onLeave, onUserChanged, picked],
 	);
 	const onBackTo = useCallback(
 		(depth: number): void => {
 			/** Go back the plain way. */
 			const proceed = (): void => {
 				leave("out");
-				onSelect(null);
+				onLeave();
 				// A move the shell makes for it is announced by the shell, and a back that
 				// leaves the board on screen where it is changed nothing to report.
 				if (drill.backTo(depth)) onUserChanged?.("board");
@@ -130,7 +127,7 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 			}
 			out(above, proceed);
 		},
-		[above, drill, leave, onSelect, onUserChanged, out],
+		[above, drill, leave, onLeave, onUserChanged, out],
 	);
 	return { onOpenDown, onBackTo };
 }

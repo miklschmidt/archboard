@@ -491,29 +491,32 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function readingChanged(next: PaneReading): void {
 		if (next.board === null) {
-			readingThrough(null);
+			readingThrough(null, false);
 			reading.publish(NOTHING_READ);
 			return;
 		}
 		showing(next.board.key);
-		readingThrough(next.view?.id ?? null);
+		readingThrough(next.view?.id ?? null, (next.presentation ?? null) !== null);
 		reading.publish(next);
 	}
 
 	/**
-	 * The board on screen is being read through this view, or through none.
+	 * The board on screen is being read through this view, or through none, and
+	 * as a presented walkthrough or not.
 	 *
 	 * Said by the pane rather than remembered by the shell, because the shell's
 	 * memory is about the board it pointed this pane at and the pane may be a
 	 * level below that. A board arriving with nothing chosen on it clears this,
 	 * which is what keeps a view id from outliving the variant it names.
 	 * @param view The view's id, or null for the whole variant.
+	 * @param presenting Whether a walkthrough is presented.
 	 */
-	function readingThrough(view: string | null): void {
-		if (status.view === view) {
+	function readingThrough(view: string | null, presenting: boolean): void {
+		if (status.view === view && status.presenting === presenting) {
 			return;
 		}
 		status.view = view;
+		status.presenting = presenting;
 		publishStatus();
 	}
 

@@ -12,7 +12,8 @@
 // resurrecting the old choice. A change of view keeps it, because a view
 // narrows the picture and not the group. A group the variant stops using is
 // let go too, since the list no longer offers it to let go of, and so is a
-// group when a walkthrough opens, whoever opened it: the picture says one of
+// group when a walkthrough opens or a part is picked out, whoever opened or
+// picked it, the linked pane included (TASK-538.02): the picture says one of
 // the two at a time.
 //
 // What the choice selects is derived here too, from the board document, so
@@ -81,22 +82,22 @@ function chosenHere(
 
 /**
  * Whether the remembered choice is over: navigation left it, the variant no
- * longer uses the group, or a walkthrough opened. A variant still loading
- * ends nothing.
+ * longer uses the group, or a walkthrough or a pick took its place. A variant
+ * still loading ends nothing.
  * @param place The remembered choice.
  * @param board The board now shown.
  * @param variant The variant now shown, or null while the document loads.
- * @param presenting Whether a walkthrough is open.
+ * @param displaced Whether a walkthrough is open or a part is picked out.
  * @returns Whether to forget the choice for good.
  */
 function choiceOver(
 	place: GroupPlace | null,
 	board: string,
 	variant: SemanticVariant | null,
-	presenting: boolean,
+	displaced: boolean,
 ): boolean {
 	if (place === null) return false;
-	if (presenting || place.board !== board) return true;
+	if (displaced || place.board !== board) return true;
 	return (
 		variant !== null &&
 		(place.variant !== variant.id || !groupsUsed(variant.content).includes(place.group))
@@ -108,19 +109,19 @@ function choiceOver(
  * and what that selects.
  * @param board The board on screen.
  * @param variant The variant on screen, whole, or null while it has not arrived.
- * @param presenting Whether a walkthrough is open.
+ * @param displaced Whether a walkthrough is open or a part is picked out.
  * @returns The names, the choices, the selection and the one way to change it.
  */
 function useGroupSelection(
 	board: string,
 	variant: SemanticVariant | null,
-	presenting: boolean,
+	displaced: boolean,
 ): GroupSelectionState {
 	const shown = variant === null ? null : variant.id;
 	const policy = useQuery(vaultCheckQuery(usePaneVault()));
 	const names = policy.data === undefined ? NO_GROUP_NAMES : policy.data.policy.groups;
 	const [place, setPlace] = useState<GroupPlace | null>(null);
-	if (choiceOver(place, board, variant, presenting)) {
+	if (choiceOver(place, board, variant, displaced)) {
 		setPlace(null);
 	}
 	const group = chosenHere(place, board, shown);

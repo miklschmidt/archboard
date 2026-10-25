@@ -127,6 +127,12 @@ interface SemanticBoardStageProps {
 	 * @param id The semantic id, or null.
 	 */
 	onSelect: (id: string | null, subject?: SelectedSubject) => void;
+	/**
+	 * The pane leaves the board its pick was made on, by a drill-down or back out:
+	 * the pick goes in this pane only, where the linked pane keeps its own
+	 * (TASK-538.02). Without it, leaving lets the pick go as the person would.
+	 */
+	onLeave?: (() => void) | undefined;
 	/** The user changed a part of the reading by hand that the shell hears of no other way. */
 	onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
 	/**
@@ -225,7 +231,11 @@ interface BoardReadingProps extends SemanticBoardStageProps {
  */
 const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.Element {
 	const { resting, ...stage } = props;
-	const { board, variant, onSelect, onUserChanged } = props;
+	const { board, variant, onSelect, onUserChanged, onLeave } = props;
+	const leavePick = useCallback((): void => {
+		if (onLeave === undefined) onSelect(null);
+		else onLeave();
+	}, [onLeave, onSelect]);
 	const [comparison, onComparisonChange] = useState(true);
 	const vault = usePaneVault();
 	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
@@ -323,6 +333,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		board: drill.board,
 		reading,
 		presenting: narrative.open !== null,
+		picked: props.selection !== null,
 		choose,
 		onSelect,
 	});
@@ -385,7 +396,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		leave: departure.leave,
 		picked: props.selection,
 		ownView: props.view,
-		onSelect,
+		onLeave: leavePick,
 		onUserChanged,
 	});
 
