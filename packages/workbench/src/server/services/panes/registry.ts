@@ -1,11 +1,7 @@
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
-import {
-	addressablePanes,
-	panesInOrder,
-	resolvePane,
-} from "@archboard/server-lifecycle/panes";
+import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { statedVariant } from "@archboard/board/address";

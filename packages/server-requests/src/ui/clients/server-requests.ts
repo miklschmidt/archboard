@@ -213,11 +213,4 @@ async function strictReply<T, F>(
 	}
 }
 
-export {
-	inVault,
-	learnServedVault,
-	requestJson,
-	servedVault,
-	strictReply,
-	type ReplySchema,
-};
+export { inVault, learnServedVault, requestJson, servedVault, strictReply, type ReplySchema };

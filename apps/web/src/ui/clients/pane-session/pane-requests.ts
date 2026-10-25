@@ -165,7 +165,10 @@ function showConversation(
 	vault: string,
 	request: ShownConversationRequest,
 ): Promise<ShownConversationReply> {
-	return requestJson(inVault(SHOWN_CONVERSATION_ROUTE, vault), { method: "POST", payload: request });
+	return requestJson(inVault(SHOWN_CONVERSATION_ROUTE, vault), {
+		method: "POST",
+		payload: request,
+	});
 }
 
 export {

@@ -356,10 +356,7 @@ function startFailureOf(spawned: SpawnedServer, deferred: DeferredFailure): Erro
  * @param timeoutMs How long readiness may take.
  * @returns The server URL once it answers as itself.
  */
-async function awaitServerReadiness(
-	spawned: SpawnedServer,
-	timeoutMs: number,
-): Promise<Reached> {
+async function awaitServerReadiness(spawned: SpawnedServer, timeoutMs: number): Promise<Reached> {
 	const deadline = Date.now() + timeoutMs;
 	const deferred: DeferredFailure = { failure: null };
 	while (Date.now() < deadline) {
