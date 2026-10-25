@@ -3,11 +3,11 @@ id: TASK-520.01
 title: >-
   The Nix dev shell builds the renderer core to WASM, and a host refuses a stale
   build
-status: In Progress
+status: Done
 assignee:
   - '@claude'
-created_date: '2026-10-24 12:53'
-updated_date: '2026-10-24 14:45'
+created_date: 2026-10-24 12:53
+updated_date: '2026-10-25T20:25:00Z'
 labels:
   - renderer
   - tooling
@@ -32,7 +32,7 @@ Every later step of TASK-520 needs Rust code that Bun and the browser load. ADR 
 - [x] #2 One bun script builds the core to WASM from a Cargo workspace whose crates live in packages/renderer, and the build output is ignored by Git
 - [x] #3 The renderer package loads the core under Bun and in a browser worker from the same WASM file, and a test calls the core in each place
 - [x] #4 A host refuses a build whose recorded source hash differs from the core sources in its checkout, and the refusal names the build command
-- [ ] #5 CI runs the complete gate inside the Nix dev shell
+- [x] #5 CI runs the complete gate inside the Nix dev shell
 - [x] #6 ADR 0014, INSTALL.md, TESTING.md and the agent rules say how to build the core
 <!-- AC:END -->
 
@@ -64,4 +64,12 @@ Verification, 2026-10-24:
 - Not verified: criterion 5. .github/workflows/ci.yml installs Nix and runs install and the gate inside nix develop, but no CI run has happened, because nothing was pushed.
 
 Restructure after review, 2026-10-24: the crate moved to crates/archboard-renderer-wasm, with the root workspace members crates/*. The dev shell now reads Bun from package.json packageManager and the wasm-bindgen CLI from Cargo.lock (nixpkgs carries one package per version, wasm-bindgen-cli_0_2_N). A lock set to 0.2.128 gave wasm-bindgen-cli-0.2.128, and one set to 0.2.999 stopped evaluation with a message naming the fix. The board correction was adopted as "TASK-520.01 crates" (version 87), and bun run check passed to the end inside nix develop.
+
+AC5 proven on pull request #14, CI run 40229337618 at a853b85a5: the job 'Complete validation gate' installs Nix (cachix/install-nix-action), runs 'nix develop --command bun install --frozen-lockfile' and 'nix develop --command bash -o pipefail -c bun run check ...'. It compiled the core from the crates with 0 of 16 task cache hits, and all 19 gate tasks succeeded, the Rust lanes and tests/native.rs included. The macOS job also builds the core in the dev shell and passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Nix flake's dev shell gives cargo, the wasm32 target, a matching wasm-bindgen CLI and Bun; bun run build:core builds the core to WASM with Git ignoring the output; Bun and the browser load the same file and refuse a build whose source hash differs from their checkout, naming the build command; CI runs install and the complete gate inside nix develop. Risk: every contributor and CI job now needs Nix to build the core.
+<!-- SECTION:FINAL_SUMMARY:END -->
