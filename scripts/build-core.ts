@@ -9,7 +9,7 @@
 // Run from the repository root, inside `nix develop`:
 //   bun run build:core
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	CHECKOUT,
@@ -97,6 +97,44 @@ function currentBuild(hash: string): boolean {
 	}
 }
 
+/**
+ * Install one panic boundary in the glue that every host loads. Guarding only
+ * the public render misses callbacks that poll its future after a solve.
+ * @throws {Error} When a wasm-bindgen update changes a boundary we must protect.
+ */
+function guardCoreGlue(): void {
+	const path = join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm.js");
+	let glue = readFileSync(path, "utf8");
+	const boundaries = [
+		["wasm = instance.exports;", "wasm = coreGuard.exports(instance.exports);"],
+		["return real;", "return coreGuard.callback(real);"],
+		[
+			"new FinalizationRegistry(state => wasm.__wbindgen_destroy_closure(state.a, state.b))",
+			"new FinalizationRegistry(coreGuard.callback(state => wasm.__wbindgen_destroy_closure(state.a, state.b)))",
+		],
+		[
+			"export function render(request, host) {",
+			"export function render(request, host) { return coreGuard.render(() => renderUnchecked(request, host)); }\n" +
+				"function renderUnchecked(request, host) {",
+		],
+	] as const;
+	for (const [before, after] of boundaries) {
+		if (glue.split(before).length !== 2) {
+			// A failed adaptation must never leave a loadable, unguarded build.
+			rmSync(join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm"));
+			throw new Error(
+				`The wasm-bindgen panic boundary changed: ${before}. Update guardCoreGlue before building the core.`,
+			);
+		}
+		glue = glue.replace(before, after);
+	}
+	writeFileSync(
+		path,
+		'import { CoreGuard } from "#shared/rules/render/core-guard.ts";\nconst coreGuard = new CoreGuard();\n' +
+			glue,
+	);
+}
+
 const hash = coreSourceHash();
 if (currentBuild(hash)) {
 	console.log(`The renderer core is built from these sources (${hash}).`);
@@ -121,5 +159,6 @@ if (currentBuild(hash)) {
 	writeFileSync(TYPES, types);
 	writeFileSync(MARKS, marks);
 	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
+	guardCoreGlue();
 	console.log(`Built the renderer core from these sources (${hash}).`);
 }
