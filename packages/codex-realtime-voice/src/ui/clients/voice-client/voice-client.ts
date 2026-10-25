@@ -46,6 +46,8 @@ interface VoiceClientOwners {
 
 const UNCERTAIN = "Delivery is uncertain. Refresh the conversation before trying another action.";
 const TAB_SESSION_KEY = "codex-realtime-voice:tab";
+/** The `readyState` of a socket whose close has begun; `CLOSED` is 3. */
+const SOCKET_CLOSING = 2;
 
 /**
  * Connect one page view to the voice server through the real browser.
@@ -187,12 +189,14 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const open = async () => {
 		const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
 		socket = next;
-		const closeReason = closeReasonOf(next);
+		const closed = closeReasonOf(next);
 		await opened(next);
 		if (disposed) return;
 		const attached = await transport.attach(next);
-		if (attached.kind === "connection" && !disposed)
-			throw new Error(closeReason() || attached.reason);
+		if (attached.kind === "connection") {
+			const reason = next.readyState >= SOCKET_CLOSING ? await closed : "";
+			throw new Error(reason || attached.reason);
+		}
 		await media.attach(transport);
 		await transport.accountRead();
 	};
@@ -470,20 +474,18 @@ function failureOf(error: unknown): VoiceClientFailure {
 }
 
 /**
- * Keep the reason a socket's close names, such as the server's words for a refusal.
+ * The reason a socket's close names, such as the server's words for a refusal.
  * @param socket The socket.
- * @returns The reason, empty until the socket closes with one.
+ * @returns The reason once the socket closed, empty when its close names none.
  */
-function closeReasonOf(socket: VoiceClientSocket): () => string {
-	let reason = "";
-	socket.addEventListener(
-		"close",
-		(event) => {
-			if ("reason" in event && typeof event.reason === "string") reason = event.reason;
-		},
-		{ once: true },
-	);
-	return () => reason;
+function closeReasonOf(socket: VoiceClientSocket): Promise<string> {
+	return new Promise((resolve) => {
+		socket.addEventListener(
+			"close",
+			(event) => resolve("reason" in event && typeof event.reason === "string" ? event.reason : ""),
+			{ once: true },
+		);
+	});
 }
 
 /**

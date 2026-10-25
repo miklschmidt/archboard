@@ -51,6 +51,7 @@ class ClosedSocket extends FakeSocket {
 	constructor() {
 		super();
 		queueMicrotask(() => this.dispatchEvent(new Event("open")));
+		/** Close the socket as the server does, with its reason. */
 		this.onRequest = () => {
 			this.readyState = 3;
 			this.dispatchEvent(new CloseEvent("close", { code: 1011, reason: SERVER_REASON }));
