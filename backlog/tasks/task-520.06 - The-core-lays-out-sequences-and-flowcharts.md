@@ -1,11 +1,11 @@
 ---
 id: TASK-520.06
 title: The core lays out sequences and flowcharts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T02:21:00Z'
+updated_date: '2026-10-25T02:41:00Z'
 labels:
   - renderer
 dependencies:
@@ -111,3 +111,9 @@ AC4 waived by the user on 2026-10-25: the flowchart slowdown of about 0.85 ms pe
 - `archboard check`: no diagnostics. After adoption, `check --code` adds no finding over the baseline. The two BINDING_PATH_MISSING warnings of the old current variant are gone.
 - Not seen: `semantic rasterize` refused, because the server could not load the WebAssembly core (`import function ...__wbg_cb_unref... must be callable`). The core build is outside this work, and a corpus render is running from the checkout, so the pictures were not checked.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The core lays out sequences and flowcharts. The new crate crates/archboard-flows holds the ported sequence and flowchart rules. The wasm binding crates/archboard-renderer-wasm/src/flows.rs draws a sequence in one synchronous call and a flowchart in one async call that waits for the host's track engine, then paints. packages/renderer/src/shared/rules/render/flows.ts answers the core's text and track calls, and the TypeScript sequence and flowchart rules are gone. Verified: 0 of 22,216 flows drawings differ from the TypeScript stage; 0 of 35,560 corpus drawings differ across variants, engines, themes and comparison; after the rebase onto main, every Track, sequence and flowchart drawing of the current variants equals main's except on the two boards this branch changed. AC4 was waived by the user: a flowchart draws about 0.85 ms slower, from the JSON crossing to the TypeScript track engine, which TASK-520.04 removes. Semantic renderer@TASK-520.06 is adopted (version 102). Gate after the rebase: lint, format, types, build, test:system, test:repository and test:serial-browser pass; test:modules fails only the two 3 s Track first-layout bounds, which main fails the same way at this machine's load.
+<!-- SECTION:FINAL_SUMMARY:END -->
