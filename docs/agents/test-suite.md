@@ -209,7 +209,7 @@ case.
 workflow: `semantic rasterize` against a real Archboard server, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
 owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
-scaled dimensions, full bounds past a display, font readiness, bounds refusals,
+scaled dimensions, full bounds past a display, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a

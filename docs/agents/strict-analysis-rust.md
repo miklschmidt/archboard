@@ -45,19 +45,21 @@ is refused by `allow_attributes_without_reason`. There is no crate-wide
 exception. The four pedantic lints that the policy rejects are set to `allow`
 in the workspace table, with the reason below.
 
-The crates carry 25 exceptions:
+The exceptions cover these cases:
 
-- Ten float-to-integer casts (`cast_possible_truncation`, `cast_sign_loss`).
+- Float-to-integer casts (`cast_possible_truncation`, `cast_sign_loss`).
   The ECMAScript source works in floating point, so a few counts and indices
   come from `Math.floor`, `Math.round` or a clamp. Each site proves that the
   value is whole and in range.
-- Eight `missing_docs` on enums that are pure vocabularies, such as palette
+- A width converted to single precision (`cast_possible_truncation`) preserves the rounding of the canvas that the core replaces.
+- A crossing count converted to floating point (`cast_precision_loss`) stays below 2^52.
+- `missing_docs` on enums that are pure vocabularies, such as palette
   colours, dash styles and compass directions. The enum's doc says what the
   set is, and each variant is the word its name says.
-- Two `match_same_arms` on colour tables, where two colours share a value by
+- `match_same_arms` on colour tables, where two colours share a value by
   chance and each row stays one colour.
-- One each of `unreadable_literal` (numbers spelt as ECMAScript prints them),
-  `print_stdout` (the binary that prints the TypeScript types),
+- `unreadable_literal` (numbers spelt as ECMAScript prints them),
+  `print_stdout` (the binaries that print the TypeScript types and viewer marks),
   `decimal_bitwise_operands` (mulberry32's published constant),
   `struct_field_names` (viz-js's own attribute names) and
   `struct_excessive_bools` (independent remedies that a relaying turns on).
