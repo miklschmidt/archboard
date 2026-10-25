@@ -12,7 +12,7 @@ import type {
 	SettledSemanticChangeEvent,
 } from "#runtime/schemas/semantic-context-types.ts";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
+import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault";
@@ -66,7 +66,7 @@ function canonicalContextFromBrief(
 			name: brief.board.name,
 			key: brief.board.key,
 			version: brief.version ?? 0,
-			cursor: brief.cursor === null ? null : canonicalSemanticCursorToken(brief.cursor),
+			cursor: brief.cursor === null ? null : canonicalContextCursorToken(brief.cursor),
 		},
 		threadLink: brief.threadLink,
 		child: { id: brief.child.id, epoch: brief.child.epoch },
