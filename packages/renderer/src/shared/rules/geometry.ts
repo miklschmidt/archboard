@@ -1,26 +1,16 @@
 // Points, boxes and the one place a coordinate is rounded.
 //
 // Forked from PR Lens's `geometry.ts` and `bounds.ts`, unchanged in behaviour.
+// A point and a box are the renderer core's (ADR 0057), generated from its
+// Rust types, because the drawing the core paints is made of them.
+
+import type * as Core from "#shared/protocol/generated/core/types.ts";
 
 /** A position in the diagram's own units. */
-interface Point {
-	/** Distance from the left edge. */
-	readonly x: number;
-	/** Distance from the top edge. */
-	readonly y: number;
-}
+type Point = Core.Point;
 
 /** A rectangle in the diagram's own units. */
-interface Box {
-	/** The left edge. */
-	readonly x: number;
-	/** The top edge. */
-	readonly y: number;
-	/** How wide. */
-	readonly width: number;
-	/** How tall. */
-	readonly height: number;
-}
+type Box = Core.Box;
 
 /** Which face of a box a line meets. */
 type Side = "top" | "right" | "bottom" | "left";
@@ -199,7 +189,6 @@ export {
 	type Size,
 	type Side,
 	type Canvas,
-	roundCoord,
 	coord,
 	covering,
 	inflate,

@@ -7,28 +7,17 @@ import { SELF_LOOP_REACH } from "#shared/constants/spacing.ts";
 // opinion about which gaps the route travelled through.
 
 import { APPROACH_STRAIGHT, BEND_RADIUS } from "#shared/constants/spacing.ts";
+import type * as Core from "#shared/protocol/generated/core/types.ts";
 import { coord, type Box, type Point } from "#shared/rules/geometry.ts";
 
-/** One piece of a route. */
-type Segment =
-	| { readonly kind: "line"; readonly to: Point }
-	| {
-			readonly kind: "cubic";
-			readonly first: Point;
-			readonly second: Point;
-			readonly to: Point;
-	  };
+/** One piece of a route: the renderer core's, which paints it (ADR 0057). */
+type Segment = Core.Segment;
 
 /**
  * A route, kept as its own segments rather than as a path string, because the
  * label pill has to be placed on a point of it after the fact.
  */
-interface Curve {
-	/** Where the route starts. */
-	readonly from: Point;
-	/** Every piece of it, in order. */
-	readonly segments: readonly Segment[];
-}
+type Curve = Core.Curve;
 
 const ORIGIN: Point = { x: 0, y: 0 };
 const EPSILON = 0.01;
@@ -538,7 +527,6 @@ export {
 	EPSILON,
 	segmentStart,
 	reversed,
-	pointOnSegment,
 	pathOf,
 	curveBounds,
 	selfLoop,

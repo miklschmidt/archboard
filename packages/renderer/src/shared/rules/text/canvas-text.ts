@@ -9,7 +9,7 @@
 // by one engine. The host makes sure the canvas exists and the diagram faces
 // are loaded before anything is measured (`shared/rules/render/host.ts`).
 
-import { fontAttributes, type DiagramFont } from "#shared/rules/text/fonts.ts";
+import { fontStack, type DiagramFont } from "#shared/rules/text/fonts.ts";
 
 let context: OffscreenCanvasRenderingContext2D | undefined;
 
@@ -38,7 +38,7 @@ function measuringContext(): OffscreenCanvasRenderingContext2D {
  * @returns The CSS `font` shorthand.
  */
 function cssFont(font: DiagramFont, fontSize: number): string {
-	return `${font.weight} ${fontSize}px ${fontAttributes(font)["font-family"]}`;
+	return `${font.weight} ${fontSize}px ${fontStack(font)}`;
 }
 
 /**

@@ -8,7 +8,6 @@ import {
 	type HeadlessChromium,
 } from "#runtime/processes/headless-chromium/launch.ts";
 import { type DevTools } from "#runtime/clients/headless-chromium/devtools.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { VariantContentSchema } from "@archboard/board/content";
@@ -22,6 +21,9 @@ import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/raster
 import { withFixtureOrders } from "#tests/runtime/services/rasterizer/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The page tokens a picture paints its ground and its cards' edges in. */
+const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
 
 // The shared Chromium starts cold in beforeAll.
 setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
@@ -159,10 +161,10 @@ for (const scheme of ["light", "dark"] as const) {
 		for (const [placement, colours] of await shotsUnder(scheme)) {
 			const count = (key: string) => colours.get(key) ?? 0;
 			// Much of the picture is its ground, and none of it is the other scheme's.
-			expect(count(rgbIn(scheme, PALETTE.background)), placement).toBeGreaterThan(area / 4);
-			expect(count(rgbIn(other, PALETTE.background)), placement).toBe(0);
+			expect(count(rgbIn(scheme, PAGE.background)), placement).toBeGreaterThan(area / 4);
+			expect(count(rgbIn(other, PAGE.background)), placement).toBe(0);
 			// The cards stand on this scheme's front edges.
-			expect(count(rgbIn(scheme, PALETTE.slabEdge)), placement).toBeGreaterThan(100);
+			expect(count(rgbIn(scheme, PAGE.slabEdge)), placement).toBeGreaterThan(100);
 			expect(count("255,0,255"), placement).toBe(0);
 		}
 	});

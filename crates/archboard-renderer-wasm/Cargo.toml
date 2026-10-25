@@ -14,3 +14,8 @@ crate-type = ["cdylib"]
 # wasm-bindgen CLI of that version, which refuses a module of any other.
 wasm-bindgen = "0.2.129"
 archboard-router = { path = "../archboard-router" }
+archboard-scene = { path = "../archboard-scene" }
+archboard-svg = { path = "../archboard-svg" }
+# Every number the host writes is read back to the same double: the layout's
+# coordinates are painted to a hundredth, and a last-bit error moves one.
+serde_json = { version = "1", features = ["float_roundtrip"] }
