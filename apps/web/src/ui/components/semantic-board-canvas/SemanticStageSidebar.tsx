@@ -155,6 +155,8 @@ function SemanticStageSidebar(props: {
 					appearances={appearances}
 					look={view.look}
 					onShow={view.onShow}
+					question={view.question}
+					onChooseQuestion={view.onChooseQuestion}
 					comparison={view.comparison}
 					onComparisonChange={view.onComparisonChange}
 				/>

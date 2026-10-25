@@ -6,10 +6,12 @@
 //
 // The same reading says what the picture lights when a part is poked (`litBy`):
 // the part and all it holds, every relationship that touches any of it, and the
-// parts at their other ends.
+// parts at their other ends. A chosen design question lights the subjects of its
+// answer and the containers that hold them (`litByAnswer`, ADR 0057).
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { subjectBox } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** The parts and relationships of a variant, as far as containment and wiring are concerned. */
 interface Wiring {
@@ -170,9 +172,32 @@ function litInPicture(
 	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
 }
 
+/**
+ * What the picture lights for the answer of a chosen design question: its
+ * subjects and every container that holds them, so a subject the view does not
+ * draw stands through the nearest container it draws.
+ * @param wiring What the variant says, or null while that is not known.
+ * @param atlas Where every subject of the picture ended up.
+ * @param subjects The subjects the answer names, or null while no question is chosen.
+ * @returns The ids to leave standing, or null when the picture draws none of them.
+ */
+function litByAnswer(
+	wiring: Wiring | null,
+	atlas: SemanticAtlas,
+	subjects: readonly string[] | null,
+): ReadonlySet<string> | null {
+	if (wiring === null || subjects === null) {
+		return null;
+	}
+	const lit = new Set(subjects);
+	withContainers(wiring.nodes, lit);
+	return [...lit].some((one) => subjectBox(atlas, one) !== null) ? lit : null;
+}
+
 export {
 	connectionsOf,
 	litBy,
+	litByAnswer,
 	litInPicture,
 	subtreeOf,
 	withReach,

@@ -629,7 +629,8 @@ touches any of it, the parts at their other ends, and the containers that hold
 them. The rest recedes. A relationship is lit along the whole of its route, even
 where the picture has another relationship draw a stretch of a lane they share.
 The light is attention, like the selection: nothing is written, and a presented
-walkthrough step, a selected group or a chosen design question takes its place.
+walkthrough step or a selected group takes its place. While nothing is picked,
+a chosen design question lights its answer instead.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:

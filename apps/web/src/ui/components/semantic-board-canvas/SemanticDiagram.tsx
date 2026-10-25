@@ -201,6 +201,8 @@ interface SemanticDiagramProps {
 	focus?: BeatFocus | undefined;
 	/** The selected group and its members, each marked as attended; null for none. */
 	group: GroupSelection | null;
+	/** The subjects of the chosen design question's answer, lit while nothing is poked; null for none. */
+	answer: readonly string[] | null;
 	/** What a presented step's veil leaves standing; null for no veil. */
 	veil: ReadonlySet<string> | null;
 	/**
@@ -345,6 +347,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		veil: props.veil,
 		presenting: props.presenting,
 		group: props.group,
+		answer: props.answer,
 		departure,
 	});
 	// Before the viewer's marks, so a line's group made to hold a warning is

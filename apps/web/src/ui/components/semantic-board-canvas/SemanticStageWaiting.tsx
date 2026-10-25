@@ -52,6 +52,7 @@ function waitingStage(view: WaitingView): JSX.Element {
 			reading={null}
 			reducedMotion={view.reducedMotion ?? false}
 			group={null}
+			answer={null}
 			veil={null}
 		/>
 	);

@@ -329,14 +329,15 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		[choose, chooseView],
 	);
 
-	const { onPick, onChooseGroup, groupControls, groups, group } = usePicking({
-		board: drill.board,
-		reading,
-		presenting: narrative.open !== null,
-		picked: props.selection !== null,
-		choose,
-		onSelect,
-	});
+	const { onPick, onChooseGroup, groupControls, groups, group, question, onChooseQuestion } =
+		usePicking({
+			board: drill.board,
+			reading,
+			presenting: narrative.open !== null,
+			picked: props.selection !== null,
+			choose,
+			onSelect,
+		});
 	useReported(props.onReading, {
 		board: drill.board,
 		answer: render.data,
@@ -440,6 +441,8 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			groupControls={groupControls}
 			group={group}
 			onChooseGroup={onChooseGroup}
+			question={question}
+			onChooseQuestion={onChooseQuestion}
 		/>
 	);
 });
