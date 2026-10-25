@@ -11,12 +11,10 @@ type PageClient = Pick<VoiceClient, "connect" | "dispose">;
  * conversation while its tab session lasts.
  * @param create Makes a client.
  * @param show Draws the page over a client.
- * @param page The window whose lifecycle the client follows.
  */
 function followPageLifecycle<Client extends PageClient>(
 	create: () => Client,
 	show: (client: Client) => void,
-	page: Window = window,
 ): void {
 	let client: Client;
 	/** Make a client, draw the page over it and connect it. */
@@ -26,8 +24,8 @@ function followPageLifecycle<Client extends PageClient>(
 		void client.connect();
 	};
 	begin();
-	page.addEventListener("pagehide", () => void client.dispose());
-	page.addEventListener("pageshow", (event) => {
+	window.addEventListener("pagehide", () => void client.dispose());
+	window.addEventListener("pageshow", (event) => {
 		if (event.persisted) begin();
 	});
 }
