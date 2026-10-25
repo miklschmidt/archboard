@@ -31,6 +31,13 @@ function livePanesOver(binding: LiveBinding<Panes>): Panes {
 			return binding.read().records;
 		},
 		/**
+		 * Which panes are linked now.
+		 * @returns The links.
+		 */
+		get links() {
+			return binding.read().links;
+		},
+		/**
 		 * The active pane's record now.
 		 * @returns It.
 		 */

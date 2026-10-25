@@ -23,6 +23,12 @@ import {
 	type PaneRecords,
 } from "#ui/rules/application/pane-records.ts";
 import type { PaneSessionOptions } from "#ui/rules/pane-session/session-contracts.ts";
+import {
+	NO_PANES,
+	relinked,
+	type LinkedRecords,
+	type PaneLinks,
+} from "#ui/rules/application/pane-link.ts";
 import type {
 	AgentActivityEntry,
 	LockHolder,
@@ -85,6 +91,8 @@ type PaneCallbacks = Required<
 interface Panes {
 	readonly list: PaneList;
 	readonly records: PaneRecords;
+	/** Which panes are linked (TASK-538.02): the same object until the link changes. */
+	readonly links: PaneLinks;
 	readonly handles: PaneHandles;
 	readonly callbacks: PaneCallbacks;
 	/** Open the second pane; false when there is no pane to open. */
@@ -244,12 +252,12 @@ function usePanes(
 	// when their callback was made: the pane callbacks keeps these for the
 	// application's life, and the server asks it to close panes opened since.
 	const [moves] = useState(() => createPaneMoves(list, setList));
-	const [records, setRecords] = useState<PaneRecords>({});
+	const [{ records, links }, setRecords] = useState<LinkedRecords>(NO_PANES);
 	const [handles] = useState(() => new PaneHandles(media));
 	const [events] = useState(() => new LiveBinding<PaneEvents>());
 
 	const patch = useCallback((paneId: string, next: Partial<PaneRecord>): void => {
-		setRecords((current) => patchRecord(current, paneId, next));
+		setRecords((current) => relinked(current, patchRecord(current.records, paneId, next)));
 	}, []);
 	const add = useCallback((): boolean => moves.add(), [moves]);
 	// A close the list refuses — the last pane, or one that is not open — leaves
@@ -260,7 +268,7 @@ function usePanes(
 			if (!moves.close(paneId)) {
 				return false;
 			}
-			setRecords((current) => dropRecord(current, paneId));
+			setRecords((current) => relinked(current, dropRecord(current.records, paneId)));
 			return true;
 		},
 		[moves],
@@ -270,8 +278,20 @@ function usePanes(
 	const bindEvents = useCallback((next: PaneEvents): void => events.bind(next), [events]);
 	const active = recordFor(records, list.activePaneId);
 	return useMemo(
-		() => ({ list, records, handles, callbacks, add, close, select, patch, active, bindEvents }),
-		[list, records, handles, callbacks, add, close, select, patch, active, bindEvents],
+		() => ({
+			list,
+			records,
+			links,
+			handles,
+			callbacks,
+			add,
+			close,
+			select,
+			patch,
+			active,
+			bindEvents,
+		}),
+		[list, records, links, handles, callbacks, add, close, select, patch, active, bindEvents],
 	);
 }
 

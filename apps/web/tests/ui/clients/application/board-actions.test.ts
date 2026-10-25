@@ -59,6 +59,13 @@ function picker() {
 			},
 			/**
 			 * Read the fixture state.
+			 * @returns Never; linked panes are outside this test.
+			 */
+			get links() {
+				return unrelated();
+			},
+			/**
+			 * Read the fixture state.
 			 * @returns Never; media is outside this test.
 			 */
 			get handles() {

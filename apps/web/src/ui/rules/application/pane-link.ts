@@ -6,8 +6,10 @@
 // Each pane's status names the board on screen, which after a drill-down is the
 // board followed into. So a drill-down or another board in either pane ends the
 // link, and the same board in both makes it again. The link is derived from the
-// statuses on every read and never stored.
+// pane records each time they change, and kept as the same object while it says
+// the same, so pane news that moves no link draws no pane again.
 
+import type { PaneRecords } from "#ui/rules/application/pane-records.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 
@@ -90,4 +92,28 @@ function sameLinks(a: PaneLinks, b: PaneLinks): boolean {
 	);
 }
 
-export { paneLinks, sameLinks, type PaneLinks };
+/** The records of the open panes, and the links they make. */
+interface LinkedRecords {
+	readonly records: PaneRecords;
+	readonly links: PaneLinks;
+}
+
+/** No pane has said anything yet, so none is linked. */
+const NO_PANES: LinkedRecords = Object.freeze({ records: Object.freeze({}), links: UNLINKED });
+
+/**
+ * The records after a change, with the links they make: the links held before
+ * when they say the same.
+ * @param before The records and links before the change.
+ * @param records The records after it.
+ * @returns The records and their links.
+ */
+function relinked(before: LinkedRecords, records: PaneRecords): LinkedRecords {
+	if (records === before.records) {
+		return before;
+	}
+	const found = paneLinks(Object.values(records).map((record) => record.status));
+	return { records, links: sameLinks(before.links, found) ? before.links : found };
+}
+
+export { NO_PANES, paneLinks, relinked, type LinkedRecords, type PaneLinks };
