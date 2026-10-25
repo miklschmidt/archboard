@@ -14,7 +14,7 @@ import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
 import type { SemanticView } from "@archboard/board/views";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/content";
-import { Button, IconButton } from "@archboard/ui-kit/controls";
+import { Button, IconButton } from "@archboard/ui-kit/components";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";

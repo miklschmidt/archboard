@@ -31,7 +31,7 @@ import { RiMicLine, RiPlayCircleLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import type { SemanticWalkthrough } from "@archboard/board/content";
-import { IconButton } from "@archboard/ui-kit/controls";
+import { IconButton } from "@archboard/ui-kit/components";
 import {
 	SidebarChoice,
 	SidebarChoices,

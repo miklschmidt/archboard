@@ -13,7 +13,7 @@ import { useQuery, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import type { JSX } from "react";
 
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 
 /** One icon's path data, as the Archboard server serves it. */

@@ -28,8 +28,11 @@ import {
 	type Talk,
 } from "@archboard/walkthrough/talk";
 import { createBoardQueryClient } from "#ui/clients/board-catalog/query-client.ts";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";
+import {
+	createSteppedClock,
+	driveFramesFrom,
+	type SteppedClock,
+} from "@archboard/ui-kit/frame-clock";
 import { chooseLayoutEngine } from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
 import {
 	pictureSource,

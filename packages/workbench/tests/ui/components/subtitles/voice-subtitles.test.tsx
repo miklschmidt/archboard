@@ -18,9 +18,8 @@ import { useSyncExternalStore, type JSX } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@archboard/timing";
 import { SUBTITLE_OUT_MS, SUBTITLE_SWAP_MS } from "@archboard/timing/voice";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { Tooltip } from "@archboard/ui-kit/components";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { SubtitlesToggle } from "#ui/components/subtitles/SubtitlesToggle.tsx";
 import { VoiceSubtitles } from "#ui/components/subtitles/VoiceSubtitles.tsx";
 import {
@@ -337,10 +336,10 @@ function Governed(props: GovernedProps): JSX.Element {
 	const { preference } = props;
 	const wanted = useSyncExternalStore(preference.subscribe, preference.wanted);
 	return (
-		<TooltipProvider>
+		<Tooltip.Provider>
 			<SubtitlesToggle preference={preference} />
 			<VoiceSubtitles transcript={transcriptOf(props.said)} enabled={wanted} reducedMotion />
-		</TooltipProvider>
+		</Tooltip.Provider>
 	);
 }
 
@@ -389,11 +388,11 @@ function Surfaces(props: { readonly preference: SubtitlePreference }): JSX.Eleme
 	const { preference } = props;
 	const wanted = useSyncExternalStore(preference.subscribe, preference.wanted);
 	return (
-		<TooltipProvider>
+		<Tooltip.Provider>
 			<div key={wanted ? "box" : "dock"} data-surface={wanted ? "box" : "dock"}>
 				<SubtitlesToggle preference={preference} />
 			</div>
-		</TooltipProvider>
+		</Tooltip.Provider>
 	);
 }
 
@@ -445,14 +444,14 @@ function BothSurfaces(props: { readonly preference: SubtitlePreference }): JSX.E
 	const { preference } = props;
 	const wanted = useSyncExternalStore(preference.subscribe, preference.wanted);
 	return (
-		<TooltipProvider>
+		<Tooltip.Provider>
 			<div data-surface="box" inert={!wanted}>
 				<SubtitlesToggle preference={preference} />
 			</div>
 			<div data-surface="dock" inert={wanted}>
 				<SubtitlesToggle preference={preference} />
 			</div>
-		</TooltipProvider>
+		</Tooltip.Provider>
 	);
 }
 
@@ -491,14 +490,14 @@ test("a subtitles control that is still there with focus keeps it, whatever othe
 	kept.clear();
 	const preference = createSubtitlePreference(storage);
 	render(
-		<TooltipProvider>
+		<Tooltip.Provider>
 			<div data-surface="bar">
 				<SubtitlesToggle preference={preference} />
 			</div>
 			<div data-surface="elsewhere">
 				<SubtitlesToggle preference={preference} />
 			</div>
-		</TooltipProvider>,
+		</Tooltip.Provider>,
 	);
 	act(() => {
 		toggleIn("bar").focus();

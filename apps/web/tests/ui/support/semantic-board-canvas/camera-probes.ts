@@ -3,8 +3,7 @@
 
 import { act, fireEvent } from "@testing-library/react";
 
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { surface, viewport } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 
 /** How long a camera that was moved by hand is given to come to rest, in milliseconds. */

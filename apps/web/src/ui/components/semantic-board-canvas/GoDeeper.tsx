@@ -27,8 +27,7 @@ import { useCallback, useState, type JSX, type ReactNode } from "react";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { DrillDown } from "@archboard/board/content";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
+import { Button, cn } from "@archboard/ui-kit/components";
 import {
 	drillWay,
 	drillWayWords,

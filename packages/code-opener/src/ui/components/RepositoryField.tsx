@@ -4,19 +4,7 @@
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
-import { Badge } from "@archboard/ui-kit/display";
-import {
-	Field,
-	FieldDescription,
-	FieldLabel,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@archboard/ui-kit/controls";
-import { Technical } from "@archboard/ui-kit/dialog-parts";
-import { RepositoryName } from "@archboard/ui-kit/repository-name";
+import { Badge, Field, RepositoryName, Select, Technical } from "@archboard/ui-kit/components";
 
 type CheckoutChoice = OpenerSettingsReply["repositories"][number];
 
@@ -43,24 +31,24 @@ function RepositoryField(props: RepositoryFieldProps): JSX.Element {
 	const chosen = props.repositories.find((checkout) => checkout.repository === props.value);
 	return (
 		<Field>
-			<FieldLabel htmlFor={id}>Test with repository</FieldLabel>
+			<Field.Label htmlFor={id}>Test with repository</Field.Label>
 			<Select value={props.value} onValueChange={handleChange} disabled={props.disabled}>
-				<SelectTrigger id={id} className="w-full">
-					<SelectValue>{chosenName}</SelectValue>
-				</SelectTrigger>
-				<SelectContent>
+				<Select.Trigger id={id} className="w-full">
+					<Select.Value>{chosenName}</Select.Value>
+				</Select.Trigger>
+				<Select.Content>
 					{props.repositories.map((checkout) => (
 						<RepositoryItem key={checkout.repository} checkout={checkout} />
 					))}
-				</SelectContent>
+				</Select.Content>
 			</Select>
-			<FieldDescription>
+			<Field.Description>
 				{chosen ? (
 					<Technical>{chosen.root}</Technical>
 				) : (
 					"A test opens a checkout's root with the chosen opener."
 				)}
-			</FieldDescription>
+			</Field.Description>
 		</Field>
 	);
 }
@@ -87,7 +75,7 @@ interface RepositoryItemProps {
 function RepositoryItem(props: RepositoryItemProps): JSX.Element {
 	const { checkout } = props;
 	return (
-		<SelectItem value={checkout.repository}>
+		<Select.Item value={checkout.repository}>
 			<RepositoryName identity={checkout.repository} className="font-mono" />
 			{!checkout.exists && (
 				<Badge variant="outline" className="border-warning/60 text-warning-foreground">
@@ -99,7 +87,7 @@ function RepositoryItem(props: RepositoryItemProps): JSX.Element {
 					identity changed
 				</Badge>
 			)}
-		</SelectItem>
+		</Select.Item>
 	);
 }
 
