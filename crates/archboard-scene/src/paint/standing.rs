@@ -51,16 +51,10 @@ fn pin_glyph(standing: Standing) -> &'static str {
 }
 
 /// How solid a swipe is.
-fn swipe_opacity(standing: Standing) -> f64 {
-    if standing == Standing::Unchanged {
-        0.0
-    } else {
-        0.32
-    }
-}
+const SWIPE_OPACITY: f64 = 0.32;
 
 /// The ink one standing is drawn in, or none for a subject that stands unchanged.
-pub fn standing_ink(standing: Standing, palette: &Palette) -> Option<&'static str> {
+fn standing_ink(standing: Standing, palette: &Palette) -> Option<&'static str> {
     match standing {
         Standing::Added => Some(palette.standing_added),
         Standing::Removed => Some(palette.standing_removed),
@@ -158,12 +152,7 @@ pub fn standing_pin(rect: Rect, standing: Option<Standing>, palette: &Palette) -
 
 /// The pin, centred on a point.
 pub fn standing_pin_at(x: f64, y: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
-    let ink = if draws_pin(standing) {
-        ink_of(standing, palette)
-    } else {
-        None
-    };
-    let (Some(standing), Some(ink)) = (standing, ink) else {
+    let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
         return Markup::new();
     };
     group(
@@ -211,16 +200,13 @@ pub fn standing_swipe(
             "fill": "none",
             "stroke": ink,
             "stroke-width": width + SWIPE_EXTRA,
-            "stroke-opacity": swipe_opacity(standing),
+            "stroke-opacity": SWIPE_OPACITY,
             "stroke-linecap": "butt",
             "stroke-linejoin": "round",
             "stroke-dasharray": outline_dash(standing),
         },
     )
 }
-
-/// How big the warning triangle is, corner to corner.
-pub const BADGE_SIZE: f64 = 11.0;
 
 const BADGE_SIDE: f64 = 5.4;
 const BADGE_ABOVE: f64 = 5.2;
@@ -229,7 +215,7 @@ const BADGE_GLYPH: &str = "M0,-5.2 L5.4,4.4 H-5.4 Z";
 const BADGE_BANG_AND_DOT: &str = "M0,-2.4 V0.9 M0,2.6 V2.9";
 
 /// The warning mark, centred where it was put.
-pub fn warning_mark(x: f64, y: f64, palette: &Palette) -> Markup {
+fn warning_mark(x: f64, y: f64, palette: &Palette) -> Markup {
     group(
         Role::Warning,
         None,
