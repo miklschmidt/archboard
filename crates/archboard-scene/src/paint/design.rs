@@ -79,6 +79,11 @@ pub const PILL_TEXT_SIZE: f64 = 9.0;
 /// The corner radius of a label plate.
 pub const PILL_RADIUS: f64 = 4.0;
 
+/// The size of words inside a flowchart shape.
+pub const SHAPE_TEXT_SIZE: f64 = 11.0;
+/// The height of one line inside a flowchart shape.
+pub const SHAPE_TEXT_LINE: f64 = 14.0;
+
 /// The space around the final drawing.
 pub const DIAGRAM_MARGIN: f64 = 20.0;
 /// The extra space a planned board's page adds around the drawing to hold its frame.

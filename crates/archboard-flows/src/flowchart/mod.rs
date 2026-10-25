@@ -36,7 +36,7 @@ use archboard_layout::{LineLook, Measured, Node as GraphNode, Solver};
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
 use archboard_scene::js;
 use archboard_scene::measure::{self, CardWords};
-use archboard_scene::paint::design::{FALLBACK_ICON, FLOW_ICON};
+use archboard_scene::paint::design::{FALLBACK_ICON, FLOW_ICON, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE};
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
@@ -50,9 +50,6 @@ use outlines::{to_diamonds, with_outlines};
 
 /// The widest a shape's words run before they wrap.
 const SHAPE_WORDS_WIDTH: f64 = 150.0;
-/// A shape's words: their size, and the room one line of them takes.
-const SHAPE_TEXT_SIZE: f64 = 11.0;
-const SHAPE_TEXT_LINE: f64 = 14.0;
 /// The room between a shape's words and its outline.
 const SHAPE_PAD: f64 = 10.0;
 /// How tall a diamond is for its width: a diamond twice as wide as it is tall.
