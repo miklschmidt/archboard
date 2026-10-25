@@ -3,7 +3,11 @@
 // `fake-transport.ts`.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import type { BrowserQueue, BrowserSnapshot, BrowserThreadLink } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserQueue,
+	BrowserSnapshot,
+	BrowserThreadLink,
+} from "#shared/schemas/browser/snapshot.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { WorkbenchQueueEntry } from "#ui/state/queue/contracts.ts";
 import type {

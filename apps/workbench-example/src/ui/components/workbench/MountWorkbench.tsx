@@ -2,10 +2,7 @@ import { createRoot } from "react-dom/client";
 import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
 import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
 import { Workbench } from "#ui/components/workbench/Workbench.tsx";
-import {
-	ExampleConfigurationSchema,
-	WORKBENCH_SOCKET_PATH,
-} from "#shared/protocol/application.ts";
+import { ExampleConfigurationSchema, WORKBENCH_SOCKET_PATH } from "#shared/protocol/application.ts";
 
 /**
  * Mount the page over one voice client, and show the checkout it works in.
@@ -39,8 +36,7 @@ function mountWorkbench(): void {
 async function readCheckout(): Promise<string> {
 	try {
 		const response = await fetch("/api/config");
-		if (!response.ok)
-			return `The workbench configuration could not be read (${response.status}).`;
+		if (!response.ok) return `The workbench configuration could not be read (${response.status}).`;
 		return ExampleConfigurationSchema.parse(await response.json()).checkout.path;
 	} catch {
 		return "The workbench configuration could not be read.";
