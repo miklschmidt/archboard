@@ -2,25 +2,25 @@ import { expect, test } from "bun:test";
 import { z } from "zod";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join } from "node:path";
-import { createCodexWorkbench, parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
+import { createVoiceAgent, parseTabSessionId } from "@archboard/codex-realtime-voice/server";
+import type {
+	BrowserCommandLease,
+	BrowserSnapshot,
+} from "@archboard/codex-realtime-voice/contract";
 import { prepareProductionFixture, productionRecords } from "./support/codex-production.ts";
 
 const instructions = {
-	coordinator: createWorkbenchThreadProfile({
-		serviceName: "neutral-proof",
-		threadSource: "neutral-proof",
-		role: "coordinator",
-		domainInstructions: "Coordinate work in the admitted checkout.\n",
-		dynamicTools: [],
-	}),
-	workhorse: createWorkbenchThreadProfile({
-		serviceName: "neutral-proof",
-		threadSource: "neutral-proof",
-		role: "workhorse",
-		domainInstructions: "Complete work in the admitted checkout.\n",
-		dynamicTools: [],
-	}),
+	coordinator: "Coordinate work in the admitted checkout.\n",
+	workhorse: "Complete work in the admitted checkout.\n",
+};
+const identity = { serviceName: "neutral-proof", threadSource: "neutral-proof" };
+
+/**
+ * Fail the test on an unrecoverable agent fault.
+ * @param error The fault.
+ */
+const onFatal = (error: unknown): never => {
+	throw error;
 };
 
 test("the public factory captures process getters and detaches mutable inputs before startup", async () => {
@@ -44,9 +44,9 @@ test("the public factory captures process getters and detaches mutable inputs be
 		const prefixes = [originalPrefix];
 		const secrets = ["captured-diagnostic-secret"];
 		const reads = { environment: 0, prefixes: 0, secrets: 0 };
-		const workbench = createCodexWorkbench({
-			storage: { rootDirectory: join(fixture.root, "private") },
-			process: {
+		const workbench = createVoiceAgent({
+			storage: { directory: join(fixture.root, "private") },
+			codex: {
 				executablePath: fixture.executablePath,
 				get hostEnvironment() {
 					reads.environment += 1;
@@ -62,7 +62,10 @@ test("the public factory captures process getters and detaches mutable inputs be
 					return secrets;
 				},
 			},
-			host: { instructions, allowedCheckouts: [checkout] },
+			checkouts: [checkout],
+			instructions,
+			identity,
+			onFatal,
 		});
 		resources.defer(() => workbench.shutdown());
 		expect(reads).toEqual({ environment: 1, prefixes: 1, secrets: 1 });
@@ -100,23 +103,30 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		rmSync(join(fixture.root, ".archboard"), { recursive: true, force: true });
 		const checkout = join(fixture.root, "checkout");
 		mkdirSync(checkout);
-		const workbench = createCodexWorkbench({
-			storage: { rootDirectory: join(fixture.root, "private") },
-			process: { executablePath: fixture.executablePath, hostEnvironment: {} },
-			host: { instructions, allowedCheckouts: [checkout] },
+		const workbench = createVoiceAgent({
+			storage: { directory: join(fixture.root, "private") },
+			codex: { executablePath: fixture.executablePath, hostEnvironment: {} },
+			checkouts: [checkout],
+			instructions,
+			identity,
+			onFatal,
 		});
 		resources.defer(() => workbench.shutdown());
-		expect(workbench.snapshot()).toMatchObject({ state: "idle", ready: false });
+		expect(workbench.status()).toMatchObject({ state: "idle", ready: false });
 		expect(await workbench.start()).toMatchObject({ state: "ready", ready: true });
 		const tab = parseTabSessionId("standalone-proof")!;
 
 		const physical = {};
 		const registration = { paneId: "main", tabSessionId: tab, checkout };
 		workbench.browser.accept(physical, "browser", registration);
-		type Gateway = ReturnType<typeof workbench.gateway>;
-		type Lease = ReturnType<Gateway["claimLease"]>;
-		type Snapshot = ReturnType<Gateway["snapshot"]>;
-		type Command = Awaited<ReturnType<Gateway["command"]>>;
+		type Lease = BrowserCommandLease;
+		interface Snapshot {
+			readonly snapshot: BrowserSnapshot;
+		}
+		interface Command {
+			readonly outcome: string;
+			readonly realtimeSessionHandle?: unknown;
+		}
 		let sequence = 0;
 		const request = async <Result>(
 			action: string,
@@ -159,23 +169,18 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(await command("threadLinkCreate")).toMatchObject({ outcome: "delivered" });
 		const linked = (await request<Snapshot>("snapshot")).snapshot.threadLink;
 		expect(linked.state).toBe("executable");
-		expect(workbench.session(tab).workhorses.size).toBe(1);
-		const workhorse = workbench.session(tab).workhorses.get(checkout)!;
 		await request<Snapshot>("mediaReady", { ready: true });
 		const voice = await command("realtimeStart", { threadId: linked.threadId, sdp: "v=0" });
 		expect(voice).toMatchObject({
 			outcome: "delivered",
 			realtimeAnswer: { sdp: "v=0\r\ns=controlled-answer-sdp\r\n" },
 		});
-		expect(workbench.session(tab).components.realtime.generation()).not.toBeNull();
 		expect(
 			await command("realtimeStop", {
 				threadId: linked.threadId,
 				realtimeSessionHandle: voice.realtimeSessionHandle,
 			}),
 		).toMatchObject({ outcome: "delivered" });
-		expect(workbench.session(tab).components.realtime.generation()).toBeNull();
-		expect(workhorse.components.workhorse.snapshot().threadId).toBe(linked.threadId);
 		const starts = productionRecords(fixture.logPath).filter(
 			(entry) => entry.kind === "frame" && entry.method === "thread/start",
 		);
@@ -195,9 +200,13 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(existsSync(join(checkout, ".archboard"))).toBe(false);
 		expect(existsSync(join(fixture.root, ".archboard"))).toBe(false);
 		await workbench.shutdown();
-		expect(workbench.snapshot()).toMatchObject({ ready: false, childPid: null });
+		expect(workbench.status()).toMatchObject({ ready: false, childPid: null });
 		expect(await workbench.start()).toMatchObject({ ready: true });
-		expect(workbench.sessions()).toHaveLength(0);
+		const restarted = {};
+		workbench.browser.accept(restarted, "browser", registration);
+		expect(
+			(await request<Snapshot>("connect", {}, restarted)).snapshot.threadLink.state,
+		).not.toBe("executable");
 		await workbench.shutdown();
 	} finally {
 		await resources.disposeAsync();
