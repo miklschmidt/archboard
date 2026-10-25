@@ -824,6 +824,46 @@ fn appearance_of<'a>(picture: &'a SequencePicture, id: &str) -> &'a NodeAppearan
         .unwrap_or_else(|| panic!("no appearance for {id}"))
 }
 
+/// The row of a flow's participant cards over its shade, the cards' shadows under them.
+fn flow_head(
+    ctx: &Ctx<'_>,
+    picture: &SequencePicture,
+    layout: &SequenceFlow,
+    palette: &Palette,
+    (standings, unsettled): (&Standings, &Unsettled),
+) -> Markup {
+    let mut head = vec![head_shade(layout, standings.of(&layout.flow.id), palette)];
+    head.extend(layout.columns.iter().map(|column| {
+        let card = &column.card;
+        shadow_under(
+            &card.node.id,
+            card.bounds,
+            SLAB_RADIUS,
+            Lift::Card,
+            palette,
+            standings.of(&card.node.id),
+            None,
+        )
+    }));
+    head.extend(layout.columns.iter().map(|column| {
+        let id = &column.card.node.id;
+        paint_card(
+            ctx,
+            &column.card,
+            palette,
+            standings.of(id),
+            unsettled.of(id),
+            appearance_of(picture, id),
+        )
+    }));
+    group(
+        Role::FlowHead,
+        None,
+        attrs! { HEAD_ATTRIBUTE: layout.flow.id.as_str() },
+        lines(head),
+    )
+}
+
 /// One flow, painted: everything it draws, and the words that go above every flow's runs.
 fn paint_flow(
     ctx: &Ctx<'_>,
@@ -872,35 +912,12 @@ fn paint_flow(
             standings.of(id),
         )
     }));
-    let mut head = vec![head_shade(layout, flow_standing, palette)];
-    head.extend(layout.columns.iter().map(|column| {
-        let card = &column.card;
-        shadow_under(
-            &card.node.id,
-            card.bounds,
-            SLAB_RADIUS,
-            Lift::Card,
-            palette,
-            standings.of(&card.node.id),
-            None,
-        )
-    }));
-    head.extend(layout.columns.iter().map(|column| {
-        let id = &column.card.node.id;
-        paint_card(
-            ctx,
-            &column.card,
-            palette,
-            standings.of(id),
-            unsettled.of(id),
-            appearance_of(picture, id),
-        )
-    }));
-    body.push(group(
-        Role::FlowHead,
-        None,
-        attrs! { HEAD_ATTRIBUTE: layout.flow.id.as_str() },
-        lines(head),
+    body.push(flow_head(
+        ctx,
+        picture,
+        layout,
+        palette,
+        (standings, unsettled),
     ));
     body.extend(layout.frames.iter().rev().map(|frame| {
         paint_fragment(

@@ -127,26 +127,23 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
                 .find(|(held, _)| *held == wanted)
                 .map(|(_, value)| read_back(&spelt(value)))
         };
-        let subject = match (id, read("data-type-name")) {
-            (Some(id), Some(type_name)) => {
-                walk.met.push((
-                    id,
-                    Applied {
-                        type_name,
-                        type_kind: read("data-type-kind").unwrap_or_default(),
-                        icon: None,
+        let subject = id.zip(read("data-type-name")).map(|(id, type_name)| {
+            walk.met.push((
+                id,
+                Applied {
+                    type_name,
+                    type_kind: read("data-type-kind").unwrap_or_default(),
+                    icon: None,
 
-                        depiction: read("data-depiction").unwrap_or_default(),
-                        type_color: read("data-type-color").unwrap_or_else(|| "neutral".to_owned()),
-                        line_color: read("data-line-color").unwrap_or_else(|| "neutral".to_owned()),
-                        dash: read("data-line-dash").unwrap_or_else(|| "solid".to_owned()),
-                        arrowhead: read("data-arrowhead").unwrap_or_else(|| "filled".to_owned()),
-                    },
-                ));
-                Some(walk.met.len() - 1)
-            }
-            _ => None,
-        };
+                    depiction: read("data-depiction").unwrap_or_default(),
+                    type_color: read("data-type-color").unwrap_or_else(|| "neutral".to_owned()),
+                    line_color: read("data-line-color").unwrap_or_else(|| "neutral".to_owned()),
+                    dash: read("data-line-dash").unwrap_or_else(|| "solid".to_owned()),
+                    arrowhead: read("data-arrowhead").unwrap_or_else(|| "filled".to_owned()),
+                },
+            ));
+            walk.met.len() - 1
+        });
         if empty {
             return;
         }
@@ -158,13 +155,21 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
             visit(walk, child);
         }
         walk.open.pop();
-        if name == "svg" && walk.open.last().is_some_and(|parent| parent.icon) {
-            for open in &walk.open {
-                if let Some(at) = open.subject
-                    && walk.met[at].1.icon.is_none()
-                {
-                    walk.met[at].1.icon = Some(item.clone());
-                }
+        if name == "svg" {
+            adopt_icon(walk, item);
+        }
+    }
+    /// An icon's markup, as the icon of every open subject without one yet,
+    /// when it stands inside a group that draws an icon.
+    fn adopt_icon(walk: &mut Walk, item: &Item) {
+        if !walk.open.last().is_some_and(|parent| parent.icon) {
+            return;
+        }
+        for open in &walk.open {
+            if let Some(at) = open.subject
+                && walk.met[at].1.icon.is_none()
+            {
+                walk.met[at].1.icon = Some(item.clone());
             }
         }
     }
