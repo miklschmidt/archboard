@@ -38,7 +38,9 @@ export type CodexWorkbenchExtensions = Omit<
 	Partial<CodexWorkbenchHostPolicy>,
 	"instructions" | "resolveCheckout" | "shownCheckoutOf" | "shownConversationOf" | "onShownChange"
 > & {
+	/** The checkout a browser's tab shows first. Default: the checkout its socket was accepted with. */
 	readonly browserCheckoutOf?: (browserId: string) => string;
+	/** Install the host's reading and activation of the tab registry on each generation's gateway. */
 	readonly installBrowserSessions?: (tabs: TabSessions) => () => void;
 };
 
