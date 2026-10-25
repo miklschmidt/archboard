@@ -1,7 +1,9 @@
 // The panes on screen, as the CLI asks the server about them and moves them.
 
-import type { BoardIdentity } from "@archboard/board/address";
+import type { parseBoardKey } from "@archboard/board/address";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
+
+type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
 /**
  * The options for a POST carrying a JSON body.

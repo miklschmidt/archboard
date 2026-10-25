@@ -2,21 +2,15 @@ import { RiNotification3Line } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
-import type { VaultCheck } from "@archboard/board/policy";
-import { Button } from "@archboard/ui-kit/controls";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@archboard/ui-kit/overlays";
+import { Button, Dialog } from "@archboard/ui-kit/components";
 import { DiagnosticList } from "#ui/components/vault-diagnostics/DiagnosticList.tsx";
 import { useVaultCheck } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
 import { useVaultRepair } from "#ui/hooks/vault-diagnostics/use-vault-repair.ts";
 import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */
@@ -49,25 +43,25 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DiagnosticsBell count={count} failed={check.isError} />
-			<DialogContent className="sm:max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Vault diagnostics</DialogTitle>
-					<DialogDescription>
+			<Dialog.Content className="sm:max-w-2xl">
+				<Dialog.Header>
+					<Dialog.Title>Vault diagnostics</Dialog.Title>
+					<Dialog.Description>
 						{check.data?.configurationValid === false
 							? "Configuration needs attention. Boards use bundled defaults until it is repaired."
 							: "Configuration and every board family, checked together."}
-					</DialogDescription>
-				</DialogHeader>
+					</Dialog.Description>
+				</Dialog.Header>
 				<CheckResult check={check} />
-				<DialogFooter>
+				<Dialog.Footer>
 					<Button variant="outline" onClick={recheck} disabled={check.isFetching}>
 						Check again
 					</Button>
 					<Button onClick={handleRepair} disabled={count === 0}>
 						Fix with Codex
 					</Button>
-				</DialogFooter>
-			</DialogContent>
+				</Dialog.Footer>
+			</Dialog.Content>
 		</Dialog>
 	);
 }
@@ -82,7 +76,7 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 function DiagnosticsBell(props: { count: number; failed: boolean }): JSX.Element {
 	const { count, failed } = props;
 	return (
-		<DialogTrigger
+		<Dialog.Trigger
 			className="hover:bg-accent focus-visible:ring-ring relative inline-flex size-8 items-center justify-center rounded-md outline-none focus-visible:ring-2"
 			aria-label={count > 0 ? `Vault diagnostics: ${count} issues` : "Vault diagnostics"}
 		>
@@ -90,7 +84,7 @@ function DiagnosticsBell(props: { count: number; failed: boolean }): JSX.Element
 			{(count > 0 || failed) && (
 				<span className="absolute top-1 right-1 size-1.5 rounded-full bg-amber-500" />
 			)}
-		</DialogTrigger>
+		</Dialog.Trigger>
 	);
 }
 

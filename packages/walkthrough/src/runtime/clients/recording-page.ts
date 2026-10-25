@@ -13,13 +13,7 @@
 
 import { setTimeout as delay } from "node:timers/promises";
 
-import {
-	RECORDING_CALL_MS,
-	RECORDING_FILE_READ_MS,
-	RECORDING_PAGE_READY_MS,
-	RECORDING_POLL_MS,
-	RECORDING_STALL_MS,
-} from "@archboard/timing";
+import { RECORDER_MS } from "@archboard/timing";
 import {
 	RECORDING_PAGE_GLOBAL,
 	RecordingStateSchema,
@@ -114,7 +108,7 @@ async function heeded<T>(signal: AbortSignal, call: Promise<T>): Promise<T> {
  * @throws {RecordingPageError} When the page publishes something that is not a recording state.
  */
 async function stateOf(page: RecordingPageHandle): Promise<RecordingState | null> {
-	const value = await page.evaluate(`${PAGE}?.state() ?? null`, { timeoutMs: RECORDING_CALL_MS });
+	const value = await page.evaluate(`${PAGE}?.state() ?? null`, { timeoutMs: RECORDER_MS.call });
 	if (value === null) return null;
 	const parsed = RecordingStateSchema.safeParse(value);
 	if (!parsed.success) throw new RecordingPageError(OTHER_BUILD, false);
@@ -131,7 +125,7 @@ const OTHER_BUILD =
  * @returns What happened and what to do.
  */
 function notReady(published: boolean): string {
-	const within = `within ${RECORDING_PAGE_READY_MS / 1000} seconds`;
+	const within = `within ${RECORDER_MS.pageReady / 1000} seconds`;
 	return published
 		? `The canvas page was not ready to record ${within}: the board was not drawn or Codex did not start. Open the board on the canvas to see why, then record again.`
 		: `The canvas page never offered a recording ${within}: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server, then record again.`;
@@ -176,7 +170,7 @@ async function ready(
 	if (isReady(state)) return;
 	const seen = published || state !== null;
 	if (performance.now() >= deadline) throw new RecordingPageError(notReady(seen), false);
-	await pause(RECORDING_POLL_MS, signal);
+	await pause(RECORDER_MS.poll, signal);
 	return ready(page, signal, deadline, seen);
 }
 
@@ -191,7 +185,7 @@ async function begin(page: RecordingPageHandle, signal: AbortSignal): Promise<vo
 	try {
 		await heeded(
 			signal,
-			page.evaluate(`${PAGE}.start()`, { userGesture: true, timeoutMs: RECORDING_CALL_MS }),
+			page.evaluate(`${PAGE}.start()`, { userGesture: true, timeoutMs: RECORDER_MS.call }),
 		);
 	} catch (error) {
 		signal.throwIfAborted();
@@ -269,13 +263,13 @@ async function finished(
 	const done = outcomeOf(state, following);
 	if (done !== null) return done;
 	follow(state, following, onProgress);
-	if (performance.now() - following.changedAt > RECORDING_STALL_MS) {
+	if (performance.now() - following.changedAt > RECORDER_MS.stall) {
 		throw new RecordingPageError(
 			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the board on the canvas and check voice there.",
 			following.shown,
 		);
 	}
-	await pause(RECORDING_POLL_MS, signal);
+	await pause(RECORDER_MS.poll, signal);
 	return finished(page, signal, onProgress, following);
 }
 
@@ -289,7 +283,7 @@ async function finished(
 async function logOf(page: RecordingPageHandle, signal: AbortSignal): Promise<TalkLog> {
 	const value = await heeded(
 		signal,
-		page.evaluate(`${PAGE}.talk()`, { timeoutMs: RECORDING_FILE_READ_MS }),
+		page.evaluate(`${PAGE}.talk()`, { timeoutMs: RECORDER_MS.fileRead }),
 	);
 	const parsed = TalkLogSchema.safeParse(value);
 	if (!parsed.success) throw new RecordingPageError(OTHER_BUILD, true);
@@ -319,11 +313,11 @@ async function drive(
 	const following: Following = { said: "", changedAt: 0, shown: false };
 	try {
 		signal.throwIfAborted();
-		await ready(page, signal, performance.now() + RECORDING_PAGE_READY_MS, false);
+		await ready(page, signal, performance.now() + RECORDER_MS.pageReady, false);
 		await begin(page, signal);
 		following.changedAt = performance.now();
 		const state = await finished(page, signal, options.onProgress, following);
-		await heeded(signal, page.saveBlob(`${PAGE}.voice()`, options.voice, RECORDING_FILE_READ_MS));
+		await heeded(signal, page.saveBlob(`${PAGE}.voice()`, options.voice, RECORDER_MS.fileRead));
 		return { state, log: await logOf(page, signal) };
 	} catch (error) {
 		signal.throwIfAborted();

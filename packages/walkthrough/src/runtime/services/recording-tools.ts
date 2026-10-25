@@ -2,7 +2,7 @@
 // with the flags its page needs. Both are found before anything is recorded (TASK-381).
 
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
-import { RECORDING_BROWSER_START_MS, RECORDING_BROWSER_STOP_MS } from "@archboard/timing";
+import { RECORDER_MS } from "@archboard/timing";
 import {
 	HeadlessChromiumError,
 	discoveredChromiumPath,
@@ -52,8 +52,8 @@ async function startBrowser(options: {
 		return await launchHeadlessChromium({
 			chromiumPath: options.chromiumPath ?? discoveredChromiumPath(),
 			extraArgs: options.flags,
-			startupTimeoutMs: RECORDING_BROWSER_START_MS,
-			cleanupTimeoutMs: RECORDING_BROWSER_STOP_MS,
+			startupTimeoutMs: RECORDER_MS.browserStart,
+			cleanupTimeoutMs: RECORDER_MS.browserStop,
 			tempRootPrefix: options.tempRootPrefix,
 			signal: options.signal,
 		});

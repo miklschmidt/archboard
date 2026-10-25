@@ -11,7 +11,7 @@ import {
 } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { AGENT_ELAPSED_TICK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "@archboard/timing";
 import { clockDuration, useClock } from "@archboard/ui-kit/time";
 import type { ConversationDataParts } from "#ui/rules/runtime/messages.ts";
 import { DelegatedFrom } from "#ui/components/thread/VoiceTurn.tsx";
@@ -221,7 +221,7 @@ function EndedLine(props: { readonly end: ConversationDataParts["turn-end"] }): 
  * @returns The line.
  */
 function RunningLine(props: { readonly startedAtMs: number | null }): JSX.Element {
-	const now = useClock(AGENT_ELAPSED_TICK_MS);
+	const now = useClock(SHELL_CLOCK_MS.elapsedTick);
 	const { startedAtMs } = props;
 	return (
 		<p data-slot="turn-running" className="text-body text-muted-foreground flex items-center gap-2">

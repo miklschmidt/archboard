@@ -15,7 +15,7 @@ import {
 	verifyCodexExecutable,
 } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
-import { SERVER_STARTUP_READINESS_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {
@@ -24,7 +24,8 @@ import {
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
 } from "#runtime/operations/server-startup-cleanup.ts";
-import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
+import { errnoCode } from "@archboard/diagnostics/errno";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import {
 	serverPort,
 	healthOrNull,
@@ -227,7 +228,7 @@ function signalSpawnedServer(spawned: SpawnedServer, signal: NodeJS.Signals): vo
 	try {
 		spawned.child.kill(signal);
 	} catch (error) {
-		if (errorCode(error) !== "ESRCH") {
+		if (errnoCode(error) !== "ESRCH") {
 			throw error;
 		}
 	}
@@ -419,8 +420,7 @@ async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureR
  * @returns The server URL and whether this call started the server.
  */
 async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
-	const timeoutMs = options.timeoutMs ?? SERVER_STARTUP_READINESS_MS;
-
+	const timeoutMs = options.timeoutMs ?? SERVER_LIFECYCLE_MS.startupReadiness;
 	const existing = await healthOrNull();
 	if (existing) {
 		if (!isServerHealth(existing)) {

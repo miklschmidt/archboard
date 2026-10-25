@@ -15,7 +15,7 @@ import {
 	standingMark,
 	type SubjectStanding,
 } from "@archboard/renderer/picture";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import type { AppliedAppearance } from "@archboard/renderer/picture";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 

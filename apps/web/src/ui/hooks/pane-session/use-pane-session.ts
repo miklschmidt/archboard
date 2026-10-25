@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 
 import { createPaneCore, type PaneCore } from "#ui/state/pane-session/pane-core.ts";
 import { usePaneContact, type PaneContact } from "#ui/hooks/pane-session/use-pane-contact.ts";
@@ -22,6 +21,10 @@ import type {
 	DoingEntry,
 	LockHolder,
 } from "#ui/rules/pane-session/session-types.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
 /**
  * A client id for one pane: the pane, plus enough randomness that two tabs

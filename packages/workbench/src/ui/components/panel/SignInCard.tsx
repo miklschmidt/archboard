@@ -4,7 +4,7 @@
 
 import { useCallback, useState, type ChangeEvent, type FormEvent, type JSX } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
+import { Button } from "@archboard/ui-kit/components";
 import type { AgentActions } from "#ui/state/surfaces/contracts.ts";
 
 /** Inputs for the card. */

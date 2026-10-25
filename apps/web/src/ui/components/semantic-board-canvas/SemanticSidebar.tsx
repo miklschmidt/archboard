@@ -33,8 +33,7 @@ import {
 
 import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SIDEBAR_MS } from "@archboard/timing";
-import { cn } from "@archboard/ui-kit/class-names";
-import { IconButton, Tabs, TabsContent, TabsList, TabsTrigger } from "@archboard/ui-kit/controls";
+import { cn, IconButton, Tabs } from "@archboard/ui-kit/components";
 import {
 	SearchRequestContext,
 	useSearchRequest,
@@ -70,13 +69,13 @@ function SidebarPanel(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<TabsContent
+		<Tabs.Content
 			value={props.tab}
 			// A panel that scrolls is a tab stop, so the keys can scroll it: it shows where it is.
 			className="focus-visible:ring-ring flex min-h-0 flex-col overflow-x-hidden overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset"
 		>
 			{props.children}
-		</TabsContent>
+		</Tabs.Content>
 	);
 }
 
@@ -132,9 +131,9 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 		// The labels' words start on the column the tab's content starts on, 16 px
 		// in, with each underline reaching 8 px past its words.
 		<div className="border-border h-band flex shrink-0 items-center gap-1 border-b pr-2">
-			<TabsList variant="underline" className="h-full w-auto flex-none border-b-0 pl-2">
+			<Tabs.List variant="underline" className="h-full w-auto flex-none border-b-0 pl-2">
 				{TABS.map((entry) => (
-					<TabsTrigger
+					<Tabs.Trigger
 						key={entry.tab}
 						id={entry.tab === "selection" ? selectionTabId : undefined}
 						value={entry.tab}
@@ -143,9 +142,9 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 						className="text-control px-2"
 					>
 						{entry.label}
-					</TabsTrigger>
+					</Tabs.Trigger>
 				))}
-			</TabsList>
+			</Tabs.List>
 			{clear !== null && (
 				<IconButton label="Clear selection" slot="semantic-selection-clear" onClick={letGo}>
 					<RiCloseLine />

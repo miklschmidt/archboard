@@ -9,9 +9,7 @@
 import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
+import { Button, cn, Tooltip } from "@archboard/ui-kit/components";
 
 /** What a key that has nowhere to go looks like: dimmed, flat, and out of the pointer's way. */
 const SPENT =
@@ -31,8 +29,8 @@ interface KeyTipProps {
 function KeyTip(props: KeyTipProps): JSX.Element {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={props.children} />
-			<TooltipContent>{props.label}</TooltipContent>
+			<Tooltip.Trigger render={props.children} />
+			<Tooltip.Content>{props.label}</Tooltip.Content>
 		</Tooltip>
 	);
 }

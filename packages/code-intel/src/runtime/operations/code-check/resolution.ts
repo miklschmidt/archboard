@@ -49,7 +49,8 @@ import {
 	type UnavailableServer,
 } from "#runtime/services/language-servers/session.ts";
 import type { CheckTiming, CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import { configureCommand, type LanguageServers } from "@archboard/workspace/checkouts";
+import type { z } from "zod";
+import { configureCommand, type LanguageServersSchema } from "@archboard/workspace/checkouts";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -213,7 +214,7 @@ function serverSkips(
  * @returns The resolution.
  */
 function openResolution(
-	servers: ReadonlyMap<string, LanguageServers>,
+	servers: ReadonlyMap<string, z.infer<typeof LanguageServersSchema>>,
 	signal: AbortSignal,
 	facts: FactsPass,
 	checkouts: ReadonlyMap<string, Checkout>,

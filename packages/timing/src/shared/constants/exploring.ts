@@ -2,8 +2,10 @@
 // not the motion they wait out. What these pull against is the hand itself, so
 // each is judged by how it feels under a wheel, a drag or a pointer at rest.
 
+import { durations } from "#shared/constants/durations.ts";
+
 /** The durations of exploring a board, in milliseconds. */
-const EXPLORING_MS = Object.freeze({
+const EXPLORING_MS = durations({
 	/**
 	 * How long the camera takes to cover most of the way to where a wheel or a
 	 * key asked it to go: it covers 63 percent of what is left in this time, and
@@ -55,7 +57,7 @@ const EXPLORING_MS = Object.freeze({
 	trafficStart: 1500,
 	/**
 	 * How long the camera glides to the whole board when the fit key is pressed.
-	 * Shorter than a walkthrough step (`PRESENTATION_STEP_MS`) because the reader
+	 * Shorter than a walkthrough step (`PRESENTATION_MS.step`) because the reader
 	 * asked for it and is waiting; long enough that the path, which pulls back to
 	 * cross a long distance, can be followed.
 	 */
@@ -67,10 +69,18 @@ const EXPLORING_MS = Object.freeze({
 	 * Pulls against the pointer crossing the board: shorter than about 80 ms and
 	 * the picture flashes at everything the pointer passes; longer than about
 	 * 200 ms and resting on a part to ask what it touches feels ignored. It is
-	 * well under a tip's delay (`SUBJECT_TIP_DELAY_MS`), so the light comes
+	 * well under a tip's delay (`subjectTip`), so the light comes
 	 * first and the tip, when it opens, finds the connections already lit.
 	 */
 	lightingDwell: 110,
+	/**
+	 * How long the pointer rests on a card, a container's header or a label before
+	 * the picture says more about it; once one tip is open, the next opens at once.
+	 * Pulls against the pointer crossing the board: shorter and tips flash over
+	 * everything it passes on its way; longer and resting on a card to read it
+	 * feels ignored.
+	 */
+	subjectTip: 450,
 	/**
 	 * How long the light stays after the pointer leaves a part for the empty
 	 * picture, so crossing the gap between two cards, or a line's thin width, does
@@ -86,7 +96,7 @@ const EXPLORING_MS = Object.freeze({
 	 * Pulls against the pointer: shorter than about 100 ms and the picture
 	 * flickers as the pointer crosses parts, longer than about 250 ms and a part
 	 * seems to be lit after the pointer has moved on. Shorter than a presented
-	 * step's veil (`PRESENTATION_STEP_MS`) because a poke is asked of the picture
+	 * step's veil (`PRESENTATION_MS.step`) because a poke is asked of the picture
 	 * by a hand that is waiting for the answer.
 	 */
 	lightingFade: 160,
@@ -114,7 +124,7 @@ const EXPLORING_MS = Object.freeze({
 	 * somewhere other than the picture.
 	 *
 	 * Pulls against the pick: the reader chose the part and is waiting to see
-	 * it, so it is shorter than a walkthrough step (`PRESENTATION_STEP_MS`); and
+	 * it, so it is shorter than a walkthrough step (`PRESENTATION_MS.step`); and
 	 * long enough that the move reads as a glide to the part and not a cut that
 	 * leaves the reader to find where the board went.
 	 */
@@ -126,7 +136,7 @@ const EXPLORING_MS = Object.freeze({
 	 * a card to the size of the pane, often more than ten times, and the eye needs
 	 * a few frames at each size to see that it is the same board; under about half
 	 * a second that reads as a cut with a smear, and over a second the reader waits
-	 * on a picture they already chose. A walkthrough step (`PRESENTATION_STEP_MS`)
+	 * on a picture they already chose. A walkthrough step (`PRESENTATION_MS.step`)
 	 * is longer because it also carries the reader across the board.
 	 */
 	dive: 720,

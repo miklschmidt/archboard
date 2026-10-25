@@ -11,8 +11,7 @@
 
 import { useCallback, type JSX, type ReactNode } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
+import { Button, cn } from "@archboard/ui-kit/components";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { SemanticGroupChip } from "#ui/components/semantic-board-canvas/SemanticGroupChip.tsx";
 import { groupLabel, type GroupNames } from "#ui/rules/semantic-board-canvas/board/groups.ts";

@@ -4,8 +4,12 @@
 // and writes no doing line. It states the version the preview read, so a board
 // written since is refused rather than moved as nobody saw it.
 
-import type { BoardMoveAnswer, BoardMovePreview } from "@archboard/board/commands";
+import type { BoardMovePreview } from "@archboard/board/commands";
 import { inVault, requestJson } from "@archboard/server-requests";
+import type { BoardMoveAnswerSchema } from "@archboard/board/commands";
+import type { z } from "zod";
+
+type BoardMoveAnswer = z.infer<typeof BoardMoveAnswerSchema>;
 
 /** Which board to move, from which vault, to which vault. */
 interface MoveAsked {

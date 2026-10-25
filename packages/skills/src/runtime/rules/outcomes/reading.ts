@@ -10,7 +10,7 @@ import {
 } from "@archboard/board/document";
 import type { DiagramTheme } from "@archboard/board/render-reply";
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
-import type { SemanticPolicy, VaultDiagnostic } from "@archboard/board/policy";
+import type { SemanticPolicy } from "@archboard/board/policy";
 import type { RecordingContainer } from "@archboard/walkthrough/recording";
 import type { CaptureAttempt } from "#runtime/operations/runs/captures.ts";
 import {
@@ -19,6 +19,10 @@ import {
 	plausibleSubjects,
 	variantNamed,
 } from "#runtime/rules/outcomes/naming.ts";
+import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {

@@ -1,9 +1,4 @@
-import {
-	CODEX_COMPOSED_SHUTDOWN_MS,
-	CODEX_PROCESS_RESTART_BASE_MS,
-	CODEX_PROCESS_RESTART_MAX_MS,
-	CODEX_REQUEST_SETTLEMENT_MS,
-} from "@archboard/timing";
+import { CODEX_PROCESS_MS, CODEX_SESSION_MS, codexRestartDelayMs } from "@archboard/timing";
 import {
 	CodexProcessError,
 	type ChildExit,
@@ -142,18 +137,6 @@ function classifyExit(
 }
 
 /**
- * Compute the exponential restart delay for the current attempt.
- * @param restartAttempt - Restarts already attempted since account readiness.
- * @returns The delay, capped at the configured maximum.
- */
-function restartDelay(restartAttempt: number): number {
-	return Math.min(
-		CODEX_PROCESS_RESTART_MAX_MS,
-		CODEX_PROCESS_RESTART_BASE_MS * 2 ** Math.min(restartAttempt, 30),
-	);
-}
-
-/**
  * Run the scheduled restart, making any spawn failure terminal.
  * @param state - The owner state.
  */
@@ -193,7 +176,7 @@ function scheduleRestart(
 	exit: ChildExit,
 	classification: "early_exit" | "crash",
 ): void {
-	const delayMs = restartDelay(state.restartAttempt);
+	const delayMs = codexRestartDelayMs(state.restartAttempt);
 	state.restartAttempt += 1;
 	state.restartDelayMs = delayMs;
 	state.nextRestartAtMs = state.dependencies.now() + delayMs;
@@ -277,7 +260,7 @@ function recoverFromExit(
 	const cleanup = ensureGroupCleanup(
 		state,
 		record,
-		state.dependencies.now() + CODEX_COMPOSED_SHUTDOWN_MS,
+		state.dependencies.now() + CODEX_PROCESS_MS.composedShutdown,
 	);
 	void cleanup.then(
 		() => {
@@ -325,7 +308,7 @@ function routeClosedChild(
 	exit: ChildExit,
 	classification: CodexProcessExit["classification"],
 ): void {
-	const deadlineAtMs = state.dependencies.now() + CODEX_COMPOSED_SHUTDOWN_MS;
+	const deadlineAtMs = state.dependencies.now() + CODEX_PROCESS_MS.composedShutdown;
 	if (classification === "requested" || state.state === "terminal_failure") {
 		observeGroupCleanup(state, record, deadlineAtMs);
 		return;
@@ -361,7 +344,7 @@ function readinessTimeout(state: ProcessOwnerState, record: ChildRecord): void {
 		new CodexProcessError({
 			code: "startup_timeout",
 			terminal: true,
-			message: `The Codex app-server spawned but did not acknowledge typed readiness within ${CODEX_REQUEST_SETTLEMENT_MS} ms. Recovery: verify the app-server handshake and retry start.`,
+			message: `The Codex app-server spawned but did not acknowledge typed readiness within ${CODEX_SESSION_MS.requestSettlement} ms. Recovery: verify the app-server handshake and retry start.`,
 		}),
 	);
 	void state.hooks.stop().catch(() => undefined);
@@ -412,7 +395,7 @@ function handleSpawned(state: ProcessOwnerState, record: ChildRecord): void {
 	try {
 		record.readinessTimer = state.dependencies.schedule(
 			() => readinessTimeout(state, record),
-			CODEX_REQUEST_SETTLEMENT_MS,
+			CODEX_SESSION_MS.requestSettlement,
 		);
 	} catch (cause) {
 		terminalFailure(

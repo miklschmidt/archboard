@@ -5,7 +5,7 @@
 
 import { useCallback, type JSX } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
+import { Button } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellPane, TakeBackState } from "#ui/rules/shell/contracts.ts";
 import { StatusDot } from "#ui/components/shell/StatusDot.tsx";
 import { clockTime } from "#ui/rules/shell/time.ts";

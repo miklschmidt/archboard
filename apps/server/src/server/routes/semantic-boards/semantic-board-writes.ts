@@ -26,7 +26,6 @@ import {
 	VariantEditInputSchema,
 } from "@archboard/board/commands";
 import {
-	type DescendantOutcome,
 	adoptVariantTransition,
 	branchVariantTransition,
 	createBoardTransition,
@@ -34,7 +33,6 @@ import {
 	settleVariantTransition,
 	shelveVariantTransition,
 	writeSemanticBoard,
-	type SemanticWriteResult,
 } from "@archboard/board/store-write";
 import { broadcast, settledChangeFields } from "@archboard/workbench/panes";
 import { checkDoing } from "@archboard/board/doing";
@@ -43,6 +41,9 @@ import {
 	refuseUndescribedWrite,
 } from "#server/projections/board-announcements/board-announcements.ts";
 import { vaultOfRequest } from "@archboard/workbench/host";
+
+type DescendantOutcome = Extract<Awaited<ReturnType<typeof writeSemanticBoard>>, { outcome: "applied" }>["descendants"][number];
+type SemanticWriteResult = Awaited<ReturnType<typeof writeSemanticBoard>>;
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for

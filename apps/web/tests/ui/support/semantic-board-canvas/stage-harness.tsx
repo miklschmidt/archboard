@@ -9,7 +9,11 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@archboard/ui-kit/display";
+import {
+	type PaneChrome,
+	PaneChromeContext,
+} from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
+import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";

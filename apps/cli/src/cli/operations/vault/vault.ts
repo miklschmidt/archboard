@@ -11,8 +11,10 @@ import {
 	type CodeCheckAnswer,
 	type CheckTiming,
 } from "@archboard/code-intel/code-check";
-import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
+import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 const output = {
 	cases: [
