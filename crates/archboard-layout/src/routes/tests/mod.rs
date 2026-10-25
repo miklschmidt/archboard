@@ -5,6 +5,7 @@
 //! in `clusters`, and a drawing with some subjects left out in `shown`.
 
 mod clusters;
+mod ink;
 mod layering;
 mod shown;
 
@@ -216,12 +217,13 @@ fn a_crossing_with_room_on_both_lines_hops_centred_bulging_the_one_way() {
 
 #[test]
 fn every_route_of_a_trunk_hops_with_it() {
-    let result = bridged(&drawing(&[
+    let before = drawing(&[
         points(&[(100.0, 0.0), (100.0, 100.0)]),
         points(&[(0.0, 50.0), (200.0, 50.0)]),
         // The same line one unit lower, run the other way.
         points(&[(200.0, 51.0), (0.0, 51.0)]),
-    ]));
+    ]);
+    let result = bridged(&before);
     assert_eq!(lone_hop(&result), ("1", vec!["0"]));
     let crest = curve_bounds(&result.bridges[0].curve).y;
     for (index, line) in [(1, 50.0), (2, 51.0)] {
@@ -229,6 +231,7 @@ fn every_route_of_a_trunk_hops_with_it() {
         assert_eq!(curve_bounds(curve).y, crest + line - 50.0, "route {index}");
         assert_eq!(curve.end().y, line, "route {index}");
     }
+    ink::hides_hop(&before, &result, "2", crest + 1.0);
 }
 
 #[test]
