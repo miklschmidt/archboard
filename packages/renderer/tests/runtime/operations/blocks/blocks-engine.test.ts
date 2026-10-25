@@ -31,6 +31,7 @@ import requestPath from "#tests/runtime/support/fixtures/request-path.json";
 import theTwoThreads from "#tests/runtime/support/fixtures/the-two-threads.json";
 import tightWallPort from "#tests/runtime/support/fixtures/tight-wall-port.json";
 import twoChains from "#tests/runtime/support/fixtures/two-chains.json";
+import wallPortKinds from "#tests/runtime/support/fixtures/wall-port-kinds.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
@@ -497,4 +498,41 @@ test("a line out of nested containers by their walls runs level between them", a
 		route.slice(1).flatMap((point, index) => (point.y === route[index]!.y ? [point.y] : [])),
 	);
 	expect(levels.size).toBeLessThanOrEqual(2);
+});
+
+/**
+ * Where a route crosses a box's side walls.
+ * @param route The route.
+ * @param box The box.
+ * @returns Each crossing, as its wall and height.
+ */
+function sideWallCrossings(
+	route: readonly { x: number; y: number }[],
+	box: { x: number; y: number; width: number; height: number },
+): string[] {
+	return route.slice(1).flatMap((end, index) => {
+		const start = route[index]!;
+		if (start.y !== end.y || start.y <= box.y || start.y >= box.y + box.height) return [];
+		const [low, high] = [Math.min(start.x, end.x), Math.max(start.x, end.x)];
+		return [box.x, box.x + box.width]
+			.filter((x) => low < x && x < high)
+			.map((x) => `${x === box.x ? "left" : "right"}:${start.y}`);
+	});
+}
+
+// Reduced from Codex realtime voice (TASK-536): a container stood each of
+// its own ports on a side wall level with the pin its lines reach, so the
+// ports of an RPC and a call out of one block stood on one point. The two
+// lines drew as one there, and libavoid finds no route to the later of two
+// pins on one point of a block: on the whole board three trunks took a
+// dogleg through the Chat conversations container and its Workhorse list.
+test("lines of two kinds out of a container's side wall cross it apart", async () => {
+	const content = orderedFixture(wallPortKinds);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const routes = corridorPoints(drawn.svg);
+	const [rpc, call] = ["MZtuHuMT", "o63C7KPd"].map((id) =>
+		sideWallCrossings(routes.get(id)!, drawn.atlas.nodes["Fvl3uDPi"]!),
+	);
+	expect(rpc!.length * call!.length).toBeGreaterThan(0);
+	expect(rpc!.filter((crossing) => call!.includes(crossing))).toEqual([]);
 });

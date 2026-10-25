@@ -26,6 +26,7 @@ import { headerWithin, takenIndex, type TakenHeader } from "#shared/rules/blocks
 import { extentOf, packingsOf, type Packing } from "#shared/rules/blocks/packing/packings.ts";
 import { openStretch, type Span } from "#shared/rules/blocks/packing/open-edge.ts";
 import { slideToTrunks } from "#shared/rules/blocks/packing/slides.ts";
+import { placeWallPorts } from "#shared/rules/blocks/packing/walls.ts";
 import { LANE } from "#shared/rules/track/routes/chains.ts";
 import { spreadPorts } from "#shared/rules/track/channels/channels.ts";
 import { scoresBetter } from "#shared/rules/track/scene/score.ts";
@@ -374,33 +375,6 @@ class PackLayout {
 	}
 
 	/**
-	 * Place the block's own ports on its side walls, within the block: each level
-	 * with the pins its lines reach on that wall of their blocks, else their middle.
-	 * @param width The block's width.
-	 * @param span Where the packed items start and end.
-	 * @param span.top Where they start.
-	 * @param span.bottom Where they end.
-	 */
-	placeWalls(width: number, span: { top: number; bottom: number }): void {
-		const lines = [...this.block.lines.values()];
-		for (const [port, side] of this.block.ports) {
-			if (side !== "left" && side !== "right") continue;
-			const reached = lines
-				.flatMap((line) => (line.to === port ? [line.from] : line.from === port ? [line.to] : []))
-				.flatMap((end) => {
-					const owner = this.boxes.get(this.tree.pins.get(end)?.block.id ?? "");
-					if (owner === undefined) return [];
-					const at = this.pinAt(end);
-					return [at.side === side ? at.y : owner.y + owner.height / 2];
-				});
-			const middle = reached.reduce((sum, y) => sum + y, 0) / Math.max(1, reached.length);
-			const y = Math.min(span.bottom, Math.max(span.top, middle));
-			const x = side === "left" ? 0 : width;
-			this.boxes.set(port, { x: x - PORT / 2, y: y - PORT / 2, width: PORT, height: PORT });
-		}
-	}
-
-	/**
 	 * Route every trunk around the packed blocks.
 	 * @param avoid The initialized libavoid module.
 	 */
@@ -593,7 +567,7 @@ class PackLayout {
 			});
 		this.placePorts("top", width, span.top);
 		this.placePorts("bottom", width, span.bottom);
-		this.placeWalls(width, span);
+		placeWallPorts(this, width, span);
 	}
 }
 
