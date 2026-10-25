@@ -4,16 +4,16 @@
 //! repeating gradient that slides by one spacing every spacing's time; a
 //! message's pulse crosses its line once in every turn of the shared clock.
 
+use crate::legs::{Leg, leg_path, legs_of};
 use archboard_scene::attrs;
 use archboard_scene::geometry::{Segment, coord, round_coord};
 use archboard_scene::js;
-use archboard_scene::markup::{Markup, markup_of, short_hash, tag, wrap};
-use archboard_scene::route::{Leg, leg_path, legs_of, plain};
+use archboard_scene::markup::{Markup, markup_of, tag, wrap};
 use archboard_scene::scene::{Motion, PulseLook, TrafficMark};
 
 /// The class every moving mark carries, for the stylesheet to hide it from a
 /// reader who asked for less motion.
-pub const PULSE_CLASS: &str = "ab-pulse";
+pub(crate) const PULSE_CLASS: &str = "ab-pulse";
 
 const CORE_LEAST: f64 = 1.5;
 const CORE_OVER_LINE: f64 = 0.6;
@@ -61,6 +61,15 @@ fn box_of(leg: &Leg, core: f64) -> [String; 4] {
     [coord(x0), coord(y0), coord(width), coord(height)]
 }
 
+/// Seven characters of FNV-1a over some markup's UTF-16 code units, in base 36.
+fn short_hash(markup: &str) -> String {
+    let mut state: u32 = 0x811c_9dc5;
+    for code in markup.encode_utf16() {
+        state = (state ^ u32::from(code)).wrapping_mul(0x0100_0193);
+    }
+    js::pad_start(&js::radix(state, 36), 7, '0')
+}
+
 /// A definition and the id it is referred to by.
 struct Defined {
     id: String,
@@ -95,7 +104,7 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
                     "d": if *over > HALO_OVER { exact.as_str() } else { joined.as_str() },
                     "fill": "none",
                     "stroke": "#ffffff",
-                    "stroke-width": plain(core + over, 2),
+                    "stroke-width": js::fixed_number(core + over, 2),
                     "stroke-opacity": *light,
                 },
             ))
@@ -118,9 +127,9 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
         markup_of(&tag(
             "stop",
             attrs! {
-                "offset": plain((span - behind) / span, 4),
+                "offset": js::fixed_number((span - behind) / span, 4),
                 "stop-color": colour,
-                "stop-opacity": plain(light, 3),
+                "stop-opacity": js::fixed_number(light, 3),
             },
         ))
     };
@@ -141,7 +150,7 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
     stops.push_str(&stop(0.0, &look.hot, 0.0));
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
-        plain(span, 4),
+        js::fixed_number(span, 4),
         if repeat {
             " spreadMethod=\"repeat\""
         } else {
@@ -187,7 +196,7 @@ fn leg_markup(leg: &Leg, bar: &Bar) -> String {
     let shift = if bar.shift == 0.0 {
         String::new()
     } else {
-        format!(" translate({} 0)", plain(bar.shift, 2))
+        format!(" translate({} 0)", js::fixed_number(bar.shift, 2))
     };
     let slide = wrap(
         "g",
@@ -195,10 +204,10 @@ fn leg_markup(leg: &Leg, bar: &Bar) -> String {
         wrap(
             "rect",
             attrs! {
-                "x": plain(bar.from, 2),
-                "y": plain(-bar.height / 2.0, 2),
-                "width": plain(bar.width, 2),
-                "height": plain(bar.height, 2),
+                "x": js::fixed_number(bar.from, 2),
+                "y": js::fixed_number(-bar.height / 2.0, 2),
+                "width": js::fixed_number(bar.width, 2),
+                "height": js::fixed_number(bar.height, 2),
                 "fill": format!("url(#{})", bar.gradient),
             },
             bar.motion.clone(),
@@ -250,7 +259,7 @@ fn steady_pulses(
             "attributeName": "transform",
             "type": "translate",
             "from": "0 0",
-            "to": format!("{} 0", plain(period, 4)),
+            "to": format!("{} 0", js::fixed_number(period, 4)),
             "dur": timecount(period / speed),
             "repeatCount": "indefinite",
             "calcMode": "linear",
@@ -293,7 +302,7 @@ fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Markup {
         attrs! {
             "attributeName": "transform",
             "type": "translate",
-            "values": slides.iter().map(|x| format!("{} 0", plain(*x, 2))).collect::<Vec<_>>().join(";"),
+            "values": slides.iter().map(|x| format!("{} 0", js::fixed_number(*x, 2))).collect::<Vec<_>>().join(";"),
             "keyTimes": ["0".to_owned(), ratio(from / cycle), ratio(to / cycle), "1".to_owned()].join(";"),
             "dur": timecount(cycle),
             "repeatCount": "indefinite",
@@ -340,7 +349,7 @@ fn turn_pulse(
 }
 
 /// One train of pulses written as SVG.
-pub fn write_traffic(mark: &TrafficMark, out: &mut String) {
+pub(crate) fn write_traffic(mark: &TrafficMark, out: &mut String) {
     let legs = legs_of(&mark.route);
     match mark.motion {
         Motion::Steady {

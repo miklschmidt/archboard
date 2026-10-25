@@ -58,6 +58,7 @@ name = "archboard-svg"
 version = "0.0.0"
 dependencies = [
  "archboard-scene",
+ "libm",
 ]
 
 [[package]]

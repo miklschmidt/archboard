@@ -6,6 +6,7 @@
 //! Its colours are the page's tokens. A document that stands alone carries the
 //! value of every token it names on its root, for one theme or for both.
 
+mod legs;
 mod pulse;
 
 use std::collections::BTreeSet;
@@ -16,10 +17,11 @@ use archboard_scene::markup::{escape_xml, tag, write_items};
 use archboard_scene::paint::colour::light_dark;
 use archboard_scene::paint::fonts::{FACES, FONT_URL_PREFIX, SANS_STACK};
 use archboard_scene::paint::palette::PALETTE;
+use archboard_scene::paint::standing::{MEMBERS_ATTRIBUTE, TRAFFIC_ATTRIBUTE};
 use archboard_scene::request::{DocumentRequest, FontSource, StandaloneTheme};
 use archboard_scene::scene::{Item, Scene};
 
-pub use pulse::PULSE_CLASS;
+use pulse::PULSE_CLASS;
 
 /// Why a document could not be written.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,13 +42,11 @@ const NEAR_PLACE: &str = "--near";
 const FAR_PLACE: &str = "--far";
 const AWAY_PLACE: &str = "--away";
 const HEAD_SHADE_CLASS: &str = "ab-head-shade";
-const TRAFFIC_ATTRIBUTE: &str = "data-traffic";
-const MEMBERS_ATTRIBUTE: &str = "data-members";
 /// How every part of a swap between the near and the far view moves.
 const SWAP_EASE: &str = "cubic-bezier(.4,0,.2,1)";
 
 /// Some things written as markup, traffic drawn as beams of light.
-pub fn write(items: &[Item], out: &mut String) {
+fn write(items: &[Item], out: &mut String) {
     write_items(items, out, &pulse::write_traffic);
 }
 

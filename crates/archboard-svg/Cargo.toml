@@ -8,3 +8,5 @@ publish.workspace = true
 
 [dependencies]
 archboard-scene = { path = "../archboard-scene" }
+# The deterministic software libm, as the scene's painter uses it (ADR 0057).
+libm = "0.2"
