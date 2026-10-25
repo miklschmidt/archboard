@@ -225,7 +225,7 @@ describe.serial("production Codex setup cleanup", () => {
 			expect(processExists(serverPid)).toBeFalse();
 			expect(processExists(childPids[0]!)).toBeFalse();
 			expect(
-				existsSync(join(publicWorkbenchRoot(root), "codex-home/.archboard-codex-process.lock")),
+				existsSync(join(publicWorkbenchRoot(root), "codex-home/.codex-process.lock")),
 			).toBeFalse();
 		} finally {
 			await socket?.close();

@@ -14,7 +14,8 @@ import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { resolveProjectCodexExecutable } from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { discoveredChromiumPath } from "@archboard/renderer/headless-chromium";
 import { findFfmpeg } from "@archboard/walkthrough/ffmpeg";
 
@@ -201,7 +202,7 @@ function toolLine(name: string, find: () => string): string {
 }
 
 /**
- * Say where each tool comes from, without running any of them.
+ * Say where each tool comes from. Only Codex runs, to report its version.
  * @returns One line per tool.
  */
 function toolLines(): readonly string[] {
@@ -210,7 +211,7 @@ function toolLines(): readonly string[] {
 		toolLine("chromium", chromiumPath),
 		toolLine("ffmpeg", () => ffmpegCommand().join(" ")),
 		toolLine("pyftsubset", () => pyftsubsetCommand().join(" ")),
-		toolLine("codex", resolveProjectCodexExecutable),
+		toolLine("codex", () => resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT })),
 	];
 }
 

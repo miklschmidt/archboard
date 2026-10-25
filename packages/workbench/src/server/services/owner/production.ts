@@ -1,13 +1,12 @@
 import { pinnedCheckoutOf } from "#server/services/sessions/panes.ts";
 import { installWorkbenchTabSessions } from "#server/services/panes/tab-sessions.ts";
-import type { CreateCodexWorkbenchOptions } from "@archboard/codex-realtime-voice/server";
+import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+import { ARCHBOARD_AGENT } from "#runtime/services/host/archboard.ts";
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "#server/services/host/listener-address.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
@@ -50,38 +49,40 @@ function prepareCoordinatorDirectory(directory: string, sourceRoot: string): voi
  * @param sourceRoot The checkout whose source the server runs, whose skill the coordinators read.
  * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(sourceRoot: string): CreateCodexWorkbenchOptions["storage"] {
+function createWorkbenchStorage(sourceRoot: string): VoiceAgentOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
 	const ownerDirectory = path.join(root, "canvases", String(PORT));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
 	prepareCoordinatorDirectory(coordinatorDirectory, sourceRoot);
 	return {
-		rootDirectory: root,
+		directory: root,
 		ownerDirectory,
 	};
 }
 
 /**
- * Build the one mandatory real production installation used by the server
- * application: the proven executable, the storage under it, and the bindings
- * and hooks each generation is built from.
+ * Build the one mandatory real production voice agent options used by the
+ * server application: the proven executable, the storage under it, Archboard's
+ * identity, instructions and tools, and the extensions each generation uses.
  * @param server What the server provides the workbench.
- * @returns The installation options.
+ * @returns The voice agent options.
  */
-export function createServerCodexWorkbenchInstallation(
-	server: ArchboardWorkbenchServer,
-): CreateCodexWorkbenchOptions {
+export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer): VoiceAgentOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
-	const executablePath = verifyCodexExecutable(resolveProjectCodexExecutable()).executablePath;
+	const executablePath = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
 	const storage = createWorkbenchStorage(server.sourceRoot);
 
 	return {
 		storage,
-		host: { instructions: server.host.instructions, allowedCheckouts: server.host.resolveCheckout },
+		checkouts: server.host.resolveCheckout,
+		identity: ARCHBOARD_AGENT.identity,
+		instructions: ARCHBOARD_AGENT.instructions,
+		onFatal: server.host.onFatal,
 		extensions: {
+			tools: ARCHBOARD_AGENT.tools,
 			contextCodec: server.host.contextCodec,
 			coordinatorContextFor: server.host.coordinatorContextFor,
 			voiceFor: server.host.voiceFor,
@@ -94,12 +95,11 @@ export function createServerCodexWorkbenchInstallation(
 			...(server.host.domainTools ? { domainTools: server.host.domainTools } : {}),
 			...(server.host.onGeneration ? { onGeneration: server.host.onGeneration } : {}),
 			...(server.host.onBrowserGateway ? { onBrowserGateway: server.host.onBrowserGateway } : {}),
-			onFatal: server.host.onFatal,
 			browserCheckoutOf: pinnedCheckoutOf,
 			installBrowserSessions: installWorkbenchTabSessions,
+			browserLeaseLedger: server.browserLeaseLedger,
 		},
-		browserLeaseLedger: server.browserLeaseLedger,
-		process: {
+		codex: {
 			executablePath,
 			hostEnvironment: { ARCHBOARD_URL: serverUrl(), ARCHBOARD_NO_AUTOSTART: "1" },
 			pathPrefixes: [path.join(server.sourceRoot, "bin")],

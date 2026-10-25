@@ -157,7 +157,7 @@ test("authority lost during a quiet host copy prevents the later voice append", 
 			...h.options.host,
 			delivery: (callback) => ({
 				channel: "context",
-				text: callback.semantic.brief,
+				text: callback.context.brief,
 				reason: null,
 				coordinatorContext: true,
 			}),
@@ -191,12 +191,12 @@ test("host callback data is captured before caller mutation", async () => {
 	try {
 		const source = hostEvent(h.ids);
 		const result = h.callbacks.enqueue(source);
-		Reflect.set(source.semantic, "brief", "Changed after receipt.");
+		Reflect.set(source.context, "brief", "Changed after receipt.");
 		Reflect.set(source.coordinator, "threadId", null);
 		const delivery = await result;
 		expect(delivery.outcome).toBe("delivered");
 		expect(delivery.callback?.correlation.coordinatorThreadId).toBe(h.ids.coordinator);
-		expect(delivery.callback?.kind === "semantic" && delivery.callback.semantic.brief).toBe(
+		expect(delivery.callback?.kind === "host_context" && delivery.callback.context.brief).toBe(
 			"Task changed.",
 		);
 		expect(Object.isFrozen(delivery.callback)).toBe(true);

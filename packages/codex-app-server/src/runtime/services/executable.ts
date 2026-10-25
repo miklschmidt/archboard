@@ -5,7 +5,6 @@ import path from "node:path";
 
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
 import { CODEX_SESSION_MS } from "@archboard/timing";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [
@@ -32,6 +31,17 @@ type CodexExecutableFailureCode =
 	| "version_unavailable"
 	| "wrong_version"
 	| "outside_checkout";
+
+/** Which Codex executable `resolveCodexExecutable` proves. */
+interface CodexExecutableOptions {
+	/** An absolute path to prove in place of the installed `@openai/codex` package. */
+	readonly executablePath?: string;
+	/**
+	 * Refuse an installed `@openai/codex` outside `<installedIn>/node_modules`, such as a global
+	 * install or the install of another project. It does not apply to `executablePath`.
+	 */
+	readonly installedIn?: string;
+}
 
 /** The seam that runs the bounded `--version` proof, injected by tests. */
 interface CodexExecutableVerificationOptions {
@@ -135,10 +145,12 @@ function killedBySignal(cause: object): boolean {
 }
 
 /**
- * Resolve only the package-local wrapper selected by the pinned dependency.
- * @returns The absolute path of the checkout-local Codex wrapper.
+ * Resolve the wrapper of the installed `@openai/codex` package, as the code that runs this module
+ * resolves its own dependencies.
+ * @param installedIn - The directory whose `node_modules` must hold it, when the host requires one.
+ * @returns The absolute path of the Codex wrapper.
  */
-function resolveProjectCodexExecutable(): string {
+function installedCodexExecutable(installedIn: string | undefined): string {
 	const require = createRequire(import.meta.url);
 	let resolved: string;
 	try {
@@ -147,18 +159,19 @@ function resolveProjectCodexExecutable(): string {
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath: "@openai/codex/bin/codex.js",
-			message:
-				"The pinned project-local @openai/codex executable is unavailable. Run bun install and retry.",
+			message: `The @openai/codex ${CODEX_PROTOCOL_BINARY_VERSION} package is not installed. Run bun install where it is a dependency, or bun add @openai/codex@${CODEX_PROTOCOL_BINARY_VERSION}, and retry.`,
 		});
 	}
-	return requireCheckoutLocal(resolved, SOURCE_CHECKOUT);
+	return installedIn === undefined
+		? path.resolve(resolved)
+		: requireCheckoutLocal(resolved, installedIn);
 }
 
 /**
- * Refuse an executable that is not in the `node_modules` of the checkout whose source runs, such
- * as a global install or the install of another checkout.
+ * Refuse an executable that is not in the `node_modules` of one directory, such as a global
+ * install or the install of another checkout.
  * @param resolved - The path that module resolution found.
- * @param checkout - The real path of the checkout whose source runs.
+ * @param checkout - The real path of the directory whose `node_modules` must hold it.
  * @returns The absolute path of the executable.
  */
 function requireCheckoutLocal(resolved: string, checkout: string): string {
@@ -168,7 +181,7 @@ function requireCheckoutLocal(resolved: string, checkout: string): string {
 		throw new CodexExecutableError({
 			code: "outside_checkout",
 			executablePath: absolute,
-			message: `The resolved Codex executable is outside this checkout: ${absolute}. PATH and global package resolution are disabled.`,
+			message: `The resolved Codex executable is outside ${localNodeModules}: ${absolute}. PATH and global package resolution are disabled.`,
 		});
 	}
 	return absolute;
@@ -266,12 +279,26 @@ function verifyCodexExecutable(
 	return Object.freeze({ executablePath, version: CODEX_PROTOCOL_BINARY_VERSION });
 }
 
+/**
+ * Find the Codex executable and prove it before anything runs it: an absolute, regular,
+ * executable file that reports exactly the pinned Codex version. PATH is never consulted.
+ * @param options - An explicit path, or where the installed package must be.
+ * @returns The absolute path of the proven executable.
+ * @throws {CodexExecutableError} When the executable is missing, outside `installedIn`, not
+ * executable, or reports another version.
+ */
+function resolveCodexExecutable(options: CodexExecutableOptions = {}): string {
+	const candidate = options.executablePath ?? installedCodexExecutable(options.installedIn);
+	return verifyCodexExecutable(candidate).executablePath;
+}
+
 export {
 	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
+	type CodexExecutableOptions,
 	type VerifiedCodexExecutable,
 	type CodexExecutableFailureCode,
 	CodexExecutableError,
 	requireCheckoutLocal,
-	resolveProjectCodexExecutable,
+	resolveCodexExecutable,
 	verifyCodexExecutable,
 };

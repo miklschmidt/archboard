@@ -236,7 +236,7 @@ export function decodeLoginAccountParams(value: unknown) {
 		throw new ProtocolDecodeError({
 			method: "account/login/start",
 			direction: "client-request",
-			issues: [{ path: ["type"], message: `${decoded.type} is not supported by Archboard` }],
+			issues: [{ path: ["type"], message: `${decoded.type} is not supported by this client` }],
 			recoveryAction:
 				"use hosted ChatGPT login, an API key, or explicit Bedrock credentials through the visual login flow",
 		});
@@ -325,7 +325,7 @@ function assertServerRequestCapability(method: ServerRequestMethod): void {
 		throw new ProtocolDecodeError({
 			method,
 			direction: "server-request",
-			issues: [{ path: ["method"], message: "capability was explicitly disabled by Archboard" }],
+			issues: [{ path: ["method"], message: "capability was explicitly disabled by this client" }],
 			recoveryAction:
 				method === "attestation/generate"
 					? "reply with JSON-RPC -32601 Attestation is not supported by this client"

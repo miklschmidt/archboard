@@ -83,7 +83,7 @@ describe("typed Codex session", () => {
 			"config/read",
 		]);
 		expect(fixture.transport.requests[0]?.params).toEqual({
-			clientInfo: { name: "archboard", title: "archboard server", version: "0.1.0" },
+			clientInfo: { name: "codex-realtime-voice", title: "Codex realtime voice", version: "0.1.0" },
 			capabilities: {
 				experimentalApi: true,
 				requestAttestation: false,

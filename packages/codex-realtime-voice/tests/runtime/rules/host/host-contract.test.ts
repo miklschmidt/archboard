@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import {
 	createWorkbenchThreadProfile,
 	captureThreadProfile,
+	captureWorkbenchInstructions,
 } from "#runtime/rules/host/instructions.ts";
 import { createWorkbenchTurnStartParams } from "#runtime/rules/host/bodies.ts";
 import { createWorkhorseThreadStartParams } from "#runtime/rules/workhorse-start/model.ts";
@@ -26,8 +27,7 @@ test("a host starts a Codex workhorse with its own identity and exact composed i
 	const domain = "Host instructions with trailing spaces.  \n";
 	const profile = createWorkbenchThreadProfile({
 		role: "workhorse",
-		serviceName: "standalone",
-		threadSource: "standalone",
+		identity: { serviceName: "standalone", threadSource: "standalone" },
 		domainInstructions: domain,
 		dynamicTools: [],
 	});
@@ -53,16 +53,14 @@ test("a host starts a Codex workhorse with its own identity and exact composed i
 test("a host cannot replace a built-in coordination namespace", () => {
 	const workhorse = createWorkbenchThreadProfile({
 		role: "workhorse",
-		serviceName: "host",
-		threadSource: "host",
+		identity: { serviceName: "host", threadSource: "host" },
 		domainInstructions: "Host",
 		dynamicTools: [],
 	});
 	expect(() =>
 		createWorkbenchThreadProfile({
 			role: "workhorse",
-			serviceName: "host",
-			threadSource: "host",
+			identity: { serviceName: "host", threadSource: "host" },
 			domainInstructions: "Host",
 			dynamicTools: [...workhorse.dynamicTools],
 		}),
@@ -116,8 +114,7 @@ test("self-consistent profile hashes cannot authorize changed reserved namespace
 	for (const role of ["coordinator", "workhorse"] as const) {
 		const profile = createWorkbenchThreadProfile({
 			role,
-			serviceName: "host",
-			threadSource: "host",
+			identity: { serviceName: "host", threadSource: "host" },
 			domainInstructions: "Host instructions.\n",
 			dynamicTools: [],
 		});
@@ -142,8 +139,7 @@ test("self-consistent instruction hashes cannot replace the known role's core in
 	for (const role of ["coordinator", "workhorse"] as const) {
 		const profile = createWorkbenchThreadProfile({
 			role,
-			serviceName: "host",
-			threadSource: "host",
+			identity: { serviceName: "host", threadSource: "host" },
 			domainInstructions: "Host instructions.\n",
 			dynamicTools: [],
 		});
@@ -165,15 +161,13 @@ test("self-consistent instruction hashes cannot replace the known role's core in
 test("the known role requires its own built-in tools and rejects another role's reserved host tools", () => {
 	const workhorse = createWorkbenchThreadProfile({
 		role: "workhorse",
-		serviceName: "host",
-		threadSource: "host",
+		identity: { serviceName: "host", threadSource: "host" },
 		domainInstructions: "Host",
 		dynamicTools: [],
 	});
 	const coordinator = createWorkbenchThreadProfile({
 		role: "coordinator",
-		serviceName: "host",
-		threadSource: "host",
+		identity: { serviceName: "host", threadSource: "host" },
 		domainInstructions: "Host",
 		dynamicTools: [],
 	});
@@ -193,10 +187,25 @@ test("the known role requires its own built-in tools and rejects another role's 
 	expect(() =>
 		createWorkbenchThreadProfile({
 			role: "coordinator",
-			serviceName: "host",
-			threadSource: "host",
+			identity: { serviceName: "host", threadSource: "host" },
 			domainInstructions: "Host",
 			dynamicTools: workhorse.dynamicTools,
 		}),
+	).toThrow(TypeError);
+});
+
+test("a host's coordinator and workhorse must name the host the same way to Codex", () => {
+	const build = (role: "coordinator" | "workhorse", threadSource: string) =>
+		createWorkbenchThreadProfile({
+			role,
+			identity: { serviceName: "host", threadSource },
+			domainInstructions: "Host",
+			dynamicTools: [],
+		});
+	const same = { coordinator: build("coordinator", "host"), workhorse: build("workhorse", "host") };
+
+	expect(captureWorkbenchInstructions(same)).toEqual(same);
+	expect(() =>
+		captureWorkbenchInstructions({ ...same, workhorse: build("workhorse", "other") }),
 	).toThrow(TypeError);
 });

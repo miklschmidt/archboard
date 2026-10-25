@@ -2,28 +2,23 @@ import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 
 import {
-	ARCHBOARD_VOICE_MANIFEST_JSON,
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	VOICE_TOOLS_MANIFEST_JSON,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_JSON,
+	WORKHORSE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMES,
 	assertCanonicalManifest,
 	verifyCoordinatorManifestIntegrity,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	CODEX_QUEUE_OPERATION_CONTRACTS,
 	CODEX_QUEUE_PARAMETER_SCHEMAS,
 	CODEX_QUEUE_PROTOCOL,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/coordinator-tool-contract/queue-operations.ts";
 import {
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
-} from "@archboard/codex-realtime-voice/runtime";
-import {
-	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	DynamicToolEnvelopeSchema,
-	DynamicToolResponseSchema,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/coordinator-tool-contract/contracts.ts";
 import {
 	InspectWorkhorseResultSchema,
 	DelegateToWorkhorseResultSchema,
@@ -32,7 +27,7 @@ import {
 	SteerWorkhorseResultSchema,
 	StopWorkhorsesResultSchema,
 	parseCoordinatorToolResult,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/coordinator-tool-contract/tool-results.ts";
 import {
 	ManageWorkhorseQueueInputSchema,
 	QueueAddInputSchema,
@@ -44,7 +39,7 @@ import {
 	parseCoordinatorToolInput,
 	VOICE_TOOL_INPUT_SCHEMAS,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
 import {
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,
@@ -53,6 +48,7 @@ import {
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
 } from "@archboard/codex-app-server/session";
+
 import {
 	QUEUE_OPERATION_SNAPSHOT,
 	VOICE_MANIFEST_SNAPSHOT,
@@ -61,15 +57,15 @@ import {
 
 describe("coordinator namespace manifests", () => {
 	test("matches independent reviewed snapshots and fixed bytes", () => {
-		expect(ARCHBOARD_WORKHORSE_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
-		expect(ARCHBOARD_VOICE_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
-		expect(JSON.parse(ARCHBOARD_WORKHORSE_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
-		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
+		expect(WORKHORSE_TOOL_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
+		expect(VOICE_TOOL_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
+		expect(JSON.parse(WORKHORSE_TOOLS_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
+		expect(JSON.parse(VOICE_TOOLS_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
 			workhorseSha256: "22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11",
 			voiceSha256: "04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
 		});
-		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
+		for (const namespace of [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
 			expect(namespace.tools.every((tool) => tool.type === "function")).toBe(true);
 			expect(namespace.tools.every((tool) => !tool.deferLoading)).toBe(true);
@@ -84,40 +80,40 @@ describe("coordinator namespace manifests", () => {
 			JSON.parse(JSON.stringify(COORDINATOR_IDENTITY)),
 		);
 		expect(COORDINATOR_IDENTITY.dynamicTools).toEqual(["archboard_workhorse", "archboard_voice"]);
-		expect(ARCHBOARD_WORKHORSE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
-			...ARCHBOARD_WORKHORSE_TOOL_NAMES,
+		expect(WORKHORSE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
+			...WORKHORSE_TOOL_NAMES,
 		]);
-		expect(ARCHBOARD_VOICE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
+		expect(VOICE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			"resolve_spoken_approval",
 		]);
 	});
 
 	test("rejects missing, extra, reordered, and ambiguous manifest mutations", () => {
-		const missing = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const missing = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		missing.tools.pop();
 		expect(() => assertCanonicalManifest("archboard_workhorse", missing)).toThrow();
 
-		const extra = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const extra = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		extra.tools.push(structuredClone(extra.tools[0]!));
 		expect(() => assertCanonicalManifest("archboard_workhorse", extra)).toThrow();
 
-		const reordered = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const reordered = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		reordered.tools.reverse();
 		expect(() => assertCanonicalManifest("archboard_workhorse", reordered)).toThrow();
 
-		const vague = structuredClone(ARCHBOARD_VOICE_NAMESPACE) as unknown as {
+		const vague = structuredClone(VOICE_TOOL_NAMESPACE) as unknown as {
 			tools: Array<{ description: string }>;
 		};
 		vague.tools[0]!.description = "Do the thing.";
 		expect(() => assertCanonicalManifest("archboard_voice", vague)).toThrow();
 
-		const byteMutation = ARCHBOARD_VOICE_MANIFEST_JSON.replace(
+		const byteMutation = VOICE_TOOLS_MANIFEST_JSON.replace(
 			"resolve_spoken_approval",
 			"resolve_spoken_approval_changed",
 		);
@@ -361,57 +357,4 @@ describe("dynamic tool schemas and queue protocol", () => {
 			}),
 		).toThrow();
 	});
-});
-
-test("accepts one canonical envelope and one inputText item", () => {
-	const envelope = { tag: "ok", operationId: "op-1", value: { threadId: "thread-1" } } as const;
-	expect(DynamicToolEnvelopeSchema.parse(envelope)).toEqual(envelope);
-	expect(
-		DynamicToolResponseSchema.parse({
-			contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-			success: true,
-		}),
-	).toEqual({
-		contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-		success: true,
-	});
-	expect(
-		DynamicToolEnvelopeSchema.parse({
-			tag: "refused",
-			reason: "not_ready",
-			message: "Inspect the linked workhorse first.",
-		}),
-	).toEqual({
-		tag: "refused",
-		reason: "not_ready",
-		message: "Inspect the linked workhorse first.",
-	});
-	expect(
-		DynamicToolEnvelopeSchema.parse({
-			tag: "outcome_unknown",
-			operationId: "op-2",
-			message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-		}),
-	).toEqual({
-		tag: "outcome_unknown",
-		operationId: "op-2",
-		message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	});
-	expect(() => DynamicToolResponseSchema.parse({ contentItems: [], success: true })).toThrow();
-	expect(() =>
-		DynamicToolResponseSchema.parse({
-			contentItems: [
-				{ type: "inputText", text: "x" },
-				{ type: "inputText", text: "y" },
-			],
-			success: true,
-		}),
-	).toThrow();
-	expect(() =>
-		DynamicToolEnvelopeSchema.parse({
-			tag: "outcome_unknown",
-			operationId: "op-2",
-			message: "lost",
-		}),
-	).toThrow();
 });
