@@ -6,6 +6,8 @@
 // a speed (a distance a second), which is not a duration and lives with the
 // renderer that draws it.
 
+import { durations } from "#shared/constants/durations.ts";
+
 /**
  * The longest a whole exchange's cycle may take before every pulse in it flies
  * faster to keep to it.
@@ -17,24 +19,44 @@
  */
 const FLOW_CYCLE_CAP_MS = 16_000;
 
-// ── One picture of a board turning into the next ─────────────────────────
+/** One picture of a board turning into the next, arriving, and leaving. */
+const PICTURE_MS = durations({
+	/**
+	 * How long a pane takes to turn one picture of a board into the next one of
+	 * the same board — another variant, or the same variant after an edit.
+	 *
+	 * Shared subjects glide from where they were to where they are; that is what
+	 * lets a reader keep hold of which card became which. Pulls against attention
+	 * two ways: shorter than about half a second and a move across a wide board
+	 * reads as a jump with a smear on it; longer than about three quarters and the
+	 * board feels like it is waiting for the animation rather than the reader.
+	 * Everything below is a fraction of this one number, so the whole choreography
+	 * shortens or lengthens together.
+	 */
+	transition: 640,
+	/**
+	 * How long a pane takes to bring in a picture it has nothing to carry from:
+	 * the first picture of a page, another board, another view of this one.
+	 *
+	 * The picture is built up the way it is read: frames, then cards in reading
+	 * order, then the lines between cards already there, so the eye lands on the
+	 * structure before the detail. Pulls against the wait itself: somebody who asked
+	 * for a board wants to read it, so the whole entrance is barely longer than a
+	 * transition, and a card is readable well before the last line is drawn.
+	 */
+	entry: 760,
+	/**
+	 * How long the picture a pane is leaving takes to go, when it goes to another
+	 * board or view rather than turning into the next picture.
+	 *
+	 * Short on purpose: it is only there so the old picture is not snatched away,
+	 * and it runs underneath the next picture's entrance.
+	 */
+	exit: 280,
+});
 
 /**
- * How long a pane takes to turn one picture of a board into the next one of
- * the same board — another variant, or the same variant after an edit.
- *
- * Shared subjects glide from where they were to where they are; that is what
- * lets a reader keep hold of which card became which. Pulls against attention
- * two ways: shorter than about half a second and a move across a wide board
- * reads as a jump with a smear on it; longer than about three quarters and the
- * board feels like it is waiting for the animation rather than the reader.
- * Everything below is a fraction of this one number, so the whole choreography
- * shortens or lengthens together.
- */
-const PICTURE_TRANSITION_MS = 640;
-
-/**
- * When, as fractions of `PICTURE_TRANSITION_MS`, each part of the change
+ * When, as fractions of `PICTURE_MS.transition`, each part of the change
  * happens. The order is the point: what is leaving goes first so that what is
  * moving has room, what is moving settles before what is arriving appears, and
  * the content of a card that changed swaps over while its frame is still in
@@ -72,21 +94,7 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	labelsStart: 0.66,
 });
 
-// ── A picture arriving with nothing to carry it from ──────────────────────
-
-/**
- * How long a pane takes to bring in a picture it has nothing to carry from:
- * the first picture of a page, another board, another view of this one.
- *
- * The picture is built up the way it is read: frames, then cards in reading
- * order, then the lines between cards already there, so the eye lands on the
- * structure before the detail. Pulls against the wait itself: somebody who asked
- * for a board wants to read it, so the whole entrance is barely longer than a
- * transition, and a card is readable well before the last line is drawn.
- */
-const PICTURE_ENTRY_MS = 760;
-
-/** When, as fractions of `PICTURE_ENTRY_MS`, each part of a picture arrives. */
+/** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
 const PICTURE_ENTRY_PHASES = Object.freeze({
 	/** Frames fade in over the first part. */
 	framesEnd: 0.35,
@@ -109,54 +117,44 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	labelsStart: 0.66,
 });
 
-/**
- * How long the picture a pane is leaving takes to go, when it goes to another
- * board or view rather than turning into the next picture.
- *
- * Short on purpose: it is only there so the old picture is not snatched away,
- * and it runs underneath the next picture's entrance.
- */
-const PICTURE_EXIT_MS = 280;
-
-// ── A walkthrough, presented ──────────────────────────────────────────────
-
-/**
- * How long the camera takes to glide from one step of a presented walkthrough
- * to the next, and the veil over what the step is not about takes to follow it.
- *
- * A step is a new sentence in a talk, not a jump cut, so the camera travels far
- * enough to be followed: it pulls back, crosses, and settles on the step. Pulls
- * against the talk itself: a glide much past a second is dead air between two
- * sentences, and one shorter than half a second reads as a cut with a blur. A
- * step that also changes the view the board is read through moves with the
- * picture instead, on `PICTURE_TRANSITION_MS`, so the cards and the camera
- * arrive together.
- */
-const PRESENTATION_STEP_MS = 900;
-
-/**
- * How long a presented walkthrough's box takes to arrive over the foot of the picture: it rises a
- * few pixels and fades in, once, as the camera sets out for the first step.
- *
- * Pulls against two things. The box is what is read first, so it is in well before the camera's
- * glide ends (`PRESENTATION_STEP_MS`), and it is there before the voice's orb, which flies into its
- * foot, can land (`VOICE_FLIGHT_MS`). And it is the answer to the press that opened the
- * walkthrough, so it cannot make a person wait: past a quarter of a second it is slower than the
- * press.
- */
-const PRESENTATION_BOX_IN_MS = 220;
-
-/**
- * How long a presented walkthrough's box takes to hand one step to the next: the rail's gold
- * travels to the new step, the step's number rolls, and the heading and the words slide out and
- * in along the way the reader stepped, one after the other.
- *
- * Pulls against the camera's glide (`PRESENTATION_STEP_MS`, 900): the new words are to be readable
- * well before the camera has settled, so this is the shorter. It also pulls against a reader who
- * steps again at once: nothing waits for it, and a move turns round from where it is. Shorter than
- * about 350ms the gold cannot be followed across the rail, and it is the eye that follows it.
- */
-const PRESENTATION_BOX_STEP_MS = 520;
+/** A walkthrough presented step by step. */
+const PRESENTATION_MS = durations({
+	/**
+	 * How long the camera takes to glide from one step of a presented walkthrough
+	 * to the next, and the veil over what the step is not about takes to follow it.
+	 *
+	 * A step is a new sentence in a talk, not a jump cut, so the camera travels far
+	 * enough to be followed: it pulls back, crosses, and settles on the step. Pulls
+	 * against the talk itself: a glide much past a second is dead air between two
+	 * sentences, and one shorter than half a second reads as a cut with a blur. A
+	 * step that also changes the view the board is read through moves with the
+	 * picture instead, on `PICTURE_MS.transition`, so the cards and the camera
+	 * arrive together.
+	 */
+	step: 900,
+	/**
+	 * How long a presented walkthrough's box takes to arrive over the foot of the picture: it rises a
+	 * few pixels and fades in, once, as the camera sets out for the first step.
+	 *
+	 * Pulls against two things. The box is what is read first, so it is in well before the camera's
+	 * glide ends (`PRESENTATION_MS.step`), and it is there before the voice's orb, which flies into its
+	 * foot, can land (`VOICE_MS.flight`). And it is the answer to the press that opened the
+	 * walkthrough, so it cannot make a person wait: past a quarter of a second it is slower than the
+	 * press.
+	 */
+	boxIn: 220,
+	/**
+	 * How long a presented walkthrough's box takes to hand one step to the next: the rail's gold
+	 * travels to the new step, the step's number rolls, and the heading and the words slide out and
+	 * in along the way the reader stepped, one after the other.
+	 *
+	 * Pulls against the camera's glide (`PRESENTATION_MS.step`, 900): the new words are to be readable
+	 * well before the camera has settled, so this is the shorter. It also pulls against a reader who
+	 * steps again at once: nothing waits for it, and a move turns round from where it is. Shorter than
+	 * about 350ms the gold cannot be followed across the rail, and it is the eye that follows it.
+	 */
+	boxStep: 520,
+});
 
 /**
  * How long a picture takes to swap its cards drawn near (chip, name and
@@ -176,25 +174,11 @@ const PRESENTATION_BOX_STEP_MS = 520;
  */
 const FAR_VIEW_SWAP_MS = 280;
 
-/**
- * How long the pointer rests on a card, a container's header or a label before
- * the picture says more about it; once one tip is open, the next opens at once.
- * Pulls against the pointer crossing the board: shorter and tips flash over
- * everything it passes on its way; longer and resting on a card to read it
- * feels ignored.
- */
-const SUBJECT_TIP_DELAY_MS = 450;
-
 export {
-	FAR_VIEW_SWAP_MS,
 	FLOW_CYCLE_CAP_MS,
-	PICTURE_ENTRY_MS,
-	PICTURE_ENTRY_PHASES,
-	PICTURE_EXIT_MS,
-	PICTURE_TRANSITION_MS,
+	PICTURE_MS,
 	PICTURE_TRANSITION_PHASES,
-	PRESENTATION_BOX_IN_MS,
-	PRESENTATION_BOX_STEP_MS,
-	PRESENTATION_STEP_MS,
-	SUBJECT_TIP_DELAY_MS,
+	PICTURE_ENTRY_PHASES,
+	PRESENTATION_MS,
+	FAR_VIEW_SWAP_MS,
 };

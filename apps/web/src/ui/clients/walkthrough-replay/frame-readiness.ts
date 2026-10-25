@@ -7,7 +7,7 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { RECORDING_FRAME_READY_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/timing";
 
 /**
  * One turn of the browser's event loop.
@@ -41,7 +41,7 @@ class FrameReadiness {
 	 * @throws {Error} Naming what was pending when it is not ready in time.
 	 */
 	async until(pending: () => string | null, frame: number): Promise<void> {
-		const deadline = performance.now() + RECORDING_FRAME_READY_MS;
+		const deadline = performance.now() + REPLAY_MS.frameReady;
 		let quiet = 0;
 		let seen = this.#changes;
 		while (quiet < 2) {
@@ -74,7 +74,7 @@ async function waitingFor(pending: () => string | null): Promise<string | null> 
  */
 function notReady(frame: number, waiting: string | null): Error {
 	return new Error(
-		`Frame ${frame} was not ready within ${RECORDING_FRAME_READY_MS / 1000} s: it waited for ${waiting ?? "the page to stop changing"}.`,
+		`Frame ${frame} was not ready within ${REPLAY_MS.frameReady / 1000} s: it waited for ${waiting ?? "the page to stop changing"}.`,
 	);
 }
 

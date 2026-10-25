@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 
-import { SIDEBAR_MS, SLIDE_SETTLED_MS } from "@archboard/timing";
+import { COLUMN_MS, SIDEBAR_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 
 /** Where the sidebar is. */
@@ -96,7 +96,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(leavingMs(shownAs) + SLIDE_SETTLED_MS, () =>
+		const timer = clock.after(leavingMs(shownAs) + COLUMN_MS.slideSettled, () =>
 			setKept((now) => ({ ...now, leaving: false })),
 		);
 		return () => clock.cancelAfter(timer);
@@ -106,7 +106,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(SIDEBAR_MS.dock + SLIDE_SETTLED_MS, () =>
+		const timer = clock.after(SIDEBAR_MS.dock + COLUMN_MS.slideSettled, () =>
 			setKept((now) => ({ ...now, motion: "none" })),
 		);
 		return () => clock.cancelAfter(timer);

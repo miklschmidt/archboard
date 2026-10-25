@@ -10,7 +10,7 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { RECORDING_PACE_TICK_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/timing";
 import type {
 	RecordingPage,
 	RecordingPhase,
@@ -231,7 +231,7 @@ class WalkthroughRecorder {
 			walkthrough,
 			recording: { language, ...(against === null ? {} : { against }) },
 		});
-		this.#timer = setInterval(this.#tick.bind(this), RECORDING_PACE_TICK_MS);
+		this.#timer = setInterval(this.#tick.bind(this), RECORDING_MS.paceTick);
 	}
 
 	/**

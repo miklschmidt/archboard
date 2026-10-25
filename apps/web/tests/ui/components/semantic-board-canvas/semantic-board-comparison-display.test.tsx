@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@archboard/timing";
+import { PICTURE_MS } from "@archboard/timing";
 import {
 	drawing,
 	mountStage,
@@ -55,7 +55,7 @@ test("the comparison control carries the picture in and out without changing the
 		function land(): void {
 			act(() => {
 				for (const callback of frames.values()) {
-					callback(performance.now() + PICTURE_ENTRY_MS + PICTURE_TRANSITION_MS + 1);
+					callback(performance.now() + PICTURE_MS.entry + PICTURE_MS.transition + 1);
 				}
 				frames.clear();
 			});

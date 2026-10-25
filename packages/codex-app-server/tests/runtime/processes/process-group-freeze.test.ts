@@ -1,10 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	CODEX_GROUP_FREEZE_MS,
-	CODEX_STDIN_EOF_GRACE_MS,
-	CODEX_TERM_GRACE_MS,
-} from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "@archboard/timing";
 
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
 import {
@@ -64,7 +60,7 @@ describe("Codex process group KILL", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(lifecycle.signals.at(-1)).toBe("SIGKILL");
 			expect(lifecycle.clock.now()).toBeLessThanOrEqual(
-				CODEX_STDIN_EOF_GRACE_MS + CODEX_TERM_GRACE_MS + CODEX_GROUP_FREEZE_MS,
+				CODEX_PROCESS_MS.stdinEofGrace + CODEX_PROCESS_MS.termGrace + CODEX_PROCESS_MS.groupFreeze,
 			);
 		} finally {
 			if (owner) {

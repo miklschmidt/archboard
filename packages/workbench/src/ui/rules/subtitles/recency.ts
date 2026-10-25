@@ -5,7 +5,7 @@
 // each word within some tens of milliseconds of its place on the audio clock. So
 // a word is shown the moment it arrives, and nothing here paces or holds text back; an earlier
 // cut that did fell further behind the voice with every sentence. What is left to decide is when
-// a subtitle goes: once no word has arrived for `SUBTITLE_LINGER_MS`, longer than the voice ever
+// a subtitle goes: once no word has arrived for `SUBTITLE_MS.linger`, longer than the voice ever
 // pauses mid-thought. That one rule also covers an interruption, which simply stops the words
 // where the speech stopped. The timer is the hook's; what it is compared with is here.
 

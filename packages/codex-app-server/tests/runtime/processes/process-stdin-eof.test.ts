@@ -2,11 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
-import {
-	CODEX_COMPOSED_SHUTDOWN_MS,
-	CODEX_STDIN_EOF_GRACE_MS,
-	CODEX_TERM_GRACE_MS,
-} from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "@archboard/timing";
 import {
 	driveManual,
 	expectKillAfterGrace,
@@ -55,10 +51,10 @@ describe("Codex stdin EOF shutdown", () => {
 			lifecycle.clock.schedule(() => {
 				lifecycle.markGroupQuiescent();
 				lifecycle.child()!.emit("close", 0, null);
-			}, CODEX_STDIN_EOF_GRACE_MS / 2);
+			}, CODEX_PROCESS_MS.stdinEofGrace / 2);
 			expect((await driveManual(stopped, lifecycle.clock)).state).toBe("stopped");
 			expect(lifecycle.signals).toEqual([]);
-			expect(lifecycle.clock.now()).toBe(CODEX_STDIN_EOF_GRACE_MS / 2);
+			expect(lifecycle.clock.now()).toBe(CODEX_PROCESS_MS.stdinEofGrace / 2);
 			expect(owner.snapshot().lastExit).toMatchObject({
 				code: 0,
 				signal: null,
@@ -84,7 +80,10 @@ describe("Codex stdin EOF shutdown", () => {
 			expect(lifecycle.signals).toEqual([]);
 			expect((await driveManual(stopped, lifecycle.clock)).state).toBe("stopped");
 			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
-			expectKillAfterGrace(lifecycle.clock.now(), CODEX_STDIN_EOF_GRACE_MS + CODEX_TERM_GRACE_MS);
+			expectKillAfterGrace(
+				lifecycle.clock.now(),
+				CODEX_PROCESS_MS.stdinEofGrace + CODEX_PROCESS_MS.termGrace,
+			);
 		} finally {
 			lifecycle.quiesce();
 			await driveManual(owner.stop(), lifecycle.clock).catch(() => undefined);
@@ -110,7 +109,7 @@ describe("Codex stdin EOF shutdown", () => {
 			expect(lifecycle.signals).toEqual(["SIGTERM"]);
 			await expect(driveManual(stopped, lifecycle.clock)).rejects.toBeInstanceOf(CodexProcessError);
 			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
-			expectKillAfterGrace(lifecycle.clock.now(), CODEX_TERM_GRACE_MS);
+			expectKillAfterGrace(lifecycle.clock.now(), CODEX_PROCESS_MS.termGrace);
 			expect(owner.snapshot().state).toBe("terminal_failure");
 			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
 		} finally {
@@ -133,7 +132,7 @@ describe("Codex stdin EOF shutdown", () => {
 				CodexProcessError,
 			);
 			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
-			expect(lifecycle.clock.now()).toBe(CODEX_COMPOSED_SHUTDOWN_MS);
+			expect(lifecycle.clock.now()).toBe(CODEX_PROCESS_MS.composedShutdown);
 			expect(owner.snapshot().state).toBe("terminal_failure");
 			expect(owner.currentChild()).not.toBeNull();
 			lifecycle.quiesce();

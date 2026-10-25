@@ -12,7 +12,7 @@ import path from "path";
 import { writeFileAtomic } from "#runtime/store/atomic-write.ts";
 import { stateDir } from "#runtime/services/state-dir.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
-import { LOCK_LEASE_MS, LOCK_POLL_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import { LanguageServersSchema, type LanguageServers } from "#runtime/store/language-servers.ts";
 
 /** New entries are declared; observed is retained for existing registry files. */
@@ -263,7 +263,7 @@ function writeRegistry(registry: Registry): void {
  */
 function isAbandoned(lock: string): boolean {
 	try {
-		return Date.now() - fs.statSync(lock).mtimeMs > LOCK_LEASE_MS;
+		return Date.now() - fs.statSync(lock).mtimeMs > BOARD_LOCK_MS.lease;
 	} catch {
 		return false;
 	}
@@ -287,9 +287,9 @@ function makeLock(lock: string): boolean {
 
 /**
  * Take the lock, waiting while another process holds it. The lock is a lease
- * like a board lock: it lapses after `LOCK_LEASE_MS`, so a process that died
+ * like a board lock: it lapses after `BOARD_LOCK_MS.lease`, so a process that died
  * while it held the lock costs the next change one lease. A waiter asks again
- * every `LOCK_POLL_MS`.
+ * every `BOARD_LOCK_MS.poll`.
  * @param lock The lock directory.
  * @returns True when this process holds the lock. False when the directory
  * cannot be made at all, so the write goes without a lock, as quietly as it
@@ -300,7 +300,7 @@ function takeLock(lock: string): boolean {
 		fs.mkdirSync(path.dirname(lock), { recursive: true });
 		while (!makeLock(lock)) {
 			if (isAbandoned(lock)) fs.rmSync(lock, { recursive: true, force: true });
-			else Bun.sleepSync(LOCK_POLL_MS);
+			else Bun.sleepSync(BOARD_LOCK_MS.poll);
 		}
 		return true;
 	} catch {

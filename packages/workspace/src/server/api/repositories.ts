@@ -6,4 +6,3 @@ export {
 	repositoryOfVault,
 	vaultIn,
 } from "#server/projections/repository-listing.ts";
-export type { VaultPlace } from "#server/projections/repository-listing.ts";

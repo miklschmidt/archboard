@@ -3,7 +3,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { BOARD_CACHE_GC_MS } from "@archboard/timing";
+import { BOARD_CACHE_MS } from "@archboard/timing";
 
 /**
  * A cache with this product's read defaults.
@@ -26,7 +26,7 @@ function createBoardQueryClient(): QueryClient {
 			queries: {
 				retry: false,
 				refetchOnWindowFocus: false,
-				gcTime: BOARD_CACHE_GC_MS,
+				gcTime: BOARD_CACHE_MS.gc,
 			},
 		},
 	});

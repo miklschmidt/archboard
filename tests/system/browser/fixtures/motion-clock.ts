@@ -1,5 +1,5 @@
 // The real page's motion, advanced frame by frame without waiting for a display refresh.
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { createSteppedClock } from "@archboard/ui-kit/frame-clock";
 
 const clock = createSteppedClock(performance.now());
 const channel = new MessageChannel();

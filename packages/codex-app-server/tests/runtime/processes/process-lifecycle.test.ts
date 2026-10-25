@@ -6,7 +6,7 @@ import { readProcessObservation } from "@archboard/process/observation";
 
 import { CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
-import { CODEX_TERM_GRACE_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 import {
 	fixture,
 	processOptions as options,
@@ -333,9 +333,9 @@ describe("Codex process lifecycle", () => {
 			});
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.lastExit?.classification).toBe("early_exit");
-			expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
+			expect(clock.now()).toBeGreaterThanOrEqual(CODEX_PROCESS_MS.termGrace);
 			expect(clock.now()).toBeLessThanOrEqual(
-				CODEX_TERM_GRACE_MS + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
+				CODEX_PROCESS_MS.termGrace + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
 			);
 			expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		} finally {
@@ -417,9 +417,9 @@ describe("Codex process lifecycle", () => {
 		expect([undefined, "zombie"]).toContain(processState(leaderPid));
 		expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		expect(fs.existsSync(root)).toBe(false);
-		expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
+		expect(clock.now()).toBeGreaterThanOrEqual(CODEX_PROCESS_MS.termGrace);
 		expect(clock.now()).toBeLessThanOrEqual(
-			CODEX_TERM_GRACE_MS + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
+			CODEX_PROCESS_MS.termGrace + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
 		);
 	});
 
