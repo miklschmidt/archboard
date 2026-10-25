@@ -1771,6 +1771,60 @@
 					"board": "Flask application"
 				}
 			]
+		},
+		{
+			"id": "S20",
+			"name": "survey the design questions of the vault",
+			"report": "primary",
+			"workflow": "read",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S16.json",
+			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/ctx.py", "src/flask/sessions.py"],
+			"prompt": "Before a refactor, survey the saved boards of this repository. Which entry points only pass one call on, which containers have no hidden part, and which containers have no entry point? Say which boards you could read. Answer from the saved boards using the CLI. Change nothing.",
+			"expectedFeatures": [
+				{
+					"feature": "questions.survey",
+					"requirement": "`semantic questions` is used, not a hand count from `semantic show`, and the answer reports `Request context push` as the one pass-through entry point, of `Contexts`; `Contexts` as a container with no hidden part; and `CLI`, whose `Run command` and `App loader` nothing outside reaches, as a container with no entry point; `Flask app` is in none of the three",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "questions.terms",
+					"requirement": "the answer names `Flask application` as the board it read and says that no board was skipped, and it gives each result as a question for the reader, with no score, ranking, combined number or word such as deep or shallow",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "read-only",
+					"requirement": "no write happens",
+					"skill": [
+						"references/read.md#answer-a-question-from-a-saved-board",
+						"SKILL.md#which-recipe"
+					]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/read.md"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		}
 	]
 }

@@ -219,8 +219,11 @@ recipe names.
   variant with its `lifecycle`, `parent`, `content` and the board `version`.
   `archboard semantic` lists the boards. `archboard semantic compare <board>
   [--variant <id|name>] [--against <id|name>]` reads one variant against the
-  current one, or on a board nobody has built the one it came from
-  ([answer from a saved board](references/read.md) says what it reports).
+  current one, or on a board nobody has built the one it came from.
+  `archboard semantic questions [--board <name>]...` asks every current board
+  the design questions of a survey: pass-through entry points, containers with
+  no hidden part and containers with no entry point
+  ([answer from a saved board](references/read.md) says what both report).
 - **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
   later write (`edit`, `branch`, `resolve`, `adopt`, `rename`) also needs
   `--expect-version <n>` with the version you read; a moved board refuses the
@@ -561,8 +564,8 @@ Each recipe, and the request it is for:
   [design it twice](references/propose-compare.md#design-it-twice): their
   measures side by side, and the drafts not kept shelved with a reason.
 - [answer from a saved board](references/read.md): answer a question from a
-  saved board, including which of its parts change most often in Git, and
-  change nothing.
+  saved board, including a survey of the design questions across the boards and
+  which of its parts change most often in Git, and change nothing.
 
 A new board is the architecture recipe first, whatever the request calls its
 subject: a board that describes how a request travels is parts, containment

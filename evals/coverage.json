@@ -215,6 +215,13 @@
 					"owner": "grader inspect.container; packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				},
 				{
+					"path": "semantic questions: the pass-through entry points, the containers with no hidden part and the containers with no entry point of every current board, each with the boards, containers and parts behind its counts, the boards it read and the boards it skipped with the reason",
+					"expectedUse": "answer a survey across the boards from the CLI, report each result as a question for the reader and never as a score, a ranking or a verdict, and name a board that was skipped as not read",
+					"scenarios": ["S20"],
+					"evidence": "grader",
+					"owner": "grader questions.survey, questions.terms; packages/board/tests/shared/rules/inspect/design-questions.test.ts; packages/board/tests/shared/protocol/design-questions.test.ts (the schema refuses a score or a verdict); packages/board/tests/runtime/operations/read/design-questions.test.ts (current variants, skipped boards, --board); apps/server/tests/server/routes/design-questions/design-questions-route.test.ts; apps/cli/tests/cli/operations/semantic/questions/questions.test.ts; apps/cli/tests/cli/rules/routing/board-flags.test.ts (a repeatable --board)"
+				},
+				{
 					"path": "a node with no children holds no parts; a container nothing outside reaches has only hidden parts and no callers; a relationship to the container itself makes a caller and no entry point",
 					"expectedUse": "the answer says each in words instead of reporting zero entry points",
 					"scenarios": [],
