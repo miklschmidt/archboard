@@ -314,7 +314,7 @@ function armContextMatches(context: WorkbenchExecutionContext, values: ArmContex
 /**
  * The transcript record of the effect prompt: the assistant's own final utterance of exactly the
  * effect summary. The gate is armed against that utterance, so anything else means the person was
- * not asked what Archboard thinks they were asked.
+ * not asked what the workbench thinks they were asked.
  * @param records - The transcript records.
  * @param input - The arm request.
  * @param effectSummary - The summary that must have been spoken.

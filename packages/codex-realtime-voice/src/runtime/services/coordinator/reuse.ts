@@ -233,7 +233,7 @@ function currentProofDecision(
 
 /**
  * Whether a classification says the retained coordinator can still be driven: an executable link
- * to the same Archboard-created thread on the same child and epoch, with a live proof.
+ * to the same workbench-created thread on the same child and epoch, with a live proof.
  * @param link - The classified link.
  * @param proof - The classification's proof, or null when it has none.
  * @param candidate - The retained coordinator.
@@ -302,7 +302,7 @@ async function classifyCandidate(
  * Decide what to do with the coordinator the workbench retained: reuse it, replace it, or leave
  * its thread inspect-only. Reuse is the narrow case — the retained state, the durable record, the
  * live epoch proof and a fresh classification must all agree — because a coordinator that cannot
- * be proven is one Archboard must not drive.
+ * be proven is one the workbench must not drive.
  * @param candidate - The retained coordinator, or null when nothing was retained.
  * @param configured - The settings the coordinator must have been given.
  * @param reviewed - The reviewed instruction and manifest hashes.
@@ -528,7 +528,7 @@ function recordProvesOwnership(
 
 /**
  * Why the retained coordinator cannot be reused as it stands: its settings drifted from the
- * reviewed ones, or its durable record does not prove Archboard owns the thread.
+ * reviewed ones, or its durable record does not prove the workbench owns the thread.
  * @param persistence - The retained coordinator.
  * @param record - Its durable record.
  * @param configured - The settings the coordinator must have been given.

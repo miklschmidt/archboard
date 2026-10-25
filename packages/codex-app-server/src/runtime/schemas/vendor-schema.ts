@@ -21,7 +21,7 @@ export function codexIngressSchemas<WireByMethod extends object>() {
 }
 
 /**
- * Proves a handwritten schema for a value Archboard sends to Codex against the generated
+ * Proves a handwritten schema for a value the client sends to Codex against the generated
  * wire type, so a protocol bump fails at type-check rather than on the wire.
  * @returns An identity function that only accepts a schema whose output conforms to the wire type.
  */
@@ -32,7 +32,7 @@ export function codexOutputSchema<Wire>() {
 }
 
 /**
- * Proves a handwritten schema for a value Archboard receives from Codex against the generated
+ * Proves a handwritten schema for a value the client receives from Codex against the generated
  * wire type in both its input and output shapes.
  * @returns An identity function that only accepts a schema conforming to the wire type.
  */

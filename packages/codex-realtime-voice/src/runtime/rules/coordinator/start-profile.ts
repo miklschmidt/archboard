@@ -88,7 +88,7 @@ function assertStartedResponse(
 }
 
 /**
- * The coordinator's settings as they will be retained: what Archboard asked for, what Codex
+ * The coordinator's settings as they will be retained: what the workbench asked for, what Codex
  * applied, and the permissions the thread runs under.
  * @param configured - The settings the coordinator was asked for.
  * @param settings - The settings Codex confirmed.

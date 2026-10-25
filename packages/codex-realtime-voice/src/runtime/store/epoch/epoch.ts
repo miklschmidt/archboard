@@ -58,7 +58,7 @@ import {
 } from "#runtime/store/epoch/validation.ts";
 /**
  * Create the durable epoch ledger: the record of which child epoch owns which thread, kept
- * outside both Codex storage roots so Codex can never rewrite Archboard's own evidence.
+ * outside both Codex storage roots so Codex can never rewrite the workbench's own evidence.
  * @param options - Where the ledger lives, the Codex roots it must avoid, and its seams.
  * @returns The store.
  */

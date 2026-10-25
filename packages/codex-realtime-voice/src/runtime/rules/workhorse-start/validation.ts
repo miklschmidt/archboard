@@ -35,7 +35,7 @@ interface ValidatedWorkhorseStart {
 /**
  * Every field of a thread/start response that must match the authored workhorse profile, named so
  * a refusal can say exactly which ones did not. The decoded response already proves each field is
- * present; these checks prove it holds the value Archboard asked for.
+ * present; these checks prove it holds the value the workbench asked for.
  * @param response - The decoded thread/start response.
  * @param options - The start options carrying the checkout root.
  * @param threadId - The thread identity adopted from the response.
@@ -66,9 +66,9 @@ function startProfileMismatches(
 }
 
 /**
- * Prove a thread/start response is the workhorse Archboard authored, and reduce it to the facts
+ * Prove a thread/start response is the workhorse the workbench authored, and reduce it to the facts
  * the pane keeps. A response that differs anywhere is refused whole: a workhorse that is not the
- * authored profile is not one Archboard will drive.
+ * authored profile is not one the workbench will drive.
  * @param response - The decoded thread/start response.
  * @param options - The start options carrying the identity authority and checkout root.
  * @returns The thread, its adopted identity and the start facts.
@@ -252,7 +252,7 @@ function isCommittedCleanupRecord(
 
 /**
  * Deletion is permitted only for the exact newly-created, empty, idle root this start produced:
- * a thread with a turn, a fork, or a parent is somebody's work, not Archboard's to remove.
+ * a thread with a turn, a fork, or a parent is somebody's work, not the workbench's to remove.
  * @param thread - The thread being considered for deletion.
  * @param started - What the start proved about the thread it created.
  * @returns True when the thread is that exact root.

@@ -46,7 +46,7 @@ function isInteger(value: unknown): value is number {
 
 /**
  * Adopt a canonical identity read back from the durable manifest as its branded type. The
- * manifest is Archboard's own earlier output and the text has just been matched against that
+ * manifest is the workbench's own earlier output and the text has just been matched against that
  * domain's canonical form, so this decode boundary is the one place a brand is restored.
  * @param identity - The canonical identity text.
  * @returns The same text, typed as the branded identity.

@@ -55,7 +55,7 @@ type LegacyDecision = Extract<
 type Answers = Record<string, { readonly answers: string[] }>;
 type ContentValue = string | number | boolean | string[];
 
-const DEFAULT_DECLINE_REASON = "Declined at the Archboard workbench.";
+const DEFAULT_DECLINE_REASON = "Declined at the workbench.";
 const UNKNOWN_OFFER = "That decision is not offered for this request.";
 
 /** What one dynamic draft is built from. */

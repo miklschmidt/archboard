@@ -8,7 +8,7 @@ import type {
 	TurnId,
 } from "@archboard/codex-app-server/identity";
 
-/** The only queue operations exposed to Archboard callers. */
+/** The only queue operations exposed to workbench callers. */
 const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
 	"list",
 	"add",

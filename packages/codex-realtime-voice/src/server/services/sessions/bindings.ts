@@ -474,7 +474,7 @@ function createWorkhorseBindings(
 		semanticDelivery: (created) => ({
 			contextCodec: server.host.contextCodec,
 			/**
-			 * Compare the captured Archboard payload with the event before core authority gates allow delivery.
+			 * Compare the captured host payload with the event before core authority gates allow delivery.
 			 * @param event The source event with its identity and freshness.
 			 * @param capturedContext The immutable context to compare.
 			 * @returns Whether the stated condition holds.
