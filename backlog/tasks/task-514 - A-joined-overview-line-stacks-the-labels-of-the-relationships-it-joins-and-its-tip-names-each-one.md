@@ -6,8 +6,8 @@ title: >-
 status: Done
 assignee:
   - '@claude'
-created_date: '2026-10-24 02:08'
-updated_date: '2026-10-24 02:31'
+created_date: 2026-10-24 02:08
+updated_date: '2026-10-25T00:22:00Z'
 labels:
   - semantic-model
   - renderer
@@ -38,11 +38,11 @@ TASK-513 labeled a joined overview line with its count ("5 relationships"). On D
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. scope.ts oneLine stacks distinct member labels with a line break; none when no member is labelled.
-2. measureLabel wraps each block on its own, with a gap and a rule between blocks; architecture.ts paints the rules in the plate's edge ink.
-3. subject-tips.ts: in the overview, a joined line's tip names the drawn ends and every member with its own ends; SemanticDiagram passes the overview flag.
-4. Inspector titles a joined line by its drawn ends.
-5. ADR 0052 and CONTEXT.md.
+1. scope.ts oneLine stacks distinct member labels with a line break. It carries no label when no member has one.
+2. measureLabel wraps each label on its own chip, with the same padding as a lone label and a gap between chips. architecture.ts paints each chip and its shadow.
+3. In the overview, subject-tips.ts names the drawn ends and every member with its own ends. SemanticDiagram passes the overview flag.
+4. The inspector titles a joined line by its drawn ends.
+5. ADR 0052 and CONTEXT.md state the stacked-label rule.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -51,10 +51,12 @@ TASK-513 labeled a joined overview line with its count ("5 relationships"). On D
 Cause of the tip defect: subjectTip read the line id against the whole variant (subject-tips.ts labelTip), so it described the first member. Verified: stacked-labels render test (blocks, track), scope, tip and inspection tests fail without the change and pass with it. Device Trust Library re-rendered after archboard restart in blocks and track, light and dark: each joined line stacks its labels with a rule between them; Everything keeps the saved labels. Live pane: hovering the cAR746dp label shows the drawn ends and all five calls with their own ends. bun run check passed to completion.
 
 Owner rejected the hairline rule between stacked labels (DESIGN.md Planes Not Lines Rule). Each label now stands on its own chip (measured chips in MeasuredLabel, slab and shadow per chip in architecture.ts), with a 4-unit gap. Re-rendered in blocks and track, light and dark.
+
+Pre-push review derives the temporary chip type from MeasuredLabel instead of repeating its fields. The plan and summary now describe the final separate chips, which replaced the rejected divider rule. No rendering behavior changes.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-A joined overview line stacks the distinct labels of its relationships, each wrapped on its own and set apart by a rule in the plate's edge ink. The tip over it and the inspector name the drawn ends and every joined relationship with its own ends. ADR 0052 and CONTEXT.md state the rule. A plate with many members grows tall; no cap is applied.
+A joined overview line stacks the distinct labels of its relationships. Each label wraps on its own padded chip, with a gap between chips. The tip and inspector name the drawn ends and every relationship with its own ends. ADR 0052 and CONTEXT.md state the rule. A stack with many members grows tall, with no cap.
 <!-- SECTION:FINAL_SUMMARY:END -->

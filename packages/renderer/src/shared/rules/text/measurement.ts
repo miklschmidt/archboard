@@ -279,7 +279,7 @@ function measureLabel(text: string): MeasuredLabel {
 	});
 	const widest = Math.max(0, ...blocks.flat().map((line) => line.width));
 	const width = Math.max(LABEL_MIN_WIDTH, widest + 2 * ARCHITECTURE_LABEL_PADDING_X);
-	const chips: { y: number; height: number }[] = [];
+	const chips: MeasuredLabel["chips"][number][] = [];
 	for (const block of blocks) {
 		const last = chips.at(-1);
 		chips.push({
