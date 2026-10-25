@@ -11,13 +11,15 @@ import {
 	historyAttributionLabel,
 	FootprintReplySchema,
 	type FootprintAnswer,
-	type FootprintPart,
 } from "@archboard/code-intel/history";
 import { z } from "zod";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { SelectorSchema } from "#cli/operations/semantic/input/semantic-input.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
+
+/** One part a footprint names, changed or not. */
+type FootprintPart = Extract<FootprintAnswer, { proposal: null }>["changed"][number];
 
 const FootprintInputSchema = z.object({
 	name: z.string(),

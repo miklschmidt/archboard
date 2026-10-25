@@ -16,7 +16,7 @@
 // checkout: most of the work of a walk between a merge base and HEAD.
 
 import type { Express, Request, Response } from "express";
-import { readFootprint, type FootprintRequest } from "@archboard/code-intel/history-lens";
+import { readFootprint } from "@archboard/code-intel/history-lens";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
@@ -40,7 +40,7 @@ interface FootprintRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Read the footprint. */
-	readonly read: (request: FootprintRequest) => Promise<FootprintAnswer>;
+	readonly read: typeof readFootprint;
 }
 
 /** What a request asks for. */
