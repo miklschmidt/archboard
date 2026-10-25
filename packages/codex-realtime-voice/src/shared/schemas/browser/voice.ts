@@ -87,11 +87,8 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 				"failed",
 			]),
 			realtimeSessionId: BrowserRealtimeSessionIdSchema.nullable(),
-			/**
-			 * Whether the live session is a recording's (TASK-304): its words are narration spoken
-			 * into a video, not an answer to anybody on the canvas, and taking the voice ends it.
-			 */
-			recording: z.boolean().optional(),
+			/** Whether nobody listens live to the session, as the host's narrative says. */
+			unattended: z.boolean().optional(),
 			transcript: z.array(
 				z
 					.object({

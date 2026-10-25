@@ -4,7 +4,7 @@
 
 import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
 import type { WorkbenchQueueCorrelation, WorkbenchQueueState } from "#ui/state/queue/contracts.ts";
-import { WORKBENCH_QUEUE_NARRATIVES } from "#ui/rules/queue/narratives.ts";
+import { WORKBENCH_QUEUE_STATE_WORDS } from "#ui/rules/queue/words.ts";
 import { childIdentityOf } from "#ui/rules/queue/state.ts";
 
 type Turn = NonNullable<BrowserSnapshot["timeline"]>["turns"][number];
@@ -84,7 +84,7 @@ function correlationSummary(
 			? "no coordinator thread"
 			: `coordinator thread ${facts.coordinatorThreadId}`;
 	const submissions = entryCount === 1 ? "1 submission" : `${entryCount} submissions`;
-	return `${WORKBENCH_QUEUE_NARRATIVES[state].label}: ${submissions} on ${workhorseText(facts)}, ${turnText(facts)}, queued through ${coordinator}.`;
+	return `${WORKBENCH_QUEUE_STATE_WORDS[state].label}: ${submissions} on ${workhorseText(facts)}, ${turnText(facts)}, queued through ${coordinator}.`;
 }
 
 /**

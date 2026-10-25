@@ -98,7 +98,7 @@ interface CodexWorkbenchWorkhorseBindings {
 
 /** What each of one tab session's own components is configured with. */
 interface CodexWorkbenchSessionBindings {
-	readonly presentation?: import("#server/services/voice/presentation.ts").WorkbenchVoicePresentationAdapter;
+	readonly narrative?: import("#server/services/voice/narrative.ts").VoiceNarrativeAdapter;
 	readonly realtime: SessionComponentBuilder<
 		Omit<CodexRealtimeAdapterOptions, "session" | "identity">
 	>;

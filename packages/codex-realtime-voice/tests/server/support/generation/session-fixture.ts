@@ -21,7 +21,7 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 		onNotification: () => undefined,
 		transcript: () => [],
 		generation: () => null,
-		presentation: () => null,
+		narrative: () => null,
 		dispose: () => void events.push("realtime:dispose"),
 	} satisfies CodexWorkbenchSessionComponents["realtime"];
 	const coordinator = {

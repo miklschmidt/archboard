@@ -15,10 +15,10 @@ export type WorkbenchContextCodec = Extensions["contextCodec"];
 export type WorkbenchExecutionContext = Parameters<WorkbenchContextCodec["encode"]>[0];
 /** What the coordinator is told about the host page. */
 export type WorkbenchContextSource = Extensions["context"];
-/** How voice is presented and recorded. */
+/** How voice starts, for a narrative or an ordinary session. */
 export type WorkbenchVoicePolicy = Extensions["voice"];
-/** How a voice presentation is announced to the host page. */
-export type WorkbenchVoicePresentationAdapter = Extensions["presentation"];
+/** How the narrative a voice session presents is checked, prepared, opened and forgotten. */
+export type VoiceNarrativeAdapter = Extensions["narrative"];
 /** The host's domain tools: their manifest registrations and their installation. */
 export type CodexWorkbenchDomainTools = Extensions["domainTools"];
 /** The capabilities of one Codex generation that the core grants to domain tools. */

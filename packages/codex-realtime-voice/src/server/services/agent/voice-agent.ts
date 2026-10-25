@@ -25,13 +25,13 @@ import {
 
 /**
  * Deliberate extension points for a host that adds its own domain to the agent: context sources,
- * domain tools, voice presentation and its own browser socket routing. A host without a domain
+ * domain tools, voice narratives and its own browser socket routing. A host without a domain
  * passes none.
  */
 export type VoiceAgentExtensions = Omit<CodexWorkbenchExtensions, "onFatal"> & {
 	/** What the coordinator is told about the host page. Default: the admitted checkouts, as data. */
 	readonly context?: WorkbenchContextSource;
-	/** How voice is presented and recorded. Default: plain live voice. */
+	/** How voice starts, for a narrative or an ordinary session. Default: plain live voice. */
 	readonly voice?: WorkbenchVoicePolicy;
 	/** Extra Codex dynamic tools per role, appended to the built-in coordination tools. */
 	readonly tools?: {

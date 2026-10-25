@@ -8,7 +8,8 @@ import type { RealtimeServer } from "#shared/protocol/realtime-contract.ts";
 import type { RealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
 import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/media-session.ts";
 import { createRealtimeServer } from "#ui/clients/media/realtime.ts";
-import type { StartOperation, VoicePresentation } from "#ui/clients/media/realtime.ts";
+import type { StartOperation } from "#ui/clients/media/realtime.ts";
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import {
 	browserAudioElements,
 	browserMediaSupported,
@@ -43,11 +44,11 @@ function noop(): void {
 
 /**
  * The operation one start runs under.
- * @param presentation The host presentation payload, when present.
+ * @param narrative The narrative the start presents, when there is one.
  * @returns The operation, holding no lease yet.
  */
-function startOperationFor(presentation: VoicePresentation | null | undefined): StartOperation {
-	return { lease: null, presentation: presentation ?? null };
+function startOperationFor(narrative: VoiceNarrative | null | undefined): StartOperation {
+	return { lease: null, narrative: narrative ?? null };
 }
 
 /**
@@ -442,16 +443,16 @@ function createBrowserWorkbenchMediaOwner(
 
 	/**
 	 * Starts realtime media on the current run.
-	 * @param presentation The host presentation payload, when present.
+	 * @param narrative The narrative the session presents, when there is one.
 	 * @returns The snapshot the start ended on.
 	 */
-	const start = async (presentation?: VoicePresentation | null): Promise<RealtimeMediaSnapshot> => {
+	const start = async (narrative?: VoiceNarrative | null): Promise<RealtimeMediaSnapshot> => {
 		const open = openRun();
 		const active = run;
 		if (open === null || active === null) {
 			throw new Error("The Codex browser media owner has no active transport.");
 		}
-		const operation = startOperationFor(presentation);
+		const operation = startOperationFor(narrative);
 		active.startOperation = operation;
 		try {
 			return await startMedia(active, open.media, operation);

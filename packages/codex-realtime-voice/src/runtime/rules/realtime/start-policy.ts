@@ -6,11 +6,10 @@ import type {
 import type { SessionParams } from "@archboard/codex-app-server/session";
 
 /**
- * The channel rule while a recording holds the voice (TASK-304). Nobody is there to hear an answer,
- * and whatever the voice says lands in the video as narration of the step on screen, so the
- * coordinator is told it has nobody to speak to until the session ends.
+ * The channel rule while the host suppresses coordinator speech, as it does when nobody listens
+ * live: the coordinator is told it has nobody to speak to until the session ends.
  */
-const RECORDING_COORDINATOR_INSTRUCTIONS = `${CHANNEL_RULE}\nThe host suppresses spoken coordinator replies during this voice session. Until the session ends, begin every message with [COMMENTARY] and never write [FINAL]; nothing you write is to be spoken.`;
+const SILENT_COORDINATOR_INSTRUCTIONS = `${CHANNEL_RULE}\nThe host suppresses spoken coordinator replies during this voice session. Until the session ends, begin every message with [COMMENTARY] and never write [FINAL]; nothing you write is to be spoken.`;
 
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
@@ -50,7 +49,7 @@ export function createRealtimeStartParams(input: {
 		includeStartupContext: false,
 		initialItems: [],
 		realtimeStartInstructions: input.voice.suppressCoordinatorSpeech
-			? RECORDING_COORDINATOR_INSTRUCTIONS
+			? SILENT_COORDINATOR_INSTRUCTIONS
 			: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt: input.voice.prompt,

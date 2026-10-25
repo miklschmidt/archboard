@@ -4,7 +4,7 @@
 
 import { JsonValueSchema } from "#shared/schemas/browser/scalars.ts";
 import { type BrowserCommandLease } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	AppendOutcome,
 	CommandOutcome,
@@ -28,14 +28,9 @@ interface MediaSessionRecord {
 /** One start in flight, and the lease it was granted. */
 interface StartOperation {
 	lease: BrowserCommandLease | null;
-	/**
-	 * The host presentation payload for this start, or null for an ordinary session.
-	 */
-	readonly presentation: VoicePresentation | null;
+	/** The narrative this start presents, or null for an ordinary session. */
+	readonly narrative: VoiceNarrative | null;
 }
-
-/** The host-defined JSON payload attached to a voice start. */
-type VoicePresentation = BrowserVoicePresentation;
 
 /** What the realtime server needs from the run that owns it. */
 interface MediaRunPort {
@@ -157,9 +152,9 @@ async function createOffer(
 		command: "realtimeStart",
 		threadId: executableThread(run.transport),
 		sdp: offer.sdp,
-		...(operation.presentation === null
+		...(operation.narrative === null
 			? {}
-			: { presentation: JsonValueSchema.parse(operation.presentation) }),
+			: { narrative: JsonValueSchema.parse(operation.narrative) }),
 	});
 	run.requireCurrentStart(operation);
 	const answer = startAnswer(value, offer, lease);
@@ -286,4 +281,4 @@ function createRealtimeServer(run: MediaRunPort): RealtimeServer {
 	};
 }
 
-export { createRealtimeServer, type MediaRunPort, type StartOperation, type VoicePresentation };
+export { createRealtimeServer, type MediaRunPort, type StartOperation };

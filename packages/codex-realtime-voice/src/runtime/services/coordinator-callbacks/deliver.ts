@@ -255,7 +255,7 @@ function situationOf(callback: CoordinatorCallback): WorkhorseNewsSituation {
 
 /**
  * Give the coordinator one workhorse outcome at once, in the turn it is running or a new one, so
- * it decides what the user hears. Nothing is sent while a recording holds the voice.
+ * it decides what the user hears. Nothing is sent while the voice session is unattended.
  * @param callback - The normalized callback.
  * @param options - The authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -279,7 +279,7 @@ async function deliverThroughCoordinatorTurn(
 	const attemptedAtMs = (options.now ?? Date.now)();
 	const news = workhorseNewsSentence(callback);
 	const result = await port.report({ threadId, news, situation: situationOf(callback) });
-	if (result === "recording") {
+	if (result === "unattended") {
 		return recordOnly(callback, evidence, text, "voice_inactive");
 	}
 	return turnDelivery(callback, evidence, {

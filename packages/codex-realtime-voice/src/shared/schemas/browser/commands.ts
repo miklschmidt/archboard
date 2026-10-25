@@ -171,8 +171,8 @@ function createBrowserCommandSchemas(
 				command: z.literal("realtimeStart"),
 				threadId: ThreadIdSchema,
 				sdp: boundedText(16_384),
-				/** The host validates the meaning of this optional JSON payload. */
-				presentation: JsonValueSchema.optional(),
+				/** The narrative the session presents: JSON whose meaning the host validates. */
+				narrative: JsonValueSchema.optional(),
 			})
 			.strict(),
 		z

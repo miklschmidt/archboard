@@ -4,8 +4,8 @@ import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
 //
 // What is guarded: the outcome goes out at once as one turn/start, under a minted identity and
 // the reviewed producer, whatever the coordinator is doing (Codex adds it to a running turn or
-// starts one, so nothing here reads the thread or waits); a recording's voice gets nothing to
-// speak into the video; and a start that failed says whether anything was delivered.
+// starts one, so nothing here reads the thread or waits); an unattended voice session gets
+// nothing to speak to nobody; and a start that failed says whether anything was delivered.
 
 import { describe, expect, test } from "bun:test";
 import { createOutcomeReportPort } from "#server/services/voice/outcome-report.ts";
@@ -13,7 +13,7 @@ import { createIdentityAuthorities } from "@archboard/codex-app-server/identity"
 import { generationContextFixture } from "#tests/server/support/generation/generation-values.ts";
 
 /** A port whose turn/start a test scripts, recording what was started. */
-function harness(startFails = false, recording = false) {
+function harness(startFails = false, unattended = false) {
 	const threadId = createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator");
 	const starts: { readonly prompt: string; readonly clientUserMessageId: unknown }[] = [];
 	const contexts: string[] = [];
@@ -45,7 +45,7 @@ function harness(startFails = false, recording = false) {
 				},
 			};
 		},
-		recording: () => recording,
+		unattended: () => unattended,
 	});
 	return { port, threadId, starts, contexts };
 }
@@ -65,11 +65,11 @@ describe("a workhorse outcome given to the coordinator", () => {
 		expect(h.contexts).toEqual(["operation-1"]);
 	});
 
-	test("sends nothing while a recording holds the voice", async () => {
-		// Whatever the coordinator answered would be spoken into the video.
+	test("sends nothing while the voice session is unattended", async () => {
+		// Whatever the coordinator answered would be spoken to nobody.
 		const h = harness(false, true);
 		expect(await h.port.report({ threadId: h.threadId, news: "News.", situation: "ended" })).toBe(
-			"recording",
+			"unattended",
 		);
 		expect(h.starts).toHaveLength(0);
 	});

@@ -1,4 +1,4 @@
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	AnswerSdp,
 	RealtimeCorrelationId,
@@ -30,8 +30,8 @@ interface ActiveRealtimeSession {
 	readonly correlationId: RealtimeCorrelationId;
 	readonly wireSessionId: WireRealtimeSessionId;
 	readonly startBrief: string;
-	/** The walkthrough this session was started to present, or null for an ordinary session. */
-	readonly presentation: BrowserVoicePresentation | null;
+	/** The narrative this session was started to present, or null for an ordinary session. */
+	readonly narrative: VoiceNarrative | null;
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;

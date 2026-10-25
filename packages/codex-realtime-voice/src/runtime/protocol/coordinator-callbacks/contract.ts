@@ -240,10 +240,10 @@ type WorkhorseNewsSituation = "ended" | "waiting" | "message";
 
 /**
  * What giving the coordinator a workhorse outcome came to: an ordinary mutation result, or
- * recording when a recording holds the voice and nothing was sent, since whatever the
- * coordinator answered would be spoken into the video (TASK-304).
+ * unattended when nobody listens live to the voice and nothing was sent, since whatever the
+ * coordinator answered would be spoken to nobody.
  */
-type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "recording";
+type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "unattended";
 
 /**
  * Gives the coordinator one workhorse outcome while voice is live (TASK-291, TASK-321).

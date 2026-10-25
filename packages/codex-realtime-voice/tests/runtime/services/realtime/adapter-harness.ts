@@ -205,14 +205,14 @@ function correlation(suffix = "") {
 async function started(
 	h: Harness,
 	suffix = "",
-	presentation: Parameters<Harness["adapter"]["createOffer"]>[1] = null,
+	narrative: Parameters<Harness["adapter"]["createOffer"]>[1] = null,
 ): Promise<{
 	readonly wireSessionId: string;
 	readonly correlation: ReturnType<typeof correlation>;
 }> {
 	const browser = correlation(suffix);
 	const startIndex = h.session.starts.length;
-	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, presentation);
+	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, narrative);
 	await Promise.resolve();
 	const start = h.session.starts[startIndex];
 	if (!start?.realtimeSessionId) {

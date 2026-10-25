@@ -1,4 +1,4 @@
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	AnswerSdp,
 	CreateOfferSdp,
@@ -64,17 +64,17 @@ interface CodexRealtimeAdapterOptions {
 interface CodexRealtimeAdapter extends Omit<RealtimeServer, "attachRemoteMedia" | "createOffer"> {
 	/**
 	 * Accept the browser's offer and start the session, as an ordinary voice session or, given a
-	 * walkthrough, one started to present it (TASK-251).
+	 * narrative, one started to present it.
 	 */
 	readonly createOffer: (
 		offer: CreateOfferSdp,
-		presentation?: BrowserVoicePresentation | null,
+		narrative?: VoiceNarrative | null,
 	) => Promise<AnswerSdp>;
 	readonly onNotification: SessionNotificationHandler;
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 	readonly generation: () => CodexRealtimeGeneration | null;
-	/** The walkthrough the live session presents (TASK-251), or null with none or an ordinary one. */
-	readonly presentation: () => BrowserVoicePresentation | null;
+	/** The narrative the live session presents, or null with none or an ordinary one. */
+	readonly narrative: () => VoiceNarrative | null;
 	readonly dispose: () => void;
 }
 

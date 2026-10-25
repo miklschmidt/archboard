@@ -58,7 +58,7 @@ function browserProjectionInput(
 		},
 		voice: {
 			kind: "codex_voice",
-			recording: false,
+			unattended: false,
 			mediaReady: false,
 			generation: null,
 			coordinatorState: "unbound",

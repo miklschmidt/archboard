@@ -16,7 +16,7 @@ import {
 	projectEntry,
 	type EntryContext,
 } from "#ui/rules/queue/entry-projection.ts";
-import { WORKBENCH_QUEUE_NARRATIVES } from "#ui/rules/queue/narratives.ts";
+import { WORKBENCH_QUEUE_STATE_WORDS } from "#ui/rules/queue/words.ts";
 import { isCoordinatorOwned } from "#ui/rules/queue/reorder.ts";
 import { isStaleWorkbenchQueueState, resolveWorkbenchQueueState } from "#ui/rules/queue/state.ts";
 import type { WorkbenchTransportCapabilities } from "#ui/state/queue/transport-port.ts";
@@ -69,10 +69,10 @@ function regionBlock(
 	state: WorkbenchQueueState,
 ): string | null {
 	if (isStaleWorkbenchQueueState(state)) {
-		return WORKBENCH_QUEUE_NARRATIVES[state].recovery;
+		return WORKBENCH_QUEUE_STATE_WORDS[state].recovery;
 	}
 	if (state === "unavailable") {
-		return WORKBENCH_QUEUE_NARRATIVES.unavailable.recovery;
+		return WORKBENCH_QUEUE_STATE_WORDS.unavailable.recovery;
 	}
 	return transportBlock(input);
 }
@@ -120,12 +120,12 @@ function projectWorkbenchQueue(input: WorkbenchQueueProjectionInput): WorkbenchQ
 		ownedSlots,
 		total: entries.length,
 	};
-	const narrative = WORKBENCH_QUEUE_NARRATIVES[state];
+	const words = WORKBENCH_QUEUE_STATE_WORDS[state];
 	return Object.freeze({
 		state,
-		label: narrative.label,
-		detail: narrative.detail,
-		recovery: narrative.recovery,
+		label: words.label,
+		detail: words.detail,
+		recovery: words.recovery,
 		correlation,
 		entries: Object.freeze(entries.map((entry, index) => projectEntry(entry, index, context))),
 		coordinatorOwnedCount: ownedSlots.length,

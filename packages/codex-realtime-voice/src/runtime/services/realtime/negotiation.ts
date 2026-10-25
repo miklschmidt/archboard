@@ -93,7 +93,7 @@ async function beginStart(
 		threadId: session.binding.coordinatorThreadId,
 		realtimeSessionId: session.wireSessionId,
 		sdp,
-		voice: ops.options.voice.start(session.presentation),
+		voice: ops.options.voice.start(session.narrative),
 	});
 	ops.options.trace?.("start_sent", startSizes(params));
 	await ops.options.session.realtimeStart(params);

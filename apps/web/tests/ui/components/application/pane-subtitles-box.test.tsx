@@ -138,7 +138,7 @@ function listenToNothing(): () => undefined {
  */
 function carried(text: string): ReturnType<VoiceFeed["voice"]> {
 	const said = [{ itemId: "said-1", speaker: "assistant", text, final: false }] as const;
-	return { state: "active", recording: false, transcript: text === "" ? [] : said };
+	return { state: "active", unattended: false, transcript: text === "" ? [] : said };
 }
 
 /** A voice a transport carries, with nothing said yet. */

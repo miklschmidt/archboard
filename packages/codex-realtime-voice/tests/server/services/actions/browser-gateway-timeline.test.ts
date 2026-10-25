@@ -79,6 +79,8 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	};
 	const fixture = createCodexWorkbenchGenerationFixture([]);
 	const coordinator = fixture.sessionComponents.coordinator;
+	// The live voice session presents a narrative, which the host says nobody listens to live.
+	const narrative = { topic: "tour" };
 	const sessions = createCodexWorkbenchSessions({
 		resolveCheckout: (named) => named,
 		identity: authorities.identity,
@@ -90,6 +92,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		build: () => ({
 			components: {
 				...fixture.sessionComponents,
+				realtime: { ...fixture.sessionComponents.realtime, narrative: () => narrative },
 				coordinator: {
 					...coordinator,
 					snapshot: () => ({ ...coordinator.snapshot(), state: "ready" as const }),
@@ -112,16 +115,19 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		},
 		login: { kind: "login", state: "idle" },
 	} satisfies ServerBrowserBindingState;
-	const presentations: unknown[] = [];
+	const asked: unknown[] = [];
 	const budget = createServerBrowserProjectionBudget();
 	const options = createServerBrowserGatewayOptions({
 		components: fixture.components,
 		checkoutLabel: (checkout: string) => checkout,
 		sessions,
 		dynamicApprovals: null,
-		recording: (presentation) => {
-			presentations.push(presentation);
-			return false;
+		narrative: {
+			prepare: (input) => input ?? narrative,
+			unattended: (presented) => {
+				asked.push(presented);
+				return true;
+			},
 		},
 		state,
 		timeline,
@@ -158,8 +164,8 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const projected = options.projection.read(context);
 	expect(projected.timeline).toBe(timelineValue);
 	expect(projected.dynamicApprovals).toEqual([]);
-	expect(projected.voice.recording).toBe(false);
-	expect(presentations).toEqual([null]);
+	expect(projected.voice.unattended).toBe(true);
+	expect(asked).toEqual([narrative]);
 	await expect(
 		options.actions.dynamicApprovals.resolve({} as never, {} as never),
 	).rejects.toMatchObject({

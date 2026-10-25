@@ -98,7 +98,7 @@ export function createApprovalGateway(
 			},
 			voice: {
 				kind: "codex_voice",
-				recording: false,
+				unattended: false,
 				mediaReady,
 				generation: null,
 				coordinatorState: "ready",

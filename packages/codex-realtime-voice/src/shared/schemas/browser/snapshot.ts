@@ -252,9 +252,9 @@ type BrowserVoiceContext = z.infer<BrowserSchemas["BrowserVoiceContextSchema"]>;
 type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
 type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
 type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;
-/** The host-defined JSON payload attached to a voice start. */
-type BrowserVoicePresentation = NonNullable<
-	Extract<BrowserCommand, { readonly command: "realtimeStart" }>["presentation"]
+/** The narrative a voice session starts to present: host-defined JSON. */
+type VoiceNarrative = NonNullable<
+	Extract<BrowserCommand, { readonly command: "realtimeStart" }>["narrative"]
 >;
 type BrowserSnapshot = z.infer<BrowserSchemas["BrowserSnapshotSchema"]>;
 type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
@@ -290,7 +290,7 @@ export {
 	type BrowserCommandLease,
 	type BrowserOperationOutcome,
 	type BrowserCommand,
-	type BrowserVoicePresentation,
+	type VoiceNarrative,
 	type BrowserSnapshot,
 	type BrowserDto,
 	type DeliveryOutcome,

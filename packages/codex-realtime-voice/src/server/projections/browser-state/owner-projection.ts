@@ -1,4 +1,4 @@
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import { isUnattended, type VoiceNarrativeAdapter } from "#server/services/voice/narrative.ts";
 import type {
 	BrowserOwnerProjection,
 	CodexQueueProjectionInput,
@@ -54,8 +54,8 @@ interface ServerOwnerProjectionInput {
 	/** The workhorse of the shown checkout, or null while that checkout has none. */
 	readonly workhorse: Pick<CodexWorkbenchWorkhorse, "components" | "state"> | null;
 	readonly dynamicApprovals: WorkbenchDomainApprovals | null;
-	/** Host presentation facts for the active voice session. */
-	readonly recording?: (presentation: BrowserVoicePresentation | null) => boolean;
+	/** The host's narrative adapter, which says whether the live voice session is unattended. */
+	readonly narrative?: VoiceNarrativeAdapter;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
 	/** Reads the voice coordinator's thread, which is not any pane's link. */
@@ -280,15 +280,6 @@ function coordinatorTarget(
 }
 
 /**
- * Read the host's recording fact for the active voice presentation.
- * @param input The owners and host policy.
- * @returns True when the host identifies a recording.
- */
-function recordingFor(input: ServerOwnerProjectionInput): boolean {
-	return input.recording?.(input.session.components.realtime.presentation()) ?? false;
-}
-
-/**
  * One complete snapshot of the workbench as one pane is shown it, read from
  * the live owners rather than from anything the adapter stored.
  * @param input The owners, the cached facts, and the pane-side owners.
@@ -349,7 +340,7 @@ function readBrowserOwnerProjection(
 			kind: "codex_voice",
 			mediaReady: context.mediaReady,
 			generation: realtimeGeneration,
-			recording: recordingFor(input),
+			unattended: isUnattended(input.narrative, components.realtime.narrative()),
 			coordinatorState: coordinator.state,
 			transcript: components.realtime.transcript(),
 		},

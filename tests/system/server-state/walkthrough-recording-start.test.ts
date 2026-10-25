@@ -4,7 +4,7 @@
 // What is guarded: a recording start opens no step itself, because the recording page opens step
 // 1 and moves on by itself; the page's own move to step 1, reported with no request behind it,
 // reaches the voice model as speech the way a step chosen by hand does; the voice projection
-// says the live session is a recording; the recording page's pane hears its own steps by client
+// says the live session is unattended; the recording page's pane hears its own steps by client
 // id and is neither listed nor shown a board by a show that names no pane; and the recording is a
 // tab session of its own (TASK-373), so another tab talks at the same time, each on its own
 // coordinator, and neither stops the other.
@@ -142,7 +142,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 			command("realtimeStart", {
 				threadId: link["threadId"],
 				sdp: "v=0",
-				presentation: { walkthrough, recording: { language: "en" } },
+				narrative: { walkthrough, recording: { language: "en" } },
 			});
 		const frames = (method: string) =>
 			records(fixture.logPath).filter((entry) => entry.kind === "frame" && entry.method === method);
@@ -153,9 +153,9 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 
 		const voice = async () =>
 			snapshots(await socket.request("snapshot"))["voice"] as Record<string, unknown>;
-		expect((await voice())["recording"]).toBe(false);
+		expect((await voice())["unattended"]).toBe(false);
 		expect(await startRecording()).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-		expect((await voice())["recording"]).toBe(true);
+		expect((await voice())["unattended"]).toBe(true);
 		expect(frames("thread/realtime/start")).toHaveLength(1);
 		// Nothing asks the pane for a step, and nothing is said before the page moves. A step the
 		// start asked for would be sent down this socket before the start's own answer.
@@ -210,12 +210,12 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 		expect(voiced).toHaveLength(2);
 		expect(voiced[0]).not.toBe(voiced[1]);
 		expect(frames("thread/realtime/stop")).toHaveLength(0);
-		expect((await voice())["recording"]).toBe(true);
+		expect((await voice())["unattended"]).toBe(true);
 		const talkingVoice = snapshots(await talker.request("snapshot"))["voice"] as Record<
 			string,
 			unknown
 		>;
-		expect(talkingVoice["recording"]).toBe(false);
+		expect(talkingVoice["unattended"]).toBe(false);
 		expect(paneMessages).not.toContain("pane_present");
 
 		// Nobody can point at the recording page's pane: it is not listed, and a show that names no

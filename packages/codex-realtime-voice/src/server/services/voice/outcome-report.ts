@@ -11,8 +11,8 @@
 // `start_or_steer`), so nothing waits for the coordinator to be idle and nothing lands in its
 // history without a turn to act on it. Which outcomes are given is the callback module's.
 //
-// A recording's voice (TASK-304) is nobody's to report to: whatever the coordinator answered
-// would be spoken into the video. While one holds the voice nothing is sent.
+// An unattended voice session is nobody's to report to: nobody listens live, and whatever the
+// coordinator answered would be spoken to nobody. While one holds the voice nothing is sent.
 
 import type {
 	CoordinatorCallbackTurnPort,
@@ -41,10 +41,10 @@ interface OutcomeReportParts {
 	readonly contextCodec: WorkbenchContextCodec;
 	readonly contextFor: (operationId: string) => WorkbenchExecutionContext;
 	/**
-	 * Whether a recording holds the voice now.
-	 * @returns True while the live voice session is a recording's.
+	 * Whether nobody listens live to the voice now.
+	 * @returns True while the live voice session is unattended.
 	 */
-	readonly recording: () => boolean;
+	readonly unattended: () => boolean;
 }
 
 /** What every outcome message tells the coordinator to do with it, however it arrives. */
@@ -82,14 +82,14 @@ function outcomeReportPrompt(news: string, situation: WorkhorseNewsSituation): s
 function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallbackTurnPort {
 	return {
 		/**
-		 * Give the coordinator the outcome at once, unless a recording holds the voice.
+		 * Give the coordinator the outcome at once, unless the voice session is unattended.
 		 * @param request The coordinator thread and the outcome.
-		 * @returns How the message settled, or recording when nothing was sent.
+		 * @returns How the message settled, or unattended when nothing was sent.
 		 */
 		report: async (request) => {
 			const { threadId, news, situation } = request;
-			if (parts.recording()) {
-				return "recording";
+			if (parts.unattended()) {
+				return "unattended";
 			}
 			const operationId = parts.issue();
 			const params = createWorkbenchTurnStartParams(
