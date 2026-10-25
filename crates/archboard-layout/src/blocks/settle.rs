@@ -1,18 +1,21 @@
 //! Where the ports on a block's top and bottom stand, settled where both ends
 //! of the trunk through them are known. Every block is laid out innermost
 //! first, so each first places its ports alone, before the block that routes
-//! the line between them exists. Once every block is laid out, the blocks are
-//! walked outermost first: in each block of cards that holds blocks, the two
-//! ends of every line to a block inside stand in one column where their edges
+//! the trunk between them exists, and the trunk then runs sideways from one
+//! to the other, or overshoots and doubles back. Once every block is laid
+//! out, the blocks are walked outermost first: in each block that holds
+//! blocks, the two ends of every trunk stand in one column where their edges
 //! share one, or else as near each other as their edges allow; each block
-//! inside is routed again with its ports there, and then the block itself.
+//! inside is routed again with its ports there, and the block is packed or
+//! routed again as it was.
 //!
-//! A Track solve draws every block of cards inline and packs none, so the
-//! packing half of `settle.ts` never runs here.
+//! A block of cards drawn inline (Track) holds its ports where its lines
+//! first turn, and a line settling a pin there reaches it only where it drops
+//! straight (`turns_from`, `clear_of`).
 
 use std::rc::Rc;
 
-use crate::ecma::{abs, js_max, js_min, max, min};
+use crate::ecma::{abs, js_max, js_min, max, min, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::channels::port_reach;
@@ -20,11 +23,12 @@ use crate::track::scene::Map;
 
 use super::laid::{Laid, LaidMap, SAME, corners};
 use super::lone::card_in;
+use super::packing::{
+    PACK_GAP, PackLayout, Packing, Span, TRUNK_CLEARANCE, nearest_free, open_stretch,
+    separate_facing_ports, spread,
+};
 use super::place::insets_of;
-use super::tree::{Block, BlockId, BlockTree, Line, header_of};
-
-/// A stretch of an edge: its lowest and highest x.
-type Span = (f64, f64);
+use super::tree::{Block, BlockId, BlockTree, Line, Nesting, header_of};
 
 /// A box's middle across.
 fn middle(at: &Rect) -> f64 {
@@ -78,74 +82,35 @@ fn turn_from(points: &[Point], from: &Rect) -> f64 {
     turned.get(2).unwrap_or(&turned[turned.len() - 1]).x
 }
 
-/// The stretches of an edge no blocked stretch covers, left to right.
-fn free_of(edge: Span, blocked: &[Span]) -> Vec<Span> {
-    let mut sorted = blocked.to_vec();
-    sorted.sort_by(|one, other| crate::ecma::order(one.0 - other.0));
-    let mut free = Vec::new();
-    let mut from = edge.0;
-    for (low, high) in sorted {
-        if low > from {
-            free.push((from, js_min(low, edge.1)));
-        }
-        from = js_max(from, high);
-    }
-    if from < edge.1 {
-        free.push((from, edge.1));
-    }
-    free
+/// The board laid out, as settling reads and writes it.
+pub(crate) struct Settling<'s> {
+    pub tree: &'s BlockTree,
+    /// Every block laid out; each block routed again replaces its own.
+    pub laid: &'s mut LaidMap,
+    /// How each block of blocks is packed.
+    pub packings: &'s Map<String, Packing>,
 }
 
-/// The free stretch of an edge nearest an x, clear of some boxes by a margin.
-fn nearest_free(edge: Span, boxes: &[Rect], margin: f64, x: f64) -> Option<Span> {
-    let blocked: Vec<Span> = boxes
-        .iter()
-        .map(|at| (at.x - margin, at.x + at.width + margin))
-        .collect();
-    let apart = |span: &Span| js_max(js_max(span.0 - x, x - span.1), 0.0);
-    let mut free = free_of(edge, &blocked);
-    free.sort_by(|one, other| crate::ecma::order(apart(one) - apart(other)));
-    free.into_iter().next()
-}
-
-/// Wanted x's spread a lane apart within a span, in their order.
-fn spread(span: Span, wanted: &[f64]) -> Vec<f64> {
-    let gap = if wanted.len() > 1 {
-        js_min(LANE, (span.1 - span.0) / (wanted.len() - 1) as f64)
-    } else {
-        0.0
-    };
-    let mut xs: Vec<f64> = wanted
-        .iter()
-        .map(|&x| js_min(span.1, js_max(span.0, x)))
-        .collect();
-    for index in 1..xs.len() {
-        xs[index] = js_max(xs[index], xs[index - 1] + gap);
-    }
-    for index in (0..xs.len()).rev() {
-        let next = xs.get(index + 1).copied().unwrap_or(span.1 + gap);
-        xs[index] = js_min(xs[index], next - gap);
-    }
-    xs
-}
-
-/// The top-down walk that settles every block's ports and routes each block again.
-struct Settle<'s> {
-    tree: &'s BlockTree,
-    laid: &'s mut LaidMap,
-}
-
-impl Settle<'_> {
+impl Settling<'_> {
     /// A block laid out.
     fn laid_of(&self, block: &Block) -> &Laid {
         &self.laid[block.id.as_str()]
     }
 
-    /// Whether a block can be routed again with its ports moved.
+    /// Whether a block can be routed again with its ports moved: a block of
+    /// blocks, or a block of cards that kept its placement.
     fn movable(&self, block: &Block) -> bool {
-        self.laid
-            .get(block.id.as_str())
-            .is_some_and(|laid| laid.reroute.is_some())
+        self.packings.contains_key(&block.id)
+            || self
+                .laid
+                .get(block.id.as_str())
+                .is_some_and(|laid| laid.reroute.is_some())
+    }
+
+    /// Whether a block is a block of cards the track engine draws inline: it
+    /// holds cards and other blocks, laid out and routed as one, not packed.
+    fn cards_inline(&self, block: &Block) -> bool {
+        self.tree.nesting != Nesting::Blocks && !self.packings.contains_key(&block.id)
     }
 
     /// The columns some lines first turn to from one of their ends, as the
@@ -164,9 +129,9 @@ impl Settle<'_> {
         (!xs.is_empty()).then(|| (min(xs.iter().copied()), max(xs.iter().copied())))
     }
 
-    /// Where a port of a block of cards may stand: between the columns its
-    /// lines first turn to, or, when one of them runs straight from it, only
-    /// where it stands, unless that is its one line and carries no label.
+    /// Where a port of a block of cards drawn inline may stand: between the
+    /// columns its lines first turn to, or, when one of them runs straight
+    /// from it, only where it stands, unless that is its one line and carries no label.
     fn turns_from(&self, block: &Block, port: &str, lines: &[&Line]) -> Option<Span> {
         let keys: Vec<&str> = lines.iter().map(|line| line.key.as_str()).collect();
         let span = self.turns_of(block, port, &keys);
@@ -202,13 +167,61 @@ impl Settle<'_> {
                 .filter(|_| top)
                 .map_or(0.0, |header| header.width + LANE);
         let edge = (low, js_max(low, inner.width - side));
+        let reach = self
+            .reach_of(block, port)
+            .unwrap_or_else(|| self.open_of(block, port, edge));
+        overlap(edge, reach).unwrap_or(edge)
+    }
+
+    /// The stretch of a block of blocks' edge a trunk inside can reach a port
+    /// on straight: clear of every block standing nearer the edge than packed
+    /// blocks stand to each other, the free stretch nearest where the port
+    /// stands. The whole edge for a block of cards.
+    fn open_of(&self, block: &Block, port: &str, edge: Span) -> Span {
+        if !self.packings.contains_key(&block.id) {
+            return edge;
+        }
+        let inner = self.laid_of(block);
+        let top = block.ports.get(port) == Some(&Side::Top);
+        let face = if top {
+            inner
+                .boxes
+                .get(&header_of(block))
+                .map_or(0.0, |header| header.height)
+        } else {
+            inner.height
+        };
+        let against: Vec<Rect> = block
+            .items
+            .iter()
+            .map(|item| inner.boxes[item.as_str()])
+            .filter(|at| {
+                let apart = if top {
+                    at.y - face
+                } else {
+                    face - at.y - at.height
+                };
+                apart < PACK_GAP
+            })
+            .collect();
+        open_stretch(edge, &against, TRUNK_CLEARANCE, middle(&inner.boxes[port]))
+    }
+
+    /// What a port's lines inside its block reach: drawn inline, the columns
+    /// they first turn to; else, for its one line, the face of the card it
+    /// runs to or the span of the port it runs to on a block inside.
+    fn reach_of(&self, block: &Block, port: &str) -> Option<Span> {
         let lines: Vec<&Line> = block
             .lines
             .values()
             .filter(|line| line.from == port || line.to == port)
             .collect();
-        let reach = self.turns_from(block, port, &lines).unwrap_or(edge);
-        overlap(edge, reach).unwrap_or(edge)
+        if self.cards_inline(block) {
+            return self.turns_from(block, port, &lines);
+        }
+        (lines.len() == 1)
+            .then(|| self.line_reach(block, port, lines[0]))
+            .flatten()
     }
 
     /// What a port's one line inside its block reaches: the face of the card
@@ -272,16 +285,20 @@ impl Settle<'_> {
         (x, x)
     }
 
-    /// Whether a line is read to settle its pins: one whose ends both stand in
-    /// the block, as a card or a pin.
+    /// Whether a line is read to settle its pins: every line of a packed
+    /// block, and in a block of cards drawn inline one whose ends both stand
+    /// in the block, as a card or a pin.
     fn settles(&self, block: &Block, ends: [&str; 2]) -> bool {
+        if !self.cards_inline(block) {
+            return true;
+        }
         let boxes = &self.laid_of(block).boxes;
         ends.iter()
             .all(|end| self.tree.pins.contains_key(*end) || boxes.contains_key(*end))
     }
 
-    /// Where one end of a line settling a pin may stand: the pin only where the
-    /// line can reach it straight; else its span.
+    /// Where one end of a line settling a pin may stand: in a block of cards
+    /// drawn inline, the pin only where the line can reach it straight; else its span.
     fn end_in(
         &self,
         block: &Block,
@@ -292,7 +309,7 @@ impl Settle<'_> {
     ) -> Span {
         let span = self.span_in(block, end, own);
         let pins = &self.tree.pins;
-        if pins.contains_key(end) && !pins.contains_key(other) {
+        if self.cards_inline(block) && pins.contains_key(end) && !pins.contains_key(other) {
             self.clear_of(block, end, key, span)
         } else {
             span
@@ -334,7 +351,8 @@ impl Settle<'_> {
     }
 
     /// Whether where a line's end stands now means anything: all but a pin on
-    /// a port no line inside its block runs through.
+    /// a port no line inside its block runs through, the port a relationship
+    /// to the container itself makes, which stands wherever its block put it.
     fn holds(&self, end: &str) -> bool {
         let Some(pin) = self.tree.pins.get(end) else {
             return true;
@@ -378,7 +396,7 @@ impl Settle<'_> {
                 }
             }
         }
-        block
+        let mut settled: Vec<(BlockId, Map<String, f64>)> = block
             .items
             .iter()
             .filter_map(|item| {
@@ -386,7 +404,13 @@ impl Settle<'_> {
                 self.movable(self.tree.get(inner))
                     .then(|| (inner, self.edges_of(block, self.tree.get(inner), &wanted)))
             })
-            .collect()
+            .collect();
+        if !self.cards_inline(block) {
+            separate_facing_ports(block, &mut settled, self.tree, self.laid, |inner, port| {
+                self.end_span(inner, port)
+            });
+        }
+        settled
     }
 
     /// One inner block's top and bottom ports, each where its lines want it,
@@ -414,7 +438,7 @@ impl Settle<'_> {
                     (port.as_str(), x - at)
                 })
                 .collect();
-            on_face.sort_by(|one, other| crate::ecma::order(one.1 - other.1));
+            sort_by(&mut on_face, |one, other| one.1 - other.1);
             let spans: Vec<Span> = on_face
                 .iter()
                 .map(|(port, _)| self.span_of(inner, port))
@@ -431,29 +455,78 @@ impl Settle<'_> {
         ports
     }
 
-    /// Route a block of cards again: with its own ports where its parent
-    /// settled them, after settling the blocks it holds.
+    /// Settle a block and everything inside it: route it again with its own
+    /// ports where its parent settled them, after the blocks inside it. A
+    /// block of cards drawn inline settles the blocks it holds first.
     fn block(&mut self, id: BlockId, own: &Map<String, f64>) {
         let tree = self.tree;
         let block = tree.get(id);
+        let Some(packing) = self.packings.get(&block.id) else {
+            self.cards(block, own);
+            return;
+        };
+        let held = self.laid_of(block).width;
+        self.inside(block, own);
+        let mut again = PackLayout::new(tree, self.laid, block, insets_of(block));
+        again.settled.clone_from(own);
+        again.held = held;
+        let (laid, _) = again.lay(Some(packing));
+        self.laid.insert(block.id.clone(), Rc::new(laid));
+    }
+
+    /// Settle every block inside a block, where the block settles their ports.
+    fn inside(&mut self, block: &Block, own: &Map<String, f64>) {
+        for (inner, ports) in self.settle_in(block, own) {
+            self.block(inner, &ports);
+        }
+    }
+
+    /// Route a block of cards again with its own ports where its parent
+    /// settled them, after the blocks it holds when it draws them inline.
+    fn cards(&mut self, block: &Block, own: &Map<String, f64>) {
         let Some(reroute) = self.laid_of(block).reroute.clone() else {
             return;
         };
-        let holds = block.items.iter().any(|item| tree.is_block(item));
+        let holds =
+            self.cards_inline(block) && block.items.iter().any(|item| self.tree.is_block(item));
         if holds {
-            for (inner, ports) in self.settle_in(block, own) {
-                self.block(inner, &ports);
-            }
+            self.inside(block, own);
         }
         if holds || !own.is_empty() {
-            let again = reroute.reroute(tree, self.laid, own);
+            let again = reroute.reroute(self.tree, self.laid, own);
             self.laid.insert(block.id.clone(), Rc::new(again));
         }
     }
 }
 
+/// Where settling stands every movable inner block's ports, walked as it
+/// walks, routing nothing: each inner block's settled ports, by block.
+pub(crate) fn settled_ports(settling: &Settling<'_>) -> Vec<(BlockId, Map<String, f64>)> {
+    let tree = settling.tree;
+    let mut out: Vec<(BlockId, Map<String, f64>)> = Vec::new();
+    let mut walk: Vec<(BlockId, Map<String, f64>)> = vec![(tree.root, Map::default())];
+    let mut at = 0;
+    while at < walk.len() {
+        let (block, own) = walk[at].clone();
+        at += 1;
+        let block = tree.get(block);
+        if !settling.packings.contains_key(&block.id) {
+            continue;
+        }
+        for (inner, ports) in settling.settle_in(block, &own) {
+            match out.iter_mut().find(|(one, _)| *one == inner) {
+                Some(found) => found.1.clone_from(&ports),
+                None => out.push((inner, ports.clone())),
+            }
+            walk.push((inner, ports));
+        }
+    }
+    out
+}
+
 /// Settle every port on a block's top and bottom where both ends of its line
 /// are known, and route every block again with its ports there.
-pub(crate) fn settle_ports(tree: &BlockTree, laid: &mut LaidMap) {
-    Settle { tree, laid }.block(tree.root, &Map::default());
+pub(crate) fn settle_ports(settling: &mut Settling<'_>) {
+    let root = settling.tree.root;
+    settling.block(root, &Map::default());
 }

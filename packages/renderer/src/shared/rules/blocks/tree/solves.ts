@@ -1,35 +1,38 @@
 // A board laid out as blocks, chosen where the renderer runs. Each way to lay
-// it out is one solve where the layout engines run (`place.ts`): with the
-// joins of some blocks kept apart (`joins.ts`), and, drawn inline, with its
-// groups inline or each packed as a block of its own, and its first block
-// that could stack laid each way (`stacking.ts`). The solves a choice
-// weighs are asked for side by side and weighed in the order the choice
-// weighs them, so the drawing is the one laying them out one by one gives.
+// it out is one solve of the renderer core where the layout engines run: with
+// the joins of some blocks kept apart (`joins-laid.ts`), and, drawn inline,
+// with its groups inline or each packed as a block of its own, and its first
+// block that could stack laid each way. The solves a choice weighs are asked
+// for side by side and weighed in the order the choice weighs them, so the
+// drawing is the one laying them out one by one gives. Each solve tells,
+// with its drawing, what the choices read of it; the core weighs two such
+// readings where the renderer chooses between them (ADR 0039, ADR 0057).
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
-import { fitIn } from "#shared/constants/shell-geometry.ts";
-import { SOLVE_STAGE, rendererHost } from "#shared/rules/render/host.ts";
-import type { Nesting } from "#shared/rules/blocks/tree/inline.ts";
-import type { Drawn } from "#shared/rules/blocks/tree/joins.ts";
+import { rendererHost } from "#shared/rules/render/host.ts";
 import { layJoined } from "#shared/rules/blocks/tree/joins-laid.ts";
-import { lineLength } from "#shared/rules/blocks/cards/laying.ts";
-import {
-	BLOCKS_APART,
-	BLOCKS_FACING,
-	BLOCKS_NESTING,
-	BLOCKS_PLACED,
-} from "#shared/rules/blocks/tree/place.ts";
-import {
-	BLOCKS_STACKING,
-	BLOCKS_STOOD,
-	BLOCKS_UNTIL_STOOD,
-	StoodSchema,
-	stacks,
-	type Stood,
-} from "#shared/rules/blocks/tree/stacking.ts";
-import { BlockTree } from "#shared/rules/blocks/tree/tree.ts";
-import { weighedPlaced } from "#shared/rules/blocks/tree/weighing.ts";
-import { crossingsOf, scoreOf, takes } from "#shared/rules/track/scene/score.ts";
+
+/** How a board's containers and group regions are drawn: packed as blocks, inline, or inline with each group packed. */
+type Nesting = "blocks" | "inline" | "groups";
+
+/** The root option carrying the placed drawing, as the JSON the solve answers. */
+const BLOCKS_PLACED = "archboard.blocks.placed";
+/** The root option carrying what the choices read of the drawing, which only the core reads. */
+const BLOCKS_READING = "archboard.blocks.reading";
+/** The root option asking a solve to tell that reading, `true` when a choice weighs its drawing. */
+const BLOCKS_READ = "archboard.blocks.read";
+/** The root option naming how a solve draws the board's containers and group regions. */
+const BLOCKS_NESTING = "archboard.blocks.nesting";
+/** The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids. */
+const BLOCKS_APART = "archboard.blocks.apart";
+/** The root option asking a solve to face every block's walls, `true` when asked. */
+const BLOCKS_FACING = "archboard.blocks.facing";
+/** The root option laying a solve's first block that could stack only one way, `true` stacked. */
+const BLOCKS_STACKING = "archboard.blocks.stacking";
+/** The root option asking a solve to answer once that block is laid, `true` when asked. */
+const BLOCKS_UNTIL_STOOD = "archboard.blocks.until-stood";
+/** The root option a solve answers what that block stood at in, as JSON only the core reads. */
+const BLOCKS_STOOD = "archboard.blocks.stood";
 
 const BoxSchema = z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() });
 const PointSchema = z.object({ x: z.number(), y: z.number() });
@@ -52,19 +55,27 @@ const PlacedSchema = z.object({
 	edges: z.array(
 		z.object({ id: z.string(), points: z.array(PointSchema), label: BoxSchema.optional() }),
 	),
-	/** Whether facing every block's walls would change the blocks (`place.ts`); absent, it would not. */
+	/** Whether facing every block's walls would change the blocks; absent, it would not. */
 	faces: z.boolean().optional(),
 });
 /** A whole drawing's geometry, as a solve answers it. */
 type Placed = z.infer<typeof PlacedSchema>;
 
+/** A drawing a solve answered, and what the choices between solves read of it where one weighs it. */
+interface Drawing {
+	readonly placed: Placed;
+	readonly reading: string | undefined;
+	readonly faces?: boolean | undefined;
+}
+
 /**
  * How one solve lays a board out: which joins stay apart, whether it faces
- * its blocks' walls, how its first block that could stack is laid, and
- * whether it answers once that block is laid (`stacking.ts`).
+ * its blocks' walls, how its first block that could stack is laid, whether
+ * it answers once that block is laid, and whether a choice weighs its drawing.
  */
 interface Way {
 	readonly apart: ReadonlySet<string>;
+	readonly read: boolean;
 	readonly facing?: boolean;
 	readonly stacking?: boolean;
 	readonly until?: boolean;
@@ -72,17 +83,17 @@ interface Way {
 
 /** What one solve answers: the drawing, unless it answered once its first block that could stack was laid, and what that block stood at where it was laid one way. */
 interface Answer {
-	readonly placed: Placed | undefined;
-	readonly stood: Stood | undefined;
+	readonly drawing: Drawing | undefined;
+	readonly stood: string | undefined;
 }
 
 /**
  * What a solve that lays a board out one way answers.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
- * @param way Which joins stay apart, whether every block faces its walls
- * (`BlockTree`), how its first block that could stack is laid, if named,
- * and whether the solve answers once it is.
+ * @param way Which joins stay apart, whether every block faces its walls,
+ * how its first block that could stack is laid, if named, and whether the
+ * solve answers once it is.
  * @param signal Calls the solve off while it waits for the engine.
  * @returns The answer.
  */
@@ -93,41 +104,31 @@ async function answered(
 	signal: AbortSignal,
 ): Promise<Answer> {
 	const asked = { ...graph, layoutOptions: { ...graph.layoutOptions, ...optionsOf(nesting, way) } };
-	const stage = { [SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track" };
-	const told = (await rendererHost().solve(asked, stage, signal)).layoutOptions ?? {};
-	return {
-		placed: parsedOf(PlacedSchema, told[BLOCKS_PLACED]),
-		stood: parsedOf(StoodSchema, told[BLOCKS_STOOD]),
-	};
+	const told = (await rendererHost().solve(asked, signal)).layoutOptions ?? {};
+	const [placed, reading, stood] = [told[BLOCKS_PLACED], told[BLOCKS_READING], told[BLOCKS_STOOD]];
+	if (placed === undefined) return { drawing: undefined, stood };
+	const drawing = PlacedSchema.parse(JSON.parse(placed));
+	return { drawing: { placed: drawing, reading, faces: drawing.faces }, stood };
 }
 
 /**
  * The root options that ask a solve to lay a board out one way.
  * @param nesting How its containers and group regions are drawn.
  * @param way Which joins stay apart, whether every block faces its walls,
- * how its first block that could stack is laid, and whether the solve
- * answers once it is.
+ * how its first block that could stack is laid, whether the solve answers
+ * once it is, and whether it tells its drawing's reading.
  * @returns The options.
  */
 function optionsOf(nesting: Nesting, way: Way): Record<string, string> {
-	const { apart, facing = false, stacking, until = false } = way;
+	const { apart, read, facing = false, stacking, until = false } = way;
 	return {
 		[BLOCKS_NESTING]: nesting,
 		[BLOCKS_APART]: JSON.stringify([...apart]),
 		[BLOCKS_FACING]: String(facing),
 		...(stacking === undefined ? {} : { [BLOCKS_STACKING]: String(stacking) }),
 		...(until ? { [BLOCKS_UNTIL_STOOD]: "true" } : {}),
+		...(read ? { [BLOCKS_READ]: "true" } : {}),
 	};
-}
-
-/**
- * What a solve told in one root option, read.
- * @param schema What it tells.
- * @param told The option's JSON, if the solve told it.
- * @returns What it told, or nothing.
- */
-function parsedOf<T>(schema: z.ZodType<T>, told: string | undefined): T | undefined {
-	return told === undefined ? undefined : schema.parse(JSON.parse(told));
 }
 
 /**
@@ -136,9 +137,9 @@ function parsedOf<T>(schema: z.ZodType<T>, told: string | undefined): T | undefi
  * @returns The drawing.
  * @throws {Error} When it answered none.
  */
-function drawingOf(answer: Answer): Placed {
-	if (answer.placed === undefined) throw new Error("A solve asked for a drawing answered none.");
-	return answer.placed;
+function drawingOf(answer: Answer): Drawing {
+	if (answer.drawing === undefined) throw new Error("A solve asked for a drawing answered none.");
+	return answer.drawing;
 }
 
 /**
@@ -147,14 +148,14 @@ function drawingOf(answer: Answer): Placed {
  * @param nesting How its containers and group regions are drawn.
  * @param way Which joins stay apart, whether every block faces its walls, and how its first block that could stack is laid.
  * @param signal Calls the solve off while it waits for the engine.
- * @returns The drawing's geometry.
+ * @returns The drawing.
  */
 async function solved(
 	graph: ElkNode,
 	nesting: Nesting,
 	way: Way,
 	signal: AbortSignal,
-): Promise<Placed> {
+): Promise<Drawing> {
 	return drawingOf(await answered(graph, nesting, way, signal));
 }
 
@@ -166,23 +167,46 @@ async function solved(
  * A board with no block that can stack is drawn by the partial solves.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own.
+ * @param way The blocks whose joins keep ports of their own, and whether a choice weighs the drawing.
  * @param signal Calls every solve off while it waits for the engine.
- * @returns The drawing's geometry.
+ * @returns The drawing.
  */
 async function stackedSolved(
 	graph: ElkNode,
 	nesting: Nesting,
-	apart: ReadonlySet<string>,
+	way: Way,
 	signal: AbortSignal,
-): Promise<Placed> {
+): Promise<Drawing> {
 	const [stacked, plain] = await Promise.all(
 		[true, false].map((stacking) =>
-			answered(graph, nesting, { apart, stacking, until: true }, signal),
+			answered(graph, nesting, { ...way, stacking, until: true }, signal),
 		),
 	);
 	if (stacked!.stood === undefined || plain!.stood === undefined) return drawingOf(plain!);
-	return solved(graph, nesting, { apart, stacking: stacks(stacked!.stood, plain!.stood) }, signal);
+	const stacking = rendererHost().core().stacksOf(stacked!.stood, plain!.stood);
+	return solved(graph, nesting, { ...way, stacking }, signal);
+}
+
+/**
+ * What the choices read of a drawing a choice weighs.
+ * @param drawing The drawing.
+ * @returns Its reading.
+ * @throws {Error} When its solve was not asked to tell it.
+ */
+function readingOf(drawing: Drawing): string {
+	if (drawing.reading === undefined)
+		throw new Error("A drawing a choice weighs was solved without its reading.");
+	return drawing.reading;
+}
+
+/**
+ * Whether one drawing reads better than another, as the core weighs their readings.
+ * @param one A drawing.
+ * @param other Another.
+ * @returns True when the first reads better.
+ */
+function drawsBetter(one: Drawing, other: Drawing): boolean {
+	return rendererHost().core().drawsBetter(readingOf(one), readingOf(other));
 }
 
 /**
@@ -193,82 +217,51 @@ async function stackedSolved(
  * side ({@link stackedSolved}); the turns of the joins choice are already
  * laid out side by side with it, and splitting them as well only had them
  * wait for the cores (Agent workbench, Track, 1.5 s against 1.7 s).
+ * Each solve tells its drawing's reading only where a choice may weigh it:
+ * where joins turn, where Blocks may face its walls, or where the caller
+ * weighs the drawing against another.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
- * @returns The blocks, and the drawing's geometry.
+ * @param weighed Whether the caller weighs the drawing against another.
+ * @returns The drawing.
  */
-function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
-	const tree = new BlockTree(graph, new Map(), nesting, new Set());
+function joinedOut(graph: ElkNode, nesting: Nesting, weighed: boolean): Promise<Drawing> {
+	const joining = rendererHost().core().joiningOf(JSON.stringify(graph), nesting);
+	const read = weighed || joining.length > 0 || nesting === "blocks";
 	if (nesting !== "blocks")
-		return layJoined(tree, (apart, signal) =>
+		return layJoined(joining, drawsBetter, (apart, signal) =>
 			apart.size === 0
-				? stackedSolved(graph, nesting, apart, signal)
-				: solved(graph, nesting, { apart }, signal),
+				? stackedSolved(graph, nesting, { apart, read }, signal)
+				: solved(graph, nesting, { apart, read }, signal),
 		);
 	return layJoined(
-		tree,
-		(apart, signal) => solved(graph, nesting, { apart }, signal),
-		(apart, signal) => solved(graph, nesting, { apart, facing: true }, signal),
+		joining,
+		drawsBetter,
+		(apart, signal) => solved(graph, nesting, { apart, read }, signal),
+		(apart, signal) => solved(graph, nesting, { apart, read, facing: true }, signal),
 	);
 }
 
 /**
- * Whether a board laid with its groups packed reads better than laid inline
- * in the order of ADR 0039, and no worse anywhere than the drawing taken
- * before it ({@link takes}): packed, where it scores higher, draws no more
- * line, and fits the pane no worse. Blocks standing side by side can trade
- * a line's straight run for one round both blocks, which the score alone
- * does not see; and packing is for a page the board's own ranks spread out,
- * so a packing that fits worse only buys its crossings with lines run round
- * the blocks. Both weighings count the lines' runs away from their ends as
- * crossings (`away.ts`): packed, Device Trust Control Plane (Track) crossed
- * five lines more and ran its lines some 3900 px round its blocks, for 5%
- * less line.
- * @param packed The drawing with groups packed.
- * @param inline The drawing with groups inline.
- * @returns True when the packed one reads better.
- */
-function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolean {
-	const [one, other] = [packed.placed, inline.placed];
-	const [packs, inlines] = [one, other].map(({ edges }) => edges.map(({ points }) => points));
-	const [mine, theirs] = [
-		weighedPlaced(one, packed.tree.projections),
-		weighedPlaced(other, inline.tree.projections),
-	];
-	const earlier =
-		scoreOf({ ...one, crossings: crossingsOf(packs!), away: mine.away }) >
-			scoreOf({ ...other, crossings: crossingsOf(inlines!), away: theirs.away }) &&
-		lineLength(packs!) <= lineLength(inlines!) &&
-		fitIn(one) >= fitIn(other);
-	return takes(mine, theirs, earlier);
-}
-
-/**
- * Whether a board drawn inline gathers any group into a region.
- * @param graph The measured hierarchy.
- * @returns True when some cluster is a group's region.
- */
-function hasRegions(graph: ElkNode): boolean {
-	const tree = new BlockTree(graph, new Map(), "inline", new Set());
-	return [...tree.root.clusters.values()].some(({ kind }) => kind === "region");
-}
-
-/**
  * Lay a measured hierarchy out as blocks and route every relationship. Drawn
- * inline, a board with groups is also laid with each group's region packed as
- * a block of its own, and the layout that reads better is kept: a group whose
- * members stand far apart in the board's ranks spans them all as a cluster,
- * a tall sparse band, but packed stands whole.
+ * inline, a board whose groups gather into regions is also laid with each
+ * group's region packed as a block of its own, and the layout that reads
+ * better is kept (the core's `readsBetterPacked`): a group whose members
+ * stand far apart in the board's ranks spans them all as a cluster, a tall
+ * sparse band, but packed stands whole.
  * @param graph The measured hierarchy.
  * @param inline Whether containers and group regions are drawn inline, as
  * clusters of the board's own layout, rather than packed as blocks.
  * @returns The drawing's geometry.
  */
 async function placedBlocks(graph: ElkNode, inline: boolean): Promise<Placed> {
-	const first = joinedOut(graph, inline ? "inline" : "blocks");
-	if (!inline || !hasRegions(graph)) return (await first).placed;
-	const [packed, laid] = await Promise.all([joinedOut(graph, "groups"), first]);
-	return readsBetterPacked(packed, laid) ? packed.placed : laid.placed;
+	const regions = inline && rendererHost().core().hasRegions(JSON.stringify(graph));
+	const first = joinedOut(graph, inline ? "inline" : "blocks", regions);
+	if (!regions) return (await first).placed;
+	const [packed, laid] = await Promise.all([joinedOut(graph, "groups", true), first]);
+	return rendererHost().core().readsBetterPacked(readingOf(packed), readingOf(laid))
+		? packed.placed
+		: laid.placed;
 }
 
 export { placedBlocks, type Placed };

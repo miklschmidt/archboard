@@ -60,6 +60,8 @@ pub(crate) struct Laid {
     pub frames: Option<Vec<FrameShape>>,
     /// The group regions it draws inline, in its own coordinates.
     pub regions: Option<Vec<RegionShape>>,
+    /// Which of its header's wider sizes a container's block took, when it took one.
+    pub header: Option<usize>,
     /// How many of its lines lap round it, which its score counts as crossings.
     pub laps: Option<f64>,
     /// The block routed again with some of its ports moved along their edges,

@@ -1,5 +1,5 @@
 // Ports a block of cards holds in the order its parent settles them in
-// (orders.ts). What this catches: two lines that cross inside a block because
+// (crates/archboard-layout/src/blocks/orders.rs). What this catches: two lines that cross inside a block because
 // settling swapped their ports after Graphviz had ordered the block's cards
 // and labels for the old order, a held order that lets the board choose to
 // part lines joined on their way to a card and run one round a block, and a

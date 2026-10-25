@@ -11,7 +11,6 @@
 // so the picture is the server's picture of that board, measured the way this
 // browser paints it.
 
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import {
@@ -19,7 +18,7 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "#shared/rules/render/board.ts";
-import { installRendererHost, SOLVE_STAGE, type RendererHost } from "#shared/rules/render/host.ts";
+import { installRendererHost, type RendererHost } from "#shared/rules/render/host.ts";
 import initCore, * as core from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import { loadDiagramFaces } from "#ui/state/diagram-faces.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
@@ -90,7 +89,7 @@ function startBrowserRenderer(): void {
 	// Start one engine now, while the page boots and reads the board, rather
 	// than when the first picture needs it: a worker's first solve initializes
 	// its engines, and a trivial graph pays that cost here.
-	void solve(WARM_UP_GRAPH, { [SOLVE_STAGE]: DEFAULT_LAYOUT_ENGINE }).catch(() => undefined);
+	void solve(WARM_UP_GRAPH).catch(() => undefined);
 }
 
 /**

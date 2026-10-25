@@ -12,8 +12,8 @@ use crate::track::spacing::Rim;
 
 use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};
-use super::lone::side_room;
-use super::tree::{Block, BlockTree, Kind, header_of};
+use super::lone::{frame_width, room_of, side_room};
+use super::tree::{Block, BlockTree, Kind, Nesting, header_of};
 
 /// The side of a port's square.
 pub(crate) const PORT: f64 = 1.0;
@@ -25,12 +25,11 @@ fn level(one: &PlacedNode, other: &PlacedNode) -> bool {
 
 /// Stand the header in the block's top-left corner, over what the block
 /// holds, and every leaf on its rank right of it a lane apart, at the widest
-/// size it has room for there.
-pub(crate) fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) {
+/// size it has room for there. Answers which of its wider sizes it took, when
+/// it took one.
+pub(crate) fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64) -> Option<usize> {
     let id = header_of(block);
-    let Some(at) = leaves.iter().position(|leaf| leaf.id == id) else {
-        return;
-    };
+    let at = leaves.iter().position(|leaf| leaf.id == id)?;
     let others: Vec<usize> = (0..leaves.len()).filter(|&index| index != at).collect();
     leaves[at].x = min(others.iter().map(|&index| leaves[index].x));
     let mut beside: Vec<usize> = others
@@ -39,13 +38,14 @@ pub(crate) fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64)
         .filter(|&index| level(&leaves[index], &leaves[at]))
         .collect();
     beside.sort_by(|&one, &other| crate::ecma::order(leaves[one].x - leaves[other].x));
-    widened(block, leaves, at, &others, &beside, side);
+    let taken = widened(block, leaves, at, &others, &beside, side);
     let mut free = leaves[at].x + leaves[at].width + LANE;
     for index in beside {
         let leaf = &mut leaves[index];
         leaf.x = js_max(leaf.x, free);
         free = leaf.x + leaf.width + LANE;
     }
+    taken
 }
 
 /// Give a block's header the widest size it has room for, now Graphviz has
@@ -58,7 +58,7 @@ fn widened(
     others: &[usize],
     beside: &[usize],
     side: f64,
-) {
+) -> Option<usize> {
     let least = block
         .header
         .as_ref()
@@ -75,15 +75,16 @@ fn widened(
     let taken = header_within(
         least,
         &Room {
-            frame: content + 2.0 * side,
+            frame: frame_width(block.lone.as_ref(), content + 2.0 * side),
             content,
             beside: &beside,
         },
     );
     let header = &mut leaves[at];
-    header.y += (header.height - taken.height) / 2.0;
-    header.width = taken.width;
-    header.height = taken.height;
+    header.y += (header.height - taken.size.height) / 2.0;
+    header.width = taken.size.width;
+    header.height = taken.size.height;
+    taken.index
 }
 
 /// Let a block's own top and bottom ports slide along its edge while it is
@@ -113,8 +114,13 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
 
 /// Mark the items of a block's scene that stand for group regions: a region
 /// packed whole, and a card laid out as the region it is alone in, whose own
-/// faces stand in from its box. A lane keeps a region's clearance off each.
+/// faces stand in from its box. A lane keeps a region's clearance off each, as
+/// a region's wall has no inset of its own; but drawn as blocks, off a packed
+/// region only: a block of cards is as wide as its Graphviz ranks, and kept
+/// off a card's region there, the lanes beside it pushed the next one along
+/// its container's wall (Recording a walkthrough).
 pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
+    let inline = tree.nesting != Nesting::Blocks;
     for item in &block.items {
         let card = scene.cards.get(item).copied();
         if let Some(lone) = tree.lone.get(item) {
@@ -125,7 +131,7 @@ pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTre
         let region = tree
             .block_of(item)
             .is_some_and(|inner| tree.get(inner).kind == Kind::Region);
-        if tree.lone.contains_key(item) || region {
+        if (inline && tree.lone.contains_key(item)) || region {
             scene
                 .region_blocks
                 .insert(card.expect("a region is on its block's scene"));
@@ -232,12 +238,15 @@ pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
     }
 }
 
-/// The room a block of cards keeps where no line turns under its header, and
-/// over its bottom ports when they stand on its edge: the inset it keeps at
-/// its sides. Nothing when the block draws no edge.
+/// The room a block of cards keeps where no line turns under its header, a
+/// frame's title row or a region's caption tab, and over its bottom ports when
+/// they stand on its edge: the inset it keeps at its sides. Alone in a region,
+/// it keeps the inset it keeps in none: the region's own room stands outside
+/// its edge, and its caption band in its header. Nothing when the block draws
+/// no edge.
 pub(crate) fn rim_of(block: &Block, insets: Insets) -> Option<Rim> {
     block.header.as_ref()?;
-    let own = insets.side;
+    let own = insets.side - block.lone.as_ref().map_or(0.0, room_of);
     Some(Rim {
         head: own,
         foot: block.has_bottom_port().then_some(own),

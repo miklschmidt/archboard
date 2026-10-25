@@ -46,6 +46,8 @@ test.each(["active", "queued", "cancelling", "failed"] as const)(
 		/**
 		 * Geometry whose line lengths make all-apart, then two-apart, then
 		 * three alone win in that order. Its card width identifies the winner.
+		 * The choice reads the reading the core tells with a drawing: this one
+		 * is what it tells of one straight line that long and nothing else.
 		 * @param graph The candidate graph.
 		 * @param key The apart blocks, sorted.
 		 * @returns The host's solved graph.
@@ -74,17 +76,25 @@ test.each(["active", "queued", "cancelling", "failed"] as const)(
 					},
 				],
 			};
+			const reading = {
+				parted: 0,
+				cost: length / 1000,
+				weighed: { width: 3000, height: 3000, crossings: 0, away: 0, bends: 0, length },
+				crossings: 0,
+				length,
+			};
 			return {
 				...graph,
 				layoutOptions: {
 					...graph.layoutOptions,
 					"archboard.blocks.placed": JSON.stringify(placed),
+					"archboard.blocks.reading": JSON.stringify(reading),
 				},
 			};
 		};
 		installRendererHost({
 			...host,
-			solve: (graph, _options, signal) => {
+			solve: (graph, signal) => {
 				const apart = JSON.parse(
 					graph.layoutOptions?.["archboard.blocks.apart"] ?? "[]",
 				) as string[];

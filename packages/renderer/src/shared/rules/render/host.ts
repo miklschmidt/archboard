@@ -25,12 +25,22 @@
 // browser paints, and one backed by @napi-rs/canvas under Bun. The host makes
 // sure that canvas exists and has the diagram faces loaded before measuring.
 
-import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
+import type { ElkNode } from "@archboard/elk-rs";
 import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 
-/** What the renderer asks of the core. */
-type CorePainter = Pick<typeof CoreBuild, "drawFlowchart" | "drawSequence" | "paintDocument">;
+/** What the renderer asks of the core where it runs: pictures painted, and the choices between solves weighed. */
+type CorePainter = Pick<
+	typeof CoreBuild,
+	| "drawFlowchart"
+	| "drawSequence"
+	| "paintDocument"
+	| "drawsBetter"
+	| "readsBetterPacked"
+	| "stacksOf"
+	| "joiningOf"
+	| "hasRegions"
+>;
 
 /** The place the renderer runs in. */
 interface RendererHost {
@@ -41,22 +51,17 @@ interface RendererHost {
 	 */
 	readonly core: () => CorePainter;
 	/**
-	 * Solve one graph with the layout engine, for the engine its options name
-	 * as their {@link SOLVE_STAGE}. The engine solves a copy
-	 * of the graph (a worker receives one), so the caller's graph is never
-	 * changed and may share its parts with other graphs.
+	 * Solve one graph with the layout engine, laid out the way its root
+	 * options name. The engine solves a copy of the graph (a worker receives
+	 * one), so the caller's graph is never changed and may share its parts
+	 * with other graphs.
 	 * @param graph The complete measured graph.
-	 * @param layoutOptions The options for this solve.
 	 * @param signal Calls the solve off: one still waiting for the engine is
 	 * never solved, and is refused with the signal's reason; one the engine
 	 * holds finishes normally.
 	 * @returns Its solved geometry.
 	 */
-	readonly solve: (
-		graph: ElkNode,
-		layoutOptions: LayoutOptions,
-		signal?: AbortSignal,
-	) => Promise<ElkNode>;
+	readonly solve: (graph: ElkNode, signal?: AbortSignal) => Promise<ElkNode>;
 	/** The theme colours, where a document that stands alone can be drawn. */
 	readonly themeColors?: ThemeColors | undefined;
 	/**
@@ -72,14 +77,6 @@ interface RendererHost {
 	 */
 	readonly iconPaths: (name: string) => readonly string[] | undefined;
 }
-
-/**
- * The option that names which engine a solve places a graph for: `track`
- * (TASK-349) or `blocks` (TASK-351). Either answers every card, frame and
- * label its box and every relationship's polyline. A solve that names neither
- * is refused.
- */
-const SOLVE_STAGE = "archboard.stage";
 
 let installed: RendererHost | undefined;
 
@@ -106,4 +103,4 @@ function rendererHost(): RendererHost {
 	return installed;
 }
 
-export { installRendererHost, SOLVE_STAGE, rendererHost, type RendererHost };
+export { installRendererHost, rendererHost, type RendererHost };

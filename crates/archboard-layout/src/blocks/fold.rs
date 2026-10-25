@@ -73,7 +73,7 @@ pub(crate) struct FoldPlan {
 
 /// The columns a block of cards would better fold into, if any: the cut of
 /// its ranks into runs that scores best, when that beats the block unfolded
-/// by a clear margin. Only the board folds.
+/// by a clear margin. Only the board and a container folds.
 pub(crate) fn fold_plan(
     block: &Block,
     laid: &Laid,
@@ -85,7 +85,7 @@ pub(crate) fn fold_plan(
         .iter()
         .filter(|band| !band.items.is_empty())
         .collect();
-    if block.kind != Kind::Root || bands.len() < 3 {
+    if !matches!(block.kind, Kind::Root | Kind::Frame) || bands.len() < 3 {
         return None;
     }
     let (runs, weighed) = best_runs(block, laid, &bands, insets, unfolded)?;

@@ -14,8 +14,8 @@ use crate::track::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    Block, BlockId, BlockTree, ClusterKind, Ends, Line, Piece, Pin, Projection, Route, exit_key,
-    header_of, holds,
+    Block, BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection,
+    Route, exit_key, header_of, holds,
 };
 
 impl BlockTree {
@@ -144,16 +144,7 @@ impl BlockTree {
     pub(super) fn draw(&mut self, projection: &Projection, back: &Set<String>, before: bool) {
         let edge = &projection.edge;
         let upward = back.contains(&edge.id);
-        let label_at = if before {
-            projection.out.first().copied().unwrap_or(projection.at)
-        } else {
-            projection
-                .into
-                .first()
-                .or_else(|| projection.out.first())
-                .copied()
-                .unwrap_or(projection.at)
-        };
+        let label_at = self.label_holder(projection, before);
         let (mut pieces, from) = self.leave(projection, upward, label_at);
         let (entering, to) = self.enter(projection, upward, label_at);
         let (tail, head) = if upward {
@@ -190,11 +181,18 @@ impl BlockTree {
         let edge = &projection.edge;
         let face = if upward { Side::Top } else { Side::Bottom };
         let mut pieces = Vec::new();
-        let mut from = if projection.out.is_empty() {
+        let start = if projection.out.is_empty() {
             projection.from.clone()
         } else {
             edge.source().to_owned()
         };
+        let key = format!(
+            "from|{}|{}|{}",
+            face.name(),
+            projection.to,
+            trunk_kind(edge)
+        );
+        let mut from = self.on_edge(start, &key, face);
         for &block in &projection.out {
             let along = format!("{}|{}", projection.to, self.kind_of(edge));
             let side = self.exit_of(block, "out", face, &along, Some(label_at));
@@ -243,11 +241,18 @@ impl BlockTree {
         let edge = &projection.edge;
         let face = if upward { Side::Bottom } else { Side::Top };
         let mut pieces = Vec::new();
-        let mut to = if projection.into.is_empty() {
+        let end = if projection.into.is_empty() {
             projection.to.clone()
         } else {
             edge.target().to_owned()
         };
+        let key = format!(
+            "to|{}|{}|{}",
+            face.name(),
+            projection.from,
+            trunk_kind(edge)
+        );
+        let mut to = self.on_edge(end, &key, face);
         for &block in &projection.into {
             let along = format!("{}|{}", projection.from, self.kind_of(edge));
             let side = self.exit_of(block, "in", face, &along, None);
@@ -287,8 +292,46 @@ impl BlockTree {
         }
     }
 
+    /// The block that holds a relationship's label: the innermost block around
+    /// its target that can hold one, or with the label before a join its
+    /// source's, else the block that holds both ends.
+    fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
+        let own = projection.out.first().copied().unwrap_or(projection.at);
+        if before {
+            return own;
+        }
+        projection
+            .into
+            .iter()
+            .copied()
+            .find(|&one| self.holds_labels(one))
+            .unwrap_or(own)
+    }
+
+    /// Whether a block can hold a line's label: every block drawn inline can,
+    /// and of the blocks packed each on its own, a block of cards. A block of
+    /// blocks draws only trunks between them (`pack.rs`).
+    fn holds_labels(&self, block: BlockId) -> bool {
+        self.nesting != Nesting::Blocks
+            || !self.get(block).items.iter().any(|item| self.is_block(item))
+    }
+
+    /// Where a line meets a container the relationship names as its end: a
+    /// port on the container's own edge, so the line stops at the box the
+    /// reader sees instead of running in to its middle; else the end itself.
+    fn on_edge(&mut self, end: String, key: &str, face: Side) -> String {
+        match self.block_of(&end) {
+            Some(block) if self.get(block).kind == Kind::Frame => {
+                let port = self.port(block, key, face);
+                self.pin(block, &port)
+            }
+            _ => end,
+        }
+    }
+
     /// The edge a port crosses: the wall an earlier layout moved it to, or its
-    /// face; where it leaves the block with its label, its face.
+    /// face; where it leaves the block with its label, its face, unless every
+    /// block faces its walls.
     fn exit_of(
         &self,
         block: BlockId,
@@ -297,7 +340,7 @@ impl BlockTree {
         along: &str,
         label_at: Option<BlockId>,
     ) -> Side {
-        if Some(block) == label_at {
+        if Some(block) == label_at && !self.facing {
             return face;
         }
         self.exits
@@ -371,16 +414,16 @@ fn walled(side: Side, inner: &str) -> String {
     }
 }
 
-/// Lines that join on the way to one card stay one line into it (`joins.ts`):
+/// Lines that join on the way to one card stay one line into it (`choosing.rs`):
 /// each line of a join keeps its label before the join, by its source, or,
-/// where its block is kept apart, keeps ports of its own. The relationships
-/// in joins each way, by id.
+/// where its block is kept apart, keeps ports of its own. The blocks joins
+/// move labels to, and the relationships in joins each way, by id.
 pub(super) fn join_ways(
     projections: &[Projection],
     arena: &[Block],
     back: &Set<String>,
     apart: &Set<String>,
-) -> (Set<String>, Set<String>) {
+) -> (Set<String>, Set<String>, Set<String>) {
     let joins: Vec<String> = projections
         .iter()
         .map(|projection| {
@@ -400,12 +443,13 @@ pub(super) fn join_ways(
     for join in &joins {
         *counts.entry(join.as_str()).or_default() += 1;
     }
-    let (mut before, mut own) = (Set::default(), Set::default());
+    let (mut joining, mut before, mut own) = (Set::default(), Set::default(), Set::default());
     for (projection, join) in projections.iter().zip(&joins) {
         if join.is_empty() || counts[join.as_str()] == 1 {
             continue;
         }
         let block = &arena[projection.out.first().copied().unwrap_or(projection.at).0].id;
+        joining.insert(block.clone());
         if apart.contains(block) {
             &mut own
         } else {
@@ -413,5 +457,5 @@ pub(super) fn join_ways(
         }
         .insert(projection.edge.id.clone());
     }
-    (before, own)
+    (joining, before, own)
 }

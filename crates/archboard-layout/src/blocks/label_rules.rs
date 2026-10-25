@@ -1,6 +1,6 @@
 //! The label rules of a block's containers (TASK-349): where the label of a
-//! line entering a container is held (`anchors.ts`), and how hard the label of
-//! a line leaving one is pulled (`leaving.ts`).
+//! line entering a container is held, and how hard the label of a line leaving
+//! one is pulled.
 
 use crate::geometry::Rect;
 use crate::track::scene::Map;

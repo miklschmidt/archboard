@@ -36,7 +36,7 @@ test("a failed required block solve cancels the speculative solves through the h
 	});
 	installRendererHost({
 		...host,
-		solve: (_graph, _options, signal) => {
+		solve: (_graph, signal) => {
 			signals.push(signal);
 			if (signals.length === 1) return Promise.reject(failure);
 			return new Promise((_resolve, reject) => {

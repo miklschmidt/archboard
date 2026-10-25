@@ -8,7 +8,6 @@ type Solve = RendererHost["solve"];
 interface Request {
 	readonly id: number;
 	readonly graph: Parameters<Solve>[0];
-	readonly layoutOptions: Parameters<Solve>[1];
 }
 
 // An initialization promise is shared by every request in this worker. The
@@ -31,7 +30,7 @@ self.addEventListener("message", (event: MessageEvent<Request>) => {
 	queue = queue.then(async () => {
 		try {
 			const solve = await ready;
-			const data = solve(request.graph, request.layoutOptions);
+			const data = solve(request.graph);
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
 			self.postMessage({ id: request.id, data });
 		} catch (error) {

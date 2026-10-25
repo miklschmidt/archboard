@@ -16,7 +16,7 @@ use crate::track::containers::FrameShape;
 use crate::track::scene::Map;
 
 use super::headers::{Header, steps_of};
-use super::laid::{CAPTION_INSET, Size};
+use super::laid::{CAPTION_INSET, Insets, Size};
 
 /// How far a line carried to a card's side keeps from the card's corners.
 const CORNER_ROOM: f64 = 8.0;
@@ -144,6 +144,35 @@ pub(crate) fn caption_width(lone: &Lone) -> f64 {
 /// band above and its inset below.
 pub(crate) fn grown_by(lone: &Lone) -> f64 {
     band_of(lone) + REGION_INSET
+}
+
+/// A container a block lays out alone in its region, laid out once as that
+/// region, when its caption needs the region wider: the region then keeps the
+/// container as wide as it was laid out and stands it in the middle, as it
+/// does a card. Nothing when the caption fits.
+pub(crate) fn widened(lone: &Lone, width: f64) -> Option<Lone> {
+    let short = caption_width(lone) - width;
+    (short > 0.0).then(|| Lone {
+        room: Some(REGION_INSET + short / 2.0),
+        ..lone.clone()
+    })
+}
+
+/// How wide a container is in a block of some width: the block's width, or
+/// alone in its region, the width it stands at inside the region.
+pub(crate) fn frame_width(lone: Option<&Lone>, width: f64) -> f64 {
+    lone.map_or(width, |lone| width - 2.0 * side_room(width, lone))
+}
+
+/// The room a container alone in its region keeps around what it holds: the
+/// region's room round the container more on its sides, and its inset more
+/// below. The caption band stands in its header.
+pub(crate) fn grown_insets(insets: Insets, lone: Option<&Lone>) -> Insets {
+    lone.map_or(insets, |lone| Insets {
+        side: insets.side + room_of(lone),
+        bottom: insets.bottom + REGION_INSET,
+        ..insets
+    })
 }
 
 /// A container's header: its title row, and the caption band above it when
@@ -454,5 +483,52 @@ mod tests {
         ];
         let caption = caption_in(region, &lone(), &[&line]);
         assert!(caption.x + WORDS_INSET > 20.0);
+    }
+
+    // A region round one card captions its band where no line into the card
+    // crosses the caption's words: at the band's left corner, else in the
+    // first gap between the lines wide enough for the words.
+
+    const BANDED: Rect = Rect {
+        x: 100.0,
+        y: 100.0,
+        width: 368.0,
+        height: 152.0,
+    };
+
+    fn captioned() -> Lone {
+        Lone {
+            group: "child".to_owned(),
+            caption: Size {
+                width: 134.0,
+                height: 42.0,
+            },
+            width: None,
+            room: None,
+        }
+    }
+
+    /// A line dropping through the region's caption band into its card.
+    fn dropping(x: f64) -> [Point; 2] {
+        [Point { x, y: 0.0 }, Point { x, y: 150.0 }]
+    }
+
+    #[test]
+    fn a_caption_stands_in_its_band_s_corner_where_no_line_crosses_it() {
+        let caption = caption_in(BANDED, &captioned(), &[&dropping(400.0)]);
+        assert_eq!(caption.x, 104.0);
+    }
+
+    // Taken from a dogfood view: lines into Codex session dropped through both
+    // ends of its region's band, and the caption stood over the left one.
+    #[test]
+    fn a_caption_stands_between_lines_at_both_ends_of_its_band() {
+        let lines = [dropping(130.0), dropping(440.0)];
+        let caption = caption_in(BANDED, &captioned(), &[&lines[0], &lines[1]]);
+        for [top, _] in lines {
+            let strikes =
+                top.x > caption.x + WORDS_INSET && top.x < caption.x + caption.width - WORDS_INSET;
+            assert!(!strikes, "{}", top.x);
+        }
     }
 }

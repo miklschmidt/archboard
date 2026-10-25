@@ -5,7 +5,6 @@ use wasm_bindgen::prelude::*;
 
 pub mod flows;
 pub mod layout;
-pub mod router;
 pub mod scene;
 
 /// The hash of the core sources this build was made from, as

@@ -12,7 +12,7 @@ use super::card_layout::{CardLayout, Sub};
 use super::clusters::title_of;
 use super::leaves::PORT;
 use super::tree::{Line, header_of};
-use super::walls::{enters_by, labelled_out};
+use super::walls::{enters_by, items_of, labelled_out};
 
 impl CardLayout<'_> {
     /// Build the block's Graphviz graph: its items, its header and top ports
@@ -20,7 +20,7 @@ impl CardLayout<'_> {
     /// on the last, and every line through its label's box.
     pub(super) fn build(&mut self) {
         let block = self.block;
-        for item in &block.items {
+        for item in &items_of(self.tree, block) {
             let node = self.node_of(item);
             self.push(self.clusters.holder_of(item), node);
         }
@@ -75,6 +75,7 @@ impl CardLayout<'_> {
                         tops.iter()
                             .map(move |head| Edge::new(tail.clone(), head.clone(), invisible()))
                     })
+                    .chain(self.held_edges(Side::Top))
                     .collect(),
             ),
             ..Subgraph::default()
@@ -82,7 +83,7 @@ impl CardLayout<'_> {
         let last = Subgraph {
             graph_attributes: Some(Attrs::of([("rank", Value::from("sink"))])),
             nodes: Some(bottoms.iter().map(|name| self.node_of(name)).collect()),
-            edges: Some(Vec::new()),
+            edges: Some(self.held_edges(Side::Bottom)),
             ..Subgraph::default()
         };
         for subgraph in [first, last] {
@@ -94,6 +95,30 @@ impl CardLayout<'_> {
                 self.subgraphs.push(Sub::Plain(subgraph));
             }
         }
+    }
+
+    /// The invisible edges that hold the ports on one face of the block in the
+    /// order its parent settles them in (`orders.rs`), each port to the next.
+    fn held_edges(&self, face: Side) -> Vec<Edge> {
+        let block = self.block;
+        let key = format!("{}|{}", block.id, face.name());
+        let held: Vec<&String> = self
+            .tree
+            .orders
+            .get(&key)
+            .into_iter()
+            .flatten()
+            .filter(|port| block.ports.get(port.as_str()) == Some(&face))
+            .collect();
+        held.windows(2)
+            .map(|pair| {
+                Edge::new(
+                    pair[0].clone(),
+                    pair[1].clone(),
+                    Attrs::of([("style", Value::from("invis"))]),
+                )
+            })
+            .collect()
     }
 
     /// A stub node for each line that enters the block through a port or
