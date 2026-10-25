@@ -59,7 +59,11 @@ export interface VoiceAgentOptions {
 	 * admitted path for a named checkout and null for a refused one.
 	 */
 	readonly checkouts: readonly string[] | ((named: string) => string | null);
-	/** The host's own instructions, appended to the built-in coordinator and workhorse roles. */
+	/**
+	 * The host's own instructions, appended to the built-in coordinator and workhorse roles. Both
+	 * must be non-empty: for an empty one, {@link createVoiceAgent} throws a `TypeError` with the
+	 * message "A workbench role requires domain instructions."
+	 */
 	readonly instructions: { readonly coordinator: string; readonly workhorse: string };
 	/**
 	 * How the agent names itself to Codex, to the user and in its records. Each value left out is
