@@ -138,3 +138,14 @@ fn a_character_its_face_has_stays_in_its_face() {
 fn every_face_shares_one_unit() {
     assert!(Face::ALL.iter().all(|face| face.units_per_em() == 1000));
 }
+
+#[test]
+fn unicode_mandatory_separators_break_even_a_wide_line() {
+    for separator in [
+        "\n", "\r\n", "\r", "\u{b}", "\u{c}", "\u{85}", "\u{2028}", "\u{2029}",
+    ] {
+        let words = format!("α{separator}б{separator}");
+        let paragraph = Paragraph::new(FACE, 10.0, &words);
+        assert_eq!(texts(&paragraph, 1000.0), ["α", "б", ""]);
+    }
+}
