@@ -24,9 +24,8 @@
 import { unlinkDurably } from "@archboard/workspace/atomic-write";
 import { claimWriterId, releaseClaim } from "#runtime/store/lock/lock.ts";
 import type { SemanticBoardLocation } from "#runtime/store/location.ts";
+import { boardBefore, rejected } from "#runtime/operations/write/candidate.ts";
 import {
-	boardBefore,
-	rejected,
 	underBoardLease,
 	type BoardLeaseAsk,
 	type SemanticWriteCommand,

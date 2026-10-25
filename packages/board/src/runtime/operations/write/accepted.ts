@@ -13,6 +13,11 @@ import {
 import { parseSemanticBoard } from "#shared/rules/coherence/parse-board.ts";
 import type { SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
 import { newVocabularyProblem } from "#runtime/operations/check/vocabulary.ts";
+import { refuse } from "#runtime/operations/write/outcome.ts";
+import type {
+	SemanticTransition,
+	TransitionResult,
+} from "#runtime/operations/write/transitions.ts";
 
 /**
  * The board a transition produced, stamped as a write stamps it, and whether it may be written.
@@ -44,4 +49,28 @@ function acceptedBoard(
 	return unconfigured === null ? { board: parsed.board } : { problem: unconfigured };
 }
 
-export { acceptedBoard };
+/**
+ * Apply a transition to a board held in memory and admit what it produced, as
+ * the store's write does before it writes: for a caller with no vault on disk,
+ * such as the evaluation harness laying a fixture under the fixture's policy.
+ * @param before The family before the transition, or null before its creation.
+ * @param transition The change.
+ * @param at The timestamp to apply and stamp it with.
+ * @param policy The policy to check new vocabulary against, or null to check none.
+ * @returns The accepted board with what the transition said beside it, or the refusal.
+ */
+function acceptedTransition(
+	before: SemanticBoard | null,
+	transition: SemanticTransition,
+	at: string,
+	policy: SemanticPolicy | null,
+): TransitionResult {
+	const produced = transition.apply(before, at);
+	if (!produced.ok) return produced;
+	const accepted = acceptedBoard(before, produced.board, at, policy);
+	return "problem" in accepted
+		? refuse("INVALID_CONTENT", `refusing to ${transition.summary}: ${accepted.problem}`)
+		: { ...produced, board: accepted.board };
+}
+
+export { acceptedBoard, acceptedTransition };
