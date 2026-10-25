@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { scopedContent } from "#shared/rules/scope.ts";
+import { overviewLines, scopedContent } from "#shared/rules/scope.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
@@ -144,11 +144,59 @@ describe("the overview a board opens on", () => {
 		expect(overview.nodes.map((node) => node.id)).toEqual(["pl", "ld"]);
 	});
 
-	test("joins every relationship between two drawn parts into one unlabelled line of the commonest kind", () => {
+	test("joins every relationship between two drawn parts into one line of the commonest kind", () => {
 		expect(overview.edges).toHaveLength(1);
-		const [line] = overview.edges;
-		expect(line).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: "queue" });
-		expect(line?.label).toBeUndefined();
+		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: "queue" });
+	});
+
+	test("stacks the labels of a joined line's relationships, each once, in board order", () => {
+		const calls = content({
+			nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
+			edges: [
+				{
+					id: "e1",
+					from: "rt",
+					to: "ld",
+					kind: "call",
+					label: "posts",
+					description: "Posts one entry.",
+					emphasis: "hero",
+					traffic: {},
+					anchor: { repo: "shop", path: "router.ts", symbol: "post" },
+				},
+				{ id: "e2", from: "au", to: "ld", kind: "call", label: "records" },
+				{ id: "e3", from: "gw", to: "ld", kind: "call" },
+				{ id: "e4", from: "au", to: "ld", kind: "call", label: "posts" },
+			],
+		});
+		const [line] = scopedContent(calls, { kind: "overview" }).edges;
+		// What only the first relationship says is not said of the line.
+		expect(line).toEqual({
+			id: "e1",
+			order: calls.edges[0]!.order,
+			from: "pl",
+			to: "ld",
+			kind: "call",
+			label: "posts\nrecords",
+			emphasis: "normal",
+		});
+	});
+
+	test("draws a joined line of unlabelled relationships without a label", () => {
+		const bare = content({
+			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],
+			edges: [
+				{ id: "e1", from: "rt", to: "ld", kind: "call" },
+				{ id: "e2", from: "gw", to: "ld", kind: "call" },
+			],
+		});
+		expect(scopedContent(bare, { kind: "overview" }).edges[0]?.label).toBeUndefined();
+	});
+
+	test("names the relationships each joined line stands for, as they were stated", () => {
+		const [line] = overviewLines(DEEP);
+		expect(line?.line.id).toBe("e1");
+		expect(line?.joins).toEqual([DEEP.edges[0]!, DEEP.edges[1]!, DEEP.edges[2]!]);
 	});
 
 	test("draws no relationship inside a closed card, and no flow", () => {

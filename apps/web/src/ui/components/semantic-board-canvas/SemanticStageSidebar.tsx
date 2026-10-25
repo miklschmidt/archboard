@@ -109,6 +109,7 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			board={answer.board}
 			variant={answer.variant.id}
 			selection={selection}
+			overview={answer.view === null}
 			onOpen={view.onOpenDown}
 			onOpenCode={onOpenCode}
 			groups={groupsFromPanel}

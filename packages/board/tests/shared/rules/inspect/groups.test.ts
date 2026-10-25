@@ -89,29 +89,29 @@ describe("inspecting one group", () => {
 /** The worker on its own, so a merge has nothing but memberships to decide. */
 const FREE_WORKER = { id: "w", name: "Worker", kind: "job", groups: ["billing", "fulfillment"] };
 
-describe("the group a card is placed with", () => {
-	/**
-	 * The placing group of every placed node, drawing the given nodes.
-	 * @param nodes The nodes drawn, each with an id, a parent and memberships.
-	 * @param order The configured groups, in config.yaml order.
-	 * @returns Node id to placing group id, for the placed nodes only.
-	 */
-	const placing = (nodes: readonly Record<string, unknown>[], order: readonly string[]) =>
-		Object.fromEntries(
-			placingGroups(
-				content({
-					nodes: [
-						ORDERS,
-						SHIPPING,
-						...nodes.map((node) => ({ name: node["id"], kind: "job", ...node })),
-					],
-				}).nodes,
-				{
-					groups: Object.fromEntries(order.map((id) => [id, { name: id, color: "blue" as const }])),
-				},
-			),
-		);
+/**
+ * The placing group of every placed node, drawing the given nodes.
+ * @param nodes The nodes drawn, each with an id, a parent and memberships.
+ * @param order The configured groups, in config.yaml order.
+ * @returns Node id to placing group id, for the placed nodes only.
+ */
+const placing = (nodes: readonly Record<string, unknown>[], order: readonly string[]) =>
+	Object.fromEntries(
+		placingGroups(
+			content({
+				nodes: [
+					ORDERS,
+					SHIPPING,
+					...nodes.map((node) => ({ name: node["id"], kind: "job", ...node })),
+				],
+			}).nodes,
+			{
+				groups: Object.fromEntries(order.map((id) => [id, { name: id, color: "blue" as const }])),
+			},
+		),
+	);
 
+describe("the group a card is placed with", () => {
 	test("a card is placed with its first configured group whether or not a sibling shares it", () => {
 		const nodes = [
 			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
