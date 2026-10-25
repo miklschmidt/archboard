@@ -374,3 +374,86 @@ fn a_line_crossed_either_way_does_not_turn_the_others_round() {
     assert_eq!(crossings(upper, middle), 0);
     assert_eq!(crossings(middle, lower), 0);
 }
+
+/// A scene in the flat numbers of the renderer core's binding:
+/// `clearance, lane, bend, crossing`, the obstacles, then the connectors.
+fn decoded(text: &str) -> Scene {
+    let numbers: Vec<f64> = text
+        .trim()
+        .split(',')
+        .map(|number| number.parse().unwrap())
+        .collect();
+    let mut next = numbers.into_iter();
+    let mut take = || next.next().unwrap();
+    let params = Params {
+        clearance: take(),
+        lane: take(),
+        bend: take(),
+        crossing: take(),
+    };
+    let obstacles = (0..take() as usize)
+        .map(|_| rect(take(), take(), take(), take()))
+        .collect();
+    let connectors = (0..take() as usize)
+        .map(|_| {
+            let mut end = || {
+                let (kind, obstacle, x, y, leaves) = (take(), take(), take(), take(), take());
+                if kind == 1.0 {
+                    End::Free { at: Point { x, y } }
+                } else {
+                    let leaves = [Dir::Up, Dir::Right, Dir::Down, Dir::Left][leaves as usize];
+                    pin(obstacle as usize, x, y, leaves)
+                }
+            };
+            (end(), end())
+        })
+        .collect();
+    Scene {
+        obstacles,
+        connectors,
+        params,
+    }
+}
+
+// The trunks of Agent workbench (Blocks): a line whose head pin stands near
+// a corridor's wall turned towards its pin high up, and the whole segment
+// into the pin, held at the pin, left three other lines the room of one
+// for 500 px.
+#[test]
+fn a_pin_holds_only_its_stub_where_its_segment_crowds_a_channel() {
+    let scene = decoded(include_str!("fixtures/agent-workbench-blocks.txt"));
+    let answer = route(&scene);
+    let runs: Vec<(usize, bool, f64, f64, f64)> = answer
+        .iter()
+        .enumerate()
+        .flat_map(|(index, route)| {
+            routed(route)
+                .windows(2)
+                .map(move |pair| {
+                    let (a, b) = (pair[0], pair[1]);
+                    if (a.x - b.x).abs() < SAME {
+                        (index, true, a.x, a.y.min(b.y), a.y.max(b.y))
+                    } else {
+                        (index, false, a.y, a.x.min(b.x), a.x.max(b.x))
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    for (i, one) in runs.iter().enumerate() {
+        for other in &runs[i + 1..] {
+            let apart = (one.2 - other.2).abs();
+            let beside = one.4.min(other.4) - one.3.max(other.3);
+            let squeezed = one.0 != other.0
+                && one.1 == other.1
+                && apart > SAME
+                && apart < 0.75 * PARAMS.lane
+                && beside > 4.0 * PARAMS.lane;
+            assert!(
+                !squeezed,
+                "routes {} and {} stand {apart} apart",
+                one.0, other.0
+            );
+        }
+    }
+}
