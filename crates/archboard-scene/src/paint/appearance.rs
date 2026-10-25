@@ -20,7 +20,12 @@ use crate::request::{NodeAppearance, PaletteColor, Standing};
 
 /// One named palette colour, as the page's token for it.
 pub fn semantic_ink(color: Option<PaletteColor>) -> Option<String> {
-    color.map(|color| token(&format!("--semantic-{}", color.as_str())))
+    color.map(semantic_token)
+}
+
+/// A named palette colour's page token.
+fn semantic_token(color: PaletteColor) -> String {
+    token(&format!("--semantic-{}", color.as_str()))
 }
 
 const DARK_FACE: ToneStep = ToneStep::new(0.31, 0.4);
@@ -55,7 +60,7 @@ fn light_face(color: PaletteColor) -> (f64, f64) {
 fn face_in(color: PaletteColor) -> String {
     let (lightness, chroma) = light_face(color);
     toned(
-        &token(&format!("--semantic-{}", color.as_str())),
+        &semantic_token(color),
         Tone {
             light: ToneStep {
                 lightness,
