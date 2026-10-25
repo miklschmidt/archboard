@@ -14,8 +14,11 @@ import {
 } from "@remixicon/react";
 import type { JSX } from "react";
 
-import type { VariantLifecycle } from "@archboard/board/document";
 import { cn } from "@archboard/ui-kit/components";
+import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { z } from "zod";
+
+type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
 /** The mark of each lifecycle. */
 const LIFECYCLE_ICONS: Readonly<Record<VariantLifecycle, RemixiconComponentType>> = {

@@ -5,8 +5,11 @@ import {
 	createReadingPublisher,
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { PANE_MS } from "@archboard/timing";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 beforeEach(() => {
 	jest.useFakeTimers();

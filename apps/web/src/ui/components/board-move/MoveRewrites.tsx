@@ -6,9 +6,13 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX } from "react";
 
-import type { BoardMovePreview, MovedDrillDown } from "@archboard/board/commands";
+import type { BoardMovePreview } from "@archboard/board/commands";
 import { MoveRefusal } from "#ui/components/board-move/MoveRefusal.tsx";
 import { Dialog, Technical } from "@archboard/ui-kit/components";
+import type { MovedDrillDownSchema } from "@archboard/board/commands";
+import type { z } from "zod";
+
+type MovedDrillDown = z.infer<typeof MovedDrillDownSchema>;
 
 /** Inputs for the rewrites. */
 interface MoveRewritesProps {
