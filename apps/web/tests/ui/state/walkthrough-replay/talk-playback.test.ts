@@ -17,7 +17,10 @@ import { TalkPlayback, frameOf } from "#ui/state/walkthrough-replay/talk-playbac
  * @param levels How loud the voice is on each frame.
  * @returns The playback.
  */
-function playbackOf(events: readonly Talk["events"][number][], levels: readonly number[] = []): TalkPlayback {
+function playbackOf(
+	events: readonly Talk["events"][number][],
+	levels: readonly number[] = [],
+): TalkPlayback {
 	return new TalkPlayback(
 		{
 			events,
