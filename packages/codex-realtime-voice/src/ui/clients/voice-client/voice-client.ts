@@ -165,15 +165,15 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	/**
-	 * Open the socket again and attach the owners to it.
+	 * Open the socket again and attach the owners to it. A dispose while it
+	 * runs opens no socket, or closes the one it opened.
 	 * @returns Whether it opened.
 	 */
-	const connect = () =>
-		run(async () => {
+	const connect = async () => {
+		const completed = await run(async () => {
 			await release();
-			const next = owners.openSocket(
-				socketUrl(options, owners.pageUrl(), owners.tabSessionId()),
-			);
+			if (disposed) return;
+			const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
 			socket = next;
 			await opened(next);
 			if (disposed) return;
@@ -181,6 +181,8 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 			await media.attach(transport);
 			await transport.accountRead();
 		});
+		return completed && !disposed;
+	};
 
 	/**
 	 * Cancel the sign-in the server shows as pending.

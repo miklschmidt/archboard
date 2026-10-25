@@ -251,6 +251,17 @@ test("connect opens the socket with the pane and tab identity and attaches voice
 	await client.dispose();
 });
 
+test("a dispose during connect or reconnect leaves no socket open", async () => {
+	for (const reconnect of [false, true]) {
+		const { client, sockets } = gateway();
+		if (reconnect) await client.connect();
+		const connecting = client.connect();
+		await client.dispose();
+		expect(await connecting).toBe(false);
+		expect(sockets.every((socket) => socket.closeCalls > 0)).toBe(true);
+	}
+});
+
 test("an uncertain delivery stays visible and is never sent again", async () => {
 	const { client, commands } = gateway("outcome_unknown");
 	await client.connect();
