@@ -1,7 +1,7 @@
 import type {
 	CodexWorkbenchDomainTools,
 	CodexWorkbenchDomain,
-} from "@archboard/codex-realtime-voice/server";
+} from "#runtime/protocol/voice/extension.ts";
 import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { createCodexDynamicTools } from "#runtime/operations/dynamic-tools/dispatch/dispatcher.ts";
 import {

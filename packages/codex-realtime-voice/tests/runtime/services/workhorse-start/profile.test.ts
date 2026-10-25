@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createWorkhorseThreadStartParams } from "#runtime/rules/workhorse-start/model.ts";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 
 const CHECKOUT_ROOT = "/workspace/checkout";
@@ -29,13 +29,13 @@ describe("codex workhorse start profile", () => {
 			config: { model_reasoning_effort: "medium" },
 			cwd: CHECKOUT_ROOT,
 			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
-			serviceName: TEST_INSTRUCTIONS.workhorse.serviceName,
+			serviceName: TEST_INSTRUCTIONS.workhorse.identity.serviceName,
 			developerInstructions: TEST_INSTRUCTIONS.workhorse.instructions.text,
 			ephemeral: false,
 			historyMode: "paginated",
 			sessionStartSource: "startup",
-			threadSource: TEST_INSTRUCTIONS.workhorse.threadSource,
-			dynamicTools: [ARCHBOARD_COORDINATOR_NAMESPACE],
+			threadSource: TEST_INSTRUCTIONS.workhorse.identity.threadSource,
+			dynamicTools: [COORDINATOR_CALLBACK_NAMESPACE],
 			experimentalRawEvents: false,
 		});
 	});

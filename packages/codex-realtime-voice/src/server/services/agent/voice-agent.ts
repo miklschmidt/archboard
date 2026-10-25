@@ -101,6 +101,12 @@ export interface VoiceAgent {
 	readonly shutdown: () => Promise<void>;
 	/** The browser connection port; see {@link VoiceAgentBrowserPort}. */
 	readonly browser: VoiceAgentBrowserPort;
+	/**
+	 * The exact coordinator and workhorse profiles the agent's threads start with: identity,
+	 * composed instruction text, dynamic tools, and the SHA-256 of each. A host can record these
+	 * digests to notice when a change of its instructions or tools would reach Codex.
+	 */
+	readonly instructions: Workbench["instructions"];
 }
 
 /**
@@ -143,8 +149,7 @@ function socketCheckout(checkouts: VoiceAgentOptions["checkouts"], named: string
  * @returns The agent's lifecycle and browser operations.
  */
 export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
-	const { context, voice, tools, browserLeaseLedger, ...extensions } =
-		options.extensions ?? {};
+	const { context, voice, tools, browserLeaseLedger, ...extensions } = options.extensions ?? {};
 	const workbench = createCodexWorkbench({
 		storage: {
 			rootDirectory: options.storage.directory,
@@ -195,5 +200,6 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 			}
 		},
 		browser: workbench.browser,
+		instructions: workbench.instructions,
 	});
 }

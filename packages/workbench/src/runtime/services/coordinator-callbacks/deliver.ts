@@ -7,7 +7,10 @@ import type {
 	CoordinatorCallbackOptions,
 	CoordinatorPaneNews,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { archboardContextOf, toHostSource } from "#runtime/rules/coordinator-callbacks/normalize.ts";
+import {
+	archboardContextOf,
+	toHostSource,
+} from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import { encodeCoordinatorCallback } from "#runtime/rules/coordinator-callbacks/encoding.ts";
 
 /**
@@ -16,7 +19,10 @@ import { encodeCoordinatorCallback } from "#runtime/rules/coordinator-callbacks/
  * @param canvas The current pane state.
  * @returns The voice channel.
  */
-function channelOf(news: CoordinatorPaneNews, canvas: CoordinatorCallbackCanvas): "speech" | "context" {
+function channelOf(
+	news: CoordinatorPaneNews,
+	canvas: CoordinatorCallbackCanvas,
+): "speech" | "context" {
 	return news.stops &&
 		canvas.narrated !== null &&
 		(news.board === null || news.board === canvas.narrated)
