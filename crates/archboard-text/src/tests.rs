@@ -157,3 +157,25 @@ fn nonbreaking_spaces_are_content_even_at_the_end_of_a_line() {
         assert_eq!(texts(&paragraph, 1000.0), [words]);
     }
 }
+
+#[test]
+fn tabs_advance_to_eight_space_stops_without_missing_glyphs() {
+    let run = shape(FACE, "a\tb");
+    let stop = shape(FACE, " ").advance * 8;
+    assert_eq!(run.glyphs.len(), 2);
+    assert!(run.glyphs.iter().all(|glyph| glyph.id != 0));
+    assert_eq!(i64::from(run.glyphs[1].x), stop);
+    assert_eq!(
+        shape(FACE, "        \tb").advance,
+        2 * stop + shape(FACE, "b").advance
+    );
+}
+
+#[test]
+fn wrapped_tabs_start_from_the_new_line() {
+    let paragraph = Paragraph::new(FACE, 10.0, "ab\tc de\tf");
+    let limit = width(FACE, "ab\tc", 10.0);
+    let lines = paragraph.lines(limit);
+    assert_eq!(texts(&paragraph, limit), ["ab\tc", "de\tf"]);
+    assert!(lines.iter().all(|line| line.width <= limit));
+}

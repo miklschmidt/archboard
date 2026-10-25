@@ -52,6 +52,8 @@ struct Span {
 #[derive(Debug)]
 struct Hard {
     words: String,
+    /// Byte positions of tabs, whose advance depends on the line start.
+    tabs: Vec<usize>,
     /// The byte each grapheme starts at, and the end of the words.
     bounds: Vec<usize>,
     /// The advance up to each bound, at the paragraph's size: of the words
@@ -65,11 +67,13 @@ struct Hard {
 }
 
 impl Hard {
+    /// Shape one hard line and record its grapheme boundaries.
     fn of(face: Face, size: f64, words: &str) -> Hard {
         let mut bounds: Vec<usize> = words.grapheme_indices(true).map(|(at, _)| at).collect();
         bounds.push(words.len());
         Hard {
             words: words.to_owned(),
+            tabs: words.match_indices('\t').map(|(at, _)| at).collect(),
             before: advances_before(face, size, words, &bounds),
             opens: opens(words, &bounds),
             visible: visible(words, &bounds),
@@ -125,7 +129,12 @@ impl Hard {
     }
 
     /// The width of the words between two bounds.
-    fn span(&self, start: usize, end: usize) -> f64 {
+    fn span(&self, start: usize, end: usize, face: Face, size: f64) -> f64 {
+        let (from, to) = (self.bounds[start], self.bounds[end]);
+        let next_tab = self.tabs.partition_point(|&at| at < from);
+        if self.tabs.get(next_tab).is_some_and(|&at| at < to) {
+            return crate::shape::width(face, &self.words[from..to], size);
+        }
         self.before[end] - self.before[start]
     }
 
@@ -252,7 +261,7 @@ pub struct Paragraph {
 
 impl Paragraph {
     /// Words in a face at a size. Unicode mandatory separators each start a
-    /// new line; a carriage return and line feed together count as one.
+    /// new line. A carriage return and line feed together count as one.
     pub fn new(face: Face, size: f64, words: &str) -> Paragraph {
         let words = words.replace("\r\n", "\n").replace(
             ['\r', '\u{b}', '\u{c}', '\u{85}', '\u{2028}', '\u{2029}'],
@@ -273,7 +282,8 @@ impl Paragraph {
     fn walk(&self, width: f64, mut line: impl FnMut(&Hard, Span)) {
         let limit = width + FIT_TOLERANCE;
         for hard in &self.hards {
-            let fits = |start: usize, end: usize| hard.span(start, end) <= limit;
+            let fits =
+                |start: usize, end: usize| hard.span(start, end, self.face, self.size) <= limit;
             let mut start = 0;
             loop {
                 let (span, next) = hard.next_line(start, &fits);
@@ -318,7 +328,7 @@ impl Paragraph {
     pub fn natural_width(&self) -> f64 {
         self.hards
             .iter()
-            .map(|hard| hard.span(0, hard.visible_end(0, hard.last())))
+            .map(|hard| hard.span(0, hard.visible_end(0, hard.last()), self.face, self.size))
             .fold(0.0, f64::max)
     }
 
