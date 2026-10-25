@@ -303,6 +303,8 @@ test("showing a part the view on screen does not draw opens the whole board, the
 			width: 4000,
 			height: 3000,
 			drawn: { nodes: [], edges: [], flows: [], steps: [] },
+			appearances: [],
+			key: null,
 			atlas: { nodes: {}, edges: {}, regions: {} },
 		},
 	};

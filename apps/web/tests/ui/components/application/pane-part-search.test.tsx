@@ -113,6 +113,8 @@ function drawingOf(name: string): Record<string, unknown> {
 			`<g data-semantic-kind="node" data-semantic-id="${id}"><rect id="card" width="80" height="40"></rect></g>` +
 			`</svg>`,
 		drawn: { nodes: [], edges: [], flows: [], steps: [] },
+		appearances: [],
+		key: null,
 		atlas: { nodes: { [id]: { x: 0, y: 0, width: 80, height: 40 } }, edges: {}, regions: {} },
 	};
 }
