@@ -23,6 +23,12 @@ import {
 	settle,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import {
+	boardOf,
+	cardBoard,
+	twoCardDrawing,
+	twoCardPipeline,
+} from "#tests/ui/support/semantic-board-canvas/board-documents.ts";
+import {
 	listedVariants,
 	openAboutPage,
 	variantEntry,
@@ -36,35 +42,6 @@ const ENGINE_VIEWS = [
 
 /** The one way the board above can be read. */
 const PIPELINE_VIEW = { id: "pv1", name: "Where writes go", grammar: "architecture" } as const;
-
-/**
- * One board document.
- * @param name What the board is called.
- * @param variants Its variants, in the order it states them.
- * @param current Which variant is the current one.
- * @param views The ways this board can be read.
- * @returns The document.
- */
-function boardOf(
-	name: string,
-	variants: readonly Record<string, unknown>[],
-	current: string,
-	views: readonly Record<string, unknown>[] = [],
-): Record<string, unknown> {
-	return {
-		schemaVersion: "2.0.0",
-		kind: "semantic-board",
-		id: name === "pipeline" ? "bd1" : "bd2",
-		name,
-		level: name === "pipeline" ? "system" : "module",
-		version: 1,
-		createdAt: "2026-09-11T00:00:00.000Z",
-		updatedAt: "2026-09-11T00:00:00.000Z",
-		views,
-		current,
-		variants,
-	};
-}
 
 /** The current state of the board the pane is opened on: one node, with a link to the level below. */
 const PIPELINE_CURRENT = {
@@ -254,6 +231,50 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
 });
 
+test("a newer double-click wins over an older one whose board answers first", async () => {
+	// Two cards, each opening a different board.
+	server.documents["pipeline"] = twoCardPipeline();
+	server.documents["engine"] = cardBoard("engine", undefined);
+	server.documents["store"] = cardBoard("store", undefined);
+	const engineRead = Promise.withResolvers<void>();
+	const storeRead = Promise.withResolvers<void>();
+	server.held["engine"] = engineRead.promise;
+	server.held["store"] = storeRead.promise;
+	server.reply = { status: 200, body: twoCardDrawing() };
+	mountStage(null, {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
+	await settle();
+	await act(async () => {
+		fireEvent.doubleClick(document.querySelector("#card")!);
+	});
+	await act(async () => {
+		fireEvent.doubleClick(document.querySelector("#card2")!);
+	});
+	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+
+	// The older double-click's board answers while the newer one's is still being
+	// read. The reader has asked for something else since, so it opens nothing.
+	await act(async () => {
+		engineRead.resolve();
+	});
+	await settle();
+	expect(stage?.getAttribute("data-board")).toBe("pipeline");
+	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
+
+	// The newer one's board then answers, and is the one that opens and stays open.
+	server.reply = { status: 200, body: drawing(1, "store") };
+	await act(async () => {
+		storeRead.resolve();
+	});
+	await settle();
+	expect(stage?.getAttribute("data-board")).toBe("store");
+	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
+});
+
 test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
@@ -358,25 +379,6 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 		renderCalls().every((call) => !call.includes("view=pv1&") || call.includes("pipeline")),
 	).toBe(true);
 });
-
-/**
- * A board of one card, n1, that drills down to another board's current variant.
- * @param name What the board is called.
- * @param below The board its card opens, or undefined for a card that opens none.
- * @returns The document.
- */
-function cardBoard(name: string, below: string | undefined): Record<string, unknown> {
-	const card = { id: "n1", name: name + " card", kind: "module" };
-	const node =
-		below === undefined
-			? card
-			: { ...card, drillDown: { board: below, variant: { kind: "current" } } };
-	return boardOf(
-		name,
-		[{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes: [node], edges: [] } }],
-		"v1",
-	);
-}
 
 /**
  * Open the board the card drills down to, as a double-click on it does.
