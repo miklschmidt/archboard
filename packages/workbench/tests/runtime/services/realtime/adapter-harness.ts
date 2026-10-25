@@ -1,9 +1,11 @@
+import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { expect } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/codex-realtime-voice/realtime";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,
@@ -17,12 +19,12 @@ import {
 } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
+import { createCodexRealtimeAdapter } from "@archboard/codex-realtime-voice/runtime";
 import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeAdapterOptions,
 	type CodexRealtimeBinding,
-} from "#runtime/services/realtime/contract.ts";
+} from "@archboard/codex-realtime-voice/runtime";
 import { recordReducerCheckedEvents } from "#tests/runtime/services/realtime/state-test-support.ts";
 
 type TimelinePage = Awaited<ReturnType<CodexRealtimeAdapterOptions["session"]["timelineListPage"]>>;
@@ -117,11 +119,13 @@ const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
 
 const transitionFailures: string[] = [];
 function harness(
-	boardCatalogue: CodexRealtimeAdapterOptions["boardCatalogue"] = {
+	coordinatorContext: CodexRealtimeAdapterOptions["coordinatorContext"] = {
 		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 		subscribe: () => () => {},
 	},
-	presentationChanges?: CodexRealtimeAdapterOptions["presentationChanges"],
+	presentationChanges?: {
+		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;
+	},
 ): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -145,8 +149,8 @@ function harness(
 	const adapter = createCodexRealtimeAdapter({
 		session: session.port,
 		identity,
-		boardCatalogue,
-		...(presentationChanges === undefined ? {} : { presentationChanges }),
+		coordinatorContext,
+		voice: createArchboardVoicePolicy(presentationChanges?.subscribe),
 		freshSemanticBrief: () => semanticBrief(),
 		currentBinding: () => bindingState.binding,
 	});

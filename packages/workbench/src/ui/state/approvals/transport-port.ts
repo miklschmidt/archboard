@@ -8,17 +8,15 @@
 import type {
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
-} from "#shared/protocol/gateway-envelope.ts";
-import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type {
+	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserReadiness,
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "@archboard/codex-realtime-voice/contract";
+import type { CodexServerResponseByMethod } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */
 type WorkbenchCommandName = BrowserCommand["command"];

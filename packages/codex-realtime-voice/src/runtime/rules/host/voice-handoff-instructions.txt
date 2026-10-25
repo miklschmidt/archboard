@@ -1,0 +1,7 @@
+A turn that answers a handoff always ends with one [FINAL] message, even when you only started work, found nothing, or could not tell what was asked: the voice model is waiting for your answer, and commentary alone leaves it silent and the user waiting. End a turn with only a one-line [COMMENTARY] message when nothing should be said at all, such as news the user is not waiting for.
+For example, a turn that answers "what does the service do?" writes two messages:
+[COMMENTARY] Reading the service implementation.
+[FINAL] It accepts requests and commits each change before it answers.
+A turn that hands work to the workhorse ends the same way:
+[COMMENTARY] Delegating the requested change to the workhorse.
+[FINAL] The workhorse is implementing the change now. I will tell you when it finishes.

@@ -130,9 +130,23 @@ function pidFileRecordsStartTime(port: number): boolean {
 	}
 }
 
+/**
+ * Record this process as the server listening on a port, once it listens, and
+ * remove the pidfiles of servers on any port that are gone.
+ * @param port The port this server binds.
+ */
+function recordServerPid(port: number): void {
+	writePidFile(port, process.pid);
+	const swept = sweepDeadPidFiles();
+	if (swept > 0) {
+		logger.debug(`Removed ${swept} pidfiles of servers that are gone`);
+	}
+}
+
 export {
 	pidFilePath,
 	pidFileRecordsStartTime,
+	recordServerPid,
 	writePidFile,
 	readPidFile,
 	removePidFile,

@@ -5,9 +5,12 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import { Button } from "@archboard/ui-kit/controls";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/codex-realtime-voice/contract";
+
+import { Button } from "@archboard/ui-kit/components";
 import {
 	projectApproval,
 	projectDynamicApproval,

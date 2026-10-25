@@ -9,11 +9,14 @@
 import type {
 	DrawnBoard,
 	MarkedSubjects,
-	PictureMarks,
 	RenderedChanges,
 } from "@archboard/board/render-reply";
 import { markCounts } from "@archboard/renderer/picture";
 import { drawnAgainst } from "#cli/operations/semantic/input/semantic-input.ts";
+import type { PictureMarksSchema } from "@archboard/board/render-reply";
+import type { z } from "zod";
+
+type PictureMarks = z.infer<typeof PictureMarksSchema>;
 
 /** What a receipt says about its picture. */
 interface PictureReceipt {

@@ -2,18 +2,8 @@
 
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
-import { LINE_TOKEN, PATH_TOKEN } from "@archboard/code-binding/opening";
-import {
-	Field,
-	FieldDescription,
-	FieldLabel,
-	Input,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupText,
-	InputGroupTextarea,
-} from "@archboard/ui-kit/controls";
-import { FieldIssues, Technical } from "@archboard/ui-kit/dialog-parts";
+import { LINE_TOKEN, PATH_TOKEN } from "#shared/schemas/opener-settings.ts";
+import { Field, Input, InputGroup, Technical } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -53,7 +43,7 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 	return (
 		<>
 			<Field data-invalid={executableIssues.length > 0}>
-				<FieldLabel htmlFor={executableId}>Executable</FieldLabel>
+				<Field.Label htmlFor={executableId}>Executable</Field.Label>
 				<Input
 					id={executableId}
 					value={draft.executable}
@@ -64,13 +54,13 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 					autoComplete="off"
 					spellCheck={false}
 				/>
-				<FieldDescription>A command name on PATH, or an absolute path.</FieldDescription>
-				<FieldIssues messages={executableIssues} />
+				<Field.Description>A command name on PATH, or an absolute path.</Field.Description>
+				<Field.Issues messages={executableIssues} />
 			</Field>
 			<Field data-invalid={argvIssues.length > 0}>
-				<FieldLabel htmlFor={argvId}>Arguments</FieldLabel>
+				<Field.Label htmlFor={argvId}>Arguments</Field.Label>
 				<InputGroup>
-					<InputGroupTextarea
+					<InputGroup.Textarea
 						id={argvId}
 						value={draft.argvText}
 						onChange={handleArgv}
@@ -80,15 +70,15 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 						rows={3}
 						spellCheck={false}
 					/>
-					<InputGroupAddon align="block-end">
-						<InputGroupText>
+					<InputGroup.Addon align="block-end">
+						<InputGroup.Text>
 							One argument per line. Exactly one must hold <Technical>{PATH_TOKEN}</Technical>,
 							which becomes the file to open. <Technical>{LINE_TOKEN}</Technical> becomes the line
 							where the bound symbol is defined, or 1.
-						</InputGroupText>
-					</InputGroupAddon>
+						</InputGroup.Text>
+					</InputGroup.Addon>
 				</InputGroup>
-				<FieldIssues messages={argvIssues} />
+				<Field.Issues messages={argvIssues} />
 			</Field>
 		</>
 	);

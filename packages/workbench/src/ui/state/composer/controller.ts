@@ -5,11 +5,11 @@
 // retargeted. The controller holds no message list: the only turn a person
 // ever sees came from the server snapshot through the runtime.
 
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserWorkbenchCommandResult,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/codex-realtime-voice/browser";
 import type {
 	WorkbenchComposerCommandResult,
 	WorkbenchComposerController,

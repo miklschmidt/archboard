@@ -1,7 +1,7 @@
 // What the composer may target right now, read from the transport's published
 // state and nothing else: the pane's link and the authoritative in-progress turn.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchState,
 	WorkbenchComposerLink,

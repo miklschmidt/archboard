@@ -13,7 +13,6 @@ import { boardAncestors } from "#ui/rules/board-catalog/outline.ts";
 import { useVaultBoards } from "#ui/hooks/board-catalog/use-vault-boards.ts";
 import { useVaultPolicyRefresh } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
 
-import type { PanePresentRequest, SemanticPanePart } from "@archboard/board/pane-context";
 import { PartSearchHost } from "#ui/components/application/PartSearchHost.tsx";
 import { useDrillRepositories } from "#ui/hooks/application/use-drill-repositories.ts";
 import type { PaneCallbacks } from "#ui/hooks/application/use-panes.ts";
@@ -48,7 +47,13 @@ import { type WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkt
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
-} from "@archboard/workbench/controllers";
+} from "@archboard/codex-realtime-voice/browser";
+import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {

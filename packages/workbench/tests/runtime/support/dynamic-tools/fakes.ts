@@ -3,9 +3,9 @@ import type {
 	EpochSnapshot,
 	EpochStageInput,
 	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
-import { emptyManifest } from "#runtime/store/epoch/manifest.ts";
+} from "@archboard/codex-realtime-voice/runtime";
+import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
+import { emptyManifest } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
 	ResponseOwner,
@@ -31,8 +31,8 @@ import type {
 	DynamicToolApprovalPort,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { DynamicImmutableEffect } from "#runtime/protocol/dynamic-tools/effect-contract.ts";
-import type { ThreadLinkTarget } from "#runtime/rules/thread-link/contract.ts";
-import type { CodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+import type { ThreadLinkTarget } from "@archboard/codex-realtime-voice/runtime";
+import type { CodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import {
 	CALLER_WIRE_ID,
 	authorityToken,

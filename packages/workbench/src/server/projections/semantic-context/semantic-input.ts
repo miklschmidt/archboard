@@ -1,3 +1,4 @@
+import type { CodexWorkbenchSessionComponents } from "@archboard/codex-realtime-voice/server";
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
@@ -9,15 +10,13 @@ import type {
 	SemanticArchitectureInput,
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
-} from "@archboard/codex-app-server/semantic-context";
+} from "#runtime/schemas/semantic-context-types.ts";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { canonicalSemanticCursorToken } from "#runtime/services/thread-context/event-identity.ts";
+import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { CodexWorkbenchSessionComponents } from "#server/protocol/generation/session-contract.ts";
-import type { CodexWorkbenchWorkhorseComponents } from "#server/services/sessions/workhorses.ts";
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
+import type { CodexWorkbenchWorkhorseComponents } from "@archboard/codex-realtime-voice/server";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
 import {
 	aggregateKey,
@@ -25,8 +24,12 @@ import {
 	semanticBoardContext,
 } from "#server/projections/semantic-context/board-context.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
 
-type FreshBrief = ReturnType<CodexWorkbenchSessionComponents["semanticPublisher"]["freshBrief"]>;
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+
+type FreshBrief = import("#runtime/schemas/semantic-context-types.ts").FreshSemanticBrief;
 
 /**
  * The variant a context names: the brief's, without the predecessor it is

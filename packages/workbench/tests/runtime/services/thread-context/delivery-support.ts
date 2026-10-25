@@ -1,8 +1,16 @@
+import type { WorkbenchExecutionContext } from "@archboard/codex-realtime-voice/runtime";
+import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
+import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
+import {
+	archboardContextEvent,
+	archboardContextMatchesEvent,
+} from "#runtime/services/host/archboard-context-match.ts";
+import type { WorkbenchContextEvent } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	CodexEpochError,
 	EpochExecutionProof,
 	EpochExecutionRequest,
-} from "#runtime/store/epoch/contract.ts";
+} from "@archboard/codex-realtime-voice/runtime";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type {
@@ -15,8 +23,8 @@ import type {
 	ThreadLinkReasonCode,
 	ThreadLinkSnapshot,
 	ThreadLinkStatus,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { SettledSemanticChangeEvent } from "@archboard/codex-app-server/semantic-context";
+} from "@archboard/codex-realtime-voice/runtime";
+import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,
@@ -25,8 +33,8 @@ import {
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
 import { baseContext } from "#tests/runtime/services/thread-context/delivery-context.ts";
-import { createCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
-import { createCodexThreadContextController } from "#runtime/services/thread-context/controller.ts";
+import { createCodexThreadContextDelivery } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexThreadContextController } from "@archboard/codex-realtime-voice/runtime";
 import {
 	type CodexThreadContextBinding,
 	type CodexThreadContextController,
@@ -34,25 +42,20 @@ import {
 	type CodexThreadContextDeliveryOptions,
 	type CodexThreadContextExecution,
 	type CodexThreadContextTarget,
-} from "#runtime/services/thread-context/contract.ts";
-
+} from "@archboard/codex-realtime-voice/runtime";
 const PANE_ID = "pane-a";
 const FEED_ID = "feed-1";
 const OPERATION_ID = "operation-1";
-
 type InjectRequest = Parameters<CodexSession["threadInjectItems"]>[0];
 type InjectResponse = Awaited<ReturnType<CodexSession["threadInjectItems"]>>;
-
 async function successfulInject(): Promise<InjectResponse> {
 	return {};
 }
-
 async function flushMicrotasks(): Promise<void> {
 	await Promise.resolve();
 	await Promise.resolve();
 	await Promise.resolve();
 }
-
 interface EventOptions {
 	readonly sequence?: number;
 	readonly feedId?: string;
@@ -68,7 +71,6 @@ interface EventOptions {
 	readonly brief?: string;
 	readonly stale?: boolean;
 }
-
 interface HarnessOptions {
 	readonly controller?: boolean;
 	/** The threads whose writes this port should treat as its own session's. */
@@ -82,7 +84,6 @@ interface HarnessOptions {
 	readonly contextFocusPaneId?: string | null;
 	readonly now?: number;
 }
-
 interface Harness {
 	/** Replace the threads this port's session writes as, as a restart or New conversation does. */
 	readonly becomeSession: (threads: readonly string[]) => void;
@@ -112,7 +113,6 @@ interface Harness {
 	readonly retiredEpochs: () => number;
 	readonly readLink: () => ThreadLinkBindingSnapshot;
 }
-
 function proofFor(
 	authority: IdentityAuthority,
 	threadId: ThreadId,
@@ -144,7 +144,6 @@ function proofFor(
 		},
 	};
 }
-
 function executableLink(
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -163,7 +162,6 @@ function executableLink(
 		reason: null,
 	});
 }
-
 function inspectOnlyLink(
 	threadId: ThreadId,
 	reason: ThreadLinkReasonCode,
@@ -186,7 +184,6 @@ function inspectOnlyLink(
 		reason,
 	});
 }
-
 function unboundLink(): ThreadLinkSnapshot {
 	return Object.freeze({
 		kind: "thread_link",
@@ -201,7 +198,6 @@ function unboundLink(): ThreadLinkSnapshot {
 		reason: null,
 	});
 }
-
 function createHarness(options: HarnessOptions = {}): Harness {
 	const authority = createIdentityAuthority();
 	const childId = authority.validator.childId;
@@ -229,7 +225,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	let listener: ((event: SettledSemanticChangeEvent) => void) | null = null;
 	let subscriptions = 0;
 	let retired = 0;
-
 	const read = (): ThreadLinkBindingSnapshot => {
 		const cas: ThreadLinkCasToken = {
 			revision,
@@ -285,7 +280,8 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			return behavior(request);
 		},
 	};
-	const contextForEvent = (event: SettledSemanticChangeEvent): ArchboardContext => {
+	const contextForEvent = (input: WorkbenchContextEvent): ArchboardContext => {
+		const event = archboardContextEvent(input);
 		const context = baseContext(
 			{
 				paneId: PANE_ID,
@@ -312,6 +308,12 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		},
 	};
 	const common = {
+		contextCodec: ARCHBOARD_CONTEXT_CODEC,
+		matchesHostContext: (event: WorkbenchContextEvent, context: WorkbenchExecutionContext) =>
+			archboardContextMatchesEvent(
+				archboardContextEvent(event),
+				ArchboardContextSchema.parse(context),
+			),
 		feedId: FEED_ID,
 		now: () => now,
 		publisher,
@@ -343,7 +345,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			// coordinator paired with it when a harness names one.
 			sessionAuthors: () => sessionAuthors,
 		});
-
 	const events = (eventOptions: EventOptions = {}): SettledSemanticChangeEvent => {
 		const sequence = eventOptions.sequence ?? 1;
 		const feedId = eventOptions.feedId ?? FEED_ID;
@@ -473,7 +474,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		readLink: read,
 	};
 }
-
 function bindingFor(harness: Harness): CodexThreadContextBinding {
 	return Object.freeze({
 		paneId: PANE_ID,
@@ -481,7 +481,6 @@ function bindingFor(harness: Harness): CodexThreadContextBinding {
 		link: harness.readLink(),
 	});
 }
-
 export {
 	PANE_ID,
 	FEED_ID,

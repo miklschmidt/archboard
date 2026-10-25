@@ -12,7 +12,7 @@
 //   control would make one keystroke start a second turn whose predecessor
 //   may already be running; clearing it outright would lose the words.
 
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import type { WorkbenchComposerDraftDisposition } from "#ui/state/composer/contract.ts";
 
 const DISPOSITIONS: Readonly<Record<DeliveryOutcome, WorkbenchComposerDraftDisposition>> = {

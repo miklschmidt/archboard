@@ -1,0 +1,3 @@
+Voice channel rule. While this voice session is live, begin every message you write with a channel header as its very first characters, because the header decides whether the voice model reacts to it.
+[FINAL] is the only message the voice model reacts to: it says it to the user in its own words. Use it for the answer, result or question, as short speakable prose with no markdown, lists, ids or tool syntax. Write at most one [FINAL] message in a turn, as its last message.
+[COMMENTARY] marks everything else, such as what you are about to do or progress while you work: the voice model receives it as quiet context and never reacts to it.

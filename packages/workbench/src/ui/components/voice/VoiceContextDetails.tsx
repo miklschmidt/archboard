@@ -6,7 +6,7 @@
 import { RiFileCopyLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { IconAction } from "#ui/components/dock/IconAction.tsx";
 import { clockTime, counted } from "#ui/rules/dock/format.ts";
 

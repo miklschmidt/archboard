@@ -6,12 +6,16 @@ import path from "node:path";
 import type { RuleContext } from "./rule-api.ts";
 
 /** The browser entry of the web app. It sits above `ui/` and counts as browser code. */
-const BROWSER_ENTRYPOINTS = new Set(["apps/web/src/main.tsx"]);
+const BROWSER_ENTRYPOINTS = new Set([
+	"apps/web/src/main.tsx",
+	"apps/workbench-example/src/main.tsx",
+]);
 
 /** The thin entries of the apps: the files a process or the page starts from. */
 const APP_ENTRYPOINTS = new Set([
 	"apps/cli/src/bin.ts",
 	"apps/server/src/server.ts",
+	"apps/workbench-example/src/server.ts",
 	...BROWSER_ENTRYPOINTS,
 ]);
 

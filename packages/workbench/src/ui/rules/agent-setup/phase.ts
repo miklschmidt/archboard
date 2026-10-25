@@ -2,9 +2,9 @@
 // derived from the workbench transport's published state, each of which says
 // what, if anything, stands between them and talking to the agent. Pure.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
 
 /** Where the agent stands. */
 type AgentPhase =

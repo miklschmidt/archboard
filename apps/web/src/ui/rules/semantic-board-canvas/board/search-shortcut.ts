@@ -6,7 +6,7 @@
 // to the parts of every board. Ctrl or Command with Shift and F is the shell's:
 // it presents the active pane.
 
-import { usesCommandKey } from "@archboard/ui-kit/controls";
+import { usesCommandKey } from "@archboard/ui-kit/components";
 
 /**
  * Whether a key event asks for the search: Ctrl or Command, Shift and K, pressed

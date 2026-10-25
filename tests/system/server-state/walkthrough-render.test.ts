@@ -11,8 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { TalkSchema } from "@archboard/walkthrough/talk";
-import { renderTalk, writeTalk, askedTalkPlace } from "@archboard/walkthrough/recorder";
+import { keepTalk, renderTalk } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 
@@ -70,10 +69,9 @@ window.archboardReplay = {
 };
 </script></body></html>`;
 
-const talk = TalkSchema.parse({
-	format: "archboard-talk",
-	version: 1,
-	recordedAt: "2026-09-30T10:00:00.000Z",
+/** The talk, as keepTalk takes it. */
+const talkParts: Omit<Parameters<typeof keepTalk>[0], "voice" | "directory"> = {
+	recordedAt: new Date("2026-09-30T10:00:00.000Z"),
 	language: "en",
 	theme: "light",
 	board: {
@@ -83,12 +81,15 @@ const talk = TalkSchema.parse({
 		walkthrough: { id: "wk", name: "Tour" },
 		steps: 2,
 	},
-	audio: { file: "voice.wav", sampleRate: 48_000, channels: 1, samples: SAMPLES, baseLatencyMs: 0 },
-	events: [
-		{ kind: "step", at: 1, beat: 0 },
-		{ kind: "step", at: 40_000, beat: 1 },
-		{ kind: "end", at: SAMPLES },
-	],
+	log: {
+		samples: SAMPLES,
+		baseLatencyMs: 0,
+		events: [
+			{ kind: "step", at: 1, beat: 0 },
+			{ kind: "step", at: 40_000, beat: 1 },
+			{ kind: "end", at: SAMPLES },
+		],
+	},
 	document: BOARD,
 	policy: {
 		policy: DEFAULT_SEMANTIC_POLICY,
@@ -97,7 +98,7 @@ const talk = TalkSchema.parse({
 		fingerprint: "f1",
 		diagnostics: [],
 	},
-});
+};
 
 beforeAll(() => {
 	root = mkdtempSync(join(tmpdir(), "archboard-render-"));
@@ -127,11 +128,8 @@ afterAll(async () => {
  * @returns What it took, and how the render came out.
  */
 async function render(name: string, pages: number) {
-	const directory = writeTalk({
-		talk,
-		voice: new Int16Array(SAMPLES),
-		place: askedTalkPlace(join(root, `talk-${name}`)),
-	});
+	const directory = join(root, `talk-${name}`);
+	const talk = keepTalk({ ...talkParts, voice: new Int16Array(SAMPLES), directory });
 	const ffmpeg = prepareFakeFfmpeg(mkdtempSync(join(root, "tools-")));
 	asked = [];
 	const lines: string[] = [];

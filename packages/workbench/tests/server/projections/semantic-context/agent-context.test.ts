@@ -28,7 +28,10 @@ import {
 } from "@archboard/board/commands";
 import { type SemanticBoard, findVariant, currentVariant } from "@archboard/board/document";
 import { findView } from "@archboard/board/views";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-agent-context-"));
 
@@ -328,7 +331,7 @@ test("an edit that landed and left a proposal in disagreement carries its repair
 test("the context an operation delivers is the board's grounding, not a summary of it", async () => {
 	const { createIdentityAuthority } = await import("@archboard/codex-app-server/identity");
 	const { createSemanticContextPublisher } =
-		await import("@archboard/codex-app-server/semantic-context");
+		await import("#runtime/operations/semantic-context-publisher.ts");
 	const authority = createIdentityAuthority();
 	const gateway = nodeId("Front door");
 	const read = semanticBoardContext(board(), reading(PROPOSAL, [gateway]));

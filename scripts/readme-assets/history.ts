@@ -23,6 +23,7 @@ import {
 const BOARD = "Renderer layout";
 const CLIP = attachmentFile("history.webp");
 const THUMBNAIL = readmeFile("idx-history.webp");
+const CLIP_WIDTH = 960;
 const PANE = { width: 1440, height: 900 } as const;
 const STRIP = { width: 1440, height: 180 } as const;
 
@@ -87,7 +88,7 @@ const history: Producer = {
 		`Start an Archboard server over a copy of .archboard/vault, and read the states of "${BOARD}", their adoption dates and reasons with archboard semantic show.`,
 		`Open the shell on the first state in a private headless Chromium at ${PANE.width}x${PANE.height}, dark, turn the comparison marks off and present the pane; open the timeline strip beside it at ${STRIP.width}x${STRIP.height}.`,
 		"Film archboard browser show moving the pane to each later state while the strip lights it.",
-		`Encode the pane above the strip as a 1280 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the second state.`,
+		`Encode the pane above the strip as a ${CLIP_WIDTH} px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the second state.`,
 	],
 	/**
 	 * Film the take and encode it.
@@ -135,7 +136,12 @@ const history: Producer = {
 				await Bun.sleep(600);
 				return shown[0] ?? null;
 			});
-			await encodeTake(take, { clip: CLIP, width: 1280, stack: "above", thumbnail: THUMBNAIL });
+			await encodeTake(take, {
+				clip: CLIP,
+				width: CLIP_WIDTH,
+				stack: "above",
+				thumbnail: THUMBNAIL,
+			});
 		}),
 };
 

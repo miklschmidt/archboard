@@ -25,7 +25,8 @@ import { mountRepositoryRoutes } from "#server/routes/repositories/repository-ro
 import { mountSemanticLockRoutes } from "#server/routes/semantic-boards/semantic-lock-routes.ts";
 import { mountSemanticBoardRoutes } from "#server/routes/semantic-boards/semantic-board-routes.ts";
 import { mountLocalityRoute } from "#server/routes/locality/locality-route.ts";
-import { mountVoiceStartTraceRoute } from "@archboard/workbench/server";
+import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
+
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { watchSemanticBoardFiles } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { mountServiceRoutes } from "#server/routes/service/service-routes.ts";

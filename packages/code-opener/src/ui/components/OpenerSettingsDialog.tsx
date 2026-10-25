@@ -3,18 +3,8 @@
 
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
-import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
-import { Button } from "@archboard/ui-kit/controls";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@archboard/ui-kit/overlays";
-import { Separator } from "@archboard/ui-kit/display";
+import type { OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
+import { Button, Dialog, Separator, Technical } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -31,12 +21,6 @@ import { OpenerChoiceGroup } from "#ui/components/OpenerChoiceGroup.tsx";
 import { RepositoryField } from "#ui/components/RepositoryField.tsx";
 import { TestResultAlert } from "#ui/components/TestResultAlert.tsx";
 import { formatCommand } from "#ui/rules/format-command.ts";
-import {
-	BusyText,
-	CANCEL_BUTTON_CLASS,
-	DialogErrorAlert,
-	Technical,
-} from "@archboard/ui-kit/dialog-parts";
 
 /** Inputs for the effective command line. */
 interface EffectiveOpenerProps {
@@ -188,11 +172,11 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 				onChange={setRepository}
 			/>
 			<TestResultAlert result={dialog.testResult} />
-			<DialogErrorAlert error={dialog.error} />
-			<BusyText busy={busy.test} text="Testing the opener…" />
-			<BusyText busy={busy.save} text="Saving the opener…" />
-			<BusyText busy={busy.reset} text="Restoring the platform default…" />
-			<DialogFooter>
+			<Dialog.Error error={dialog.error} />
+			<Dialog.Busy busy={busy.test} text="Testing the opener…" />
+			<Dialog.Busy busy={busy.save} text="Saving the opener…" />
+			<Dialog.Busy busy={busy.reset} text="Restoring the platform default…" />
+			<Dialog.Footer>
 				<Button variant="ghost" size="sm" disabled={anyBusy} onClick={dialog.onReset}>
 					Reset
 				</Button>
@@ -204,13 +188,11 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 				>
 					Test
 				</Button>
-				<DialogClose className={CANCEL_BUTTON_CLASS} disabled={anyBusy}>
-					Close
-				</DialogClose>
+				<Dialog.Cancel disabled={anyBusy}>Close</Dialog.Cancel>
 				<Button size="sm" disabled={anyBusy} onClick={handleSave}>
 					Save
 				</Button>
-			</DialogFooter>
+			</Dialog.Footer>
 		</div>
 	);
 }
@@ -224,17 +206,17 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
 	const { settings } = props;
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
-			<DialogContent
+			<Dialog.Content
 				className="sm:max-w-lg"
 				initialFocus={chosenOpenerFocus}
 				finalFocus={props.finalFocus}
 			>
-				<DialogHeader>
-					<DialogTitle>Opener settings</DialogTitle>
-					<DialogDescription>
+				<Dialog.Header>
+					<Dialog.Title>Opener settings</Dialog.Title>
+					<Dialog.Description>
 						Which editor a code-bound element opens on this machine. Test it before you save.
-					</DialogDescription>
-				</DialogHeader>
+					</Dialog.Description>
+				</Dialog.Header>
 				{settings ? (
 					// Keyed by the saved selection: a reset or a save the host reloads
 					// starts the form again from what is now saved.
@@ -248,7 +230,7 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
 						Reading opener settings…
 					</p>
 				)}
-			</DialogContent>
+			</Dialog.Content>
 		</Dialog>
 	);
 }

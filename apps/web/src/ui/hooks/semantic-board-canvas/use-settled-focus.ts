@@ -10,13 +10,16 @@
 
 import { useMemo, useState } from "react";
 
-import type { WalkthroughBeat } from "@archboard/board/content";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
 	beatFocus,
 	type BeatFocus,
 } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
+import type { WalkthroughBeatSchema } from "@archboard/board/content";
+import type { z } from "zod";
+
+type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /**
  * Whether the picture on screen is the reading a step asked for.

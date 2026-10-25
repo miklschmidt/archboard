@@ -122,6 +122,49 @@ const promptItem = (id: string, input: unknown) => ({
 	content: input ?? [],
 });
 
+export type FixtureThread = Record<string, unknown> & {
+	id: string;
+	status: { type: string; activeFlags?: string[] };
+	turns: Record<string, unknown>[];
+};
+
+/** The command approval that the controlled workhorse requests once. */
+export function ordinaryApproval(threadId: string) {
+	return {
+		threadId,
+		turnId: "turn-1",
+		itemId: "approval-item-1",
+		kind: "command",
+		startedAtMs: Date.now(),
+		approvalId: "ordinary-approval-1",
+		environmentId: null,
+		reason: "Prove the production approval route.",
+		networkApprovalContext: null,
+		command: "bun test",
+		cwd: process.cwd(),
+		commandActions: null,
+		additionalPermissions: null,
+		proposedExecpolicyAmendment: null,
+		proposedNetworkPolicyAmendments: null,
+		availableDecisions: ["accept", "decline", "cancel"],
+	};
+}
+
+/** Finish the exact turn that a controlled interrupt names. */
+export function interruptFixtureTurn(
+	thread: FixtureThread | undefined,
+	turnId: unknown,
+	notify: (method: string, params: unknown) => void,
+): void {
+	const turn = thread?.turns.find((candidate) => candidate["id"] === turnId);
+	if (thread === undefined || turn === undefined) return;
+	turn["status"] = "interrupted";
+	turn["completedAt"] = unixSeconds();
+	thread.status = { type: "idle" };
+	notify("turn/completed", { threadId: thread.id, turn });
+	notify("thread/status/changed", { threadId: thread.id, status: thread.status });
+}
+
 export {
 	configFixture,
 	coordinatorModelFixture,

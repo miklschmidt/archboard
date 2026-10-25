@@ -12,7 +12,6 @@ import {
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
-	type SemanticTransition,
 } from "@archboard/board/store-write";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { VariantContent } from "@archboard/board/content";
@@ -28,6 +27,9 @@ import {
 	resolvePlaceholders,
 	targetVariant,
 } from "#runtime/operations/runs/vault.ts";
+import type { writeSemanticBoard } from "@archboard/board/store-write";
+
+type SemanticTransition = Parameters<typeof writeSemanticBoard>[0]["transition"];
 
 /**
  * The one relationship kind that may end on a part with children.

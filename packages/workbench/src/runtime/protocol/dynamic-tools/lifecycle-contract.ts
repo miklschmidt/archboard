@@ -1,4 +1,4 @@
-import type { OwnedWaitCleanupCause, WaitOwner } from "#runtime/state/wait-graph/wait-graph.ts";
+import type { OwnedWaitCleanupCause, WaitOwner } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ChildEpoch,
 	ChildId,

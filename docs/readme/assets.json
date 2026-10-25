@@ -25,7 +25,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "261d5bd4670712e40c9e07fdf97d1a4bed39cdd6a2cba897819fedf2b63c8c4f"
+			"hash": "5313ee3c46c8617f457ef61c30d2094f8bc2818c88b70f3ffe558c2910068e85"
 		},
 		{
 			"name": "hero",
@@ -40,6 +40,7 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"apps/cli/src",
 				"apps/server/src",
 				"packages/code-opener/src/server",
@@ -47,6 +48,7 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/hero.ts",
 				"scripts/readme-assets/hero-change.json",
 				"scripts/readme-assets/stage/terminal.html",
@@ -54,7 +56,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
+			"hash": "f3471acca60dc986fe769109104ffd1cb1545471ef88dc1048c92a90a95fb569"
 		},
 		{
 			"name": "explainer",
@@ -70,14 +72,18 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/host",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
@@ -96,16 +102,18 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/plan.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "c3131e15476a7c8824c6cff2d918cc4e755327dc5d70e23c9a9f099ab32ba21c"
+			"hash": "50aedc0e54f9ac5fa224c1aa90948385698581e530b9430fd08afa0706561b4d"
 		},
 		{
 			"name": "history",
@@ -121,17 +129,19 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/history.ts",
 				"scripts/readme-assets/stage/timeline.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
+			"hash": "1a082880040607394e7a8f4802bd8afb76ce93d9c21c11af0ce01f178cbb76cd"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -146,14 +156,18 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/host",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
@@ -182,7 +196,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "471778c31a9ea7d2c0d983641a0b5e1a58eaca0f87b424d7b2315cc800c157fc"
 		},
 		{
 			"name": "newcomer",
@@ -197,14 +211,18 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/realtime",
+				"packages/codex-realtime-voice/src/runtime/rules/host",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
@@ -224,16 +242,18 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/drill-down.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "f3552de4a2a8fc76ef578a5650fb44765abb0a634ae5643541743e6e5ed78e00"
+			"hash": "cb66a6e5f918cc645d4845fc5bed36968aacf2f62d7999cba32a5ef3e11e9f44"
 		},
 		{
 			"name": "ask",
@@ -248,10 +268,12 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"packages/renderer/src",
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/ask.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
@@ -272,6 +294,7 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"apps/cli/src",
 				"apps/server/src",
 				"packages/code-opener/src/server",
@@ -279,13 +302,14 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/take-back.ts",
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "b8356075fd518f345aa1b2851e1977000520f083a7833620b7410af38deeec1c"
+			"hash": "b71fb1fa4497590744ad366bdd49fdfbd4a8178359220fdcc35198ad83aae199"
 		},
 		{
 			"name": "web-shop",
@@ -309,7 +333,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61784cf4c728f4511bc9de9a033c150f0aa0a98dce71fa5d7ec0a048cd76b261"
+			"hash": "471778c31a9ea7d2c0d983641a0b5e1a58eaca0f87b424d7b2315cc800c157fc"
 		},
 		{
 			"name": "architecture",
@@ -328,7 +352,7 @@
 				"packages/renderer/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": "74181c75367f1b5162b9534e40aa2143dad86e8ebc09b9c3e0e29440b09eca84"
+			"hash": "91d907bd14dfa64a560e3b347f70ea524a77bff71280bfa258eaf557a3bdfc0c"
 		},
 		{
 			"name": "code-evidence",
@@ -343,6 +367,7 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"apps/cli/src",
 				"apps/server/src",
 				"packages/code-opener/src/server",
@@ -351,6 +376,7 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/evidence-fixture.ts",
 				"scripts/readme-assets/evidence.ts",
 				"scripts/readme-assets/stage/terminal.html",
@@ -360,7 +386,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		},
 		{
 			"name": "module-interfaces",
@@ -375,6 +401,7 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"apps/cli/src",
 				"apps/server/src",
 				"packages/code-opener/src/server",
@@ -383,6 +410,7 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/evidence-fixture.ts",
 				"scripts/readme-assets/evidence.ts",
 				"scripts/readme-assets/stage/terminal.html",
@@ -392,7 +420,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		},
 		{
 			"name": "git-history",
@@ -407,6 +435,7 @@
 				"packages/server-requests/src/ui",
 				"packages/code-opener/src/ui",
 				"packages/workbench/src/ui",
+				"packages/codex-realtime-voice/src/ui",
 				"apps/cli/src",
 				"apps/server/src",
 				"packages/code-opener/src/server",
@@ -415,6 +444,7 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
+				"packages/codex-realtime-voice/src/shared",
 				"scripts/readme-assets/evidence-fixture.ts",
 				"scripts/readme-assets/evidence.ts",
 				"scripts/readme-assets/stage/terminal.html",
@@ -424,7 +454,7 @@
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "a789e03dcca0f808bfa21341c32b93002734c6fc2e0f84c81df70677def9187e"
+			"hash": "c0d2bf854a66be87879e4d85b858e94cfd696d6b2a61134d20fc2827bb0fc3bc"
 		}
 	]
 }

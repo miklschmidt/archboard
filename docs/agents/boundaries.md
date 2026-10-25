@@ -3,6 +3,7 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
+[ADR 0057](../adr/0057-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
 The app migration history is in `docs/design/apps-migration.md`.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
@@ -13,7 +14,7 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 
 ```text
 packages/<name>/   # a library that owns one behavior. See Packages.
-apps/<name>/       # a process entry that nothing imports: cli, server, web. See Apps.
+apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
 vite.config.ts     # the build host of the browser app
@@ -28,7 +29,8 @@ A package can also hold files and folders outside these areas, such as `src/type
 Each area has role folders, and a role folder has one folder for each behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
 React ownership, read [frontend.md](frontend.md).
 
-The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`.
+The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,
+and the server and browser entries of `apps/workbench-example`.
 Do not add implementation to them.
 
 ## Import rules
@@ -100,14 +102,25 @@ split by behavior.
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
+- **An interface is the few operations its callers need** (ADR 0057). Design it from the jobs that
+  callers do. Measure it by everything a caller must learn: names, types, invariants, ordering,
+  error modes and configuration. A public name needs a caller outside the package, but a caller is
+  not enough. When callers import pieces of a package and connect them, move that assembly into the
+  package as one operation, change the callers to use it, and make the pieces private. Do not hide
+  the same width in one large file or behind one object.
+- **Interface width has a recorded ceiling.** `tests/system/repository-policy/interface-width.test.ts`
+  counts the names that the code entries of each package's `exports` export. It fails when a package
+  exceeds its ceiling in `interface-width-ceilings.json` beside the test, and when that file does
+  not list exactly the packages that exist. When a package gets narrower, lower its ceiling. Never
+  raise a ceiling: design a deeper operation instead.
 - **An `api/` folder is the package's interface over private implementation.** A package that
   adopts it points the `exports` of an area only into that area's `api/`. An api file re-exports
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
-  from the private files that define the names, and it holds no second definition. A public name
-  needs a concrete caller outside the package, so a name nobody outside imports stays private.
+  from the private files that define the names, and it holds no second definition. A name that no
+  code outside the package imports stays private, and so does a piece that callers only connect.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
@@ -127,20 +140,31 @@ split by behavior.
   package either. A `./testing` export holds a fixture that tests of two packages share. Its file
   lives in `src/`, and only a test can import it.
 
-The first package is `timing` (`@archboard/timing`). Its `.` export holds every product duration.
-Its `./voice` export holds the voice motion durations.
+The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
+grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
+`BOARD_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
+pulls against written beside it. A caller imports its owner's group and reads a key of it. A
+computation that callers would repeat from a group is one function of the package, such as the
+Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
+named constant. The six flat names that only the renderer imports, such as
+`SEMANTIC_RASTER_JOB_TIMEOUT_MS`, stay until its rewrite lands.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
 `./unknown-record` exports read a caught value without Node and are safe for the browser. The two
 `errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
-Error or string, and `./thrown-error` stringifies it.
+Error or string, and `./thrown-error` stringifies it. `errnoCode` of `./errno` is the one reader of
+the `code` a thrown value carries. The package imports no other package, so a package that runs
+outside Archboard can carry it.
 
 The third is `process` (`@archboard/process`). It owns a child process group and ends it. Its implementation
 sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
-where it exposed 6 files. `./observation` reads the process table. `./git-group` carries the
-operations on the group of a Git command: capturing it, asking whether it or another member exists,
-and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
+where it exposed 6 files. It imports only `timing` and `diagnostics`, so a package that runs
+outside Archboard can carry it. `./observation` reads the process table. `./git` runs one Git
+command, `git`, in a detached group of its own under the owner script, with bounded output, a
+timeout and cancellation, and ends the group TERM-then-KILL. Every failure is a `GitCommandError`
+that names its kind, and a non-zero exit is the kind `exit`. The group operations it uses stay
+private. `./codex-group` carries the Codex process-group operations and
 their TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package
 does not import `codex-app-server`. `./git-owner` is the one export that is not an api file: it is
 the script that a Git command runs under, and callers find it with `import.meta.resolve` and spawn
@@ -152,11 +176,19 @@ subpaths, where it exposed 10 files. `./repositories` and `./languages` are in `
 for the browser, with no Node import: the listing schemas of the navigator, and the languages that an
 agent can configure a server for. The rest is Node-bound. `./checkouts` carries what is known of
 checkouts: the Git lookups, the repository registry and the validation of a language server
-command, which uses `node:path`, so the browser never imports it. The registry's
+command, which uses `node:path`, so the browser never imports it. Its `gitCheckoutOfVault` asks
+Git synchronously for the checkout that holds a vault, its root and identity, for the vault check
+that every open canvas polls and that cannot wait for the asynchronous lookups. The registry's
 `repositoryOfVault` is exported as `registeredRepositoryOfVault`, because `./repository-listing`
 defines a different `repositoryOfVault`, the one that the server projection answers with.
-`./vault` finds a vault, `./source-checkout` finds the checkout whose source runs, and
-`./atomic-write` and `./state-dir` write files durably and name the state directory.
+`./vault` finds a vault as ADR 0049 says. `findVault` only finds it, for a command that asks
+where it is without registering anything. `findAndRegisterVault` is what a command does before it
+starts: it finds the vault, registers the checkout or untracked vault that holds it when the registry
+does not know it, and answers with the vault, what it registered, or why the registry could not be
+written, which does not refuse the command. The CLI words its line on stderr from that answer.
+`./source-checkout` finds the checkout whose source runs, and
+`./atomic-write` and `./state-dir` write files durably and name the state directory: `writeFileAtomic`
+with `exclusive: true` refuses a file that is there instead of replacing it.
 `./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
 depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
@@ -165,24 +197,24 @@ derives the checkout root from `SOURCE_CHECKOUT`.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
-exposes 3 subpaths, where it exposed 9 files. Everything in `shared/api/` is safe for the browser,
-with no Node import. `./bindings` holds the binding, anchor and document-reference schemas and the
-files a binding names. `board` imports them and the resolver parses with `CodeBindingSchema`, so
-they stay here. `./opening` holds the wire contract of the open route, the contract of the opener
-settings and the pure rules for an opener executable. `./resolution` is Node-bound, in
-`runtime/api/`. It captures the registered checkouts and the paths of some bindings once, then
-resolves a binding or a repository against that snapshot alone. It also carries the result types
-and the resolution rules that the snapshot feeds, the checkout that holds a vault with the
-checkouts a reader of that vault resolves identities in, and the GitHub URL that a card opens when
-the code is not local.
+exposes 2 subpaths with 18 names, where it exposed 9 files. Everything in `shared/api/` is safe for
+the browser, with no Node import. `./bindings` holds the binding, anchor and document-reference
+schemas and the files a binding names. `board` imports them and the resolver parses with
+`CodeBindingSchema`, so they stay here. `./resolution` is Node-bound, in `runtime/api/`. It captures
+the registered checkouts and the paths of some bindings once, then resolves a binding or a
+repository against that snapshot alone. It also carries the result types and the resolution rules
+that the snapshot feeds. It finds the checkout that holds a vault, and the checkouts in which a
+reader of that vault resolves identities. The resolver names its own failure codes, and the open contract in
+`code-opener` holds each of them. The wire contract of the open, the opener settings and the GitHub
+link of a binding are not here: only the code opener reads them, so they live in `code-opener`.
 
-The sixth is `codex-app-server` (`@archboard/codex-app-server`). It is one private Codex app-server
-session over stdio. The package is complete. It holds the shared files, the wire protocol, the
-process owner, the stdio transport, the session and the semantic context. It imports `board`
-(layer 4) and the lower packages. It adopts the `api/` role for `shared/`
-and `runtime/` and exposes 7 subpaths, where it exposed 17 files. The 2 files of `shared/api/` are
-safe for the browser, with no Node import. The 5 files of `runtime/api/` are runtime-only by policy:
-the browser imports none of them, though `./session` carries some Zod schemas.
+The sixth is `codex-app-server` (`@archboard/codex-app-server`). It owns one private Codex app-server session over stdio.
+It holds protocol contracts, the process owner, the stdio transport, and the session.
+It imports the lower process, workspace, diagnostics, and timing packages.
+It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
+
+The two shared entries are safe for the browser. The four runtime entries run only in Bun.
+Archboard owns board context in `workbench` through its `./semantic-context` entry.
 
 - `shared/api/`: `./contract` holds the authored wrapper over the generated protocol types: the
   request methods, the status types, the approval decisions and their schemas, and the connection
@@ -211,13 +243,6 @@ the browser imports none of them, though `./session` carries some Zod schemas.
   the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
   or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
   `runtime/services/` holds the child's environment and its diagnostics buffer.
-- `./semantic-context` turns a user's gestures and the settled changes of a board into the briefs
-  and events that the coordinator and the workhorse read. It creates the publisher and carries its
-  input, brief, event and publisher types and the byte and entry limits. The input normalizers, the
-  brief builder, the fitter and the bounded-text and listener-diagnostic helpers are private. The
-  barrel `codex-semantic-context/index.ts` is gone: a name is imported from the api file that
-  carries it. The package reads board schemas by value from `@archboard/board` (`./views`,
-  `./document`, `./reconciliation`, `./pane-context`) to normalize the architecture a pane reports.
 - A test that needs the process owner's injected dependencies imports
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
@@ -246,7 +271,9 @@ folders of `shared/` are:
 
 The thirteen files of `shared/api/` are the whole browser-safe interface. Each carries only the
 names that code outside the package imports. A name sits in the file of its meaning, not of the
-private file that defines it:
+private file that defines it. A type that only restates an exported schema, an operation's result
+or a field of another exported shape is not exported: the caller derives it, with `z.infer` of the
+schema, `ReturnType` of the operation or an indexed access (ADR 0057):
 
 - `./document` is the board aggregate, the variant address and lifecycle, how a variant is found,
   the draft references and `parseSemanticBoard`.
@@ -274,8 +301,9 @@ package imports:
 
 - `store/` holds files, locks, registries and file formats: the board's identity and key, where a
   note lives, the vault's configuration, the vaults bound to a repository, the line an agent said
-  about its write, `format/` (the decode and the schema migrations) and `lock/` (the one-writer
-  lease, its claims and its announcements). `former-names.ts` is private.
+  about its write, `format/` (the decode and the schema migrations), `lock/` (the one-writer
+  lease, its claims and its announcements) and `memory.ts` (the one forget of everything the
+  process remembers about boards). `former-names.ts` is private.
 - `operations/` is one write or one read that a caller asks for: `write/` (the write boundary and
   the pure transitions it applies), `read/`, `check/`, `edit/` (one batch of stated changes into
   content), `move/`, `rename/`, `settle/` and `variant/` (adopt, shelve, restore, inheritance and
@@ -286,15 +314,21 @@ The seven files of `runtime/api/` are:
 - `./address` is where a board lives: its identity, its key and the variant a key states, and the
   path of its note in a vault.
 - `./store-read` reads boards from a vault: one board, the listing and the catalogue of them, the
-  vaults that hold boards of one repository, and the decode of a board file.
+  vaults that hold boards of one repository, and the decode of a board file. `readBoardVariant`
+  reads a board and opens the variant an address states, in one call.
 - `./vault-policy` is the vault's configuration, the vault check against its policy and the
   subject a diagnostic names.
 - `./doing` is the line an agent said about its write.
-- `./lock` is the one-writer lease: claims, holds, the lock state and what announces a change of
-  it.
+- `./lock` is the one-writer lease: an agent's claim and its release, the take-back
+  (`takeBackBoard` revokes a claim and gives the lease straight back), the claim this server lost
+  with the reason it is told once, the lock state, what announces a change of it, and
+  `forgetBoardMemory`, which a stopping server calls once. `holdBoard` and `releaseHold` stay public
+  only for the process fixture that holds a lease in a child process.
 - `./store-move` moves a board to another repository's vault and previews that move.
 - `./store-write` is the write boundary, the transitions it applies, the discard and acceptance of
-  a board, the rename and the outcome of a propagation to drill-downs.
+  a board, and the outcome of a propagation to drill-downs. `renameSemanticBoard` is the rename as
+  one operation: it writes the new name and carries this server's claim and the doing lines to it,
+  so a caller only points its panes.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
 reply, the reconciliation and the comparison came from one import. An importer now names the api
@@ -306,26 +340,35 @@ imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspac
 imports nothing back, so the old import cycle between them is gone.
 
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
-module draws with, in the `ui` area. It adopts the `api/` role for
-`ui/` and exposes 10 subpaths, where code outside imported 29 paths. Every export is safe for the browser.
-`ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
-`dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
-`ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
-`components.json` name `ui/components/` as `packages/ui-kit/src/ui/components`. The shadcn CLI
-resolves these paths from the repository root with no TypeScript path alias. Generated imports
-still need the package-local `#` rewrite.
+module draws with, in the `ui` area. It adopts the `api/` role for `ui/` and exposes 4 subpaths
+with 37 names (TASK-529.03; before, 10 subpaths with 85 names). Every export is safe for the
+browser. `ui/components/shadcn/` holds the official shadcn Base UI files with their `README.md`,
+private and kept at the registry's bytes. `ui/components/` holds the package's own components and
+one composite per family, which puts the family's parts on its root, and `dialog-parts/` holds the
+parts that every dialog surface shares. `ui/state/` holds the frame clock and the fullscreen
+presentation; `ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
+name `packages/ui-kit/src/ui/components/shadcn`, so the shadcn CLI writes there. It resolves these
+paths from the repository root with no TypeScript path alias. Generated imports still need the
+package-local `#` rewrite, and a new part reaches callers through its family's composite.
 
-- `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
-  and `usesCommandKey`, the platform's modifier for shortcuts.
-- `./overlays` is the dialog, the dropdown menu and the tooltip. `./display` is the alert, the
-  badge, the separator, the skeleton, the pane chrome and the resizable panels. `./class-names` is
-  `cn`, the class merger that every component draws with.
-- `./dialog-parts` is the failure alert, progress text, technical values, the field messages and
-  the cancel button class that every dialog surface shares.
+- `./components` is every component, one composite per job. A caller imports the family and
+  reaches its parts on it: `Dialog` with `Dialog.Content`, `Dialog.Header`, `Dialog.Title`,
+  `Dialog.Description`, `Dialog.Footer`, `Dialog.Trigger`, `Dialog.Close` and the shared
+  `Dialog.Busy` (progress text), `Dialog.Error` (the host's failure) and `Dialog.Cancel` (the
+  footer's dismissing action); `Field` with its label, description, content, set, legend and
+  `Field.Issues`; and likewise `Select`, `Tabs`, `RadioGroup`, `ToggleGroup`, `InputGroup`,
+  `DropdownMenu`, `Tooltip` (with `Tooltip.Provider`), `Alert`, `Resizable` (the panel group,
+  with `Resizable.Panel` and `Resizable.Handle`) and `RepositoryName` (with
+  `RepositoryName.GitHubMark`). The single components are `Button`, `IconButton`, `Checkbox`,
+  `Input`, `Badge`, `Separator`, `Skeleton` and `Technical`, a value in the mono face. Beside them
+  are `cn`, the class merger every component draws with, `buttonVariants` for an element that is
+  not a button, `usesCommandKey`, the platform's modifier for shortcuts, `shownRepository`, the
+  words a repository's name shows, and the `DialogError` shape that `Dialog.Error` shows.
 - `./time` is the ticking clock hook and the short age and clock text. `./frame-clock` is the clock
-  that moves what a pane draws over time. `./stepped-clock` is the clock that a renderer steps,
-  which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
-  presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
+  that moves what a pane draws over time, and the stepped clock that a renderer moves, which the
+  page that renders a recording frame by frame drives. `./fullscreen-presentation` owns presenting
+  one pane fullscreen.
+- The pane chrome, what the shell puts in a pane's header, belongs to `apps/web`, its one owner.
 - Tailwind finds class names by scanning source files. `apps/web/src/ui/theme/app.css` turns the scan of
   Vite's root off (`source(none)`), names `apps/web/src` and names `packages/*/src/ui/**/*` with `@source`, so the
   `ui` area of every package is scanned (a bare `packages/*/src/ui` matches nothing). `tsconfig.frontend.json`
@@ -335,31 +378,41 @@ still need the package-local `#` rewrite.
 The ninth is `server-requests` (`@archboard/server-requests`). It is the browser's one way of speaking
 JSON to the Archboard server, and the browser side of the rule that every call names its vault
 (ADR 0049). It has one file, `ui/clients/server-requests.ts`, and its `.` export is the one api
-file, `ui/api/server-requests.ts`, with 10 names, where the module was imported through one path.
-It carries the request helpers (`json`, `post`, `mutation`, `strictReply`, `cancellable`), the
-vault and board query builders (`inVault`, `boardQuery`) and the vault a page opens in
-(`learnServedVault`, `servedVault`). The reply guards `isRecord` and `trustReply` stay private. It
+file, `ui/api/server-requests.ts`, with 6 names. `requestJson(url, { method, payload, signal })`
+is one JSON request that throws the server's own reason when it refuses: GET unless it names a
+method, with a JSON body when it carries a payload. `strictReply` takes the same request and
+parses the reply against a success and a failure schema (`ReplySchema`). `inVault` names the vault
+on a URL, and `learnServedVault` and `servedVault` are the vault a page opens in. The request
+options, the reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
 
-The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board: the code
-facts of a checkout, the code check of a board's claims, the history lens over Git and the language
-servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 36 names, where code outside imported 7 module paths. It imports `board`,
+The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
+the code facts of a checkout and the code check of a board's claims. It also holds the history lens
+over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
+subpaths with 16 names, where code outside imported 7 module paths. It imports `board`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
-- `./code-check` is the answer of the code check and of the route that remembers it: the findings,
-  their evidence, what the check skipped, how far a board is behind its code and the timings. The
-  schema is in `shared/protocol/code-check.ts`. `./history` is the answers of the locality and
-  footprint routes and the label of a commit's attribution, from `shared/protocol/` and
-  `shared/schemas/`.
-- `./code-check-run` reads the boards to check, runs the pass and reads the plans an agent names.
-  `./history-lens` creates the behind and locality readings and reads a footprint. `./code-facts`
-  creates the code facts and finds a symbol, which the code opener uses to place a line.
-- The language servers have no api file, because no code outside the package imports them. The code
-  check opens them through its own session. A name needs a caller outside the package before it
-  becomes public.
+- `./code-check` is the answer of the code check and the answer of the route that remembers it:
+  `CodeCheckAnswer` and `RememberedFindings`, with their schemas. The schema is in
+  `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes
+  and the start of a period, from `shared/protocol/`. It also gives the label of a commit's
+  attribution, from `shared/schemas/`. A part of an answer, such as a finding, a skip, a timing or a commit, has no
+  public name. A reader names it by its place in the answer, such as
+  `CodeCheckAnswer["findings"][number]`.
+- `./code-check-run` gives one operation for each job. `createCodeCheck()` makes the code check,
+  and its `run` does the whole pass: it reads the boards to check and the plans an agent names,
+  reads the claims and behind side by side, and gives the answer. A draft that no board has, or a
+  plan the check does not read, gives a refusal (`NO_SUCH_DRAFT`, `PLAN_REFUSED`) with its words.
+  The code check keeps what behind read, so a server makes one. `checkCandidateCode` and
+  `suggestHistoricalCommits` check the candidate of a correction. `./history-lens` makes the
+  locality reading and reads a footprint. `./code-facts` is `symbolLine`: the line that defines a
+  binding's symbol in the one file the binding names. The code opener opens the file at that line.
+- The steps of a pass, behind, the code facts reader and the language servers have no api file. The
+  code check opens the language servers through its own session. The package's tests reach the
+  steps and the readings through `tests/runtime/support/code-check/pass.ts` and
+  `tests/runtime/support/history-lens/lens.ts`.
 - `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
   facts, `modules/` for what a module exposes, and one folder for each language or format
   (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `nix/`, `kubernetes/`, `compose/`,
@@ -422,44 +475,60 @@ only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `server/` and `ui/` and exposes 4 subpaths with 13 names, where code outside imported
-5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace` and `server-requests`. The 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
+imported 5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
+The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, the
-  plan of an opener command and its launch. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opening` is the wire contract of the open, as a reader outside sees it. It holds the notice a person reads,
+  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
+  the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
+  contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
+  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
-- `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run, the
-  target inside a vault and the line that defines a symbol, which asks `code-intel` for the code facts. `lifecycle/`
-  launches the editor. `store/` holds the opener configuration, a file in the state directory that
+- `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and
+  the target inside a vault. It also makes the GitHub link of a binding (`github-link.ts`). The line that defines a
+  symbol comes from `code-intel/code-facts`. `lifecycle/`
+  launches the editor. `store/` holds the opener settings, a file in the state directory that
   `@archboard/workspace/atomic-write` writes. It is in `store/` because lint refuses a `node:fs` import in a `state/`
   folder. `middleware/` holds the guard and the CSRF check.
-- `./code-target` asks the server to open the code a subject is bound to and gives the notice that the outcome
-  deserves. `./opener-settings` is the dialog that sets which editor opens the code, and the flow it runs against. The
-  flow reads, tests, saves and resets through `ui/clients/code-target-requests.ts`, which parses each reply strictly
-  against the schemas of `code-binding/opening`.
-- `ui/` keeps the dialog's `components/`, the flow's `hooks/` and `state/`, the endpoints in `clients/` and the pure
+- `./code-target` is `activateCodeTarget`. It asks the server to open the code a subject is bound to. It gives
+  `onNotice` the one notice that the outcome deserves: each failure, and an open of a version that the binding does
+  not name. A plain open gives no notice. `./opener-settings` is `OpenerSettings`, the dialog that sets which editor
+  opens the code, open over the flow that it runs against. The flow reads, tests, saves and resets through
+  `ui/clients/code-target-requests.ts`, which parses each reply strictly against the schemas of `shared/schemas/`.
+- `ui/` keeps the dialogs in `components/`, the flow's `hooks/` and `state/`, the endpoints in `clients/` and the pure
   command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
   area.
-- The tests are in `tests/`: `server/middleware/`, `server/projections/` and `server/store/` test the server files,
-  `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay in `tests/system/code-targets` and
-  `tests/system/browser/opener-settings.test.ts`.
+- The tests are in `tests/`: `shared/schemas/` tests the contract, `server/middleware/`, `server/projections/` and
+  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay
+  in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records a narrated walkthrough of a board to a video
-(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 38 names,
-where code outside imported 4 module paths. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of `shared/api/` are safe for the browser, with no Node import: the recording page and the replay
-page import them. The 2 files of `runtime/api/` run only in Bun.
+(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+operation or fact for each job a caller has. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of
+`shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
+files of `runtime/api/` run only in Bun.
 
-- `./recording` is the contract that the recording page and the command that drives it agree on: the address that opens
-  the page as a recording, the global it publishes its state on, the container and the language of a recording, and the
-  narration that the voice is told. `./talk` is the talk that the page keeps (the voice and a log stamped on its
-  samples), the frames drawn from it, the schema of a talk on disk and the address that opens the replay page. They are
-  `shared/protocol/recording-page.ts` and `shared/protocol/talk.ts`. The language schema is in `shared/schemas/`.
-- `./recorder` records a walkthrough, renders a kept talk again and reads and writes a talk in the state directory. It
-  is `runtime/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page client of
-  `runtime/clients/`, the talk files and the silent WAV of `runtime/store/`, and the choice of an encoder and a browser
-  in `runtime/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
+- `./recording` is the recording page's side of its contract: the address that opens the page as a recording
+  (`recordingAskedOf`), `publishRecordingPage`, which puts the page's side on the page and hides the global it is
+  published on, the language of a recording with its default, and the narration that the voice is told.
+  `./talk` is the talk: its type, the clock its log is stamped on (`TALK_SAMPLE_RATE`, `SAMPLES_PER_FRAME`), the
+  frames drawn from it, the address that opens the replay page and `publishReplayPage`, which reads what the command
+  gives the page as a talk and its options before the page sees it and answers with the talk's frames. A caller derives
+  the page, state, log and event types from these operations. They are `shared/protocol/recording-page.ts` and
+  `shared/protocol/talk.ts`. The language schema is in `shared/schemas/`.
+- `./recorder` is the command's side. `recordWalkthrough` records, `renderTalk` renders a kept talk again, and
+  `readTalk` reads one, refusing what cannot be rendered with `TalkFileError`. `freshTalkPlace` chooses where a
+  recording keeps its talk (the directory asked for, or a new one in the state directory, which keeps the newest ten)
+  and proves it free before anything starts. `keepTalk` makes a talk of its parts and writes it into a named directory,
+  so the talk's format and file names stay private. `recordingContainerOf` reads the container a file name asks for.
+  `recordingPageUrl` is the address a recording opens, which the browser's contract test reads back. It is
+  `runtime/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page client of
+  `runtime/clients/`, the talk files and the silent WAV of `runtime/store/`, and the container, encoder and browser of
+  `runtime/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
 - `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/processes/video-encoder.ts`, the ffmpeg
   child, and `runtime/services/ffmpeg.ts` finds and proves it: `ARCHBOARD_FFMPEG`, else `ffmpeg` on `PATH`, else
   `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
@@ -469,17 +538,22 @@ page import them. The 2 files of `runtime/api/` run only in Bun.
   `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
-role for `runtime/` and exposes 4 subpaths with 16 names, where code outside imported 2 module paths. It imports
-`board`, `timing`, `renderer`, `process` and `walkthrough`. Every file is Node-bound and runs
-only in Bun. The 4 files of `runtime/api/` are the interface.
+role for `runtime/` and exposes 3 subpaths with 3 names. It imports `board`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The 3 files of `runtime/api/` are the
+interface.
 
-- `./distribution` prepares the copy of the skill that the checkout, the installer and `generate:skill-artifacts`
-  ship: the JSON Schemas that Zod renders for the board document, the vault configuration and the two authoring payloads
-  (`runtime/projections/schemas.ts`), and the installation-local manual (`runtime/operations/distribution/prepare.ts`).
-- `./evaluation-run`, `./grading` and `./citations` are what `bun run eval:skill` calls. The evaluation is human-run and
-  never part of the gate: real Codex authors on real Flask checkouts, one blinded grader and a comparison report.
-  `./evaluation-run` loads the canonical inputs of `evals/`, pins the tool versions and runs a batch. `./grading` grades a
-  batch and writes the report. `./citations` reads the anchors of a document.
+- `./distribution` is `prepareSkillArtifacts`. It prepares the copy of the skill that the checkout, the installer and
+  `generate:skill-artifacts` ship: the JSON Schemas that Zod renders for the board document, the vault configuration and
+  the two authoring payloads (`runtime/projections/schemas.ts`), and the installation-local manual
+  (`runtime/operations/distribution/prepare.ts`). The CLI's `install-skill` keeps which skills it ships and how it
+  stages and copies them.
+- `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
+  (`runtime/operations/evaluation/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
+  passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
+  on real Flask checkouts, one blinded grader and a comparison report.
+- `./citations` is `anchorsOf`, the anchors of a markdown document. The grader's citations and
+  `tests/system/repository-policy/skill-links.test.ts` read them. That test stays in the repository lane, whose cache
+  follows every tracked file, so a changed skill always runs it.
 - `runtime/operations/runs/` holds an author run and a batch, `operations/grading/` the grading session and the blinding.
   `rules/audit/` classifies what an author ran and what it reached for, `rules/outcomes/` holds the deterministic
   checks and `rules/reports/` the comparison. `processes/` holds the child processes, the Archboard server and the Flask
@@ -493,223 +567,119 @@ only in Bun. The 4 files of `runtime/api/` are the interface.
   executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`). It starts, finds, restarts and stops the
-Archboard server, and holds the CLI's client of that server. It adopts the `api/` role for `runtime/` and exposes 9
-subpaths with 71 names, where code outside imported 12 module paths. It imports `board`, `codex-app-server`,
-`workspace`, `process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in
-Bun, and nothing in it is safe for the browser. It replaces `runtime/engine`, `runtime/semantic-board-client` and
-`shared/server-startup-terminal`, which used the `shared/` name for a file that writes to a file descriptor.
+Archboard server, and holds the one identity-gated request that the CLI sends it. It adopts the `api/` role for
+`runtime/` and exposes 5 subpaths with 29 names. Each job is one operation: a caller never assembles the health
+probe, the pid file, the port and the readiness wait itself. It imports `board`, `codex-app-server`, `workspace`,
+`process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in Bun, and nothing in it is safe for
+the browser. The CLI's route clients are not here: the CLI is their only caller, so they live in
+`apps/cli/src/cli/clients/server/`.
 
-- `./server` is what a command does to the server: find it, start it (`ensureServerRunning`), stop it, restart it and
-  read its health, sync status and pid file. `./config` is the server URL that the CLI reads from the environment, the
-  removed variable that it refuses, and the version of the install. `bin.ts` imports `./config` alone and late, because
-  loading it reads `.env`.
-- `./server-client` is the typed request to a running server: JSON requests, claims on a board, the panes on screen
-  and how a refused board request is shown. `./request-context` is what one CLI invocation says about itself on
-  every request: its board, vault, doing line, write session and expected version.
-  `./semantic-board-client` reads and writes a board through the server, never through the vault.
-- `./server-host` is what the server process does for itself: whether it is the entry point, its pid file, and
-  whether its source or frontend bundle is stale. `./startup-terminal` is the records that a starting server writes
-  down the startup pipe, for the launcher to clean up after it. `./pane-messages` is the messages that the server
-  sends a pane over its socket. `./panes` is how a pane is addressed, ordered and reported.
-- `runtime/operations/` holds the spawn, the restart and the cleanup of a failed start. `runtime/clients/` holds
-  the two clients. `runtime/protocol/` holds what is written down the startup pipe and what the server sends a pane.
-  `runtime/rules/` holds the pane layout, `runtime/store/` the pid file, `runtime/state/` the invocation's context
-  and `runtime/services/` the configuration and the staleness check.
-- The server entry and the version file are found with `SOURCE_CHECKOUT` of `workspace`, because the package sits
-  at another depth than the module did: the spawn runs `apps/server/src/server.ts` and the version is read from the root
-  `package.json` of that checkout. The staleness check watches `packages/` and `apps/` of it. The startup preload
+- `./server` is what a command does to the server of its checkout. `ensureServerRunning` reaches the server at the
+  URL, or starts one when it may and waits for its readiness, and answers its URL, whether it started it and its pid
+  file's pid. `stopServer` stops it without ever signalling a process that is not it, `restartServer` stops it,
+  builds the frontend and starts it again, and `serverStatus` says what answers at the URL: nothing, a conflict
+  (another service, an older build or another checkout's server), or the running server with its pid, browsers,
+  source freshness and sync state. `connectedBrowsers` is the browser count a command that needs a pane checks.
+  `./config` is the server URL that the CLI reads from the environment and the removed variables that it refuses.
+  `bin.ts` imports `./config` alone and late, because loading it reads `.env`.
+- `./server-client` is one CLI request to a running server (`requestJson`), behind the identity gate, carrying what
+  the invocation states about itself on every request. `stateInvocation` states its board, vault, doing line, write
+  session and expected version, and `statedInvocation` reads them back. `formatBoardRefusal` and
+  `BOARD_REFUSAL_CODES` are how a refused board request is shown, and `responseError` is the error the transport
+  builds from a refused answer.
+- `./server-host` is what the server process does for itself: whether it is the entry point, whether its source or
+  frontend bundle is stale, its pid file (`recordServerPid` once it listens, which also sweeps the pid files of
+  servers that are gone, and `removePidFile`), and its reports down the startup pipe to the launcher that spawned it
+  (`reportStartupOwnership`, `reportStartupEnd`). `./panes` is how a pane is addressed (`resolvePane`), ordered and
+  reported, and the messages that the server sends a pane over its socket.
+- `runtime/operations/` holds the spawn, the stop, the restart, the status and the cleanup of a failed start.
+  `runtime/clients/` holds the transport and the health reads. `runtime/protocol/` holds what is written down the
+  startup pipe and what the server sends a pane. `runtime/rules/` holds the pane layout, `runtime/store/` the pid
+  file, `runtime/state/` the invocation's statement and `runtime/services/` the configuration and the staleness
+  check.
+- The server entry is found with `SOURCE_CHECKOUT` of `workspace`, because the package sits at another depth than
+  the module did: the spawn runs `apps/server/src/server.ts` of that checkout. The staleness check watches
+  `packages/` and `apps/` of it. The startup preload
   of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
   because the spawn imports that private file, and `package-api.test.ts` names it.
 - The tests are in `tests/`: `runtime/store/` holds the pid file, `runtime/operations/` the cleanup of a failed start
   and `runtime/rules/` the pane addressing. The end-to-end owners stay in `tests/system/`.
 
-The sixteenth is `workbench` (`@archboard/workbench`). It is the Codex workbench: the coordinator, the workhorses, the
-conversation and the voice (layer 7, the last). It came over in TASK-500.23.01 to .07, one move for each step up its
-import graph, and it is complete. It holds the browser-safe contracts that the
-browser and the server exchange, the Codex runtime under them (the foundation, and over it the coordinator and the
-workhorses), the server side (the gateway over the runtime, and the sessions, generations and pane plumbing that wire
-it into the Archboard server) and the browser UI (the transport, the conversation and the composer, then the dock, the
-panes, the approvals, the queue, the agent setup and the voice). It adopts the `api/` role for
-`shared/`, `runtime/`, `server/` and `ui/` and exposes 8 subpaths, each an api file that carries only the names that code
-outside the package imports (TASK-500.23.08). It imports `board`, `codex-app-server`,
-`diagnostics`, `process`, `server-lifecycle`, `timing`, `ui-kit`, `walkthrough` and `workspace`.
-The file of `shared/api/` (`./browser-contract`) holds 12 names and is safe for the browser, with no Node import and no
-path into a runtime or server area: the pane session imports it as well as the server. The 3 files of `ui/api/`
-(`./controllers`, `./agent` and `./voice`) hold 58 names and are safe for the browser too. The file of `runtime/api/`
-(`./runtime`) holds 8 names and the 3 of `server/api/` (`./server`, `./panes` and `./host`) hold 82, and they run only
-in Bun. The browser imports none of them, and a trace from `apps/web/src` reaches no file of `runtime/` or
-`server/`. `ui/` never imports the `runtime/` or `server/` of the package, and the shared files it reads are the
-private ones, not the api files. An api file lists a name only when code outside the package imports it, and a test
-outside the package counts as that code. The approvals, the gateway envelope and the realtime commands of the shared
-contracts have no such importer, so they are private.
+The `codex-realtime-voice` package (`@archboard/codex-realtime-voice`) owns reusable Codex conversations and realtime voice.
+It runs one private app-server process with separate coordinator and workhorse histories.
+Each browser tab has one coordinator and one workhorse per admitted checkout.
+The package sits at layer 6 and reads only its Codex, process, workspace, diagnostics, and timing foundations.
+It imports no Archboard board, vault, walkthrough, pane, or server-lifecycle module.
 
-**Shared.**
+Its public entries separate browser code from Bun code.
+`./contract` holds shared snapshots, gateway messages, commands, and their identity-bound schemas.
+`./realtime` holds the realtime server contract, transcript events, state transitions, and delivery outcomes.
+`./browser` holds the browser transport, media owner, WebRTC session, and output meter.
+`./runtime` and `./server` run only in Bun.
+All four areas adopt the `api/` role.
 
-- `./browser-contract` is what the browser and the server exchange: `BrowserSnapshot` and `BrowserTimeline`, the snapshot
-  that a pane renders, and `createCodexBrowserModel`, which binds every schema to one identity authority, so nothing the
-  browser exchanges can name a child, an epoch or an identity that the session did not issue. It also holds the route
-  that tells the server which checkout's conversation the dock shows, and what it answers
-  (`shared/protocol/shown-conversation.ts`), and the three parsers and the event type of the realtime ids (a session, an
-  item and a correlation) that the process-contract tests read from the wire (`shared/protocol/realtime-contract.ts`).
-  The model, the scalars and the families of the snapshot are `shared/schemas/browser/`, and the ordinary, dynamic and
-  spoken approvals in it are `shared/schemas/dynamic-approval/`, with the canonical hash and the lifecycle check in
-  `shared/rules/`. The gateway envelope and the realtime commands stay private.
-- The dynamic approval keeps its expiry in `@archboard/timing`, so the api file does not re-export it. A caller imports
-  `CODEX_APPROVAL_EXPIRY_MS` from there.
-- The tests are in `tests/`: `shared/protocol/` holds the identity types of the realtime contract, `shared/rules/` the
-  canonical hash and `shared/schemas/` the browser states and the dynamic approval. `shared/support/` holds the fixture
-  model they share.
+The primary server entry is `createCodexWorkbench` from `./server`.
+The caller supplies private storage, the Codex process configuration, instructions, application context, and checkout admission.
+The factory owns process startup, generations, sessions, browser connections, shown conversations, and shutdown.
+Optional domain extensions install application tools and context sources into that same graph.
+A consumer never assembles the internal factories.
 
-**Runtime.** `runtime/` keeps its code in role folders, each with one folder for each behavior. A role folder that
-grew past about 12 files splits by behavior (`dynamic-tools/` has `dispatch/`, `mutation/` and `projection/` below
-`operations/`). A module that is not in `runtime/api/` is private, and no private file imports an api file.
+`runtime/` owns execution identity, immutable instruction profiles, thread links, approvals, queues, coordinators, workhorses, and realtime recovery.
+Host context stays separate from execution identity.
+Core comparisons retain exact child, epoch, thread, turn, coordinator, and voice-generation identity.
+The approval broker owns settlement, including spoken approval.
+An uncertain delivery remains `outcome_unknown` and permits no blind retry.
+Voice stop and workhorse stop remain separate operations.
 
-- `rules/` holds the pure decisions: `instructions/` (the two authored developer instructions, their reviewed digests and
-  the context a turn carries), `thread-link/` (the classification of a target thread, the pane's binding by
-  compare-and-swap and its durable evidence), `realtime/` (the presentation mode, the voice prompt and the start policy)
-  `dynamic-tools/` (the authority a call runs under, the effects it may have and the validation of a call),
-  `coordinator-callbacks/` (the encoding and the normalizing of a callback, and the news it carries), `coordinator-tools/`
-  (the validation, the identity and the response of a coordinator tool call), `spoken-approval/` (the classifier and the
-  validation of a spoken answer), `coordinator/` (the review hashes and the start profile of the coordinator),
-  `workhorse-operations/` (the errors and the link provenance of an operation) and `workhorse-start/` (the model, the
-  validation and the immutability of a start).
-- `protocol/` holds the contracts that a tool call or a manifest states: `thread-tools/` (the `archboard_app` manifest
-  and the parse of a call response), `coordinator-tool-contract/` (the reviewed voice and workhorse manifests, the
-  tool inputs and results) and `dynamic-tools/` (the ports and the lifecycle events of an operation). `coordinator/`,
-  `coordinator-callbacks/`, `coordinator-tools/`, `spoken-approval/`, `workhorse-operations/` and `workhorse-start/` each
-  hold the `contract.ts` of that module: its options, ports and snapshots.
-- `services/` holds the long-lived behaviors: `approvals/` (the broker), `workhorse-queue/`, `thread-context/` (the
-  delivery of context into a thread), `realtime/` (the voice adapter) and `dynamic-tools/` (the quarantine of an
-  uncertain mutation and the wait for a thread), `coordinator/` (the coordinator, its start and its reuse of an epoch),
-  `coordinator-callbacks/` (the callbacks that tell the coordinator what happened, their delivery and the
-  `tell_coordinator` tool), `coordinator-tools/` (the dispatcher that answers the coordinator's tool calls and its replay
-  ledger), `spoken-approval/` (the gate that settles a spoken approval), `workhorse-operations/` (the port that the
-  coordinator uses on a workhorse: its events, notifications and validation) and `workhorse-start/` (the start and the
-  cleanup of one workhorse thread).
-- `operations/` holds one act a caller asks for: `dynamic-tools/` (the dispatch of a call, its mutations and the pages
-  it answers with), `thread-unload/` and `workhorse-operations/` (inspect, delegate, steer and manage the queue).
-  `store/epoch/` is the durable epoch manifest. `state/` holds `wait-graph/` (the in-memory graph of waiting threads) and
-  the snapshots of `coordinator/`, `spoken-approval/` and `workhorse-start/`.
-- The two instruction documents and the four manifests (the voice and the workhorse manifests of the
-  coordinator, and the `archboard_app` and `archboard_coordinator` namespaces) are data files that sit beside the code
-  that reads them, found with `import.meta.resolve` of a `#` path, so no file depends on its own depth. Their digests are pinned in the code, and a changed byte is a review.
-- `./runtime` holds the 8 names that the system tests outside the package build the gateway and the projection from, and no app imports it: the approval broker (`createCodexApprovalBroker`), the realtime voice adapter
-  (`createCodexRealtimeAdapter` with its binding), the parse of a tool-call response (`parseDynamicToolCallResponse`) and
-  the empty spoken approval snapshot. The coordinator, the workhorses, the epoch store, the thread link, the
-  instructions, the dynamic tools, the queue and the tool manifests are private: the server area reads them through
-  their defining files, and a test of one of them lives in the package.
-- The tests are in `tests/runtime/`, in the folders of the code they cover. `support/dynamic-tools/` holds the fakes and
-  fixtures that the dynamic-tools tests share. The capacity test of the dynamic tools is opt-in
-  (`bunx vp run test:opt-in:capacity`).
+`server/` owns the browser gateway, command leases, generation replacement, session cleanup, and generic projections.
+The browser changes the shown conversation through activation.
+An agent tool cannot change it.
+Context delivery retains ordering, freshness, authorship, and the distinction between quiet context and speech.
+Application context and agent speech grant no user authority.
 
-**Server.** `server/` is the workbench on the Archboard server. It reads the runtime and the shared contracts through
-their private files, and no private file imports an api file. The host in `apps/server/` keeps the routes and
-the application. It imports only `server/api/`, and only what a route or the application itself calls: the pane
-registry, the tab sessions, the request context, the wiring and the listener. Everything else (the generations, the
-owners and the actions that carry out a pane's command) is private, and its tests are in the package.
+`ui/clients/transport/` owns one socket run, one lease, command targeting, and recovery after gaps in the event stream.
+`ui/clients/wire/` parses messages with the shared model.
+`ui/clients/media/` binds that transport to the WebRTC session and its audio elements.
+`ui/clients/realtime/` owns microphone capture, negotiation, playback, and cleanup.
+`ui/clients/output-level/` measures playback volume.
+The application owns opening and closing its socket.
 
-- `protocol/` holds `gateway/contract.ts` (the options, the owners' ports, the connection and the gateway that the host
-  wires, with the error a command is refused with), `projection/projection-contract.ts` (what the host hands the
-  projection to read) and `generation/` (the components, sessions and tab sessions of a generation of the workbench in
-  `contract.ts`, `session-contract.ts` and `generation-contract.ts`, and `host.ts`, what a generation needs of the
-  server around it).
-- `rules/` holds `tab-session/` (the tab session id and the key that links one to the workhorse of a checkout),
-  `snapshot/` (the byte budget of a snapshot and a delta, the fit and the diff that keep them inside it, and the
-  redaction of secret keys), `timeline/` (bounding the text and evidence of a timeline item), `pane/` (what a pane's
-  board key names, and the pane that work nobody's command started presents through), `semantic-context/` (the sentence
-  that describes a variant, and the subjects a narrated step highlights) and `generation/` (the readiness a pane is shown
-  and the failures a generation reports).
-- `projections/` turns the owners' state into what a pane or the voice reads. `browser-state/` is the snapshot a pane
-  renders: the timeline, the thread link, the ordinary, dynamic and spoken approvals, the workhorse list and the voice
-  context, and the whole of it in `projection.ts`. `timeline/` reads a thread into the timeline within its budget.
-  `semantic-context/` is the board as an agent is told it (`board-context.ts`, `semantic-input.ts`), the walkthrough step
-  the voice explains, and the canvas of a tab.
-- `services/gateway/` is the gateway: `gateway.ts` takes a connection, and its connections, execution (the command
-  surface and the cache a retry is answered from) and leases files hold what one connection and one command need.
-  `services/lease/` is the ledger and the manager of the browser command leases. `operations/command/` admits a browser
-  command (the readiness, the thread link and the lease it needs) and dispatches it to the one action that carries it
-  out, so a command with no action is not one this gateway serves.
-- `services/generation/` composes one generation of the workbench over a Codex child (`workbench.ts`, `compose.ts`,
-  `factories.ts`, `hooks.ts`, the bindings and the owners record) and tears it down in order (`lifecycle.ts`,
-  `shutdown-steps.ts`, `operation-lifecycle.ts`). `services/owner/` is the owner that lives for one server application
-  and replaces generations (`lifecycle.ts`, `owner-state.ts`, `owner-transitions.ts`), the application stage and the
-  production installation, and the wiring that panes reach the workbench through (`wiring.ts`, with its state in
-  `wiring-hooks.ts` so that the pane context can publish without importing it back). `services/sessions/` holds the tab
-  sessions of a generation, how one ends, its workhorses, what each owner is bound to, the panes it is read through,
-  the delegations and the checkouts. `services/actions/` is what a pane's command does: the account, the dynamic and
-  ordinary approvals, the queue, the text and the thread link. `services/voice/` is one tab's voice session, the
-  outcome the coordinator is told, the start trace and the transcript. `services/dynamic-tools/` is the authority,
-  routing and wait of a dynamic tool call. `services/browser-socket/` publishes to the sockets of a browser.
-  `services/panes/` is the pane registry, the pane presentation, the tab sessions, the context each pane last
-  reported and the settled change feed. `services/request/` reads the board and the vault a call names, and
-  `services/host/` holds where the server listens and which checkout it runs (`module-paths.ts` takes it from
-  `SOURCE_CHECKOUT`, so no depth decides). The frontend directory is the host app's: `apps/server` serves
-  `SOURCE_CHECKOUT/dist/frontend`.
-- The 3 api files group what a caller does. `./server` is the workbench on the server (24 names): the wiring through
-  which panes and routes reach it (its hooks, its preparation and stop, the browser socket owner); the gateway and the
-  projection of the browser state, which the system tests compose with the runtime pieces; the actions of a tab's voice
-  session and the route of the voice start trace; and the tab sessions, that is, which tab a pane belongs to, the
-  conversation a tab shows and the tab session id. `./panes` is the open panes, their sockets and the broadcast every
-  write announces through, with the settled change feed, the context the panes report and the steps they present (38
-  names). `./host` is the vault and the body a call names and where the server listens (20 names).
-- The tests are in `tests/server/`, in the folders of the code they cover. `support/generation/` holds the fake
-  owners, fixtures and harness that the generation, owner, session, action and timeline tests share, and
-  `support/gateway/` those of the gateway and the projection tests. Only the tests of the host's own routes, lifetime
-  and startup stay in `apps/server/tests/`.
+Tests move with their behavior into `packages/codex-realtime-voice/tests/`.
+They retain the matching `shared/`, `runtime/`, `server/`, and `ui/` owners.
+Support files remain private to that test owner.
+Cross-package tests import only public entries.
 
-**Ui.** `ui/` is the browser side of the workbench: the transport, the conversation and the composer (TASK-500.23.06),
-and over them the dock, the panes, the approvals, the queue, the agent setup and the voice (TASK-500.23.07). The
-web app (`apps/web/src/ui`: the application, the shell, the pane session, the walkthrough replay and the rest) imports the
-api files. A private file reads the shared contracts through their defining files (`#shared/...`), never through an
-api file. `ui/` keeps its code in the role folders that `code-opener` uses, with one folder for each behavior.
+The `workbench` package (`@archboard/workbench`) owns the Archboard agent integration at layer 7.
+It consumes `codex-realtime-voice` and retains board context, vault admission, domain tools, narration, pane services, and the visual shell.
+It adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
 
-- `components/` holds the React components: `thread/` (the conversation as a person reads it, with the files placed
-  from the assistant-ui registry and the README that records them), `runtime/` (the provider of the assistant-ui
-  runtime), `dock/` (the agent dock and its plan, details and pending work, with the README of the agent surfaces),
-  `panel/` (the conversation panel, its composer, approval cards and sign-in), `voice/` (the voice box, the voice
-  control and the key of a presentation), `orb/` (the voice orb and its stage) and `subtitles/` (the words of the
-  voice and their toggle). `hooks/` holds `runtime/` (the hook that reads the conversation), `thread/` (the copy hook
-  of the registry), `dock/` (the dock's motion and circle), `voice/`, `orb/` and `subtitles/`.
-- `state/` holds the contracts and the controllers that own state without React: `transport/` (the transport's typed
-  surface and its error), `timeline/`, `thread-link/` (the contracts, the port a transport satisfies and the
-  controller), `composer/` (the contract and the controller the assistant-ui composer submits through), `realtime/`
-  (the neutral realtime contract, the ports of the media session and its contract), `surfaces/` (what the agent
-  surfaces read and act through, and the composer's draft store), `agent-setup/` (the setup that a message or a press
-  of Talk carries itself through), `approvals/` and `queue/` (the contracts, the transport port and the controller of
-  each), `voice-session/` (the contract, the session and the level channel), `orb/` (the stage that flies the orb) and
-  `subtitles/` (the person's wish to have them).
-- `clients/` holds what talks to the server or the browser platform: `transport/` (the socket reducer, its session,
-  lease, command and prepared-action owners), `wire/` (the parsers of what the socket carries), `realtime/` (the
-  WebRTC media session and its start sequence), `media/` (the owner of the microphone, the mute and the audio
-  elements over one transport), `output-level/` (the measured level of the model's voice) and `orb/` (the canvas
-  painter and the runner that draws the orb every frame).
-- `rules/` holds the pure decisions: `transport/` (which commands the state answers and what a command is bound to),
-  `timeline/` (the projection of the server's timelines into turns), `thread-link/` (how a link command settles),
-  `runtime/` (turns into assistant-ui messages), `thread/` (the words of an activity run) and `composer/` (intent,
-  draft policy, keys and the link a composer reads), `dock/` (the agent's one-line status, the plan steps, the circle's
-  state and the projection of approvals into cards), `agent-setup/` (the phase), `approvals/` and `approval-forms/`
-  (the families, choices, disclosure and status of an approval; its fields, form, validation and reviewed answer),
-  `queue/` (order, projection, correlation and narratives), `voice-session/` (binding, failure, narration and the
-  projection of the session into a view), `orb/` (colors, dynamics and flight) and `subtitles/` (cues, measured lines
-  and recency).
-- assistant-ui is imported only in the `thread/` and `runtime/` folders of these role folders, and
-  `@assistant-ui/react-markdown` only in `thread/` (the lint rule `archboard/assistant-ui-imports`). The `subtitles/`
-  folders of `components/`, `hooks/`, `rules/` and `state/` read no browser clock: they ask the frame clock of
-  `ui-kit`, so a recording renders them frame by frame (the override in `.oxlintrc.jsonc`). Tailwind finds the class
-  names through the `@source` of every package's `ui` area.
-- The 3 api files group what the web app imports. `./controllers` is the transport and the controllers over it (12 names):
-  the transport with its state, and the controllers of the thread link and sign-in, the approvals, the queue and the
-  composer. `./agent` is the agent as the application shows it (18 names): the setup that a message or a press of Talk
-  carries itself through, the dock and the panel with the view and actions they take and the draft store, the hook that
-  reads the conversation, and the projection of the server's timelines into turns. `./voice` is the voice (28 names): the
-  voice session, the media owner with its audio elements and the snapshot of the realtime session, the measured output
-  level, the orb's stage, the subtitles with the person's wish to have them, and the voice box with the key of a
-  presentation. The rendered conversation and the words of its activity (`Conversation`, `activityLabel`, `runSummary`)
-  are private: the panel in the package renders them.
-- The tests are in `tests/ui/`, in the folders of the code they cover. `support/` holds the fake socket and fixtures
-  of the transport, the harness of the prepared commands, the fakes of the media session and the media owner, the
-  fixtures of the thread link, the composer, the approvals, the queue, the agent setup and the voice session, and the
-  identities and voice fixtures of the dock.
+`./browser-contract` holds Archboard conversation routes and presentation contracts.
+Archboard validates its walkthrough and recording payload before narration starts.
+`./semantic-context` publishes board context for coordinators and workhorses.
+Its board schemas, brief builder, and catalogue formatting stay in this integration.
+`./runtime` exposes application behavior needed by outside callers.
+
+`./server`, `./panes`, and `./host` expose Archboard server integration.
+The production adapter supplies the shared factory with domain instructions, context, admitted vault checkouts, and tool handlers.
+It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
+The Codex SDK supplies none of those application values by default.
+Pane registration, board request context, semantic projections, and narration remain integration concerns.
+`apps/server` owns HTTP routes, sockets, and application lifetime.
+
+`./controllers`, `./agent`, and `./voice` expose the Archboard browser shell.
+Conversation, composer, approval cards, sign-in, queue, voice controls, orb, and subtitles remain here.
+The shell imports shared transport and media factories directly from `codex-realtime-voice`.
+The voice-session adapter adds Archboard presentation and narration to shared media state.
+
+The UI uses the role folders in [frontend.md](frontend.md).
+Assistant-ui imports stay in the `thread/` and `runtime/` concerns.
+`@assistant-ui/react-markdown` stays in `thread/`.
+Subtitles use the frame clock from `ui-kit`, so recordings render them frame by frame.
+Tailwind discovers package class names through the stylesheet's `@source` declarations.
+
+Tests of retained integration behavior stay in `packages/workbench/tests/`.
+Tests of the app's routes and startup stay in `apps/server/tests/`.
+Full-product and browser workflows stay in `tests/system/`.
 
 ## Apps
 
@@ -725,8 +695,8 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
   an error whoever owns the importing file.
 - **An app has areas and role folders like a package.** `apps/web/src/ui/<role>/<behavior>/`,
   `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
-  `apps/cli/src/bin.ts`, `apps/server/src/server.ts` and `apps/web/src/main.tsx`; the last counts as
-  browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
+  `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`, and
+  `apps/workbench-example/src/{server.ts,main.tsx}`. Both `main.tsx` entries count as browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
   source are refused. An app also refuses a folder of `src/` that is no area.
 - **A package or an app has no `lib/` folder.** Name the role of the folder.
 - **Tests** follow `apps/<name>/tests/` like a package's. Its `ui/` folder is held to the UI lint
@@ -755,7 +725,10 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   argv parser, the introspection that feeds the generated proof, the registry, dispatch, global
   flags and help, the staged tokens, and for the `semantic` commands the answers they build
   (`semantic/compare`, `semantic/inspect`, `semantic/draw`). `clients/server/` makes sure the server
-  a command needs is running. `store/artifacts/` writes a command's file artifacts. `operations/`
+  a command needs is running, and holds the CLI's route clients over the gated `requestJson` of
+  `server-lifecycle`: the board reads and writes (`semantic-boards.ts`), the claim and the panes.
+  `store/artifacts/` writes a command's file artifacts and `store/package-version/` reads the
+  install's version. `operations/`
   holds the commands themselves, one folder per command family (`claim`, `pane`, `repo`, `server`
   with `status`, `vault`, `install-skill`, and `semantic/{board,input,inspect,compare,history,draw}`)
   and the machinery that runs one invocation: `invocation/` (the one command table in `run.ts`, the
@@ -879,3 +852,23 @@ formatting, type checking, and all four normal native test lanes. Explicit
 `test:opt-in:*` package commands own capacity, test tooling, unsupported
 topologies, and browser performance outside that normal gate. `bun run fix`
 applies safe Oxlint fixes and formats the repository.
+
+### `apps/workbench-example`
+
+`apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
+The server admits one checkout and keeps private state in the supplied directory.
+It reads only public SDK and codex-realtime-voice entries.
+Its server forwards exact socket identities through the shared factory browser ingress.
+Its browser uses the shared transport and media owner.
+The two stop controls keep voice and workhorse lifetimes separate.
+
+`src/server.ts` and `src/main.tsx` are thin process and browser entries.
+`src/shared/protocol/application.ts` owns the configuration response and socket path.
+`src/server/` owns HTTP, socket registration, startup, and cleanup.
+`src/ui/` owns the page, action presentation, and its connection client.
+`scripts/build-workbench-example.ts` generates the three browser assets under ignored `dist/workbench-example`.
+The normal gate builds those assets before it runs product tests.
+
+App-owned DOM tests cover controls and draft recovery.
+The process owner in `tests/system/server-state/workbench-example.test.ts` starts the actual app with the controlled Codex executable.
+It covers approval delivery, tab isolation, voice negotiation, workhorse completion, independent stops, and cleanup.

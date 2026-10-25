@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { LOCK_WATCH_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
 const originalWarn = logger.warn;
@@ -21,7 +21,7 @@ test("announcements isolate passenger failure and report release at once", async
 			throw new Error("note-watch fixture failed");
 		});
 		lock.watchBoardLocks({ boards: () => [{ vault, board: "passenger" }] });
-		jest.advanceTimersByTime(LOCK_WATCH_MS);
+		jest.advanceTimersByTime(BOARD_LOCK_MS.watch);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();

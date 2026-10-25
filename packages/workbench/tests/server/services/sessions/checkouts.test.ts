@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { checkoutNamedBy, readyDelegatedWorkhorse } from "#server/services/sessions/checkouts.ts";
+import { checkoutNamedBy } from "#server/services/host/archboard-checkouts.ts";
 
 const roots: string[] = [];
 
@@ -25,16 +25,6 @@ function checkout() {
 	const linked = join(root, "linked");
 	symlinkSync(repository, linked);
 	return { root, repository, linked };
-}
-
-/** The workhorse of a checkout of a tab session that has gone, which builds none. */
-function ended(): never {
-	throw new Error("The tab session is not live, so it can start no workhorse.");
-}
-
-/** A coordinator tool call. */
-function call(tool: string, args: unknown) {
-	return { params: { namespace: "archboard_workhorse", tool, arguments: args } } as never;
 }
 
 test("a workhorse tool names a checkout by its directory or its vault, through any link", () => {
@@ -57,36 +47,4 @@ test("a workhorse tool names a checkout by its directory or its vault, through a
 	expect(checkoutNamedBy(root)).toBeNull();
 	expect(checkoutNamedBy(join(root, "missing"))).toBeNull();
 	expect(checkoutNamedBy("payments")).toBeNull();
-});
-
-test("a delegation starts the workhorse of the checkout it names, and nothing else starts one", async () => {
-	const { root, linked, repository } = checkout();
-	const started: string[] = [];
-	const workhorseOf = (named: string) => ({
-		actions: {
-			ensureStarted: async () => {
-				started.push(named);
-				if (named === "fails") throw new Error("The workhorse could not start.");
-			},
-		},
-	});
-
-	await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: linked }), workhorseOf);
-	expect(started).toEqual([repository]);
-
-	await readyDelegatedWorkhorse(call("inspect_workhorse", { checkout: repository }), workhorseOf);
-	await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: root }), workhorseOf);
-	await readyDelegatedWorkhorse(call("delegate_to_workhorse", {}), workhorseOf);
-	await readyDelegatedWorkhorse(call("stop_workhorses", {}), workhorseOf);
-	expect(started).toEqual([repository]);
-
-	// A start that fails leaves the delegation itself to answer.
-	const failing = () => workhorseOf("fails");
-	expect(
-		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), failing),
-	).toBeUndefined();
-	// So does a tab session that can build no workhorse any more, because its tab has gone.
-	expect(
-		await readyDelegatedWorkhorse(call("delegate_to_workhorse", { checkout: repository }), ended),
-	).toBeUndefined();
 });

@@ -3,7 +3,7 @@
 // answering it is refused rather than retargeted. This module never writes a
 // protocol response or mutates server state; the gateway and its broker own both.
 
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { DeliveryOutcome } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchApprovalDecisionResult,
 	WorkbenchApprovalDraftResult,

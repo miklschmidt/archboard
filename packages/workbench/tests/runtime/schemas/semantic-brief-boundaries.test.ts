@@ -1,0 +1,317 @@
+import { describe, expect, test } from "bun:test";
+
+import { createSemanticContextPublisher } from "#runtime/api/semantic-context.ts";
+import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
+import { type SemanticContextInput } from "#runtime/api/semantic-context.ts";
+
+function utf8(value: string): number {
+	return new TextEncoder().encode(value).byteLength;
+}
+
+function hasLoneSurrogate(value: string): boolean {
+	for (let index = 0; index < value.length; index++) {
+		const codeUnit = value.charCodeAt(index);
+		if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+			const next = value.charCodeAt(index + 1);
+			if (next < 0xdc00 || next > 0xdfff) {
+				return true;
+			}
+			index++;
+		} else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function rawAtMost(value: string, maximum: number): string {
+	let result = "";
+	let bytes = 0;
+	const encoder = new TextEncoder();
+	while (bytes < maximum && value.length > 0) {
+		let progressed = false;
+		for (const character of value) {
+			progressed = true;
+			const characterBytes = encoder.encode(character).byteLength;
+			if (bytes + characterBytes > maximum) {
+				return result;
+			}
+			result += character;
+			bytes += characterBytes;
+		}
+		if (!progressed) {
+			return result;
+		}
+	}
+	return result;
+}
+
+const jsonControls = String.fromCharCode(...Array.from({ length: 32 }, (_, index) => index));
+const jsonBoundaryValues = [
+	'"',
+	"\\",
+	"\b",
+	"\t",
+	"\n",
+	"\f",
+	"\r",
+	jsonControls,
+	"\ud800",
+	"\udc00",
+	"\ud834\udf06",
+	"𝄞界",
+	'quote " slash \\ newline\n tab\t pair 𝄞 and lone \ud800',
+];
+const publicHostileUnit = jsonBoundaryValues.join("").replaceAll("\0", "");
+const publicBoundaryValues = jsonBoundaryValues
+	.map((value) => value.replaceAll("\0", ""))
+	.filter((value) => value.length > 0);
+const maximumFeedId = "\u0001".repeat((SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes - 2) / 6);
+
+function createPublisher(feedId: string, context: SemanticContextInput) {
+	return createSemanticContextPublisher({
+		feed: { onChange: () => () => {} },
+		feedId,
+		fresh: { read: () => context },
+		contextForChange: () => context,
+		now: () => 1_700_000_000_000,
+	});
+}
+
+/** Nothing read: the architecture of a pane that has drawn nothing yet. */
+const EMPTY_ARCHITECTURE: SemanticContextInput["architecture"] = {
+	variant: null,
+	view: null,
+	selection: { count: 0, subjects: [] },
+	differences: null,
+	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+};
+
+/**
+ * Every architecture list at its admitted maximum, with distinct identities so
+ * fitting cannot look right by dropping duplicates.
+ * @param id A maximum-length identity.
+ * @param name A maximum-length label.
+ * @returns The architecture.
+ */
+function hostileArchitecture(id: string, name: string): SemanticContextInput["architecture"] {
+	const distinct = (index: number): string => String(index).padStart(3, "0") + id.slice(0, 29);
+	return {
+		variant: { id, name, lifecycle: "draft", against: id },
+		view: { id, name, grammar: "sequence" },
+		selection: {
+			count: SEMANTIC_CONTEXT_LIMITS.selectionEntries,
+			subjects: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.selectionEntries }, (_, index) => ({
+				kind: "node" as const,
+				id: distinct(index),
+				name,
+			})),
+		},
+		differences: {
+			added: Number.MAX_SAFE_INTEGER,
+			removed: Number.MAX_SAFE_INTEGER,
+			changed: Number.MAX_SAFE_INTEGER,
+			subjects: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.differenceEntries }, (_, index) => ({
+				change: "changed" as const,
+				kind: "edge" as const,
+				id: distinct(index),
+				name,
+			})),
+		},
+		reconciliation: {
+			required: true,
+			count: Number.MAX_SAFE_INTEGER,
+			blockedBy: id,
+			issues: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.issueEntries }, () => ({
+				subject: id,
+				what: name,
+				kind: "competing-field" as const,
+				field: name,
+				repair: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.repairBytes),
+			})),
+		},
+	};
+}
+
+function maximumContext(cursorFeedId: string, includeStaleReasons = true): SemanticContextInput {
+	const identity = "i".repeat(SEMANTIC_CONTEXT_LIMITS.identityBytes) as never;
+	const selectionId = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectIdBytes);
+	const subjectName = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes);
+	const ambiguityReason = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes);
+	const staleReason = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes);
+	return {
+		repository: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.repositoryBytes),
+		child: { id: identity, epoch: identity },
+		threadLink: {
+			state: "inspect_only",
+			reason: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.reasonBytes),
+		},
+		workhorse: { threadId: identity, turnId: identity },
+		coordinator: { threadId: identity, realtimeSessionId: identity },
+		board: {
+			key: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
+			name: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes),
+			vault: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),
+			file: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),
+			version: Number.MAX_SAFE_INTEGER,
+		},
+		pane: {
+			paneId: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.paneIdBytes),
+			focused: true,
+		},
+		architecture: hostileArchitecture(selectionId, subjectName),
+		claim: {
+			holder: "agent",
+			doing: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.doingBytes),
+		},
+		doing: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.doingBytes),
+		cursor: { feedId: cursorFeedId, sequence: Number.MAX_SAFE_INTEGER },
+		description: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.descriptionBytes),
+		ambiguity: Array.from(
+			{ length: SEMANTIC_CONTEXT_LIMITS.ambiguityEntries },
+			() => ambiguityReason,
+		),
+		stale: includeStaleReasons,
+		staleReasons: includeStaleReasons
+			? Array.from({ length: SEMANTIC_CONTEXT_LIMITS.ambiguityEntries }, () => staleReason)
+			: [],
+	};
+}
+
+describe("semantic context JSON byte boundaries", () => {
+	test("keeps every admitted hostile JSON boundary valid and bounded", () => {
+		for (const value of publicBoundaryValues) {
+			const context: SemanticContextInput = {
+				repository: "repo",
+				board: {
+					key: "board",
+					name: "Board",
+					vault: "/vault",
+					file: "board.semantic.json",
+					version: 1,
+				},
+				pane: { paneId: "pane", focused: true },
+				architecture: EMPTY_ARCHITECTURE,
+				doing: null,
+				cursor: { feedId: "feed", sequence: 0 },
+				description: value.repeat(8_192),
+			};
+			const publisher = createPublisher("feed", context);
+			const first = publisher.publishPaneSelection(context);
+			const second = publisher.publishPaneSelection(context);
+
+			expect(JSON.parse(first.brief)).toBeTruthy();
+			expect(first.bytes).toBe(utf8(first.brief));
+			expect(first.bytes).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+			expect(first.truncated).toBe(true);
+			expect(first.brief).toBe(second.brief);
+			expect(hasLoneSurrogate(first.brief)).toBe(false);
+			publisher.dispose();
+		}
+	});
+
+	test("retains the NUL-free authored string contract", () => {
+		const context: SemanticContextInput = {
+			repository: "repo",
+			board: {
+				key: "board",
+				name: "Board",
+				vault: "/vault",
+				file: "board.semantic.json",
+				version: 1,
+			},
+			pane: { paneId: "pane", focused: true },
+			architecture: EMPTY_ARCHITECTURE,
+			doing: null,
+			cursor: { feedId: "feed", sequence: 0 },
+			description: "before\0after",
+		};
+		const publisher = createPublisher("feed", context);
+		expect(() => publisher.publishPaneSelection(context)).toThrow(/NUL/);
+	});
+
+	test("fits all public mutable maxima into a deterministic valid brief", () => {
+		const feedId = maximumFeedId;
+		const context = maximumContext(feedId);
+		const publisher = createPublisher(feedId, context);
+		expect(utf8(JSON.stringify(feedId))).toBe(SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes);
+
+		const first = publisher.publishPaneSelection(context);
+		const second = publisher.publishPaneSelection(context);
+		const parsed = JSON.parse(first.brief) as {
+			feedId: string;
+			cursor: { feedId: string; sequence: number };
+			truncated: boolean;
+		};
+
+		expect(first.brief).toBe(second.brief);
+		expect(first.bytes).toBe(utf8(first.brief));
+		expect(first.bytes).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+		expect(first.truncated).toBe(true);
+		expect(parsed.feedId).toBe(feedId);
+		expect(parsed.cursor.feedId).toBe(feedId);
+		expect(parsed.cursor.sequence).toBe(Number.MAX_SAFE_INTEGER);
+		expect(first.cursor?.feedId).toBe(feedId);
+		expect(parsed.truncated).toBe(true);
+		expect(first.brief).toContain("…");
+		expect(hasLoneSurrogate(first.brief)).toBe(false);
+		publisher.dispose();
+	});
+
+	test("rejects feed identities whose JSON tokens cannot be reserved twice", () => {
+		const overBound = `${maximumFeedId}\u0001`;
+		const context = maximumContext(overBound);
+		expect(() => createPublisher(overBound, context)).toThrow(/JSON encoded/);
+	});
+
+	test("keeps exact current, prior, and restarted cursor identities under pressure", () => {
+		const currentFeedId = maximumFeedId;
+		const priorFeedId = "\u0002".repeat((SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes - 2) / 6);
+		const restartFeedId = "\u0003".repeat((SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes - 2) / 6);
+
+		const currentContext = maximumContext(currentFeedId, false);
+		const currentPublisher = createPublisher(currentFeedId, currentContext);
+		const current = currentPublisher.publishPaneSelection(currentContext);
+		const currentBrief = JSON.parse(current.brief) as {
+			feedId: string;
+			cursor: { feedId: string; sequence: number };
+		};
+		expect(currentBrief.feedId).toBe(currentFeedId);
+		expect(currentBrief.cursor.feedId).toBe(currentFeedId);
+		expect(currentBrief.cursor.sequence).toBe(Number.MAX_SAFE_INTEGER);
+		expect(current.cursor?.feedId).toBe(currentFeedId);
+		expect(current.bytes).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+		expect(current.staleness.state).toBe("current");
+		currentPublisher.dispose();
+
+		const priorContext = maximumContext(priorFeedId, false);
+		const priorPublisher = createPublisher(currentFeedId, priorContext);
+		const prior = priorPublisher.publishPaneSelection(priorContext);
+		const priorBrief = JSON.parse(prior.brief) as {
+			feedId: string;
+			cursor: { feedId: string; sequence: number };
+		};
+		expect(priorBrief.feedId).toBe(currentFeedId);
+		expect(priorBrief.cursor.feedId).toBe(priorFeedId);
+		expect(prior.cursor?.feedId).toBe(priorFeedId);
+		expect(prior.cursor?.sequence).toBe(Number.MAX_SAFE_INTEGER);
+		expect(prior.bytes).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+		expect(prior.staleness.state).toBe("stale");
+		priorPublisher.dispose();
+
+		const restartContext = maximumContext(restartFeedId, false);
+		const restartPublisher = createPublisher(restartFeedId, restartContext);
+		const restarted = restartPublisher.publishPaneSelection(restartContext);
+		const restartBrief = JSON.parse(restarted.brief) as {
+			feedId: string;
+			cursor: { feedId: string; sequence: number };
+		};
+		expect(restartBrief.feedId).toBe(restartFeedId);
+		expect(restartBrief.cursor.feedId).toBe(restartFeedId);
+		expect(restartBrief.cursor.sequence).toBe(Number.MAX_SAFE_INTEGER);
+		expect(restarted.cursor?.feedId).toBe(restartFeedId);
+		expect(restarted.bytes).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+		expect(restarted.staleness.state).toBe("current");
+		restartPublisher.dispose();
+	});
+});

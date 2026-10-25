@@ -1,0 +1,329 @@
+import type {
+	CodexEpochStore,
+	EpochExecutionProof,
+	EpochTransaction,
+} from "#runtime/store/epoch/contract.ts";
+import type {
+	WorkbenchExecutionContext,
+	WorkbenchContextCodec,
+} from "#runtime/protocol/host/context.ts";
+import type { CodexSession, SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type {
+	CodexThreadLinkPort,
+	ThreadLinkClassification,
+	ThreadLinkTarget,
+} from "#runtime/rules/thread-link/contract.ts";
+import type {
+	CodexWorkhorseQueue,
+	WorkhorseQueueOperation as QueueOperation,
+	WorkhorseQueueMutation,
+} from "#runtime/services/workhorse-queue/contract.ts";
+import type {
+	ChildEpoch,
+	ChildId,
+	IdentityAuthority,
+	LogicalToolCallCorrelation,
+	OperationAuthority,
+	OperationId,
+	QueuedSubmissionId,
+	ThreadId,
+	TurnId,
+} from "@archboard/codex-app-server/identity";
+import type { CodexThreadStatusType } from "@archboard/codex-app-server/contract";
+
+/** The only four operations the coordinator may dispatch to its workhorse. */
+const WORKHORSE_OPERATION_NAMES = Object.freeze([
+	"inspect_workhorse",
+	"delegate_to_workhorse",
+	"manage_workhorse_queue",
+	"steer_workhorse",
+] as const);
+type WorkhorseOperationName = (typeof WORKHORSE_OPERATION_NAMES)[number];
+
+type WorkhorseTurnOperation = "delegate_to_workhorse" | "steer_workhorse";
+type WorkhorseOperationRpc = "turn/start" | "turn/steer" | `thread/queue/${WorkhorseQueueMutation}`;
+type WorkhorseOperationDelivery = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
+
+/** A target supplied by the composition root; callers cannot choose one. */
+type WorkhorseOperationTarget = ThreadLinkTarget & {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly operationId: string;
+};
+
+/** The two exact links that every operation revalidates before and after effect. */
+interface WorkhorseOperationBinding {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly coordinator: WorkhorseOperationTarget;
+	readonly workhorse: WorkhorseOperationTarget;
+}
+
+type CurrentWorkhorseOperationBinding = () => WorkhorseOperationBinding | null;
+
+type WorkhorseOperationThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
+type WorkhorseOperationSessionPort = Pick<CodexSession, "turnStart" | "turnSteer">;
+type WorkhorseOperationEpochPort = Pick<
+	CodexEpochStore,
+	| "snapshot"
+	| "stageOperation"
+	| "commitOperation"
+	| "rollbackOperation"
+	| "markOutcomeUnknown"
+	| "confirmOutcome"
+>;
+
+/** The coordinator call remains an exact, server-validated logical correlation. */
+type WorkhorseCoordinatorCall = LogicalToolCallCorrelation;
+type CurrentWorkhorseCoordinatorCall = () => WorkhorseCoordinatorCall | null;
+
+interface WorkhorseOperationContextInput {
+	readonly operationId: OperationId;
+	readonly kind: WorkhorseTurnOperation;
+	readonly rpc: "turn/start" | "turn/steer";
+}
+
+interface WorkhorseOperationOptions {
+	readonly session: WorkhorseOperationSessionPort;
+	readonly threadLink: WorkhorseOperationThreadLinkPort;
+	readonly queue: CodexWorkhorseQueue<OperationId>;
+	readonly epoch: WorkhorseOperationEpochPort;
+	readonly identity: IdentityAuthority;
+	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
+	readonly currentBinding: CurrentWorkhorseOperationBinding;
+	readonly currentCoordinatorCall: CurrentWorkhorseCoordinatorCall;
+	/** Returns the fresh canonical context used by turn/start and turn/steer. */
+	readonly contextCodec: WorkbenchContextCodec;
+	readonly contextFor: (input: WorkhorseOperationContextInput) => WorkbenchExecutionContext;
+}
+
+interface InspectWorkhorseRequest {
+	readonly call: WorkhorseCoordinatorCall;
+}
+
+interface DelegateToWorkhorseRequest {
+	readonly call: WorkhorseCoordinatorCall;
+	/** Reuse this server-issued identity when the dispatcher already owns the effect. */
+	readonly operationId?: OperationId;
+	readonly input: string;
+	readonly transcriptDelta: string;
+}
+
+type ManageWorkhorseQueueMutationRequest =
+	| {
+			readonly operation: "add";
+			readonly prompt: string;
+	  }
+	| {
+			readonly operation: "update";
+			readonly submissionId: QueuedSubmissionId;
+			readonly prompt: string;
+	  }
+	| {
+			readonly operation: "delete";
+			readonly submissionId: QueuedSubmissionId;
+	  }
+	| {
+			readonly operation: "reorder";
+			readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
+	  }
+	| {
+			readonly operation: "start";
+			readonly submissionId: QueuedSubmissionId;
+	  };
+
+type ManageWorkhorseQueueRequest =
+	| {
+			readonly call: WorkhorseCoordinatorCall;
+			readonly operation: "list";
+	  }
+	| (ManageWorkhorseQueueMutationRequest & {
+			readonly call: WorkhorseCoordinatorCall;
+			/** Reuse this server-issued identity when the dispatcher already owns the effect. */
+			readonly operationId?: OperationId;
+	  });
+
+interface SteerWorkhorseRequest {
+	readonly call: WorkhorseCoordinatorCall;
+	/** Reuse this server-issued identity when the dispatcher already owns the effect. */
+	readonly operationId?: OperationId;
+	/** Captured by the server from the exact active workhorse classification. */
+	readonly expectedTurnId: TurnId;
+	readonly input: string;
+}
+
+interface InspectWorkhorseResult {
+	readonly threadId: ThreadId;
+	readonly status: CodexThreadStatusType;
+	readonly activeTurnId: TurnId | null;
+	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
+}
+
+interface DelegateToWorkhorseResult {
+	readonly mode: "started" | "queued";
+	readonly clientUserMessageId: string;
+	readonly queuedSubmissionId: QueuedSubmissionId | null;
+	readonly turnId: TurnId | null;
+}
+
+interface ManageWorkhorseQueueResult {
+	readonly operation: QueueOperation;
+	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
+}
+
+interface SteerWorkhorseResult {
+	readonly turnId: TurnId;
+	readonly delivery: Exclude<WorkhorseOperationDelivery, "pending">;
+}
+
+interface WorkhorseOperationCorrelation {
+	readonly operationId: OperationId;
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly coordinatorThreadId: ThreadId;
+	readonly coordinatorTurnId: TurnId;
+	readonly workhorseThreadId: ThreadId;
+	readonly coordinatorCall: WorkhorseCoordinatorCall;
+	readonly clientUserMessageId: string | null;
+	readonly queuedSubmissionId: QueuedSubmissionId | null;
+	readonly turnId: TurnId | null;
+}
+
+interface WorkhorseOperationEventBase {
+	readonly operation: Exclude<WorkhorseOperationName, "inspect_workhorse">;
+	readonly queueOperation: WorkhorseQueueMutation | null;
+	readonly rpc: WorkhorseOperationRpc;
+	readonly correlation: WorkhorseOperationCorrelation;
+	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
+	readonly detail: string | null;
+}
+
+type WorkhorseOperationEvent =
+	| (WorkhorseOperationEventBase & { readonly type: "accepted"; readonly outcome: "pending" })
+	| (WorkhorseOperationEventBase & { readonly type: "queued"; readonly outcome: "delivered" })
+	| (WorkhorseOperationEventBase & { readonly type: "started"; readonly outcome: "delivered" })
+	| (WorkhorseOperationEventBase & { readonly type: "progress"; readonly outcome: "delivered" })
+	| (WorkhorseOperationEventBase & { readonly type: "attention"; readonly outcome: "delivered" })
+	| (WorkhorseOperationEventBase & { readonly type: "completed"; readonly outcome: "delivered" })
+	| (WorkhorseOperationEventBase & {
+			readonly type: "failed";
+			readonly outcome: "delivered" | "not_delivered";
+	  })
+	| (WorkhorseOperationEventBase & {
+			readonly type: "outcome_unknown";
+			readonly outcome: "outcome_unknown";
+	  });
+
+type WorkhorseOperationEventListener = (event: WorkhorseOperationEvent) => void;
+
+type WorkhorseOperationErrorCode =
+	| "invalid_call"
+	| "invalid_input"
+	| "not_ready"
+	| "stale_child"
+	| "prior_epoch"
+	| "unknown_provenance"
+	| "not_loaded"
+	| "not_controllable"
+	| "system_error"
+	| "busy"
+	| "stale_link"
+	| "transport_failure"
+	| "transaction_failed"
+	| "outcome_unknown";
+
+/** What is known about a failed operation beyond its code and message. */
+interface WorkhorseOperationErrorFacts {
+	readonly operation?: WorkhorseOperationName;
+	readonly outcome?: Exclude<WorkhorseOperationDelivery, "pending">;
+	readonly operationId?: OperationId;
+	readonly cause?: unknown;
+}
+
+class CodexWorkhorseOperationsError extends Error {
+	override readonly name = "CodexWorkhorseOperationsError";
+	readonly code: WorkhorseOperationErrorCode;
+	readonly operation: WorkhorseOperationName | null;
+	readonly outcome: Exclude<WorkhorseOperationDelivery, "pending"> | null;
+	readonly operationId: OperationId | null;
+	override readonly cause: unknown;
+
+	/**
+	 * Build the error, defaulting every optional fact to null so a caller can always ask what the
+	 * failure proved about delivery without checking whether the field exists.
+	 * @param code - Why the operation could not proceed.
+	 * @param message - The diagnostic for the caller.
+	 * @param options - The operation, settled outcome, operation identity and underlying cause,
+	 * as far as they are known at the point of failure.
+	 */
+	constructor(
+		code: WorkhorseOperationErrorCode,
+		message: string,
+		options: WorkhorseOperationErrorFacts = {},
+	) {
+		super(message);
+		this.code = code;
+		this.operation = options.operation ?? null;
+		this.outcome = options.outcome ?? null;
+		this.operationId = options.operationId ?? null;
+		this.cause = options.cause;
+	}
+}
+
+interface CodexWorkhorseOperations {
+	readonly inspect: (request: InspectWorkhorseRequest) => Promise<InspectWorkhorseResult>;
+	readonly delegate: (request: DelegateToWorkhorseRequest) => Promise<DelegateToWorkhorseResult>;
+	readonly manageQueue: (
+		request: ManageWorkhorseQueueRequest,
+	) => Promise<ManageWorkhorseQueueResult>;
+	readonly steer: (request: SteerWorkhorseRequest) => Promise<SteerWorkhorseResult>;
+	/** Raw notifications are an input boundary only; no raw event leaves this port. */
+	readonly onNotification: (event: TransportServerNotification) => void;
+	readonly subscribe: (listener: WorkhorseOperationEventListener) => () => void;
+}
+
+type WorkhorseOperationClassification = ThreadLinkClassification;
+type WorkhorseOperationEpochProof = EpochExecutionProof;
+type WorkhorseOperationTransaction = EpochTransaction;
+type WorkhorseOperationTurn = SessionTurn;
+type WorkhorseOperationTurnStartParams = SessionParams<"turn/start">;
+type WorkhorseOperationTurnSteerParams = SessionParams<"turn/steer">;
+
+export {
+	WORKHORSE_OPERATION_NAMES,
+	type WorkhorseOperationName,
+	type WorkhorseTurnOperation,
+	type WorkhorseOperationRpc,
+	type WorkhorseOperationDelivery,
+	type WorkhorseOperationTarget,
+	type WorkhorseOperationBinding,
+	type CurrentWorkhorseOperationBinding,
+	type WorkhorseOperationThreadLinkPort,
+	type WorkhorseOperationSessionPort,
+	type WorkhorseOperationEpochPort,
+	type WorkhorseCoordinatorCall,
+	type CurrentWorkhorseCoordinatorCall,
+	type WorkhorseOperationContextInput,
+	type WorkhorseOperationOptions,
+	type InspectWorkhorseRequest,
+	type DelegateToWorkhorseRequest,
+	type ManageWorkhorseQueueRequest,
+	type SteerWorkhorseRequest,
+	type InspectWorkhorseResult,
+	type DelegateToWorkhorseResult,
+	type ManageWorkhorseQueueResult,
+	type SteerWorkhorseResult,
+	type WorkhorseOperationCorrelation,
+	type WorkhorseOperationEvent,
+	type WorkhorseOperationEventListener,
+	type WorkhorseOperationErrorCode,
+	CodexWorkhorseOperationsError,
+	type CodexWorkhorseOperations,
+	type WorkhorseOperationClassification,
+	type WorkhorseOperationEpochProof,
+	type WorkhorseOperationTransaction,
+	type WorkhorseOperationTurn,
+	type WorkhorseOperationTurnStartParams,
+	type WorkhorseOperationTurnSteerParams,
+};

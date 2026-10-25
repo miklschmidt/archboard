@@ -16,7 +16,7 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
-} from "@archboard/workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
 import {
 	createCodexTransport,
@@ -28,7 +28,7 @@ import {
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
-import type { RealtimeSemanticEvent } from "@archboard/workbench/browser-contract";
+import type { RealtimeSemanticEvent } from "@archboard/codex-realtime-voice/realtime";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const DEFAULTS = {
@@ -210,7 +210,6 @@ async function createHarness(
 		),
 		workingDirectory: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
-		archboardServer: { url: "http://127.0.0.1:3000", binDirectory: "/opt/archboard/bin" },
 	});
 	const generations: Generation[] = [];
 	const events: RealtimeSemanticEvent[] = [];
@@ -262,9 +261,16 @@ async function createHarness(
 			readyState,
 		} as Generation;
 		adapter = createCodexRealtimeAdapter({
+			voice: {
+				start: () => ({
+					prompt: "Test voice.",
+					delegationAckFiller: true,
+					suppressCoordinatorSpeech: false,
+				}),
+			},
 			session,
 			identity,
-			boardCatalogue: {
+			coordinatorContext: {
 				read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 				subscribe: () => () => {},
 			},

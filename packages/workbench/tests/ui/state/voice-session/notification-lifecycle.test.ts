@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+import type { RealtimeMediaSnapshot } from "@archboard/codex-realtime-voice/browser";
 import {
 	capabilities,
 	connectedState,

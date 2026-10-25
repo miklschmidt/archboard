@@ -5,7 +5,7 @@
 
 import { useMemo, type CSSProperties, type JSX } from "react";
 
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 

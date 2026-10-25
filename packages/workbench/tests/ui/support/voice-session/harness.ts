@@ -1,6 +1,6 @@
 // One adapter over one pane's fake media owner and fake transport.
 
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
+import type { RealtimeMediaSnapshot } from "@archboard/codex-realtime-voice/browser";
 import { createVoiceSession } from "#ui/state/voice-session/session.ts";
 import type { VoiceSession } from "#ui/state/voice-session/contract.ts";
 import {

@@ -185,6 +185,14 @@ export default defineConfig({
 				command: "vp build",
 				cache: { input: [{ auto: true }, ...FRONTEND_INPUT_GLOBS] },
 			},
+			"workbench-example": {
+				command: "bun scripts/build-workbench-example.ts",
+				cache: {
+					input: analysisCache.input,
+					env: analysisCache.env,
+					output: ["dist/workbench-example/**"],
+				},
+			},
 			types: {
 				dependsOn: ["contracts"],
 				command:
@@ -231,6 +239,7 @@ export default defineConfig({
 				command: [
 					"vp run types",
 					"vp run frontend",
+					"vp run workbench-example",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:repository",

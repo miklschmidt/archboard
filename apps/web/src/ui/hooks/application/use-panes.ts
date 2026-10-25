@@ -5,8 +5,11 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
-import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/workbench/voice";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
+import type {
+	BrowserWorkbenchMediaOwnerOptions,
+	BrowserWorkbenchTransport,
+} from "@archboard/codex-realtime-voice/browser";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
 import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
@@ -24,7 +27,6 @@ import type {
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {

@@ -9,7 +9,7 @@
 import { RiLayoutRightFill, RiLayoutRightLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { IconButton } from "@archboard/ui-kit/controls";
+import { IconButton } from "@archboard/ui-kit/components";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 
 /** Why the control does nothing while a walkthrough is presented. */

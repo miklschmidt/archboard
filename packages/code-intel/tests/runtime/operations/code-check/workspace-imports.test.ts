@@ -87,7 +87,7 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	const check = await import("#runtime/api/code-check-run.ts");
+	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("fixture board was not read");
 	expect(read.boards).toHaveLength(1);

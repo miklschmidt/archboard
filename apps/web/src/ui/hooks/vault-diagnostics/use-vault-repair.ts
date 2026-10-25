@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { vaultRepairRequest } from "#ui/rules/vault-diagnostics/repair-request.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
 
 /**
  * Ask the agent to repair the vault, and check again whenever a turn ends.

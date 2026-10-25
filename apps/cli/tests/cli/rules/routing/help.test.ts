@@ -18,10 +18,7 @@ import { commanderTree } from "#cli/rules/routing/help.ts";
 import { type CommandRoute } from "#cli/protocol/routing/route.ts";
 import { applyCliBootstrap, isHelpInvocation } from "#cli/operations/bootstrap/bootstrap.ts";
 import { SHARED_OPTION_KEYS, sharedOptionsFor } from "#cli/protocol/contract/shared-options.ts";
-import {
-	currentRequestedBoard,
-	currentWriteDoing,
-} from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 
 const registry = cliContractRegistry();
 const routes = Object.fromEntries(
@@ -123,8 +120,8 @@ test("every route answers every help spelling on stdout, exit 0, and runs nothin
 			expect(usage, argv.join(" ")).toContain(path.join(" "));
 		}
 		for (const handler of handlers) expect(handler).not.toHaveBeenCalled();
-		expect(currentRequestedBoard()).toBeNull();
-		expect(currentWriteDoing()).toBeNull();
+		expect(statedInvocation().board).toBeNull();
+		expect(statedInvocation().doing).toBeNull();
 	}
 });
 

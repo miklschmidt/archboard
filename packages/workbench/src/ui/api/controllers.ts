@@ -1,5 +1,4 @@
 // The browser's transport to the workbench gateway and the controllers over it: the thread link and sign-in, the approvals, the queue and the composer. Safe for the browser.
-export { createBrowserWorkbenchTransport } from "#ui/clients/transport/transport.ts";
 export { createWorkbenchApprovalsController } from "#ui/state/approvals/controller.ts";
 export type { WorkbenchApprovalsController } from "#ui/state/approvals/controller.ts";
 export type { WorkbenchComposerController } from "#ui/state/composer/contract.ts";
@@ -11,7 +10,3 @@ export type {
 	ThreadLinkController,
 } from "#ui/state/thread-link/contracts.ts";
 export { createThreadLinkController } from "#ui/state/thread-link/controller.ts";
-export type {
-	BrowserWorkbenchState,
-	BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";

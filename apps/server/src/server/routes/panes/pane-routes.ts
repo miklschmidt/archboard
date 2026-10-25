@@ -6,11 +6,11 @@ import {
 	addressablePanes,
 	MAX_PANES,
 	panesInOrder,
-	resolvePaneSpec,
+	resolvePane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { frontendState } from "@archboard/server-lifecycle/server-host";
-import { PANE_LAYOUT_TIMEOUT_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import {
 	serverUrl,
 	bodyOf,
@@ -194,7 +194,7 @@ function postPaneRoute(req: Request, res: Response): void {
 //
 // These two routes ask the browser to change its layout and then wait for the
 // registry to agree. How long they wait is in timing.ts, because the settle
-// cap is waiting out PANE_DEBOUNCE_MS, which is a number on the other side of
+// cap is waiting out PANE_MS.report, which is a number on the other side of
 // the browser boundary.
 
 /**
@@ -234,7 +234,7 @@ function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegist
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, PANE_LAYOUT_TIMEOUT_MS),
+			}, PANE_MS.layoutTimeout),
 		};
 		pendingPaneOpens.add(pending);
 	});
@@ -305,7 +305,7 @@ function closeTarget(
 				".",
 		);
 	}
-	const target = resolvePaneSpec(registrations, spec);
+	const target = resolvePane(registrations, spec);
 	const place =
 		panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)?.place ??
 		spec;
@@ -336,7 +336,7 @@ function awaitPaneClose(
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, PANE_LAYOUT_TIMEOUT_MS),
+			}, PANE_MS.layoutTimeout),
 		};
 		pendingPaneCloses.add(pending);
 	});

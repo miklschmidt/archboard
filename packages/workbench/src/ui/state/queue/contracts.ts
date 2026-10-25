@@ -2,7 +2,7 @@
 // entry may do, the reorder plan, the settlement of one command, and the
 // actions the committed queue panel calls (`state/surfaces/contracts.ts`).
 
-import type { BrowserQueue, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserQueue, BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchCommandIntent,
 	WorkbenchTransportCapabilities,

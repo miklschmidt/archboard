@@ -193,7 +193,37 @@ function writeServerStartupProtocolRecord(record: ServerStartupProtocolRecord): 
 	}
 }
 
+/**
+ * Tell the launcher that this server process now owns a Codex process group, so
+ * the launcher can clean that group up if the process dies before readiness.
+ * @param codexGroup - The process group this process owns.
+ */
+function reportStartupOwnership(codexGroup: ServerStartupProcessGroupIdentity): void {
+	writeServerStartupProtocolRecord(
+		serverStartupOwnershipRecord({ serverPid: process.pid, codexGroup }),
+	);
+}
+
+/**
+ * Tell the launcher that this server process is ending, and whether it proved
+ * its own cleanup, so the launcher knows what is left to do.
+ * @param ending - What this process can say about its end.
+ * @param ending.cleanupProven - Whether it proved its cleanup completed.
+ * @param ending.message - Why it ended, for the launcher to show, or null for an ordinary stop.
+ */
+function reportStartupEnd(ending: { cleanupProven: boolean; message: string | null }): void {
+	writeServerStartupProtocolRecord(
+		serverStartupTerminalRecord({
+			serverPid: process.pid,
+			cleanupProven: ending.cleanupProven,
+			message: ending.message,
+		}),
+	);
+}
+
 export {
+	reportStartupEnd,
+	reportStartupOwnership,
 	SERVER_STARTUP_TERMINAL_FD_ENV,
 	type ServerStartupProcessGroupIdentity,
 	type ServerStartupOwnershipRecord,
@@ -203,5 +233,4 @@ export {
 	serverStartupOwnershipRecord,
 	serverStartupTerminalRecord,
 	parseServerStartupProtocolRecord,
-	writeServerStartupProtocolRecord,
 };

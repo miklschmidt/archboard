@@ -2,12 +2,9 @@
 // refusals of the browser and ffmpeg that write it.
 
 import { accessSync, constants, statSync } from "node:fs";
-import { dirname, extname } from "node:path";
+import { dirname } from "node:path";
 
-import {
-	RecordingContainerSchema,
-	type RecordingContainer,
-} from "@archboard/walkthrough/recording";
+import { recordingContainerOf } from "@archboard/walkthrough/recorder";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 const recorderUnavailableRefusal = {
@@ -38,12 +35,12 @@ const renderFailedRefusal = {
  * @returns The container.
  * @throws {CliUsageError} When the name ends in neither .mp4 nor .webm.
  */
-function containerOf(out: string): RecordingContainer {
-	const parsed = RecordingContainerSchema.safeParse(extname(out).slice(1).toLowerCase());
-	if (!parsed.success) {
+function containerOf(out: string): NonNullable<ReturnType<typeof recordingContainerOf>> {
+	const container = recordingContainerOf(out);
+	if (container === null) {
 		throw new CliUsageError(`--out ${out} must name a .mp4 or .webm file.`);
 	}
-	return parsed.data;
+	return container;
 }
 
 /**
