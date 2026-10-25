@@ -117,6 +117,21 @@ function requireFreshPlace(place: TalkPlace): void {
 }
 
 /**
+ * Where a board's talk is kept, proven free before anything starts: the directory asked for, or a
+ * new one in the state directory, named for the moment it was recorded.
+ * @param asked The directory asked for, absolute, if any.
+ * @param board The board recorded, which names a talk kept in the state directory.
+ * @param now When it is recorded.
+ * @returns The place.
+ * @throws {TalkFileError} When the directory asked for exists or has no directory to be made in.
+ */
+function freshTalkPlace(asked: string | undefined, board: string, now: Date): TalkPlace {
+	const place = asked === undefined ? stateTalkPlace(board, now) : askedTalkPlace(asked);
+	requireFreshPlace(place);
+	return place;
+}
+
+/**
  * A WAV file's header, for 16-bit mono PCM.
  * @param samples How many samples follow it.
  * @returns The header.
@@ -373,11 +388,34 @@ function writeTalk(options: {
 	return place.directory;
 }
 
+/**
+ * Keep a talk in a directory somebody named: written whole, and never pruned.
+ * @param options The talk, its voice and its directory.
+ * @param options.talk The talk; its `audio.samples` is how long the voice is.
+ * @param options.voice The voice's samples: 16-bit mono at the talk's sample rate.
+ * @param options.directory The directory, which does not exist yet.
+ * @returns The directory it was written to.
+ * @throws {TalkFileError} When the voice is not the length the talk says, or the directory is taken.
+ */
+function keepTalk(options: {
+	readonly talk: Talk;
+	readonly voice: Int16Array;
+	readonly directory: string;
+}): string {
+	return writeTalk({
+		talk: options.talk,
+		voice: options.voice,
+		place: askedTalkPlace(options.directory),
+	});
+}
+
 export {
 	KEPT_TALKS,
 	TALK_FILE,
 	TalkFileError,
 	askedTalkPlace,
+	freshTalkPlace,
+	keepTalk,
 	readTalk,
 	requireFreshPlace,
 	stateTalkPlace,

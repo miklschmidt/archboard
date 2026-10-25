@@ -12,7 +12,7 @@ import { join } from "node:path";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { TalkSchema } from "@archboard/walkthrough/talk";
-import { renderTalk, writeTalk, askedTalkPlace } from "@archboard/walkthrough/recorder";
+import { keepTalk, renderTalk } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 
@@ -127,10 +127,10 @@ afterAll(async () => {
  * @returns What it took, and how the render came out.
  */
 async function render(name: string, pages: number) {
-	const directory = writeTalk({
+	const directory = keepTalk({
 		talk,
 		voice: new Int16Array(SAMPLES),
-		place: askedTalkPlace(join(root, `talk-${name}`)),
+		directory: join(root, `talk-${name}`),
 	});
 	const ffmpeg = prepareFakeFfmpeg(mkdtempSync(join(root, "tools-")));
 	asked = [];

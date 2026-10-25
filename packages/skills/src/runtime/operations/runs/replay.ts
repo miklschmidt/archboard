@@ -11,22 +11,16 @@ import { addressedVariant, type SemanticBoard } from "@archboard/board/document"
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
 import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
-import {
-	RecordingContainerSchema,
-	type RecordingContainer,
-} from "@archboard/walkthrough/recording";
+import type { RecordingContainer } from "@archboard/walkthrough/recording";
 import {
 	SAMPLES_PER_FRAME,
-	TALK_FORMAT,
 	TALK_SAMPLE_RATE,
-	TALK_VERSION,
-	TALK_VOICE_FILE,
-	TalkSchema,
 	framesOf,
+	talkFrom,
 	type Talk,
 	type TalkEvent,
 } from "@archboard/walkthrough/talk";
-import { readTalk } from "@archboard/walkthrough/recorder";
+import { readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
 	type Finding,
@@ -120,10 +114,8 @@ function talkOfFixture(
 		]),
 		{ kind: "end", at: samples },
 	];
-	const talk = TalkSchema.parse({
-		format: TALK_FORMAT,
-		version: TALK_VERSION,
-		recordedAt: new Date().toISOString(),
+	const talk = talkFrom({
+		recordedAt: new Date(),
 		language: "en",
 		theme: fixture.theme,
 		board: {
@@ -133,18 +125,12 @@ function talkOfFixture(
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			steps: walkthrough.beats.length,
 		},
-		audio: {
-			file: TALK_VOICE_FILE,
-			sampleRate: TALK_SAMPLE_RATE,
-			channels: 1,
-			samples,
-			baseLatencyMs: 0,
-		},
-		events,
+		log: { samples, baseLatencyMs: 0, events },
 		document: board,
 		policy,
 	});
-	return { talk, voice: new Int16Array(samples) };
+	if (!talk.success) throw talk.error;
+	return { talk: talk.data, voice: new Int16Array(samples) };
 }
 
 /**
@@ -272,8 +258,8 @@ function inspectVideo(
  */
 function fileProblem(video: VideoAttempt): string | null {
 	if (video.bytes === null) return `${video.file} was not written`;
-	const asked = RecordingContainerSchema.safeParse(path.extname(video.file).slice(1).toLowerCase());
-	return asked.success && video.container === asked.data
+	const asked = recordingContainerOf(video.file);
+	return asked !== null && video.container === asked
 		? null
 		: `${video.file} holds ${video.container ?? "neither an MP4 nor a WebM"}, not what its name says`;
 }

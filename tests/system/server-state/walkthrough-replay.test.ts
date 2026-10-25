@@ -18,7 +18,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@archboard/walkthrough/recorder";
+import { keepTalk, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { parseSemanticBoard } from "@archboard/board/document";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
 import { TalkSchema, type Talk } from "@archboard/walkthrough/talk";
@@ -228,16 +228,16 @@ beforeAll(async () => {
 		body: { board: BOARD, session: "replay" },
 	});
 	expect(discarded.status).toBe(200);
-	talkDirectory = writeTalk({
+	talkDirectory = keepTalk({
 		talk,
 		voice: voiceOf(talk.audio.samples),
-		place: askedTalkPlace(join(root, "talk")),
+		directory: join(root, "talk"),
 	});
 	const blocksTalk = talkOf(served.body!.board, policy.body, "blocks", BLOCKS_FRAMES);
-	blocksTalkDirectory = writeTalk({
+	blocksTalkDirectory = keepTalk({
 		talk: blocksTalk,
 		voice: voiceOf(blocksTalk.audio.samples),
-		place: askedTalkPlace(join(root, "blocks-talk")),
+		directory: join(root, "blocks-talk"),
 	});
 	await keepStackedTalks(request);
 	ffmpeg = prepareFakeFfmpeg(root).executablePath;
@@ -288,15 +288,15 @@ async function keepStackedTalks(request: ReturnType<typeof createRequester>): Pr
 	const policy = (await request("/api/vault/check")).body;
 	const from = { document: served.body!.board, policy };
 	const voice = voiceOf(12 * 1600);
-	againstTalkDirectory = writeTalk({
+	againstTalkDirectory = keepTalk({
 		talk: proposalTalk(from, true),
 		voice,
-		place: askedTalkPlace(join(root, "against-talk")),
+		directory: join(root, "against-talk"),
 	});
-	plainTalkDirectory = writeTalk({
+	plainTalkDirectory = keepTalk({
 		talk: proposalTalk(from, false),
 		voice,
-		place: askedTalkPlace(join(root, "plain-talk")),
+		directory: join(root, "plain-talk"),
 	});
 	const discarded = await request("/api/semantic-boards/discard", {
 		method: "POST",

@@ -19,6 +19,8 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
+	type DiagramTheme,
+	type LayoutEngineName,
 } from "@archboard/board/render-reply";
 import {
 	addressedVariant,
@@ -143,6 +145,53 @@ const TalkSchema = z
 			context.addIssue({ code: "custom", message: problem });
 	});
 type Talk = z.infer<typeof TalkSchema>;
+
+/** What a talk is made of: what was recorded, how it is drawn, and the log of what was heard. */
+interface TalkParts {
+	/** When the talk was recorded. */
+	readonly recordedAt: Date;
+	/** The language the voice spoke, as a BCP 47 tag. */
+	readonly language: string;
+	/** The theme the talk is rendered in unless another is asked for. */
+	readonly theme: DiagramTheme;
+	/** The layout engine the talk is rendered with; the default engine when absent. */
+	readonly layout?: LayoutEngineName;
+	/** The board presented, as it was when the talk was recorded. */
+	readonly board: z.input<typeof TalkBoardSchema>;
+	/** The voice's length and what happened while it spoke. */
+	readonly log: TalkLog;
+	/** The board's document as the Archboard server served it. */
+	readonly document: unknown;
+	/** The vault's checked policy the board was drawn under. */
+	readonly policy: z.input<typeof VaultCheckSchema>;
+}
+
+/**
+ * The talk of its parts, in the format `talk.json` holds, with its voice as the file beside it.
+ * @param parts What the talk is made of.
+ * @returns The talk, or why it cannot be rendered.
+ */
+function talkFrom(parts: TalkParts): ReturnType<typeof TalkSchema.safeParse> {
+	return TalkSchema.safeParse({
+		format: TALK_FORMAT,
+		version: TALK_VERSION,
+		recordedAt: parts.recordedAt.toISOString(),
+		language: parts.language,
+		theme: parts.theme,
+		layout: parts.layout,
+		board: parts.board,
+		audio: {
+			file: TALK_VOICE_FILE,
+			sampleRate: TALK_SAMPLE_RATE,
+			channels: 1,
+			samples: parts.log.samples,
+			baseLatencyMs: parts.log.baseLatencyMs,
+		},
+		events: parts.log.events,
+		document: parts.document,
+		policy: parts.policy,
+	});
+}
 
 /**
  * What is wrong with a talk whose parts each read well.
@@ -345,6 +394,7 @@ export {
 	TalkSchema,
 	framesOf,
 	replayAskedOf,
+	talkFrom,
 	voiceLevels,
 	type ReplayOptions,
 	type ReplayPage,
