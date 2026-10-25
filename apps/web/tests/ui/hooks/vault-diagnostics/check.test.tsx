@@ -4,7 +4,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
-import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import {
 	useVaultCheck,

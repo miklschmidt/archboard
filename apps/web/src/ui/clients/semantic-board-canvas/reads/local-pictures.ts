@@ -59,10 +59,11 @@ import {
 import type { PictureSource } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
 import {
 	semanticBoardDocumentQuery,
-	semanticBoardKeys,
 	semanticRenderQuery,
 	vaultCheckQuery,
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import { cachedReadings } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
+import { boardGoneStale } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
 
 /** Draws one board in this page. */
 type DrawBoard = (
@@ -210,7 +211,7 @@ async function drawn(
 }
 
 /**
- * What this tab has been reading of one board: the name it asks by, and the views.
+ * What this tab has been reading of one board: the name it asks its pictures by, and the views.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
  * @param board The board that changed.
@@ -222,30 +223,12 @@ function readingsOf(
 	board: string,
 ): { name: string; views: Set<string> } {
 	const reading = { name: board, views: new Set([""]) };
-	const pictures = client.getQueryCache().findAll({ queryKey: semanticBoardKeys.rendersIn(vault) });
-	for (const query of pictures) {
-		readOne(reading, board, query.queryKey);
+	for (const { kind, asked, view } of cachedReadings(client, vault)) {
+		if (kind !== "picture" || !sameBoardName(asked, board)) continue;
+		reading.name = asked;
+		reading.views.add(view);
 	}
 	return reading;
-}
-
-/**
- * Add what one cached picture says about how a board is read.
- * @param reading What has been gathered so far.
- * @param reading.name The name the tab asks for the board by.
- * @param reading.views The views read.
- * @param board The board that changed.
- * @param key The cached picture's key: prefix, kind, vault, board, variant, view.
- */
-function readOne(
-	reading: { name: string; views: Set<string> },
-	board: string,
-	key: readonly unknown[],
-): void {
-	const [, , , asked, , view] = key;
-	if (typeof asked !== "string" || !sameBoardName(asked, board)) return;
-	reading.name = asked;
-	if (typeof view === "string") reading.views.add(view);
 }
 
 /**
@@ -263,13 +246,7 @@ async function picturesToDrawAhead(
 	const reading = readingsOf(client, vault, board);
 	// Marked stale without reading anything yet: a pane showing the board reads
 	// its own again, and the drawing below reads the rest.
-	for (const queryKey of [
-		semanticBoardKeys.document(vault, reading.name),
-		semanticBoardKeys.boardRenders(vault, reading.name),
-	]) {
-		// oxlint-disable-next-line no-await-in-loop -- two invalidations, the document before the pictures drawn from it
-		await client.invalidateQueries({ queryKey, refetchType: "none" });
-	}
+	await boardGoneStale(client, vault, reading.name);
 	const document = await boardFor(client, vault, reading.name);
 	// The About page asks for the variant the board's name opens by no name, and any other by
 	// id. A board whose name opens nothing, because it has several drafts and no current variant,
