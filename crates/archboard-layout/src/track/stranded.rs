@@ -9,8 +9,9 @@
 //! before sliding.
 
 use crate::ecma::{abs, js_max, js_min};
-use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, Occupancy, StationId, Track};
+use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
 use crate::track::channels::{End, NetId};
+use crate::track::occupancy::Occupancy;
 use crate::track::readings::by_band;
 use crate::track::scene::{Map, Set, centre_x};
 
