@@ -8,7 +8,7 @@ import type {
 import type { CodexEpochStore, CodexThreadLinkPort } from "#runtime/protocol/voice/extension.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { CodexSession, SessionThread } from "@archboard/codex-app-server/session";
-import type { ThreadLinkSource } from "@archboard/codex-realtime-voice/runtime";
+import type { SessionThreadSource as ThreadLinkSource } from "@archboard/codex-app-server/session";
 import type {
 	CodexTransport,
 	DynamicServerRequest,

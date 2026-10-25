@@ -1,12 +1,9 @@
 export {
-	type CoordinatorCallbackHostPolicy,
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackOptions,
 	type CoordinatorCallbackRealtimeGeneration,
 	type CoordinatorCallbackSource,
 	type CoordinatorCallbacks,
-	type CoordinatorHostContextCallback,
-	type CoordinatorHostContextSource,
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorCallbackContextPort,
 	type CoordinatorCallback,
@@ -16,10 +13,7 @@ export {
 	type CoordinatorCallbackReadyCoordinator,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 export { COORDINATOR_CAPABILITY_POLICY } from "#runtime/protocol/coordinator/contract.ts";
-export {
-	type WorkbenchContextEvent,
-	type WorkbenchContextPublisher,
-} from "#runtime/protocol/host/context-source.ts";
+export { type WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
 export { type WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operations/contract.ts";
 export { coordinatorCallbackCoalescingKey } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 export { type ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
@@ -36,7 +30,6 @@ export {
 	type ThreadLinkCasToken,
 	type ThreadLinkReasonCode,
 	type ThreadLinkSnapshot,
-	type ThreadLinkSource,
 	type ThreadLinkStatus,
 } from "#runtime/rules/thread-link/contract.ts";
 export { type DeepReadonly } from "#runtime/services/approvals/contract.ts";

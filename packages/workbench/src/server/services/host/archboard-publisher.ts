@@ -1,4 +1,4 @@
-import type { WorkbenchContextPublisher } from "@archboard/codex-realtime-voice/runtime";
+import type { WorkbenchContextPublisher } from "#runtime/protocol/voice/extension.ts";
 import type {
 	SemanticContextPublisher,
 	SemanticContextPublisherOptions,

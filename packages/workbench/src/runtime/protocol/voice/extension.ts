@@ -88,3 +88,17 @@ export type BrowserActionContext = Parameters<BrowserDynamicApprovalActions["res
 export type BrowserActionResult = Awaited<ReturnType<BrowserDynamicApprovalActions["resolve"]>>;
 /** The exact physical socket a host registers with the browser port. */
 export type BrowserConnectionInstance = Parameters<VoiceAgentBrowserPort["accept"]>[0];
+/** Where a tab session's or workhorse's host context is published. */
+export type WorkbenchContextPublisher = ReturnType<Extensions["sessionContextFor"]>["publisher"];
+/** The host's policy for the coordinator callbacks its context events become. */
+export type CoordinatorCallbackHostPolicy = ReturnType<
+	Extensions["sessionContextFor"]
+>["callbacks"];
+/** One host-context event as the host announces it to the callback engine. */
+export type CoordinatorHostContextSource = Parameters<
+	Parameters<CoordinatorCallbackHostPolicy["subscribe"]>[0]
+>[0];
+/** One host-context event as the callback engine asks the host how to deliver it. */
+export type CoordinatorHostContextCallback = Parameters<
+	CoordinatorCallbackHostPolicy["delivery"]
+>[0];
