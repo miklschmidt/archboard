@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 105,
+	"version": 106,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-25T04:09:54.924Z",
+	"updatedAt": "2026-10-25T11:37:31.875Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -38964,7 +38964,7 @@
 							{
 								"id": "TxUv8QT5",
 								"heading": "One core, two hosts",
-								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host: an @napi-rs/canvas canvas with the diagram faces, and Bun Workers running Graphviz and libavoid. The tab installs its own canvas and Web Workers running the same engines. Both then call the same board answer.",
+								"body": "The renderer body reads no file, no clock and no random number. The server installs a Bun host: an @napi-rs/canvas canvas with the diagram faces, and Bun Workers that load the renderer core and run Graphviz. The tab installs its own canvas and Web Workers running the same engines. Both then call the same board answer.",
 								"subjects": [
 									"4nyk76pY",
 									"0XCanbzp",
