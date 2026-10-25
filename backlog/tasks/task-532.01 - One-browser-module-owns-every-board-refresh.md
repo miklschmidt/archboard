@@ -1,11 +1,11 @@
 ---
 id: TASK-532.01
 title: One browser module owns every board refresh
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:41:00Z'
+updated_date: '2026-10-25T02:47:00Z'
 labels: []
 dependencies: []
 references:
@@ -29,3 +29,14 @@ Four browser paths each assemble the same document-before-picture refresh: use-s
 - [ ] #2 Query-key layout, cancellation order and readAgain are private to the reads module
 - [ ] #3 Tests on a real QueryClient with delayed reads prove that the next read is of the new version, across former names and per vault
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move the semantic query keys out of queries.ts into a reads-private board-keys.ts, with one decoder of cached readings (board asked by, view, data) so no caller destructures key positions.
+2. Add reads/board-refresh.ts: the one interface callers report events to: boardChanged (a pane's board moved), boardsChanged (boards of a vault written or let go, plus its listing and the panes), listingsChanged, policyChanged, readEverythingAgain (reload and reconnect), repositoriesChanged. Module-private: boardsListed (a received listing, used by the list query) and boardGoneStale (draw-ahead marks without reading). All ordering (document before pictures, cancel before invalidate) and readAgain live there.
+3. A board's readings are matched by every name this tab asked it by: case-insensitively and by the cached document's name and former names, so a board let go under the server's spelling refreshes a reading asked by another spelling or a former name (the boardsChanged divergence).
+4. Change callers: use-semantic-board-changes, use-board-catalog (catalogCommands binds the module ops), use-vault-check, local-pictures, queries.ts. No caller names a query key.
+5. Replace key-invalidation tests (boards-changed.test.ts, listed-versions.test.ts, board-catalog refresh test) with real-QueryClient tests with delayed reads: delayed old answer does not win, next read is of the new version, a former name refreshes, another vault untouched. Keep local-pictures drawing coverage.
+6. type-check, lint, focused tests, fmt; commit.
+<!-- SECTION:PLAN:END -->

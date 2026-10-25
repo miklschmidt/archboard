@@ -19,18 +19,15 @@ import {
 	type VaultHalf,
 } from "#ui/rules/board-catalog/listing.ts";
 import { halfOf } from "#ui/rules/board-catalog/vault-boards.ts";
-import {
-	boardCatalogKeys,
-	paneInventoryQuery,
-	repositoriesQuery,
-} from "#ui/clients/board-catalog/queries.ts";
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { paneInventoryQuery, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
 import { onSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
-import { readAgain } from "#ui/clients/semantic-board-canvas/reads/read-again.ts";
 import {
-	semanticBoardKeys,
-	semanticBoardListQuery,
-} from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+	boardsChanged,
+	listingsChanged,
+	readEverythingAgain,
+	repositoriesChanged,
+} from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
+import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { type SemanticBoardListing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardListing, BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
@@ -85,16 +82,8 @@ interface BoardCatalog {
 }
 
 /**
- * Read every vault's listing and the panes again.
- * @param client The cache.
- */
-function invalidateListing(client: QueryClient): void {
-	void readAgain(client, [semanticBoardKeys.allBoards]);
-	void readAgain(client, [boardCatalogKeys.panes]);
-}
-
-/**
- * The invalidations, bound to one cache.
+ * The commands, bound to one cache. Each reports what happened to the board
+ * reads, which decide what goes stale and in what order.
  * @param client The cache.
  * @returns The commands, stable for that cache.
  */
@@ -104,59 +93,33 @@ function catalogCommands(
 	BoardCatalog,
 	"refresh" | "reload" | "boardsChanged" | "reconnected" | "repositoriesChanged"
 > {
-	/**
-	 * Read the listings again. The repositories are not read: a chosen checkout
-	 * is announced, and nothing a board command or a pane report does moves one.
-	 */
+	/** A board command or a pane report: the listings and the panes. */
 	function refresh(): void {
-		invalidateListing(client);
+		void listingsChanged(client);
 	}
-	/**
-	 * Read the repositories, the listings, every drawing, and every board
-	 * document again. This is the one control a person has when something the
-	 * shell reads has gone wrong, so it must reach every resource, not only the
-	 * ones that failed loudly.
-	 *
-	 * The documents matter as much as the pictures and are easier to forget: a
-	 * board's own document is what the inspector reads and what the variant and
-	 * walkthrough controls are built from, and it is cached for as long as the
-	 * tab is open. A board written while this tab was not being told — another
-	 * Archboard server on the same vault, or a socket that was down — would come back with
-	 * a fresh picture beside an inspector describing the board as it used to be.
-	 */
+	/** Everything, as a person asks for it and as a reconnected socket needs it. */
 	function reload(): void {
-		void readAgain(client, [boardCatalogKeys.repositories]);
-		invalidateListing(client);
-		void readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
+		void readEverythingAgain(client);
 	}
 	/**
-	 * These boards of one vault have been written, or stopped being worked on.
-	 * The listing may have moved whether or not any board is named, so it is
-	 * read again either way.
+	 * Boards of one vault were written or let go.
 	 * @param vault The vault the boards are in.
-	 * @param boards The board keys, which may be none. A key that names a
-	 *   variant is of the whole board: the canvas caches a board by its name.
+	 * @param boards The board keys, which may be none.
 	 */
-	function boardsChanged(vault: string, boards: readonly string[]): void {
-		void readAgain(client, [semanticBoardKeys.boards(vault)]);
-		void readAgain(client, [boardCatalogKeys.panes]);
-		for (const key of boards) {
-			const board = boardAddressOf(key)?.board ?? key;
-			void readAgain(client, [
-				semanticBoardKeys.document(vault, board),
-				semanticBoardKeys.boardRenders(vault, board),
-			]);
-		}
-	}
-	/** A pane's socket came back. */
-	function reconnected(): void {
-		reload();
+	function changed(vault: string, boards: readonly string[]): void {
+		void boardsChanged(client, vault, boards);
 	}
 	/** A checkout was chosen. */
-	function repositoriesChanged(): void {
-		void readAgain(client, [boardCatalogKeys.repositories]);
+	function chosen(): void {
+		void repositoriesChanged(client);
 	}
-	return { refresh, reload, boardsChanged, reconnected, repositoriesChanged };
+	return {
+		refresh,
+		reload,
+		boardsChanged: changed,
+		reconnected: reload,
+		repositoriesChanged: chosen,
+	};
 }
 
 /**
@@ -217,7 +180,7 @@ function useBoardCatalog(): BoardCatalog {
 	useEffect(
 		() =>
 			onSemanticBoardChange((vault) => {
-				void readAgain(client, [semanticBoardKeys.boards(vault), boardCatalogKeys.panes]);
+				void boardsChanged(client, vault, []);
 			}),
 		[client],
 	);
@@ -273,10 +236,4 @@ function boardsIn(catalog: Pick<BoardCatalog, "repositories">, vault: string | n
 	return found?.listing ?? EMPTY_LISTING;
 }
 
-export {
-	boardsIn,
-	catalogCommands as catalogCommandsFor,
-	useBoardCatalog,
-	type BoardCatalog,
-	type RepositoryBoards,
-};
+export { boardsIn, useBoardCatalog, type BoardCatalog, type RepositoryBoards };
