@@ -83,7 +83,7 @@ describe("production Codex owner lifecycle", () => {
 		const shutdown = owner.shutdown();
 		expect(events).toContain("owner:stop:entered");
 		for (const dispatch of [() => owner.start(), () => owner.gateway()]) {
-			expect(dispatch).toThrow("no active owner dispatch");
+			expect(dispatch).toThrow("is not running");
 		}
 		expect(events.filter((event) => event === "owner:stop:entered")).toHaveLength(1);
 		releaseStop();
@@ -106,7 +106,7 @@ describe("production Codex owner lifecycle", () => {
 		await owner.shutdown();
 		releaseGeneration();
 		expect(await rejected(staleStart)).toBeInstanceOf(CodexWorkbenchCompositionError);
-		expect(() => owner.gateway()).toThrow("no active owner dispatch");
+		expect(() => owner.gateway()).toThrow("is not running");
 		expect(oldEvents.filter((event) => event === "process:stop")).toHaveLength(1);
 	});
 
@@ -195,7 +195,7 @@ describe("production Codex owner lifecycle", () => {
 				failure: expect.stringContaining(failure.message),
 			});
 			expect(process.process.snapshot()).toMatchObject({ state: "stopped", pid: null });
-			expect(() => owner.gateway()).toThrow("no active owner dispatch");
+			expect(() => owner.gateway()).toThrow("is not running");
 			expect(events).not.toContain("process:restart");
 			await owner.shutdown();
 		});

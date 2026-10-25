@@ -75,7 +75,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		published.failure = failureMessage(error);
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
-			"The production Codex process owner could not be created.",
+			"The Codex process could not be created. The cause says why.",
 			error,
 		);
 	}
@@ -118,7 +118,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		if (published.current === null) {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
-				"The production Codex workbench has no active owner dispatch.",
+				"The voice agent is not running. Start it first.",
 			);
 		}
 		return published.current;
@@ -201,7 +201,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		}
 		return new CodexWorkbenchCompositionError(
 			"startup_failed",
-			"The production Codex workbench did not become ready.",
+			"Codex did not become ready. The cause says why; fix it, then start the agent again.",
 			failure,
 		);
 	};
@@ -401,7 +401,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		gateway: () => {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
-				"The production Codex workbench browser gateway is not ready.",
+				"The voice agent is not ready for browser sockets until it has started.",
 			);
 		},
 	};
