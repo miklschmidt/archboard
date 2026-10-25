@@ -3,6 +3,8 @@
 //! included, so nested containers never share a bottom edge; and the channel
 //! below the band a container ends on starts its tracks below that edge.
 
+use std::cell::OnceCell;
+
 use archboard_scene::geometry::Rect;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
@@ -43,6 +45,11 @@ pub(crate) struct Container {
     pub inner: Vec<usize>,
     /// Its left and right walls.
     pub walls: (f64, f64),
+    /// The lowest band of its items.
+    last_band: usize,
+    /// Geometry shared by every ancestor that includes this container.
+    bottom: OnceCell<f64>,
+    reach: OnceCell<f64>,
 }
 
 /// The placed relationships a scene's containers hold the labels of, by id.
@@ -148,12 +155,20 @@ impl<'a> Containers<'a> {
                 .then_some(item)
         });
         let held = members.iter().filter_map(|id| scene.member(id));
-        let items = std::iter::once(head).chain(held).chain(labels).collect();
+        let items: Vec<ItemId> = std::iter::once(head).chain(held).chain(labels).collect();
+        let last_band = items
+            .iter()
+            .map(|&item| scene.item(item).band)
+            .max()
+            .unwrap_or(0);
         Container {
             inset,
             items,
             inner: Vec::new(),
             walls,
+            last_band,
+            bottom: OnceCell::new(),
+            reach: OnceCell::new(),
         }
     }
 
@@ -179,18 +194,16 @@ impl<'a> Containers<'a> {
 
     /// Where a container's bottom edge stands once the scene is spaced: one
     /// inset below the lowest thing it holds, the containers inside it included.
-    pub(crate) fn bottom_of(&self, container: usize, left: f64) -> f64 {
+    fn bottom_of(&self, container: usize) -> f64 {
         let container = &self.all[container];
-        let items = container.items.iter().map(|&item| {
-            let bx = self.scene.moved_id(item, left);
-            bx.y + bx.height
-        });
-        let inner: Vec<f64> = container
-            .inner
-            .iter()
-            .map(|&one| self.bottom_of(one, left))
-            .collect();
-        max(items.chain(inner)) + container.inset
+        *container.bottom.get_or_init(|| {
+            let items = container.items.iter().map(|&item| {
+                let bx = self.scene.moved_id(item, 0.0);
+                bx.y + bx.height
+            });
+            let inner = container.inner.iter().map(|&one| self.bottom_of(one));
+            max(items.chain(inner)) + container.inset
+        })
     }
 
     /// How far below each band the containers that end on it reach, before spacing.
@@ -203,7 +216,7 @@ impl<'a> Containers<'a> {
             .chain(self.regions.iter().copied())
         {
             let band = self.last_band(at);
-            closing[band] = js_max(closing[band], self.reach(at, band));
+            closing[band] = js_max(closing[band], self.reach(at));
         }
         closing
     }
@@ -233,22 +246,20 @@ impl<'a> Containers<'a> {
 
     /// The lowest band a container holds anything on.
     pub(crate) fn last_band(&self, container: usize) -> usize {
-        self.all[container]
-            .items
-            .iter()
-            .map(|&item| self.scene.item(item).band)
-            .max()
-            .unwrap_or(0)
+        self.all[container].last_band
     }
 
     /// How far below a band a container ending on it reaches.
-    fn reach(&self, container: usize, band: usize) -> f64 {
-        let inner = self.all[container]
-            .inner
-            .iter()
-            .filter(|&&one| self.last_band(one) == band)
-            .map(|&one| self.reach(one, band));
-        self.all[container].inset + max(std::iter::once(0.0).chain(inner))
+    fn reach(&self, container: usize) -> f64 {
+        let container = &self.all[container];
+        *container.reach.get_or_init(|| {
+            let inner = container
+                .inner
+                .iter()
+                .filter(|&&one| self.last_band(one) == container.last_band)
+                .map(|&one| self.reach(one));
+            container.inset + max(std::iter::once(0.0).chain(inner))
+        })
     }
 }
 
@@ -261,7 +272,7 @@ pub(crate) fn frame_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> V
         .iter()
         .map(|(id, frame)| {
             let title = scene.moved_id(scene.titles[id.as_str()], left);
-            let bottom = containers.bottom_of(containers.frames[id.as_str()], left);
+            let bottom = containers.bottom_of(containers.frames[id.as_str()]);
             let bx = Rect {
                 x: frame.x + left,
                 y: title.y,
@@ -289,7 +300,7 @@ pub(crate) fn region_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> 
         .enumerate()
         .map(|(index, region)| {
             let caption = scene.moved_id(region.caption, left);
-            let bottom = containers.bottom_of(containers.regions[index], left);
+            let bottom = containers.bottom_of(containers.regions[index]);
             let depth = region.parent.as_ref().map_or(0, |parent| {
                 scene.frames.get(parent).map_or(0, |frame| frame.depth) + 1
             });
@@ -308,4 +319,75 @@ pub(crate) fn region_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> 
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::placed::{FrameRow, PlacedBlock, PlacedNode, PlacedRegion};
+
+    /// A region around nested frames, each title on its own band above one card.
+    fn nested(depth: usize) -> Placement {
+        let mut node = PlacedNode {
+            id: "leaf".to_owned(),
+            x: 0.0,
+            y: depth as f64 * 40.0,
+            width: 200.0,
+            height: 20.0,
+            children: None,
+            frame: None,
+        };
+        for index in (0..depth).rev() {
+            let y = index as f64 * 40.0;
+            node = PlacedNode {
+                id: format!("frame{index}"),
+                x: 0.0,
+                y,
+                width: 300.0,
+                height: (depth - index) as f64 * 40.0 + 20.0,
+                children: Some(vec![node]),
+                frame: Some(FrameRow {
+                    title: [0.0, y, 300.0, 20.0, 80.0],
+                    steps: None,
+                    below: None,
+                    wide: None,
+                }),
+            };
+        }
+        let mut scene = Placement::new(&PlacedBlock {
+            children: vec![node],
+            edges: Vec::new(),
+            regions: vec![PlacedRegion {
+                group: "region".to_owned(),
+                parent: None,
+                members: vec!["frame0".to_owned()],
+                bx: [0.0, -40.0, 300.0, 0.0],
+                caption: [0.0, -40.0, 80.0, 20.0],
+            }],
+            header: None,
+        });
+        for band in &mut scene.bands {
+            band.new_top = band.top;
+        }
+        scene
+    }
+
+    // Every ancestor lists every descendant. Without shared results, these
+    // 33 containers require billions of recursive visits to size their edges.
+    #[test]
+    fn deeply_nested_frames_and_their_region_keep_each_bottom_inset() {
+        let depth = 32;
+        let scene = nested(depth);
+        let edges = Edges::default();
+        let containers = Containers::new(&scene, &edges);
+        let inset = depth as f64 * CONTAINER_INSET + REGION_INSET;
+        assert_eq!(containers.closings().last(), Some(&inset));
+        let leaf_bottom = scene.item(scene.cards["leaf"]).bx.y + 20.0;
+        for frame in frame_shapes(&scene, &edges, 37.0) {
+            let expected = leaf_bottom + (depth - frame.depth) as f64 * CONTAINER_INSET;
+            assert_eq!(frame.bx.y + frame.bx.height, expected);
+        }
+        let region = &region_shapes(&scene, &edges, 37.0)[0];
+        assert_eq!(region.bx.y + region.bx.height, leaf_bottom + inset);
+    }
 }
