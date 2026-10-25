@@ -15,6 +15,9 @@ fn free_of(edge: Span, blocked: &[Span]) -> Vec<Span> {
     let mut free = Vec::new();
     let mut from = edge.0;
     for (low, high) in sorted {
+        if from >= edge.1 {
+            break;
+        }
         if low > from {
             free.push((from, js_min(low, edge.1)));
         }
@@ -43,4 +46,34 @@ pub(crate) fn nearest_free(edge: Span, boxes: &[Rect], margin: f64, x: f64) -> O
 /// or the whole edge when the boxes cover it.
 pub(crate) fn open_stretch(edge: Span, boxes: &[Rect], margin: f64, x: f64) -> Span {
     nearest_free(edge, boxes, margin, x).unwrap_or(edge)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A box whose horizontal span blocks a port's edge.
+    fn obstacle(x: f64, width: f64) -> Rect {
+        Rect {
+            x,
+            y: 0.0,
+            width,
+            height: 100.0,
+        }
+    }
+
+    #[test]
+    fn obstacles_beyond_an_edge_never_offer_reversed_free_stretches() {
+        let edge = (0.0, 100.0);
+        let boxes = [obstacle(40.0, 80.0), obstacle(150.0, 30.0)];
+        assert_eq!(nearest_free(edge, &boxes, 0.0, 90.0), Some((0.0, 40.0)));
+    }
+
+    #[test]
+    fn a_covered_edge_keeps_its_fallback_with_more_obstacles_beyond_it() {
+        let edge = (0.0, 100.0);
+        let boxes = [obstacle(-10.0, 120.0), obstacle(150.0, 30.0)];
+        assert_eq!(nearest_free(edge, &boxes, 0.0, 50.0), None);
+        assert_eq!(open_stretch(edge, &boxes, 0.0, 50.0), edge);
+    }
 }
