@@ -197,7 +197,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				active?.sessions
 					.list()
 					.find((session) => session.id === id)
-					?.components.realtime.presentation(),
+					?.components.realtime.narrative(),
 			);
 			return recording ? { ...canvas, narrated: null } : canvas;
 		},
@@ -248,8 +248,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				const vault = vaultIn(checkout);
 				return (vault === null ? null : repositoryOfVault(vault)) ?? basename(checkout);
 			},
-			presentation: ARCHBOARD_VOICE_PRESENTATION,
-			recording: isArchboardRecording,
+			narrative: ARCHBOARD_VOICE_PRESENTATION,
 			domainTools: {
 				registrations: [
 					{ namespace: "archboard_app", manifestHash: ARCHBOARD_APP_MANIFEST_SHA256 },

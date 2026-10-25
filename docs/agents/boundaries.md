@@ -644,7 +644,7 @@ The agent's `start()`, its two socket adapters and `shutdown()` own process star
 `attach(server, { path, origin })` serves the browser sockets on one path of a `node:http` server, and `bunHandlers({ path, fetch, websocket })` returns the `fetch` and `websocket` of a `Bun.serve` server that serves them, so a host writes no upgrade handling.
 Both apply the one admission in `server/services/agent/admission.ts`.
 The identity sets the Codex service name and thread source, with the neutral default `codex-realtime-voice`.
-A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, voice presentation, and its own browser routing.
+A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, a voice narrative, and its own browser routing.
 A host that multiplexes its own socket uses `agent.browser` instead of either adapter.
 That extension contract is one type, and a host derives the parts it names from it.
 `./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, instruction byte checks, and the realtime adapter and thread-context delivery its tests build on.

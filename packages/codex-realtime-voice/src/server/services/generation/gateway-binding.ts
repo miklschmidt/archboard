@@ -45,7 +45,7 @@ function createGatewayBinding(
 			components: created,
 			sessions: requireCreated(created, "sessions"),
 			dynamicApprovals: dynamic,
-			...(server.host.recording === undefined ? {} : { recording: server.host.recording }),
+			...(server.host.narrative === undefined ? {} : { narrative: server.host.narrative }),
 			timeline: owners.timeline,
 			coordinatorTimeline: owners.coordinatorTimeline,
 			budget,

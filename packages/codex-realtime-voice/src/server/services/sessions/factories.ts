@@ -376,7 +376,7 @@ function buildProductionTabSession(
 				},
 				scope,
 				scope.state.voiceTrace,
-				bindings.presentation,
+				bindings.narrative,
 			),
 		},
 	};

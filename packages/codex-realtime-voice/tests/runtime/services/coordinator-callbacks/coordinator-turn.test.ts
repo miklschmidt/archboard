@@ -3,8 +3,8 @@
 // That a turn ended or waits on the user is workhorse news from the thread itself, whoever started
 // the turn, so an operation's completed, failed and attention stay quiet here rather than telling
 // the coordinator twice. What is guarded: only an outcome nobody can vouch for reaches the
-// coordinator, and none of it is appended to the voice model; a recording gets nothing; and with
-// no voice session nothing reaches the coordinator.
+// coordinator, and none of it is appended to the voice model; an unattended session gets nothing;
+// and with no voice session nothing reaches the coordinator.
 
 import { describe, expect, test } from "bun:test";
 
@@ -77,8 +77,8 @@ describe("a coordinator operation's outcome while voice is live", () => {
 		}
 	});
 
-	test("sends nothing while a recording holds the voice, and records the outcome", async () => {
-		const { h, reports, callbacks } = withTurnPort(true, "recording");
+	test("sends nothing while the voice session is unattended, and records the outcome", async () => {
+		const { h, reports, callbacks } = withTurnPort(true, "unattended");
 		try {
 			const delivery = await callbacks.enqueue(operationEvent(h.ids, "outcome_unknown"));
 			expect(delivery).toMatchObject({

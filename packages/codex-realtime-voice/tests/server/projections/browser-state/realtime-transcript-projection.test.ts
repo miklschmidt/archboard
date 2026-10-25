@@ -281,7 +281,7 @@ function projectionInput(input: {
 		},
 		voice: {
 			kind: "codex_voice",
-			recording: false,
+			unattended: false,
 			mediaReady: true,
 			generation: { browserSessionId: input.browserSessionId },
 			coordinatorState: "ready",

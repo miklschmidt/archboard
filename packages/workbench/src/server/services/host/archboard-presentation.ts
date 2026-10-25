@@ -1,4 +1,4 @@
-import type { WorkbenchVoicePresentationAdapter } from "#runtime/protocol/voice/extension.ts";
+import type { VoiceNarrativeAdapter } from "#runtime/protocol/voice/extension.ts";
 import { JsonValueSchema } from "@archboard/codex-realtime-voice/schemas";
 import { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 import {
@@ -8,9 +8,12 @@ import {
 } from "#server/projections/semantic-context/walkthrough-narration.ts";
 import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
 
-/** Parse host JSON before any walkthrough or recording behavior uses it. */
-export const ARCHBOARD_VOICE_PRESENTATION: WorkbenchVoicePresentationAdapter =
-	Object.freeze<WorkbenchVoicePresentationAdapter>({
+/**
+ * Archboard's walkthrough presentation as the voice package's narrative: parsed before any
+ * walkthrough or recording behavior uses it.
+ */
+export const ARCHBOARD_VOICE_PRESENTATION: VoiceNarrativeAdapter =
+	Object.freeze<VoiceNarrativeAdapter>({
 		/**
 		 * Require valid Archboard presentation data before the core accepts it.
 		 * @param input The host presentation payload.
@@ -48,10 +51,9 @@ export const ARCHBOARD_VOICE_PRESENTATION: WorkbenchVoicePresentationAdapter =
 		},
 		forget: forgetNarration,
 		/**
-		 * Read the recording flag from validated browser input before narration is prepared.
-		 * @param input The browser presentation payload.
-		 * @returns Whether this browser request records narration.
+		 * A recording is narrated to nobody listening live.
+		 * @param presentation The captured host presentation.
+		 * @returns Whether it is a recording's.
 		 */
-		recording: (input) =>
-			input !== null && ArchboardVoicePresentationSchema.parse(input).recording !== undefined,
+		unattended: isArchboardRecording,
 	});

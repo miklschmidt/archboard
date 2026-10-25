@@ -41,7 +41,7 @@ function createTestVoicePolicy(
 		...(subscribe === undefined
 			? {}
 			: {
-					subscribe: (_presentation: unknown, listener: (input: WorkbenchVoiceInput) => void) =>
+					subscribe: (_narrative: unknown, listener: (input: WorkbenchVoiceInput) => void) =>
 						subscribe(listener),
 				}),
 	});

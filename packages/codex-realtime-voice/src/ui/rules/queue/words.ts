@@ -5,13 +5,13 @@
 import type { WorkbenchQueueEntry, WorkbenchQueueState } from "#ui/state/queue/contracts.ts";
 
 /** The words for one state. */
-interface WorkbenchQueueNarrative {
+interface WorkbenchQueueStateWords {
 	readonly label: string;
 	readonly detail: string;
 	readonly recovery: string;
 }
 
-const WORKBENCH_QUEUE_NARRATIVES = {
+const WORKBENCH_QUEUE_STATE_WORDS = {
 	loading: {
 		label: "Loading queue",
 		detail: "The authoritative queue snapshot for this thread link has not arrived yet.",
@@ -98,7 +98,7 @@ const WORKBENCH_QUEUE_NARRATIVES = {
 		detail: "A queue mutation's outcome was lost, so nothing on screen may be read as settled.",
 		recovery: "Refresh the list to read the authoritative queue before commanding it again.",
 	},
-} as const satisfies Record<WorkbenchQueueState, WorkbenchQueueNarrative>;
+} as const satisfies Record<WorkbenchQueueState, WorkbenchQueueStateWords>;
 
 const WORKBENCH_QUEUE_ENTRY_STATUS_LABELS = {
 	empty: "Empty",
@@ -114,4 +114,4 @@ const WORKBENCH_QUEUE_ENTRY_STATUS_LABELS = {
 	outcome_unknown: "Outcome unknown",
 } as const satisfies Record<WorkbenchQueueEntry["status"], string>;
 
-export { WORKBENCH_QUEUE_ENTRY_STATUS_LABELS, WORKBENCH_QUEUE_NARRATIVES };
+export { WORKBENCH_QUEUE_ENTRY_STATUS_LABELS, WORKBENCH_QUEUE_STATE_WORDS };

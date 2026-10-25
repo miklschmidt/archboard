@@ -8,7 +8,7 @@ import type {
 	WorkbenchQueueEntryView,
 	WorkbenchQueueProjectionInput,
 } from "#ui/state/queue/contracts.ts";
-import { WORKBENCH_QUEUE_ENTRY_STATUS_LABELS } from "#ui/rules/queue/narratives.ts";
+import { WORKBENCH_QUEUE_ENTRY_STATUS_LABELS } from "#ui/rules/queue/words.ts";
 import { isCoordinatorOwned } from "#ui/rules/queue/reorder.ts";
 import { isSettledEntryStatus } from "#ui/rules/queue/state.ts";
 import type { QueueCommandName } from "#ui/state/queue/transport-port.ts";

@@ -1,4 +1,4 @@
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import { watchContextUpdates } from "#runtime/rules/realtime/context-updates.ts";
 import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#shared/rules/realtime-state.ts";
 import {
@@ -247,12 +247,12 @@ export function createCodexRealtimeAdapter(
 	/**
 	 * Accept the browser's offer, open the one active session and start negotiation with Codex.
 	 * @param offer - The browser's offer SDP and correlation.
-	 * @param presentation - The walkthrough the session is started to present, or null.
+	 * @param narrative - The narrative the session is started to present, or null.
 	 * @returns The answer SDP once Codex has started the session.
 	 */
 	const openSession = (
 		offer: CreateOfferSdp,
-		presentation: BrowserVoicePresentation | null,
+		narrative: VoiceNarrative | null,
 	): Promise<AnswerSdp> => {
 		if (disposed) {
 			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
@@ -280,7 +280,7 @@ export function createCodexRealtimeAdapter(
 			correlationId: offer.correlationId,
 			wireSessionId,
 			startBrief: options.coordinatorContext.read(),
-			presentation,
+			narrative,
 			answer,
 			resolveAnswer,
 			rejectAnswer,
@@ -304,15 +304,15 @@ export function createCodexRealtimeAdapter(
 	};
 
 	/**
-	 * Accept the browser's offer as an ordinary session, or one started to present a walkthrough.
+	 * Accept the browser's offer as an ordinary session, or one started to present a narrative.
 	 * @param offer - The browser's offer SDP and correlation.
-	 * @param presentation - The walkthrough the session is started to present, when there is one.
+	 * @param narrative - The narrative the session is started to present, when there is one.
 	 * @returns The answer SDP once Codex has started the session.
 	 */
 	const createOffer = (
 		offer: CreateOfferSdp,
-		presentation?: BrowserVoicePresentation | null,
-	): Promise<AnswerSdp> => openSession(offer, presentation ?? null);
+		narrative?: VoiceNarrative | null,
+	): Promise<AnswerSdp> => openSession(offer, narrative ?? null);
 
 	/**
 	 * Reduce a server notification when it belongs exactly to the live session.
@@ -501,10 +501,10 @@ export function createCodexRealtimeAdapter(
 		 */
 		generation: () => (active === null ? null : realtimeGeneration(active)),
 		/**
-		 * The walkthrough the live session presents, and whether it is recorded.
-		 * @returns The presentation, or null with no live session or an ordinary one.
+		 * The narrative the live session presents.
+		 * @returns The narrative, or null with no live session or an ordinary one.
 		 */
-		presentation: () => active?.presentation ?? null,
+		narrative: () => active?.narrative ?? null,
 		/**
 		 * Drop listeners, retain the live transcript and reject a still-pending start.
 		 */

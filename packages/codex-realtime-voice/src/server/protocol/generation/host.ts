@@ -14,8 +14,7 @@ import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomainTools,
 } from "#server/protocol/generation/domain.ts";
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
-import type { WorkbenchVoicePresentationAdapter } from "#server/services/voice/presentation.ts";
+import type { VoiceNarrativeAdapter } from "#server/services/voice/narrative.ts";
 import type { CodexWorkbenchGateway } from "#server/protocol/gateway/contract.ts";
 import type { CodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
 
@@ -32,7 +31,7 @@ export interface CodexWorkbenchHostPolicy {
 	readonly resolveCheckout: (named: string) => string | null;
 	/** What one tab's coordinator is told about the host page. Default: the `context` option. */
 	readonly coordinatorContextFor: (id: TabSessionId) => WorkbenchContextSource;
-	/** How one tab's voice is presented and recorded. Default: the `voice` option. */
+	/** How one tab's voice starts. Default: the `voice` option. */
 	readonly voiceFor: (id: TabSessionId) => WorkbenchVoicePolicy;
 	/**
 	 * The context an operation runs under, captured before it runs. Default: the live workhorse of
@@ -47,10 +46,8 @@ export interface CodexWorkbenchHostPolicy {
 	readonly onShownChange: (listener: () => void) => () => void;
 	/** The name the workhorse list shows for a checkout. Default: the checkout directory's name. */
 	readonly checkoutLabel: (checkout: string) => string;
-	/** Validates and prepares the voice presentation a browser asks for at realtime start. */
-	readonly presentation?: WorkbenchVoicePresentationAdapter;
-	/** Whether a presentation is being recorded, which the browser shows. Default: never. */
-	readonly recording?: (presentation: BrowserVoicePresentation | null) => boolean;
+	/** Checks, prepares, opens and forgets the narrative a browser starts voice to present. */
+	readonly narrative?: VoiceNarrativeAdapter;
 	/** The host's own Codex dynamic tools, installed on each generation. */
 	readonly domainTools?: CodexWorkbenchDomainTools;
 	/** Install context and authority readers before browser work is accepted. Retirement removes them. */

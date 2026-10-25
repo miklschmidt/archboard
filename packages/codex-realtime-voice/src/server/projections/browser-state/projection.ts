@@ -299,7 +299,7 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 		kind: "voice",
 		state: voiceState(input),
 		realtimeSessionId: realtimeSessionId(input),
-		recording: input.recording,
+		unattended: input.unattended,
 		transcript: input.transcript.map((record) => ({
 			itemId: record.itemId,
 			sequence: record.sequence,

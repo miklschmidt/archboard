@@ -24,7 +24,7 @@ import type {
 	CodexWorkbenchWorkhorse,
 } from "#server/services/sessions/sessions.ts";
 import type { WorkbenchDomainApprovals } from "#server/protocol/projection/domain-approvals.ts";
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrativeAdapter } from "#server/services/voice/narrative.ts";
 import type {
 	ServerBrowserProjectionBudget,
 	ServerTimelineOwner,
@@ -57,8 +57,8 @@ interface ServerBrowserGatewayInput {
 	readonly components: CodexWorkbenchSharedComponents;
 	readonly sessions: Pick<CodexWorkbenchSessions, "require" | "list" | "onChange">;
 	readonly dynamicApprovals: WorkbenchDomainApprovals | null;
-	/** Host presentation facts for the active voice session. */
-	readonly recording?: (presentation: BrowserVoicePresentation | null) => boolean;
+	/** The host's narrative adapter, which says whether the live voice session is unattended. */
+	readonly narrative?: VoiceNarrativeAdapter;
 	readonly state: ServerBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
 	readonly timeline: ServerTimelineOwner;
@@ -455,7 +455,7 @@ function createServerBrowserGatewayOptions(
 					session: sessionOf(context),
 					workhorse: sessionOf(context).workhorses.get(context.checkout) ?? null,
 					dynamicApprovals,
-					...(input.recording === undefined ? {} : { recording: input.recording }),
+					...(input.narrative === undefined ? {} : { narrative: input.narrative }),
 					state,
 					timeline: input.timeline,
 					coordinatorTimeline: input.coordinatorTimeline,

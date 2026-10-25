@@ -30,6 +30,7 @@ import type {
 	CodexWorkbenchWorkhorseScope,
 } from "#server/services/sessions/sessions.ts";
 import type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
+import { isUnattended } from "#server/services/voice/narrative.ts";
 import {
 	readyDelegatedWorkhorse,
 	workhorseOfCheckout,
@@ -337,12 +338,6 @@ function callbackBindings(
 			 * @returns The generation, or null.
 			 */
 			currentRealtimeGeneration: () => currentRealtimeGeneration(created),
-			/**
-			 * What this tab's canvas holds now: the boards its panes show, and the one a narration is
-			 * on. A recording is narrated to nobody listening, so it is no narration to stop.
-			 * @returns The canvas.
-			 */
-
 			coordinatorContext: createCoordinatorCallbackContextPort(session),
 			coordinatorTurn: createOutcomeReportPort({
 				contextCodec: server.host.contextCodec,
@@ -375,10 +370,11 @@ function callbackBindings(
 					);
 				},
 				/**
-				 * Whether a recording holds the voice, which nobody hears an outcome through.
-				 * @returns True while the live session is a recording's.
+				 * Whether nobody listens live to the voice, which then hears no outcome.
+				 * @returns True while the live session is unattended.
 				 */
-				recording: () => server.host.recording?.(created.realtime?.presentation() ?? null) ?? false,
+				unattended: () =>
+					isUnattended(server.host.narrative, created.realtime?.narrative() ?? null),
 			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {
@@ -399,9 +395,9 @@ function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSe
 		...voiceBindings(context),
 		...coordinatorBindings(context),
 		...callbackBindings(context),
-		...(context.server.host.presentation === undefined
+		...(context.server.host.narrative === undefined
 			? {}
-			: { presentation: context.server.host.presentation }),
+			: { narrative: context.server.host.narrative }),
 	};
 }
 

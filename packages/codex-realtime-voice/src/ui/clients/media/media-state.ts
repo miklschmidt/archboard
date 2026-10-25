@@ -1,7 +1,7 @@
 // The media owner's published state, its options, and the pure helpers over
 // the transport snapshot it reads.
 
-import type { BrowserCommandLease } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
 import { browserRealtimeMediaSupported } from "#ui/clients/realtime/browser-environment.ts";
 import type {
 	AppendOutcome,
@@ -17,7 +17,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import type { StartOperation, VoicePresentation } from "#ui/clients/media/realtime.ts";
+import type { StartOperation } from "#ui/clients/media/realtime.ts";
 
 /** Where the owner stands: installing, ready to start, or why it cannot. */
 type BrowserWorkbenchMediaState =
@@ -42,10 +42,10 @@ interface BrowserWorkbenchMediaOwner {
 	readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>;
 	readonly detach: (transport: BrowserWorkbenchTransport) => Promise<void>;
 	/**
-	 * Starts realtime media with an optional host presentation payload.
-	 * @param presentation The host presentation payload, when present.
+	 * Starts realtime media, as an ordinary session or one that presents a host narrative.
+	 * @param narrative The narrative the session presents, when there is one.
 	 */
-	readonly start: (presentation?: VoicePresentation | null) => Promise<RealtimeMediaSnapshot>;
+	readonly start: (narrative?: VoiceNarrative | null) => Promise<RealtimeMediaSnapshot>;
 	readonly appendText: (text: string) => Promise<AppendOutcome>;
 	/**
 	 * Silences and restores the captured microphone. Neither claims a lease nor

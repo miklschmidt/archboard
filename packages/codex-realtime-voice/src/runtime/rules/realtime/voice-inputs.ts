@@ -46,7 +46,7 @@ export function watchVoiceInputs(
 			if (current()) onError("The voice input delivery was not confirmed.");
 		}
 	};
-	const unsubscribe = subscribe(session.presentation, (input) => {
+	const unsubscribe = subscribe(session.narrative, (input) => {
 		const captured = Object.freeze({ ...input });
 		tail = tail.then(() => deliver(captured)).catch(() => undefined);
 	});

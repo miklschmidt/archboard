@@ -5,9 +5,10 @@ import { DEFAULT_VOICE_AGENT_IDENTITY } from "#runtime/protocol/host/identity.ts
 
 /**
  * The bindings of a tab session whose scope stops what it is told to.
+ * @param narrative The host's narrative adapter, if it has one.
  * @returns The bindings, and the checkouts the scope was asked to stop.
  */
-function bindingsOfTab() {
+function bindingsOfTab(narrative?: { readonly unattended: (narrative: unknown) => boolean }) {
 	const stopped: (string | null)[] = [];
 	const scope = {
 		id: "tab-1",
@@ -23,6 +24,7 @@ function bindingsOfTab() {
 		server: {
 			host: {
 				instructions: { coordinator: { identity: DEFAULT_VOICE_AGENT_IDENTITY } },
+				...(narrative === undefined ? {} : { narrative }),
 			},
 		},
 		shared: {},
@@ -38,4 +40,14 @@ test("a coordinator's stop reaches the stop of every workhorse of its tab sessio
 
 	expect(await tools.stopWork()).toEqual([{ checkout: "/work/payments", outcome: "interrupted" }]);
 	expect(stopped).toEqual([null]);
+});
+
+test("a live session whose narrative nobody listens to gives the coordinator no workhorse outcome", async () => {
+	const { bindings } = bindingsOfTab({ unattended: (narrative) => narrative === "tour" });
+	const created = { realtime: { narrative: () => "tour" } };
+	const port = bindings.callbacks(created as never).coordinatorTurn;
+
+	expect(
+		await port?.report({ threadId: "coordinator" as never, news: "News.", situation: "ended" }),
+	).toBe("unattended");
 });
