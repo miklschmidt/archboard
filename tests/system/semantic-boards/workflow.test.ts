@@ -67,6 +67,12 @@ afterAll(async () => {
 	fs.rmSync(holder, { recursive: true, force: true });
 });
 
+const asked = async (query: string): Promise<{ status: number; code: string }> => {
+	const answer = await render(`board=pipeline${query}`);
+	const body = (await answer.json()) as { code?: string };
+	return { status: answer.status, code: body.code ?? "" };
+};
+
 describe("authoring and opening a semantic board", () => {
 	test("a stated architecture becomes a board, changes, and is read back", () => {
 		const created = cli(
@@ -286,11 +292,6 @@ describe("authoring and opening a semantic board", () => {
 	}, 30_000);
 
 	test("a render selector that says nothing is refused rather than answered with everything", async () => {
-		const asked = async (query: string): Promise<{ status: number; code: string }> => {
-			const answer = await render(`board=pipeline${query}`);
-			const body = (await answer.json()) as { code?: string };
-			return { status: answer.status, code: body.code ?? "" };
-		};
 		// Leaving a selector out asks for the whole variant; stating an empty one
 		// is a request that lost its value on the way here, and drawing the whole
 		// board for it would answer a question nobody asked.

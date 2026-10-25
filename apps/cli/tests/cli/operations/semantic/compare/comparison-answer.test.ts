@@ -236,36 +236,37 @@ describe("the comparison an agent reads", () => {
 	});
 });
 
+/**
+ * The lease board with its lock files, its lease table and a second proposal
+ * written on the lock files.
+ * @param lifecycles Where each of the three stands.
+ * @param current The one designated current, or none on a board nobody has built.
+ * @returns The board.
+ */
+function lease(
+	lifecycles: readonly [string, string, string],
+	current: string | undefined,
+): SemanticBoard {
+	const [first, second, third] = lifecycles;
+	return SemanticBoardSchema.parse({
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		kind: "semantic-board",
+		id: "bd",
+		name: "Board lease",
+		level: "system",
+		version: 4,
+		createdAt: "2026-09-27T00:00:00.000Z",
+		updatedAt: "2026-09-27T00:00:00.000Z",
+		...(current === undefined ? {} : { current }),
+		variants: [
+			{ ...BASELINE, lifecycle: first },
+			{ ...PROPOSAL, lifecycle: second },
+			{ ...variant("v3", "Watched locks", BEFORE, "v1"), lifecycle: third },
+		],
+	});
+}
+
 describe("which variant the comparison reads against", () => {
-	/**
-	 * The lease board with its lock files, its lease table and a second proposal
-	 * written on the lock files.
-	 * @param lifecycles Where each of the three stands.
-	 * @param current The one designated current, or none on a board nobody has built.
-	 * @returns The board.
-	 */
-	function lease(
-		lifecycles: readonly [string, string, string],
-		current: string | undefined,
-	): SemanticBoard {
-		const [first, second, third] = lifecycles;
-		return SemanticBoardSchema.parse({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-			kind: "semantic-board",
-			id: "bd",
-			name: "Board lease",
-			level: "system",
-			version: 4,
-			createdAt: "2026-09-27T00:00:00.000Z",
-			updatedAt: "2026-09-27T00:00:00.000Z",
-			...(current === undefined ? {} : { current }),
-			variants: [
-				{ ...BASELINE, lifecycle: first },
-				{ ...PROPOSAL, lifecycle: second },
-				{ ...variant("v3", "Watched locks", BEFORE, "v1"), lifecycle: third },
-			],
-		});
-	}
 	const adopted = lease(["historical", "current", "draft"], "v2");
 	const [historical, current, onHistory] = adopted.variants;
 

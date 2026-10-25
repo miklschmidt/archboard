@@ -113,19 +113,20 @@ function secondWaiting(wait: Partial<BrowserWorkhorses["entries"][number]>): Bro
 	return { ...TWO, entries: [idle(SHOP), { ...idle(WORKTREE), ...wait }] };
 }
 
+/**
+ * The words of the second workhorse while it waits on something, or on nothing.
+ * @param wait What it waits on.
+ * @returns Its words.
+ */
+function wordsWhile(wait: Partial<BrowserWorkhorses["entries"][number]>): string | null {
+	const view = render(<ConversationList workhorses={secondWaiting(wait)} onPick={keepPick} />);
+	const [, other] = twoOf(view.getAllByRole("button"));
+	const words = other.textContent;
+	view.unmount();
+	return words;
+}
+
 test("the list says in words, not in colour alone, what a workhorse waits on", () => {
-	/**
-	 * The words of the second workhorse while it waits on something, or on nothing.
-	 * @param wait What it waits on.
-	 * @returns Its words.
-	 */
-	function wordsWhile(wait: Partial<BrowserWorkhorses["entries"][number]>): string | null {
-		const view = render(<ConversationList workhorses={secondWaiting(wait)} onPick={keepPick} />);
-		const [, other] = twoOf(view.getAllByRole("button"));
-		const words = other.textContent;
-		view.unmount();
-		return words;
-	}
 	const words = [
 		wordsWhile({}),
 		wordsWhile({ waitingForApproval: true }),

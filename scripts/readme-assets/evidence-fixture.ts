@@ -119,9 +119,9 @@ async function prepareSource(root: string): Promise<void> {
 			GIT_COMMITTER_DATE: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
 		};
 		// Git hooks export repository paths and config. Do not let those redirect fixture writes.
-		const inherited = Object.keys(process.env)
-			.filter((key) => key.startsWith("GIT_") && !Object.hasOwn(env, key))
-			.flatMap((key) => ["-u", key]);
+		const inherited = Object.keys(process.env).flatMap((key) =>
+			key.startsWith("GIT_") && !Object.hasOwn(env, key) ? ["-u", key] : [],
+		);
 		return run(
 			[
 				"env",
