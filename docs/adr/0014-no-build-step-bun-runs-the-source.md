@@ -132,7 +132,7 @@ directly and building only the frontend.
 
 ## Amendment of 2026-10-24: the renderer core is built
 
-[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-paint-list.md)
+[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
 makes the renderer a Rust crate, compiled to WebAssembly. So the browser bundle
 is no longer the only build: `bun run build:core` builds the core (TASK-520.01).
 The CLI and the server still run their TypeScript from source.
