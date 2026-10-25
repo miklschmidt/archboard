@@ -46,9 +46,13 @@ pub struct SequenceRequest {
     pub held: Option<Vec<Flow>>,
     /// Each participant's appearance.
     pub appearances: BTreeMap<String, NodeAppearance>,
+    /// How fast the pulses fly and how long a turn of the clock may take.
     pub clock: SequenceClock,
+    /// The comparison the picture is read against, and the page around it.
     pub page: PageRequest,
+    /// What the document says about itself and what it needs from its host.
     pub document: DocumentRequest,
+    /// Each icon's path data, by its export name.
     pub icons: BTreeMap<String, Vec<String>>,
 }
 

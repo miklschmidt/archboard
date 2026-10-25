@@ -7,17 +7,22 @@ use crate::markup::Attrs;
 
 /// The names the document registers. Deliberately not the shell's own names.
 pub const SANS_CSS_FAMILY: &str = "Archboard Diagram Sans";
+/// The CSS family the document registers the monospace faces under.
 pub const MONO_CSS_FAMILY: &str = "Archboard Diagram Mono";
 
 /// The stacks a document names, family first and then a generic.
 pub const SANS_STACK: &str = "\"Archboard Diagram Sans\", ui-sans-serif, system-ui, sans-serif";
+/// The monospace stack a document names, the registered family first.
 pub const MONO_STACK: &str = "\"Archboard Diagram Mono\", ui-monospace, monospace";
 
 /// One registered face: its family and weight, its CSS family, and its file.
 #[derive(Debug)]
 pub struct Face {
+    /// The face's weight: 400 or 500.
     pub weight: u16,
+    /// The CSS family it is registered under.
     pub css_family: &'static str,
+    /// The name of its font file, which the document links or embeds.
     pub file: &'static str,
 }
 

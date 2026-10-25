@@ -24,7 +24,9 @@ pub fn mixed(from: &str, to: &str, amount: f64) -> String {
 /// One tone of an ink: how light it is in OKLCH, and how much of the ink's chroma it keeps.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ToneStep {
+    /// How light the tone is, in OKLCH lightness.
     pub lightness: f64,
+    /// The share of the ink's chroma it keeps, up to `cap`.
     pub chroma: f64,
     /// The most of the ink's chroma it counts.
     pub cap: f64,
@@ -47,7 +49,9 @@ impl ToneStep {
 /// A tone of an ink on the light ground and on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tone {
+    /// The tone on the light ground.
     pub light: ToneStep,
+    /// The tone on the dark ground.
     pub dark: ToneStep,
 }
 
@@ -70,7 +74,9 @@ pub fn toned(ink: &str, steps: Tone) -> String {
 /// A colour in an ink: a tone of it on the light ground, a share of it over a base on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Inked {
+    /// The tone of the ink on the light ground.
     pub light: ToneStep,
+    /// How much of the ink is mixed into the base on the dark ground, from 0 to 1.
     pub dark: f64,
 }
 
@@ -83,8 +89,11 @@ pub fn inked_over(base: &str, ink: &str, inked: Inked) -> String {
 /// How light an ink may be on the light ground, and a tone of it on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Held {
+    /// The least lightness the ink keeps on the light ground.
     pub least: f64,
+    /// The most lightness the ink keeps on the light ground.
     pub most: f64,
+    /// The tone of the ink on the dark ground.
     pub dark: ToneStep,
 }
 
@@ -133,7 +142,9 @@ pub fn colour_id(colour: &str) -> String {
 /// A share of a colour mixed into another, on the light ground and on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Share {
+    /// The share mixed in on the light ground, from 0 to 1.
     pub light: f64,
+    /// The share mixed in on the dark ground, from 0 to 1.
     pub dark: f64,
 }
 

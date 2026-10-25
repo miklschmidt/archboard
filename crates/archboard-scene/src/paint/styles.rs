@@ -49,7 +49,9 @@ pub fn head_widths(weight: Emphasis) -> f64 {
 /// The two forms of arrowhead a line can end in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Head {
+    /// A solid head, whose tip reaches a little past the end of its line.
     Filled,
+    /// An open head, whose tip lies at the end of its line.
     Open,
 }
 
@@ -196,6 +198,7 @@ pub struct Styles<'p> {
 }
 
 impl<'p> Styles<'p> {
+    /// The attribute bundles resolved against one palette.
     pub fn of(palette: &'p Palette) -> Self {
         Styles { palette }
     }
@@ -206,25 +209,30 @@ impl<'p> Styles<'p> {
             .with(font_attributes(CARD_TITLE_FONT))
     }
 
+    /// The responsibility under a container's or a flow's heading, set small and muted.
     pub fn header_note(&self) -> Attrs {
         attrs! { "font-size": PART_NOTE_SIZE, "fill": self.palette.muted }
             .with(font_attributes(CARD_NOTE_FONT))
     }
 
+    /// A card's name, in the title face; its size is left to the caller.
     pub fn title(&self) -> Attrs {
         attrs! { "fill": self.palette.foreground }.with(font_attributes(CARD_TITLE_FONT))
     }
 
+    /// A card's responsibility or a step's note, set small and muted.
     pub fn note(&self) -> Attrs {
         attrs! { "font-size": NOTE_SIZE, "fill": self.palette.muted }
             .with(font_attributes(CARD_NOTE_FONT))
     }
 
+    /// The words on a label plate.
     pub fn pill_text(&self) -> Attrs {
         attrs! { "font-size": PILL_TEXT_SIZE, "fill": self.palette.pill_text }
             .with(font_attributes(PILL_FONT))
     }
 
+    /// The ring round whatever the person has selected, unfilled.
     pub fn halo(&self) -> Attrs {
         attrs! { "fill": "none", "stroke": self.palette.selection }
     }

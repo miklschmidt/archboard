@@ -76,9 +76,13 @@ impl Curve {
 /// The page a picture is drawn on, and how far its content had to move onto it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Canvas {
+    /// The page's width, in diagram units.
     pub width: f64,
+    /// The page's height, in diagram units.
     pub height: f64,
+    /// How far the content moved right to clear the margin, in whole units.
     pub shift_x: f64,
+    /// How far the content moved down to clear the margin, in whole units.
     pub shift_y: f64,
 }
 

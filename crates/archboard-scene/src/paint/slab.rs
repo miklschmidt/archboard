@@ -33,6 +33,7 @@ pub struct SlabLook {
     pub edge: String,
     /// How tall its front edge shows, inside its box along its foot.
     pub thickness: f64,
+    /// How round its corners are, in diagram units.
     pub radius: f64,
     /// Whether light falls off down its face.
     pub sheen: bool,
@@ -59,8 +60,11 @@ const SOFT_SHEEN: f64 = 0.2;
 /// Which sort of block casts a shadow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Lift {
+    /// A card or a header slab, which casts the full shadow.
     Card,
+    /// A container's tray, which casts none.
     Tray,
+    /// A type chip, which casts a short shadow.
     Chip,
 }
 

@@ -27,7 +27,9 @@ pub struct Palette {
     pub tray_lip: &'static str,
     /// A port's inside by its rim, its depth, and its lit floor by the sill.
     pub port_wall: &'static str,
+    /// A port's inside at its deepest.
     pub port_deep: &'static str,
+    /// A port's lit floor, by the sill.
     pub port_lip: &'static str,
     /// Text that carries the meaning: a card's name.
     pub foreground: &'static str,
