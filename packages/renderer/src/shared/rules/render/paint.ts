@@ -23,7 +23,7 @@ import { base64Of, FACES } from "#shared/rules/text/fonts.ts";
 import { measure } from "#shared/rules/text/text.ts";
 
 /** The host's canvas, measuring for the core. */
-const MEASURE: TextMeasure = { width };
+const TEXT_MEASURE: TextMeasure = { width };
 
 /**
  * How wide a run of text is, as the host's canvas draws it.
@@ -88,10 +88,12 @@ function pageRequest(request: DiagramRenderRequest, plain: boolean): PageRequest
 /**
  * The path data of every icon a picture can draw that this host has: each
  * icon its appearances name, and the renderer's own.
- * @param appearances The picture's node appearances.
+ * @param appearances The picture's node appearances, or the policy's node kinds it can draw.
  * @returns Each icon's paths, by export name.
  */
-function iconsFor(appearances: Iterable<NodeAppearance>): Record<string, readonly string[]> {
+function iconsFor(
+	appearances: Iterable<Pick<NodeAppearance, "icon">>,
+): Record<string, readonly string[]> {
 	const host = rendererHost();
 	const names = new Set([...OWN_ICONS, ...[...appearances].map(({ icon }) => icon)]);
 	const icons: Record<string, readonly string[]> = {};
@@ -121,7 +123,7 @@ function paintDocument(request: PaintRequest): PaintedDocument {
 	// The core writes what its Rust `PaintedDocument` type says, and the type
 	// here is generated from it.
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
-	return JSON.parse(core.paintDocument(JSON.stringify(request), MEASURE)) as PaintedDocument;
+	return JSON.parse(core.paintDocument(JSON.stringify(request), TEXT_MEASURE)) as PaintedDocument;
 }
 
-export { documentRequest, groupColours, iconsFor, pageRequest, paintDocument };
+export { TEXT_MEASURE, documentRequest, groupColours, iconsFor, pageRequest, paintDocument };

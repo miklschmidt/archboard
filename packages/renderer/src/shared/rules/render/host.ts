@@ -30,7 +30,10 @@ import type { DiagramTheme } from "@archboard/board/render-reply";
 import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 
 /** What the renderer asks of the core. */
-type CorePainter = Pick<typeof CoreBuild, "paintDocument" | "paintScene">;
+type CorePainter = Pick<
+	typeof CoreBuild,
+	"drawFlowchart" | "drawSequence" | "paintDocument" | "paintScene"
+>;
 
 /** Every theme colour by theme and custom property name. */
 type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>>>>;
