@@ -4,7 +4,7 @@ import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
-import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";

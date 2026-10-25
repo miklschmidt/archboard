@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
+updated_date: '2026-10-25T02:00:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -20,6 +21,12 @@ Part of TASK-529 for the server-lifecycle and server-requests package(s). TASK-5
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The callers use only the package's narrowed public entries, and the package's focused tests, type-check and lint pass
-- [ ] #2 Each public entry exposes operations a caller needs, measured by the names and facts it must learn
+- [x] #1 The callers use only the package's narrowed public entries, and the package's focused tests, type-check and lint pass
+- [x] #2 Each public entry exposes operations a caller needs, measured by the names and facts it must learn
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Interfaces measured with /tmp/iface/count.ts: server-lifecycle 9 subpaths/75 names -> 5/29; server-requests 1/10 -> 1/6 (85 -> 35). ./server is ensureServerRunning (now answers the pid), stopServer (own file), restartServer, serverStatus (absent, conflict or running) and connectedBrowsers; the CLI no longer reads health, the pid file or the port itself. ./startup-terminal folded into ./server-host as reportStartupOwnership and reportStartupEnd; recordServerPid writes and sweeps pid files. ./request-context folded into ./server-client as stateInvocation and statedInvocation. The board client, the claim and pane requests and the install version moved into apps/cli/src/cli/clients/server and store/package-version, their only caller. ./pane-messages folded into ./panes; resolvePane replaces resolvePaneSpec and soloPane. server-requests: requestJson(url, {method, payload, signal}) replaces json, post, mutation and cancellable; strictReply takes the same request; boardQuery inlined. Checks: type-check 0, lint 0, focused tests and tests/system/repository-policy pass, server-spawning CLI system tests pass. spawn.ts verifyCodexExecutable call left as it was.
+<!-- SECTION:NOTES:END -->

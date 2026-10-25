@@ -1,10 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
-import { removePidFile } from "@archboard/server-lifecycle/server-host";
+import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
 import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
-import {
-	serverStartupTerminalRecord,
-	writeServerStartupProtocolRecord,
-} from "@archboard/server-lifecycle/startup-terminal";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,
@@ -116,13 +112,7 @@ function startupTerminal(cleanupProven: () => boolean): StartupTerminal {
 				return;
 			}
 			reported = true;
-			writeServerStartupProtocolRecord(
-				serverStartupTerminalRecord({
-					serverPid: process.pid,
-					cleanupProven: cleanupProven(),
-					message,
-				}),
-			);
+			reportStartupEnd({ cleanupProven: cleanupProven(), message });
 		},
 	};
 }

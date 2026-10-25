@@ -20,7 +20,7 @@ import {
 import {
 	checkSemanticVaultOnServer,
 	readSemanticBoardAnswerOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import {

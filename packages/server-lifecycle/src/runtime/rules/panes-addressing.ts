@@ -186,12 +186,38 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	);
 }
 
+/**
+ * The pane a caller means: the one its spec names, or the only pane on screen when it names none.
+ * @param registrations The panes on screen.
+ * @param spec What the caller typed.
+ * @returns The pane it names.
+ * @throws {Error} When the spec names none or more than one.
+ */
+function resolvePane(registrations: PaneRegistration[], spec: string): PaneRegistration;
+/**
+ * The pane a caller who named none means: the only pane on screen.
+ * @param registrations The panes on screen.
+ * @returns The one pane, or null when nothing is on screen.
+ * @throws {Error} When more than one pane is open.
+ */
+function resolvePane(registrations: PaneRegistration[]): PaneRegistration | null;
+/**
+ * The pane a caller means.
+ * @param registrations The panes on screen.
+ * @param spec What the caller typed, or nothing.
+ * @returns The pane, or null when no spec was given and nothing is on screen.
+ */
+function resolvePane(registrations: PaneRegistration[], spec?: string): PaneRegistration | null {
+	return spec === undefined ? soloPane(registrations) : resolvePaneSpec(registrations, spec);
+}
+
 export {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
 	addressablePanes,
 	panesAddressableFirst,
 	paneWords,
+	resolvePane,
 	resolvePaneSpec,
 	soloPane,
 };

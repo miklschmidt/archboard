@@ -1,11 +1,5 @@
 import { z } from "zod";
-import {
-	serverPort,
-	ensureServerRunning,
-	stopServer,
-	restartServer,
-	readPidFile,
-} from "@archboard/server-lifecycle/server";
+import { ensureServerRunning, stopServer, restartServer } from "@archboard/server-lifecycle/server";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 
 const IgnoredTailSchema = z.array(z.string()).default([]);
@@ -86,7 +80,7 @@ const startContract = defineCommand({
 				running: true as const,
 				url: result.url,
 				spawned: result.spawned,
-				pid: readPidFile(serverPort()) ?? undefined,
+				pid: result.pid,
 			},
 			...(result.spawned
 				? {}
@@ -241,7 +235,7 @@ const restartContract = defineCommand({
 				running: true as const,
 				url: restarted.url,
 				spawned: restarted.spawned,
-				pid: readPidFile(serverPort()) ?? undefined,
+				pid: restarted.pid,
 				stop: restarted.stop,
 				frontendBuild: restarted.frontendBuild,
 			},

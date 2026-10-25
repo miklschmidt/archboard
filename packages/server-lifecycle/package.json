@@ -2,7 +2,7 @@
 	"name": "@archboard/server-lifecycle",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Starting, finding, restarting and stopping the Archboard server, and the CLI's client of it: the typed requests, the board client, the panes on screen and the startup records the server writes to its launcher.",
+	"description": "Starting, finding, restarting and stopping the Archboard server, the identity-gated request that carries what a CLI invocation states, the panes on screen and the startup records the server writes to its launcher.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -14,10 +14,6 @@
 		"./server": "./src/runtime/api/server.ts",
 		"./server-host": "./src/runtime/api/server-host.ts",
 		"./server-client": "./src/runtime/api/server-client.ts",
-		"./request-context": "./src/runtime/api/request-context.ts",
-		"./semantic-board-client": "./src/runtime/api/semantic-board-client.ts",
-		"./panes": "./src/runtime/api/panes.ts",
-		"./pane-messages": "./src/runtime/api/pane-messages.ts",
-		"./startup-terminal": "./src/runtime/api/startup-terminal.ts"
+		"./panes": "./src/runtime/api/panes.ts"
 	}
 }

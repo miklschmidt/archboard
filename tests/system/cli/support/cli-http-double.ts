@@ -7,7 +7,6 @@
 // answers are the smallest true ones rather than a second implementation.
 
 import { z } from "zod";
-import { ARCHBOARD_SERVICE_NAME } from "@archboard/server-lifecycle/server-client";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
@@ -103,7 +102,7 @@ function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 			observed.push(contact);
 			if (url.pathname === "/health") {
 				return Response.json({
-					service: ARCHBOARD_SERVICE_NAME,
+					service: "archboard-server",
 					status: "ok",
 					websocket_clients: browserClients,
 				});
