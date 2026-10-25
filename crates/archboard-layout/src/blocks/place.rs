@@ -7,7 +7,7 @@
 //! relationship's lines are joined end to end (`assembly.rs`). One solve lays
 //! the board out one way: how its containers and group regions are drawn,
 //! which way its joins are kept and whether its blocks face their walls are
-//! chosen where the renderer runs (`solves.ts`).
+//! chosen between solves (`architecture::choosing`).
 
 use std::rc::Rc;
 
@@ -301,7 +301,7 @@ fn crossings_and_bends(board: &Board) -> (f64, f64) {
 
 /// Whether facing every block's walls would change a board's blocks. Only
 /// Blocks faces them: drawn inline, no drawing of either vault changed by
-/// facing them (`solves.ts`).
+/// facing them.
 fn faces_of(graph: &Node, exits: &Map<String, Side>, way: &Way) -> Result<bool, String> {
     if way.nesting != Nesting::Blocks || exits.is_empty() {
         return Ok(false);

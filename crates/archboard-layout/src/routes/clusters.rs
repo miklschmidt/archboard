@@ -1,6 +1,6 @@
 //! Crossings along one line close enough that hops on it would touch are one
-//! cluster (`crossing-clusters.ts`): they are settled together, so a line
-//! rises over all of them or none, and hops along one bundle layer the same way.
+//! cluster: they are settled together, so a line rises over all of them or
+//! none, and hops along one bundle layer the same way.
 
 use crate::ecma::sorted_by;
 

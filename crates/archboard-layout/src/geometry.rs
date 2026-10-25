@@ -1,5 +1,4 @@
-//! Points and boxes, and the few measures of them the layout takes
-//! (`shared/rules/geometry.ts`).
+//! Points and boxes, and the few measures of them the layout takes.
 
 pub(crate) use archboard_scene::geometry::{Point, Rect, covering, inflate};
 
