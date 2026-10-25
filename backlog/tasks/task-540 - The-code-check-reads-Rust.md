@@ -1,11 +1,11 @@
 ---
 id: TASK-540
 title: The code check reads Rust
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:37:00Z'
+updated_date: '2026-10-25T20:07:00Z'
 labels: []
 dependencies: []
 ordinal: 932000
@@ -19,11 +19,11 @@ archboard check --code has language adapters for TypeScript, Python, C, Objectiv
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An anchor on a Rust symbol resolves to its definition (function, method, type, trait, constant, module), and a missing or mismatched one is reported as for TypeScript
-- [ ] #2 The check knows what a crate or module exposes (pub, pub(crate), re-exports), and a part bound to a Rust directory reads its exposure
-- [ ] #3 A call or use from one bound Rust part to another that the board does not draw is reported as RELATIONSHIP_UNDRAWN, resolving use paths, crate dependencies from Cargo.toml and workspace members
-- [ ] #4 Tests own the adapter on a small Rust fixture workspace, as the other languages' fixtures do, and the dogfood vault's check --code reports no Rust finding that a hand check refutes
-- [ ] #5 The archboard skill and the code-check docs name Rust as a supported language and say what it needs installed
+- [x] #1 An anchor on a Rust symbol resolves to its definition (function, method, type, trait, constant, module), and a missing or mismatched one is reported as for TypeScript
+- [x] #2 The check knows what a crate or module exposes (pub, pub(crate), re-exports), and a part bound to a Rust directory reads its exposure
+- [x] #3 A call or use from one bound Rust part to another that the board does not draw is reported as RELATIONSHIP_UNDRAWN, resolving use paths, crate dependencies from Cargo.toml and workspace members
+- [x] #4 Tests own the adapter on a small Rust fixture workspace, as the other languages' fixtures do, and the dogfood vault's check --code reports no Rust finding that a hand check refutes
+- [x] #5 The archboard skill and the code-check docs name Rust as a supported language and say what it needs installed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -124,4 +124,12 @@ Gate (2026-10-25, inside `nix develop`): `bun run check` passed every lint, form
 - Footprint against base d20f481ba (the commit before 769a9207b): namedAndChanged Fact analysis (22e97e155, 68a410e94); changedNotNamed none; namedNotChanged Language servers. Its binding is the session (services/language-servers/session.ts), which owns the responsibility; the rust row is in operations/language-servers/languages.ts and cargo-workspace.ts (61741dc6c), which the session reads and the description names. The binding stays on the owner.
 - Adopted at version 289 with the board's scope as summary. `archboard check` is clean.
 - Behind after adoption: Archboard (Workspace packages, workspace, code-intel) and Command interface (Vault check, Commands) read behind on 61741dc6c and 80dfedadd. Those commits add `rust` to CONFIGURABLE_LANGUAGES and to the help of `repo language-server` and `check`; no part, relationship or responsibility on either board changes, so both boards stay right.
+
+Review (2026-10-25, Codex gpt-6-astra xhigh, branch review/code-intel-rust, merged as 78e3bece6..8a38b9288): public methods on private types leave the module interface; imports resolve within their module scope, with local shadowing, glob re-export chains, module aliases and files below inline modules; #[cfg(test)] code is no production evidence; rust-analyzer starts in the nearest Cargo workspace; failed tests close their servers, and cancellation during endless cache priming is tested; one prose assertion became a structural one. Boards: TASK-540 adopted on Archboard server (b22c3be95); the Rust findings on Semantic renderer and Renderer layout were settled under TASK-520 (6a7f6b89d), 84 to 43 findings, every ANCHOR_MISMATCH cleared. The EXPOSED_UNUSED of Board layout stays: InProcess and Laying are the in-process solver API that crates/archboard-render/tests/native.rs uses across crates and that a native host needs. Gate on the merged branch: bun run check and test:system, test:repository, test:serial-browser all exit 0.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check reads Rust. A tree-sitter-rust adapter (pinned 0.24.0, approved in ADR 0046) reads definitions, use imports, Cargo.toml crates and workspace members, module exposure and the pairs that find an undrawn relationship, in the same adapter table as every other language. rust-analyzer answers only what syntax cannot settle, and starts only where a repository configures it, because it runs build scripts and cargo check. The rust-shop fixture and its tests own the adapter; the dogfood check found 41 true Rust findings on the renderer boards, which a board pass then settled. Risk: one run of the real rust-analyzer test once got no answer, unexplained in more than 20 reruns; the test reports why if it happens again. Known limits are in the archboard skill's authoring.md (#[path], macro-written code, pub(crate) counts as exposed).
+<!-- SECTION:FINAL_SUMMARY:END -->
