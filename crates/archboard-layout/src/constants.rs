@@ -1,32 +1,19 @@
-//! The distances the layout keeps, in diagram points, and the page shape it
-//! lays a board out for. `packages/renderer/src/shared/constants` holds the
-//! same numbers for what the host still lays out and measures.
+//! The distances the layout keeps, in diagram units, and its target page shape.
+//! Shared sizes come from the scene that the layout places.
+
+pub(crate) use archboard_scene::geometry::BEND_RADIUS;
+pub(crate) use archboard_scene::paint::design::{
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, REGION_INSET,
+};
 
 /// Equal space below a container title and at its sides and bottom.
 pub(crate) const CONTAINER_INSET: f64 = 20.0;
-/// Equal space below a group region's caption tab and at its sides and bottom.
-pub(crate) const REGION_INSET: f64 = 14.0;
 /// Label-to-card whitespace.
 pub(crate) const LABEL_CARD_CLEARANCE: f64 = 16.0;
 /// Whitespace between separate label boxes.
 pub(crate) const LABEL_LABEL_CLEARANCE: f64 = 24.0;
-/// Fixed radius of ordinary edge bends.
-pub(crate) const BEND_RADIUS: f64 = 8.0;
 /// Required straight run after the final bend, for every arrow.
 pub(crate) const APPROACH_STRAIGHT: f64 = 12.0;
-/// Padding inside measured architecture cards.
-pub(crate) const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
-
-/// How thick a container's tray shows its walls.
-const TRAY_WALL: f64 = 6.0;
-/// The floor a tray shows round its header slab.
-const WELL_GAP: f64 = 2.0;
-/// How far a header slab stands in from the outer edge of its tray.
-const HEADER_SLAB_INSET: f64 = TRAY_WALL + WELL_GAP;
-/// How far a container's words stand in from the sides of its box.
-pub(crate) const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
-/// How round a card's corner is to the layout, which keeps a line's port clear of it.
-pub(crate) const CARD_RADIUS: f64 = 6.0;
 
 /// The page shape the renderer lays a board out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;
