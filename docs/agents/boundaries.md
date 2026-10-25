@@ -363,7 +363,7 @@ subpaths with 36 names, where code outside imported 7 module paths. It imports `
   becomes public.
 - `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
   facts, `modules/` for what a module exposes, and one folder for each language or format
-  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `nix/`, `kubernetes/`, `compose/`,
+  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
   `terraform/`); `code-check/` has the pass, `claims/`, `evidence/` and `interfaces/`;
   `history-lens/` and `language-servers/` hold the rest. `runtime/services/code-facts/` holds the
   reader that caches facts by content, the grammars and the tree-sitter query files. `runtime/clients/`

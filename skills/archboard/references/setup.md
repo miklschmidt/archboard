@@ -35,7 +35,7 @@ uses the version at the root.
 
 ## What a configured server runs
 
-Python, C, C++, Objective-C, C# and Swift have no default server. A language
+Python, C, C++, Objective-C, C#, Swift and Rust have no default server. A language
 server reads a project as an editor does, and that runs code of the repository:
 
 - pyright runs the interpreter of the `.venv`, and the startup hooks of the
@@ -45,6 +45,8 @@ server reads a project as an editor does, and that runs code of the repository:
   compiler of a command.
 - csharp-ls evaluates the MSBuild files of the solution.
 - sourcekit-lsp evaluates `Package.swift`.
+- rust-analyzer runs `cargo metadata`, the build scripts and the procedural
+  macros of the Cargo workspace, and `cargo check` after it loads.
 
 The Archboard server starts the configured server. The check uses the command,
 the arguments and the environment of the Archboard server. It adds no flag, no
@@ -62,6 +64,10 @@ of your shell.
    - C#: `csharp-ls` (`dotnet tool install --global csharp-ls`). It needs the
      .NET SDK on the `PATH` of the Archboard server.
    - Swift: `sourcekit-lsp`. It ships with the Swift toolchain.
+   - Rust: `rust-analyzer` (`rustup component add rust-analyzer rust-src`, or
+     `nix profile install nixpkgs#rust-analyzer`). It needs `cargo` on the
+     `PATH` of the Archboard server, and the source of the standard library:
+     the `rust-src` component, or `RUST_SRC_PATH` on Nix.
 2. For C, C++ and Objective-C, generate `compile_commands.json`. For CMake, run
    `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. This builds nothing. For
    other build tools, run `bear -- make`. This builds the project once. Without
@@ -77,7 +83,7 @@ of your shell.
    changes what every board on this machine reads.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
-   `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C.
+   `csharp`, `swift`, `c` or `rust`. The language `c` covers C, C++ and Objective-C.
 6. Run `archboard check --code`. Read the answer for the language, as the next
    section says.
 7. If you use clangd and the `.gitignore` of the repository does not list `.cache/`,
@@ -92,6 +98,7 @@ archboard repo language-server python pyright-langserver --arg=--stdio
 archboard repo language-server c clangd
 archboard repo language-server csharp csharp-ls
 archboard repo language-server swift sourcekit-lsp
+archboard repo language-server rust rust-analyzer
 ```
 
 For basedpyright, use `basedpyright-langserver` in place of
@@ -118,7 +125,7 @@ the Archboard server, run `command -v <program>`. Give that absolute path as the
 command.
 
 If the answer says `language-server-unready`, the project lacks what the server
-reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift, it is a `Package.swift` that holds the file. For C#, it is a solution or project file. The detail
+reads. For C, C++ and Objective-C, that is a `compile_commands.json`. For Swift, it is a `Package.swift` that holds the file. For Rust, it is a `Cargo.toml` that holds the file. For C#, it is a solution or project file. The detail
 names the project.
 
 The check has no time limit. Cancel the command to stop waiting. The output
