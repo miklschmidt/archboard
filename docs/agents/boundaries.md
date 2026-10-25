@@ -252,7 +252,9 @@ folders of `shared/` are:
 
 The thirteen files of `shared/api/` are the whole browser-safe interface. Each carries only the
 names that code outside the package imports. A name sits in the file of its meaning, not of the
-private file that defines it:
+private file that defines it. A type that only restates an exported schema, an operation's result
+or a field of another exported shape is not exported: the caller derives it, with `z.infer` of the
+schema, `ReturnType` of the operation or an indexed access (ADR 0057):
 
 - `./document` is the board aggregate, the variant address and lifecycle, how a variant is found,
   the draft references and `parseSemanticBoard`.
@@ -293,7 +295,8 @@ The seven files of `runtime/api/` are:
 - `./address` is where a board lives: its identity, its key and the variant a key states, and the
   path of its note in a vault.
 - `./store-read` reads boards from a vault: one board, the listing and the catalogue of them, the
-  vaults that hold boards of one repository, and the decode of a board file.
+  vaults that hold boards of one repository, and the decode of a board file. `readBoardVariant`
+  reads a board and opens the variant an address states, in one call.
 - `./vault-policy` is the vault's configuration, the vault check against its policy and the
   subject a diagnostic names.
 - `./doing` is the line an agent said about its write.

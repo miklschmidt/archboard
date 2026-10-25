@@ -4,4 +4,3 @@ export { DEFAULT_TRAFFIC_SPEED, EdgeTrafficSchema, effectiveTraffic, emptyConten
 export type { SemanticEdge, SemanticNode, SubjectKind, VariantContent } from "#shared/schemas/content.ts";
 export type { EdgeEmphasis } from "#shared/schemas/vocabulary.ts";
 export { WalkthroughBeatSchema } from "#shared/schemas/walkthrough.ts";
-export type { SemanticWalkthrough } from "#shared/schemas/walkthrough.ts";

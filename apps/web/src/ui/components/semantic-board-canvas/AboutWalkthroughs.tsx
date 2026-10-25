@@ -13,7 +13,6 @@ import { RiArrowRightLine, RiMicLine, RiPlayCircleLine, RiPlayLine } from "@remi
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
 import type { SemanticView } from "@archboard/board/views";
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import { Button, IconButton } from "@archboard/ui-kit/controls";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
@@ -21,6 +20,9 @@ import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.t
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 import type { WalkthroughBeatSchema } from "@archboard/board/content";
 import type { z } from "zod";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 

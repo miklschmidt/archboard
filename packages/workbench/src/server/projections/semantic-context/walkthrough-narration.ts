@@ -20,7 +20,6 @@ import type {
 import { parseBoardKey, statedVariant } from "@archboard/board/address";
 import { readBoardVariant } from "@archboard/board/store-read";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	panePresentations,
 	type UserPresentationChange,
@@ -31,6 +30,9 @@ import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { aggregateKey } from "#server/projections/semantic-context/board-context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /**
  * The board a pane shows: what the pane itself last said is on screen, which
