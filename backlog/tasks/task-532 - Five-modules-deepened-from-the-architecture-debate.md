@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:39:00Z'
-updated_date: '2026-10-25T05:38:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,7 +24,7 @@ Two independent reviewers (Codex gpt-6-astra at xhigh and Claude Opus 5.5) each 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Each subtask is merged into feat/reusable-codex-workbench with its focused tests passing
-- [ ] #2 The interface width ceilings do not rise
+- [x] #2 The interface width ceilings do not rise
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -46,4 +46,6 @@ Vault closing (branch vault/close-529-530-532, from f667552b2):
   - Archboard server routes: four RELATIONSHIP_UNDRAWN findings (Checkout registry, Repository listing, Semantic board store, Semantic renderer) were in the base run. They stay undrawn to keep the overview at 25 lines.
   - Live panes: Board announcements, Panes report, Repository routes and Pane socket reach the board store only through parseBoardKey, normalizeBoardKey or boardLockState, which are address rules. Archboard server: Browser reaches the Semantic renderer. Both were in the base run.
 - Code finding (no source changed): the pane socket and several announcement routes reach the board store only for address parsing. A narrower address export can remove that reach. EXPOSED_UNUSED on Pane session (apps/web/src/ui/clients/pane-session) was in the base run.
+
+AC #2 evidence: git diff df9e4ba5a HEAD -- tests/system/repository-policy/interface-width-ceilings.json is empty, and the repository lane (interface-width.test.ts) passes, 153 tests.
 <!-- SECTION:NOTES:END -->

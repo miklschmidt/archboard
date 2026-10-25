@@ -1,11 +1,11 @@
 ---
 id: TASK-532.05
 title: The CLI reads a stated variant change once for edit and resolve
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:19:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -39,3 +39,9 @@ readVariantChange(input, context, {command, needs}) in semantic-input.ts; edit a
 
 Review (review/variant-change, 797ba3849): behaviour, order, exit codes and JSON unchanged; restored three cases of the deleted targeted-variant.test.ts that had no other owner (spacing-only difference stays silent, flag with no stated variant stays silent, a non-name stated variant is overridden with one warning); the targeted mutations now fail four tests.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+semantic edit and semantic resolve read a stated variant change through one readVariantChange (version admission, JSON reading, object refusal, targeting, immediate diagnostics, in that order); the write-answer part moved to input/write-answer.ts. Exit codes, refusal codes and JSON are unchanged. Verified by variant-change.test.ts through the commands, including three cases the review restored from the deleted helper test.
+<!-- SECTION:FINAL_SUMMARY:END -->

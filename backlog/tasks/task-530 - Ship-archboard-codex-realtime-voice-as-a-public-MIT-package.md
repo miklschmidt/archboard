@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T05:38:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -22,9 +22,9 @@ The owner wants any developer to add a realtime Codex voice agent to a project. 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 An outside Bun project installs the packed tarball and runs a voice agent from the README quickstart with no Archboard code
-- [ ] #2 The package and every bundled source are MIT, and the published manifest declares its dependencies and peers
+- [x] #2 The package and every bundled source are MIT, and the published manifest declares its dependencies and peers
 - [ ] #3 Archboard and the example use only the public entries that an outside developer uses
-- [ ] #4 No Archboard name reaches Codex, the browser or a prompt unless the host supplies it
+- [x] #4 No Archboard name reaches Codex, the browser or a prompt unless the host supplies it
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -49,4 +49,6 @@ Vault closing (branch vault/close-529-530-532, from f667552b2):
   - EXPOSED_UNUSED: the voice package exposes names that no file outside their module uses: gateway (createBrowserConnections, createCommandExecutor, createSessionLeases and their types), workhorse-start (compensateAfterBindFailure), coordinator-callbacks (11 names) and rules/host (9 names).
   - apps/workbench-example/tests/ui/support/snapshot.ts imports @archboard/codex-app-server/identity. That is not a public entry of the voice package, and the example package.json does not list codex-app-server. The final code check does not report it, because it is test code.
 - Renderer (waived): after the Voice coordinator adoption, wide-boards.test.ts passes for Voice coordinator (track and blocks). Codex workhorse (blocks) fails "labels off their own route" for edge XkZUEZcj, which TASK-530 did not change. Codex realtime voice (blocks) timed out at 20 s on a loaded machine. The boards are not reshaped for the renderer.
+
+AC #2 evidence: package.json and LICENSE are MIT; the pack script bundles only workspace packages whose license is MIT and refuses a bundle of any other license (ef6ba8ece); the packed manifest declares dependencies, peerDependencies and peerDependenciesMeta (react and @types/bun optional). AC #4 evidence: unnamed-host.test.ts serializes the toolset, both thread profiles and starts, both realtime starts, the classifier prompt and minted records of a host with no identity and finds no Archboard name; git grep finds no Archboard name in the package sources except package import names and one code comment. AC #1 stays open: voice-package.test.ts installs the packed tarball, type-checks every public entry and the README's server.ts and page.tsx, and imports createVoiceAgent, but it does not run a voice agent, which needs a Codex executable and a sign-in. AC #3 stays open: Archboard's UI still uses ./controllers instead of createVoiceClient (TASK-530.02 #3).
 <!-- SECTION:NOTES:END -->

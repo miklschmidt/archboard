@@ -1,11 +1,11 @@
 ---
 id: TASK-530.04
 title: Codex tool namespaces and record prefixes are host identity
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:24:00Z'
-updated_date: '2026-10-25T05:00:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -45,3 +45,9 @@ Review (review/voice-identity): verified role matching (every correlation carrie
 
 Gate repair (f37d01c9a): test:system failed 'real process proves the exact realtime envelope' because the realtime process harness built its identity with the test-only createIdentityAuthority(), which now takes the prefix codex, while the test holds Archboard's realtime session ids to archboard:. The harness now builds its ledger with Archboard's prefix, as the server does (generation/factories.ts and generation/workbench.ts always pass the host's ledger). After the repair the test passes 4/4.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+VoiceAgentIdentity carries serviceName, threadSource, productName, toolNamespaces and recordPrefix, with neutral defaults (codex-realtime-voice, Codex, voice_workhorse/voice_channel/voice_coordinator, voice). createVoiceToolset fills the role-keyed manifest templates; incoming calls are matched by role (namespace plus manifest digest); createIdentityLedger(prefix) mints every record with the host's prefix; the browser copy is neutral. Archboard passes its existing names and stays byte-identical: manifest digests 22124bd3/04531fce/dc259407, classifier 1873dd20, profile digests and archboard: records are pinned by tests. unnamed-host.test.ts proves that a host with no identity sends no Archboard name to Codex, the prompts or the stored records. The gate's realtime system test failed because its harness minted with the test-only default prefix; repaired in f37d01c9a. Follow-up: createIdentityAuthorities() keeps a test-only default prefix codex on a public entry.
+<!-- SECTION:FINAL_SUMMARY:END -->

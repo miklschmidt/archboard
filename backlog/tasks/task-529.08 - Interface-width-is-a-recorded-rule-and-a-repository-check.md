@@ -1,11 +1,11 @@
 ---
 id: TASK-529.08
 title: Interface width is a recorded rule and a repository check
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:27:00Z'
-updated_date: '2026-10-25T01:37:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -39,3 +39,9 @@ TASK-500.14 measured subpaths and kept every name callers imported, so nothing s
 <!-- SECTION:NOTES:BEGIN -->
 ADR 0057 (0056 was taken) records the rule and amends ADR 0055 with an Amended-by paragraph. docs/agents/boundaries.md: the intro names ADR 0057, two new general bullets under Packages state the rule and the ceiling, and the api/ bullet drops the outside-caller-is-enough sentence; per-package paragraphs are untouched. tests/system/repository-policy/interface-width.test.ts counts names with @babel/parser over each code entry of exports (declarations incl. destructuring, export { a as b }, export type, export * as ns, export * followed through resolveSource, export default) and reuses ownersIn for discovery. Ceilings in interface-width-ceilings.json are keyed by package directory id, as LAYERS in package-graph.test.ts is, and equal the counts at 11340202f, which match /tmp/iface/count.ts for every package. With an empty ceiling file the two real-data tests failed and named each package, its count and its ceiling; with the recorded ceilings tests/system/repository-policy passes (152 pass).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+ADR 0057 records that an interface is the few operations its callers need (ADR 0055 notes the amendment). tests/system/repository-policy/interface-width.test.ts counts each package's exported names with @babel/parser and holds them to tests/system/repository-policy/interface-width-ceilings.json, which a change may lower but not raise. The repository lane passes (153 tests).
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-532.02
 title: History readings name their board and own which variants they read
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:19:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -51,3 +51,9 @@ Review (review/history-admission): the refusal order during a server stop is kep
 
 Review (review/history-admission, f0032ce74): clean. Every refusal code and status unchanged case by case; locality memory and footprint statelessness kept; every moved route case reappears in history-admission.test.ts. The refusal-order change during a server stop (500 instead of 422 while checkout work drains) was kept on purpose, see the reviewer's note.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+readFootprint and createLocalityReading().read take the vault, the board name and variant names and return a reading or a typed refusal (HistoryRefusalCode on @archboard/code-intel/history). The variant rules moved from apps/server (footprint-variants.ts and readableVariant deleted) into private code-intel files; routes keep status mapping and cancellation. Every refusal code and status is unchanged; during a server stop a bad request now gets the same 500 as a valid one. Width of code-intel stays 16 (FootprintAnswer derived by the CLI instead). Verified by history-admission.test.ts, the route tests and the review.
+<!-- SECTION:FINAL_SUMMARY:END -->

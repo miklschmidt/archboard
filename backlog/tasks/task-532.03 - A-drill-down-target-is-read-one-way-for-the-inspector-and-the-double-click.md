@@ -1,11 +1,11 @@
 ---
 id: TASK-532.03
 title: A drill-down target is read one way for the inspector and the double-click
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:19:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -49,3 +49,9 @@ Evidence: apps/web/tests/ui/hooks/semantic-board-canvas/drill-target.test.tsx (7
 
 Review (review/drill-target, 76cc8f695): behaviour as specified; fixed the listing-failed copy (the link, not the board, names the repository). A test that a newer double-click wins over an older one answered later is being added (the current() guard was untested; predates this change). Vault: Board viewer still binds drillPlace and resolveDrillDown, which are gone; rebind in the closing step.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+use-drill-target.ts reads a drill-down target one way, as a hook for the inspector and a promise for the double-click, returning ready or a named unresolved state; use-drill-place.ts is deleted. Fixed: after a failed vault listing the inspector offered a drill-down the double-click could not open; both now answer listing-failed and guess no vault. Verified by drill-target.test.tsx (both adapters on one QueryClient), semantic-board-levels.test.tsx including a new test that a newer double-click wins over an older one whose board answers first.
+<!-- SECTION:FINAL_SUMMARY:END -->
