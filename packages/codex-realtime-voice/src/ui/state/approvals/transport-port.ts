@@ -1,5 +1,5 @@
 // What the approvals surface needs from a workbench transport, and nothing
-// more. `ui/clients/transport` implements this port (TASK-150.07). The
+// more. `ui/clients/transport` implements this port. The
 // surface never owns or starts a transport: it reads one authoritative state,
 // captures the target a decision is offered against, and sends exactly one
 // response per decision. Every shape here is the transport's own contract

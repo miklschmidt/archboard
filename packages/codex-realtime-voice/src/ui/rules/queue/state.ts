@@ -113,7 +113,7 @@ function sameChild(
  * A restart is the one state the wire cannot spell on its own: the queue looks
  * ordinary, but it belongs to a child that replaced the one the person was
  * reading. Comparing the presented child with the snapshot's is the only
- * authoritative way to see it (ADR 0019).
+ * authoritative way to see it.
  * @param presented The child the queue on screen was presented for.
  * @param current The child the snapshot names now.
  * @returns True when the child changed.

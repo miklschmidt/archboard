@@ -208,7 +208,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 				.strict()
 				.nullable(),
 			plan: BrowserTimelinePlanSchema.nullable(),
-			/** The coordinator turn that delegated this workhorse turn, while the server knows it (TASK-319). */
+			/** The coordinator turn that delegated this workhorse turn, while the server knows it. */
 			delegatedBy: TurnIdSchema.nullable().optional(),
 		})
 		.strict();

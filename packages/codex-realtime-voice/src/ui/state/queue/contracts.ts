@@ -34,7 +34,7 @@ type WorkbenchTimelineTurn = NonNullable<BrowserSnapshot["timeline"]>["turns"][n
  * Every state the queue region can be in. `loading`, `restarted` and
  * `outcome_unknown` are not queue statuses on the wire: loading is the window
  * before the first authoritative snapshot, restarted is a child epoch that
- * replaced the one this queue was presented for (ADR 0019 voids every
+ * replaced the one this queue was presented for (a restart voids every
  * execution proof with the child), and outcome_unknown also covers a command
  * whose own outcome was lost.
  */

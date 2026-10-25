@@ -11,7 +11,7 @@ import { TimestampSchema } from "#shared/schemas/browser/vocabulary.ts";
 /** At most this many workhorses are listed: one tab session works in this many checkouts at most. */
 const BROWSER_WORKHORSE_LIMIT = 32;
 
-/** One workhorse of the tab session, as the agent dock lists it (ADR 0050). */
+/** One workhorse of the tab session, as a host lists it. */
 const BrowserWorkhorseSchema = z
 	.object({
 		/** The checkout that the workhorse works in. */

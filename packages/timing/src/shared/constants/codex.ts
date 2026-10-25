@@ -90,6 +90,18 @@ const CODEX_REALTIME_MS = durations({
 	contextFreshness: 30_000,
 });
 
+/** The browser's voice client and its socket to the workbench server. */
+const CODEX_VOICE_CLIENT_MS = durations({
+	/**
+	 * How long the voice client waits before opening its socket again after the
+	 * socket is lost, and between failed attempts after that. Pulls against the tab
+	 * session grace: a reload plus these redials must fit inside it, or the server
+	 * ends the conversation before the client is back. It is also the beat of a
+	 * retry, so a shorter value would hammer a server that is restarting.
+	 */
+	reconnect: 3000,
+});
+
 /** A browser command an agent leases, and the approvals a person answers. */
 const CODEX_APPROVAL_MS = durations({
 	/** Browser-command lease classification. Pulls against the public browser wait contract and approval expiry. */
@@ -102,7 +114,8 @@ const CODEX_APPROVAL_MS = durations({
 
 /**
  * How long a browser tab's conversation outlives its last pane socket (TASK-373). Pulls against a
- * reload plus PANE_MS.socketReconnect redials, which it must outlast or a reload loses the
+ * reload plus CODEX_VOICE_CLIENT_MS.reconnect redials (and PANE_MS.socketReconnect, for Archboard's
+ * own pane sockets), which it must outlast or a reload loses the
  * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
  * end as "tab session ended" rather than expiring unanswered.
  */
@@ -113,6 +126,7 @@ export {
 	CODEX_PROCESS_MS,
 	CODEX_SESSION_MS,
 	CODEX_REALTIME_MS,
+	CODEX_VOICE_CLIENT_MS,
 	CODEX_APPROVAL_MS,
 	TAB_SESSION_GRACE_MS,
 };
