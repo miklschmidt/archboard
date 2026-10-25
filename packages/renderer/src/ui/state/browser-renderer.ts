@@ -2,8 +2,8 @@
 //
 // The same renderer core the CLI and the Archboard server's render route run
 // (`shared/rules/render`), with this page as its host: a pool of Web Workers
-// runs the layout engine; the renderer core this page serves measures every
-// word and paints, on the page's own thread, so a word is the same width here
+// runs the layout engine's solves; the renderer core this page serves draws
+// every picture on the page's own thread, so a word is the same width here
 // as on the server. It holds no theme
 // colours: a picture drawn here paints with the page's own colour tokens, so it
 // takes whichever theme the page is in (TASK-346). What is drawn comes from the
@@ -17,7 +17,7 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "#shared/rules/render/board.ts";
-import { installRendererHost, type RendererHost } from "#shared/rules/render/host.ts";
+import { installRendererHost } from "#shared/rules/render/host.ts";
 import initCore, * as core from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
 import {
@@ -50,14 +50,14 @@ function loadedCore(): typeof core {
 }
 
 /** Two boxes and an edge: the least a layout can be, to start an engine on. */
-const WARM_UP_GRAPH: Parameters<RendererHost["solve"]>[0] = {
+const WARM_UP_GRAPH = JSON.stringify({
 	id: "warm-up",
 	children: [
 		{ id: "a", width: 10, height: 10 },
 		{ id: "b", width: 10, height: 10 },
 	],
 	edges: [{ id: "a-b", sources: ["a"], targets: ["b"] }],
-};
+});
 
 /** Make this page a renderer host. Once per page: later calls keep the first. */
 function startBrowserRenderer(): void {

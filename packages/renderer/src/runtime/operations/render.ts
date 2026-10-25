@@ -4,7 +4,6 @@
 // host and imports the core.
 import {
 	renderArchitecture as renderArchitectureIn,
-	renderDataFlow as renderDataFlowIn,
 	renderSemanticView as renderSemanticViewIn,
 } from "#shared/rules/render/diagram.ts";
 import {
@@ -29,16 +28,6 @@ import { installBunHost } from "#runtime/services/bun-host.ts";
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
 	installBunHost();
 	return renderArchitectureIn(request);
-}
-
-/**
- * A semantic data flow in, one self-contained SVG plus its geometry out.
- * @param request What to draw, and on which ground.
- * @returns The document, its size and its atlas.
- */
-function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
-	installBunHost();
-	return renderDataFlowIn(request);
 }
 
 /**
@@ -67,4 +56,4 @@ async function renderBoard(
 	return renderBoardIn(board, choices, policy);
 }
 
-export { renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };
+export { renderArchitecture, renderBoard, renderSemanticView };

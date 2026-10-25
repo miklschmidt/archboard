@@ -1,13 +1,13 @@
 // What the renderer asks of the place it runs in.
 //
-// The renderer is the same code under Bun (the CLI, the rasterizer, the
-// Archboard server's render route) and in a browser tab (TASK-247). Four things
-// differ between those places, and only four, so they arrive as a host
-// installed once before the first picture:
+// The renderer is the same core under Bun (the CLI, the rasterizer, the
+// Archboard server's render route) and in a browser tab (TASK-247). The core
+// draws every picture (ADR 0057); four things differ between those places,
+// and only four, so they arrive as a host installed once before the first
+// picture:
 //
-//   the renderer core, which measures and paints every picture (ADR 0057): under Bun the
-//     build of this checkout's sources, refused when it is stale; in a browser
-//     the build the page serves
+//   the renderer core: under Bun the build of this checkout's sources,
+//     refused when it is stale; in a browser the build the page serves
 //   the layout engine: a pool of workers, Bun Workers on the server and Web
 //     Workers in the browser, each solving one graph at a time
 //   the theme colours a document that stands alone carries: parsed from
@@ -17,48 +17,31 @@
 //   the Remix Icon path data a policy's node kinds name: the whole set under
 //     Bun, and in a browser only the icons it fetched, so a page does not
 //     carry three thousand icons to draw a dozen
-//
-// Text is no host's: the core shapes every word in the faces it carries, so
-// every place measures and draws a word alike.
 
-import type { ElkNode } from "@archboard/elk-rs";
 import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 
-/** What the renderer asks of the core where it runs: words measured, pictures painted, and the choices between solves weighed. */
-type CorePainter = Pick<
-	typeof CoreBuild,
-	| "measureBoard"
-	| "drawFlowchart"
-	| "drawSequence"
-	| "paintDocument"
-	| "drawsBetter"
-	| "readsBetterPacked"
-	| "stacksOf"
-	| "joiningOf"
-	| "hasRegions"
->;
+/** What the renderer asks of the core where it runs: a render. */
+type CoreRenderer = Pick<typeof CoreBuild, "render">;
 
 /** The place the renderer runs in. */
 interface RendererHost {
 	/**
-	 * The renderer core, loaded once and ready to paint.
+	 * The renderer core, loaded once and ready to draw.
 	 * @returns The core.
-	 * @throws {Error} When the host has no core to paint with.
+	 * @throws {Error} When the host has no core to draw with.
 	 */
-	readonly core: () => CorePainter;
+	readonly core: () => CoreRenderer;
 	/**
 	 * Solve one graph with the layout engine, laid out the way its root
-	 * options name. The engine solves a copy of the graph (a worker receives
-	 * one), so the caller's graph is never changed and may share its parts
-	 * with other graphs.
-	 * @param graph The complete measured graph.
+	 * options name, as the core's `layOutBoard` answers it.
+	 * @param graph The complete measured graph, as the core wrote it.
 	 * @param signal Calls the solve off: one still waiting for the engine is
 	 * never solved, and is refused with the signal's reason; one the engine
 	 * holds finishes normally.
-	 * @returns Its solved geometry.
+	 * @returns Its solved geometry, as the core wrote it.
 	 */
-	readonly solve: (graph: ElkNode, signal?: AbortSignal) => Promise<ElkNode>;
+	readonly solve: (graph: string, signal?: AbortSignal) => Promise<string>;
 	/** The theme colours, where a document that stands alone can be drawn. */
 	readonly themeColors?: ThemeColors | undefined;
 	/**

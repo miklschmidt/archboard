@@ -13,7 +13,7 @@ import {
 	RelationshipSample,
 	TypeSample,
 } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
-import type { AppliedAppearance } from "@archboard/renderer/picture";
+import type { AppliedAppearance } from "@archboard/board/render-reply";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
