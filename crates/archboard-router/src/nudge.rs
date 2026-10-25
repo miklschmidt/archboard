@@ -16,9 +16,10 @@
 //!
 //! The placement is solved with [`crate::vpsc`]. A segment never leaves its
 //! channel: where a channel is too narrow for its lanes, they stand closer
-//! than a lane, and the answer names each route crowded so.
+//! than a lane, and the routes crowded so are counted, to choose between
+//! holding a pin's whole segment and holding only its stub.
 
-use crate::grid::{Buffer, SAME, stub_end};
+use crate::grid::{Buffer, SAME, close, sign, stub_end};
 use crate::order;
 use crate::search::simplified;
 use crate::vpsc::{self, Constraint, Var};
@@ -74,7 +75,8 @@ struct Segment {
     fixed: bool,
     /// Whether the route turns the same way at both ends of the segment.
     zigzag: bool,
-    /// Which way the route goes from each end: -1, 0 or 1 across this axis.
+    /// Which way the route goes from each end, -1, 0 or 1 across this axis,
+    /// summed over both ends.
     turns: i32,
 }
 
@@ -105,24 +107,19 @@ impl Groups {
 
 /// Nudge every route, x then y; where that crowds routes, nudge them again
 /// with each pin held only by its stub, and keep the routes crowded less.
-pub fn nudge(scene: &Scene, found: &[Option<Vec<Point>>]) -> Vec<Option<Vec<Point>>> {
-    let buffers: Vec<Buffer> = scene
-        .obstacles
-        .iter()
-        .map(|rect| Buffer::around(rect, scene.params.clearance))
-        .collect();
-    let (mut routes, crowded) = nudged(scene, &buffers, found.to_vec());
+pub fn nudge(
+    scene: &Scene,
+    buffers: &[Buffer],
+    found: &[Option<Vec<Point>>],
+) -> Vec<Option<Vec<Point>>> {
+    let (mut routes, crowded) = nudged(scene, buffers, found.to_vec());
     if crowded > 0 {
-        let stubbed = found
+        let cut = found
             .iter()
             .zip(&scene.connectors)
-            .map(|(route, ends)| {
-                route
-                    .as_ref()
-                    .map(|points| stubbed(&buffers, points, *ends))
-            })
+            .map(|(route, ends)| route.as_ref().map(|points| stubbed(buffers, points, *ends)))
             .collect();
-        let (again, still) = nudged(scene, &buffers, stubbed);
+        let (again, still) = nudged(scene, buffers, cut);
         if still < crowded {
             routes = again;
         }
@@ -184,16 +181,6 @@ fn stubbed(buffers: &[Buffer], points: &[Point], (tail, head): (End, End)) -> Ve
         out.splice(1..1, [stub, stub]);
     }
     out
-}
-
-fn sign(value: f64) -> i32 {
-    if value > SAME {
-        1
-    } else if value < -SAME {
-        -1
-    } else {
-        0
-    }
 }
 
 /// Every segment of every route that runs along the other axis.
@@ -270,10 +257,6 @@ fn same_end(a: &End, b: &End) -> bool {
         (End::Free { at: p1 }, End::Free { at: p2 }) => close(*p1, *p2),
         _ => false,
     }
-}
-
-fn close(a: Point, b: Point) -> bool {
-    (a.x - b.x).abs() < SAME && (a.y - b.y).abs() < SAME
 }
 
 /// Join the segments of routes that share an end and run together from it.
