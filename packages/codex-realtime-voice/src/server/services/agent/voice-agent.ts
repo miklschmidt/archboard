@@ -89,8 +89,9 @@ export type VoiceAgentStatus = ReturnType<Workbench["snapshot"]>;
 
 /**
  * The browser connection port, for a host that serves the agent's browser messages on a socket
- * of its own instead of {@link VoiceAgent.attach}: accept a socket with its pane, tab session and
- * checkout, hand it each parsed request, close it, and drain accepted work.
+ * of its own instead of {@link VoiceAgent.attach} or {@link VoiceAgent.bunHandlers}: accept a
+ * socket with its pane, tab session and checkout, hand it each parsed request, close it, and drain
+ * accepted work.
  */
 export type VoiceAgentBrowserPort = Workbench["browser"];
 
@@ -132,8 +133,9 @@ export interface VoiceAgent {
 		options: VoiceAgentBunOptions<HostData>,
 	) => VoiceAgentBunHandlers<HostData>;
 	/**
-	 * Detach every attached server, stop the Codex process and forget every browser tab. After a
-	 * later {@link VoiceAgent.start}, attach again to serve sockets.
+	 * Close the sockets of every {@link VoiceAgent.attach} and {@link VoiceAgent.bunHandlers} call,
+	 * stop the Codex process and forget every browser tab. After a later {@link VoiceAgent.start},
+	 * attach again or reload the server with new Bun handlers to serve sockets.
 	 */
 	readonly shutdown: () => Promise<void>;
 	/** The browser connection port; see {@link VoiceAgentBrowserPort}. */

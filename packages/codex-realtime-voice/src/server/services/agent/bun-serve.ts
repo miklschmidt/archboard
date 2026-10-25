@@ -32,8 +32,10 @@ type Fetched = Response | undefined | Promise<Response | undefined>;
 export interface VoiceAgentBunOptions<HostData> extends Omit<VoiceAgentAttachOptions, "origin"> {
 	/**
 	 * The server's own HTTP origin exactly, such as `http://127.0.0.1:4100`. Default: the origin of
-	 * the receiving server's `url`, so a server on port 0 needs none. Name it when the browser
-	 * reaches the server under another name than the one it listens on.
+	 * the receiving server's `url`, so a server on port 0 needs none. That `url` names the
+	 * `hostname` the server was given, and `localhost` when it was given none: name the origin when
+	 * the browser reaches the server under another name, as for a server on `0.0.0.0`, on a unix
+	 * socket or behind a proxy. A default the browser does not match refuses it with 403.
 	 */
 	readonly origin?: string;
 	/**
