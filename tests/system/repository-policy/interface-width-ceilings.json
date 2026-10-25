@@ -10,10 +10,10 @@
 	"renderer": 61,
 	"server-lifecycle": 75,
 	"server-requests": 10,
-	"skills": 16,
+	"skills": 3,
 	"timing": 146,
 	"ui-kit": 85,
-	"walkthrough": 38,
+	"walkthrough": 21,
 	"workbench": 152,
 	"workspace": 58
 }
