@@ -37,7 +37,7 @@ import {
 } from "#server/store/configuration.ts";
 import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/lifecycle/launch.ts";
 import { resolveInVault } from "#server/projections/resolve-target.ts";
-import { symbolLine } from "#server/projections/symbol-line.ts";
+import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
 	validateOpenerSelection,
