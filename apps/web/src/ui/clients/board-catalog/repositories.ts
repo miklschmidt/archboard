@@ -2,11 +2,8 @@
 // them from the page: which checkout of a repository this machine reads (ADR
 // 0050). The choice is `repo use` for the whole machine, so every tab hears it.
 
-import {
-	RepositoryListingSchema,
-	type CheckoutChoice,
-	type RepositoryListing,
-} from "@archboard/workspace/repositories";
+import type { z } from "zod";
+import { RepositoryListingSchema, type CheckoutChoiceSchema } from "@archboard/workspace/repositories";
 import { cancellable, json, mutation } from "@archboard/server-requests";
 
 /**
@@ -15,7 +12,7 @@ import { cancellable, json, mutation } from "@archboard/server-requests";
  * @returns The repositories and the vault the server was started with.
  * @throws {Error} When the server's answer is not a repository listing.
  */
-async function fetchRepositories(signal?: AbortSignal): Promise<RepositoryListing> {
+async function fetchRepositories(signal?: AbortSignal): Promise<z.infer<typeof RepositoryListingSchema>> {
 	const parsed = RepositoryListingSchema.safeParse(
 		await json<unknown>("/api/repositories", cancellable(signal)),
 	);
@@ -30,7 +27,7 @@ async function fetchRepositories(signal?: AbortSignal): Promise<RepositoryListin
  * @param choice The repository and one of its known checkouts.
  * @returns When the server has chosen it.
  */
-async function chooseCheckout(choice: CheckoutChoice): Promise<void> {
+async function chooseCheckout(choice: z.infer<typeof CheckoutChoiceSchema>): Promise<void> {
 	await json("/api/repositories/chosen", mutation("PUT", choice));
 }
 

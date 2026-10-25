@@ -12,7 +12,7 @@ import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
@@ -245,7 +245,7 @@ function createServerBrowserGatewayOptions(
 		}
 		if (
 			lastRereadAtMs?.threadId === threadId &&
-			now() - lastRereadAtMs.atMs < CODEX_QUEUE_REREAD_FLOOR_MS
+			now() - lastRereadAtMs.atMs < CODEX_SESSION_MS.queueRereadFloor
 		) {
 			return Promise.resolve();
 		}

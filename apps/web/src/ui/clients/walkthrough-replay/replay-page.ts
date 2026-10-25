@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { RECORDING_REPLAY_PREROLL_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/timing";
 import {
 	ReplayOptionsSchema,
 	TALK_FRAME_RATE,
@@ -28,8 +28,11 @@ import {
 	type Talk,
 } from "@archboard/walkthrough/talk";
 import { createBoardQueryClient } from "#ui/clients/board-catalog/query-client.ts";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock, type SteppedClock } from "@archboard/ui-kit/stepped-clock";
+import {
+	createSteppedClock,
+	driveFramesFrom,
+	type SteppedClock,
+} from "@archboard/ui-kit/frame-clock";
 import { chooseLayoutEngine } from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
 import {
 	pictureSource,
@@ -49,7 +52,7 @@ import { talkReads } from "#ui/clients/walkthrough-replay/talk-reads.ts";
 const FRAME_MS = 1000 / TALK_FRAME_RATE;
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(RECORDING_REPLAY_PREROLL_MS / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(REPLAY_MS.preroll / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {

@@ -229,7 +229,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * Report what this pane shows, after the debounce or now.
-	 * @param immediate Send now rather than after `PANE_DEBOUNCE_MS`.
+	 * @param immediate Send now rather than after `PANE_MS.report`.
 	 */
 	function schedulePaneReport(immediate: boolean): void {
 		// A pane being removed has nothing to say about what it shows.

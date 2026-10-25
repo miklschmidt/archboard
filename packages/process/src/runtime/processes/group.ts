@@ -1,4 +1,4 @@
-import { errorCode } from "@archboard/diagnostics/thrown-error";
+import { errnoCode } from "@archboard/diagnostics/errno";
 import {
 	listProcessGroupObservations,
 	readProcessObservation,
@@ -139,7 +139,7 @@ function signalOwnedProcessGroup(identity: ProcessGroupIdentity, signal: NodeJS.
 		process.kill(-identity.group, signal);
 		return true;
 	} catch (cause) {
-		if (errorCode(cause) === "ESRCH") {
+		if (errnoCode(cause) === "ESRCH") {
 			return false;
 		}
 		throw cause;

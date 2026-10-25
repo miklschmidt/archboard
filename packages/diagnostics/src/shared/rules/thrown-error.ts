@@ -1,9 +1,7 @@
 // What a `catch` clause holds is `unknown`, and the runtime modules mostly want
-// one of two things from it: the message to put in front of a person, or the
-// `code` a system call or a server refusal attached. Narrowing lives here so
-// the reading sites stay honest about what they know.
-
-import { isRecord, stringAt } from "#shared/rules/unknown-record.ts";
+// the message to put in front of a person from it. The `code` a system call
+// attached is read by `errnoCode` of `./errno`. Narrowing lives here so the
+// reading sites stay honest about what they know.
 
 /** An error that carries a machine-readable code beside its message. */
 type CodedError = Error & { code: string };
@@ -27,15 +25,6 @@ function asError(cause: unknown): Error {
 }
 
 /**
- * The string `code` attached to a thrown value, such as a Node errno name.
- * @param cause Whatever a catch clause received.
- * @returns The code when the value carries a string one, otherwise undefined.
- */
-function errorCode(cause: unknown): string | undefined {
-	return isRecord(cause) ? stringAt(cause, "code") : undefined;
-}
-
-/**
  * Build an Error with a code the CLI can branch on, without an unchecked cast.
  * @param message What went wrong, for a person.
  * @param code The machine-readable code, such as `SERVER_UNREACHABLE`.
@@ -45,4 +34,4 @@ function codedError(message: string, code: string): CodedError {
 	return Object.assign(new Error(message), { code });
 }
 
-export { errorMessage, asError, errorCode, codedError };
+export { errorMessage, asError, codedError };

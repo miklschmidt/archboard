@@ -3,7 +3,7 @@
 // workbench through these functions, so there is exactly one place a state
 // change, a retirement or an incompatibility is decided.
 
-import { SOCKET_RECONNECT_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
 import type {
 	BrowserWorkbenchCommandIntent,
@@ -206,7 +206,7 @@ function setBackoff(core: TransportCore, run: SocketRun, reason: string): void {
 		connection: "reconnecting",
 		snapshot: run.snapshot,
 		sequence: run.sequence,
-		retryAtMs: core.now() + SOCKET_RECONNECT_MS,
+		retryAtMs: core.now() + PANE_MS.socketReconnect,
 		reason,
 	});
 }

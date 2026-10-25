@@ -8,12 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-	RECORDING_LEAD_MS,
-	RECORDING_QUIET_MS,
-	RECORDING_SPEECH_START_MS,
-	RECORDING_TAIL_MS,
-} from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/timing";
 import {
 	pace,
 	type PaceObservation,
@@ -65,11 +60,11 @@ describe("recording pace", () => {
 		let turn = tick(state, seen(10));
 		expect(turn.action.kind).toBe("begin");
 		state = turn.state;
-		expect(tick(state, seen(10 + RECORDING_LEAD_MS - 1)).action.kind).toBe("none");
-		turn = tick(state, seen(10 + RECORDING_LEAD_MS));
+		expect(tick(state, seen(10 + RECORDING_MS.lead - 1)).action.kind).toBe("none");
+		turn = tick(state, seen(10 + RECORDING_MS.lead));
 		expect(turn.action).toEqual({ kind: "show", beat: 0 });
 		state = turn.state;
-		const at = 10 + RECORDING_LEAD_MS;
+		const at = 10 + RECORDING_MS.lead;
 		const place = { beat: 0, of: 2, arrived: true };
 		// Still speaking, then a final line whose audio is still playing: neither moves on.
 		state = tick(
@@ -84,30 +79,30 @@ describe("recording pace", () => {
 		expect(
 			tick(
 				state,
-				seen(at + 1000 + RECORDING_QUIET_MS - 1, { place, transcript: [line("a", true)] }),
+				seen(at + 1000 + RECORDING_MS.quiet - 1, { place, transcript: [line("a", true)] }),
 			).action.kind,
 		).toBe("none");
 		turn = tick(
 			state,
-			seen(at + 1000 + RECORDING_QUIET_MS, { place, transcript: [line("a", true)] }),
+			seen(at + 1000 + RECORDING_MS.quiet, { place, transcript: [line("a", true)] }),
 		);
 		expect(turn.action).toEqual({ kind: "show", beat: 1 });
 	});
 
 	test("what the voice said before a step was asked for does not explain it", () => {
 		const said = [line("before", true)];
-		let turn = tick({ kind: "lead", since: 0 }, seen(RECORDING_LEAD_MS, { transcript: said }));
+		let turn = tick({ kind: "lead", since: 0 }, seen(RECORDING_MS.lead, { transcript: said }));
 		const place = { beat: 0, of: 2, arrived: true };
 		let state = turn.state;
 		turn = tick(
 			state,
-			seen(RECORDING_LEAD_MS + RECORDING_QUIET_MS * 3, { place, transcript: said }),
+			seen(RECORDING_MS.lead + RECORDING_MS.quiet * 3, { place, transcript: said }),
 		);
 		expect(turn.action.kind).toBe("none");
 		state = turn.state;
 		turn = tick(
 			state,
-			seen(RECORDING_LEAD_MS + RECORDING_SPEECH_START_MS + 1, { place, transcript: said }),
+			seen(RECORDING_MS.lead + RECORDING_MS.speechStart + 1, { place, transcript: said }),
 		);
 		expect(turn.action.kind).toBe("fail");
 		expect(turn.state.kind).toBe("failed");
@@ -124,16 +119,16 @@ describe("recording pace", () => {
 			landed: true,
 			quietSince: 0,
 		};
-		let turn = tick(state, seen(RECORDING_QUIET_MS, { place, transcript: said }));
+		let turn = tick(state, seen(RECORDING_MS.quiet, { place, transcript: said }));
 		expect(turn.state.kind).toBe("tail");
 		state = turn.state;
-		expect(tick(state, seen(RECORDING_QUIET_MS + RECORDING_TAIL_MS - 1)).action.kind).toBe("none");
-		turn = tick(state, seen(RECORDING_QUIET_MS + RECORDING_TAIL_MS));
+		expect(tick(state, seen(RECORDING_MS.quiet + RECORDING_MS.tail - 1)).action.kind).toBe("none");
+		turn = tick(state, seen(RECORDING_MS.quiet + RECORDING_MS.tail));
 		expect(turn.action).toEqual({ kind: "finish" });
 	});
 
 	test("only a step's first arrival is bounded: a redraw mid-explanation holds it, and fails nothing", () => {
-		const at = RECORDING_SPEECH_START_MS + 5000;
+		const at = RECORDING_MS.speechStart + 5000;
 		const landed: PaceState = {
 			kind: "step",
 			beat: 0,

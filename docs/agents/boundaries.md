@@ -3,6 +3,7 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
+[ADR 0057](../adr/0057-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
 The app migration history is in `docs/design/apps-migration.md`.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
@@ -101,11 +102,22 @@ split by behavior.
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
+- **An interface is the few operations its callers need** (ADR 0057). Design it from the jobs that
+  callers do. Measure it by everything a caller must learn: names, types, invariants, ordering,
+  error modes and configuration. A public name needs a caller outside the package, but a caller is
+  not enough. When callers import pieces of a package and connect them, move that assembly into the
+  package as one operation, change the callers to use it, and make the pieces private. Do not hide
+  the same width in one large file or behind one object.
+- **Interface width has a recorded ceiling.** `tests/system/repository-policy/interface-width.test.ts`
+  counts the names that the code entries of each package's `exports` export. It fails when a package
+  exceeds its ceiling in `interface-width-ceilings.json` beside the test, and when that file does
+  not list exactly the packages that exist. When a package gets narrower, lower its ceiling. Never
+  raise a ceiling: design a deeper operation instead.
 - **An `api/` folder is the package's interface over private implementation.** A package that
   adopts it points the `exports` of an area only into that area's `api/`. An api file re-exports
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
-  from the private files that define the names, and it holds no second definition. A public name
-  needs a concrete caller outside the package, so a name nobody outside imports stays private.
+  from the private files that define the names, and it holds no second definition. A name that no
+  code outside the package imports stays private, and so does a piece that callers only connect.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
   `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
@@ -128,20 +140,31 @@ split by behavior.
   package either. A `./testing` export holds a fixture that tests of two packages share. Its file
   lives in `src/`, and only a test can import it.
 
-The first package is `timing` (`@archboard/timing`). Its `.` export holds every product duration.
-Its `./voice` export holds the voice motion durations.
+The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
+grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
+`BOARD_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
+pulls against written beside it. A caller imports its owner's group and reads a key of it. A
+computation that callers would repeat from a group is one function of the package, such as the
+Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
+named constant. The six flat names that only the renderer imports, such as
+`SEMANTIC_RASTER_JOB_TIMEOUT_MS`, stay until its rewrite lands.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
 `./unknown-record` exports read a caught value without Node and are safe for the browser. The two
 `errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
-Error or string, and `./thrown-error` stringifies it.
+Error or string, and `./thrown-error` stringifies it. `errnoCode` of `./errno` is the one reader of
+the `code` a thrown value carries. The package imports no other package, so a package that runs
+outside Archboard can carry it.
 
 The third is `process` (`@archboard/process`). It owns a child process group and ends it. Its implementation
 sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
-where it exposed 6 files. `./observation` reads the process table. `./git-group` carries the
-operations on the group of a Git command: capturing it, asking whether it or another member exists,
-and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
+where it exposed 6 files. It imports only `timing` and `diagnostics`, so a package that runs
+outside Archboard can carry it. `./observation` reads the process table. `./git` runs one Git
+command, `git`, in a detached group of its own under the owner script, with bounded output, a
+timeout and cancellation, and ends the group TERM-then-KILL. Every failure is a `GitCommandError`
+that names its kind, and a non-zero exit is the kind `exit`. The group operations it uses stay
+private. `./codex-group` carries the Codex process-group operations and
 their TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package
 does not import `codex-app-server`. `./git-owner` is the one export that is not an api file: it is
 the script that a Git command runs under, and callers find it with `import.meta.resolve` and spawn
@@ -153,11 +176,19 @@ subpaths, where it exposed 10 files. `./repositories` and `./languages` are in `
 for the browser, with no Node import: the listing schemas of the navigator, and the languages that an
 agent can configure a server for. The rest is Node-bound. `./checkouts` carries what is known of
 checkouts: the Git lookups, the repository registry and the validation of a language server
-command, which uses `node:path`, so the browser never imports it. The registry's
+command, which uses `node:path`, so the browser never imports it. Its `gitCheckoutOfVault` asks
+Git synchronously for the checkout that holds a vault, its root and identity, for the vault check
+that every open canvas polls and that cannot wait for the asynchronous lookups. The registry's
 `repositoryOfVault` is exported as `registeredRepositoryOfVault`, because `./repository-listing`
 defines a different `repositoryOfVault`, the one that the server projection answers with.
-`./vault` finds a vault, `./source-checkout` finds the checkout whose source runs, and
-`./atomic-write` and `./state-dir` write files durably and name the state directory.
+`./vault` finds a vault as ADR 0049 says. `findVault` only finds it, for a command that asks
+where it is without registering anything. `findAndRegisterVault` is what a command does before it
+starts: it finds the vault, registers the checkout or untracked vault that holds it when the registry
+does not know it, and answers with the vault, what it registered, or why the registry could not be
+written, which does not refuse the command. The CLI words its line on stderr from that answer.
+`./source-checkout` finds the checkout whose source runs, and
+`./atomic-write` and `./state-dir` write files durably and name the state directory: `writeFileAtomic`
+with `exclusive: true` refuses a file that is there instead of replacing it.
 `./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
 depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
@@ -268,8 +299,9 @@ package imports:
 
 - `store/` holds files, locks, registries and file formats: the board's identity and key, where a
   note lives, the vault's configuration, the vaults bound to a repository, the line an agent said
-  about its write, `format/` (the decode and the schema migrations) and `lock/` (the one-writer
-  lease, its claims and its announcements). `former-names.ts` is private.
+  about its write, `format/` (the decode and the schema migrations), `lock/` (the one-writer
+  lease, its claims and its announcements) and `memory.ts` (the one forget of everything the
+  process remembers about boards). `former-names.ts` is private.
 - `operations/` is one write or one read that a caller asks for: `write/` (the write boundary and
   the pure transitions it applies), `read/`, `check/`, `edit/` (one batch of stated changes into
   content), `move/`, `rename/`, `settle/` and `variant/` (adopt, shelve, restore, inheritance and
@@ -284,11 +316,16 @@ The seven files of `runtime/api/` are:
 - `./vault-policy` is the vault's configuration, the vault check against its policy and the
   subject a diagnostic names.
 - `./doing` is the line an agent said about its write.
-- `./lock` is the one-writer lease: claims, holds, the lock state and what announces a change of
-  it.
+- `./lock` is the one-writer lease: an agent's claim and its release, the take-back
+  (`takeBackBoard` revokes a claim and gives the lease straight back), the claim this server lost
+  with the reason it is told once, the lock state, what announces a change of it, and
+  `forgetBoardMemory`, which a stopping server calls once. `holdBoard` and `releaseHold` stay public
+  only for the process fixture that holds a lease in a child process.
 - `./store-move` moves a board to another repository's vault and previews that move.
 - `./store-write` is the write boundary, the transitions it applies, the discard and acceptance of
-  a board, the rename and the outcome of a propagation to drill-downs.
+  a board, and the outcome of a propagation to drill-downs. `renameSemanticBoard` is the rename as
+  one operation: it writes the new name and carries this server's claim and the doing lines to it,
+  so a caller only points its panes.
 
 The package has no barrel. In the old `index.ts`, the names of the document, the input, the render
 reply, the reconciliation and the comparison came from one import. An importer now names the api
@@ -300,26 +337,35 @@ imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspac
 imports nothing back, so the old import cycle between them is gone.
 
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
-module draws with, in the `ui` area. It adopts the `api/` role for
-`ui/` and exposes 10 subpaths, where code outside imported 29 paths. Every export is safe for the browser.
-`ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
-`dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
-`ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
-`components.json` name `ui/components/` as `packages/ui-kit/src/ui/components`. The shadcn CLI
-resolves these paths from the repository root with no TypeScript path alias. Generated imports
-still need the package-local `#` rewrite.
+module draws with, in the `ui` area. It adopts the `api/` role for `ui/` and exposes 4 subpaths
+with 37 names (TASK-529.03; before, 10 subpaths with 85 names). Every export is safe for the
+browser. `ui/components/shadcn/` holds the official shadcn Base UI files with their `README.md`,
+private and kept at the registry's bytes. `ui/components/` holds the package's own components and
+one composite per family, which puts the family's parts on its root, and `dialog-parts/` holds the
+parts that every dialog surface shares. `ui/state/` holds the frame clock and the fullscreen
+presentation; `ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
+name `packages/ui-kit/src/ui/components/shadcn`, so the shadcn CLI writes there. It resolves these
+paths from the repository root with no TypeScript path alias. Generated imports still need the
+package-local `#` rewrite, and a new part reaches callers through its family's composite.
 
-- `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
-  and `usesCommandKey`, the platform's modifier for shortcuts.
-- `./overlays` is the dialog, the dropdown menu and the tooltip. `./display` is the alert, the
-  badge, the separator, the skeleton, the pane chrome and the resizable panels. `./class-names` is
-  `cn`, the class merger that every component draws with.
-- `./dialog-parts` is the failure alert, progress text, technical values, the field messages and
-  the cancel button class that every dialog surface shares.
+- `./components` is every component, one composite per job. A caller imports the family and
+  reaches its parts on it: `Dialog` with `Dialog.Content`, `Dialog.Header`, `Dialog.Title`,
+  `Dialog.Description`, `Dialog.Footer`, `Dialog.Trigger`, `Dialog.Close` and the shared
+  `Dialog.Busy` (progress text), `Dialog.Error` (the host's failure) and `Dialog.Cancel` (the
+  footer's dismissing action); `Field` with its label, description, content, set, legend and
+  `Field.Issues`; and likewise `Select`, `Tabs`, `RadioGroup`, `ToggleGroup`, `InputGroup`,
+  `DropdownMenu`, `Tooltip` (with `Tooltip.Provider`), `Alert`, `Resizable` (the panel group,
+  with `Resizable.Panel` and `Resizable.Handle`) and `RepositoryName` (with
+  `RepositoryName.GitHubMark`). The single components are `Button`, `IconButton`, `Checkbox`,
+  `Input`, `Badge`, `Separator`, `Skeleton` and `Technical`, a value in the mono face. Beside them
+  are `cn`, the class merger every component draws with, `buttonVariants` for an element that is
+  not a button, `usesCommandKey`, the platform's modifier for shortcuts, `shownRepository`, the
+  words a repository's name shows, and the `DialogError` shape that `Dialog.Error` shows.
 - `./time` is the ticking clock hook and the short age and clock text. `./frame-clock` is the clock
-  that moves what a pane draws over time. `./stepped-clock` is the clock that a renderer steps,
-  which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
-  presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
+  that moves what a pane draws over time, and the stepped clock that a renderer moves, which the
+  page that renders a recording frame by frame drives. `./fullscreen-presentation` owns presenting
+  one pane fullscreen.
+- The pane chrome, what the shell puts in a pane's header, belongs to `apps/web`, its one owner.
 - Tailwind finds class names by scanning source files. `apps/web/src/ui/theme/app.css` turns the scan of
   Vite's root off (`source(none)`), names `apps/web/src` and names `packages/*/src/ui/**/*` with `@source`, so the
   `ui` area of every package is scanned (a bare `packages/*/src/ui` matches nothing). `tsconfig.frontend.json`

@@ -11,7 +11,7 @@
 	},
 	"exports": {
 		"./observation": "./src/runtime/api/observation.ts",
-		"./git-group": "./src/runtime/api/git-group.ts",
+		"./git": "./src/runtime/api/git.ts",
 		"./codex-group": "./src/runtime/api/codex-group.ts",
 		"./git-owner": "./src/runtime/processes/git-owner.ts"
 	}

@@ -37,7 +37,7 @@ import type { SemanticAgentSwitch } from "@archboard/workbench/semantic-context"
 import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { arrivedOnBoard, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
 import { movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
-import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-listing";
+import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/routes/repositories/repository-routes.ts";
 import {
 	chooseKnownCheckout,
@@ -145,7 +145,7 @@ function pointPane(
 	identity: BoardIdentity,
 	vault: string,
 	byAgent: boolean,
-): Pick<VaultPlace, "repository" | "checkout"> & { chose?: ShowChoice } {
+): Pick<ReturnType<typeof placeOfVault>, "repository" | "checkout"> & { chose?: ShowChoice } {
 	const key = paneBoardAddress(identity);
 	// Chosen only here, once nothing can refuse the show (ADR 0050).
 	const chose = byAgent ? chooseShownCheckout(vault) : undefined;
