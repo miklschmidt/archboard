@@ -129,6 +129,29 @@ that the host gives the core. The WASM core calls `@viz-js/viz` through an
 import, and a native build links Graphviz. Whether the core replaces Graphviz
 is a separate decision.
 
+### The host gives the core what only its place has
+
+The core draws a picture in one call: the reading to draw, the vault's policy
+and the render's choices go in, and the document, its atlas, each subject's
+appearance and the picture's key come out (`render`, TASK-520.08). The core
+also keeps the scene, for a frontend that paints it itself. A host gives the
+core four things that only the place it runs in has. In the request, it gives
+the durations of `@archboard/timing` and, where a document can stand alone, the
+theme colours. Through a port, it runs the layout's solves and gives the path
+data of the icons that a picture draws.
+
+The core chooses between the solves of a board itself: which joins to keep,
+whether a block stacks, whether groups pack. It asks for every solve that a
+choice reads before it waits for any of them, so a host runs them side by side
+on as many workers as it has. When the core no longer needs a solve, the
+host calls it off. A solve that still waits for a worker is never laid out. A
+solve that a worker already lays out answers all the same, and a later choice
+that needs it again shares that answer (TASK-464). A worker runs one solve
+with `layOutBoard`, and puts Graphviz back as it was loaded before each solve.
+The renderer package
+holds no rule of layout, painting or measurement. It resolves a board's
+variant, view and comparison into a request and runs the solves.
+
 ### Every port step has an oracle
 
 The port starts at the output. First the core paints the drawing that the
