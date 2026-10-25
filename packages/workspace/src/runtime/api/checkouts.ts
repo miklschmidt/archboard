@@ -1,6 +1,5 @@
 // What is known of checkouts: Git lookups of a directory, the repository registry (declare, forget, choose, list) with the vault it binds, and the language server configuration of a repository.
 export { checkoutHead, inspectCheckout, repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
-export type { CheckoutHead } from "#runtime/clients/git.ts";
 export { gitCheckoutOfVault } from "#runtime/clients/git-sync.ts";
 export {
 	configureCommand,
@@ -8,7 +7,7 @@ export {
 	LanguageServersSchema,
 } from "#runtime/store/language-servers.ts";
 export { registryPath, RepoRegistryError } from "#runtime/store/registry-file.ts";
-export type { RegisteredRepo, RegisteredRepoStatus } from "#runtime/store/registry-file.ts";
+export type { RegisteredRepo } from "#runtime/store/registry-file.ts";
 export {
 	chooseKnownCheckout,
 	chosenCheckouts,
