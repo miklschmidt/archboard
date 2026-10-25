@@ -53,17 +53,6 @@ type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
 const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "track";
 
-/**
- * Where a drawn document's faces come from.
- *
- * A pane is inside a page the server serves, so it links them and the browser
- * fetches each one once. A file somebody keeps has no server behind it, so it
- * carries them. Nothing else is offered: naming a face without delivering it is
- * how a picture ends up drawn in a font nobody measured.
- */
-const FontSourceSchema = z.enum(["linked", "embedded"]);
-type FontSource = z.infer<typeof FontSourceSchema>;
-
 /** A rectangle in the drawn document's own viewBox units. */
 const DiagramBoxSchema = z.object({
 	x: z.number(),
@@ -291,8 +280,6 @@ export {
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,
-	FontSourceSchema,
-	type FontSource,
 	DiagramBoxSchema,
 	type DiagramBox,
 	DiagramAtlasSchema,

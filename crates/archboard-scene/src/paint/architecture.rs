@@ -281,7 +281,7 @@ impl<'p> Painting<'p> {
     fn region(&self, region: &DrawingRegion, routes: &[&Curve]) -> Items {
         let color = self.vocabulary.groups.get(&region.group).copied();
         let far_size = self.vocabulary.far_size;
-        paint_region(self.ctx, region, self.palette, color, far_size, routes)
+        paint_region(region, self.palette, color, far_size, routes)
     }
 
     /// The shadow under a card: its shape's own, or the slab's.

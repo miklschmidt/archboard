@@ -1,5 +1,5 @@
-//! Print the TypeScript types of the core's contract: the paint request, the
-//! scene and the painted document, with every type they name (ADR 0057).
+//! Print the TypeScript types of the core's contract: a board's words and
+//! their measures, the paint request, the scene and the painted document, with every type they name (ADR 0057).
 //! `scripts/build-core.ts` writes them beside the WebAssembly build, so the
 //! TypeScript side never holds a copy of its own.
 //!
@@ -10,6 +10,7 @@ use std::any::TypeId;
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_scene::drawing::{ArchitectureDrawing, EdgeFacts, NodeFacts};
+use archboard_scene::measure::{BoardWords, MeasuredWords};
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{AtlasBox, PaintedDocument, Scene};
 use ts_rs::{Config, TS, TypeVisitor};
@@ -216,6 +217,9 @@ fn main() {
         out: BTreeMap::new(),
     };
     declarations.visit::<PaintRequest>();
+    // A board's words, measured before its layout places anything.
+    declarations.visit::<BoardWords>();
+    declarations.visit::<MeasuredWords>();
     // The drawing a layout answers, before its bridges are spliced in.
     declarations.visit::<ArchitectureDrawing<NodeFacts, EdgeFacts>>();
     declarations.visit::<Scene>();

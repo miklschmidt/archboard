@@ -1,14 +1,10 @@
 // The hand-off to the renderer core (ADR 0057): a render's drawing, laid out
 // here, goes to the core as one paint request, and the core answers the
-// picture as one SVG document with its atlas.
-//
-// The core paints, but this host still measures text: the core asks the
-// canvas of the place that draws for every width it needs, in the faces the
-// document names (TASK-247), until it shapes text itself (TASK-520.07).
+// picture as one SVG document with its atlas. The core shapes every word and
+// draws its glyphs, so the document needs no font.
 
 import type { PaletteColor, SemanticPolicy } from "@archboard/board/policy";
 import { FAR_VIEW_SWAP_MS } from "@archboard/timing";
-import type { TextMeasure } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type {
 	DocumentRequest,
 	NodeAppearance,
@@ -19,28 +15,6 @@ import type {
 import type { DiagramRenderRequest } from "#shared/protocol/render-request.ts";
 import { rendererHost } from "#shared/rules/render/host.ts";
 import { OWN_ICONS } from "#shared/rules/render/icons.ts";
-import { base64Of, FACES } from "#shared/rules/text/fonts.ts";
-import { measure } from "#shared/rules/text/text.ts";
-
-/** The host's canvas, measuring for the core. */
-const TEXT_MEASURE: TextMeasure = { width };
-
-/**
- * How wide a run of text is, as the host's canvas draws it.
- * @param text The text.
- * @param family Its font family.
- * @param weight Its font weight.
- * @param size Its font size.
- * @returns Its width.
- */
-function width(
-	text: string,
-	family: Parameters<TextMeasure["width"]>[1],
-	weight: Parameters<TextMeasure["width"]>[2],
-	size: number,
-): number {
-	return measure(text, { family, weight }, size);
-}
 
 /**
  * What a picture's document says about itself, and what it needs from this host.
@@ -54,16 +28,10 @@ function documentRequest(
 	name: string,
 	description: string | undefined,
 ): DocumentRequest {
-	const fonts = request.fonts ?? "linked";
 	return {
 		name,
 		description,
-		fonts,
 		farViewSwapMs: FAR_VIEW_SWAP_MS,
-		fontData:
-			fonts === "embedded"
-				? Object.fromEntries(FACES.map(({ file }) => [file, base64Of(file)]))
-				: undefined,
 		theme: request.theme,
 		themeColors: request.theme === undefined ? undefined : rendererHost().themeColors,
 	};
@@ -123,7 +91,7 @@ function paintDocument(request: PaintRequest): PaintedDocument {
 	// The core writes what its Rust `PaintedDocument` type says, and the type
 	// here is generated from it.
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
-	return JSON.parse(core.paintDocument(JSON.stringify(request), TEXT_MEASURE)) as PaintedDocument;
+	return JSON.parse(core.paintDocument(JSON.stringify(request))) as PaintedDocument;
 }
 
-export { TEXT_MEASURE, documentRequest, groupColours, iconsFor, pageRequest, paintDocument };
+export { documentRequest, groupColours, iconsFor, pageRequest, paintDocument };

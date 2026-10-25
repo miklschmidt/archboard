@@ -2,18 +2,14 @@
 // lays a sequence or a flowchart out and paints it in one call, and answers
 // the picture as one SVG document with its atlas.
 //
-// The core asks this host for what it does not hold yet: the widths and line
-// breaks of text, as the canvas of the place that draws measures them
-// (TASK-520.07), and for a flowchart the track engine (TASK-520.04). What
-// crosses to the core and back crosses as JSON.
+// The core asks this host for what it does not hold yet: for a flowchart the
+// track engine (TASK-520.04). What crosses to the core and back crosses as
+// JSON.
 
 import type { SemanticFlow } from "@archboard/board/flow";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
-import type {
-	FlowchartHost,
-	LayoutText,
-} from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+import type { FlowchartHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type {
 	ArchitecturePicture,
 	PaintRequest,
@@ -28,14 +24,6 @@ import type {
 	MeasuredNode,
 } from "#shared/rules/render/drawing.ts";
 import { rendererHost } from "#shared/rules/render/host.ts";
-import { TEXT_MEASURE } from "#shared/rules/render/paint.ts";
-import {
-	farSizeFor,
-	measureLabel,
-	measureMessageLines,
-	measureNode,
-	measureNoteLines,
-} from "#shared/rules/text/measurement.ts";
 
 /** Everything a sequence is laid out and painted from. */
 type SequenceRequest = Omit<PaintRequest, "picture"> &
@@ -66,71 +54,8 @@ interface MeasuredEntries {
 	readonly lines: readonly (readonly [string, LineLook])[];
 }
 
-/** The host's text, as the core's layout asks for it. */
-const TEXT: LayoutText = { ...TEXT_MEASURE, noteLines, messageLines };
-
-/** What the core's flowchart layout asks of this host: its text, and the track engine. */
-const FLOWCHART: FlowchartHost = {
-	...TEXT,
-	measureNode: nodeMeasured,
-	measureLabel: labelMeasured,
-	farSize,
-	track,
-};
-
-/**
- * A step note's lines, as the host breaks them.
- * @param text The note.
- * @param width The widest a line may be.
- * @param size Its font size.
- * @param lineHeight Its line height.
- * @returns The JSON of its runs.
- */
-function noteLines(text: string, width: number, size: number, lineHeight: number): string {
-	return JSON.stringify(measureNoteLines(text, width, size, lineHeight));
-}
-
-/**
- * A message's lines, as the host breaks them.
- * @param text The message's words.
- * @param width The widest a line may be.
- * @param size Its font size.
- * @param lineHeight Its line height.
- * @returns The JSON of its lines.
- */
-function messageLines(text: string, width: number, size: number, lineHeight: number): string {
-	return JSON.stringify(measureMessageLines(text, width, size, lineHeight));
-}
-
-/**
- * A graph node's box and words, as the host measures them.
- * @param node The JSON of the node.
- * @param container Whether it holds other nodes.
- * @returns The JSON of its measurement.
- */
-function nodeMeasured(node: string, container: boolean): string {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
-	return JSON.stringify(measureNode(JSON.parse(node) as SemanticNode, container));
-}
-
-/**
- * A line's words on their plate, as the host measures them.
- * @param words The words.
- * @returns The JSON of their measurement.
- */
-function labelMeasured(words: string): string {
-	return JSON.stringify(measureLabel(words));
-}
-
-/**
- * The size every card's name is set at from far away.
- * @param subjects The JSON of the cards whose names are drawn.
- * @returns The size.
- */
-function farSize(subjects: string): number {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
-	return farSizeFor(JSON.parse(subjects) as Parameters<typeof farSizeFor>[0]);
-}
+/** What the core's flowchart layout asks of this host: the track engine. */
+const FLOWCHART: FlowchartHost = { track };
 
 /**
  * The flowchart's graph laid out by the track engine.
@@ -162,7 +87,7 @@ async function track(content: string, measured: string): Promise<string> {
  * @returns The document, its size, its atlas and what it placed.
  */
 function drawSequence(request: SequenceRequest): PaintedDocument {
-	const painted = rendererHost().core().drawSequence(JSON.stringify(request), TEXT);
+	const painted = rendererHost().core().drawSequence(JSON.stringify(request));
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output, typed from its Rust source
 	return JSON.parse(painted) as PaintedDocument;
 }

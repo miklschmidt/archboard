@@ -40,7 +40,6 @@ type CaptureProvenance = Readonly<
 		"version" | "variant" | "view" | "theme" | "scale" | "width" | "height" | "diagram"
 	> & {
 		readonly svgSha256: SemanticRasterReceipt["source"]["svgSha256"];
-		readonly facesLoaded: SemanticRasterReceipt["source"]["facesLoaded"];
 		readonly motion: SemanticRasterReceipt["source"]["motion"];
 	}
 >;
@@ -185,7 +184,6 @@ function captureFromReceipt(
 			height: receipt.height,
 			diagram: receipt.diagram,
 			svgSha256: receipt.source.svgSha256,
-			facesLoaded: receipt.source.facesLoaded,
 			motion: receipt.source.motion,
 		},
 		tiles: [],

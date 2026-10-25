@@ -162,9 +162,15 @@ const testCache = {
 	],
 };
 // The Rust checks read only the crates, the workspace manifest that holds their lint policy,
-// clippy's thresholds and the lock file.
+// clippy's thresholds, the lock file and the diagram fonts the text crate builds in.
 const coreCache = {
-	input: ["crates/**", "Cargo.toml", "clippy.toml", "Cargo.lock"],
+	input: [
+		"crates/**",
+		"Cargo.toml",
+		"clippy.toml",
+		"Cargo.lock",
+		"packages/renderer/assets/fonts/*.ttf",
+	],
 	output: [],
 	env: analysisCache.env,
 };
@@ -410,11 +416,6 @@ export default defineConfig({
 		port: 5173,
 		proxy: {
 			"/api": {
-				target: "http://127.0.0.1:3000",
-				changeOrigin: false,
-			},
-			// The faces a picture drawn in the page links and measures with.
-			"/assets/diagram-fonts": {
 				target: "http://127.0.0.1:3000",
 				changeOrigin: false,
 			},

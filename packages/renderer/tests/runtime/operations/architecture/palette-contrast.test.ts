@@ -67,7 +67,9 @@ const content = orderedFixture({
 function cardOf(markup: string) {
 	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
 	const rects = [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map((m) => m[1]!);
-	const words = [...markup.matchAll(/<text [^>]*fill="(#[0-9a-f]{6})"/gu)].map((m) => m[1]!);
+	const words = [...markup.matchAll(/<g [^>]*fill="(#[0-9a-f]{6})"[^>]*aria-hidden="true">/gu)].map(
+		(m) => m[1]!,
+	);
 	const glyph = /data-type-icon="[^"]+"><svg[^>]* fill="(#[0-9a-f]{6})"/u.exec(markup)![1]!;
 	return {
 		edge: rects[0]!,

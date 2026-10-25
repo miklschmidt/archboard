@@ -38,7 +38,7 @@ interface SessionOptions {
 
 /** What one capture is: the document and the bitmap it should become. */
 interface CaptureJob extends RasterBounds {
-	/** The self-contained SVG document, with its faces embedded. */
+	/** The self-contained SVG document. */
 	readonly svg: string;
 }
 
@@ -47,8 +47,6 @@ interface Capture {
 	readonly png: Uint8Array;
 	readonly width: number;
 	readonly height: number;
-	/** How many faces the document declared, all of them loaded before the shot. */
-	readonly fonts: number;
 }
 
 /** What a closed session proved about its own teardown. */
@@ -161,12 +159,11 @@ class RasterSession {
 		try {
 			signal?.throwIfAborted();
 			await this.load(devtools, file, signal);
-			const readiness = checkedReadiness(
+			checkedReadiness(
 				await devtools.evaluate(READINESS_SCRIPT, { timeoutMs: this.options.jobTimeoutMs }),
 			);
 			signal?.throwIfAborted();
-			const bitmap = checkedBitmap(await this.shoot(devtools, job), job);
-			return { ...bitmap, fonts: readiness.fonts };
+			return checkedBitmap(await this.shoot(devtools, job), job);
 		} catch (error) {
 			throw this.captureFailure(error, devtools, signal);
 		} finally {

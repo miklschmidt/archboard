@@ -6,6 +6,7 @@
 use crate::drawing::{DiagramFont, NodeFacts, TextRole, TextRun};
 use crate::geometry::{Point, Rect};
 use crate::js;
+use crate::measure;
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
 use crate::paint::build::{Items, concat, lines};
@@ -68,14 +69,7 @@ fn words_of(text: &str) -> Vec<&str> {
 
 /// A text broken into lines by words, balanced, and cut with an ellipsis where
 /// it takes more than some lines.
-fn break_lines(
-    ctx: &Ctx<'_>,
-    text: &str,
-    face: DiagramFont,
-    size: f64,
-    room: f64,
-    most: usize,
-) -> Vec<String> {
+fn break_lines(text: &str, face: DiagramFont, size: f64, room: f64, most: usize) -> Vec<String> {
     let words = words_of(text);
     let greedy = |limit: f64| -> Vec<String> {
         let mut broken = Vec::new();
@@ -86,7 +80,7 @@ fn break_lines(
             } else {
                 format!("{line} {word}")
             };
-            if !line.is_empty() && ctx.measurer.measure(&next, face, size) > limit {
+            if !line.is_empty() && measure::width(&next, face, size) > limit {
                 broken.push(std::mem::replace(&mut line, (*word).to_owned()));
             } else {
                 line = next;
@@ -117,24 +111,17 @@ fn break_lines(
     }
     broken
         .iter()
-        .map(|line| ctx.measurer.truncate(line, face, size, room))
+        .map(|line| measure::truncate(line, face, size, room))
         .collect()
 }
 
 /// A card's words at one name size, broken to the room they have.
-fn stack_at(
-    ctx: &Ctx<'_>,
-    name: &str,
-    gist: Option<&str>,
-    size: f64,
-    gist_lines: usize,
-    room: f64,
-) -> Stack {
-    let names = break_lines(ctx, name, CARD_TITLE_FONT, size, room, NAME_LINES);
+fn stack_at(name: &str, gist: Option<&str>, size: f64, gist_lines: usize, room: f64) -> Stack {
+    let names = break_lines(name, CARD_TITLE_FONT, size, room, NAME_LINES);
     let gist_size = js::js_max(GIST_MIN, js::round(size * GIST_SHARE));
     let gists = match gist {
         Some(gist) if gist_lines > 0 => {
-            break_lines(ctx, gist, CARD_NOTE_FONT, gist_size, room, gist_lines)
+            break_lines(gist, CARD_NOTE_FONT, gist_size, room, gist_lines)
         }
         _ => Vec::new(),
     };
@@ -155,34 +142,26 @@ fn stack_at(
 }
 
 /// A card's name and gist sized to the room its box holds.
-fn settle(ctx: &Ctx<'_>, name: &str, gist: Option<&str>, room: f64, height: f64) -> Stack {
+fn settle(name: &str, gist: Option<&str>, room: f64, height: f64) -> Stack {
     let whole = words_of(name).join(" ");
     for (size, gist_lines) in attempts() {
         if gist.is_none() && gist_lines > 0 {
             continue;
         }
-        let stack = stack_at(ctx, &whole, gist, size, gist_lines, room);
+        let stack = stack_at(&whole, gist, size, gist_lines, room);
         if stack.kept && stack.height <= height {
             return stack;
         }
     }
-    stack_at(ctx, &whole, None, f64::from(NAME_MIN), 0, room)
+    stack_at(&whole, None, f64::from(NAME_MIN), 0, room)
 }
 
 /// One line of words as a run, from the left of the line's top: its baseline
 /// half a cap height below the line's middle.
-fn run(
-    ctx: &Ctx<'_>,
-    text: &str,
-    at: Point,
-    size: f64,
-    step: f64,
-    face: DiagramFont,
-    role: TextRole,
-) -> TextRun {
+fn run(text: &str, at: Point, size: f64, step: f64, face: DiagramFont, role: TextRole) -> TextRun {
     TextRun {
         text: text.to_owned(),
-        width: ctx.measurer.measure(text, face, size),
+        width: measure::width(text, face, size),
         x: at.x,
         y: at.y + (size * step) / 2.0 + size * 0.35,
         font: face,
@@ -192,7 +171,7 @@ fn run(
 }
 
 /// A stack's runs, the name's lines and then the gist's, from one top.
-fn runs_of(ctx: &Ctx<'_>, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
+fn runs_of(stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
     let name_step = stack.name_size * NAME_LINE;
     let gist_step = stack.gist_size * GIST_LINE;
     let gist_top = top + stack.names.len() as f64 * name_step + GIST_GAP;
@@ -203,7 +182,6 @@ fn runs_of(ctx: &Ctx<'_>, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
         .map(|(index, text)| {
             let line_top = top + index as f64 * name_step;
             run(
-                ctx,
                 text,
                 Point { x, y: line_top },
                 stack.name_size,
@@ -216,7 +194,6 @@ fn runs_of(ctx: &Ctx<'_>, stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
     runs.extend(stack.gists.iter().enumerate().map(|(index, text)| {
         let line_top = gist_top + index as f64 * gist_step;
         run(
-            ctx,
             text,
             Point { x, y: line_top },
             stack.gist_size,
@@ -302,14 +279,13 @@ pub(super) fn paint_card_views(
             DRILL_MARK_ROOM * MARK_SCALE
         };
     let stack = settle(
-        ctx,
         &part.node.name,
         gist_of(part.node.responsibility.as_deref()),
         room,
         rect.height - PAD_Y * 2.0,
     );
     let top = EDGE + js::js_max(0.0, (tile - stack.height) / 2.0);
-    let far = words_in(&runs_of(ctx, &stack, x, top), rect, &words);
+    let far = words_in(&runs_of(&stack, x, top), rect, &words);
     let near_chip = Place {
         x: near.chip_x,
         y: near.chip_y,
@@ -339,7 +315,6 @@ pub(super) fn paint_card_views(
 
 /// The near and far views of a heading that has no kind of its own to show, a flow's.
 pub(super) fn paint_heading_views(
-    ctx: &Ctx<'_>,
     name: &str,
     summary: Option<&str>,
     rect: Rect,
@@ -347,14 +322,13 @@ pub(super) fn paint_heading_views(
     near: Words,
 ) -> Items {
     let stack = settle(
-        ctx,
         name,
         gist_of(summary),
         rect.width,
         rect.height - PAD_Y * 2.0,
     );
     let far = words_in(
-        &runs_of(ctx, &stack, 0.0, (rect.height - stack.height) / 2.0),
+        &runs_of(&stack, 0.0, (rect.height - stack.height) / 2.0),
         rect,
         palette,
     );

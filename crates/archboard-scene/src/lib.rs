@@ -6,8 +6,9 @@
 //! positioned list of what the picture is made of, as typed values. Each
 //! frontend paints the scene; the SVG painter is the `archboard-svg` crate.
 //!
-//! Text is measured by the host ([`measure::Measure`]): the canvas of the place
-//! that draws the picture, until the core shapes text itself (TASK-520.07).
+//! Words are shaped and broken by the core's own text ([`measure`], over the
+//! `archboard-text` crate), and a run of words carries its glyphs, so every
+//! painter draws the same glyphs at the same places.
 
 pub mod drawing;
 pub mod geometry;

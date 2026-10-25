@@ -2,13 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import { renderDataFlow } from "#runtime/operations/render.ts";
-import {
-	drawnSpan,
-	drawnTexts,
-	labelPlates,
-	registeredFaces,
-	spanFits,
-} from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // A step's note is the caveat a sequence carries on one message: the branch,
@@ -141,7 +135,6 @@ test("a self step's note is drawn whole under its loop, and the next message mak
 		content: startup(NOTE),
 		theme: "light",
 	});
-	const faces = registeredFaces(rendered.svg);
 	const words = drawnTexts(rendered.svg).filter(
 		(text) => text.subject.id === "s2" && text.text !== "import candidate ×2",
 	);
@@ -153,7 +146,7 @@ test("a self step's note is drawn whole under its loop, and the next message mak
 	const plates = labelPlates(rendered.svg, "step");
 	const frame = rendered.atlas.regions["run"]!;
 	for (const text of words) {
-		const span = drawnSpan(text, faces);
+		const span = drawnSpan(text);
 		// Inside the message it belongs to and the flow it is part of, below the
 		// message's own label and above the next message's words.
 		expect(spanFits(span, loop)).toBe(true);

@@ -63,7 +63,6 @@ const RenderThemeSchema = StandaloneThemeSchema.optional();
  * carries them. The default is the pane's, because that is the render the
  * viewer asks for on every change.
  */
-const RenderFontsSchema = z.enum(["linked", "embedded"]).default("linked");
 const RenderComparisonSchema = z.enum(["on", "off"]).default("on");
 
 /**
@@ -177,7 +176,6 @@ function renderRoute(req: Request, res: Response): void {
 /** What a render request selects, once every stated selector has been read. */
 interface RenderChoices {
 	readonly theme?: StandaloneTheme | undefined;
-	readonly fonts: "linked" | "embedded";
 	readonly variant?: string;
 	readonly view?: string;
 	readonly against?: string;
@@ -194,7 +192,6 @@ const RENDER_SELECTORS = [
 	"view",
 	"against",
 	"theme",
-	"fonts",
 	"comparison",
 	"layout",
 	"title",
@@ -276,10 +273,6 @@ function chosen(
 			why: `"theme" says "${stated["theme"]}"; a render is ${StandaloneThemeSchema.options.join(", ")}`,
 		};
 	}
-	const fonts = RenderFontsSchema.safeParse(stated["fonts"]);
-	if (!fonts.success) {
-		return { ok: false, why: `"fonts" says "${stated["fonts"]}"; they are linked or embedded` };
-	}
 	const comparison = statedComparison(stated);
 	if (!comparison.ok) return comparison;
 	const layout = statedLayout(stated["layout"]);
@@ -290,7 +283,6 @@ function chosen(
 		ok: true,
 		how: {
 			theme: theme.data,
-			fonts: fonts.data,
 			comparison: comparison.on,
 			...namedIn(stated),
 			...layout.choice,

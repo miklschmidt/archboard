@@ -6,7 +6,7 @@ import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.t
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
-import { drawnSpan, drawnTexts, registeredFaces } from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { bodyShift, distanceToRoute, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import {
 	APCA,
@@ -426,14 +426,13 @@ describe("what nobody has decided is said in its own corner", () => {
 			await architecture(["io", "gw", "moved"]),
 			sequence(["f1", "asks", "io"]),
 		]) {
-			const faces = registeredFaces(drawn.svg);
 			const where = badges(drawn);
 			for (const text of drawnTexts(drawn.svg)) {
 				const badge = where.get(text.subject.id);
 				if (badge === undefined) {
 					continue;
 				}
-				const span = drawnSpan(text, faces);
+				const span = drawnSpan(text);
 				// The badge sits in the padding every box already leaves to the right
 				// of its words, so nothing had to be re-measured to make room for it.
 				const clear =

@@ -12,7 +12,7 @@
 // they say on a card.
 
 import { describe, expect, test } from "bun:test";
-import { diagramTextWidth, renderSemanticView } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import type { VariantContent } from "@archboard/board/content";
 import {
 	distanceToOutline,
@@ -178,14 +178,11 @@ describe("the words of a shape", () => {
 			const lines = drawnTexts(svg).filter((text) => text.subject.id === id);
 			expect(lines.length).toBeGreaterThan(0);
 			for (const line of lines) {
-				expect(line.centred).toBe(true);
-				expect(line.x).toBeCloseTo((left + right) / 2, 1);
-				const face = { family: line.family, weight: line.weight };
-				const half = diagramTextWidth(line.text, face, line.size) / 2;
+				expect(line.x + line.width / 2).toBeCloseTo((left + right) / 2, 1);
 				// Both ends of the line, at its top and at its foot.
 				for (const y of [line.y - line.size * 0.75, line.y + line.size * 0.25]) {
-					expect(isInside(outline, { x: line.x - half, y })).toBe(true);
-					expect(isInside(outline, { x: line.x + half, y })).toBe(true);
+					expect(isInside(outline, { x: line.x, y })).toBe(true);
+					expect(isInside(outline, { x: line.x + line.width, y })).toBe(true);
 				}
 			}
 		});

@@ -25,7 +25,6 @@ import {
 } from "@archboard/board/document";
 import type {
 	LayoutEngineName,
-	FontSource,
 	LegendLayout,
 	NothingDrawnReason,
 	OfferedView,
@@ -54,7 +53,6 @@ interface BoardRenderChoices {
 	readonly against?: string | undefined;
 	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
 	readonly theme?: StandaloneTheme | undefined;
-	readonly fonts: FontSource;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
 	/**
@@ -172,9 +170,8 @@ function emptyReason(
  * @param variant The variant to draw.
  * @param view The view to draw, or nothing for the overview.
  * @param against The variant the caller named to read it against, if any.
- * @param how The theme, the faces and the vault policy.
+ * @param how The theme and the vault policy.
  * @param how.theme The theme a document that stands alone is drawn in, when it is one.
- * @param how.fonts Where the drawn faces come from.
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
  * @param how.layout Which engine lays the architecture out.
@@ -190,7 +187,6 @@ async function drawnReply(
 	against: SemanticVariant | undefined,
 	how: {
 		theme: StandaloneTheme | undefined;
-		fonts: FontSource;
 		policy: SemanticPolicy;
 		comparison: boolean;
 		layout: LayoutEngineName | undefined;
@@ -230,7 +226,6 @@ async function drawnReply(
 			variant: variant.content,
 			grammar: reading.grammar,
 			theme: how.theme,
-			fonts: how.fonts,
 			layout: how.layout,
 			frame: {
 				title: titleOf(how.title, identity, how.comparison),
@@ -342,7 +337,6 @@ async function renderBoard(
 	}
 	const reply = await drawnReply(board, variant, view, against, {
 		theme: choices.theme,
-		fonts: choices.fonts,
 		policy,
 		comparison: choices.comparison !== false,
 		layout: choices.layout,

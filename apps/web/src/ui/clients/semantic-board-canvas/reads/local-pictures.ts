@@ -67,7 +67,7 @@ import {
 /** Draws one board in this page. */
 type DrawBoard = (
 	board: SemanticBoard,
-	choices: Omit<BoardRenderChoices, "fonts">,
+	choices: BoardRenderChoices,
 	policy: SemanticPolicy,
 ) => Promise<BoardRenderOutcome>;
 

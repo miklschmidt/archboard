@@ -117,7 +117,6 @@ for (const item of items) {
 	const drawn = await renderArchitecture({
 		content,
 		theme: "light",
-		fonts: "embedded",
 		layout,
 		policy: item.policy,
 	});

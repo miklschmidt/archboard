@@ -11,7 +11,16 @@ import { fileURLToPath } from "node:url";
 const CHECKOUT = fileURLToPath(new URL("../../../../../", import.meta.url));
 
 /** The files and folders, relative to the checkout, that a build of the core is made from. */
-const CORE_SOURCES = ["Cargo.toml", "Cargo.lock", "crates"];
+const CORE_SOURCES = [
+	"Cargo.toml",
+	"Cargo.lock",
+	"crates",
+	// The faces the core shapes and draws words with, carried in its build.
+	"packages/renderer/assets/fonts/Onest-wght-v1.000.ttf",
+	"packages/renderer/assets/fonts/Onest-Medium-v1.000.ttf",
+	"packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf",
+	"packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf",
+];
 
 /** Where `bun run build:core` writes the build: the glue module, its types and the WebAssembly. */
 const CORE_BUILD_DIRECTORY = fileURLToPath(

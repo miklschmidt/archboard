@@ -393,9 +393,7 @@ const semanticRasterizeContract = defineCommand({
 			...pictureReceipt(drawn, input.noComparison),
 			source: {
 				renderer: "semantic-renderer" as const,
-				fonts: "embedded" as const,
 				svgSha256: createHash("sha256").update(drawn.svg).digest("hex"),
-				facesLoaded: capture.fonts,
 				motion: "paused-at-start" as const,
 			},
 		};

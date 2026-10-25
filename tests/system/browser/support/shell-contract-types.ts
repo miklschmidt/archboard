@@ -54,7 +54,6 @@ type ThemeSnapshot = {
 	headerSectionsAligned: boolean;
 	fontChecks: boolean[];
 	fontResources: string[];
-	diagramFontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
 	/** A section heading in the pane's sidebar: the body size, semibold, never uppercase. */
 	sectionHeading: { family: string; transform: string; weight: number; size: number };

@@ -4,9 +4,7 @@
 //! to parse. The board is the dogfood vault's "Codex session", as the renderer
 //! hands it to the core (`tests/fixtures/codex-session.paint.json`).
 
-use archboard_scene::drawing::DiagramFont;
 use archboard_scene::geometry::Rect;
-use archboard_scene::measure::Measure;
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{
@@ -17,25 +15,11 @@ use serde_json::Value;
 /// The paint request of "Codex session".
 const REQUEST: &str = include_str!("fixtures/codex-session.paint.json");
 
-/// A host that measures every character as half its font size wide.
-struct HalfWidth;
-
-impl Measure for HalfWidth {
-    fn width(&self, text: &str, _font: DiagramFont, size: f64) -> f64 {
-        #[expect(
-            clippy::cast_precision_loss,
-            reason = "a line of text holds far fewer characters than f64 counts exactly"
-        )]
-        let characters = text.chars().count() as f64;
-        (characters * size * 50.0).round() / 100.0
-    }
-}
-
 /// The board painted, and its request as plain data to read what it asked for.
 fn painted() -> (Scene, Value) {
     let request: PaintRequest = serde_json::from_str(REQUEST).expect("the fixture is a request");
     let asked: Value = serde_json::from_str(REQUEST).expect("the fixture is JSON");
-    (paint(&request, &HalfWidth), asked)
+    (paint(&request), asked)
 }
 
 /// Every group of some items, depth first.

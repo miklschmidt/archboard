@@ -6,6 +6,7 @@
 use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
+use archboard_scene::measure;
 use archboard_scene::request::WordLine;
 
 use crate::board::{Flow, Message, MessageKind, messages_of};
@@ -15,7 +16,6 @@ use crate::sequence::design::{
     SELF_MESSAGE_PITCH, STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH,
     STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT,
 };
-use crate::text::Text;
 
 /// `Number.MAX_SAFE_INTEGER`: the width of a line nothing stands beside.
 const UNBOUNDED: f64 = 9_007_199_254_740_991.0;
@@ -64,11 +64,11 @@ fn has_words(note: Option<&str>) -> bool {
 
 /// One note measured against the narrowest readable corridor: its plate's
 /// width, or zero for no note.
-fn minimum_note_width(text: &impl Text, note: Option<&str>) -> f64 {
+fn minimum_note_width(note: Option<&str>) -> f64 {
     let Some(note) = note.filter(|note| has_words(Some(note))) else {
         return 0.0;
     };
-    let lines = text.note_lines(
+    let lines = measure::note_lines(
         note,
         STEP_NOTE_MIN_WIDTH - STEP_NOTE_PADDING_X * 2.0,
         NOTE_SIZE,
@@ -85,11 +85,11 @@ fn minimum_note_width(text: &impl Text, note: Option<&str>) -> f64 {
 
 /// The column width that leaves every note a readable corridor, or zero when
 /// no message carries one.
-pub(super) fn required_note_column_width(text: &impl Text, flows: &[Flow]) -> f64 {
+pub(super) fn required_note_column_width(flows: &[Flow]) -> f64 {
     let mut width: f64 = 0.0;
     for flow in flows {
         for step in messages_of(&flow.steps) {
-            width = js::js_max(width, minimum_note_width(text, step.note.as_deref()));
+            width = js::js_max(width, minimum_note_width(step.note.as_deref()));
         }
     }
     if width == 0.0 {
@@ -115,7 +115,6 @@ fn note_anchor(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> f64 {
 /// Where a message's note goes: under the message, starting where its own
 /// words start, wrapped to the hop and held inside the flow's columns.
 pub(super) fn place_note(
-    text: &impl Text,
     step: &Message,
     ends: MessageEnds,
     bounds: ColumnBounds,
@@ -131,7 +130,7 @@ pub(super) fn place_note(
         corridor_width,
     ]);
     let line_height = NOTE_SIZE * TEXT_LINE_HEIGHT;
-    let lines = text.note_lines(
+    let lines = measure::note_lines(
         note,
         wrap_width - STEP_NOTE_PADDING_X * 2.0,
         NOTE_SIZE,
@@ -188,12 +187,7 @@ fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Op
 }
 
 /// A message's words, wrapped to the room its plate has.
-pub(super) fn words_for(
-    text: &impl Text,
-    step: &Message,
-    ends: MessageEnds,
-    bounds: ColumnBounds,
-) -> MessageWords {
+pub(super) fn words_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> MessageWords {
     let (width, centre) = room_for(step, ends, bounds);
     let limit = if width.is_finite() {
         width - PILL_PADDING_X * 2.0
@@ -201,7 +195,7 @@ pub(super) fn words_for(
         UNBOUNDED
     };
     MessageWords {
-        lines: text.message_lines(
+        lines: measure::message_lines(
             &step.drawn_label(),
             limit,
             PILL_TEXT_SIZE,

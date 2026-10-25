@@ -1,54 +1,35 @@
-//! The words of a scene, its icons, and the faces its words are set in.
+//! The words of a scene, its icons, and the boxes some items are drawn in.
 //!
-//! A run of words is set at a baseline in one face and size, as the host
-//! measured it. When the core shapes text itself (TASK-520.07), a run also
-//! carries its glyphs and their places; its words stay, for the reader who
-//! searches, copies or listens.
+//! A run of words is shaped by the core (`archboard-text`): it carries its
+//! glyphs and their places, which every painter draws, and its words, for the
+//! reader who searches, copies or listens.
 
 use serde::Serialize;
 use ts_rs::TS;
 
-use crate::drawing::{DiagramFont, FontFamily};
+use crate::drawing::DiagramFont;
 use crate::geometry::{Point, Rect};
+use crate::measure;
 use crate::scene::Item;
 use crate::scene::colour::Colour;
 
-/// How a run of words is set, which names how the SVG painter writes it.
+/// One glyph of a run: the glyph in the run's face, and where its origin
+/// stands from the run's point, in the units of the face.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
-#[serde(rename_all = "lowercase")]
-pub enum Setting {
-    /// A line the layout measured and placed: a card's, a label's, a caption's.
-    Run,
-    /// A heading or a line of words set where the painter put it.
-    Caption,
-    /// A line centred on a flowchart shape.
-    Centred,
-    /// A line on a row of a sequence's fragment.
-    Row,
+pub struct GlyphPlace {
+    /// The glyph, by its id in the face.
+    pub id: u32,
+    /// How far along the baseline its origin stands.
+    pub x: i32,
+    /// How far below the baseline its origin stands: nought for all but a mark.
+    pub y: i32,
 }
 
-/// Where a run stands on its point across.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
-#[serde(rename_all = "lowercase")]
-pub enum Anchor {
-    /// Its middle stands on the point.
-    Middle,
-}
-
-/// Where a run stands on its point down.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
-#[serde(rename_all = "lowercase")]
-pub enum Baseline {
-    /// Its middle stands on the point, not its baseline.
-    Central,
-}
-
-/// One run of words.
+/// One run of words, shaped.
 #[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 pub struct Text {
-    /// How it is set.
-    pub setting: Setting,
-    /// Where it starts: the left end of its baseline, unless it says otherwise.
+    /// The left end of its baseline: where its first glyph's origin stands.
     pub at: Point,
     /// The face it is set in.
     pub font: DiagramFont,
@@ -56,18 +37,69 @@ pub struct Text {
     pub size: f64,
     /// Its colour.
     pub fill: Colour,
-    /// Where it stands on its point across, when not at its start.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub anchor: Option<Anchor>,
-    /// Where it stands on its point down, when not on its baseline.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub baseline: Option<Baseline>,
-    /// Whether every space in it is kept as measured, runs of them too.
-    pub keeps_spaces: bool,
+    /// How far its glyphs advance, at its size.
+    pub width: f64,
+    /// The units of one em of its face, which its glyphs' places are in: a
+    /// place times `size / unitsPerEm` is a distance in the picture.
+    pub units_per_em: u16,
+    /// Its glyphs, in the order they are drawn.
+    pub glyphs: Vec<GlyphPlace>,
     /// The words.
     pub words: String,
+}
+
+impl Text {
+    /// Words shaped in a face at a size, their baseline starting at a point.
+    pub fn set(at: Point, font: DiagramFont, size: f64, fill: Colour, words: &str) -> Text {
+        let face = measure::face(font);
+        let shaped = archboard_text::shape(face, words);
+        Text {
+            at,
+            font,
+            size,
+            fill,
+            width: measure::exact_width(words, font, size),
+            units_per_em: face.units_per_em(),
+            glyphs: shaped
+                .glyphs
+                .iter()
+                .map(|glyph| GlyphPlace {
+                    id: glyph.id,
+                    x: glyph.x,
+                    y: glyph.y,
+                })
+                .collect(),
+            words: words.to_owned(),
+        }
+    }
+
+    /// The run moved so its middle across stands on its point.
+    #[must_use]
+    pub fn centred(self) -> Text {
+        Text {
+            at: Point {
+                x: self.at.x - self.width / 2.0,
+                ..self.at
+            },
+            ..self
+        }
+    }
+
+    /// The run moved so its middle down stands on its point: halfway between
+    /// how far its face reaches above the baseline and below it.
+    #[must_use]
+    pub fn central(self) -> Text {
+        let extent = measure::face(self.font).extent();
+        let rise =
+            (extent.ascent - extent.descent) / 2.0 * self.size / f64::from(extent.units_per_em);
+        Text {
+            at: Point {
+                y: self.at.y + rise,
+                ..self.at
+            },
+            ..self
+        }
+    }
 }
 
 /// A Remix Icon, by the name it is exported under, drawn from its own 24-unit
@@ -93,46 +125,3 @@ pub struct Viewport {
     /// What it draws, in order.
     pub items: Vec<Item>,
 }
-
-/// One face a scene's words are set in: its family and weight, and the file
-/// of the bundled fonts that holds it.
-#[derive(Debug)]
-pub struct Face {
-    /// Its family and weight.
-    pub font: DiagramFont,
-    /// The name of its font file.
-    pub file: &'static str,
-}
-
-/// Every face a scene's words can be set in. Two weights, and only two: 400
-/// and 500 ship as files.
-pub const FACES: [Face; 4] = [
-    Face {
-        font: DiagramFont {
-            family: FontFamily::Sans,
-            weight: 400,
-        },
-        file: "Onest-wght-v1.000.ttf",
-    },
-    Face {
-        font: DiagramFont {
-            family: FontFamily::Sans,
-            weight: 500,
-        },
-        file: "Onest-Medium-v1.000.ttf",
-    },
-    Face {
-        font: DiagramFont {
-            family: FontFamily::Mono,
-            weight: 400,
-        },
-        file: "DMMono-Regular-v1.000.ttf",
-    },
-    Face {
-        font: DiagramFont {
-            family: FontFamily::Mono,
-            weight: 500,
-        },
-        file: "DMMono-Medium-v1.000.ttf",
-    },
-];

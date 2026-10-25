@@ -46,7 +46,7 @@ async function bothModes(
 			},
 		],
 	});
-	const ask = { variant: "draft", fonts: "linked", layout: how.layout } as const;
+	const ask = { variant: "draft", layout: how.layout } as const;
 	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
 		renderBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),

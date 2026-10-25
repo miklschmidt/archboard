@@ -34,8 +34,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::future::Future;
 
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
-use archboard_scene::geometry::Rect;
 use archboard_scene::js;
+use archboard_scene::measure::{self, CardWords};
 use archboard_scene::paint::design::FALLBACK_ICON;
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
@@ -46,7 +46,6 @@ use serde::{Deserialize, Serialize};
 pub use graph::{Content, GraphEdge, GraphNode};
 
 use crate::board::{Flow, Node};
-use crate::text::Text;
 use answer_order::laid_out;
 use graph::{FLOW_KIND, Graph, SHAPE_KIND, flowchart_of};
 use outlines::{to_diamonds, with_outlines};
@@ -124,29 +123,10 @@ pub struct Measured {
     pub lines: Vec<(String, LineLook)>,
 }
 
-/// A card whose name is drawn from far away, and the box it stands in.
-#[derive(Clone, Debug, Serialize)]
-pub struct FarSubject<'a> {
-    /// The card's name, which is set at the far size.
-    pub name: &'a str,
-    /// The card's box in the drawing's coordinates, which the far name has to fit.
-    #[serde(rename = "box")]
-    pub bounds: Rect,
-}
-
-/// What the host gives a flowchart's layout: its text, and the track engine.
-pub trait FlowchartHost: Text {
+/// What the host gives a flowchart's layout: the track engine.
+pub trait FlowchartHost {
     /// Why the track engine could not lay the graph out.
     type Error;
-
-    /// A card's or a container's box and words (`text/measurement.ts` `measureNode`).
-    fn measure_node(&self, node: &GraphNode, container: bool) -> MeasuredNode<GraphNode>;
-
-    /// A line's words on their plate (`measureLabel`).
-    fn measure_label(&self, words: &str) -> MeasuredLabel;
-
-    /// The one size every card's name is set at from far away (`farSizeFor`).
-    fn far_size(&self, subjects: &[FarSubject<'_>]) -> f64;
 
     /// The graph laid out by the track engine.
     fn track(
@@ -157,8 +137,8 @@ pub trait FlowchartHost: Text {
 }
 
 /// One shape's words, wrapped, and the width and height its box takes to hold them.
-fn shape_size(text: &impl Text, shape: FlowchartShape, name: &str) -> (Vec<String>, f64, f64) {
-    let lines = text.message_lines(name, SHAPE_WORDS_WIDTH, SHAPE_TEXT_SIZE, SHAPE_TEXT_LINE);
+fn shape_size(shape: FlowchartShape, name: &str) -> (Vec<String>, f64, f64) {
+    let lines = measure::message_lines(name, SHAPE_WORDS_WIDTH, SHAPE_TEXT_SIZE, SHAPE_TEXT_LINE);
     let text_width = lines
         .iter()
         .fold(0.0, |widest, line| js::js_max(widest, line.width));
@@ -207,7 +187,7 @@ fn answer_rooms(graph: &Graph, labels: &HashMap<&str, f64>) -> HashMap<String, f
 /// each shape to the size its words need, a decision wider than its diamond
 /// on either side by an answer's sideways run and the room its words take
 /// beside it. Each shape's wrapped words beside.
-fn measured(graph: &Graph, host: &impl FlowchartHost) -> (Measured, BTreeMap<String, Vec<String>>) {
+fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
     let containers: HashSet<&str> = graph
         .content
         .nodes
@@ -220,7 +200,7 @@ fn measured(graph: &Graph, host: &impl FlowchartHost) -> (Measured, BTreeMap<Str
         .iter()
         .filter_map(|edge| {
             let words = edge.label.as_deref().filter(|words| !words.is_empty())?;
-            Some((edge.id.clone(), host.measure_label(words)))
+            Some((edge.id.clone(), measure::measure_label(words)))
         })
         .collect();
     let widths: HashMap<&str, f64> = labels
@@ -236,9 +216,15 @@ fn measured(graph: &Graph, host: &impl FlowchartHost) -> (Measured, BTreeMap<Str
         .map(|node| {
             let Some(shape) = graph.shape(&node.id) else {
                 let container = containers.contains(node.id.as_str());
-                return (node.id.clone(), host.measure_node(node, container));
+                let words = CardWords {
+                    name: &node.name,
+                    responsibility: node.responsibility.as_deref(),
+                    drills: false,
+                };
+                let measured = measure::measure_node(node.clone(), &words, container);
+                return (node.id.clone(), measured);
             };
-            let (lines, width, height) = shape_size(host, shape, &node.name);
+            let (lines, width, height) = shape_size(shape, &node.name);
             words.insert(node.id.clone(), lines);
             let room = rooms.get(&node.id).copied().unwrap_or(0.0);
             let decision = shape == FlowchartShape::Decision;
@@ -353,7 +339,7 @@ pub async fn picture<H: FlowchartHost>(
     host: &H,
 ) -> Result<PaintRequest, H::Error> {
     let graph = flowchart_of(&request.flows, &request.parts);
-    let (measure, words) = measured(&graph, host);
+    let (measure, words) = measured(&graph);
     let laid = laid_out(&graph.content, &measure, host).await?;
     let drawing = with_outlines(to_diamonds(laid, &graph), &graph);
     let next = LineAppearance {
@@ -362,16 +348,6 @@ pub async fn picture<H: FlowchartHost>(
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
     };
-    let subjects: Vec<FarSubject<'_>> = drawing
-        .drawing
-        .cards
-        .iter()
-        .map(|card| FarSubject {
-            name: &card.measured.node.name,
-            bounds: card.bounds,
-        })
-        .collect();
-    let far_size = host.far_size(&subjects);
     // Its frames, lines and boxes are painted as an architecture's, its shapes
     // as their own, and its atlas holds only what a reader can pick: the
     // flows and their steps.
@@ -401,7 +377,6 @@ pub async fn picture<H: FlowchartHost>(
             lines,
             steps: Vec::new(),
             groups: request.groups,
-            far_size,
             flowchart: Some(FlowchartParts {
                 shapes,
                 subjects: graph.subjects,

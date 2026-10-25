@@ -1,13 +1,14 @@
 // The block chooser's cancellation must reach the installed host. A failed
 // required solve releases its speculative candidates through that same signal.
 import { expect, test } from "bun:test";
-import { diagramTextWidth, renderArchitecture } from "#runtime/operations/render.ts";
+import { renderArchitecture } from "#runtime/operations/render.ts";
+import { installBunHost } from "#runtime/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test("a failed required block solve cancels the speculative solves through the host", async () => {
-	diagramTextWidth("Warm", { family: "Inter", weight: 400 }, 12);
+	installBunHost();
 	const host = rendererHost();
 	const signals: (AbortSignal | undefined)[] = [];
 	const failure = new Error("The required candidate failed");

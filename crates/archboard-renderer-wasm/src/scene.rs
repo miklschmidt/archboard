@@ -1,42 +1,13 @@
 //! The painter's bindings: a paint request in, as the JSON of its generated
-//! TypeScript type, and the picture out as the JSON of its `PaintedDocument`.
-//!
-//! The host measures text with the canvas of the place that draws the picture
-//! (`TextMeasure`), until the core shapes text itself (TASK-520.07).
+//! TypeScript type, and the picture out as the JSON of its `PaintedDocument`;
+//! and a board's words measured before its layout places anything.
 
-use archboard_scene::drawing::DiagramFont;
-use archboard_scene::measure::Measure;
-use archboard_scene::names::word;
+use archboard_scene::measure::{BoardWords, measure_board};
 use archboard_scene::paint::paint as paint_scene;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::PaintedDocument;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen(typescript_custom_section)]
-const TEXT_MEASURE: &str = r#"
-/** The host's measure of one line of text, in diagram units, to a hundredth of a unit. */
-export interface TextMeasure {
-    width(text: string, family: "sans" | "mono", weight: 400 | 500, size: number): number;
-}
-"#;
-
-#[wasm_bindgen]
-extern "C" {
-    /// The host's measure of text: `width(text, family, weight, size)` in
-    /// diagram units, to a hundredth of a unit.
-    #[wasm_bindgen(typescript_type = "TextMeasure")]
-    pub type TextMeasure;
-
-    #[wasm_bindgen(method)]
-    fn width(this: &TextMeasure, text: &str, family: &str, weight: u16, size: f64) -> f64;
-}
-
-impl Measure for TextMeasure {
-    fn width(&self, text: &str, font: DiagramFont, size: f64) -> f64 {
-        TextMeasure::width(self, text, word(&font.family), font.weight, size)
-    }
-}
 
 /// A request read from its JSON.
 pub(crate) fn request_of<T: DeserializeOwned>(request: &str, what: &str) -> Result<T, JsError> {
@@ -47,6 +18,18 @@ pub(crate) fn request_of<T: DeserializeOwned>(request: &str, what: &str) -> Resu
     })
 }
 
+/// A board's words measured: the JSON of its `BoardWords` in, the JSON of
+/// their `MeasuredWords` out.
+///
+/// # Errors
+///
+/// A request that does not read as `BoardWords`.
+#[wasm_bindgen(js_name = measureBoard)]
+pub fn measure(request: &str) -> Result<String, JsError> {
+    let words: BoardWords = request_of(request, "words")?;
+    serde_json::to_string(&measure_board(&words)).map_err(|error| JsError::new(&error.to_string()))
+}
+
 /// One picture painted and written as an SVG document: the JSON of a
 /// `PaintRequest` in, the JSON of its `PaintedDocument` out.
 ///
@@ -55,17 +38,14 @@ pub(crate) fn request_of<T: DeserializeOwned>(request: &str, what: &str) -> Resu
 /// A request that does not read as a `PaintRequest`, and a document the SVG
 /// painter refuses (`archboard_svg::document`).
 #[wasm_bindgen(js_name = paintDocument)]
-pub fn document(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
-    painted_document(&request_of(request, "paint")?, measure)
+pub fn document(request: &str) -> Result<String, JsError> {
+    painted_document(&request_of(request, "paint")?)
 }
 
 /// One picture painted and written as an SVG document: the JSON of its
 /// `PaintedDocument`.
-pub(crate) fn painted_document(
-    request: &PaintRequest,
-    measure: &dyn Measure,
-) -> Result<String, JsError> {
-    let scene = paint_scene(request, measure);
+pub(crate) fn painted_document(request: &PaintRequest) -> Result<String, JsError> {
+    let scene = paint_scene(request);
     let svg = archboard_svg::document(&scene, &request.document, &request.icons)
         .map_err(|error| JsError::new(&error.0))?;
     let painted = PaintedDocument {

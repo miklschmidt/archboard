@@ -3,7 +3,7 @@
 
 import type { ChangeKind } from "@archboard/board/comparison";
 import type { SemanticPolicy } from "@archboard/board/policy";
-import type { FontSource, LayoutEngineName, StandaloneTheme } from "@archboard/board/render-reply";
+import type { LayoutEngineName, StandaloneTheme } from "@archboard/board/render-reply";
 import type { DiagramGrammar } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
 import type { ExportFrame, PaintedDocument } from "#shared/protocol/generated/core/types.ts";
@@ -58,13 +58,6 @@ interface DiagramRenderRequest {
 	 * put.
 	 */
 	readonly theme?: StandaloneTheme | undefined;
-	/**
-	 * Where the drawn faces come from. Defaults to `"linked"`, which points at
-	 * the files the Archboard server serves — a few kilobytes, and what a pane wants.
-	 * `"embedded"` carries the faces in the document, which is what a file
-	 * somebody keeps needs and costs about half a megabyte.
-	 */
-	readonly fonts?: FontSource;
 	/**
 	 * How each subject of this picture stands against the variant it is read against.
 	 *

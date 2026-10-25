@@ -67,25 +67,4 @@ async function renderBoard(
 	return renderBoardIn(board, choices, policy);
 }
 
-/**
- * How wide a piece of text is as the Bun canvas measures it, in a diagram face.
- * @param text The text.
- * @param face The face: its CSS family name and weight.
- * @param face.family The CSS family name the document registers.
- * @param face.weight The weight.
- * @param fontSize The size.
- * @returns Its width.
- * @throws {Error} When the canvas gives no 2D context.
- */
-function diagramTextWidth(
-	text: string,
-	face: { readonly family: string; readonly weight: number },
-	fontSize: number,
-): number {
-	installBunHost();
-	const context = new OffscreenCanvas(1, 1).getContext("2d");
-	if (context === null) throw new Error("The Bun canvas gives no 2D context");
-	context.font = `${face.weight} ${fontSize}px "${face.family}"`;
-	return context.measureText(text).width;
-}
-export { diagramTextWidth, renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };
+export { renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };
