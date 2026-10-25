@@ -45,8 +45,8 @@ export interface CodexWorkbenchHostPolicy {
 	readonly shownCheckoutOf: (browserId: string) => string;
 	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	readonly onShownChange: (listener: () => void) => () => void;
-	/** The repository a checkout belongs to, or null. Default: the checkout's real path. */
-	readonly repositoryOfCheckout: (checkout: string) => string | null;
+	/** The name the workhorse list shows for a checkout. Default: the checkout directory's name. */
+	readonly checkoutLabel: (checkout: string) => string;
 	/** Validates and prepares the voice presentation a browser asks for at realtime start. */
 	readonly presentation?: WorkbenchVoicePresentationAdapter;
 	/** Whether a presentation is being recorded, which the browser shows. Default: never. */

@@ -1,7 +1,7 @@
 // The agent dock's list of a tab session's workhorses (ADR 0050, TASK-472.11).
 //
 // The dock shows one workhorse's conversation, the shown one, and lists every live workhorse of the
-// tab by repository and checkout so the person can pick another. A workhorse is live once it has a
+// tab by label and checkout so the person can pick another. A workhorse is live once it has a
 // thread: a message, a delegation or New conversation started one. The shown checkout is
 // listed even before that, as not live, because it is where a typed message goes. Each entry says
 // whether a turn runs and whether the workhorse waits for the person: for an approval, or for an
@@ -29,8 +29,8 @@ interface WorkhorseListInput {
 	readonly approvals: Pick<CodexApprovalBroker, "inspect">;
 	/** The checkout whose conversation the tab shows. */
 	readonly shown: string;
-	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
-	readonly repositoryOf: (checkout: string) => string | null;
+	/** The name the list shows for a checkout. */
+	readonly checkoutLabel: (checkout: string) => string;
 }
 
 /**
@@ -84,7 +84,7 @@ function entryOf(
 ): WorkhorseEntry {
 	return {
 		checkout,
-		repository: input.repositoryOf(checkout),
+		label: input.checkoutLabel(checkout),
 		live: workhorse !== undefined,
 		running: workhorse?.state.activeTurn != null,
 		...waitingMarks(input, checkout),
@@ -105,17 +105,13 @@ function compareText(left: string, right: string): number {
 }
 
 /**
- * The order the list is read in: by repository, a checkout listed under none by its own path, and
- * the checkouts of one repository by path.
+ * The order the list is read in: by label, and the checkouts of one label by path.
  * @param left One entry.
  * @param right The other.
  * @returns Their order.
  */
-function byRepositoryThenCheckout(left: WorkhorseEntry, right: WorkhorseEntry): number {
-	return (
-		compareText(left.repository ?? left.checkout, right.repository ?? right.checkout) ||
-		compareText(left.checkout, right.checkout)
-	);
+function byLabelThenCheckout(left: WorkhorseEntry, right: WorkhorseEntry): number {
+	return compareText(left.label, right.label) || compareText(left.checkout, right.checkout);
 }
 
 /**
@@ -145,7 +141,7 @@ function readWorkhorseList(input: WorkhorseListInput): BrowserWorkhorses {
 				live.has(checkout) ? input.session.workhorses.get(checkout) : undefined,
 			),
 		)
-		.toSorted(byRepositoryThenCheckout);
+		.toSorted(byLabelThenCheckout);
 	return { kind: "codex_workhorses", shown: input.shown, entries };
 }
 

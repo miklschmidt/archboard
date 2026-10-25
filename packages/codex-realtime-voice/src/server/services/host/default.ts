@@ -1,4 +1,5 @@
 import { realpathSync, statSync } from "node:fs";
+import { basename } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
@@ -344,7 +345,12 @@ function createDefaultWorkbenchHost(
 				throw new Error("Context authority changed. Read the conversation and retry.");
 			return context;
 		},
-		repositoryOfCheckout: resolveCheckout,
+		/**
+		 * Name a checkout by its directory.
+		 * @param checkout The checkout.
+		 * @returns The directory's name, or the checkout itself for a filesystem root.
+		 */
+		checkoutLabel: (checkout) => basename(checkout) || checkout,
 		...(input.domainTools === undefined ? {} : { domainTools: input.domainTools }),
 		/**
 		 * Install one generation, which operation context is read from until it retires.

@@ -26,7 +26,7 @@ export function createProductionBindingsFixture(
 		shownCheckoutOf: () => "/work/project",
 		shownConversationOf: () => null,
 		onShownChange: () => () => undefined,
-		repositoryOfCheckout: () => null,
+		checkoutLabel: (checkout) => checkout,
 		onFatal: (error) => {
 			throw error;
 		},

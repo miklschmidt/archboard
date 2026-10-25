@@ -16,8 +16,8 @@ const BrowserWorkhorseSchema = z
 	.object({
 		/** The checkout that the workhorse works in. */
 		checkout: boundedText(4096),
-		/** The host-provided repository identity, or null when none is listed. */
-		repository: boundedText(512).nullable(),
+		/** The name the host shows for the checkout. */
+		label: boundedText(512),
 		/** Whether the tab session has a workhorse here; false only for the shown checkout before its first message. */
 		live: z.boolean(),
 		/** Whether a turn of it is running. */
