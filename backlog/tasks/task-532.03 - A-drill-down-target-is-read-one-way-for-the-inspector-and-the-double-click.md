@@ -1,11 +1,11 @@
 ---
 id: TASK-532.03
 title: A drill-down target is read one way for the inspector and the double-click
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:41:00Z'
+updated_date: '2026-10-25T02:46:00Z'
 labels: []
 dependencies: []
 references:
@@ -28,3 +28,14 @@ The double-click (use-drill-open.ts) and the inspector (use-drill-place.ts with 
 - [ ] #2 A failed listing is treated the same way by both adapters
 - [ ] #3 use-drill-place.ts is removed; repository discovery, document reads, former-name tracking and variant selection are private to the target reading
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. New module apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts: one target reading (private place step from the source listing and the machine's repositories, private destination step from the target document with variant selection and former-name tracking) behind two adapters: useDrillTarget(drillDown) subscribes for the inspector; useDrillTargetReader() returns (drillDown) => Promise<DrillTarget> for the double-click. Both answer one DrillTarget union: ready {board, variant, there} or reading, listing-failed, unregistered, unreachable, unreadable, no-variant, no-current.
+2. Fix the divergence: a link that names a repository whose source listing failed is listing-failed in both adapters; neither guesses another vault. A query error wins over stale data in both, matching what fetchQuery answers.
+3. GoDeeper.WayDown renders the DrillTarget; WayDownIn and use-drill-place.ts are deleted. use-drill-open keeps the gesture's currency check and opens only a ready target.
+4. drill-target.ts keeps only the shared types (RepositoryPlace(s), OtherRepository, OpenDown); drillPlace, resolveDrillDown, drillTargetName become private to the reading; drillDownAsked moves to GoDeeper, its only user.
+5. Tests: new apps/web/tests/ui/hooks/semantic-board-canvas/drill-target.test.tsx drives both adapters over one real QueryClient with a controlled fetch: own and other repository, unregistered/unreachable, failed source listing, missing named variant, former name. The drillPlace cases leave drill-across-repositories.test.ts. Double-click and late-answer cases stay in semantic-board-levels.test.tsx.
+6. Focused checks under the heavy lock, commit by path with Refs: TASK-532.03.
+<!-- SECTION:PLAN:END -->
