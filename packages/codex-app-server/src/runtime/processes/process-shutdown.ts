@@ -134,12 +134,11 @@ function assertAllSettled(
  * @param deadlineAtMs - The composed shutdown deadline.
  */
 function assertQuiescent(state: ProcessOwnerState, deadlineAtMs: number): void {
-	// TASK-151: this read was `>=` before the module was split. settleBeforeDeadline is
-	// what proves lateness: it rejects when the deadline expires before the work finishes,
-	// so reaching this line at all means the composed shutdown did complete in time. This
-	// second clock read only catches time passing afterwards, which is why it is strict.
-	// Restoring `>=` refuses a stop that provably settled, because the split moved this
-	// read one clock turn later; process-lifecycle.test.ts holds that line.
+	// This read is strict, not `>=`. settleBeforeDeadline is what proves lateness: it rejects
+	// when the deadline expires before the work finishes, so reaching this line at all means the
+	// composed shutdown did complete in time. This second clock read only catches time passing
+	// afterwards, which is why it is strict. A `>=` would refuse a stop that provably settled;
+	// process-lifecycle.test.ts holds that line.
 	if (state.dependencies.now() > deadlineAtMs || ownsChildren(state))
 		throw shutdownError(
 			state,

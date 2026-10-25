@@ -292,7 +292,7 @@ function createProcessGroupCleanup(
 
 	/**
 	 * Stop every member of the group so none can fork, waiting for two agreeing censuses
-	 * (TASK-470). A freeze that fails or runs out of its own bound only leaves the group
+	 * A freeze that fails or runs out of its own bound only leaves the group
 	 * unfrozen: the KILL that follows is the cleanup, and it is sent either way, with the
 	 * rest of the composed deadline left to prove the group gone.
 	 * @param input - The group, its close promise and the composed deadline.

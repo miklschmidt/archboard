@@ -5,6 +5,7 @@
 	"description": "Every duration in Archboard, with what each one pulls against.",
 	"license": "MIT",
 	"type": "module",
+	"sideEffects": false,
 	"imports": {
 		"#*": "./src/*",
 		"#tests/*": "./tests/*"

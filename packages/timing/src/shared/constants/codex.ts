@@ -1,4 +1,4 @@
-// Codex workbench policy (ADR 0019).
+// Codex workbench policy.
 //
 // These are authored policy values, not consumer defaults. Their expiry
 // classifications matter: an expiry bounds a retry, lease, readiness,
@@ -69,7 +69,7 @@ const CODEX_SESSION_MS = durations({
 	 *
 	 * Serving a browser snapshot request re-reads the authoritative workhorse
 	 * queue, which is a paginated app-server call. A client is free to ask for a
-	 * snapshot as often as it likes, so the Archboard server coalesces concurrent re-reads and
+	 * snapshot as often as it likes, so the server coalesces concurrent re-reads and
 	 * will not start a new one inside this floor. It sits at or above one
 	 * wait-target poll, because a browser must not out-run the cadence the server
 	 * observes thread state at, and far below request settlement, so a person's
@@ -113,9 +113,8 @@ const CODEX_APPROVAL_MS = durations({
 });
 
 /**
- * How long a browser tab's conversation outlives its last pane socket (TASK-373). Pulls against a
- * reload plus CODEX_VOICE_CLIENT_MS.reconnect redials (and PANE_MS.socketReconnect, for Archboard's
- * own pane sockets), which it must outlast or a reload loses the
+ * How long a browser tab's conversation outlives its last browser socket. Pulls against a
+ * reload plus CODEX_VOICE_CLIENT_MS.reconnect redials, which it must outlast or a reload loses the
  * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
  * end as "tab session ended" rather than expiring unanswered.
  */

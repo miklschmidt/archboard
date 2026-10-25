@@ -117,12 +117,12 @@ function writeConfigAtomically(
 }
 
 /**
- * What every thread in the home runs under unless the config already says otherwise (TASK-314):
+ * What every thread in the home runs under unless the config already says otherwise:
  * Codex's auto-review mode, where the sandbox is the workspace and whatever it refuses goes to a
  * reviewer subagent that approves or denies it instead of asking the user (Codex 0.160.0
  * `approvals_reviewer`, paired as its TUI pairs it with on-request approvals and the
  * workspace-write profile), and network access, because the host commands an agent runs, such as
- * Archboard's CLI, reach the server over localhost. A setting somebody already made is theirs and
+ * a command-line client of the host's server, reach it over localhost. A setting somebody already made is theirs and
  * is kept. Each default is one top-level line, so it can go at the head of any config that lacks
  * it; the sandbox one is a dotted key, which a config that already has a `[sandbox_workspace_write]`
  * table cannot also carry, so that table's presence counts as the setting made.
@@ -135,7 +135,7 @@ const DEFAULT_SETTINGS: readonly { readonly key: string; readonly line: string }
 ];
 
 /**
- * The line that pins the sqlite home, which is all the config held before TASK-314.
+ * The line that pins the sqlite home.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @returns The line.
  */
@@ -317,7 +317,7 @@ function withSqliteHome(
 
 /**
  * The config with what the client needs added and nothing else changed: its sqlite home, and each
- * default the config does not already set (TASK-314). What Codex writes into it by itself, such as
+ * default the config does not already set. What Codex writes into it by itself, such as
  * the trust it records for a checkout, and whatever a person set, stays as it is.
  * @param existing - The config on disk.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.

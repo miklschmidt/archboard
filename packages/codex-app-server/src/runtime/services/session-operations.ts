@@ -321,7 +321,7 @@ function createSessionOperations(ports: SessionOperationPorts): SessionOperation
 			mutate("thread/queue/start", params, "thread-capable"),
 		/**
 		 * Inject items into a thread's model-visible history without starting a turn; this is how
-		 * a board change reaches a running conversation.
+		 * a host's context change reaches a running conversation.
 		 * @param params - The inject_items parameters.
 		 * @returns The injection result.
 		 */
