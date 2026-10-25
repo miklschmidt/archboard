@@ -1,7 +1,7 @@
 import type {
 	CoordinatorCallbackHostPolicy,
 	CoordinatorHostContextSource,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/protocol/voice/extension.ts";
 import type {
 	CoordinatorCallbackCanvas,
 	CoordinatorCallbackOptions,

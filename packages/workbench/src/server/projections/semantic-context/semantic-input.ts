@@ -1,5 +1,8 @@
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchWorkhorseComponents,
+} from "#runtime/protocol/voice/extension.ts";
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/protocol/voice/extension.ts";
-import type { CodexWorkbenchSessionComponents } from "@archboard/codex-realtime-voice/server";
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
@@ -16,7 +19,6 @@ import { readSemanticBoard } from "@archboard/board/store-read";
 import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import type { CodexWorkbenchWorkhorseComponents } from "@archboard/codex-realtime-voice/server";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
 import {
 	aggregateKey,
