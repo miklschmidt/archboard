@@ -50,20 +50,8 @@ skills/archboard/references/generated/
 .DS_Store
 
 # --- archboard ---
-# Third-party agent skills are installed, not authored, so they stay untracked:
-# `skills experimental_install` puts the ones pinned by skills-lock.json in
-# .agents/skills/ and links them from .claude/skills/. This repository's own
-# skills are authored in skills/ and reached through the tracked symlinks below.
-# Everything else under .claude/ and .agents/ (settings.json, commands/,
-# agents/) is authored configuration and IS tracked.
-/.agents/skills/*
-!/.agents/skills/archboard
-!/.agents/skills/archboard-dev
-!/.agents/skills/archboard-pr
-/.claude/skills/*
-!/.claude/skills/archboard
-!/.claude/skills/archboard-dev
-!/.claude/skills/archboard-pr
+# Agent skills and agents under .claude/ and .agents/ are tracked, including
+# third-party installs, so a clone has every skill without a separate install.
 
 # Agent worktrees, created per subagent run and removed after.
 .claude/worktrees/
@@ -82,12 +70,6 @@ skills/archboard/references/generated/
 # Impeccable's surface briefs: one person's working notes on one surface. What
 # a build decided lives in DESIGN.md and docs/design, so the briefs stay local.
 /.impeccable/surfaces/
-
-# What the Impeccable install writes beside its skill (.agents/skills/impeccable,
-# which is not tracked): its agents and its hook. Without the skill they call
-# scripts that do not exist, so a clone does not get them.
-/.claude/agents/impeccable-*.md
-/.codex/hooks.json
 
 # TASK-150 local reference snapshot; never stage or import it.
 /legacy/
