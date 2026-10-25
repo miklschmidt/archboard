@@ -150,8 +150,8 @@ export interface VoiceAgent {
 	readonly instructions: Workbench["instructions"];
 	/**
 	 * Tell the agents of the browser tabs that something they should know about changed: the
-	 * workhorses of some checkouts, the coordinator, the live voice, or any combination. Each
-	 * audience hears one `feed` and `sequence` at most once, and nothing starts a turn. The
+	 * workhorses of some checkouts, the coordinator, the live voice, or any combination. A
+	 * workhorse hears one `feed` and `sequence` at most once, and nothing starts a turn. The
 	 * audiences are told concurrently, so no audience waits for another, and no order between them
 	 * is promised.
 	 * @returns One receipt per tab session and audience, and per checkout for a workhorse.
