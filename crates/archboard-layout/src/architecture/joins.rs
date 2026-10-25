@@ -15,14 +15,15 @@ use std::task::{Context, Poll};
 use indexmap::IndexMap;
 
 use super::choosing::{Drawing, better};
-use super::solving::Boxed;
+use super::solving::{Boxed, Calling, Unsolved};
 use crate::json::J;
 
 /// The blocks whose joins a layout keeps apart, by id, in the order they were set apart.
 pub(crate) type Apart = Vec<String>;
 
-/// Lay the drawing out with some blocks' joins apart.
-pub(crate) type Lay<'a> = Box<dyn Fn(Apart) -> Boxed<'a, Result<Rc<Drawing>, String>> + 'a>;
+/// Lay the drawing out with some blocks' joins apart, called off by the [`Calling`] given.
+pub(crate) type Lay<'a> =
+    Box<dyn Fn(Apart, Calling) -> Boxed<'a, Result<Rc<Drawing>, Unsolved>> + 'a>;
 
 /// The same key for a set of blocks apart, whatever their order.
 fn key_of(apart: &[String]) -> String {
@@ -43,19 +44,30 @@ fn toggled(apart: &[String], member: &str) -> Apart {
     next
 }
 
-/// One layout asked for: under way, answered, or failed.
-enum Entry<'a> {
-    Waiting(Boxed<'a, Result<Rc<Drawing>, String>>),
+/// Where one layout asked for is: under way, answered, or failed.
+enum State<'a> {
+    Waiting(Boxed<'a, Result<Rc<Drawing>, Unsolved>>),
     Answered(Rc<Drawing>),
     Failed(String),
 }
 
+/// One layout asked for: its blocks apart, what calls it off, whether a turn
+/// to come weighs it, and where it is.
+struct Asked<'a> {
+    apart: Apart,
+    calling: Calling,
+    needed: bool,
+    state: State<'a>,
+}
+
 /// Each layout asked for, by the key of its blocks apart, laid out once
-/// however often it is asked. A layout no turn to come reads is called off
-/// while it is under way; one that answered or failed is kept.
+/// however often it is asked. A layout no turn to come weighs is called off
+/// and kept: one an engine already lays out answers all the same, and a later
+/// turn shares that answer, or its failure. One its host refused because it
+/// was called off is forgotten, and laid out afresh while a turn weighs it.
 struct Laying<'a> {
     lay: Lay<'a>,
-    asked: IndexMap<String, Entry<'a>>,
+    asked: IndexMap<String, Asked<'a>>,
 }
 
 impl<'a> Laying<'a> {
@@ -69,45 +81,74 @@ impl<'a> Laying<'a> {
     /// Ask for a layout, once.
     fn ask(&mut self, apart: &[String]) {
         let key = key_of(apart);
-        if !self.asked.contains_key(&key) {
-            let layout = (self.lay)(apart.to_vec());
-            self.asked.insert(key, Entry::Waiting(layout));
+        if let Some(asked) = self.asked.get_mut(&key) {
+            asked.needed = true;
+            return;
         }
+        let calling = Calling::default();
+        let layout = (self.lay)(apart.to_vec(), calling.clone());
+        self.asked.insert(
+            key,
+            Asked {
+                apart: apart.to_vec(),
+                calling,
+                needed: true,
+                state: State::Waiting(layout),
+            },
+        );
     }
 
-    /// Call off every layout under way that no turn to come reads.
+    /// Call off every layout that no turn to come weighs.
     fn keep(&mut self, needed: &[Apart]) {
         let keys: Vec<String> = needed.iter().map(|apart| key_of(apart)).collect();
-        self.asked
-            .retain(|key, entry| !matches!(entry, Entry::Waiting(_)) || keys.contains(key));
+        for (key, asked) in &mut self.asked {
+            asked.needed = keys.contains(key);
+            if !asked.needed {
+                asked.calling.call_off();
+            }
+        }
     }
 
     /// A layout's answer, once it came.
     fn answered(&self, apart: &[String]) -> Option<Rc<Drawing>> {
-        match self.asked.get(&key_of(apart)) {
-            Some(Entry::Answered(drawing)) => Some(Rc::clone(drawing)),
+        match self.asked.get(&key_of(apart)).map(|asked| &asked.state) {
+            Some(State::Answered(drawing)) => Some(Rc::clone(drawing)),
             _ => None,
         }
     }
 
     /// Why a layout failed, once it did.
     fn failure(&self, apart: &[String]) -> Option<String> {
-        match self.asked.get(&key_of(apart)) {
-            Some(Entry::Failed(error)) => Some(error.clone()),
+        match self.asked.get(&key_of(apart)).map(|asked| &asked.state) {
+            Some(State::Failed(error)) => Some(error.clone()),
             _ => None,
         }
     }
 
-    /// Move every layout under way on, and say whether any came or failed.
+    /// Move every layout under way on, and say whether any came, failed or
+    /// was refused. A refused layout a turn to come weighs is asked for
+    /// afresh.
     fn progressed(&mut self, context: &mut Context<'_>) -> bool {
         let mut any = false;
-        for entry in self.asked.values_mut() {
-            let Entry::Waiting(layout) = entry else {
+        let mut refused = Vec::new();
+        for (key, asked) in &mut self.asked {
+            let State::Waiting(layout) = &mut asked.state else {
                 continue;
             };
             if let Poll::Ready(answer) = layout.as_mut().poll(context) {
-                *entry = answer.map_or_else(Entry::Failed, Entry::Answered);
                 any = true;
+                match answer {
+                    Ok(drawing) => asked.state = State::Answered(drawing),
+                    Err(Unsolved::Failed(error)) => asked.state = State::Failed(error),
+                    Err(Unsolved::CalledOff) => refused.push(key.clone()),
+                }
+            }
+        }
+        for key in refused {
+            if let Some(asked) = self.asked.shift_remove(&key)
+                && asked.needed
+            {
+                self.ask(&asked.apart);
             }
         }
         any

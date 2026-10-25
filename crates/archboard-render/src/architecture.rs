@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use archboard_flows::board::{Step, every_step};
-use archboard_layout::{Measured, MeasuredGroups, Node, Standings, draw, shown_drawing};
+use archboard_layout::{LineLook, Measured, MeasuredGroups, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
 use archboard_scene::measure::{CardWords, measure_caption, measure_label, measure_node};
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
@@ -130,11 +130,14 @@ fn layout_key(
         .iter()
         .map(|(id, look)| (id, &look.name))
         .collect();
-    let looks: Vec<(&String, String)> = request
+    let looks: Vec<(&String, LineLook)> = request
         .policy
         .relationship_kinds
         .iter()
-        .map(|(kind, look)| (kind, format!("{:?}{:?}", look.dash, look.arrowhead)))
+        .map(|(kind, look)| {
+            let (dash, arrowhead) = (look.dash, look.arrowhead);
+            (kind, LineLook { dash, arrowhead })
+        })
         .collect();
     serde_json::to_string(&(
         request.layout,

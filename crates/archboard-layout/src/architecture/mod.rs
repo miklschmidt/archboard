@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
 pub use measured::{Measured, MeasuredGroups};
-pub use solving::{InProcess, Laying, Solver};
+pub use solving::{Calling, InProcess, Laying, Solver, Unsolved};
 
 use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 
