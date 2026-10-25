@@ -3,9 +3,11 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and builds both browser applications, then runs four normal
+`bun run test` type-checks and builds both browser applications, then runs five normal
 native lanes in this order:
 
+- `test:core`: the Rust tests of every crate under `crates/`, run natively with
+  `cargo test --locked --workspace` inside `nix develop`;
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
   `packages/` and `apps/`, excluding the capacity and benchmark inventories;
 - `test:system`: system product owners under the five explicit non-browser
@@ -38,6 +40,8 @@ Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
+`lint:all` includes `lint:core`, clippy over the crates and their tests, and
+`format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.

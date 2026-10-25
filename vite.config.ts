@@ -252,6 +252,10 @@ export default defineConfig({
 				command: "cargo fmt --all --check",
 				cache: coreCache,
 			},
+			"test:core": {
+				command: "cargo test --locked --workspace",
+				cache: coreCache,
+			},
 			"lint:all": {
 				dependsOn: ["contracts", "core"],
 				command: ["vp run lint:tests", "vp run lint:policy", "vp run lint:css", "vp run lint:core"],
@@ -273,6 +277,7 @@ export default defineConfig({
 					"vp run types",
 					"vp run frontend",
 					"vp run workbench-example",
+					"vp run test:core",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:repository",
