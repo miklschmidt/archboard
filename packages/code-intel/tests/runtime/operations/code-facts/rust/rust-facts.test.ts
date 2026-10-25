@@ -174,9 +174,8 @@ test("a use leads across crates through a renamed import and a re-export, and th
 		"crate.audit call": "crates/ledger/src/lib.rs#audit",
 		// The file's own type, read by name as the file's own.
 		"Entry.new call": "nowhere",
-		// `super::*` in the tests is the file itself.
-		"post call": "nowhere",
 	});
+	expect(await targets("crates/ledger/src/entry.rs")).not.toHaveProperty("post call");
 	// `mod checkout;` brings in the file of the module.
 	expect(await targets("crates/shop/src/main.rs")).toEqual({
 		"checkout call": "crates/shop/src/checkout.rs#*",

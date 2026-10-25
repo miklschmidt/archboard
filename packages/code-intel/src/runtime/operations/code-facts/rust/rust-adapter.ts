@@ -28,7 +28,8 @@
 // is a use as a type on the line of the `use`.
 //
 // Each use keeps the imports visible in its scope and whether it names a
-// local binding. Code that did not parse holds no facts; its names are kept.
+// local binding. Calls and imports under `#[cfg(test)]` are not production
+// dependencies. Code that did not parse holds no facts; its names are kept.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/operations/code-facts/facts.ts";
@@ -378,6 +379,25 @@ function tokenReferences(tree: Node, context: UseContext): WrittenUse[] {
 }
 
 /**
+ * Items compiled only by the test harness. Their definitions remain
+ * anchorable, but their imports and calls are not production dependencies.
+ * @param skipped Attributes already captured by the query.
+ * @returns The test-only items.
+ */
+function testItems(skipped: readonly Node[]): Node[] {
+	return skipped
+		.map((node) => {
+			const spelling = node.text.replaceAll(/\s+/gu, "");
+			if (spelling === "#![cfg(test)]") return node.parent;
+			if (spelling !== "#[cfg(test)]") return null;
+			let item = node.nextNamedSibling;
+			while (item?.type === "attribute_item") item = item.nextNamedSibling;
+			return item;
+		})
+		.filter((node) => node !== null);
+}
+
+/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -388,17 +408,21 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const matchedNames = new Set(captured.matched.map((node) => node.id));
 	const binding = captured.binding.filter((node) => !matchedNames.has(node.id));
 	const unparsed = spansOf(captured.unparsed);
+	const tests = testItems(captured.skip);
+	const testSpans = spansOf(tests);
 	const context: UseContext = {
 		bound: new Set([...binding, ...captured.declared].map((node) => node.id)),
-		skip: spansOf(captured.skip),
+		skip: spansOf([...captured.skip, ...tests]),
 		unparsed,
 		types: spansOf(captured.type),
 		tokens: spansOf(captured.tokens),
 	};
-	const imports = captured.import.filter((node) => !unparsed.holds(node.startIndex));
+	const imports = captured.import.filter(
+		(node) => !unparsed.holds(node.startIndex) && !testSpans.holds(node.startIndex),
+	);
 	const seen = new Set<number>();
 	const environment = captured.environment.flatMap((node): WrittenUse[] =>
-		unparsed.holds(node.startIndex)
+		unparsed.holds(node.startIndex) || testSpans.holds(node.startIndex)
 			? []
 			: [
 					{

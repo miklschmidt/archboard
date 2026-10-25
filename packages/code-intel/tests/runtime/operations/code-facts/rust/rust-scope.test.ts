@@ -25,6 +25,7 @@ const checkout = fixtureCheckout({
 		"    use crate::api::*;",
 		"    fn glob_call() { call(); }",
 		"}",
+		"#[cfg(test)] mod test_only { use crate::other::call as test_call; fn run() { test_call(); } }",
 	].join("\n"),
 });
 afterAll(() => checkout.remove());
@@ -33,6 +34,7 @@ test("Rust imports resolve in their lexical scope and locals shadow only later u
 	const pass = createCodeFacts().pass(new AbortController().signal);
 	const facts = await pass.read(checkout, "src/client.rs");
 	if (facts === undefined || facts.adapter === "text") throw new Error("missing Rust facts");
+	expect(facts.references.some((use) => use.symbol.includes("test_call"))).toBe(false);
 	expect(
 		facts.references
 			.filter(
