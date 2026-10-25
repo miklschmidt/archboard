@@ -3,40 +3,38 @@
 //! their head cards, then the messages crossing them, and last the words of
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
-use crate::attrs;
-use crate::geometry::{Rect, canvas_for, coord, union};
-use crate::markup::{Markup, group, lines, tag};
+use crate::geometry::{Rect, canvas_for, union};
 use crate::paint::Ctx;
 use crate::paint::appearance::{card_look, semantic_ink};
+use crate::paint::build::{Items, group, grouped, lines, point, shape};
 use crate::paint::cards::paint_card;
 use crate::paint::colour::{Share, light_dark, mixed, tinted};
 use crate::paint::design::{ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
 use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::sequence_frames::{paint_fragment, paint_frame};
-pub use crate::paint::sequence_messages::arrow_standoff;
 use crate::paint::sequence_messages::{
     Crossing, exchange_clock, paint_step, paint_step_words, row_tint, step_ride,
 };
 use crate::paint::shadow::SHADOW_REACH;
 use crate::paint::slab::{Lift, SlabLook, boxed, ghost_face, shadow_under, slab};
 use crate::paint::standing::{
-    HEAD_ATTRIBUTE, MEMBERS_ATTRIBUTE, PART_ATTRIBUTE, PIN_INSET, Standings, Unsettled,
-    ghost_opacity, marked_box, standing_pin_at, subject,
+    PIN_INSET, Standings, Unsettled, ghost_opacity, marked_box, standing_pin_at, subject,
 };
 use crate::paint::styles::Styles;
 use crate::paint::tray::floor_of;
 use crate::request::{
     NodeAppearance, SequenceColumn, SequenceDrawing, SequenceFlow, SequencePicture, Standing,
 };
-use crate::scene::{Atlas, Role, SubjectKind};
+use crate::scene::{
+    Atlas, Colour, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
+};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;
-const LIFELINE_DASH: &str = "3 5";
+const LIFELINE_DASH: [f64; 2] = [3.0, 5.0];
 const LIFELINE_DASH_OFFSET: f64 = SHADOW_REACH + 1.0 - 6.0;
 const HEAD_REACH: f64 = 64.0;
-const HEAD_SHADE_CLASS: &str = "ab-head-shade";
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
 const BAR_SHADE: f64 = 0.4;
 const NEUTRAL_BAR: Share = Share {
@@ -62,7 +60,7 @@ fn paint_row_marks(
     layout: &SequenceFlow,
     palette: &Palette,
     mark_of: &dyn Fn(&str) -> Option<Standing>,
-) -> Markup {
+) -> Items {
     let frame = layout.frame;
     let rows: Vec<Rect> = layout.steps.iter().map(|placed| placed.bounds).collect();
     lines(
@@ -89,16 +87,18 @@ fn paint_row_marks(
                     palette,
                 );
                 if tint.is_empty() {
-                    return Markup::new();
+                    return Items::new();
                 }
-                group(
-                    Role::RowMark,
-                    None,
-                    attrs! { MEMBERS_ATTRIBUTE: placed.step.id.as_str(), "pointer-events": "none" },
-                    lines(vec![
-                        tint,
-                        standing_pin_at(frame.x + PIN_INSET, middle, standing, palette),
-                    ]),
+                grouped(
+                    Group::new(
+                        Role::RowMark,
+                        lines(vec![
+                            tint,
+                            standing_pin_at(frame.x + PIN_INSET, middle, standing, palette),
+                        ]),
+                    )
+                    .standing_with(vec![placed.step.id.clone()])
+                    .pointer(Pointer::None),
                 )
             })
             .collect(),
@@ -107,26 +107,19 @@ fn paint_row_marks(
 
 /// A participant's activation bar: a slim slab of the participant itself.
 fn bar_look(appearance: &NodeAppearance, palette: &Palette) -> SlabLook {
-    let shape = |face: String, edge: String| SlabLook {
-        face,
-        ground: None,
-        lit: None,
-        edge,
-        thickness: BAR_THICKNESS,
-        radius: ACTIVATION_RADIUS,
-        sheen: false,
-    };
+    let shape =
+        |face: Colour, edge: Colour| SlabLook::plain(face, edge, BAR_THICKNESS, ACTIVATION_RADIUS);
     if semantic_ink(appearance.body_color).is_none() {
-        let face = tinted(palette.slab_face, Some(palette.muted), NEUTRAL_BAR);
+        let face = tinted(&palette.slab_face, Some(&palette.muted), NEUTRAL_BAR);
         let edge = light_dark(
-            &mixed(&face, palette.foreground, NEUTRAL_BAR_EDGE.light),
-            &mixed(&face, palette.slab_deep, NEUTRAL_BAR_EDGE.dark),
+            &mixed(&face, &palette.foreground, NEUTRAL_BAR_EDGE.light),
+            &mixed(&face, &palette.slab_deep, NEUTRAL_BAR_EDGE.dark),
         );
         return shape(face, edge);
     }
     let card = card_look(appearance.body_color, palette);
     shape(
-        light_dark(&mixed(&card.face, &card.edge, BAR_SHADE), &card.face),
+        light_dark(&mixed(&card.lit, &card.edge, BAR_SHADE), &card.lit),
         card.edge,
     )
 }
@@ -150,7 +143,7 @@ fn paint_column_shadows(
     column: &SequenceColumn,
     palette: &Palette,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     lines(
         activation_boxes(column)
             .into_iter()
@@ -162,7 +155,7 @@ fn paint_column_shadows(
                     Lift::Chip,
                     palette,
                     standing,
-                    Some("activation"),
+                    Some(ShadowOf::Activation),
                 )
             })
             .collect(),
@@ -176,83 +169,86 @@ fn paint_column(
     palette: &Palette,
     appearance: &NodeAppearance,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     let styles = Styles::of(palette);
-    let lifeline = attrs! {
-        "x1": coord(column.centre_x),
-        "y1": coord(column.lifeline_top),
-        "x2": coord(column.centre_x),
-        "y2": coord(layout.lifeline_bottom),
-        "stroke": palette.edge,
-        "stroke-width": 1.0,
-        "stroke-dasharray": LIFELINE_DASH,
-        "stroke-dashoffset": LIFELINE_DASH_OFFSET,
-    };
+    let lifeline = Shape::new(
+        Purpose::Line,
+        Geometry::Line {
+            from: point(column.centre_x, column.lifeline_top),
+            to: point(column.centre_x, layout.lifeline_bottom),
+        },
+    )
+    .stroked(Stroke {
+        dash_offset: Some(LIFELINE_DASH_OFFSET),
+        ..Stroke::new(&palette.edge, 1.0).dashed(&LIFELINE_DASH)
+    });
     let bars = activation_boxes(column);
     let look = bar_look(appearance, palette);
     let mut parts = vec![
-        tag("line", lifeline.clone()),
-        tag(
-            "line",
-            attrs! { "class": "ab-halo" }
-                .with(lifeline)
-                .with(styles.halo())
-                .set("stroke-width", LIT_LIFELINE_WIDTH),
-        ),
+        shape(lifeline.clone()),
+        shape(Shape {
+            purpose: Purpose::Halo,
+            ..styles.halo(Shape {
+                stroke: lifeline.stroke.map(|stroke| Stroke {
+                    width: Some(LIT_LIFELINE_WIDTH),
+                    ..stroke
+                }),
+                ..lifeline
+            })
+        }),
     ];
     parts.extend(
         bars.iter()
             .map(|bar| slab(*bar, &look, palette, None, None)),
     );
     parts.extend(bars.iter().map(|bar| {
-        tag(
-            "rect",
-            attrs! { "class": "ab-halo" }
-                .with(boxed(*bar))
-                .set("rx", ACTIVATION_RADIUS)
-                .with(styles.halo()),
-        )
+        shape(styles.halo(Shape::rect(
+            Purpose::Halo,
+            boxed(*bar),
+            Some(ACTIVATION_RADIUS),
+        )))
     }));
-    group(
-        Role::Lifeline,
-        Some(subject(SubjectKind::Node, &column.card.node.id, standing)),
-        attrs! { "opacity": ghost_opacity(standing), PART_ATTRIBUTE: "lifeline" },
-        lines(parts),
-    )
+    vec![crate::scene::Item::Group(Group {
+        opacity: ghost_opacity(standing),
+        ..Group::new(Role::Lifeline, lines(parts)).drawing(subject(
+            SubjectKind::Node,
+            &column.card.node.id,
+            standing,
+        ))
+    })]
 }
 
 /// The frame's own face behind a flow's head of cards, shown while a viewer moves the head.
-fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palette) -> Markup {
+fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palette) -> Items {
     let Some(first) = layout.columns.first() else {
-        return Markup::new();
+        return Items::new();
     };
     let card = first.card.bounds;
     let floor = floor_of(layout.frame);
-    let shape = boxed(Rect {
-        x: floor.x,
-        y: card.y - HEAD_REACH,
-        width: floor.width,
-        height: card.height + HEAD_REACH + SHADOW_REACH,
-    });
-    let face = if standing == Some(Standing::Removed) {
-        ghost_face(palette)
-    } else {
-        attrs! { "fill": palette.tray_floor }
-    };
-    group(
-        Role::HeadShade,
+    let plate = Shape::rect(
+        Purpose::Box,
+        boxed(Rect {
+            x: floor.x,
+            y: card.y - HEAD_REACH,
+            width: floor.width,
+            height: card.height + HEAD_REACH + SHADOW_REACH,
+        }),
         None,
-        attrs! { "class": HEAD_SHADE_CLASS, "visibility": "hidden" },
+    );
+    let face = if standing == Some(Standing::Removed) {
+        ghost_face(plate.clone(), palette)
+    } else {
+        plate.clone().filled(&palette.tray_floor)
+    };
+    grouped(Group::new(
+        Role::HeadShade,
         lines(vec![
-            tag("rect", shape.clone().set("fill", palette.background)),
-            group(
-                Role::Marks,
-                None,
-                attrs! { MEMBERS_ATTRIBUTE: layout.flow.id.as_str() },
-                tag("rect", shape.with(face)),
+            shape(plate.filled(&palette.background)),
+            grouped(
+                Group::new(Role::Marks, shape(face)).standing_with(vec![layout.flow.id.clone()]),
             ),
         ]),
-    )
+    ))
 }
 
 /// The appearance of a participant.
@@ -270,7 +266,7 @@ fn flow_head(
     layout: &SequenceFlow,
     palette: &Palette,
     (standings, unsettled): (&Standings, &Unsettled),
-) -> Markup {
+) -> Items {
     let mut head = vec![head_shade(layout, standings.of(&layout.flow.id), palette)];
     head.extend(layout.columns.iter().map(|column| {
         let card = &column.card;
@@ -295,12 +291,10 @@ fn flow_head(
             appearance_of(picture, id),
         )
     }));
-    group(
-        Role::FlowHead,
-        None,
-        attrs! { HEAD_ATTRIBUTE: layout.flow.id.as_str() },
+    grouped(Group::new(
+        Role::FlowHead(layout.flow.id.clone()),
         lines(head),
-    )
+    ))
 }
 
 /// One flow, painted: everything it draws, and the words that go above every flow's runs.
@@ -312,7 +306,7 @@ fn paint_flow(
     standings: &Standings,
     unsettled: &Unsettled,
     crossing: &Crossing,
-) -> (Markup, Markup) {
+) -> (Items, Items) {
     let flow_standing = standings.of(&layout.flow.id);
     let mark_of = |id: &str| marked_within(flow_standing, standings.of(id));
     let mut body = vec![
@@ -338,7 +332,7 @@ fn paint_flow(
             Lift::Chip,
             palette,
             standings.of(&placed.step.id),
-            Some("label"),
+            Some(ShadowOf::Label),
         )
     }));
     body.extend(layout.columns.iter().map(|column| {
@@ -369,7 +363,6 @@ fn paint_flow(
     body.push(group(
         Role::Messages,
         None,
-        attrs! {},
         lines(
             layout
                 .steps
@@ -406,7 +399,7 @@ fn paint_flow(
 }
 
 /// One variant's flows, painted as a stack of message sequences.
-pub fn paint_sequence(
+pub(super) fn paint_sequence(
     ctx: &Ctx<'_>,
     picture: &SequencePicture,
     palette: &Palette,
@@ -426,7 +419,7 @@ pub fn paint_sequence(
         })
         .collect();
     let crossing = exchange_clock(&lengths, &picture.clock);
-    let painted: Vec<(Markup, Markup)> = layout
+    let painted: Vec<(Items, Items)> = layout
         .flows
         .iter()
         .map(|flow| paint_flow(ctx, picture, flow, palette, standings, unsettled, &crossing))
@@ -467,8 +460,8 @@ pub fn paint_sequence(
         })
         .collect();
     let canvas = canvas_for(laid.width, laid.height, union(marked), DIAGRAM_MARGIN);
-    let mut parts: Vec<Markup> = Vec::new();
-    let mut words: Vec<Markup> = Vec::new();
+    let mut parts: Vec<Items> = Vec::new();
+    let mut words: Vec<Items> = Vec::new();
     for (body, said) in painted {
         parts.push(body);
         words.push(said);

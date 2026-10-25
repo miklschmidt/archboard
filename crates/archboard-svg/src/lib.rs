@@ -6,22 +6,32 @@
 //! Its colours are the page's tokens. A document that stands alone carries the
 //! value of every token it names on its root, for one theme or for both.
 
+mod colour;
+mod definitions;
+mod groups;
 mod legs;
+mod path;
 mod pulse;
+mod shapes;
+mod write;
+mod xml;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
-use archboard_scene::attrs;
-use archboard_scene::geometry::coord;
-use archboard_scene::markup::{escape_xml, tag, write_items};
-use archboard_scene::paint::colour::light_dark;
-use archboard_scene::paint::fonts::{FACES, FONT_URL_PREFIX, SANS_STACK};
-use archboard_scene::paint::palette::PALETTE;
-use archboard_scene::paint::standing::{MEMBERS_ATTRIBUTE, TRAFFIC_ATTRIBUTE};
+use archboard_scene::drawing::FontFamily;
+use archboard_scene::scene::{Colour, FACES, Item, Scene, Token};
+
 use archboard_scene::request::{DocumentRequest, FontSource, StandaloneTheme};
-use archboard_scene::scene::{Item, Scene};
-
+use colour::css;
+use definitions::{Names, write_definitions};
+use groups::{
+    AWAY_PLACE, CHIP_CLASS, FAR_CLASS, FAR_PLACE, HEAD_SHADE_CLASS, MEMBERS_ATTRIBUTE, NEAR_CLASS,
+    NEAR_PLACE, TRAFFIC_ATTRIBUTE, WORDS_CLASS,
+};
 use pulse::PULSE_CLASS;
+use shapes::HALO_CLASS;
+use write::{SANS_STACK, Writer};
+use xml::{Attributes, coord, empty, escape_xml};
 
 /// Why a document could not be written.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,22 +43,11 @@ impl std::fmt::Display for DocumentError {
     }
 }
 
-const NEAR_CLASS: &str = "ab-near";
-const FAR_CLASS: &str = "ab-far";
 const FAR_VIEW_CLASS: &str = "is-far";
-const CHIP_CLASS: &str = "ab-chip";
-const WORDS_CLASS: &str = "ab-words";
-const NEAR_PLACE: &str = "--near";
-const FAR_PLACE: &str = "--far";
-const AWAY_PLACE: &str = "--away";
-const HEAD_SHADE_CLASS: &str = "ab-head-shade";
 /// How every part of a swap between the near and the far view moves.
 const SWAP_EASE: &str = "cubic-bezier(.4,0,.2,1)";
-
-/// Some things written as markup, traffic drawn as beams of light.
-fn write(items: &[Item], out: &mut String) {
-    write_items(items, out, &pulse::write_traffic);
-}
+/// Where the Archboard server serves the face files from.
+const FONT_URL_PREFIX: &str = "/assets/diagram-fonts";
 
 /// Where one face's bytes come from.
 fn face_source(file: &str, document: &DocumentRequest) -> Result<String, DocumentError> {
@@ -77,9 +76,13 @@ fn face_rules(document: &DocumentRequest) -> Result<String, DocumentError> {
         .iter()
         .map(|face| {
             face_source(face.file, document).map(|source| {
+                let family = match face.font.family {
+                    FontFamily::Sans => "Archboard Diagram Sans",
+                    FontFamily::Mono => "Archboard Diagram Mono",
+                };
                 format!(
-                    "@font-face{{font-family:\"{}\";font-style:normal;font-weight:{};src:{source}}}",
-                    face.css_family, face.weight
+                    "@font-face{{font-family:\"{family}\";font-style:normal;font-weight:{};src:{source}}}",
+                    face.font.weight
                 )
             })
         })
@@ -120,10 +123,10 @@ fn stylesheet(document: &DocumentRequest) -> Result<String, DocumentError> {
         face_rules(document)?,
         "svg,text{font-synthesis:none}".to_owned(),
         "[data-semantic-kind]{cursor:pointer}".to_owned(),
-        ".ab-halo{opacity:0}".to_owned(),
+        format!(".{HALO_CLASS}{{opacity:0}}"),
         format!(
-            ".is-selected .ab-halo{{opacity:1;stroke:{}}}",
-            PALETTE.selection
+            ".is-selected .{HALO_CLASS}{{opacity:1;stroke:{}}}",
+            css(&Token::DiagramSelection.into())
         ),
         ".is-selected[mask]{mask:none}".to_owned(),
         format!(".is-stuck>.{HEAD_SHADE_CLASS}{{visibility:visible}}"),
@@ -207,7 +210,7 @@ fn token_value(
     Ok(if light == dark {
         light
     } else {
-        light_dark(&light, &dark)
+        format!("light-dark({light}, {dark})")
     })
 }
 
@@ -239,33 +242,38 @@ fn standing_alone(
     Ok(declarations.join(";"))
 }
 
-/// A scene written as one standalone SVG document.
+/// A scene written as one standalone SVG document, its icons drawn from the
+/// host's icon set: each icon's path data by its export name.
 ///
 /// # Errors
 ///
 /// A document that embeds its fonts and was given no bytes for one, and a
 /// document that stands alone in a theme the request holds no colour for.
-pub fn document(scene: &Scene, document: &DocumentRequest) -> Result<String, DocumentError> {
+pub fn document(
+    scene: &Scene,
+    document: &DocumentRequest,
+    icons: &BTreeMap<String, Vec<String>>,
+) -> Result<String, DocumentError> {
+    let names = Names::of(scene);
+    let writer = Writer {
+        names: &names,
+        icons,
+    };
     let mut painted = stylesheet(document)?;
     painted.push('\n');
     painted.push_str("<defs>");
-    write(&scene.definitions, &mut painted);
+    write_definitions(&scene.definitions, &names, &mut painted);
     painted.push_str("</defs>\n");
-    write(
-        &tag(
-            "rect",
-            attrs! {
-                "x": 0.0,
-                "y": 0.0,
-                "width": coord(scene.width),
-                "height": coord(scene.height),
-                "fill": scene.background.as_str(),
-            },
-        ),
-        &mut painted,
-    );
+    let mut ground = Attributes::new();
+    ground
+        .set("x", 0.0)
+        .set("y", 0.0)
+        .set("width", coord(scene.width))
+        .set("height", coord(scene.height))
+        .set("fill", css(&scene.background));
+    empty("rect", &ground, &mut painted);
     let mut body = String::new();
-    write(&scene.body, &mut body);
+    writer.items(&scene.body, &mut body);
     if !body.is_empty() {
         painted.push('\n');
         painted.push_str(&body);
@@ -297,4 +305,23 @@ pub fn document(scene: &Scene, document: &DocumentRequest) -> Result<String, Doc
     out.push_str(&painted);
     out.push_str("\n</svg>");
     Ok(out)
+}
+
+/// Marks that refer to no definition, written as SVG markup: what a viewer
+/// draws beside a picture, as the picture draws it.
+pub fn markup(items: &[Item]) -> String {
+    let names = Names::default();
+    let icons = BTreeMap::new();
+    let mut out = String::new();
+    Writer {
+        names: &names,
+        icons: &icons,
+    }
+    .items(items, &mut out);
+    out
+}
+
+/// A colour as the document spells it in CSS.
+pub fn colour(colour: &Colour) -> String {
+    css(colour)
 }

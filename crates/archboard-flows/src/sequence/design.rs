@@ -9,11 +9,9 @@ pub(super) use archboard_scene::paint::design::{
     DIAGRAM_MARGIN, DRILL_MARK_ROOM, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
     FRAME_TAB_PADDING, HEADER_SLAB_INSET, ICON_CHIP_GAP, ICON_CHIP_SIZE, MESSAGE_LINE_STEP,
     NOTE_SIZE, PART_NOTE_LINE, PART_TITLE_LINE, PILL_HEIGHT, PILL_PADDING_X, PILL_TEXT_SIZE,
-    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
-    TEXT_LINE_HEIGHT, TITLE_SIZE,
+    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SHADOW_REACH, STEP_NOTE_PADDING_X,
+    STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT, TITLE_SIZE, arrow_standoff,
 };
-pub(super) use archboard_scene::paint::sequence::arrow_standoff;
-pub(super) use archboard_scene::paint::shadow::SHADOW_REACH;
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;

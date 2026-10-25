@@ -6,31 +6,31 @@
 //! removal. A part opens with its seat, its box unpainted, which takes the
 //! pointer.
 
-use crate::attrs;
-use crate::geometry::{Point, Rect, coord};
+use crate::geometry::{Point, Rect, round_coord};
 use crate::js;
-use crate::markup::{Attrs, Markup, concat, group, lines, tag, wrap};
+use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{Share, light_dark, tinted, translucent};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, intersection, polygon_path, translated};
 use crate::paint::shadow::{SHADOW_REACH, shadow_definitions, smooth_shadow};
-use crate::paint::standing::{
-    MEMBERS_ATTRIBUTE, OUTLINE_WIDTH, PART_ATTRIBUTE, ink_of, outline_dash,
-};
+use crate::paint::standing::{OUTLINE_WIDTH, ink_of, outline_dash};
 use crate::request::Standing;
-use crate::scene::Role;
+use crate::scene::{
+    ClipId, Colour, Definition, Geometry, Gradient, GradientForm, GradientId, Group, Paint,
+    Pointer, Purpose, Role, ShadowOf, Shape, Stop, Stroke,
+};
 
 /// How a block looks: its two tones, how thick it is and how round its corners are.
 #[derive(Clone, Debug, PartialEq)]
-pub struct SlabLook {
+pub(super) struct SlabLook {
     /// Its top face.
-    pub face: String,
-    /// Its top face before a card's group tinted it, set on a face a group may tint.
-    pub ground: Option<String>,
-    /// The colour its highlight is mixed from, where its face is a gradient.
-    pub lit: Option<String>,
+    pub face: Paint,
+    /// Whether its face is one a group may tint.
+    pub tintable: bool,
+    /// The colour its highlight is mixed from: its face's own colour, unless its face is a gradient.
+    pub lit: Colour,
     /// Its front edge.
-    pub edge: String,
+    pub edge: Colour,
     /// How tall its front edge shows, inside its box along its foot.
     pub thickness: f64,
     /// How round its corners are, in diagram units.
@@ -49,17 +49,15 @@ const GLINT: Share = Share {
 };
 
 /// The fine highlight along the top edge of a face.
-fn glint_of(face: &str, palette: &Palette) -> String {
-    tinted(face, Some(palette.slab_glint), GLINT)
+fn glint_of(face: &Colour, palette: &Palette) -> Colour {
+    tinted(face, Some(&palette.slab_glint), GLINT)
 }
 
-const SHEEN_ID: &str = "ab-slab-sheen";
-const SOFT_SHEEN_ID: &str = "ab-slab-sheen-soft";
 const SOFT_SHEEN: f64 = 0.2;
 
 /// Which sort of block casts a shadow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Lift {
+pub(super) enum Lift {
     /// A card or a header slab, which casts the full shadow.
     Card,
     /// A container's tray, which casts none.
@@ -79,60 +77,61 @@ impl Lift {
     }
 }
 
-/// The class of the group a card's or a label's shadow is drawn in.
-const SHADOW_CLASS: &str = "ab-shadow";
-
 /// How much of a face a removed block's see-through ghost keeps.
 const GHOST_FACE: f64 = 0.5;
 
-/// Where a `rect` over a box stands and how big it is.
-pub fn boxed(rect: Rect) -> Attrs {
-    attrs! {
-        "x": coord(rect.x),
-        "y": coord(rect.y),
-        "width": coord(rect.width),
-        "height": coord(rect.height),
+/// A box, rounded as it is drawn.
+pub(super) fn boxed(rect: Rect) -> Rect {
+    Rect {
+        x: round_coord(rect.x),
+        y: round_coord(rect.y),
+        width: round_coord(rect.width),
+        height: round_coord(rect.height),
     }
 }
 
 /// A rounded rect over a box, which takes no pointer unless it says so.
-pub fn plate(rect: Rect, radius: f64, paint: Attrs) -> Markup {
-    tag(
-        "rect",
-        boxed(rect)
-            .set("rx", coord(radius))
-            .set("pointer-events", "none")
-            .with(paint),
-    )
+pub(super) fn plate(rect: Rect, radius: f64) -> Shape {
+    Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius))).pointer(Pointer::None)
 }
 
 /// A line across a box at one height, which takes no pointer.
-pub fn across(rect: Rect, y: f64, paint: Attrs) -> Markup {
-    tag(
-        "line",
-        attrs! {
-            "x1": coord(rect.x),
-            "y1": coord(y),
-            "x2": coord(rect.x + rect.width),
-            "y2": coord(y),
-            "pointer-events": "none",
-        }
-        .with(paint),
+pub(super) fn across(rect: Rect, y: f64, stroke: Stroke) -> Items {
+    shape(
+        Shape::new(
+            Purpose::Rule,
+            Geometry::Line {
+                from: Point {
+                    x: round_coord(rect.x),
+                    y: round_coord(y),
+                },
+                to: Point {
+                    x: round_coord(rect.x + rect.width),
+                    y: round_coord(y),
+                },
+            },
+        )
+        .pointer(Pointer::None)
+        .stroked(stroke),
     )
 }
 
 /// A part's seat: its box, unpainted, which takes the pointer for the whole of it.
-pub fn slab_seat(rect: Rect, radius: f64) -> Markup {
-    plate(
-        rect,
-        radius,
-        attrs! { "fill": "none", "pointer-events": "all" },
-    )
+pub(super) fn slab_seat(rect: Rect, radius: f64) -> Items {
+    shape(seat(plate(rect, radius)))
 }
 
-/// The see-through face a ghost keeps.
-pub fn ghost_face(palette: &Palette) -> Attrs {
-    attrs! { "fill": palette.slab_face, "fill-opacity": GHOST_FACE }
+/// A shape as a seat: unpainted, taking the pointer for the whole of it.
+fn seat(shape: Shape) -> Shape {
+    shape.unfilled().pointer(Pointer::All)
+}
+
+/// A shape painted as a ghost's see-through face.
+pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
+    Shape {
+        fill_opacity: Some(GHOST_FACE),
+        ..shape.filled(&palette.slab_face)
+    }
 }
 
 /// The border a standing draws round a face, inside its edge.
@@ -141,81 +140,75 @@ fn standing_border(
     radius: f64,
     standing: Option<Standing>,
     palette: &Palette,
-) -> Markup {
+) -> Items {
     let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
-        return Markup::new();
+        return Items::new();
     };
     let half = OUTLINE_WIDTH / 2.0;
-    tag(
-        "rect",
-        attrs! {
-            "x": coord(face.x + half),
-            "y": coord(face.y + half),
-            "width": coord(face.width - OUTLINE_WIDTH),
-            "height": coord(face.height - OUTLINE_WIDTH),
-            "rx": coord(js::js_max(0.0, radius - half)),
-            "fill": "none",
-            "stroke": ink,
-            "stroke-width": OUTLINE_WIDTH,
-            "stroke-dasharray": outline_dash(standing),
-            "pointer-events": "none",
-        },
+    shape(
+        Shape::rect(
+            Purpose::Border,
+            boxed(Rect {
+                x: face.x + half,
+                y: face.y + half,
+                width: face.width - OUTLINE_WIDTH,
+                height: face.height - OUTLINE_WIDTH,
+            }),
+            Some(round_coord(js::js_max(0.0, radius - half))),
+        )
+        .unfilled()
+        .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing)))
+        .pointer(Pointer::None),
     )
 }
 
 /// Where a removed block stood.
-fn ghost(rect: Rect, radius: f64, palette: &Palette) -> Markup {
+fn ghost(rect: Rect, radius: f64, palette: &Palette) -> Items {
     lines(vec![
-        plate(rect, radius, ghost_face(palette)),
+        shape(ghost_face(plate(rect, radius), palette)),
         standing_border(rect, radius, Some(Standing::Removed), palette),
     ])
 }
 
 /// What a block leaves on what it stands on: its shadow, or a removed part's ghost.
-pub fn slab_shadow(
+pub(super) fn slab_shadow(
     rect: Rect,
     radius: f64,
     lift: Lift,
     palette: &Palette,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     if standing == Some(Standing::Removed) {
         return ghost(rect, radius, palette);
     }
     if lift == Lift::Tray {
-        Markup::new()
+        Items::new()
     } else {
         smooth_shadow(rect, radius, lift.reach())
     }
 }
 
 /// A shadow in a group of its own, laid under every block and every line.
-pub fn shadow_group(shadow: Markup, member: Option<&str>, part: Option<&str>) -> Markup {
-    group(
-        Role::Shadow,
-        None,
-        attrs! {
-            "class": SHADOW_CLASS,
-            MEMBERS_ATTRIBUTE: member,
-            PART_ATTRIBUTE: part,
-            "pointer-events": "none",
-        },
-        shadow,
+pub(super) fn shadow_group(shadow: Items, member: Option<&str>, part: Option<ShadowOf>) -> Items {
+    grouped(
+        Group::new(Role::Shadow(part), shadow)
+            .standing_with(member.map(str::to_owned).into_iter().collect())
+            .pointer(Pointer::None),
     )
 }
 
 /// The shadow a block casts; a removed block casts none.
-pub fn shadow_under(
+pub(super) fn shadow_under(
     member: &str,
     rect: Rect,
     radius: f64,
     lift: Lift,
     palette: &Palette,
     standing: Option<Standing>,
-    part: Option<&str>,
-) -> Markup {
+    part: Option<ShadowOf>,
+) -> Items {
     if standing == Some(Standing::Removed) {
-        return Markup::new();
+        return Items::new();
     }
     shadow_group(
         slab_shadow(rect, radius, lift, palette, None),
@@ -224,21 +217,25 @@ pub fn shadow_under(
     )
 }
 
-/// A clip as paint refers to it.
-fn clipped(cut: Option<&str>) -> Option<String> {
-    cut.map(|cut| format!("url(#{cut})"))
+/// The light that falls off down a face.
+fn sheen_of(look: &SlabLook) -> GradientId {
+    if look.tintable {
+        GradientId::SoftSheen
+    } else {
+        GradientId::Sheen
+    }
 }
 
 /// One block, standing in its box; a removed part draws nothing here.
-pub fn slab(
+pub(super) fn slab(
     rect: Rect,
     look: &SlabLook,
     palette: &Palette,
     standing: Option<Standing>,
-    cut: Option<&str>,
-) -> Markup {
+    cut: Option<&ClipId>,
+) -> Items {
     if standing == Some(Standing::Removed) {
-        return Markup::new();
+        return Items::new();
     }
     let face = Rect {
         height: rect.height - look.thickness,
@@ -250,45 +247,29 @@ pub fn slab(
         ..face
     };
     lines(vec![
-        plate(
-            rect,
-            look.radius,
-            attrs! { "clip-path": clipped(cut), "fill": look.edge.as_str() },
-        ),
-        plate(
-            face,
-            look.radius,
-            attrs! { "fill": glint_of(&look.face, palette) },
-        ),
-        plate(lit, look.radius, attrs! { "fill": look.face.as_str() }),
+        shape(Shape {
+            clip: cut.cloned(),
+            ..plate(rect, look.radius).filled(&look.edge)
+        }),
+        shape(plate(face, look.radius).filled(glint_of(&look.lit, palette))),
+        shape(plate(lit, look.radius).filled(look.face.clone())),
         if look.sheen {
-            plate(
-                lit,
-                look.radius,
-                attrs! { "fill": format!("url(#{})", sheen_of(look)) },
-            )
+            shape(plate(lit, look.radius).filled(sheen_of(look)))
         } else {
-            Markup::new()
+            Items::new()
         },
         standing_border(face, look.radius, standing, palette),
     ])
 }
 
 /// A shape that is not a box, painted: a polygon that takes no pointer.
-pub fn solid(polygon: &[Point], radius: f64, paint: Attrs) -> Markup {
-    tag(
-        "path",
-        attrs! { "d": polygon_path(polygon, radius), "pointer-events": "none" }.with(paint),
-    )
+pub(super) fn solid(polygon: &[Point], radius: f64) -> Shape {
+    Shape::path(Purpose::Solid, polygon_path(polygon, radius)).pointer(Pointer::None)
 }
 
 /// A shape's seat: its outline, unpainted, which takes the pointer.
-pub fn solid_seat(polygon: &[Point], radius: f64) -> Markup {
-    solid(
-        polygon,
-        radius,
-        attrs! { "fill": "none", "pointer-events": "all" },
-    )
+pub(super) fn solid_seat(polygon: &[Point], radius: f64) -> Items {
+    shape(seat(solid(polygon, radius)))
 }
 
 /// The border a standing draws round the face of a block that is not a box.
@@ -297,41 +278,36 @@ fn solid_border(
     radius: f64,
     standing: Option<Standing>,
     palette: &Palette,
-) -> Markup {
+) -> Items {
     let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
-        return Markup::new();
+        return Items::new();
     };
     let half = OUTLINE_WIDTH / 2.0;
-    solid(
-        &inset(face, half),
-        js::js_max(0.0, radius - half),
-        attrs! {
-            "fill": "none",
-            "stroke": ink,
-            "stroke-width": OUTLINE_WIDTH,
-            "stroke-dasharray": outline_dash(standing),
-        },
+    shape(
+        solid(&inset(face, half), js::js_max(0.0, radius - half))
+            .unfilled()
+            .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing))),
     )
 }
 
 /// Where a removed block that is not a box stood.
-pub fn solid_ghost(polygon: &[Point], radius: f64, palette: &Palette) -> Markup {
+pub(super) fn solid_ghost(polygon: &[Point], radius: f64, palette: &Palette) -> Items {
     lines(vec![
-        solid(polygon, radius, ghost_face(palette)),
+        shape(ghost_face(solid(polygon, radius), palette)),
         solid_border(polygon, radius, Some(Standing::Removed), palette),
     ])
 }
 
 /// A block that is not a box: its body in the tone of its front edge, and its
 /// face over that, the body cut by itself lifted by the block's thickness.
-pub fn solid_slab(
+pub(super) fn solid_slab(
     body: &[Point],
     look: &SlabLook,
     palette: &Palette,
     standing: Option<Standing>,
-) -> Markup {
+) -> Items {
     if standing == Some(Standing::Removed) {
-        return Markup::new();
+        return Items::new();
     }
     let radius = look.radius;
     let face: Polygon = intersection(
@@ -354,63 +330,67 @@ pub fn solid_slab(
             },
         ),
     );
-    let glint_from = look.lit.as_deref().unwrap_or(&look.face);
     lines(vec![
-        solid(body, radius, attrs! { "fill": look.edge.as_str() }),
-        solid(
-            &face,
-            radius,
-            attrs! { "fill": glint_of(glint_from, palette) },
-        ),
-        solid(&lit, radius, attrs! { "fill": look.face.as_str() }),
+        shape(solid(body, radius).filled(&look.edge)),
+        shape(solid(&face, radius).filled(glint_of(&look.lit, palette))),
+        shape(solid(&lit, radius).filled(look.face.clone())),
         if look.sheen {
-            solid(
-                &lit,
-                radius,
-                attrs! { "fill": format!("url(#{})", sheen_of(look)) },
-            )
+            shape(solid(&lit, radius).filled(sheen_of(look)))
         } else {
-            Markup::new()
+            Items::new()
         },
         solid_border(&face, radius, standing, palette),
     ])
 }
 
 /// The light that falls off down a face, one gradient in the face's own box.
-fn sheen_gradient(id: &str, sheen: &str) -> Markup {
-    wrap(
-        "linearGradient",
-        attrs! { "id": id, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
-        concat(vec![
-            tag("stop", attrs! { "offset": 0.0, "stop-color": sheen }),
-            tag(
-                "stop",
-                attrs! { "offset": 1.0, "stop-color": sheen, "stop-opacity": 0.0 },
-            ),
-        ]),
-    )
-}
-
-/// Which light falls off down a face: a face a group may tint takes the softer one.
-fn sheen_of(look: &SlabLook) -> &'static str {
-    if look.ground.is_none() {
-        SHEEN_ID
-    } else {
-        SOFT_SHEEN_ID
-    }
+fn sheen_gradient(id: GradientId, sheen: &Colour) -> Definition {
+    Definition::Gradient(Gradient {
+        id,
+        form: GradientForm::Linear {
+            line: Some((Point { x: 0.0, y: 0.0 }, Point { x: 0.0, y: 1.0 })),
+            user_space: false,
+        },
+        stops: vec![
+            Stop {
+                offset: Some(0.0),
+                colour: sheen.clone(),
+                opacity: None,
+            },
+            Stop {
+                offset: Some(1.0),
+                colour: sheen.clone(),
+                opacity: Some(0.0),
+            },
+        ],
+    })
 }
 
 /// The definitions every slab reaches for.
-pub fn slab_definitions(palette: &Palette) -> Markup {
-    concat(vec![
-        shadow_definitions(palette),
-        sheen_gradient(SHEEN_ID, palette.slab_sheen),
-        sheen_gradient(
-            SOFT_SHEEN_ID,
-            &light_dark(
-                &translucent(palette.slab_glint, SOFT_SHEEN),
-                palette.slab_sheen,
-            ),
+pub(super) fn slab_definitions(palette: &Palette) -> Vec<Definition> {
+    let mut definitions = shadow_definitions(palette);
+    definitions.push(sheen_gradient(GradientId::Sheen, &palette.slab_sheen));
+    definitions.push(sheen_gradient(
+        GradientId::SoftSheen,
+        &light_dark(
+            &translucent(&palette.slab_glint, SOFT_SHEEN),
+            &palette.slab_sheen,
         ),
-    ])
+    ));
+    definitions
+}
+
+impl SlabLook {
+    /// A block whose face is one colour, which its highlight is mixed from.
+    pub(super) fn plain(face: Colour, edge: Colour, thickness: f64, radius: f64) -> Self {
+        SlabLook {
+            face: Paint::from(&face),
+            tintable: false,
+            lit: face,
+            edge,
+            thickness,
+            radius,
+            sheen: false,
+        }
+    }
 }

@@ -1,29 +1,27 @@
-//! Mixing the renderer's colours, which are CSS expressions of the page's
-//! tokens: the mix is written for CSS to resolve, so the one picture takes
-//! whichever theme the page it is shown on is in.
+//! Mixing the picture's colours: each a value of the scene the frontend
+//! resolves in its theme, so one picture takes whichever theme it is shown in.
 
-use crate::js;
-
-/// A share, as a CSS percentage, rounded well past what a colour channel shows.
-fn percent(share: f64) -> String {
-    format!("{}%", js::fixed_number(share * 100.0, 4))
-}
+use crate::scene::Colour;
 
 /// A colour part way from one colour to another, mixed in sRGB: either end
-/// itself at 0 and 1, `color-mix()` between.
-pub fn mixed(from: &str, to: &str, amount: f64) -> String {
+/// itself at 0 and 1, a mix between.
+pub(super) fn mixed(from: &Colour, to: &Colour, amount: f64) -> Colour {
     if amount <= 0.0 {
-        return from.to_owned();
+        return from.clone();
     }
     if amount >= 1.0 {
-        return to.to_owned();
+        return to.clone();
     }
-    format!("color-mix(in srgb, {to} {}, {from})", percent(amount))
+    Colour::Mix {
+        base: Box::new(from.clone()),
+        ink: Box::new(to.clone()),
+        share: amount,
+    }
 }
 
 /// One tone of an ink: how light it is in OKLCH, and how much of the ink's chroma it keeps.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ToneStep {
+pub(super) struct ToneStep {
     /// How light the tone is, in OKLCH lightness.
     pub lightness: f64,
     /// The share of the ink's chroma it keeps, up to `cap`.
@@ -37,7 +35,7 @@ const CHROMA_CAP: f64 = 0.12;
 
 impl ToneStep {
     /// A tone that counts the usual share of the ink's chroma.
-    pub const fn new(lightness: f64, chroma: f64) -> Self {
+    pub(super) const fn new(lightness: f64, chroma: f64) -> Self {
         ToneStep {
             lightness,
             chroma,
@@ -48,7 +46,7 @@ impl ToneStep {
 
 /// A tone of an ink on the light ground and on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Tone {
+pub(super) struct Tone {
     /// The tone on the light ground.
     pub light: ToneStep,
     /// The tone on the dark ground.
@@ -56,24 +54,24 @@ pub struct Tone {
 }
 
 /// One tone of an ink: the ink's own hue, at a lightness of its own and a share
-/// of the ink's chroma, written as a relative OKLCH colour for CSS to resolve.
-fn tone(ink: &str, step: ToneStep) -> String {
-    format!(
-        "oklch(from {ink} {} calc(min(c, {}) * {}) h)",
-        js::number(step.lightness),
-        js::number(step.cap),
-        js::number(step.chroma)
-    )
+/// of the ink's chroma.
+fn tone(ink: &Colour, step: ToneStep) -> Colour {
+    Colour::Tone {
+        ink: Box::new(ink.clone()),
+        lightness: step.lightness,
+        cap: step.cap,
+        chroma: step.chroma,
+    }
 }
 
 /// A surface in an ink's colour, a tone of it on each ground.
-pub fn toned(ink: &str, steps: Tone) -> String {
+pub(super) fn toned(ink: &Colour, steps: Tone) -> Colour {
     light_dark(&tone(ink, steps.light), &tone(ink, steps.dark))
 }
 
 /// A colour in an ink: a tone of it on the light ground, a share of it over a base on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Inked {
+pub(super) struct Inked {
     /// The tone of the ink on the light ground.
     pub light: ToneStep,
     /// How much of the ink is mixed into the base on the dark ground, from 0 to 1.
@@ -82,13 +80,13 @@ pub struct Inked {
 
 /// A surface in an ink's colour: a tone of the ink on the light ground, the
 /// ink mixed into a base on the dark ground.
-pub fn inked_over(base: &str, ink: &str, inked: Inked) -> String {
+pub(super) fn inked_over(base: &Colour, ink: &Colour, inked: Inked) -> Colour {
     light_dark(&tone(ink, inked.light), &mixed(base, ink, inked.dark))
 }
 
 /// How light an ink may be on the light ground, and a tone of it on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Held {
+pub(super) struct Held {
     /// The least lightness the ink keeps on the light ground.
     pub least: f64,
     /// The most lightness the ink keeps on the light ground.
@@ -99,69 +97,43 @@ pub struct Held {
 
 /// An ink at its full colour: on the light ground the ink itself with its
 /// lightness held between two bounds, on the dark ground a tone of it.
-pub fn held_tone(ink: &str, held: Held) -> String {
+pub(super) fn held_tone(ink: &Colour, held: Held) -> Colour {
     light_dark(
-        &format!(
-            "oklch(from {ink} clamp({}, l, {}) c h)",
-            js::number(held.least),
-            js::number(held.most)
-        ),
+        &Colour::Held {
+            ink: Box::new(ink.clone()),
+            least: held.least,
+            most: held.most,
+        },
         &tone(ink, held.dark),
     )
 }
 
 /// A colour at a share of its strength, the rest see-through.
-pub fn translucent(colour: &str, share: f64) -> String {
-    mixed("transparent", colour, share)
+pub(super) fn translucent(colour: &Colour, share: f64) -> Colour {
+    mixed(&Colour::Transparent, colour, share)
 }
 
 /// One colour on a light page and another on a dark one.
-pub fn light_dark(light: &str, dark: &str) -> String {
-    format!("light-dark({light}, {dark})")
-}
-
-/// A colour spelt so it can be part of an element's id: every character an id
-/// cannot hold written as its code.
-pub fn colour_id(colour: &str) -> String {
-    let mut spelt = String::new();
-    for character in colour.chars() {
-        if character.is_ascii_alphanumeric() || character == '-' {
-            spelt.push(character);
-        } else {
-            spelt.push('_');
-            spelt.push_str(&js::pad_start(
-                &format!("{:x}", u32::from(character)),
-                2,
-                '0',
-            ));
-        }
+pub(super) fn light_dark(light: &Colour, dark: &Colour) -> Colour {
+    Colour::LightDark {
+        light: Box::new(light.clone()),
+        dark: Box::new(dark.clone()),
     }
-    spelt
 }
 
 /// A share of a colour mixed into another, on the light ground and on the dark one.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Share {
+pub(super) struct Share {
     /// The share mixed in on the light ground, from 0 to 1.
     pub light: f64,
     /// The share mixed in on the dark ground, from 0 to 1.
     pub dark: f64,
 }
 
-impl Share {
-    /// The same share on both grounds.
-    pub const fn both(share: f64) -> Self {
-        Share {
-            light: share,
-            dark: share,
-        }
-    }
-}
-
 /// A colour tinted by an ink, as much as each ground asks for.
-pub fn tinted(base: &str, ink: Option<&str>, share: Share) -> String {
+pub(super) fn tinted(base: &Colour, ink: Option<&Colour>, share: Share) -> Colour {
     let Some(ink) = ink else {
-        return base.to_owned();
+        return base.clone();
     };
     let light = mixed(base, ink, share.light);
     if share.light == share.dark {

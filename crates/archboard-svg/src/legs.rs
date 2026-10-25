@@ -1,9 +1,13 @@
 //! A route cut into the pieces a beam of light is drawn on: each a straight
 //! run or one bend, with a frame of its own to draw in.
 
-use archboard_scene::geometry::{Curve, Point, Segment, coord, path_of, segment_start};
+use archboard_scene::geometry::{Curve, Point, Segment, round_coord, segment_start};
 use archboard_scene::js;
 use archboard_scene::route::segment_length;
+use archboard_scene::scene::PathStep;
+
+use crate::path::{Spelling, path_data};
+use crate::xml::coord;
 
 /// The shortest piece of a route worth a beam of its own.
 const LEAST_PIECE: f64 = 0.5;
@@ -108,10 +112,22 @@ fn tangent_of(leg: &Leg, end: bool) -> Option<Point> {
 
 /// One piece of a route as path data, run a hair past each end, or cut off exactly at its ends.
 pub(crate) fn leg_path(leg: &Leg, overlapping: bool) -> String {
-    let piece = path_of(&Curve {
-        from: leg.from,
-        segments: vec![leg.segment],
-    });
+    let at = |point: Point| Point {
+        x: round_coord(point.x),
+        y: round_coord(point.y),
+    };
+    let segment = match leg.segment {
+        Segment::Line { to } => PathStep::Line { to: at(to) },
+        Segment::Cubic { first, second, to } => PathStep::Cubic {
+            first: at(first),
+            second: at(second),
+            to: at(to),
+        },
+    };
+    let piece = path_data(
+        &[PathStep::Move { to: at(leg.from) }, segment],
+        Spelling::Route,
+    );
     if !overlapping {
         return piece;
     }

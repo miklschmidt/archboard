@@ -10,17 +10,16 @@
 use archboard_flows::flowchart::{self, Content, FarSubject, FlowchartHost, GraphNode, Measured};
 use archboard_flows::sequence::{self, SequenceRequest};
 use archboard_flows::text::Text;
-use archboard_scene::drawing::{
-    DiagramFont, FontFamily, MeasuredLabel, MeasuredNode, Painted, TextRun,
-};
+use archboard_scene::drawing::{DiagramFont, MeasuredLabel, MeasuredNode, Painted, TextRun};
 use archboard_scene::measure::Measure;
+use archboard_scene::names::word;
 use archboard_scene::request::WordLine;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 
-use crate::scene::painted_document;
+use crate::scene::{painted_document, request_of};
 
 #[wasm_bindgen(typescript_custom_section)]
 const LAYOUT_HOST: &str = r#"
@@ -92,22 +91,9 @@ fn json_of(value: &impl Serialize) -> String {
     serde_json::to_string(value).expect("a layout value always writes as JSON")
 }
 
-/// A request read from its JSON.
-fn request_of<T: DeserializeOwned>(request: &str, what: &str) -> Result<T, JsError> {
-    serde_json::from_str(request).map_err(|error| {
-        JsError::new(&format!(
-            "The {what} request does not match its type: {error}"
-        ))
-    })
-}
-
 impl Measure for LayoutText {
     fn width(&self, text: &str, font: DiagramFont, size: f64) -> f64 {
-        let family = match font.family {
-            FontFamily::Sans => "sans",
-            FontFamily::Mono => "mono",
-        };
-        self.text_width(text, family, font.weight, size)
+        self.text_width(text, word(&font.family), font.weight, size)
     }
 }
 

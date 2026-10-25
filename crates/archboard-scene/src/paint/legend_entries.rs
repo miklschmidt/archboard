@@ -5,142 +5,142 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::markup::spelt;
-use crate::request::Standing;
-use crate::scene::{Item, SubjectKind};
+use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, Standing};
+use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role, SubjectKind};
+
+/// How the picture drew a subject: as a part of some appearance, or as a
+/// relationship's line.
+#[derive(Clone, Debug)]
+pub(super) enum Drawn {
+    /// A part, a card or a container.
+    Part(NodeAppearance),
+    /// A relationship's line.
+    Line(LineFacts),
+}
 
 /// What a picture draws a subject as, read back from the drawn scene.
 #[derive(Clone, Debug)]
 pub(super) struct Applied {
-    pub(super) type_name: String,
-    pub(super) type_kind: String,
-    pub(super) icon: Option<Item>,
-    pub(super) depiction: String,
-    pub(super) type_color: String,
-    pub(super) line_color: String,
-    pub(super) dash: String,
-    pub(super) arrowhead: String,
+    pub(super) drawn: Drawn,
+    /// The icon its chip draws, when it draws one.
+    pub(super) icon: Option<Icon>,
 }
+
+/// What two subjects share when one sample keys them both: the icon, the
+/// kind, its name, the kind's colour, the line's colour, dash and arrowhead.
+type SampleKey<'a> = (
+    Option<&'a Icon>,
+    &'a str,
+    &'a str,
+    Option<PaletteColor>,
+    Option<PaletteColor>,
+    Dash,
+    Arrowhead,
+);
 
 impl Applied {
+    /// What the subject's kind is called.
+    pub(super) fn type_name(&self) -> &str {
+        match &self.drawn {
+            Drawn::Part(appearance) => &appearance.type_name,
+            Drawn::Line(facts) => &facts.appearance.name,
+        }
+    }
+
     /// What two subjects share when one sample keys them both.
-    fn sample_key(&self) -> (Option<&Item>, [&str; 6]) {
-        (
-            self.icon.as_ref(),
-            [
-                &self.type_kind,
-                &self.type_name,
-                &self.type_color,
-                &self.line_color,
-                &self.dash,
-                &self.arrowhead,
-            ],
-        )
-    }
-}
-
-/// A value as a reader of the written document reads it back: without the
-/// characters XML cannot hold.
-fn read_back(spelt: &str) -> String {
-    spelt
-        .chars()
-        .filter(|character| !crate::markup::forbidden(*character))
-        .collect()
-}
-
-/// One open element as the scene is walked: whether it holds an icon, and the subject it drew.
-struct Open {
-    icon: bool,
-    subject: Option<usize>,
-}
-
-/// Every subject the scene draws with an appearance, and the icon markup inside it.
-fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
-    struct Walk {
-        open: Vec<Open>,
-        met: Vec<(String, Applied)>,
-    }
-    fn visit(walk: &mut Walk, item: &Item) {
-        let (name, subject, pairs, children, empty) = match item {
-            Item::Group(group) => (
-                "g",
-                group.subject.as_ref(),
-                &group.attrs,
-                &group.children,
-                false,
-            ),
-            Item::Element(element) => (
-                element.name,
+    fn sample_key(&self) -> SampleKey<'_> {
+        let icon = self.icon.as_ref();
+        match &self.drawn {
+            Drawn::Part(appearance) => (
+                icon,
+                &appearance.type_kind,
+                &appearance.type_name,
+                appearance.type_color,
                 None,
-                &element.attrs,
-                &element.children,
-                element.empty,
+                Dash::Solid,
+                Arrowhead::Filled,
             ),
-            _ => return,
-        };
-        // A group's region is written with its group's id, not a subject id,
-        // so the page's key never reads it.
-        let id = subject
-            .filter(|subject| subject.kind != SubjectKind::GroupRegion)
-            .map(|subject| read_back(&subject.id));
-        let read = |wanted: &str| {
-            pairs
-                .iter()
-                .find(|(held, _)| *held == wanted)
-                .map(|(_, value)| read_back(&spelt(value)))
-        };
-        let subject = id.zip(read("data-type-name")).map(|(id, type_name)| {
-            walk.met.push((
-                id,
-                Applied {
-                    type_name,
-                    type_kind: read("data-type-kind").unwrap_or_default(),
-                    icon: None,
+            Drawn::Line(facts) => (
+                icon,
+                &facts.kind,
+                &facts.appearance.name,
+                None,
+                facts.appearance.color,
+                facts.appearance.dash,
+                facts.appearance.arrowhead,
+            ),
+        }
+    }
+}
 
-                    depiction: read("data-depiction").unwrap_or_default(),
-                    type_color: read("data-type-color").unwrap_or_else(|| "neutral".to_owned()),
-                    line_color: read("data-line-color").unwrap_or_else(|| "neutral".to_owned()),
-                    dash: read("data-line-dash").unwrap_or_else(|| "solid".to_owned()),
-                    arrowhead: read("data-arrowhead").unwrap_or_else(|| "filled".to_owned()),
-                },
-            ));
-            walk.met.len() - 1
-        });
-        if empty {
-            return;
+/// How a group says its subject was drawn, when it says so.
+fn drawn_by(group: &Group) -> Option<Drawn> {
+    match &group.role {
+        Role::Card(appearance) | Role::Header(appearance) | Role::Frame(Some(appearance)) => {
+            Some(Drawn::Part(appearance.as_ref().clone()))
         }
-        walk.open.push(Open {
-            icon: read("data-type-icon").is_some(),
-            subject,
-        });
-        for child in children {
-            visit(walk, child);
-        }
-        walk.open.pop();
-        if name == "svg" {
-            adopt_icon(walk, item);
-        }
+        Role::Line(Some(facts)) => Some(Drawn::Line(facts.as_ref().clone())),
+        _ => None,
     }
-    /// An icon's markup, as the icon of every open subject without one yet,
-    /// when it stands inside a group that draws an icon.
-    fn adopt_icon(walk: &mut Walk, item: &Item) {
-        if !walk.open.last().is_some_and(|parent| parent.icon) {
-            return;
-        }
-        for open in &walk.open {
-            if let Some(at) = open.subject
-                && walk.met[at].1.icon.is_none()
-            {
-                walk.met[at].1.icon = Some(item.clone());
+}
+
+/// The scene as it is walked: the subjects of the open groups, and every
+/// subject met.
+struct Walk {
+    open: Vec<Option<usize>>,
+    met: Vec<(String, Applied)>,
+}
+
+impl Walk {
+    /// One item, inside an icon's group or not.
+    fn visit(&mut self, item: &Item, in_icon: bool) {
+        match item {
+            Item::Group(group) => self.group(group),
+            Item::Viewport(viewport) => {
+                for child in &viewport.items {
+                    self.visit(child, false);
+                }
             }
+            Item::Icon(icon) if in_icon => {
+                for at in self.open.iter().flatten() {
+                    self.met[*at].1.icon.get_or_insert_with(|| icon.clone());
+                }
+            }
+            _ => {}
         }
     }
+
+    /// A group and what it holds, the subject it draws met if it says how it was drawn.
+    fn group(&mut self, group: &Group) {
+        // A group's region is named by its group's id, not a subject id, so
+        // the page's key never reads it.
+        let subject = group
+            .subject
+            .as_ref()
+            .filter(|subject| subject.kind != SubjectKind::GroupRegion)
+            .zip(drawn_by(group))
+            .map(|(subject, drawn)| {
+                self.met
+                    .push((subject.id.clone(), Applied { drawn, icon: None }));
+                self.met.len() - 1
+            });
+        self.open.push(subject);
+        let icon = matches!(group.role, Role::Icon(Some(_)));
+        for child in &group.items {
+            self.visit(child, icon);
+        }
+        self.open.pop();
+    }
+}
+
+/// Every subject the scene draws with an appearance, and the icon inside it.
+fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
     let mut walk = Walk {
         open: Vec::new(),
         met: Vec::new(),
     };
     for item in body {
-        visit(&mut walk, item);
+        walk.visit(item, false);
     }
     // One entry per subject, where it was first met, with what it was last drawn as.
     let mut appearances: Vec<(String, Applied)> = Vec::new();
@@ -179,14 +179,14 @@ pub(super) enum Keys {
 }
 
 impl Keys {
-    /// The word an entry's `data-legend-entry` attribute names its sort by.
-    pub(super) fn as_str(&self) -> &'static str {
+    /// What sort of entry it is.
+    pub(super) fn kind(&self) -> EntryKind {
         match self {
-            Keys::Mark(..) => "mark",
-            Keys::Kind(_) => "kind",
-            Keys::Relationship(_) => "relationship",
-            Keys::Emphasis => "emphasis",
-            Keys::Traffic => "traffic",
+            Keys::Mark(..) => EntryKind::Mark,
+            Keys::Kind(_) => EntryKind::Kind,
+            Keys::Relationship(_) => EntryKind::Relationship,
+            Keys::Emphasis => EntryKind::Emphasis,
+            Keys::Traffic => EntryKind::Traffic,
         }
     }
 }
@@ -251,14 +251,14 @@ pub(super) fn entries_of(
     let kinds = distinct_samples(
         appearances
             .iter()
-            .filter(|one| !one.depiction.is_empty())
+            .filter(|one| matches!(one.drawn, Drawn::Part(_)))
             .cloned()
             .collect(),
     );
     let relationships = distinct_samples(
         appearances
             .into_iter()
-            .filter(|one| one.depiction.is_empty())
+            .filter(|one| matches!(one.drawn, Drawn::Line(_)))
             .collect(),
     );
     let mut lists = vec![
@@ -272,7 +272,7 @@ pub(super) fn entries_of(
         kinds
             .into_iter()
             .map(|applied| Entry {
-                words: applied.type_name.clone(),
+                words: applied.type_name().to_owned(),
                 keys: Keys::Kind(applied),
             })
             .collect(),
@@ -281,7 +281,7 @@ pub(super) fn entries_of(
     let any = !relationships.is_empty();
     for applied in relationships {
         lined.push(Entry {
-            words: applied.type_name.clone(),
+            words: applied.type_name().to_owned(),
             keys: Keys::Relationship(applied),
         });
     }

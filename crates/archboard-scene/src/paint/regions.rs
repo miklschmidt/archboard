@@ -3,21 +3,23 @@
 //! in its corner (TASK-419). The tab keeps clear of the routes that cross its
 //! row, and from far away grows only as far as the nearest route.
 
-use crate::attrs;
 use crate::drawing::{DrawingRegion, TextRun};
-use crate::geometry::{Curve, Rect, Segment, coord, segment_start};
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 use crate::js;
-use crate::markup::{Markup, concat, group, lines, tag};
 use crate::paint::Ctx;
 use crate::paint::appearance::semantic_ink;
+use crate::paint::build::{Items, concat, grouped, lines, point, shape};
 use crate::paint::colour::{Held, Tone, ToneStep, held_tone, toned};
 use crate::paint::design::BAND_RADIUS;
 use crate::paint::far_view::{far_layer, near_layer};
-use crate::paint::palette::{Palette, token};
-use crate::paint::standing::{MEMBERS_ATTRIBUTE, subject};
+use crate::paint::palette::Palette;
+use crate::paint::slab::boxed;
+use crate::paint::standing::subject;
 use crate::paint::text_runs::paint_text_runs;
 use crate::request::PaletteColor;
-use crate::scene::{Role, SubjectKind};
+use crate::scene::{
+    Colour, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke, SubjectKind, Token,
+};
 
 const DARK_CORNER: ToneStep = ToneStep::new(0.765, 0.95);
 
@@ -61,10 +63,10 @@ const ROUTE_ROOM: f64 = 8.0;
 
 /// A group's colours: its corners', its tab's, its frame's, and the words on its tab.
 struct GroupColours {
-    corner: String,
-    tab: String,
-    frame: String,
-    words: String,
+    corner: Colour,
+    tab: Colour,
+    frame: Colour,
+    words: Colour,
 }
 
 /// Which of the region's top corners a tab stands in.
@@ -82,7 +84,7 @@ struct Crossing {
 
 /// A caption tab's outline in a top corner of its region: round as the region
 /// is at the region's corner, and round by a radius of its own at its inner foot.
-fn tab_path(rect: Rect, corner: Corner) -> String {
+fn tab_path(rect: Rect, corner: Corner) -> Vec<PathStep> {
     let Rect {
         x,
         y,
@@ -93,35 +95,45 @@ fn tab_path(rect: Rect, corner: Corner) -> String {
     let own = js::min([TAB_RADIUS, width / 2.0, height / 2.0]);
     let foot = y + height;
     let at = |inward: f64| {
-        coord(if corner == Corner::Start {
+        round_coord(if corner == Corner::Start {
             x + inward
         } else {
             x + width - inward
         })
     };
-    let sweep = i32::from(corner == Corner::Start);
-    [
-        format!("M{},{}", at(0.0), coord(foot)),
-        format!("V{}", coord(y + shared)),
-        format!(
-            "A{},{} 0 0 {sweep} {},{}",
-            coord(shared),
-            coord(shared),
-            at(shared),
-            coord(y)
-        ),
-        format!("H{}", at(width)),
-        format!("V{}", coord(foot - own)),
-        format!(
-            "A{},{} 0 0 {sweep} {},{}",
-            coord(own),
-            coord(own),
-            at(width - own),
-            coord(foot)
-        ),
-        "Z".to_owned(),
+    let clockwise = corner == Corner::Start;
+    vec![
+        PathStep::Move {
+            to: Point {
+                x: at(0.0),
+                y: round_coord(foot),
+            },
+        },
+        PathStep::Down {
+            y: round_coord(y + shared),
+        },
+        PathStep::Arc {
+            radius: point(shared, shared),
+            clockwise,
+            to: Point {
+                x: at(shared),
+                y: round_coord(y),
+            },
+        },
+        PathStep::Across { x: at(width) },
+        PathStep::Down {
+            y: round_coord(foot - own),
+        },
+        PathStep::Arc {
+            radius: point(own, own),
+            clockwise,
+            to: Point {
+                x: at(width - own),
+                y: round_coord(foot),
+            },
+        },
+        PathStep::Close,
     ]
-    .join(" ")
 }
 
 /// Where a tab for some words stands, and how far right of where they were measured its words stand.
@@ -149,7 +161,7 @@ fn tab_box(region: &DrawingRegion, run: &TextRun, corner: Corner, grown: f64) ->
 /// The colours of a group's region, from its colour or the muted ink for none.
 /// A yellow group takes the primary colours for its tab and words.
 fn group_colours(color: Option<PaletteColor>, palette: &Palette) -> GroupColours {
-    let ink = semantic_ink(color).unwrap_or_else(|| palette.muted.to_owned());
+    let ink = semantic_ink(color).unwrap_or_else(|| palette.muted.clone());
     let lightness = color.map_or(0.635, light_corner);
     let corner = held_tone(
         &ink,
@@ -163,9 +175,9 @@ fn group_colours(color: Option<PaletteColor>, palette: &Palette) -> GroupColours
     if color == Some(PaletteColor::Yellow) {
         GroupColours {
             corner: ink,
-            tab: token("--primary"),
+            tab: Token::Primary.into(),
             frame,
-            words: token("--primary-foreground"),
+            words: Token::PrimaryForeground.into(),
         }
     } else {
         GroupColours {
@@ -185,14 +197,11 @@ fn caption_tab(
     grown: f64,
     colours: &GroupColours,
     palette: &Palette,
-) -> Markup {
+) -> Items {
     let (rect, shift) = tab_box(region, run, corner, grown);
     let caption = region.caption.bounds;
     lines(vec![
-        tag(
-            "path",
-            attrs! { "d": tab_path(rect, corner), "fill": colours.tab.as_str() },
-        ),
+        shape(Shape::path(Purpose::Line, tab_path(rect, corner)).filled(&colours.tab)),
         paint_text_runs(
             std::slice::from_ref(run),
             Rect {
@@ -206,25 +215,26 @@ fn caption_tab(
 }
 
 /// A rounded outline drawn inside the edge of a box, `width` thick.
-fn outline(rect: Rect, width: f64, ink: &str) -> Markup {
+fn outline(rect: Rect, width: f64, ink: &Colour) -> Items {
     let inset = width / 2.0;
-    tag(
-        "rect",
-        attrs! {
-            "x": coord(rect.x + inset),
-            "y": coord(rect.y + inset),
-            "width": coord(rect.width - width),
-            "height": coord(rect.height - width),
-            "rx": coord(BAND_RADIUS - inset),
-            "fill": "none",
-            "stroke": ink,
-            "stroke-width": width,
-        },
+    shape(
+        Shape::rect(
+            Purpose::Box,
+            boxed(Rect {
+                x: rect.x + inset,
+                y: rect.y + inset,
+                width: rect.width - width,
+                height: rect.height - width,
+            }),
+            Some(round_coord(BAND_RADIUS - inset)),
+        )
+        .unfilled()
+        .stroked(Stroke::new(ink, width)),
     )
 }
 
 /// An arm at each corner of a box, bent round the corner, in place of a whole outline.
-fn brackets(rect: Rect, ink: &str) -> Markup {
+fn brackets(rect: Rect, ink: &Colour) -> Items {
     let inset = BRACKET_WIDTH / 2.0;
     let radius = BAND_RADIUS - inset;
     let left = rect.x + inset;
@@ -241,23 +251,26 @@ fn brackets(rect: Rect, ink: &str) -> Markup {
         corners
             .iter()
             .map(|(x, y, across, down)| {
-                let sweep = i32::from(across * down > 0.0);
-                let start = format!("{},{}", coord(*x), coord(y + down * ARM));
-                let arc_from = format!("{},{}", coord(*x), coord(y + down * radius));
-                let arc_to = format!("{},{}", coord(x + across * radius), coord(*y));
-                let end = format!("{},{}", coord(x + across * ARM), coord(*y));
-                tag(
-                    "path",
-                    attrs! {
-                        "d": format!(
-                            "M{start} L{arc_from} A{},{} 0 0 {sweep} {arc_to} L{end}",
-                            coord(radius),
-                            coord(radius)
-                        ),
-                        "fill": "none",
-                        "stroke": ink,
-                        "stroke-width": BRACKET_WIDTH,
+                let steps = vec![
+                    PathStep::Move {
+                        to: point(*x, y + down * ARM),
                     },
+                    PathStep::Line {
+                        to: point(*x, y + down * radius),
+                    },
+                    PathStep::Arc {
+                        radius: point(radius, radius),
+                        clockwise: across * down > 0.0,
+                        to: point(x + across * radius, *y),
+                    },
+                    PathStep::Line {
+                        to: point(x + across * ARM, *y),
+                    },
+                ];
+                shape(
+                    Shape::path(Purpose::Line, steps)
+                        .unfilled()
+                        .stroked(Stroke::new(ink, BRACKET_WIDTH)),
                 )
             })
             .collect(),
@@ -365,42 +378,35 @@ pub(super) fn paint_region(
     color: Option<PaletteColor>,
     far_size: f64,
     routes: &[&Curve],
-) -> Markup {
+) -> Items {
     let colours = group_colours(color, palette);
     let near = region.caption.measured.runs.first();
     let crossings = crossings_of(region, routes);
     let corner = near.map_or(Corner::Start, |run| corner_of(region, run, &crossings));
     let rect = region.bounds;
-    group(
-        Role::Region,
-        Some(subject(SubjectKind::GroupRegion, &region.group, None)),
-        attrs! { MEMBERS_ATTRIBUTE: region.members.join(" "), "pointer-events": "none" },
-        lines(vec![
-            tag(
-                "rect",
-                attrs! {
-                    "x": coord(rect.x),
-                    "y": coord(rect.y),
-                    "width": coord(rect.width),
-                    "height": coord(rect.height),
-                    "rx": BAND_RADIUS,
-                    "fill": "none",
+    grouped(
+        Group::new(
+            Role::Region,
+            lines(vec![
+                shape(Shape::rect(Purpose::Box, boxed(rect), Some(BAND_RADIUS)).unfilled()),
+                outline(rect, FRAME_WIDTH, &colours.frame),
+                brackets(rect, &colours.corner),
+                match near {
+                    None => Items::new(),
+                    Some(run) => {
+                        let room = far_room(region, run, corner, &crossings);
+                        let far = far_run(ctx, region, run, far_size, room);
+                        let grown = far.font_size / run.font_size;
+                        concat(vec![
+                            near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
+                            far_layer(caption_tab(region, &far, corner, grown, &colours, palette)),
+                        ])
+                    }
                 },
-            ),
-            outline(rect, FRAME_WIDTH, &colours.frame),
-            brackets(rect, &colours.corner),
-            match near {
-                None => Markup::new(),
-                Some(run) => {
-                    let room = far_room(region, run, corner, &crossings);
-                    let far = far_run(ctx, region, run, far_size, room);
-                    let grown = far.font_size / run.font_size;
-                    concat(vec![
-                        near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
-                        far_layer(caption_tab(region, &far, corner, grown, &colours, palette)),
-                    ])
-                }
-            },
-        ]),
+            ]),
+        )
+        .drawing(subject(SubjectKind::GroupRegion, &region.group, None))
+        .standing_with(region.members.clone())
+        .pointer(Pointer::None),
     )
 }

@@ -3,11 +3,12 @@
 //! inside an outline and a selection ring outside it ([`inset`]), and a shadow
 //! is the shape moved ([`translated`]).
 
-use crate::geometry::{Point, coord};
+use crate::geometry::{Point, round_coord};
 use crate::js;
+use crate::scene::PathStep;
 
 /// A convex outline, its corners clockwise on the page.
-pub type Polygon = Vec<Point>;
+pub(super) type Polygon = Vec<Point>;
 
 /// Less than this is nothing.
 const TINY: f64 = 1e-9;
@@ -38,37 +39,54 @@ fn rounded_corner(before: Point, corner: Point, after: Point, radius: f64) -> (P
     )
 }
 
-/// One point as path data.
-fn at(point: Point) -> String {
-    format!("{} {}", coord(point.x), coord(point.y))
+/// One point, rounded as it is drawn.
+fn at(point: Point) -> Point {
+    Point {
+        x: round_coord(point.x),
+        y: round_coord(point.y),
+    }
 }
 
-/// A polygon as path data, its corners rounded by a radius, or sharp for none.
-pub fn polygon_path(polygon: &[Point], radius: f64) -> String {
+/// A polygon as a path, its corners rounded by a radius, or sharp for none.
+pub(super) fn polygon_path(polygon: &[Point], radius: f64) -> Vec<PathStep> {
+    let mut steps = Vec::new();
     if radius <= 0.0 {
-        let corners: Vec<String> = polygon.iter().map(|point| at(*point)).collect();
-        return format!("M {} Z", corners.join(" L "));
+        for (index, corner) in polygon.iter().enumerate() {
+            let to = at(*corner);
+            steps.push(if index == 0 {
+                PathStep::Move { to }
+            } else {
+                PathStep::Line { to }
+            });
+        }
+        steps.push(PathStep::Close);
+        return steps;
     }
     let count = polygon.len();
-    let turns: Vec<String> = polygon
-        .iter()
-        .enumerate()
-        .map(|(index, corner)| {
-            let (leaves, comes) = rounded_corner(
-                polygon[(index + count - 1) % count],
-                *corner,
-                polygon[(index + 1) % count],
-                radius,
-            );
-            let verb = if index == 0 { "M" } else { "L" };
-            format!("{verb} {} Q {} {}", at(leaves), at(*corner), at(comes))
-        })
-        .collect();
-    format!("{} Z", turns.join(" "))
+    for (index, corner) in polygon.iter().enumerate() {
+        let (leaves, comes) = rounded_corner(
+            polygon[(index + count - 1) % count],
+            *corner,
+            polygon[(index + 1) % count],
+            radius,
+        );
+        let to = at(leaves);
+        steps.push(if index == 0 {
+            PathStep::Move { to }
+        } else {
+            PathStep::Line { to }
+        });
+        steps.push(PathStep::Quad {
+            control: at(*corner),
+            to: at(comes),
+        });
+    }
+    steps.push(PathStep::Close);
+    steps
 }
 
 /// A polygon moved.
-pub fn translated(polygon: &[Point], by: Point) -> Polygon {
+pub(super) fn translated(polygon: &[Point], by: Point) -> Polygon {
     polygon
         .iter()
         .map(|point| Point {
@@ -119,7 +137,7 @@ fn cut_by(polygon: &[Point], from: Point, to: Point) -> Polygon {
 }
 
 /// What two convex polygons share.
-pub fn intersection(polygon: &[Point], by: &[Point]) -> Polygon {
+pub(super) fn intersection(polygon: &[Point], by: &[Point]) -> Polygon {
     let count = by.len();
     by.iter()
         .enumerate()
@@ -144,7 +162,7 @@ fn meeting(one: (Point, Point), other: (Point, Point)) -> Point {
 
 /// A polygon with every side moved inward, its corners kept sharp; a negative
 /// distance moves them outward.
-pub fn inset(polygon: &[Point], distance: f64) -> Polygon {
+pub(super) fn inset(polygon: &[Point], distance: f64) -> Polygon {
     let count = polygon.len();
     let sides: Vec<(Point, Point)> = polygon
         .iter()

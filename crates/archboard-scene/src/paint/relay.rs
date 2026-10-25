@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use crate::drawing::Traffic;
 use crate::geometry::{Point, Rect};
-use crate::js;
+use crate::js::{self, within};
 use crate::paint::design::CARD_RADIUS;
 
 /// The least distance between two pulses on a line.
@@ -63,11 +63,6 @@ fn seeded(seed: &str) -> f64 {
     let round = (mixed ^ (mixed >> 7)).wrapping_mul(61 | mixed);
     mixed = mixed.wrapping_add(round) ^ mixed;
     f64::from(mixed ^ (mixed >> 14)) / 4_294_967_296.0
-}
-
-/// A number held to the range `[0, period)`.
-pub(super) fn within(value: f64, period: f64) -> f64 {
-    ((value % period) + period) % period
 }
 
 /// The root of a lane's group in a union-find forest, its path cut short to it.
