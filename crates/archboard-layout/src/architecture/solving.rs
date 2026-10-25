@@ -7,8 +7,10 @@
 //! in the order laying them out one by one weighs them, so the drawing never
 //! depends on which solve answered first.
 
+use std::cell::{Cell, RefCell};
 use std::future::{Future, poll_fn};
 use std::pin::Pin;
+use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use crate::Graphviz;
@@ -16,16 +18,80 @@ use crate::blocks::place::lay_out_board;
 
 /// Where a board's solves run: one measured graph laid out the way its root
 /// options name, answered as [`lay_out_board`] answers it. A host may run
-/// several at once. Dropping a solve under way calls it off: one still
-/// waiting for an engine is never laid out.
+/// several at once.
+///
+/// A solve is called off two ways. Dropping it calls it off for good. Its
+/// [`Calling`] calls it off while the choice still waits on it: a solve that
+/// an engine already lays out answers all the same, and a later turn that
+/// needs it again shares that answer (TASK-464). A host may refuse a solve
+/// called off while it still waits for an engine, as [`Unsolved::CalledOff`];
+/// the choice then asks for it afresh where it needs it.
 pub trait Solver {
     /// One solve under way.
-    type Solve<'s>: Future<Output = Result<String, String>>
+    type Solve<'s>: Future<Output = Result<String, Unsolved>>
     where
         Self: 's;
 
-    /// Ask for one solve. It starts at once, before anything waits for it.
-    fn solve(&self, graph: String) -> Self::Solve<'_>;
+    /// Ask for one solve, called off by `calling`. It starts at once, before
+    /// anything waits for it.
+    fn solve(&self, graph: String, calling: &Calling) -> Self::Solve<'_>;
+}
+
+/// Why a solve answered no drawing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Unsolved {
+    /// Its host refused it, because it was called off before an engine took it.
+    CalledOff,
+    /// Its host failed it, in these words.
+    Failed(String),
+}
+
+impl From<String> for Unsolved {
+    fn from(words: String) -> Self {
+        Unsolved::Failed(words)
+    }
+}
+
+/// What calls off the solves of one layout that a choice no longer reads,
+/// while it still waits on them. Every clone calls off the same solves.
+#[derive(Clone, Default)]
+pub struct Calling(Rc<CallingOff>);
+
+/// Whether the solves were called off, and what each host does when they are.
+#[derive(Default)]
+struct CallingOff {
+    off: Cell<bool>,
+    hooks: RefCell<Vec<Box<dyn FnOnce()>>>,
+}
+
+impl std::fmt::Debug for Calling {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Calling")
+            .field("off", &self.0.off.get())
+            .finish_non_exhaustive()
+    }
+}
+
+impl Calling {
+    /// Do `hook` once the solves are called off, at once if they already are.
+    pub fn on_call_off(&self, hook: impl FnOnce() + 'static) {
+        if self.0.off.get() {
+            hook();
+        } else {
+            self.0.hooks.borrow_mut().push(Box::new(hook));
+        }
+    }
+
+    /// Call the solves off, once.
+    pub(crate) fn call_off(&self) {
+        if !self.0.off.replace(true) {
+            let hooks = self.0.hooks.take();
+            for hook in hooks {
+                hook();
+            }
+        }
+    }
 }
 
 /// A future of the choice, boxed so the choices can hold several kinds.
@@ -46,7 +112,7 @@ impl<F> InProcess<F> {
     }
 }
 
-/// One solve laid out here once it is first waited for.
+/// One solve laid out here once it is first waited for, called off or not.
 #[derive(Debug)]
 pub struct Laying<'a, F> {
     graph: Option<String>,
@@ -58,7 +124,7 @@ where
     F: Fn(&str) -> G,
     G: Graphviz,
 {
-    type Output = Result<String, String>;
+    type Output = Result<String, Unsolved>;
 
     fn poll(mut self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
         let graph = self
@@ -66,7 +132,7 @@ where
             .take()
             .expect("a solve laid out once is not waited for again");
         let mut graphviz = (self.graphviz)(&graph);
-        Poll::Ready(lay_out_board(&graph, &mut graphviz))
+        Poll::Ready(lay_out_board(&graph, &mut graphviz).map_err(Unsolved::Failed))
     }
 }
 
@@ -80,7 +146,7 @@ where
     where
         Self: 's;
 
-    fn solve(&self, graph: String) -> Self::Solve<'_> {
+    fn solve(&self, graph: String, _: &Calling) -> Self::Solve<'_> {
         Laying {
             graph: Some(graph),
             graphviz: &self.graphviz,
