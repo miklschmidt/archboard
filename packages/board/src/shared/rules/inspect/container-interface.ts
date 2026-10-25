@@ -84,6 +84,12 @@ interface ContainerInterface {
 /** What one node is as a container: an interface, or the fact that it has no parts. */
 type ContainerInspection = ContainerInterface | PartlessNode;
 
+/** An entry point that only passes one call on, and the container it is on. */
+interface PassThrough {
+	readonly container: SemanticNode;
+	readonly part: SemanticNode;
+}
+
 /** The five counts, each of them read off one container on one variant. */
 interface InterfaceMeasures {
 	readonly entryPoints: number;
@@ -200,6 +206,20 @@ function inspectContainer(content: VariantContent, container: SemanticNode): Con
 }
 
 /**
+ * Every pass-through entry point of a variant, each with the container whose
+ * interface it is on, in document order. The deletion test asks about these
+ * first (ADR 0044): each is a question for the reader, never a fault.
+ * @param content The variant's whole content, before any view narrows it.
+ * @returns Each pass-through entry point and its container.
+ */
+function passThroughEntryPoints(content: VariantContent): readonly PassThrough[] {
+	return content.nodes.flatMap((container) => {
+		const inspection = inspectContainer(content, container);
+		return inspection.holdsParts ? inspection.passThrough.map((part) => ({ container, part })) : [];
+	});
+}
+
+/**
  * The five interface measures of a container (ADR 0044). They are counts,
  * never combined into one number and never a verdict.
  * @param inspection A container with an interface.
@@ -221,6 +241,8 @@ export {
 	type ContainerInterface,
 	type EntryPoint,
 	type InterfaceMeasures,
+	type PassThrough,
 	inspectContainer,
 	interfaceMeasures,
+	passThroughEntryPoints,
 };

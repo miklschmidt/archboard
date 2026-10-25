@@ -97,7 +97,7 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 - **Board**: what the board on screen is, and how to read it. The tab is
   ordered by the questions a reader asks, in the order they ask them.
   [The study behind the order](pane-sidebar-hierarchy.md) derives it from the
-  use cases and from research on how people read diagrams. There are four
+  use cases and from research on how people read diagrams. There are five
   regions, and a rule separates one region from the next:
   1. **What is this, and what does it change?** The summary of the variant on
      screen, with no heading: the board's own statement of its scope. On a
@@ -116,9 +116,19 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      with Everything first and the summary of the view on screen under its
      name. Then the groups, each with its colour. Choosing a group selects
      every member.
-  3. **What do the marks mean?** The legend of what the picture draws: its node
+  3. **Where can the code take more work than it should?** The design
+     questions of the variant on screen (TASK-537). Each question is a heading
+     with its count and the question to the reader under it. Then one row for
+     each result, named by its part and its container. The first question
+     lists the entry points that only pass one call on (ADR 0044). A row under
+     the pointer lights its part. Choosing it picks the part out and shows it
+     on the picture. Ask the agent, beside the row, sends the deletion question
+     about that part to the agent of the pane's checkout. A page with no agent,
+     such as a recording page, has no Ask the agent. A region with no result
+     is absent. The region states counts and names, never a verdict.
+  4. **What do the marks mean?** The legend of what the picture draws: its node
      kinds, its relationship kinds, and what a heavier line and a pulse mean.
-  4. **The layout engine**, a preference of this browser, in one row at the
+  5. **The layout engine**, a preference of this browser, in one row at the
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The

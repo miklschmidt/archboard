@@ -25,6 +25,13 @@ interface PaneOverlay {
 	readonly element: ReactNode;
 }
 
+/**
+ * Ask the agent of one pane's checkout a question, sent at once.
+ * @param paneId The pane.
+ * @param text The question.
+ */
+type PaneAskFrom = (paneId: string, text: string) => void;
+
 /** What the mounted panes are assembled from. */
 interface PaneViewSources {
 	/** What a pane is made from: never the records, which change with every pane's news. */
@@ -47,6 +54,8 @@ interface PaneViewSources {
 	readonly narration: Narration | null;
 	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
 	readonly overlay: PaneOverlay | null;
+	/** Ask the agent about what a pane shows, or null where the page has no agent to ask. */
+	readonly ask: PaneAskFrom | null;
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
 	/**
@@ -109,6 +118,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function openBoardHere(key: string, repository?: string): Promise<boolean> {
 		return sources.openBoard(key, paneId, repository);
 	}
+	const { ask } = sources;
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
@@ -126,6 +136,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		reducedMotion: sources.reducedMotion,
 		openingVault: servedVault(),
 		onOpenBoard: openBoardHere,
+		ask: ask === null ? null : (text: string): void => ask(paneId, text),
 	});
 }
 
@@ -180,6 +191,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		onVariantChange,
 		narration,
 		overlay,
+		ask,
 		recording,
 		openBoard,
 	} = sources;
@@ -196,6 +208,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					onVariantChange,
 					narration,
 					overlay,
+					ask,
 					recording,
 					openBoard,
 				},
@@ -214,9 +227,16 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		onVariantChange,
 		narration,
 		overlay,
+		ask,
 		recording,
 		openBoard,
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneRecording, type PaneViewSources };
+export {
+	usePaneViews,
+	type PaneAskFrom,
+	type PaneOverlay,
+	type PaneRecording,
+	type PaneViewSources,
+};

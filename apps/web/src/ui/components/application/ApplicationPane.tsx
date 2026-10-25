@@ -35,6 +35,7 @@ import {
 	type SemanticTarget,
 } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { NoBoardHeader } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
+import { PaneAskContext, type PaneAsk } from "#ui/state/semantic-board-canvas/pane-ask.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
 import {
@@ -86,6 +87,8 @@ interface ApplicationPaneProps {
 	narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
 	overlay?: ReactNode;
+	/** Ask the agent of this pane's checkout a question, or null where the page has no agent. */
+	ask?: PaneAsk | null;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
@@ -250,18 +253,21 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			{address === null ? (
 				<NoBoard />
 			) : (
-				// Every read the picture makes names the vault this pane is in (ADR 0050).
+				// Every read the picture makes names the vault this pane is in, and a
+				// question it asks goes to the agent of that vault's checkout (ADR 0050).
 				<PaneVaultContext value={vault}>
-					<PaneDiagram
-						address={address}
-						arrival={session.arrivals}
-						openCode={session.openCode}
-						onReading={showReading}
-						onUserChanged={session.userChanged}
-						driven={props.step ?? asked}
-						shown={onScreen?.board ?? null}
-						{...props}
-					/>
+					<PaneAskContext value={props.ask ?? null}>
+						<PaneDiagram
+							address={address}
+							arrival={session.arrivals}
+							openCode={session.openCode}
+							onReading={showReading}
+							onUserChanged={session.userChanged}
+							driven={props.step ?? asked}
+							shown={onScreen?.board ?? null}
+							{...props}
+						/>
+					</PaneAskContext>
 				</PaneVaultContext>
 			)}
 		</div>

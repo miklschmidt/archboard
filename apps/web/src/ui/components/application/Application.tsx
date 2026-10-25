@@ -47,6 +47,7 @@ import {
 	useRecordedViews,
 } from "#ui/hooks/application/use-page-recording.ts";
 import { useAgentSurfaces, type AgentSurfaces } from "#ui/hooks/application/use-agent-surfaces.ts";
+import { useAskFromPane } from "#ui/hooks/application/use-ask-from-pane.ts";
 import { conversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbench.ts";
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
@@ -421,7 +422,8 @@ function ApplicationBody(): JSX.Element {
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
-	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const askFromPane = useAskFromPane(activate, workbench, agent);
+	const recorded = useRecordedViews(recorder, workbench, { narration, overlay, ask: askFromPane });
 	const mounted = usePaneViews({
 		panes,
 		theme,
@@ -465,19 +467,10 @@ function ApplicationBody(): JSX.Element {
 	const transport = workbench.owners?.transport ?? null;
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? servedVault();
-	const { ask } = agent;
-	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
-	// The server tells the workbench socket of the switch before it answers, but that answer can
-	// arrive first. A read on the socket comes after the news, so the repair is composed for the
-	// conversation shown now, not refused because the workbench moved under it.
+	// A repair goes to the workhorse of the repository diagnosed: the focused pane's.
 	const askAboutDiagnosed = useCallback(
-		(text: string): void => {
-			void activate(livePanes.active.status.paneId)
-				.then(() => transport?.refresh())
-				.catch(() => undefined)
-				.then(() => ask(text));
-		},
-		[activate, livePanes, ask, transport],
+		(text: string): void => askFromPane(livePanes.active.status.paneId, text),
+		[askFromPane, livePanes],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,

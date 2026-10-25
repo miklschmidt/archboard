@@ -9,11 +9,8 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import {
-	type PaneChrome,
-	PaneChromeContext,
-} from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
-import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@archboard/ui-kit/display";
+import { PaneAskContext, type PaneAsk } from "#ui/state/semantic-board-canvas/pane-ask.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
@@ -253,14 +250,16 @@ const PANE_VAULT = "/work/archboard/.archboard/vault";
 /**
  * The stage inside a cache with this product's read defaults, in one vault.
  * @param children The stage.
+ * @param ask What the pane can ask the agent, if the page has an agent.
  * @returns The providers around it.
  */
-function Cache(children: ReactNode): JSX.Element {
+function Cache(children: ReactNode, ask: PaneAsk | undefined): JSX.Element {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const asking = createElement(PaneAskContext, { value: ask ?? null }, children);
 	return createElement(
 		QueryClientProvider,
 		{ client },
-		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+		createElement(PaneVaultContext, { value: PANE_VAULT }, asking),
 	);
 }
 
@@ -315,6 +314,8 @@ interface MountOptions extends StagePassThrough {
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** What the shell puts in the pane's header; a pane alone in the shell by default. */
 	readonly chrome?: PaneChrome | undefined;
+	/** What the pane can ask the agent of its checkout; none, as on a recording page, by default. */
+	readonly ask?: PaneAsk | undefined;
 }
 
 /** Every option the harness passes straight through to the stage. */
@@ -531,7 +532,7 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 		options.live !== true && options.chrome !== undefined
 			? createElement(PaneChromeContext.Provider, { value: options.chrome }, stage)
 			: stage;
-	render(Cache(framed));
+	render(Cache(framed, options.ask));
 	return { picks };
 }
 

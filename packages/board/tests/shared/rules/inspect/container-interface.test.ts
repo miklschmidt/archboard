@@ -7,6 +7,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	inspectContainer,
 	interfaceMeasures,
+	passThroughEntryPoints,
 	type ContainerInterface,
 } from "#shared/rules/inspect/container-interface.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
@@ -310,5 +311,45 @@ describe("a pass-through entry point", () => {
 		expect(
 			passing([edge("client", "route"), edge("route", "ledger")], [node("Inner", "route")]),
 		).toEqual([]);
+	});
+});
+
+describe("the pass-through entry points of a variant", () => {
+	test("each one comes with the container it is on, across containers and in a nested one", () => {
+		const variant = content({
+			nodes: [
+				node("Client"),
+				node("Ledger"),
+				node("Shop"),
+				node("Route", "shop"),
+				node("Billing"),
+				node("Charge", "billing"),
+				node("Cards", "billing"),
+				node("Token", "cards"),
+			],
+			edges: [
+				edge("client", "route"),
+				edge("route", "ledger"),
+				edge("client", "charge"),
+				edge("charge", "ledger"),
+				edge("client", "token"),
+				edge("token", "ledger"),
+			],
+		});
+		expect(
+			passThroughEntryPoints(variant).map(({ container, part }) => [container.id, part.id]),
+		).toEqual([
+			["shop", "route"],
+			["billing", "charge"],
+			["cards", "token"],
+		]);
+	});
+
+	test("a variant with no container has none", () => {
+		const variant = content({
+			nodes: [node("Client"), node("Ledger")],
+			edges: [edge("client", "ledger")],
+		});
+		expect(passThroughEntryPoints(variant)).toEqual([]);
 	});
 });

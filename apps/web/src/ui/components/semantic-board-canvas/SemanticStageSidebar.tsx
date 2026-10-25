@@ -153,6 +153,8 @@ function SemanticStageSidebar(props: {
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
 					appearances={appearances}
+					look={view.look}
+					onShow={view.onShow}
 					comparison={view.comparison}
 					onComparisonChange={view.onComparisonChange}
 				/>

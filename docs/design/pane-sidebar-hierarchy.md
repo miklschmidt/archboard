@@ -14,6 +14,12 @@ header's breadcrumb names the one on screen. The changes section names the
 variant that it is compared with in its own heading. The rest of the study
 stands as it was found.
 
+Revised 2026-10-25 (TASK-537.01). A region of design questions sits between
+the reading region and the legend. It answers a question that no task below
+names: where understanding or changing the code can take more work than it
+should. The pane sidebar section of
+[operator-canvas-shell.md](operator-canvas-shell.md) states what it shows.
+
 The evidence has three kinds. The product documents say what each element is
 for. The boards in `.archboard/vault` and `examples/web-shop` say how often
 each element has anything to show. Research on diagram reading and interface
@@ -181,7 +187,7 @@ and legend rows 12 px, and the legend's sub-headings are 12 px semibold.
 
 ## The hierarchy
 
-The tab answers four questions, in the order a reader asks them. Each question
+The tab answers five questions, in the order a reader asks them. Each question
 is one region, and a one-pixel rule separates two regions. Inside a region,
 space separates the sections. So a rule means a new question, and nothing else
 draws one.
@@ -218,12 +224,16 @@ draws one.
      so the reader sees what the reading answers where they chose it [18].
    - _Groups_ (task 5). Each row is the group's colour and its name: the key to
      the colour on the picture and the way to select its members [5].
-3. **What do the marks mean?** The legend (task 6), under one heading. The node
+3. **Where can the code take more work than it should?** The design questions
+   of the variant on screen (TASK-537.01), only where one has a result. They
+   come after the reading region, because a reader asks them of a board that
+   they can already read, and before the legend, which stays at the foot.
+4. **What do the marks mean?** The legend (task 6), under one heading. The node
    kinds the picture draws, as the picture's chips. The relationship kinds, as
    the picture's lines. Then two samples for what a line's weight and its
    moving pulses say, where there are relationships. Only what the picture
    draws is keyed, in the order the picture draws it [8, 10].
-4. **A preference of this browser.** The layout engine (task 8), one row at
+5. **A preference of this browser.** The layout engine (task 8), one row at
    the foot, under the last rule.
 
 The weight follows the rank. The most important and most frequent query gets
@@ -304,6 +314,7 @@ Spacing uses a 4 px scale: 4, 8 and 16 px.
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The picture is still being drawn                | The summary and the reading region as soon as the board is read. The legend fills when the picture arrives, and keeps the leaving picture's key meanwhile. |
 | No views, no walkthroughs or no groups          | That section is absent. A board with none of the three shows the summary, the legend and the engine.                                                       |
+| No design question has a result                 | The design questions region is absent.                                                                                                                     |
 | One variant, on a board reached by drill-down   | One plain variant row, not a control.                                                                                                                      |
 | The current variant                             | No Changes section: there is nothing to read it against.                                                                                                   |
 | A proposal identical to what it is read against | The Changes section says so, with no rows and no control.                                                                                                  |
