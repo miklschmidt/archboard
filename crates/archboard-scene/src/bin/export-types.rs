@@ -87,18 +87,19 @@ fn read_only(declaration: &str) -> String {
             at = close;
             continue;
         }
-        if character == '"' {
-            let close = (at + 1..text.len())
+        // Where a string that opens here ends, past its closing quote.
+        let string_end = (character == '"').then(|| {
+            (at + 1..text.len())
                 .find(|&index| text[index] == '"')
-                .map_or(text.len(), |index| index + 1);
-            out.extend(&text[at..close]);
-            at = close;
-            continue;
-        }
+                .map_or(text.len(), |index| index + 1)
+        });
         if field_start && (character.is_alphabetic() || character == '_' || character == '"') {
-            let name_end = (at..text.len())
-                .find(|&index| !(text[index].is_alphanumeric() || text[index] == '_'))
-                .unwrap_or(text.len());
+            // A field's name, or a quoted one such as a union's tag.
+            let name_end = string_end.unwrap_or_else(|| {
+                (at..text.len())
+                    .find(|&index| !(text[index].is_alphanumeric() || text[index] == '_'))
+                    .unwrap_or(text.len())
+            });
             let optional = text.get(name_end) == Some(&'?');
             let colon = name_end + usize::from(optional);
             if text.get(colon) == Some(&':') {
@@ -116,6 +117,11 @@ fn read_only(declaration: &str) -> String {
                 }
                 continue;
             }
+        }
+        if let Some(close) = string_end {
+            out.extend(&text[at..close]);
+            at = close;
+            continue;
         }
         match character {
             '{' => {
@@ -170,4 +176,27 @@ fn main() {
     }
     print!("{}", file.trim_end());
     println!();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_only;
+
+    #[test]
+    fn makes_every_field_read_only_a_union_tag_too() {
+        assert_eq!(
+            read_only(
+                r#"type Item = { "type": "text", text: string, } | { "type": "group" } & Group;"#
+            ),
+            r#"type Item = { readonly "type": "text", readonly text: string, } | { readonly "type": "group" } & Group;"#
+        );
+    }
+
+    #[test]
+    fn opens_an_optional_field_to_undefined_and_reads_an_array_only() {
+        assert_eq!(
+            read_only("type A = { title?: string, runs: Array<Run>, };"),
+            "type A = { readonly title?: string | undefined, readonly runs: ReadonlyArray<Run>, };"
+        );
+    }
 }
