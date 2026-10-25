@@ -42,7 +42,7 @@ pub struct Rect {
 }
 
 /// A direction a route runs in, or the way a pin leaves its obstacle.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Dir {
     Up,
     Right,
@@ -125,12 +125,7 @@ pub enum Route {
 /// The buffers of other obstacles that a pin's route starts inside: where it
 /// leaves its own obstacle's buffer lies in theirs. The route may cross
 /// them, or it could never start.
-fn started_inside(scene: &Scene, ends: [End; 2]) -> Vec<usize> {
-    let buffers: Vec<grid::Buffer> = scene
-        .obstacles
-        .iter()
-        .map(|rect| grid::Buffer::around(rect, scene.params.clearance))
-        .collect();
+fn started_inside(buffers: &[grid::Buffer], ends: [End; 2]) -> Vec<usize> {
     let mut inside = Vec::new();
     for end in ends {
         let End::Pin {
@@ -157,7 +152,7 @@ pub fn route(scene: &Scene) -> Vec<Route> {
     let mut found: Vec<Option<Vec<Point>>> = Vec::with_capacity(scene.connectors.len());
     let mut taken = search::Taken::new(&grid);
     for (tail, head) in &scene.connectors {
-        let inside = started_inside(scene, [*tail, *head]);
+        let inside = started_inside(&grid.buffers, [*tail, *head]);
         // The grid's coordinates do not depend on what blocks, so `taken`
         // reads the same vertices on either grid.
         let own = (!inside.is_empty()).then(|| grid::Grid::new(scene, &inside));
@@ -167,7 +162,7 @@ pub fn route(scene: &Scene) -> Vec<Route> {
         }
         found.push(path);
     }
-    let nudged = nudge::nudge(scene, &found);
+    let nudged = nudge::nudge(scene, &grid.buffers, &found);
     nudged
         .into_iter()
         .map(|points| match points {
