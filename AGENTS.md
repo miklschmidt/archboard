@@ -33,14 +33,18 @@ Where things are written down:
 
 ## Examples for a person
 
-When you explain, sketch or mock up an archboard feature for a person, take
-the example from the web shop. Use the boards in `examples/web-shop`. For code
+When you talk with a person about what archboard shows or does, take each
+example from the web shop. Use the boards in `examples/web-shop`. For code
 intelligence, such as bindings, the code check and history, use the "Checkout
 and orders" checkout that `scripts/readme-assets/evidence-fixture.ts` builds.
-Archboard's own vault and source describe archboard. An example taken from
-them makes the reader guess whether a name belongs to the feature or to the
-board on screen. If the web shop lacks what an example needs, say that the
-example is invented.
+If the web shop lacks what an example needs, say that the example is invented.
+
+Archboard's own boards draw archboard, so their names collide with the names
+of the product. "The board package" can be a part on the picture or
+`packages/board`. If an archboard board is itself the demonstration of the
+behavior under discussion, you can point at it. Then name the picture and the
+code apart each time: "the part Board client on the picture", "the code in
+`packages/board`".
 
 ## Environment facts you cannot derive
 
