@@ -9,6 +9,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { cargoWorkspaceOf } from "#runtime/operations/language-servers/cargo-workspace.ts";
 import { openLanguageServers } from "#runtime/services/language-servers/session.ts";
 import { FIXTURES } from "#tests/runtime/support/code-facts/checkout.ts";
 import {
@@ -95,6 +96,18 @@ test("a Rust file no Cargo.toml holds starts no server, and is said once", async
 	await session.close();
 	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["unready"]);
 	expect(current.starts()).toEqual([]);
+});
+
+test("a nested Cargo workspace keeps its server separate from the enclosing workspace", async () => {
+	current = workspace({
+		"Cargo.toml": '[workspace]\nexclude = ["fixture"]\n',
+		"fixture/Cargo.toml": '[workspace]\nmembers = ["crate"]\n',
+		"fixture/crate/Cargo.toml": '[package]\nname = "nested"\nversion = "0.1.0"\n',
+		"fixture/crate/src/lib.rs": "pub fn run() {}\n",
+	});
+	expect(await cargoWorkspaceOf(current.root, "fixture/crate/src/lib.rs")).toEqual({
+		root: join(current.root, "fixture"),
+	});
 });
 
 test.skipIf(ANALYZER === undefined)(

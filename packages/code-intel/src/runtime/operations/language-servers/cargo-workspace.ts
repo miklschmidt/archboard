@@ -4,7 +4,7 @@
 // rust-analyzer loads the workspace of the directory it starts in: it runs
 // `cargo metadata`, builds the crate graph, runs the build scripts and builds
 // the procedural macros, as an editor's does. One server answers for every
-// member of a workspace, so it starts in the directory of the outermost
+// member of a workspace, so it starts in the directory of the nearest
 // `Cargo.toml` above the file that declares a `[workspace]`, else in the
 // package's own, no higher than the checkout. Only a file no `Cargo.toml`
 // holds is unready.
@@ -50,7 +50,7 @@ async function cargoWorkspaceOf(root: string, file: string): Promise<Project> {
 	}
 	const manifests = await Promise.all(directories.map(manifestIn));
 	const held = directories.find((_, index) => manifests[index] !== undefined);
-	const workspace = directories.findLast(
+	const workspace = directories.find(
 		(_, index) => manifests[index] !== undefined && declaresWorkspace(manifests[index] ?? ""),
 	);
 	const directory = workspace ?? held;
