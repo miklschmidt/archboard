@@ -1,7 +1,4 @@
-import {
-	diagnosticLine,
-	VaultDiagnosticSchema,
-} from "@archboard/board/policy";
+import { diagnosticLine, VaultDiagnosticSchema } from "@archboard/board/policy";
 // What a person types into a semantic board command, before it is a command.
 //
 // Reading a stated architecture off a file or standard input, refusing what is
@@ -24,10 +21,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import {
-	LegendLayoutSchema,
-	type RenderedChanges,
-} from "@archboard/board/render-reply";
+import { LegendLayoutSchema, type RenderedChanges } from "@archboard/board/render-reply";
 import type { RenderedVariantSchema } from "@archboard/board/render-reply";
 
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;

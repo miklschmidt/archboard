@@ -23,23 +23,12 @@
 // pure group inspection here.
 
 import { z } from "zod";
-import {
-	compareVariants,
-	type PlacedBeat,
-	type SubjectChange,
-} from "@archboard/board/comparison";
+import { compareVariants, type PlacedBeat, type SubjectChange } from "@archboard/board/comparison";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
-import type {
-	SemanticEdge,
-	SemanticNode,
-	VariantContent,
-} from "@archboard/board/content";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticFlow } from "@archboard/board/flow";
 import type { SemanticVariant } from "@archboard/board/document";
-import {
-	diagnosticLine,
-	VaultDiagnosticSchema,
-} from "@archboard/board/policy";
+import { diagnosticLine, VaultDiagnosticSchema } from "@archboard/board/policy";
 import { readSemanticBoardAnswerOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";

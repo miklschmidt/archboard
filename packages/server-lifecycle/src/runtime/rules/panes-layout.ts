@@ -8,7 +8,6 @@ type BoardIdentity = ReturnType<typeof parseBoardKey>;
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-
 /** A rectangle in page coordinates. */
 interface Rect {
 	x: number;
