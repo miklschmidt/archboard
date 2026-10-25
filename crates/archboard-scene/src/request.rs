@@ -5,6 +5,8 @@
 
 use std::collections::BTreeMap;
 
+use serde::de::IntoDeserializer;
+use serde::de::value::{Error as ValueError, StrDeserializer};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -80,35 +82,13 @@ impl PaletteColor {
         }
     }
 
-    /// The colour a name names, if it is one of the palette's.
+    /// The colour a name names, if it is one of the palette's: read as the
+    /// contract reads it.
     pub fn named(name: &str) -> Option<PaletteColor> {
-        ALL_COLORS
-            .iter()
-            .copied()
-            .find(|color| color.as_str() == name)
+        let name: StrDeserializer<'_, ValueError> = name.into_deserializer();
+        PaletteColor::deserialize(name).ok()
     }
 }
-
-/// Every named colour.
-const ALL_COLORS: [PaletteColor; 17] = [
-    PaletteColor::Red,
-    PaletteColor::Orange,
-    PaletteColor::Amber,
-    PaletteColor::Yellow,
-    PaletteColor::Lime,
-    PaletteColor::Green,
-    PaletteColor::Emerald,
-    PaletteColor::Teal,
-    PaletteColor::Cyan,
-    PaletteColor::Sky,
-    PaletteColor::Blue,
-    PaletteColor::Indigo,
-    PaletteColor::Violet,
-    PaletteColor::Purple,
-    PaletteColor::Fuchsia,
-    PaletteColor::Pink,
-    PaletteColor::Rose,
-];
 
 /// Which way the board a part opens lies from the board it is drawn on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -598,4 +578,16 @@ pub struct PaintRequest {
     /// Each icon's path data, by its export name: every icon the picture's
     /// appearances name that the host has.
     pub icons: BTreeMap<String, Vec<String>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PaletteColor;
+
+    #[test]
+    fn names_a_palette_colour_as_the_contract_spells_it() {
+        assert_eq!(PaletteColor::named("fuchsia"), Some(PaletteColor::Fuchsia));
+        assert_eq!(PaletteColor::named("neutral"), None);
+        assert_eq!(PaletteColor::named("Rose"), None);
+    }
 }
