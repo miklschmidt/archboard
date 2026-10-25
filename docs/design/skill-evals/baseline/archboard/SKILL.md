@@ -87,7 +87,7 @@ value, and rendered line count is not a validation limit. Put longer detail in
   final message, naming the question; that report is how the skill gets the
   answer added.
 - **Claims.** For work of several writes, `archboard claim --board <board>
---reason "<campaign>"` first and `archboard release --board <board>` after. A
+  --reason "<campaign>"` first and `archboard release --board <board>` after. A
   person can take the claim back: your next write is then refused once, nothing
   is rolled back, and you stop and say so.
 

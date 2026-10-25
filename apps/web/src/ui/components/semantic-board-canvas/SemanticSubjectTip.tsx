@@ -32,16 +32,19 @@ import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts"
  * @param props.target The part whose tip is open, or null.
  * @param props.reading What the board says about the variant the picture draws, or null.
  * @param props.far Whether the picture is seen from far away, where a card says only the start of its responsibility.
+ * @param props.overview Whether the picture is the overview, whose joined lines are subjects of their own.
  * @returns The tip, or nothing when there is nothing to add.
  */
 function SemanticSubjectTip(props: {
 	readonly target: TipTarget | null;
 	readonly reading: VariantReading | null;
 	readonly far: boolean;
+	readonly overview: boolean;
 }): JSX.Element | null {
 	const { target } = props;
 	const levels = useQuery(vaultCheckQuery(usePaneVault())).data?.policy.levels;
-	const tip = target === null ? null : tipOver(target, props.reading, props.far, levels);
+	const tip =
+		target === null ? null : tipOver(target, props.reading, props.far, levels, props.overview);
 	const anchor = useTipAnchor(target);
 	if (tip === null || anchor === null) {
 		return null;
@@ -106,6 +109,7 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
  * @param reading What the board says about the variant the picture draws, or null.
  * @param far Whether the picture is seen from far away.
  * @param levels The vault's levels, coarsest first, which place the board a part opens.
+ * @param overview Whether the picture is the overview.
  * @returns The tip, or null when there is nothing to add.
  */
 function tipOver(
@@ -113,11 +117,12 @@ function tipOver(
 	reading: VariantReading | null,
 	far: boolean,
 	levels: readonly string[] | undefined,
+	overview: boolean,
 ): SubjectTip | null {
 	const variant = reading?.variant ?? null;
 	return variant === null
 		? null
-		: subjectTip(variant, target, far, { here: reading?.level, levels });
+		: subjectTip(variant, target, far, { here: reading?.level, levels }, overview);
 }
 
 /**

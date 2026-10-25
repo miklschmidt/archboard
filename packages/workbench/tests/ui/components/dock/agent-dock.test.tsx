@@ -197,6 +197,24 @@ function animationsWhenVoiceStarts(reducedMotion: boolean): number {
 	});
 }
 
+/**
+ * Move the voice to the box and back, in a dock that has the voice at its head.
+ * @param reducedMotion Whether the person asked for no motion.
+ * @returns How many animations were played.
+ */
+const moved = (reducedMotion: boolean): number =>
+	animationsWhile(() => {
+		subtitlePreference.change(false);
+		const shown = render(dock("listening", reducedMotion, true));
+		act(() => {
+			subtitlePreference.change(true);
+		});
+		act(() => {
+			subtitlePreference.change(false);
+		});
+		shown.unmount();
+	});
+
 test("the dock glides between its layouts, and cuts for a person who asked for no motion", () => {
 	expect(animationsWhenVoiceStarts(false)).toBeGreaterThan(0);
 	expect(animationsWhenVoiceStarts(true)).toBe(0);
@@ -269,23 +287,6 @@ test("turning subtitles off puts the voice back at the head of the dock, in the 
 });
 
 test("the dock glides when the voice moves into the box and back, and cuts when asked for no motion", () => {
-	/**
-	 * Move the voice to the box and back, in a dock that has the voice at its head.
-	 * @param reducedMotion Whether the person asked for no motion.
-	 * @returns How many animations were played.
-	 */
-	const moved = (reducedMotion: boolean): number =>
-		animationsWhile(() => {
-			subtitlePreference.change(false);
-			const shown = render(dock("listening", reducedMotion, true));
-			act(() => {
-				subtitlePreference.change(true);
-			});
-			act(() => {
-				subtitlePreference.change(false);
-			});
-			shown.unmount();
-		});
 	expect(moved(false)).toBeGreaterThan(0);
 	expect(moved(true)).toBe(0);
 });
