@@ -41,6 +41,7 @@ const ARCHBOARD_AGENT = Object.freeze({
 			voice: "archboard_voice",
 			coordinator: "archboard_coordinator",
 		}),
+		recordPrefix: "archboard",
 	}),
 	instructions: Object.freeze({
 		coordinator: COORDINATOR_DOMAIN_INSTRUCTIONS,

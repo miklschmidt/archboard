@@ -60,7 +60,7 @@ export interface CodexWorkbenchGenerationFixture {
 export function createCodexWorkbenchGenerationFixture(
 	events: string[],
 ): CodexWorkbenchGenerationFixture {
-	const identityLedger = createIdentityLedger();
+	const identityLedger = createIdentityLedger("codex");
 	const identity = createIdentityAuthorities(identityLedger);
 	const exitListeners = new Set<ExitListener>();
 	const requestListeners: RequestListener[] = [];

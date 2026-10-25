@@ -1,4 +1,4 @@
-// Operation identities: Archboard-server-issued mutation correlations whose token carries
+// Operation identities: server-issued mutation correlations whose token carries
 // the child epoch they were issued in, so a stale or foreign one is refused by
 // inspection rather than by lookup alone.
 
@@ -7,6 +7,7 @@ import {
 	WIRE_TOKEN_LIMIT,
 	fail,
 	requireToken,
+	prefixOf,
 	tokenOf,
 	wireValue,
 	type ChildEpoch,
@@ -37,7 +38,7 @@ function operationWireValue(epoch: ChildEpoch, nonce: unknown): OperationId {
 			"operation",
 		);
 	}
-	const value = wireValue("operation", `${tokenOf(epoch)}.h${nonce}`);
+	const value = wireValue(prefixOf(epoch), "operation", `${tokenOf(epoch)}.h${nonce}`);
 	if (new TextEncoder().encode(value).byteLength > OPERATION_ID_MAX_BYTES) {
 		return fail(
 			"invalid-shape",

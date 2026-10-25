@@ -86,15 +86,16 @@ function requireComponent<Name extends ComponentName>(
 /**
  * The ledger a generation names itself from: the kernel's when a kernel
  * outlives this child, so a restarted child rejoins the names it left, and a
- * fresh one otherwise.
+ * fresh one with the host's record prefix otherwise.
  * @param kernel The kernel this generation runs over, or null when it has none.
+ * @param recordPrefix The host's record prefix.
  * @returns The ledger.
  */
-function ledgerFor(kernel: CodexWorkbenchStableKernel | null): IdentityLedger {
-	if (kernel === null) {
-		return createIdentityLedger();
-	}
-	return kernel.identityLedger;
+function ledgerFor(
+	kernel: CodexWorkbenchStableKernel | null,
+	recordPrefix: string,
+): IdentityLedger {
+	return kernel?.identityLedger ?? createIdentityLedger(recordPrefix);
 }
 
 /**
@@ -114,7 +115,7 @@ function createProductionCodexWorkbenchFactories(
 	bindings: ProductionCodexWorkbenchBindings,
 	kernel: CodexWorkbenchStableKernel | null = null,
 	adoptedSession: CodexWorkbenchGenerationInput["adoptedSession"] = null,
-	identityLedger: IdentityLedger = ledgerFor(kernel),
+	identityLedger: IdentityLedger = ledgerFor(kernel, bindings.recordPrefix),
 	initialIdentity: IdentityAuthorities | null = null,
 ): CodexWorkbenchComponentFactories {
 	return Object.freeze({
