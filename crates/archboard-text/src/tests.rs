@@ -98,3 +98,43 @@ fn fewer_lines_are_found_at_the_narrowest_whole_width() {
     assert!(paragraph.line_count(wider - 1.0) >= paragraph.line_count(narrow));
     assert_eq!(paragraph.fewer_lines_at(1000.0), None);
 }
+
+#[test]
+fn a_character_its_face_lacks_is_drawn_from_the_first_fallback_that_has_it() {
+    let cases = [
+        (Face::SansRegular, 'α', Face::GreekRegular),
+        (Face::SansMedium, 'Ω', Face::GreekMedium),
+        (Face::SansRegular, '✗', Face::Symbols),
+        (Face::SansMedium, '■', Face::Symbols),
+        (Face::SansRegular, '─', Face::Math),
+        (Face::SansRegular, '√', Face::Math),
+        (Face::SansRegular, '⇄', Face::Math),
+        (Face::MonoRegular, '→', Face::Math),
+    ];
+    for (face, character, fallback) in cases {
+        let run = shape(face, &format!("a{character}b"));
+        let faces: Vec<Face> = run.glyphs.iter().map(|glyph| glyph.face).collect();
+        assert_eq!(faces, [face, fallback, face], "{character} in {face:?}");
+        let drawn = run.glyphs[1].id;
+        assert_ne!(drawn, 0, "{character} is drawn, not .notdef");
+        assert!(
+            !outline(fallback, drawn).is_empty(),
+            "{character} has an outline"
+        );
+        assert!(
+            run.glyphs[1].x < run.glyphs[2].x,
+            "{character} advances the pen"
+        );
+    }
+}
+
+#[test]
+fn a_character_its_face_has_stays_in_its_face() {
+    let run = shape(FACE, "a → b");
+    assert!(run.glyphs.iter().all(|glyph| glyph.face == FACE));
+}
+
+#[test]
+fn every_face_shares_one_unit() {
+    assert!(Face::ALL.iter().all(|face| face.units_per_em() == 1000));
+}

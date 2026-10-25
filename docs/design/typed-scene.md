@@ -98,7 +98,9 @@ browser does the same work.
 A text is one run as the core shaped it (TASK-520.07): the left end of its
 baseline, a face (family and weight), a size, a fill, how far its glyphs
 advance, the units per em of its face, its glyphs, and its words. Each glyph
-is an id in the face and a place in font units from the start of the run. The
+is a face, an id in that face and a place in font units from the start of the
+run. The face is the run's own, or a Noto fallback face for a character the
+run's face has no glyph for. The
 core has already resolved centring and a central baseline into the point, so
 a painter draws the glyphs where they stand and does no text layout. The words
 stay with the glyphs, so search, copy and screen readers still find them.

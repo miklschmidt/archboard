@@ -69,7 +69,9 @@ name = "archboard-text"
 version = "0.0.0"
 dependencies = [
  "harfrust",
+ "serde",
  "skrifa",
+ "ts-rs",
  "unicode-linebreak",
  "unicode-segmentation",
 ]

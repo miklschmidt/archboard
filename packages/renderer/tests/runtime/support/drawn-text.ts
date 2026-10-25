@@ -18,7 +18,7 @@ interface DrawnText {
 	readonly y: number;
 	/** Its `font-size`. */
 	readonly size: number;
-	/** The face its glyphs are drawn from, as the glyph ids name it: `s4`, `s5`, `m4` or `m5`. */
+	/** The face its first glyph is drawn from, as the glyph ids name it: `s4`, `s5`, `m4` or `m5` for its own. */
 	readonly face: string | undefined;
 	/** The weight of that face. */
 	readonly weight: number;
@@ -70,7 +70,7 @@ function textsIn(
 ): DrawnText[] {
 	const drawn: DrawnText[] = [];
 	for (const [, glyphs, tag, body] of chunk.matchAll(RUN)) {
-		const face = /href="#g([sm][45])-/.exec(glyphs ?? "")?.[1];
+		const face = /href="#g([a-z][45])-/.exec(glyphs ?? "")?.[1];
 		drawn.push({
 			subject,
 			x: Number(attr(tag ?? "", "x")) + shift.x,

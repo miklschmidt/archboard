@@ -3,18 +3,28 @@
 //! A run is shaped once per face, unhinted and at the face's own units, so a
 //! size scales it and nothing else: every size a layout tries reads the same
 //! glyphs. Each process keeps the runs it shaped, up to a bound.
+//!
+//! A character the run's face has no glyph for is set in the first of the
+//! face's fallbacks that has one (`Face::fallbacks`), and in the run's own face
+//! where none has. The run is cut where the face changes, each piece is shaped
+//! in its face, and the pieces follow one another along the baseline. A
+//! grapheme goes with its first character, so a mark stays on its letter, and
+//! a space stays in the run's own face.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use harfrust::{Buffer, ShapeOptions, ShaperFont};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::faces::Face;
 
 /// One glyph of a shaped run, in the units of its face.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Glyph {
+    /// The face the glyph is drawn from: the run's own, or a fallback.
+    pub face: Face,
     /// The glyph in its face.
     pub id: u32,
     /// Where its origin stands along the run's baseline, from the run's start.
@@ -72,8 +82,71 @@ pub fn shape(face: Face, words: &str) -> Rc<Shaped> {
     shaped
 }
 
-/// Some words shaped in a face, with `harfrust`'s own choice of script and direction.
+/// Some words shaped in a face, each piece in the face that has its glyphs.
 fn shape_now(face: Face, words: &str) -> Shaped {
+    let pieces = pieces(face, words);
+    if let [(only, _)] = pieces.as_slice() {
+        return shape_piece(*only, words);
+    }
+    let mut shaped = Shaped {
+        glyphs: Vec::new(),
+        advance: 0,
+        clusters: Vec::new(),
+    };
+    let mut ends = pieces.iter().map(|&(_, start)| start).skip(1);
+    for &(piece_face, start) in &pieces {
+        let end = ends.next().unwrap_or(words.len());
+        let piece = shape_piece(piece_face, &words[start..end]);
+        shaped.glyphs.extend(piece.glyphs.iter().map(|glyph| Glyph {
+            x: units(i64::from(glyph.x) + shaped.advance),
+            ..*glyph
+        }));
+        shaped.clusters.extend(
+            piece
+                .clusters
+                .iter()
+                .map(|&(cluster, advance)| (cluster + start, advance)),
+        );
+        shaped.advance += piece.advance;
+    }
+    shaped
+}
+
+/// Where the face a run's characters are set in changes: each piece's face
+/// and the byte it starts at. Words with no characters are one piece.
+fn pieces(face: Face, words: &str) -> Vec<(Face, usize)> {
+    let mut pieces: Vec<(Face, usize)> = Vec::new();
+    for (at, grapheme) in words.grapheme_indices(true) {
+        let set_in = grapheme
+            .chars()
+            .next()
+            .map_or(face, |first| face_for(face, first));
+        if pieces.last().is_none_or(|&(last, _)| last != set_in) {
+            pieces.push((set_in, at));
+        }
+    }
+    if pieces.is_empty() {
+        pieces.push((face, 0));
+    }
+    pieces
+}
+
+/// The face a character is set in: the run's face where it has a glyph for
+/// it, or a space, else its first fallback that has one, else the run's face.
+fn face_for(face: Face, character: char) -> Face {
+    if character.is_whitespace() || face.covers(character) {
+        return face;
+    }
+    face.fallbacks()
+        .iter()
+        .copied()
+        .find(|fallback| fallback.covers(character))
+        .unwrap_or(face)
+}
+
+/// Some words shaped in one face, with `harfrust`'s own choice of script and
+/// direction.
+fn shape_piece(face: Face, words: &str) -> Shaped {
     let font = ShaperFont::new(face.font());
     let mut buffer = Buffer::new();
     buffer.push_str(words);
@@ -92,6 +165,7 @@ fn shape_now(face: Face, words: &str) -> Shaped {
     let mut clusters = Vec::with_capacity(buffer.len());
     for (info, position) in buffer.glyph_infos().iter().zip(buffer.glyph_positions()) {
         glyphs.push(Glyph {
+            face,
             id: info.glyph_id,
             x: units(pen + i64::from(position.x_offset)),
             y: -position.y_offset,
