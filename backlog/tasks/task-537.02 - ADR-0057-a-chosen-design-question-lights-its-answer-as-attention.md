@@ -1,0 +1,28 @@
+---
+id: TASK-537.02
+title: 'ADR 0057: a chosen design question lights its answer as attention'
+status: To Do
+assignee: []
+created_date: '2026-10-25T17:03:00Z'
+labels:
+  - design-questions
+dependencies: []
+parent_task_id: TASK-537
+type: docs
+ordinal: 929000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+ADR 0045 says that the pane inspector is the one place where a reading shows. ADR 0044 says that a pass-through entry point has no mark of its own in the picture. The owner decided on 2026-10-25 that a chosen design question lights its answer, as Trace does. That decision narrows both clauses, so it needs an ADR.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 ADR 0057 states that a chosen design question leaves its answer lit and recedes the rest, and that this is attention, not a mark or a colour
+- [ ] #2 It amends the clause of ADR 0045 that the inspector is the one place a reading shows, and the pass-through clause of ADR 0044, and the head of each amended ADR points to it
+- [ ] #3 It keeps these rules: history sets no traffic, colour or mark, history never runs on a timer, a pane never starts a code pass, and no question gives a score, a combined number or a verdict
+- [ ] #4 CONTEXT.md defines Design question, and its Light entry says that a chosen design question can take the place of a pick
+- [ ] #5 The owner accepts the ADR
+<!-- AC:END -->
