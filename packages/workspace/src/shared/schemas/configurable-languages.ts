@@ -7,7 +7,7 @@
  * C, C++ and Objective-C, which one clangd reads. TypeScript is not here: its
  * server needs no configuration.
  */
-const CONFIGURABLE_LANGUAGES = ["python", "csharp", "swift", "c"] as const;
+const CONFIGURABLE_LANGUAGES = ["python", "csharp", "swift", "c", "rust"] as const;
 
 /** A language whose server an agent configures. */
 type ConfigurableLanguage = (typeof CONFIGURABLE_LANGUAGES)[number];
