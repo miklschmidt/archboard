@@ -570,9 +570,13 @@ The package sits at layer 6 and reads only its Codex, process, workspace, diagno
 It imports no Archboard board, vault, walkthrough, pane, or server-lifecycle module.
 
 Its public entries separate browser code from Bun code.
-`./contract` holds shared snapshots, gateway messages, commands, and their identity-bound schemas.
-`./realtime` holds the realtime server contract, transcript events, state transitions, and delivery outcomes.
-`./browser` holds the browser transport, media owner, WebRTC session, and output meter.
+`./browser` holds `createVoiceClient`, the one client a host page uses, and its state and option types.
+`./react` holds `VoiceClientProvider`, `useVoiceClient` and `useVoiceState` over that client, and no styled components.
+`./controllers` serves a host that owns its sockets, as Archboard does for each pane.
+It holds the transport and media owners, `createConversationControllers` for one pane, and the timeline projection.
+`./contract` holds only the snapshot types a conversation UI renders.
+`./schemas` holds the browser model's schemas and the dynamic approval wire rules, for a host server and its tests.
+`./realtime` holds the realtime contract, transcript events, and state transitions.
 `./runtime` and `./server` run only in Bun.
 All four areas adopt the `api/` role.
 
@@ -600,7 +604,10 @@ Application context and agent speech grant no user authority.
 `ui/clients/media/` binds that transport to the WebRTC session and its audio elements.
 `ui/clients/realtime/` owns microphone capture, negotiation, playback, and cleanup.
 `ui/clients/output-level/` measures playback volume.
-The application owns opening and closing its socket.
+`ui/clients/voice-client/` opens the socket with the pane id and the tab session id from `sessionStorage`, attaches the transport and media owner, and publishes one frozen state.
+An uncertain delivery stays in that state as a failure, and nothing retries it.
+A host that owns its socket attaches the transport itself.
+`ui/state/` holds the thread-link, composer, queue, approval, and timeline controllers, with their rules in `ui/rules/`.
 
 Tests move with their behavior into `packages/codex-realtime-voice/tests/`.
 They retain the matching `shared/`, `runtime/`, `server/`, and `ui/` owners.
@@ -624,9 +631,10 @@ The Codex SDK supplies none of those application values by default.
 Pane registration, board request context, semantic projections, and narration remain integration concerns.
 `apps/server` owns HTTP routes, sockets, and application lifetime.
 
-`./controllers`, `./agent`, and `./voice` expose the Archboard browser shell.
-Conversation, composer, approval cards, sign-in, queue, voice controls, orb, and subtitles remain here.
-The shell imports shared transport and media factories directly from `codex-realtime-voice`.
+`./agent` and `./voice` expose the Archboard browser shell.
+The dock, the conversation panel, approval cards, sign-in, voice controls, orb, and subtitles remain here.
+The shell reads the conversation controllers, transport, and media owners from `codex-realtime-voice/controllers`.
+`ui/state/surfaces/voice-parts.ts` derives the parts of those owners that the surfaces name.
 The voice-session adapter adds Archboard presentation and narration to shared media state.
 
 The UI uses the role folders in [frontend.md](frontend.md).
@@ -814,13 +822,13 @@ applies safe Oxlint fixes and formats the repository.
 The server admits one checkout and keeps private state in the supplied directory.
 It reads only public SDK and codex-realtime-voice entries.
 Its server forwards exact socket identities through the shared factory browser ingress.
-Its browser uses the shared transport and media owner.
+Its browser uses `createVoiceClient` and the `./react` hooks, as an outside developer would.
 The two stop controls keep voice and workhorse lifetimes separate.
 
 `src/server.ts` and `src/main.tsx` are thin process and browser entries.
 `src/shared/protocol/application.ts` owns the configuration response and socket path.
 `src/server/` owns HTTP, socket registration, startup, and cleanup.
-`src/ui/` owns the page, action presentation, and its connection client.
+`src/ui/` owns the page and action presentation. It holds no client of its own.
 `scripts/build-workbench-example.ts` generates the three browser assets under ignored `dist/workbench-example`.
 The normal gate builds those assets before it runs product tests.
 
