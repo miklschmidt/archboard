@@ -592,10 +592,10 @@ impl Track<'_> {
                 self.net_mut(net).track = track;
             }
         }
-        if tracks.is_empty() {
-            0
-        } else {
-            max(tracks.iter().map(|&(_, track)| track as f64)) as usize + 1
-        }
+        tracks
+            .iter()
+            .map(|&(_, track)| track + 1)
+            .max()
+            .unwrap_or(0)
     }
 }

@@ -33,6 +33,11 @@ const SPREAD_Y: f64 = 0.75;
 /// How strong the shadow of a box is at a place along its fall.
 fn falloff_at(position: f64) -> f64 {
     let scaled = js::js_min(js::js_max(position, 0.0), 1.0) * (FALLOFF.len() - 1) as f64;
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a whole index from 0 to the falloff's last step, as the clamps make it"
+    )]
     let low = js::js_min(scaled.floor(), (FALLOFF.len() - 2) as f64) as usize;
     FALLOFF[low] + (FALLOFF[low + 1] - FALLOFF[low]) * (scaled - low as f64)
 }

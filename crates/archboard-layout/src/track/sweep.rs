@@ -23,20 +23,24 @@ pub(crate) type Span = (f64, f64);
 #[derive(Clone, Debug)]
 pub(crate) struct Step {
     pub cost: Vec<f64>,
-    pub came: Vec<i32>,
+    pub came: Vec<usize>,
 }
+
+// In from_left and from_right, `at` is read only once `best` is finite, and
+// it is then the column `best` came from: before that, every cost is infinite
+// and no column takes it.
 
 /// Let each column be reached from any column at least a whole step to its left.
 fn from_left(above: &[f64], warped: &[f64], xs: &[f64], step: &mut Step) {
     let mut best = f64::INFINITY;
-    let mut at = -1;
+    let mut at = 0;
     let mut next = 0;
     for j in 0..xs.len() {
         while next < xs.len() && xs[next] <= xs[j] - MIN_STEP {
             let from = above[next] - warped[next];
             if from < best {
                 best = from;
-                at = next as i32;
+                at = next;
             }
             next += 1;
         }
@@ -51,16 +55,18 @@ fn from_left(above: &[f64], warped: &[f64], xs: &[f64], step: &mut Step) {
 /// Let each column be reached from any column at least a whole step to its right.
 fn from_right(above: &[f64], warped: &[f64], xs: &[f64], step: &mut Step) {
     let mut best = f64::INFINITY;
-    let mut at = -1;
-    let mut next = xs.len() as isize - 1;
+    let mut at = 0;
+    // One past the next column to try, so the search stops at zero.
+    let mut past = xs.len();
     for j in (0..xs.len()).rev() {
-        while next >= 0 && xs[next as usize] >= xs[j] + MIN_STEP {
-            let from = above[next as usize] + warped[next as usize];
+        while past > 0 && xs[past - 1] >= xs[j] + MIN_STEP {
+            let next = past - 1;
+            let from = above[next] + warped[next];
             if from < best {
                 best = from;
-                at = next as i32;
+                at = next;
             }
-            next -= 1;
+            past = next;
         }
         let cost = best - warped[j] + JOG;
         if cost < step.cost[j] {
@@ -75,7 +81,7 @@ fn from_right(above: &[f64], warped: &[f64], xs: &[f64], step: &mut Step) {
 pub(crate) fn descend(above: &[f64], warped: &[f64], xs: &[f64]) -> Step {
     let mut step = Step {
         cost: above.to_vec(),
-        came: (0..above.len() as i32).collect(),
+        came: (0..above.len()).collect(),
     };
     from_left(above, warped, xs, &mut step);
     from_right(above, warped, xs, &mut step);
@@ -83,11 +89,10 @@ pub(crate) fn descend(above: &[f64], warped: &[f64], xs: &[f64]) -> Step {
 }
 
 /// The columns the search went down, from the one it ended on: each station's column, top to bottom.
-pub(crate) fn backtrack(steps: &[Vec<i32>], end: usize) -> Vec<usize> {
+pub(crate) fn backtrack(steps: &[Vec<usize>], end: usize) -> Vec<usize> {
     let mut chosen = vec![end];
     for came in steps.iter().rev() {
-        let first = came[chosen[0]];
-        chosen.insert(0, first as usize);
+        chosen.insert(0, came[chosen[0]]);
     }
     chosen
 }

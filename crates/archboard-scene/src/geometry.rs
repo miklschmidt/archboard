@@ -194,6 +194,11 @@ pub fn point_at(curve: &Curve, t: f64) -> Point {
     if index < 0.0 {
         return curve.from;
     }
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a whole index from 0 to below the segment count, as the lines above make it"
+    )]
     let index = index as usize;
     match curve.segments.get(index) {
         Some(segment) => {

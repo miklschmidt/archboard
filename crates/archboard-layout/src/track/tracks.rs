@@ -169,16 +169,12 @@ pub(crate) fn stack_units(units: &[Unit]) -> Vec<(usize, usize)> {
     least_crossing(units, &mut ordered);
     let mut tracks: Vec<(usize, usize)> = Vec::with_capacity(ordered.len());
     for unit in ordered {
-        let above: Vec<f64> = tracks
+        let track = tracks
             .iter()
             .filter(|&&(other, _)| overlap(&units[unit], &units[other]))
-            .map(|&(_, track)| track as f64)
-            .collect();
-        let track = if above.is_empty() {
-            0
-        } else {
-            max(above.iter().copied()) as usize + 1
-        };
+            .map(|&(_, track)| track + 1)
+            .max()
+            .unwrap_or(0);
         tracks.push((unit, track));
     }
     tracks

@@ -448,17 +448,19 @@ impl Placement {
     }
 
     /// The band of a member's card or title row, zero where the scene lacks it.
-    fn band_of(&self, id: &str) -> f64 {
-        self.member(id)
-            .map_or(0.0, |item| self.item(item).band as f64)
+    fn band_of(&self, id: &str) -> usize {
+        self.member(id).map_or(0, |item| self.item(item).band)
     }
 
     /// The last band a frame covers.
     pub(crate) fn last_band_of(&self, id: &str) -> usize {
         let frame = &self.frames[id];
-        let title = self.item(self.titles[id]).band as f64;
-        max(std::iter::once(title).chain(frame.members.iter().map(|member| self.band_of(member))))
-            as usize
+        let title = self.item(self.titles[id]).band;
+        frame
+            .members
+            .iter()
+            .map(|member| self.band_of(member))
+            .fold(title, usize::max)
     }
 
     /// Whether a station stands inside a frame: on a band the frame covers, between its walls.
@@ -539,7 +541,7 @@ impl Placement {
 
     /// The last band a region covers: its lowest member's, frames' members included.
     pub(crate) fn region_last_band(&self, region: &Region) -> usize {
-        let caption = self.item(region.caption).band as f64;
+        let caption = self.item(region.caption).band;
         let nodes = region.members.iter().flat_map(|id| {
             std::iter::once(id).chain(
                 self.frames
@@ -548,7 +550,7 @@ impl Placement {
                     .flat_map(|frame| frame.members.iter()),
             )
         });
-        max(std::iter::once(caption).chain(nodes.map(|id| self.band_of(id)))) as usize
+        nodes.map(|id| self.band_of(id)).fold(caption, usize::max)
     }
 
     /// The walls of each group region that a relaid label box on a band keeps out of.
