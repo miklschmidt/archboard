@@ -1,11 +1,11 @@
 ---
 id: TASK-529.04
 title: The server lifecycle interfaces are a few operations
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T02:16:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -32,3 +32,9 @@ Interfaces measured with /tmp/iface/count.ts: server-lifecycle 9 subpaths/75 nam
 
 Review (review/lifecycle, merged): no behavior change. Lowered the server-lifecycle and server-requests ceilings to 29 and 6, and corrected two comments that claimed stop refuses a server holding work. Open: vault bindings still name the deleted semantic-board-client.ts (board closing step).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+server-lifecycle's ./server is five operations: ensureServerRunning, stopServer, restartServer, serverStatus and connectedBrowsers (stop in stop.ts), with startup ownership reporting behind reportStartupOwnership, reportStartupEnd and recordServerPid. The board, claim and pane clients moved to apps/cli/src/cli/clients/server/, and server-requests is one requestJson(url, {method, payload, signal}). Width 75 -> 29 (server-requests 10 -> 6). Verified by type-check, lint, the CLI and server tests and the system lane.
+<!-- SECTION:FINAL_SUMMARY:END -->

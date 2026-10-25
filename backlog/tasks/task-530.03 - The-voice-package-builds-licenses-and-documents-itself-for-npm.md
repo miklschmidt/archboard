@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T04:46:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -21,10 +21,10 @@ The package exports raw TypeScript, declares no dependencies, depends on BUSL wo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pack command builds ESM and type declarations with a publishable manifest, MIT LICENSE and README
+- [x] #1 A pack command builds ESM and type declarations with a publishable manifest, MIT LICENSE and README
 - [x] #2 The bundled workspace code is MIT and carries no Archboard checkout coupling
 - [x] #3 A test installs the packed tarball into a project outside the repository and type-checks and starts it
-- [ ] #4 The README explains concepts, quickstart, configuration, security and troubleshooting
+- [x] #4 The README explains concepts, quickstart, configuration, security and troubleshooting
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -37,4 +37,6 @@ Consumer fixes on branch voice/consumer-fixes, commits 5fba76403 to 15dfda011. O
 Security review of 96ff7bc38: following every link above the state directory let a link planted in a shared ancestor (for example /tmp/app -> a directory of the user's) move the private Codex home anywhere in the user's tree, where start then accepted it. Fixed in 669ae33ee: only links that the user or root own, reached through directories no other user can change (or sticky ones such as /tmp), are followed; any other link stays in the path and the private-directory check refuses it at start. macOS /tmp and os.tmpdir() still resolve. Test: voice-agent.test.ts 'a link above the state directory in a directory other users can write is not followed'. Untested: the 'you or root own the link' rule needs a link owned by another uid, which a test cannot make without root. Follow-up: createCodexWorkbench runs mkdirSync recursive on the owner and coordinator directories before the storage check (owner/workbench.ts:112-113), so it can create empty 0700 directories where a link points; start still refuses such a path.
 
 README review (review/voice-readme): quickstart run from the packed tarball outside the repository; @types/bun is an optional type peer (b7af5a60f); Requirements name Node.js or bun run for the codex.js shebang, recordPrefix row, React ^19.2.8, start() concurrency, neutral entry rows (c77752f2f, 3d5ba38bd). Left: start() and a second start() reject with internal wording ('The production Codex workbench did not become ready', 'already installed' with no code); VoiceAgentOptions.context TSDoc says nothing beyond the conversation but the default lists the admitted checkouts.
+
+AC #1 evidence: scripts/pack-codex-realtime-voice.ts (bun run pack:voice) builds ESM and bundled declarations for every public entry, with files dist, src, LICENSE and README.md and a manifest of pinned dependencies and peers; voice-package.test.ts packs it, installs the tarball outside the repository and type-checks with skipLibCheck false. AC #4 evidence: packages/codex-realtime-voice/README.md has Requirements, Install, Quickstart, Concepts, Configuration, Security, Advanced hosting, Troubleshooting (nine cases) and License; its checked blocks are type-checked by the same test.
 <!-- SECTION:NOTES:END -->

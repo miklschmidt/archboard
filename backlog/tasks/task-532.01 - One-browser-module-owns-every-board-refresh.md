@@ -1,11 +1,11 @@
 ---
 id: TASK-532.01
 title: One browser module owns every board refresh
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:18:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -48,3 +48,9 @@ Built reads/board-refresh.ts (boardChanged, boardsChanged, listingsChanged, poli
 
 Review (review/board-refresh, 1738ffc4c): behaviour unchanged except the named fix; restored five cases the deleted tests held (own-vault listing and panes on let-go, unchanged version left alone, other-spelling listing match, refresh vs reload repositories, policy change reads no document) and showed each mutation fails a test. Boundary review with TASK-532.03 (review/web-refresh-drill, 9d0a71422): a listing now also refreshes a reading asked by a former name (the name the cached document gives); test in drill-target.test.tsx fails without it. Left: check.test.tsx still imports the private semanticBoardKeys (predates this change); no test proves drawing ahead only marks readings stale (predates this change).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+One reads module (apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts with the private board-keys.ts) owns every board refresh; callers report a changed board, a received listing, a changed policy, a reload or a reconnect. Fixed: a board let go under the server's spelling, and a listing that showed a new version, did not read again a reading asked by another spelling or a former name (the review and boundary review added the listing case). Verified by board-refresh.test.ts and drill-target.test.tsx on a real QueryClient, with each targeted mutation failing a test, and the web suite. Left: check.test.tsx imports the private keys; no test proves drawing ahead only marks readings stale.
+<!-- SECTION:FINAL_SUMMARY:END -->

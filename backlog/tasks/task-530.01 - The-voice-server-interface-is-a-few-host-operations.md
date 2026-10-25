@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T04:41:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -22,7 +22,7 @@ Archboard imports about 107 internal names (epoch stores, wait graphs, thread-li
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The server, runtime and shared entries expose only host-facing operations, options and types
-- [ ] #2 Identity strings on the wire and in prompts are host options with neutral defaults, and Archboard passes its existing values
+- [x] #2 Identity strings on the wire and in prompts are host options with neutral defaults, and Archboard passes its existing values
 - [x] #3 The browser socket wiring the example hand-writes is a package operation
 - [x] #4 The callers use only the package's narrowed public entries, and the package's focused tests, type-check and lint pass
 <!-- AC:END -->
@@ -37,4 +37,6 @@ Round 2: Archboard derives its epoch, thread-link, wait-graph, session, workhors
 Bun.serve support on voice/bun-serve: VoiceAgent.bunHandlers takes path, fetch, websocket, origin and checkout, and returns the fetch and websocket of Bun.serve options, spread into Bun.serve. A wrapping shape replaced the suggested nullish composition because Bun requires fetch to return undefined after an upgrade, which nullish composition cannot tell apart from another path. Requests that are no socket upgrade on the path go to the host fetch, default 404. Sockets the host upgrades itself go to the host websocket handlers, told apart by a private VoiceSocket data class. The origin defaults to the receiving server url origin, so port 0 works. After shutdown the path answers upgrades with 503 and open sockets are terminated and released; server.reload with a new result serves again. The shared admission in src/server/services/agent/admission.ts is used by attach.ts for node:http, behaviour unchanged, and by bun-serve.ts. Bun send status 0 is a failed publication; -1 and positive counts are taken frames. No new exported name. apps/workbench-example runs on Bun.serve; its malformed-upgrade probe was removed because Bun rewrites an unparseable target to the root path. docs/agents/boundaries.md still says the example calls agent.attach.
 
 Socket adapter review (review/voice-sockets): aca898867 ends a Bun socket whose frame Bun dropped over backpressureLimit (before, a dropped event left the socket open and terminal approvals unacknowledged); 97eb7cecd tests serving again after shutdown with server.reload; 650623f9e restores the attach malformed-upgrade 400 and detach tests that the example's move to Bun.serve had removed; e84533224 names both adapters in boundaries.md, the README and the TSDoc, and says when the server.url origin default needs an explicit origin (0.0.0.0, no hostname, a proxy, a unix socket: each fails closed with 403).
+
+AC #2 evidence (TASK-530.04): VoiceAgentIdentity is a host option with neutral defaults; Archboard passes its existing names, pinned by the manifest, classifier and profile digest tests; unnamed-host.test.ts proves no Archboard name with no identity. AC #1 stays open: ./runtime still exposes about 53 names, and ./schemas createCodexBrowserModel needs app-server authorities that are not exported.
 <!-- SECTION:NOTES:END -->

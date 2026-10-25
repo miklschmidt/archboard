@@ -1,11 +1,11 @@
 ---
 id: TASK-532.04
 title: The board store prepares a write and commits exactly the prepared candidate
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:19:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -51,3 +51,9 @@ Evidence: packages/board/tests/runtime/operations/write/prepare.test.ts (4 tests
 
 Review (review/prepared-write, 276a19f3c, 1d11bb4b6): behaviour kept. Restored the HTTP commit-stage 409 race test that the deleted race test held (fails when the 409 mapping drops BOARD_VERSION_CONFLICT); added a pending-schema-migration case to prepare.test.ts (prepare writes nothing, commit writes exactly the prepared board); corrected two candidate.ts comments. A correction preview no longer saves a pending migration to disk, which is an improvement.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+packages/board offers prepareSemanticBoardWrite (apply, accept and address under the store's rules, no lease) with a commit that writes exactly the prepared candidate under the lease and refuses when the version or policy moved, plus acceptedTransition for in-memory callers. The correction route and laying.ts no longer assemble the write; acceptedBoard and correctHistoricalTransition are private; board width stays 188. Every correction status and code is unchanged, and a preview no longer saves a pending schema migration. Verified by prepare.test.ts (ids kept, version and policy refusals, pending migration), the restored HTTP race test and the board, server and skills suites.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T04:46:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -39,4 +39,6 @@ Automatic reconnect added on request of the owner (commit e9af773a3): after a lo
 Browser and example review (review/voice-browser-example): a7df3fab6 fixes two reconnect bugs from e9af773a3: an automatic attempt no longer clears the page's failure (an uncertain delivery cut off by the lost socket stayed visible for only about 3 s before), and the loop stops for good on incompatible_contract instead of reopening a socket every 3 s; tests fail against the old client. 403 and 400 refusals stay retried, because the browser's WebSocket cannot tell them from a server that is down; the loop starts only after a socket was accepted. fe045462a restores Cache-Control: no-store on the example's asset 500 lost in the move to Bun.serve.
 
 Seam review (review/voice-socket-client): a socket the server closes with 1011 before its first snapshot now fails connect with the server's close reason (0832c1b2b, 01c7f73f3); tests/system/server-state/voice-client-socket.test.ts covers that and the reconnect after shutdown, start and server.reload. Merged with the browser review's rule (32a9c0560): an automatic attempt that opens clears only the failure of a connect that did not open. Open: two page views with the same tab session and pane replace each other and each is stale until its next request (Duplicate tab copies sessionStorage); a paneId outside ^[a-zA-Z0-9_-]{1,128}$ fails with advice that cannot help.
+
+AC #3 stays open: the example uses createVoiceClient and the React hooks, but Archboard's UI still uses ./controllers.
 <!-- SECTION:NOTES:END -->

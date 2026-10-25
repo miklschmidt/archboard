@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T05:38:00Z'
+updated_date: '2026-10-25T05:47:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -22,8 +22,8 @@ TASK-500 moved code into packages but kept every name the old shallow callers im
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Each package exposes only operations that callers need, and callers no longer assemble its internals
-- [ ] #2 A recorded rule and a repository check keep an interface from regrowing by caller demand alone
-- [ ] #3 The renderer is out of scope because it is being rewritten
+- [x] #2 A recorded rule and a repository check keep an interface from regrowing by caller demand alone
+- [x] #3 The renderer is out of scope because it is being rewritten
 - [ ] #4 bun run check passes, except the waived renderer timing owners
 <!-- AC:END -->
 
@@ -50,4 +50,6 @@ Vault closing (branch vault/close-529-530-532, from f667552b2):
 - Code findings (no source changed): these modules expose names that no file outside them uses. All were in the base run.
   - Command routing (apps/cli/src/cli/protocol/routing) and Command contract (apps/cli/src/cli/protocol/contract).
   - The apps/web modules Voice session, Pane session, Application composition, Workspace routing, Board catalog, Walkthrough replay and Walkthrough recording.
+
+AC #2 evidence: TASK-529.08 (ADR 0057 and interface-width.test.ts with its ceilings). AC #3 evidence: git diff main HEAD -- packages/renderer is empty. AC #1 stays open with TASK-529.01 #2 (the board's transition builders are public and need deeper operations; 61 names are pinned by the renderer) and TASK-529.05 #2 (target 45 not reached; 21 names held by codex-app-server, the workbench and the renderer). AC #4 stays open: besides the waived renderer timing owners, wide-boards.test.ts fails 'Codex workhorse (blocks)' on labels off their own route, a layout failure, not a timing one, and the renderer is out of scope.
 <!-- SECTION:NOTES:END -->

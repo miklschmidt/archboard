@@ -1,11 +1,11 @@
 ---
 id: TASK-529.06
 title: The code binding, intelligence and opener interfaces are a few operations
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T02:03:00Z'
+updated_date: '2026-10-25T05:44:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-529
@@ -34,3 +34,9 @@ Deepened code-binding, code-intel and code-opener from 99 exported names (45 + 4
 - code-binding: loses ./opening (26 names) and githubUrlForBinding; the resolver names its own failure codes. Dead presentationTargetForBinding and buildInternalCodeTargetUrl deleted.
 Behavior unchanged: code-intel tests, the server code-check, footprint and locality route tests, the CLI check and history tests, and tests/system/code-targets pass. The code-target system tests failed once under machine load (422 and timeouts) and passed 23/23 when rerun.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check is createCodeCheck().run(request); symbolLine moved into code-intel; the open contract moved into code-opener ./opening with openInEditor. code-binding 45 -> 18, code-intel 41 -> 16, code-opener 13. Verified by type-check, lint, the code-intel, code-binding, code-opener and server tests and the code-targets system tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
