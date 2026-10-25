@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 65,
+	"version": 66,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-25T04:10:12.344Z",
+	"updatedAt": "2026-10-25T11:37:39.080Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -108,8 +108,7 @@
 					"skrvk25Y",
 					"JwgvpLYJ",
 					"ZRFUJrjD",
-					"KdNM1Q56",
-					"LCcblgyC"
+					"KdNM1Q56"
 				],
 				"edges": [],
 				"flows": []
