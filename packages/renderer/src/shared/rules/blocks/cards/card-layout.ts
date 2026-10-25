@@ -18,9 +18,7 @@ import type { Band, Insets, Laid } from "#shared/rules/blocks/tree/laid.ts";
 import {
 	PORT,
 	cornerHeader,
-	holdResizedChildren,
 	leavesOf,
-	letPortsSlide,
 	markRegions,
 	pinnedLeaf,
 	rimOf,
@@ -49,7 +47,6 @@ import { fitSides } from "#shared/rules/track/routes/sides.ts";
 import { Clusters, isTitle, titleOf } from "#shared/rules/blocks/cards/clusters.ts";
 import { frameShape } from "#shared/rules/blocks/tree/lone.ts";
 import { takenIndex, type TakenHeader } from "#shared/rules/blocks/cards/headers.ts";
-import { entryRowEdges } from "#shared/rules/blocks/cards/entry-row.ts";
 import { leavingPull } from "#shared/rules/blocks/cards/leaving.ts";
 import { gridEdges, wrapEdges } from "#shared/rules/track/channels/grid.ts";
 import { anchored, lapsOf } from "#shared/rules/track/scene/score.ts";
@@ -249,7 +246,6 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
-		graph.edges.push(...entryRowEdges(this));
 		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 		holdSinks(this.block, this.graph);
@@ -403,14 +399,6 @@ class CardLayout {
 	}
 
 	/**
-	 * Whether the block's sides are the page's: the board, drawn inline.
-	 * @returns True when they are.
-	 */
-	edgesPage(): boolean {
-		return this.block.kind === "root" && this.tree.nesting !== "blocks";
-	}
-
-	/**
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
@@ -418,10 +406,7 @@ class CardLayout {
 	 */
 	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
 		const scene = new Scene(placed);
-		scene.edgesPage = this.edgesPage();
-		scene.inline = this.tree.nesting !== "blocks";
 		markRegions(scene, this.block, this.tree);
-		letPortsSlide(scene, this.block, this.tree.nesting);
 		const beside = besideWalls(this.block, this.tree, scene);
 		const straight = new Set(beside.map(({ key }) => key));
 		markBesides(scene, beside);
@@ -471,7 +456,6 @@ class CardLayout {
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
 			else Object.assign(leaf, settledLeaf(this.tree, this.laid, leaf.id, centres));
 		}
-		holdResizedChildren(placed.children ?? []);
 		return this.routed(placed, held);
 	}
 

@@ -48,7 +48,6 @@ function columnOf(port: Port): number {
  * @param context.tree The block tree.
  * @param context.laid Every block's layout.
  * @param context.spanOf The span where a port can stand.
- * @param context.inline Whether the track router draws the blocks together.
  */
 function separateFacingPorts(
 	block: Block,
@@ -57,10 +56,8 @@ function separateFacingPorts(
 		readonly tree: BlockTree;
 		readonly laid: ReadonlyMap<string, Laid>;
 		readonly spanOf: (inner: Block, port: string) => Span;
-		readonly inline: boolean;
 	},
 ): void {
-	if (context.inline) return;
 	const { tree, laid, spanOf } = context;
 	const ports: Port[] = [...settled].flatMap(([id, positions]) => {
 		const inner = tree.blocks.get(id)!;

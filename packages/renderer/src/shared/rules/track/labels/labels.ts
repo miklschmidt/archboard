@@ -364,10 +364,7 @@ function meetingX(station: Station, item: Item): number {
  * comes from or goes to, when it stands within a jog's width of it and can
  * move there clear of its neighbours: the line then runs straight through its
  * label instead of jogging a few points on either side of it, which a corner
- * could not turn whole. Drawn inline, the station below is tried first, so a
- * step the line must still take stands above its label, not between the
- * label and the card below, just over the arrowhead; the Blocks engine keeps
- * trying the station above first. A label whose line comes straight down
+ * could not turn whole. The station above is tried first. A label whose line comes straight down
  * from a point of a decision it is held to (`points.ts`) stays on that point:
  * a step above it would run back under the diamond.
  * @param scene The scene.
@@ -381,7 +378,7 @@ function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
 		ordered.map((net) => [net.top, net.bottom] as const),
 		ordered.map((net) => [net.bottom, net.top] as const),
 	];
-	const pairs = (scene.inline ? [...below, ...above] : [...above, ...below]).filter(
+	const pairs = [...above, ...below].filter(
 		([label, other]) => label.kind === "label" && other.kind !== "label",
 	);
 	const settled = new Set<Item>(
@@ -417,39 +414,6 @@ function nudgeLabel(scene: Scene, nets: readonly Net[], item: Item, x: number): 
 }
 
 /**
- * Slide a block's own port along the block's edge to an x, when only this net
- * runs through it, the x is on its stretch, and it keeps a lane from the
- * block's other sliding ports.
- * @param scene The scene.
- * @param nets Every net.
- * @param net The net through the port.
- * @param end Which of its ends is the port.
- * @param x The x.
- * @returns Whether it moved.
- */
-function slidePort(
-	scene: Scene,
-	nets: readonly Net[],
-	net: Net,
-	end: "top" | "bottom",
-	x: number,
-): boolean {
-	const item = net[end].item!;
-	const [low, high] = scene.slides.get(item)!;
-	const shared = nets.some(
-		(other) => other !== net && (other.top.item === item || other.bottom.item === item),
-	);
-	const crowded = [...scene.slides.keys()].some(
-		(other) => other !== item && other.band === item.band && Math.abs(centreX(other) - x) < LANE,
-	);
-	if (x < low || x > high || shared || crowded) return false;
-	item.box = { ...item.box, x: x - item.box.width / 2 };
-	if (end === "top") net.topX = x;
-	else net.bottomX = x;
-	return true;
-}
-
-/**
  * The x of every lane, by the band it passes.
  * @param scene The placed scene.
  * @param nets Every net.
@@ -465,4 +429,4 @@ function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	return lanes;
 }
 
-export { extentOf, nudgeLabel, settleLabels, slideLabels, slidePort };
+export { extentOf, nudgeLabel, settleLabels, slideLabels };
