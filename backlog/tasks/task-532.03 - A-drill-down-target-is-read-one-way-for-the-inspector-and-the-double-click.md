@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:46:00Z'
+updated_date: '2026-10-25T04:01:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,9 +24,9 @@ The double-click (use-drill-open.ts) and the inspector (use-drill-place.ts with 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One target reading has two adapters, a subscribing hook for the inspector and a promise for the double-click, both returning a ready destination or a named unresolved state
-- [ ] #2 A failed listing is treated the same way by both adapters
-- [ ] #3 use-drill-place.ts is removed; repository discovery, document reads, former-name tracking and variant selection are private to the target reading
+- [x] #1 One target reading has two adapters, a subscribing hook for the inspector and a promise for the double-click, both returning a ready destination or a named unresolved state
+- [x] #2 A failed listing is treated the same way by both adapters
+- [x] #3 use-drill-place.ts is removed; repository discovery, document reads, former-name tracking and variant selection are private to the target reading
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,3 +39,11 @@ The double-click (use-drill-open.ts) and the inspector (use-drill-place.ts with 
 5. Tests: new apps/web/tests/ui/hooks/semantic-board-canvas/drill-target.test.tsx drives both adapters over one real QueryClient with a controlled fetch: own and other repository, unregistered/unreachable, failed source listing, missing named variant, former name. The drillPlace cases leave drill-across-repositories.test.ts. Double-click and late-answer cases stay in semantic-board-levels.test.tsx.
 6. Focused checks under the heavy lock, commit by path with Refs: TASK-532.03.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built in 09b7922b7. use-drill-target.ts holds one reading (placeOf, then destinationOf/variantOf, all private) behind useDrillTarget (inspector, subscribes and follows the board's news under its current name) and useDrillTargetReader (double-click, promise that never rejects). DrillTarget: ready {board, variant, there} | reading | listing-failed | unregistered | unreachable | unreadable | no-variant | no-current.
+Decisions: a query error counts over cached data in the subscribing adapter, because fetchQuery in the promise adapter would refetch and fail; so both agree. A document fetch failure and an unparsable document are one state, unreadable (the inspector now says 'could not be read' for both). GoDeeper draws each unresolved state under data-slot semantic-drill-<kind>, which keeps the existing semantic-drill-unregistered and -unreachable slots. drill-target.ts keeps only the shared types; drillDownAsked moved into GoDeeper, its only user. The inspection test's 'could not be opened' wording check became a check of the semantic-drill-unreadable slot.
+Evidence: apps/web/tests/ui/hooks/semantic-board-canvas/drill-target.test.tsx (7 tests, both adapters over one QueryClient; the failed-listing case fails when the reading guesses a vault, checked by mutation). Double-click and late-answer cases stay in semantic-board-levels.test.tsx. Checks: type-check 0, lint 0, UI semantic-board-canvas tests 245 pass, repository-policy 153 pass.
+<!-- SECTION:NOTES:END -->
