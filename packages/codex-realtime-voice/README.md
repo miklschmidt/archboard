@@ -519,10 +519,11 @@ In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts un
 
 ### The Codex executable is not found
 
-`resolveCodexExecutable` throws `CodexExecutableError`. Code `missing` means that `@openai/codex` is not installed where the package can find it, or that `executablePath` names no file. Code `not_absolute` means that `executablePath` is a relative path or a bare name: the package never looks on `PATH`.
+`resolveCodexExecutable` throws `CodexExecutableError`. Code `missing` means that `@openai/codex` is not installed where the package can find it, or that `executablePath` names no file. Code `not_absolute` means that `executablePath` is a relative path or a bare name: the package never looks on `PATH`. Code `version_unavailable` means that the executable did not run. With the installed package, the usual cause is that no `node` is on `PATH`.
 
 1. Run `bun add @openai/codex@0.160.0` in the project that runs the server. Package managers that skip peer dependencies leave it out.
 2. If you pass `executablePath`, give an absolute path.
+3. For `version_unavailable`, start the server with `bun run <script>`, or install Node.js.
 
 ### The page asks for a sign-in
 
