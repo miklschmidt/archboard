@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:24:00Z'
-updated_date: '2026-10-25T04:46:00Z'
+updated_date: '2026-10-25T05:00:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -42,4 +42,6 @@ Left (AC 1 not met): the record prefix. WIRE_PREFIX = 'archboard' in packages/co
 Second part, branch voice/host-record-prefix (3eede5bca record prefix, 682713dd0 wording). createIdentityLedger(recordPrefix) mints the child with the host's prefix; every identity the ledger spells copies the child's prefix; parsing accepts any first segment of the shape [a-z][a-z0-9-]{0,15}, and an epoch belongs to its child only under the same prefix. The limit is 16, not 32: the longest operation id must stay within OPERATION_ID_MAX_BYTES 128 (workbench-identity.test proves it at 16). VoiceAgentIdentity.recordPrefix (default voice, Archboard archboard) reaches the ledger through ProductionCodexWorkbenchBindings.recordPrefix. createIdentityAuthorities() with no ledger uses the unnamed prefix codex (tests only). Archboard: archboard-profiles.test pins recordPrefix archboard beside its unchanged profile digests. Wording: UI copy says the server, the workbench or this page; the default decline reason is Declined at the workbench.; comments that meant this client or workbench are reworded. Remaining hits: 256 @archboard/ imports, 2 first-host comments (server.ts:19, storage.ts:125). AC1 evidence: packages/codex-realtime-voice/tests/runtime/rules/host/unnamed-host.test.ts, which fails when the default prefix is archboard. Nine voice UI tests still pin copy by exact text; their literals were updated, not rewritten. Checks: type-check 0, lint 0, pack:voice 0, named test list 2407 pass 0 fail.
 
 Review (review/voice-identity): verified role matching (every correlation carries the manifest digest), prefix copying and the Archboard pins (manifests 22124bd3/04531fce/dc259407, classifier 1873dd20, profiles, archboard: records). Added tests for the namespace collision check, foreign-prefix epochs (app-server ledger and voice epoch store) and prefix shape (53c577b3a, d674f09cb); realtime start in unnamed-host.test.ts (78d889325); structural instead of copy assertions in eight UI test files (7927d3967); README recordPrefix and productName (135265394). Left: createIdentityAuthorities() defaults to the prefix codex for tests only; GENERIC_TRANSPORT_REFUSAL is exported unused.
+
+Gate repair (f37d01c9a): test:system failed 'real process proves the exact realtime envelope' because the realtime process harness built its identity with the test-only createIdentityAuthority(), which now takes the prefix codex, while the test holds Archboard's realtime session ids to archboard:. The harness now builds its ledger with Archboard's prefix, as the server does (generation/factories.ts and generation/workbench.ts always pass the host's ledger). After the repair the test passes 4/4.
 <!-- SECTION:NOTES:END -->
