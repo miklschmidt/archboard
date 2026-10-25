@@ -1,6 +1,6 @@
 import {
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+	VOICE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
 	type CoordinatorToolName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
@@ -415,8 +415,8 @@ function fixture(
 		const manifestHash =
 			options.manifestHash ??
 			(namespace === "archboard_voice"
-				? ARCHBOARD_VOICE_MANIFEST_SHA256
-				: ARCHBOARD_WORKHORSE_MANIFEST_SHA256);
+				? VOICE_TOOLS_MANIFEST_SHA256
+				: WORKHORSE_TOOLS_MANIFEST_SHA256);
 		const threadId = options.threadId ?? coordinatorThreadId;
 		const turnId = options.turnId ?? expectedTurnId;
 		const callId =

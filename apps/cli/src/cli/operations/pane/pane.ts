@@ -5,7 +5,7 @@ import {
 	openPane,
 	showBoardInPane,
 	type ShowBoardResponse,
-} from "@archboard/server-lifecycle/server-client";
+} from "#cli/clients/server/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import {

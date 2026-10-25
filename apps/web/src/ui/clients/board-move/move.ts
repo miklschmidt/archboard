@@ -4,8 +4,12 @@
 // and writes no doing line. It states the version the preview read, so a board
 // written since is refused rather than moved as nobody saw it.
 
-import type { BoardMoveAnswer, BoardMovePreview } from "@archboard/board/commands";
-import { cancellable, inVault, json, post } from "@archboard/server-requests";
+import type { BoardMovePreview } from "@archboard/board/commands";
+import { inVault, requestJson } from "@archboard/server-requests";
+import type { BoardMoveAnswerSchema } from "@archboard/board/commands";
+import type { z } from "zod";
+
+type BoardMoveAnswer = z.infer<typeof BoardMoveAnswerSchema>;
 
 /** Which board to move, from which vault, to which vault. */
 interface MoveAsked {
@@ -25,10 +29,7 @@ interface MoveAsked {
  */
 function previewMove(asked: MoveAsked, signal?: AbortSignal): Promise<BoardMovePreview> {
 	const query = `?board=${encodeURIComponent(asked.board)}&to=${encodeURIComponent(asked.to)}`;
-	return json(
-		inVault(`/api/semantic-boards/move-preview${query}`, asked.vault),
-		cancellable(signal),
-	);
+	return requestJson(inVault(`/api/semantic-boards/move-preview${query}`, asked.vault), { signal });
 }
 
 /**
@@ -39,7 +40,10 @@ function previewMove(asked: MoveAsked, signal?: AbortSignal): Promise<BoardMoveP
  */
 function moveBoard(asked: MoveAsked, version: number): Promise<BoardMoveAnswer> {
 	const url = inVault(`/api/semantic-boards/move?expectVersion=${version}`, asked.vault);
-	return post(url, { board: asked.board, origin: "human", move: { to: asked.to } });
+	return requestJson(url, {
+		method: "POST",
+		payload: { board: asked.board, origin: "human", move: { to: asked.to } },
+	});
 }
 
 export { moveBoard, previewMove, type MoveAsked };

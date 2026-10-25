@@ -12,9 +12,11 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import type { DrillDown } from "@archboard/board/content";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { readBoard } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /** A repository a drill-down can name, as this machine lists it. */
 type RepositoryPlace = Pick<RepositoryEntry, "vault" | "state">;

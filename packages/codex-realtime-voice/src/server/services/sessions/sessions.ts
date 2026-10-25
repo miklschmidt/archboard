@@ -454,7 +454,7 @@ function createCodexWorkbenchSessions(
 				.respond(request, COORDINATOR_TOOLS_OWNER, {
 					result: refusedResponse(
 						"invalid_call",
-						"No conversation on this Archboard server started the calling thread.",
+						"No conversation on this server started the calling thread.",
 						true,
 					),
 				})

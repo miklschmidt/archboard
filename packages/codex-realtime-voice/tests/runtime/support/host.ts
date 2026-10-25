@@ -1,7 +1,7 @@
 import type {
 	CoordinatorCallbackHostPolicy,
 	CoordinatorCallback,
-	CoordinatorSemanticCallback,
+	CoordinatorHostContextCallback,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
 import { WorkbenchExecutionContextSchema } from "#runtime/rules/host/context.ts";
@@ -22,15 +22,13 @@ const TEST_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 });
 const TEST_INSTRUCTIONS: WorkbenchInstructions = Object.freeze({
 	coordinator: createWorkbenchThreadProfile({
-		serviceName: "test-host",
-		threadSource: "test-host",
+		identity: { serviceName: "test-host", threadSource: "test-host" },
 		role: "coordinator",
 		domainInstructions: "Coordinate the requested task.\n",
 		dynamicTools: [],
 	}),
 	workhorse: createWorkbenchThreadProfile({
-		serviceName: "test-host",
-		threadSource: "test-host",
+		identity: { serviceName: "test-host", threadSource: "test-host" },
 		role: "workhorse",
 		domainInstructions: "Complete the requested task.\n",
 		dynamicTools: [],
@@ -79,9 +77,9 @@ export {
 const TEST_CALLBACK_POLICY: CoordinatorCallbackHostPolicy = Object.freeze({
 	subscribe: () => () => {},
 	encode: (callback: CoordinatorCallback) => JSON.stringify(callback),
-	delivery: (callback: CoordinatorSemanticCallback) => ({
+	delivery: (callback: CoordinatorHostContextCallback) => ({
 		channel: "context" as const,
-		text: callback.semantic.brief,
+		text: callback.context.brief,
 		reason: null,
 		coordinatorContext: false,
 	}),

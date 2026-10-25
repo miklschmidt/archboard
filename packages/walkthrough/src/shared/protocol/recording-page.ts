@@ -107,6 +107,18 @@ interface RecordingPage {
 }
 
 /**
+ * Publish a page's side of the recording contract on the page, for the command that drives it.
+ * @param page What the page does.
+ * @returns Withdraws it from the page.
+ */
+function publishRecordingPage(page: RecordingPage): () => void {
+	Reflect.set(globalThis, RECORDING_PAGE_GLOBAL, page);
+	return () => {
+		Reflect.deleteProperty(globalThis, RECORDING_PAGE_GLOBAL);
+	};
+}
+
+/**
  * One search parameter's value.
  * @param params The address's search parameters.
  * @param name The parameter.
@@ -150,6 +162,7 @@ export {
 	RecordingNarrationSchema,
 	RecordingPhaseSchema,
 	RecordingStateSchema,
+	publishRecordingPage,
 	recordingAskedOf,
 	type RecordingContainer,
 	type RecordingNarration,

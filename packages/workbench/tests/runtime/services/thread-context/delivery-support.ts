@@ -1,4 +1,7 @@
-import type { WorkbenchExecutionContext } from "@archboard/codex-realtime-voice/runtime";
+import type {
+	WorkbenchExecutionContext,
+	CodexThreadLinkPort,
+} from "#runtime/protocol/voice/extension.ts";
 import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
 import {
@@ -14,7 +17,6 @@ import type {
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type {
-	CodexThreadLinkPort,
 	ExecutableThreadLink,
 	InspectOnlyThreadLink,
 	ThreadLinkBindingSnapshot,

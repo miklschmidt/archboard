@@ -10,7 +10,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -205,7 +205,7 @@ beforeAll(async () => {
 	together(["src/catalog.ts", "src/product.ts"], 5);
 	together(["src/mailer.ts", "src/templates.ts"], 5);
 	together(["src/basket.ts", "src/tax.ts"], 5);
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 	const value = board();
 	const [variant] = value.variants;
 	if (variant === undefined) throw new Error("the board has no variant");

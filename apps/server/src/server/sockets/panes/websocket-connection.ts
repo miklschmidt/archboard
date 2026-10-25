@@ -4,7 +4,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,

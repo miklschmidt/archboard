@@ -1,4 +1,4 @@
-import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { VOICE_TOOLS_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type { ApprovalSnapshot } from "#runtime/services/approvals/contract.ts";
 import type { ActiveSlot } from "#runtime/state/spoken-approval/state.ts";
 import {
@@ -104,7 +104,7 @@ function resolverContractFailure(
 		request.params.namespace === "archboard_voice",
 		request.logicalCall.tool === "resolve_spoken_approval",
 		request.params.tool === "resolve_spoken_approval",
-		request.logicalCall.manifestHash === ARCHBOARD_VOICE_MANIFEST_SHA256,
+		request.logicalCall.manifestHash === VOICE_TOOLS_MANIFEST_SHA256,
 		request.params.turnId === request.logicalCall.turnId,
 		request.params.callId === request.logicalCall.callId,
 	];

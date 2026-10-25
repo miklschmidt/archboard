@@ -3,9 +3,13 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
-import type { OpenerSelection } from "@archboard/code-binding/opening";
+import type { z } from "zod";
+import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
 import { TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import type { OpenerFixture } from "./support/opener-fixture.ts";
+
+/** An opener selection, as the settings routes answer it. */
+type OpenerSelection = z.infer<typeof OpenerSelectionReplySchema>["selection"];
 
 type LaunchCommand = { executable: string; argv: string[] };
 type ActivationTimelineEntry =

@@ -1,4 +1,4 @@
-import type { WorkbenchVoicePresentationAdapter } from "@archboard/codex-realtime-voice/server";
+import type { WorkbenchVoicePresentationAdapter } from "#runtime/protocol/voice/extension.ts";
 import { JsonValueSchema } from "@archboard/codex-realtime-voice/schemas";
 import { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 import {

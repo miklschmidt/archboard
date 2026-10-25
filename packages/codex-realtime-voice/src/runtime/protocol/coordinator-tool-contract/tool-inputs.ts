@@ -7,8 +7,8 @@ import type {
 	VoiceToolName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
-	ARCHBOARD_VOICE_TOOL_NAMES,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	VOICE_TOOL_NAMES,
+	WORKHORSE_TOOL_NAMES,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 
 /**
@@ -136,7 +136,7 @@ function parseVoiceToolInput(toolName: VoiceToolName, input: unknown): unknown {
  * @returns Whether the workhorse namespace declares the tool.
  */
 function isWorkhorseToolName(toolName: CoordinatorToolName): toolName is WorkhorseToolName {
-	return ARCHBOARD_WORKHORSE_TOOL_NAMES.some((candidate) => candidate === toolName);
+	return WORKHORSE_TOOL_NAMES.some((candidate) => candidate === toolName);
 }
 
 /**
@@ -145,7 +145,7 @@ function isWorkhorseToolName(toolName: CoordinatorToolName): toolName is Workhor
  * @returns Whether the voice namespace declares the tool.
  */
 function isVoiceToolName(toolName: CoordinatorToolName): toolName is VoiceToolName {
-	return ARCHBOARD_VOICE_TOOL_NAMES.some((candidate) => candidate === toolName);
+	return VOICE_TOOL_NAMES.some((candidate) => candidate === toolName);
 }
 
 /**

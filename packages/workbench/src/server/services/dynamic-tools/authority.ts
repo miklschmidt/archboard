@@ -1,3 +1,4 @@
+import type { CodexEpochStore, CodexThreadLinkPort } from "#runtime/protocol/voice/extension.ts";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -13,12 +14,8 @@ import {
 	type DynamicTargetAuthority,
 	type DynamicThreadAuthorityPort,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { CodexEpochStore } from "@archboard/codex-realtime-voice/runtime";
 import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
-import type {
-	CodexThreadLinkPort,
-	ThreadLinkClassification,
-} from "@archboard/codex-realtime-voice/runtime";
+import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 

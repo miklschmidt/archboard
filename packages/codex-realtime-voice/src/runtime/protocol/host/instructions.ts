@@ -1,4 +1,5 @@
 import type { SessionParams } from "@archboard/codex-app-server/session";
+import type { VoiceAgentIdentity } from "#runtime/protocol/host/identity.ts";
 
 type WorkbenchDynamicTools = NonNullable<SessionParams<"thread/start">["dynamicTools"]>;
 
@@ -9,8 +10,8 @@ interface WorkbenchRoleInstructions {
 
 /** A frozen role profile binds the exact instruction and tool bytes used by a thread. */
 interface WorkbenchThreadProfile {
-	readonly serviceName: string;
-	readonly threadSource: string;
+	/** How the host names itself to Codex on the thread. */
+	readonly identity: VoiceAgentIdentity;
 	readonly instructions: WorkbenchRoleInstructions;
 	readonly dynamicTools: WorkbenchDynamicTools;
 	readonly manifestHash: string;

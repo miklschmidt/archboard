@@ -10,7 +10,13 @@
 // picture: the picture is rendered from the talk afterwards, frame by frame.
 
 import { RECORDING_MS } from "@archboard/timing";
-import { TALK_SAMPLE_RATE, type TalkEvent, type TalkLog } from "@archboard/walkthrough/talk";
+import type { publishRecordingPage } from "@archboard/walkthrough/recording";
+import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
+
+/** The log of a finished talk, as the recording page hands it over. */
+type TalkLog = NonNullable<ReturnType<Parameters<typeof publishRecordingPage>[0]["talk"]>>;
+/** Something that happened during the talk, at a moment of it. */
+type TalkEvent = TalkLog["events"][number];
 
 /** What the audio worklet's scope has that the DOM library does not declare. */
 declare class AudioWorkletProcessor {

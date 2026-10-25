@@ -13,27 +13,22 @@ import {
 	LayoutEngineSchema,
 } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
-	type RecordingState,
 } from "@archboard/walkthrough/recording";
-import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { registeredRepositoryOfVault as repositoryOfVault } from "@archboard/workspace/checkouts";
 import {
 	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,
 	readSemanticBoardOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import {
 	TalkFileError,
-	askedTalkPlace,
+	freshTalkPlace,
 	recordWalkthrough,
-	requireFreshPlace,
-	stateTalkPlace,
-	type TalkPlace,
 } from "@archboard/walkthrough/recorder";
 import {
 	CliUsageError,
@@ -55,6 +50,12 @@ import {
 	UNNAMED_VARIANT,
 	askedVariant,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
+
+/** What the recording page says about its recording, as the recorder reports it. */
+type RecordingState = Parameters<Parameters<typeof recordWalkthrough>[0]["onProgress"]>[0];
 
 const THEMES = DiagramThemeSchema.options;
 /** A video cannot follow its viewer's theme, so it is drawn dark unless asked otherwise (TASK-483). */
@@ -147,15 +148,16 @@ function recordedRepository(vault: CommandContext["vault"]): string | null {
  * @returns The place, proven free.
  * @throws {CliUsageError} When the directory asked for exists or cannot be made.
  */
-function talkPlaceOf(asked: string | undefined, board: string): TalkPlace {
-	const place = asked === undefined ? stateTalkPlace(board, new Date()) : askedTalkPlace(asked);
+function talkPlaceOf(
+	asked: string | undefined,
+	board: string,
+): ReturnType<typeof freshTalkPlace> {
 	try {
-		requireFreshPlace(place);
+		return freshTalkPlace(asked, board, new Date());
 	} catch (error) {
 		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
 		throw error;
 	}
-	return place;
 }
 
 /**
@@ -226,7 +228,7 @@ function progressLine(state: RecordingState): string | null {
  * @throws {Error} With code DOING_REQUIRED when --discard comes without --doing.
  */
 function requireDoingForDiscard(discard: boolean): void {
-	if (discard && currentWriteDoing() === null) {
+	if (discard && statedInvocation().doing === null) {
 		throw Object.assign(
 			new Error('--discard deletes the board, which is a board write: say why with --doing "…".'),
 			{ code: "DOING_REQUIRED" },

@@ -1,9 +1,12 @@
+import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { z } from "zod";
+
+type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 // How the chrome reads a variant's lifecycle: which variants recede because
 // the board has moved past them, and the order a board's variants are listed
 // in. Shared by every place that lists a board's variants, so the navigator,
 // the header and a pane's sidebar say the same thing the same way. Pure.
 
-import type { VariantLifecycle } from "@archboard/board/document";
 
 /** What a variant must say for its place in a list. */
 interface ListedLifecycle {

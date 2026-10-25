@@ -27,23 +27,20 @@ import {
 	compareVariants,
 	type PlacedBeat,
 	type SubjectChange,
-	type VariantComparison,
 } from "@archboard/board/comparison";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import type {
 	SemanticEdge,
 	SemanticNode,
 	VariantContent,
-	SemanticWalkthrough,
 } from "@archboard/board/content";
 import type { SemanticFlow } from "@archboard/board/flow";
 import type { SemanticVariant } from "@archboard/board/document";
 import {
 	diagnosticLine,
 	VaultDiagnosticSchema,
-	type VaultDiagnostic,
 } from "@archboard/board/policy";
-import { readSemanticBoardAnswerOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { readSemanticBoardAnswerOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import {
@@ -69,6 +66,11 @@ import {
 	comparedSubject,
 	movedField,
 } from "#cli/rules/semantic/compare/compared-subject.ts";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
+
+type VariantComparison = ReturnType<typeof compareVariants>;
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 const ComparedNodeSchema = z.object({
 	...comparedSubject,

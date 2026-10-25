@@ -3,8 +3,8 @@ import {
 	assertWorkbenchInstructionBytes,
 	readWorkbenchInstructionDocument,
 } from "@archboard/codex-realtime-voice/runtime";
-import type { WorkbenchInstructions } from "@archboard/codex-realtime-voice/runtime";
-type AuthoredInstructionName = keyof WorkbenchInstructions;
+import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+type AuthoredInstructionName = keyof VoiceAgentOptions["instructions"];
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;
 	readonly coordinatorSha256: string;

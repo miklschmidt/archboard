@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import type { CodeTargetNotice, CodeTargetOpenFailure } from "#shared/schemas/code-target-open.ts";
 import type {
-	CodeTargetNotice,
-	CodeTargetOpenFailure,
 	OpenerSelection,
 	OpenerSelectionReply,
 	OpenerSettingsReply,
 	OpenerTestReply,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
 import {
 	createOpenerSettingsFlow,
 	type OpenerSettingsApi,

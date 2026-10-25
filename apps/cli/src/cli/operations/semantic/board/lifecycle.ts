@@ -20,7 +20,7 @@ import {
 	adoptSemanticBoardOnServer,
 	resolveSemanticBoardOnServer,
 	shelveSemanticBoardOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
 	boardHeldRefusal,

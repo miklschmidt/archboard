@@ -17,14 +17,16 @@
 // boards. Every pane is told every vault's list, each naming its vault,
 // because the navigator marks the boards of every repository it lists.
 
-import type { DoingEntry } from "@archboard/board/doing";
-import type { LockHolder } from "@archboard/board/lock";
 import { boardMemoryKey } from "@archboard/board/address";
-import type {
-	AgentActivity,
-	AgentActivityMessage,
-} from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/panes";
 import { CLAIM_MS } from "@archboard/timing";
+import type { boardLockState } from "@archboard/board/lock";
+import type { recentDoing } from "@archboard/board/doing";
+
+/** What one board's agent is doing, as a pane is told it. */
+type AgentActivity = AgentActivityMessage["activity"][number];
+type DoingEntry = ReturnType<typeof recentDoing>[number];
+type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
 
 interface Entry {
 	vault: string;
