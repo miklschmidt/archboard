@@ -1,10 +1,10 @@
 ---
 id: TASK-530.05
 title: The voice package names no Archboard concept
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-25T17:39:00Z'
+updated_date: '2026-10-25T19:09:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -19,11 +19,11 @@ The user found Archboard concepts left in packages/codex-realtime-voice after TA
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No source, test, README or wire name of the package uses an Archboard concept (board, vault, pane, walkthrough, narration, navigator, dock, canvas, semantic change) or cites an Archboard ADR or task
-- [ ] #2 Archboard and the workbench example keep working through the package's public entries, with their focused tests, types and lint passing
-- [ ] #3 The vault boards that bind the renamed code are updated through archboard, and archboard check --code adds no finding
-- [ ] #4 A host announces a context change through one generic package operation and names its audience: the workhorse, the voice, the coordinator, or any combination; Archboard's board changes are one adapter of it
-- [ ] #5 Every Archboard feature in the package (walkthrough presentation and narration, the navigator's repository listing, board news, vault and board wording in checkout admission and coordinator bindings, and any other found) is a generic host mechanism or leaves the package, with Archboard's behaviour as one adapter of it
+- [x] #1 No source, test, README or wire name of the package uses an Archboard concept (board, vault, pane, walkthrough, narration, navigator, dock, canvas, semantic change) or cites an Archboard ADR or task
+- [x] #2 Archboard and the workbench example keep working through the package's public entries, with their focused tests, types and lint passing
+- [x] #3 The vault boards that bind the renamed code are updated through archboard, and archboard check --code adds no finding
+- [x] #4 A host announces a context change through one generic package operation and names its audience: the workhorse, the voice, the coordinator, or any combination; Archboard's board changes are one adapter of it
+- [x] #5 Every Archboard feature in the package (walkthrough presentation and narration, the navigator's repository listing, board news, vault and board wording in checkout admission and coordinator bindings, and any other found) is a generic host mechanism or leaves the package, with Archboard's behaviour as one adapter of it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -113,4 +113,12 @@ Findings that predate the task and stay on their boards:
 cdd4a2bf8, the commit of the other agent, changes no part that these boards bind. It reaches only the path-wide parts of the Archboard board.
 
 Final `archboard check`: exit 0, `configurationValid: true`, `diagnostics: []`.
+
+Closing evidence (2026-10-25): git grep of packages/codex-realtime-voice for archboard, board, vault, pane, walkthrough, narration, navigator, dock, canvas, semantic change, ADR and TASK citations finds only the browser global navigator (browser-environment.ts) and the two unnamed-host.test.ts assertions that the words are absent. voice-package.test.ts installs the packed package outside the repository, type-checks the README's code and finds no Archboard concept in any packed file. archboard check reports no diagnostics after the adoptions, and the code check comparison has no > line. Gate at 5602f1f86: lint, types, contracts and format pass; the voice package 1142 pass, test:system 260 pass, test:repository 153 pass, test:serial-browser passes; test:modules 4973 pass and 4 fail, all Track first-layout timing cases in packages/renderer (4.3 to 9.1 s on a shared machine at high load). The user waived renderer performance gates because the renderer is being rewritten. PR #2 carries the reviewer's walkthrough, recorded on Codex realtime voice and removed again (5a47f709a).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The voice package names no Archboard concept in its sources, tests, README, wire contract or packed files. Board news became generic context announcements: agent.announce(change) tells any combination of the workhorses of named checkouts, the coordinator and the voice, and answers one receipt per tab session and audience; a malformed change is refused with a TypeError before anybody is told. Archboard's board changes, focus and selection are one adapter of it (packages/workbench/src/server/services/host/archboard-announcements.ts), and its codec keeps the bytes Codex reads unchanged. The user's names replace Archboard's words: chat and chatId, narrative, unattended, checkoutLabel and label, linkKey. The vault boards Codex realtime voice, Voice coordinator, Codex workhorse and Archboard are adopted and check clean. Open: a hand-built payload with an own __proto__ key passes the JSON check; browser-tabs.ts still says client id; Archboard's dynamic-tool authority uses paneId in two meanings.
+<!-- SECTION:FINAL_SUMMARY:END -->
