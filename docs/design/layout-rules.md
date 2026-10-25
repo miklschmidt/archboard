@@ -303,6 +303,8 @@ predecessor turns it off, since its cards are pinned where the reader last
 saw them. The general crossing invariant in `tests/crossing-rounding.test.ts`
 exposed a bridge defect on the way: a route whose end carried floating noise
 (575.0000000000001 against 575) was never a straight run and never bridged.
+The crossing tests of `crates/archboard-layout/src/routes/tests/` hold that
+invariant now.
 
 ## 8. A trunk for hubs (2026-09-15, TASK-239, not landed)
 
@@ -2913,3 +2915,43 @@ Every TypeScript rule of `shared/rules/blocks/` and `shared/rules/track/`
 is gone, about 18,000 lines. `blocks/tree/` keeps the block engine, the
 solves and the joins choice. The unit tests of the removed rules moved
 with them into the crate.
+
+## 55. The renderer package is a thin host of the core (2026-10-25, TASK-520.08)
+
+The core draws a picture in one call. The crate `crates/archboard-render`
+takes the reading to draw, the vault's policy and the render's choices, and
+answers the document, its atlas, each subject's appearance and the picture's
+key. It keeps the scene for a frontend that paints it itself. The host gives
+it the durations and theme colours in the request, and runs the layout's
+solves and gives icon paths through a port (ADR 0057). The choices between
+the solves of a board moved into the core as async Rust over the `Solver`
+port, and the crossing pass moved with them.
+
+The host still runs the solves side by side on its worker pool. When the
+core no longer needs a solve, it calls the solve off without dropping it. A
+solve that waits for a worker is refused and laid out afresh if a later
+turn needs it. A solve that a worker already lays out answers, and a later
+turn shares that answer, as TASK-464 chose. The cases of
+`join-candidates.test.ts` hold this through the host.
+
+A cargo test draws a corpus board natively to the bytes the WebAssembly
+build wrote (`crates/archboard-render/tests/native.rs`). Graphviz is a C
+library that the host runs, so the test replays the Graphviz answers that the
+WebAssembly build recorded for each solve, and checks that every solve asks
+Graphviz for the same graphs.
+
+None of the 36,360 corpus drawings differed from the drawings before the
+change. None of the 17,640 exports differed, across both engines, every
+view, with and without comparison, with each legend and without a title, and
+none of their whole replies differed. The appearances and key in each reply
+equal what the old TypeScript scan read from its document. The 2,344 current
+views, drawn one at a time in two runs that alternated the two builds, took
+as long as before: Blocks 12.5 s against 12.1 s and 11.8 s against 12.0 s,
+Track 13.4 s against 12.9 s and 12.6 s against 12.8 s, on a machine shared
+with other work.
+
+About 5,900 lines of TypeScript left `packages/renderer/src`: the diagram
+helpers, the flows, painting, measurement, the drawing and shown drawing,
+step lines, appearances, the picture key scan, the engines, the solves, the
+joins choice, the compound graph, page fit, the routes and the spacing. The
+tests of the removed rules moved into the crates.

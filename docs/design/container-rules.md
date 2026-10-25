@@ -5,7 +5,7 @@
 > Track and Blocks lay out every board now.
 
 TASK-278 replaces the ELK layout audited below. Spacing and clearance values
-are editable in [`config.ts`](../../packages/renderer/src/shared/constants/spacing.ts);
+are editable in [`constants.rs`](../../crates/archboard-layout/src/constants.rs);
 values use diagram pixels, independent of camera zoom. Rebuild the frontend,
 restart the canvas at its configured URL, and reload the viewer after editing.
 The current rules are:
