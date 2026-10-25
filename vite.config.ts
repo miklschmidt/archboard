@@ -348,6 +348,7 @@ export default defineConfig({
 				cache: browserTestCache,
 			},
 			"test:macos": {
+				dependsOn: ["core"],
 				command: [
 					"bun test --isolate --max-concurrency=1",
 					"packages/process/tests",
