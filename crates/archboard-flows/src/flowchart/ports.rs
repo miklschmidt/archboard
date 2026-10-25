@@ -8,7 +8,7 @@
 //! The answers out of a decision leave it apart: one from its left point, one
 //! from its right point and a third from its bottom point. The layout holds
 //! each answer to its point of the decision's box, which is wider than the
-//! diamond on either side (`shared/rules/track/routes/points.ts`). An answer
+//! diamond on either side (`archboard-layout`, `track/points.rs`). An answer
 //! held near the left or right edge of the box starts beside the diamond, and
 //! here it is drawn out of the point on that side: it runs out sideways and
 //! turns down where it was laid out, clear of the diamond (`from_side`).
@@ -26,7 +26,7 @@ use archboard_scene::geometry::{
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
 
-use crate::routes::reversed;
+use archboard_scene::geometry::reversed;
 
 /// The straight run a line keeps before its arrowhead.
 const APPROACH_STRAIGHT: f64 = 12.0;

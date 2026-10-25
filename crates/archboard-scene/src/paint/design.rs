@@ -1,12 +1,10 @@
-//! The sizes and faces the painter draws with. The core's sequence and
-//! flowchart layout (`archboard-flows`) reads them from here. The TypeScript
-//! layout of Track and Blocks reads the same sizes from
-//! `packages/renderer/src/shared/constants`, where each is explained; the two
-//! are one design until that layout moves into the core.
+//! The sizes, faces and icons the painter draws with. The core's sequence and
+//! flowchart layout (`archboard-flows`) and its board layout
+//! (`archboard-layout`) read them from here.
 
 use crate::drawing::{DiagramFont, FontFamily};
 
-pub use super::icons::FALLBACK_ICON;
+pub use super::icons::{FALLBACK_ICON, FLOW_ICON, OWN_ICONS};
 pub use super::sequence_messages::arrow_standoff;
 pub use super::shadow::SHADOW_REACH;
 

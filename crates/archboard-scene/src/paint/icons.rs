@@ -10,6 +10,13 @@ use crate::scene::{Colour, Group, Icon, Item, Role, Transform};
 /// The icon drawn for a name the icon set does not have.
 pub const FALLBACK_ICON: &str = "RiQuestionLine";
 
+/// The icon a flowchart's flow is drawn with.
+pub const FLOW_ICON: &str = "RiFlowChart";
+
+/// Every icon a picture can draw whatever the policy says, which every host
+/// gives the painter beside the icons the policy names.
+pub const OWN_ICONS: [&str; 2] = [FALLBACK_ICON, FLOW_ICON];
+
 /// The side of the square an icon is drawn into on its chip.
 const ICON_SIZE: f64 = 18.0;
 

@@ -15,3 +15,6 @@ archboard-scene = { path = "../archboard-scene" }
 archboard-text = { path = "../archboard-text" }
 # The deterministic software libm, as the scene's painter uses it (ADR 0057).
 libm = "0.2"
+serde = { version = "1", features = ["derive"] }
+# A picture's key is typed for the host from its Rust type (src/key.rs).
+ts-rs = "12"

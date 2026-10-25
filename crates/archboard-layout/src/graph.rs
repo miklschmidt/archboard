@@ -1,7 +1,7 @@
-//! The measured graph a solve lays out, as the host's `compoundGraph` builds
-//! it: the board's containment, every card's and container's measured size,
-//! every relationship's ends and label, and the layout options that carry the
-//! rest as text (`shared/rules/layout/compound-graph.ts`).
+//! The measured graph a solve lays out, as the core builds it
+//! (`architecture::graph`): the board's containment, every card's and
+//! container's measured size, every relationship's ends and label, and the
+//! layout options that carry the rest as text.
 
 use std::rc::Rc;
 

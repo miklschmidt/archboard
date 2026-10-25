@@ -3,38 +3,11 @@
 //! told in order: a decision holds its alternatives' steps, and a loop holds
 //! the steps it repeats (ADR 0053).
 
-use serde::de::IgnoredAny;
 use serde::{Deserialize, Deserializer};
 
-pub use archboard_scene::request::MessageKind;
-
 /// One node of the variant: the part a participant or a message box stands for.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Node {
-    /// The node's id, which a flow's participants and a message's ends name.
-    pub id: String,
-    /// Where it stands among the variant's nodes, as the author ordered them.
-    #[serde(default)]
-    pub order: f64,
-    /// What the part is called.
-    pub name: String,
-    /// The key of the vault policy's node kind it is.
-    pub kind: String,
-    /// What it is responsible for, when the board says.
-    #[serde(default)]
-    pub responsibility: Option<String>,
-    /// The board it opens, when it opens one; only whether it does is read.
-    #[serde(default)]
-    pub drill_down: Option<IgnoredAny>,
-}
-
-impl Node {
-    /// Whether it opens another board.
-    pub fn opens_board(&self) -> bool {
-        self.drill_down.is_some()
-    }
-}
+pub use archboard_layout::Node;
+pub use archboard_scene::request::MessageKind;
 
 /// One message: who sends it, who receives it, and what it is.
 #[derive(Clone, Debug)]
