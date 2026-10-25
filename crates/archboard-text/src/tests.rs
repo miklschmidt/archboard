@@ -100,6 +100,19 @@ fn fewer_lines_are_found_at_the_narrowest_whole_width() {
 }
 
 #[test]
+fn a_wider_line_cannot_remove_hard_breaks() {
+    for words in ["one\ntwo", "one\n", "\n", ""] {
+        let paragraph = Paragraph::new(FACE, 10.0, words);
+        assert_eq!(paragraph.fewer_lines_at(1000.0), None);
+    }
+    let paragraph = Paragraph::new(FACE, 10.0, "one two\nthree four");
+    let next = paragraph.fewer_lines_at(20.0).unwrap();
+    assert!(next > 20.0);
+    assert!(paragraph.line_count(next) < paragraph.line_count(20.0));
+    assert_eq!(paragraph.line_count(next - 1.0), paragraph.line_count(20.0));
+}
+
+#[test]
 fn a_character_its_face_lacks_is_drawn_from_the_first_fallback_that_has_it() {
     let cases = [
         (Face::SansRegular, 'α', Face::GreekRegular),
