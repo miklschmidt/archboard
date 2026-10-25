@@ -154,20 +154,6 @@ function namedItem(node: Node): { kind: Definition["kind"]; name: string } | und
 }
 
 /**
- * Whether the members of an `impl` block are open: an inherent block's
- * members by their own visibility within an open scope, and a trait's by
- * whether the file opens the type, where the file declares it.
- * @param ofTrait Whether the block implements a trait.
- * @param holder The type's spelled name.
- * @param scope Where the block is.
- * @param walk What the walk collected.
- * @returns True when they are.
- */
-function implOpen(ofTrait: boolean, holder: string, scope: Scope, walk: Walk): boolean {
-	return scope.open && (!ofTrait || (walk.types.get(holder) ?? true));
-}
-
-/**
  * The visibility and exposure of a member of an `impl` block.
  * @param member The member.
  * @param ofTrait Whether the block implements a trait, whose members are as open as the trait.
@@ -192,7 +178,7 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	if (type === undefined || body === null) return;
 	const ofTrait = node.childForFieldName("trait") !== null;
 	const holder = [...scope.prefix, type].join(".");
-	const open = implOpen(ofTrait, holder, scope, walk);
+	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {
 		const item = namedItem(member);
 		if (item === undefined) continue;
