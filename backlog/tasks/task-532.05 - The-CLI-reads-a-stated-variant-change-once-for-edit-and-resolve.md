@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T02:49:00Z'
+updated_date: '2026-10-25T04:19:00Z'
 labels: []
 dependencies: []
 references:
@@ -36,4 +36,6 @@ Add readVariantChange to semantic-input.ts (version admission, JSON read, object
 
 <!-- SECTION:NOTES:BEGIN -->
 readVariantChange(input, context, {command, needs}) in semantic-input.ts; edit and resolve call it after context.require. targetedVariant and failStated now private. Write-answer helpers (writeResult, describedWrite, SemanticBoardResultSchema) moved to input/write-answer.ts because semantic-input.ts hit the 600-line lint cap. Tests: apps/cli/tests/cli/operations/semantic/board/variant-change.test.ts (runCli with stand-in server), helper-only test deleted.
+
+Review (review/variant-change, 797ba3849): behaviour, order, exit codes and JSON unchanged; restored three cases of the deleted targeted-variant.test.ts that had no other owner (spacing-only difference stays silent, flag with no stated variant stays silent, a non-name stated variant is overridden with one warning); the targeted mutations now fail four tests.
 <!-- SECTION:NOTES:END -->

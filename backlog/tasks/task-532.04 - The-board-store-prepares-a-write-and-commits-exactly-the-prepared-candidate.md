@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:04:00Z'
+updated_date: '2026-10-25T04:19:00Z'
 labels: []
 dependencies: []
 references:
@@ -48,4 +48,6 @@ The historical correction route re-runs the first half of the store's write pass
 Built: packages/board write/candidate.ts holds the store's candidate checks (version, apply, relocation, policy and address admission) as checkedCandidate, run by the lease pass in write.ts and by write/prepare.ts with a lease-free as-leased read. prepareSemanticBoardWrite({vault, board, expectedVersion, transition | correct}) returns {outcome: prepared, board, location, previousVersion, descendants, commit({writer, signal})} or a SemanticWriteRejection; commit writes the prepared board at the prepared timestamp through writeSemanticBoardAt, so version and policy are admitted again under the lease and nothing is re-applied. acceptedTransition (accepted.ts) applies and admits a transition in memory for laying.ts. store-write exports these two in place of acceptedBoard and correctHistoricalTransition; board width stays 188.
 Decisions: prepare refuses a change to an existing board that finds none with BOARD_MISSING (the route answered 422 BOARD_MISSING; the store's version check alone would say BOARD_VERSION_CONFLICT). The route maps prepare refusals: BOARD_VERSION_CONFLICT 409 with its own message and version, INVALID_CONTENT as INVALID_BOARD 422, any other code 422. The server race test is removed: prepare.test.ts owns the concurrent write between prepare and commit. The evidence dependency override was not introduced; the route test keeps spyOn on the code-check namespace, so semantic-board-routes.ts is unchanged.
 Evidence: packages/board/tests/runtime/operations/write/prepare.test.ts (4 tests; a mutation that re-applies the transition at commit fails the id tests); apps/server/tests/server/routes/semantic-boards/semantic-board-correction.test.ts adds missing-board and INVALID_BOARD cases. type-check 0, lint 0, focused tests 772 pass, repository-policy 153 pass.
+
+Review (review/prepared-write, 276a19f3c, 1d11bb4b6): behaviour kept. Restored the HTTP commit-stage 409 race test that the deleted race test held (fails when the 409 mapping drops BOARD_VERSION_CONFLICT); added a pending-schema-migration case to prepare.test.ts (prepare writes nothing, commit writes exactly the prepared board); corrected two candidate.ts comments. A correction preview no longer saves a pending migration to disk, which is an improvement.
 <!-- SECTION:NOTES:END -->
