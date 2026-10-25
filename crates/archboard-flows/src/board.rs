@@ -12,11 +12,16 @@ pub use archboard_scene::request::MessageKind;
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Node {
+    /// The node's id, which a flow's participants and a message's ends name.
     pub id: String,
+    /// Where it stands among the variant's nodes, as the author ordered them.
     #[serde(default)]
     pub order: f64,
+    /// What the part is called.
     pub name: String,
+    /// The key of the vault policy's node kind it is.
     pub kind: String,
+    /// What it is responsible for, when the board says.
     #[serde(default)]
     pub responsibility: Option<String>,
     /// The board it opens, when it opens one; only whether it does is read.
@@ -34,12 +39,19 @@ impl Node {
 /// One message: who sends it, who receives it, and what it is.
 #[derive(Clone, Debug)]
 pub struct Message {
+    /// The step's id.
     pub id: String,
+    /// What the message does.
     pub kind: MessageKind,
+    /// The id of the node that sends it.
     pub from: String,
+    /// The id of the node that receives it: the sender again for a message to itself.
     pub to: String,
+    /// Its words, before a repeat is added.
     pub label: String,
+    /// A note set under the message, when it has one.
     pub note: Option<String>,
+    /// How many times it happens in one run; absent for once.
     pub repeat: Option<u32>,
 }
 
@@ -56,31 +68,42 @@ impl Message {
 /// One answer to a decision's question, and the steps that run on it.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Alternative {
+    /// The answer's words, which name its branch.
     pub label: String,
+    /// The steps that run on this answer, in order.
     pub steps: Vec<Step>,
 }
 
 /// Where a flow branches.
 #[derive(Clone, Debug)]
 pub struct Decision {
+    /// The step's id.
     pub id: String,
+    /// What the decision asks.
     pub question: String,
+    /// Its answers, in the order they are drawn.
     pub alternatives: Vec<Alternative>,
 }
 
 /// Steps that repeat while a condition holds.
 #[derive(Clone, Debug)]
 pub struct Loop {
+    /// The step's id.
     pub id: String,
+    /// The condition the steps repeat while it holds.
     pub condition: String,
+    /// The steps the loop repeats, in order.
     pub steps: Vec<Step>,
 }
 
 /// One step of a flow.
 #[derive(Clone, Debug)]
 pub enum Step {
+    /// A message between two nodes.
     Message(Message),
+    /// A branch of the flow.
     Decision(Decision),
+    /// Steps that repeat while a condition holds.
     Loop(Loop),
 }
 
@@ -169,11 +192,16 @@ impl<'de> Deserialize<'de> for Step {
 /// An ordered exchange between nodes of the variant.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Flow {
+    /// The flow's id.
     pub id: String,
+    /// What the flow is called.
     pub name: String,
+    /// A line on what the flow explains, when the board has one.
     #[serde(default)]
     pub summary: Option<String>,
+    /// The ids of the nodes whose columns the flow draws, left to right.
     pub participants: Vec<String>,
+    /// The flow's steps, in the order they happen.
     pub steps: Vec<Step>,
 }
 

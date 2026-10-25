@@ -15,6 +15,7 @@ pub type Markup = Vec<Item>;
 
 /// An attribute's value, or none to leave it out.
 pub trait IntoAttr {
+    /// The value to write, or none to leave the attribute out.
     fn into_attr(self) -> Option<Value>;
 }
 
