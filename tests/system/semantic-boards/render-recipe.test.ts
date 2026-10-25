@@ -14,8 +14,8 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // TASK-526.02): on stdout and in a file alike, naming the board, the variant
 // and the view by id, with the drawing choices and two digests. The render
 // route draws a recipe again from nothing but the recipe, to the same digests. The
-// fingerprint moves when what the picture draws moves, and a draft edit, a
-// walkthrough edit or a rename moves nothing that a render of the current
+// fingerprint moves when what the picture draws moves. An edit of another draft, a
+// walkthrough edit or a rename moves nothing that an untitled render of the current
 // variant draws. The rasterize owner holds the PNG's recipe; the renderer's
 // owner holds the file format.
 
@@ -323,7 +323,7 @@ describe("a board render's recipe", () => {
 	);
 
 	test(
-		"keeps its fingerprint through a draft edit, a walkthrough edit and a rename, and not through an edit of what it draws",
+		"keeps its fingerprint through an edit of another draft, a walkthrough edit and a rename of an untitled render, and not through an edit of what it draws",
 		() => {
 			const before = rendered(["ledger"]);
 			const draft = rendered(["ledger", "--variant", "Proposal"]).fingerprint;
