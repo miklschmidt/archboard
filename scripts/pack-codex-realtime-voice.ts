@@ -11,9 +11,8 @@ import { z } from "zod";
 const PUBLISHED_VERSION = "0.1.0";
 /** What the bundle may import at run time: its dependencies, its peers and Bun's own modules. */
 const DEPENDENCIES = ["zod", "ws"] as const;
-// The browser hooks import React. The server entry's types name an Express router, and its code
-// imports nothing from Express.
-const OPTIONAL_PEERS = ["react", "express"] as const;
+// The browser hooks import React.
+const OPTIONAL_PEERS = ["react"] as const;
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = path.join(root, "packages/codex-realtime-voice");
