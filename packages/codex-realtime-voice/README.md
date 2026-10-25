@@ -571,7 +571,7 @@ The same rejection also names a state directory that the package cannot use:
 
 ### The page stays on reconnecting
 
-`connection` reads `reconnecting` after an open socket closed, for example because the server stopped. The client opens a new socket by itself, and tries again every 3 seconds until one opens. Each attempt that does not open puts its reason in `failure`.
+`connection` reads `reconnecting` after an open socket closed, for example because the server stopped. The client opens a new socket by itself, and tries again every 3 seconds until one opens. The attempts do not change `failure`, so the failure of an action that the lost socket ended, such as an uncertain delivery, stays on the page. If the server speaks a contract that this browser cannot read, the attempts stop: `connection` reads `stopped`, and `failure` says why unless it already holds another failure. Build the page with the same package version as the server, then reload the page.
 
 1. Make sure that the server runs and that `start()` resolved.
 2. If the server logs no error, look at the attempts in the browser's network panel. A `403` or `400` answer has the causes in [The socket is refused](#the-socket-is-refused).
