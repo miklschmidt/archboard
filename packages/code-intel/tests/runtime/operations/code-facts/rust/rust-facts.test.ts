@@ -231,3 +231,23 @@ test("a name written only in code that did not parse is neither found nor absent
 	expect(findSymbol(broken, "whole", "definition")).toMatchObject({ status: "found" });
 	expect(findSymbol(broken, "lost", "definition-or-reference").status).toBe("unparsed");
 });
+
+test("public methods of a private type do not become a module interface", async () => {
+	const checkout = fixtureCheckout({
+		"lib.rs": [
+			"struct Hidden;",
+			"impl Hidden { pub fn new() -> Self { Self } }",
+			"pub struct Visible;",
+			"impl Visible { pub fn new() -> Self { Self } }",
+		].join("\n"),
+	});
+	try {
+		const read = await rust("lib.rs", checkout);
+		expect(read.definitions.filter((each) => each.exposed).map((each) => each.symbol)).toEqual([
+			"Visible",
+			"Visible.new",
+		]);
+	} finally {
+		checkout.remove();
+	}
+});
