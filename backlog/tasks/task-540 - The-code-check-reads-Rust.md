@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:30:00Z'
+updated_date: '2026-10-25T19:37:00Z'
 labels: []
 dependencies: []
 ordinal: 932000
@@ -114,4 +114,14 @@ Known limits, written in authoring.md: `#[path]` is not read. Code that a macro 
 Unsettled: one run of the language-server test files answered `unasked` for the real rust-analyzer test, before an assertion change. Reruns of 4 and 10 times did not show it again. The test now reports why no answer came.
 
 Gate (2026-10-25, inside `nix develop`): `bun run check` passed every lint, format, types, frontend and core lane. test:modules gave 4826 pass, 1 skip and 2 fail. The 2 failures are packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts on the boards Renderer layout (EGgs1DlZ label off its route) and Semantic renderer (aN2ABUiR along a wall), track layout. This branch changes no file under packages/renderer, crates, apps/web, packages/board or .archboard since 93762b22d, and the file fails the same way alone. So the failure comes with the boards of the base. The later lanes ran one at a time: test:system 257 pass, test:repository 144 pass, test:serial-browser 3 pass.
+
+2026-10-25, board work (archboard-dev method):
+
+- Proposal `Archboard server@TASK-540` (variant TCqOCT3k), branched from TASK-498 at version 284. It changes two descriptions and nothing else (`semantic compare`: 2 nodes changed, no relationship, step or interface change):
+  - Fact analysis names its adapters from adapters.ts, Rust and Cargo.toml among them, and how a Rust crate's module tree, use paths (crate, self, super, Cargo.toml path and workspace dependencies) and lib.rs exposure are read.
+  - Language servers names the Rust project (the Cargo workspace or package that holds the file, cargo-workspace.ts), rust-analyzer's row (each file opened, asked once its cache priming has ended), and the unready Rust file no Cargo.toml holds. Its existing sentence already says that every language but TypeScript runs only the server set with `repo language-server`.
+- Code check: `check --code` and `check --code --variant TASK-540` gave the same 84 finding lines (with rust-analyzer configured for this checkout), so the proposal adds and clears none.
+- Footprint against base d20f481ba (the commit before 769a9207b): namedAndChanged Fact analysis (22e97e155, 68a410e94); changedNotNamed none; namedNotChanged Language servers. Its binding is the session (services/language-servers/session.ts), which owns the responsibility; the rust row is in operations/language-servers/languages.ts and cargo-workspace.ts (61741dc6c), which the session reads and the description names. The binding stays on the owner.
+- Adopted at version 289 with the board's scope as summary. `archboard check` is clean.
+- Behind after adoption: Archboard (Workspace packages, workspace, code-intel) and Command interface (Vault check, Commands) read behind on 61741dc6c and 80dfedadd. Those commits add `rust` to CONFIGURABLE_LANGUAGES and to the help of `repo language-server` and `check`; no part, relationship or responsibility on either board changes, so both boards stay right.
 <!-- SECTION:NOTES:END -->
