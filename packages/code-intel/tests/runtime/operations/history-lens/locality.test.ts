@@ -173,7 +173,7 @@ const built = board(1);
  */
 async function hotspots(since?: Date, variant = "v1"): Promise<LocalityAnswer> {
 	return LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, built, variantOf(built, variant), since),
+		await lens.createVariantLocality().read(scratch, built, variantOf(built, variant), since),
 	);
 }
 
@@ -353,7 +353,7 @@ test("a board with no part in a registered repository answers an empty ranking, 
 		],
 	});
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, lonely, variantOf(lonely, "v1"), undefined),
+		await lens.createVariantLocality().read(scratch, lonely, variantOf(lonely, "v1"), undefined),
 	);
 	expect(answer.hotspots).toEqual([]);
 	expect(answer.periods).toEqual([]);
@@ -377,7 +377,7 @@ const small = (version: number): SemanticBoard =>
 	});
 
 test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
-	const reading = lens.createLocalityReading();
+	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);

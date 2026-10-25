@@ -13,6 +13,7 @@ import {
 	LocalityReplySchema,
 	PeriodStartSchema,
 	type LocalityAnswer,
+	HistoryRefusalCode,
 } from "@archboard/code-intel/history";
 import { z } from "zod";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
@@ -27,20 +28,20 @@ const LocalityInputSchema = z.object({
 });
 
 const noCurrentVariantRefusal = {
-	code: "NO_CURRENT_VARIANT",
+	code: HistoryRefusalCode.NO_CURRENT_VARIANT,
 	exit: 2,
 	stream: "stderr" as const,
 	description:
 		"The board has no current variant, so nothing it describes is built. Name a draft with --variant.",
 };
 const unknownVariantRefusal = {
-	code: "UNKNOWN_VARIANT",
+	code: HistoryRefusalCode.UNKNOWN_VARIANT,
 	exit: 2,
 	stream: "stderr" as const,
 	description: "--variant names no variant of the board.",
 };
 const notADraftRefusal = {
-	code: "NOT_A_DRAFT",
+	code: HistoryRefusalCode.NOT_A_DRAFT,
 	exit: 2,
 	stream: "stderr" as const,
 	description:

@@ -124,7 +124,7 @@ afterAll(() => {
  */
 async function read(value: ReturnType<typeof board>, proposal?: string) {
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readFootprint({
+		await lens.readVariantFootprint({
 			vault: scratch,
 			board: value,
 			against: currentVariant(value),

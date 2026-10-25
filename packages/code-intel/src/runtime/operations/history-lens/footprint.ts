@@ -36,12 +36,15 @@ import { compareVariants } from "@archboard/board/comparison";
 import { emptyContent, type SemanticNode } from "@archboard/board/content";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 
-/** What to read: the variant the commits are read against, the ref, and the proposal to set it against. */
-interface FootprintRequest {
+/**
+ * What to read, once the variants are chosen (`footprint-reading.ts`): the
+ * variant the commits are read against, the ref, and the proposal to set it
+ * against.
+ */
+interface VariantFootprintRequest {
 	/** The vault directory the board is in: its own checkout is read for its own repository. */
 	readonly vault: string;
 	readonly board: SemanticBoard;
-	/** The variant that is built, which the commits are read against. */
 	/**
 	 * The variant the proposal is read against: the board's current variant by
 	 * default. Undefined only with a proposal, which is then read against
@@ -115,7 +118,7 @@ function partsOf(
  * @returns The parts, in the same order.
  */
 async function atOwnRefs(
-	request: FootprintRequest,
+	request: VariantFootprintRequest,
 	parts: readonly SemanticNode[],
 	snapshot: CheckoutSnapshot,
 ): Promise<SemanticNode[]> {
@@ -409,7 +412,7 @@ function namedBy(
  * @param request What to read.
  * @returns The footprint.
  */
-async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer> {
+async function readVariantFootprint(request: VariantFootprintRequest): Promise<FootprintAnswer> {
 	const { vault, board, against, proposal, base, head, signal } = request;
 	const all = partsOf(against, proposal);
 	const snapshot = await snapshotCheckoutAccess({
@@ -458,4 +461,4 @@ async function readFootprint(request: FootprintRequest): Promise<FootprintAnswer
 	};
 }
 
-export { type FootprintRequest, readFootprint };
+export { type VariantFootprintRequest, readVariantFootprint };
