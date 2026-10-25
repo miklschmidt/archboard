@@ -78,7 +78,10 @@ const CODEX_SESSION_MS = durations({
 	queueRereadFloor: 1000,
 });
 
-/** The realtime voice of a coordinator: start, stop, recovery and the freshness it needs. */
+/**
+ * The voice: its realtime start, stop, recovery and the freshness it needs, and how soon the
+ * browser's voice client opens its socket again.
+ */
 const CODEX_REALTIME_MS = durations({
 	/** Realtime-readiness timeout classification. Pulls against permission-independent SDP/start readiness. */
 	start: 15_000,
@@ -88,10 +91,6 @@ const CODEX_REALTIME_MS = durations({
 	recovery: 45_000,
 	/** How long an announced context change stays fresh enough to deliver. Pulls against realtime recovery. */
 	contextFreshness: 30_000,
-});
-
-/** The browser's voice client and its socket to the workbench server. */
-const CODEX_VOICE_CLIENT_MS = durations({
 	/**
 	 * How long the voice client waits before opening its socket again after the
 	 * socket is lost, and between failed attempts after that. Pulls against the tab
@@ -99,7 +98,7 @@ const CODEX_VOICE_CLIENT_MS = durations({
 	 * ends the conversation before the client is back. It is also the beat of a
 	 * retry, so a shorter value would hammer a server that is restarting.
 	 */
-	reconnect: 3000,
+	clientReconnect: 3000,
 });
 
 /** A browser command an agent leases, and the approvals a person answers. */
@@ -114,7 +113,7 @@ const CODEX_APPROVAL_MS = durations({
 
 /**
  * How long a browser tab's conversation outlives its last browser socket. Pulls against a
- * reload plus CODEX_VOICE_CLIENT_MS.reconnect redials, which it must outlast or a reload loses the
+ * reload plus CODEX_REALTIME_MS.clientReconnect redials, which it must outlast or a reload loses the
  * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
  * end as "tab session ended" rather than expiring unanswered.
  */
@@ -125,7 +124,6 @@ export {
 	CODEX_PROCESS_MS,
 	CODEX_SESSION_MS,
 	CODEX_REALTIME_MS,
-	CODEX_VOICE_CLIENT_MS,
 	CODEX_APPROVAL_MS,
 	TAB_SESSION_GRACE_MS,
 };

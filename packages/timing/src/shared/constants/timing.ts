@@ -31,7 +31,6 @@ export {
 	CODEX_PROCESS_MS,
 	CODEX_REALTIME_MS,
 	CODEX_SESSION_MS,
-	CODEX_VOICE_CLIENT_MS,
 	TAB_SESSION_GRACE_MS,
 	codexRestartDelayMs,
 } from "#shared/constants/codex.ts";
