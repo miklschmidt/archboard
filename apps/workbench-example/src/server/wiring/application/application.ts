@@ -128,12 +128,8 @@ export async function startExample(
 	signal.addEventListener("abort", abort, { once: true });
 	try {
 		signal.throwIfAborted();
-		const status = await agent.start();
+		await agent.start();
 		signal.throwIfAborted();
-		if (!status.ready)
-			throw new Error(
-				`Codex did not become ready: ${JSON.stringify(status.failure)}. Restart the example server.`,
-			);
 		server = Bun.serve({
 			hostname: "127.0.0.1",
 			port: options.port,

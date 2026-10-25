@@ -18,10 +18,10 @@ import type {
 } from "#ui/state/approvals/transport-port.ts";
 
 const SENT_MESSAGES = {
-	delivered: "The Archboard server delivered your decision.",
-	not_delivered: "The Archboard server could not deliver your decision, so nothing was executed.",
+	delivered: "The server delivered your decision.",
+	not_delivered: "The server could not deliver your decision, so nothing was executed.",
 	outcome_unknown:
-		"The Archboard server lost the answer, so the outcome is unknown. Archboard never retries an unknown mutation.",
+		"The server lost the answer, so the outcome is unknown. The workbench never retries an unknown mutation.",
 } as const satisfies Record<DeliveryOutcome, string>;
 
 const NO_TARGET =

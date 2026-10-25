@@ -33,7 +33,7 @@ type CompletedTurn = Extract<RawNotification, { method: "turn/completed" }>["par
 /** The thread flags that mean the workhorse waits on the user. */
 const WAITING_FLAGS: ReadonlySet<string> = new Set(["waitingOnApproval", "waitingOnUserInput"]);
 
-/** What the observer reads of the Archboard server when a notification arrives. */
+/** What the observer reads of the server when a notification arrives. */
 interface WorkhorseNewsContext {
 	readonly identity: Pick<IdentityAuthority, "decoder" | "validator">;
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
@@ -137,7 +137,7 @@ function waitKey(scope: NewsScope): string {
 /**
  * Build the observer that turns the notifications of every linked workhorse thread into
  * workhorse news. A wait is reported when it begins, not on every status change while it lasts.
- * @param context - What the observer reads of the Archboard server.
+ * @param context - What the observer reads of the server.
  * @returns A function that answers each notification with news, or null.
  */
 function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNewsObserver {

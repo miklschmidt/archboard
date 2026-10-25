@@ -1,4 +1,4 @@
-// The issuance ledger and the operations over it: minting Archboard server identities,
+// The issuance ledger and the operations over it: minting server identities,
 // adopting app-server identities, checking that an identity was issued here, and
 // giving the app-server's raw value back for one that was.
 
@@ -24,6 +24,7 @@ import {
 	mintToken,
 	parseEpochValue,
 	parseValue,
+	prefixOf,
 	tokenOf,
 	wireValue,
 	type ChildEpoch,
@@ -97,7 +98,7 @@ interface AdoptedCodexResponseIdentityBatch {
 interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
 	readonly domain: Domain;
 	readonly raw: string;
-	readonly value: IdentityValue<Domain>;
+	readonly token: string;
 }
 
 /**
@@ -106,7 +107,7 @@ interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param token - The token to spell the wire value from.
- * @param raw - The value the token stands for: the app-server's own value, or for an Archboard server
+ * @param raw - The value the token stands for: the app-server's own value, or for a server
  * identity the unprefixed nonce the token was spelled from.
  * @returns The branded identity.
  */
@@ -116,7 +117,7 @@ function issue<Domain extends IdentityDomain>(
 	token: string,
 	raw: JsonRpcRequestIdWireValue,
 ): IdentityValue<Domain> {
-	const value = wireValue(domain, token);
+	const value = wireValue(prefixOf(ledger.childId), domain, token);
 	let values = ledger.issued.get(domain);
 	if (values === undefined) {
 		values = new Set<string>();
@@ -132,7 +133,7 @@ function issue<Domain extends IdentityDomain>(
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param value - The branded identity.
- * @param raw - The app-server's raw value, or the token for an Archboard server identity.
+ * @param raw - The app-server's raw value, or the token for a server identity.
  * @returns The same identity.
  */
 function issueExisting<Domain extends IdentityDomain>(
@@ -145,7 +146,7 @@ function issueExisting<Domain extends IdentityDomain>(
 }
 
 /**
- * Mints and records an Archboard-server-owned identity.
+ * Mints and records a server-owned identity.
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @returns The fresh branded identity.
@@ -254,11 +255,7 @@ function stageResponseIdentity<Domain extends ResponseAdoptionDomain>(
 	if (typeof rawValue !== "string") {
 		return fail("invalid-shape", `The server ${domain} identity must be a string.`, domain);
 	}
-	return {
-		domain,
-		raw: rawValue,
-		value: wireValue(domain, encodeRawIdentity(rawValue, domain)),
-	};
+	return { domain, raw: rawValue, token: encodeRawIdentity(rawValue, domain) };
 }
 
 /**
@@ -284,7 +281,7 @@ function commitResponseIdentities<Domain extends ResponseAdoptionDomain>(
 	ledger: IdentityLedger,
 	values: readonly StagedResponseIdentity<Domain>[],
 ): readonly IdentityValue<Domain>[] {
-	return values.map(({ domain, raw, value }) => issueExisting(ledger, domain, value, raw));
+	return values.map(({ domain, raw, token }) => issue(ledger, domain, token, raw));
 }
 
 /**
@@ -380,7 +377,8 @@ function resolve<Domain extends "thread" | "item">(
 	if (typeof rawValue !== "string") {
 		return fail("invalid-shape", `The server ${domain} identity must be a string.`, domain);
 	}
-	return parseIssued(ledger, domain, wireValue(domain, encodeRawIdentity(rawValue, domain)));
+	const value = wireValue(prefixOf(ledger.childId), domain, encodeRawIdentity(rawValue, domain));
+	return parseIssued(ledger, domain, value);
 }
 
 /**

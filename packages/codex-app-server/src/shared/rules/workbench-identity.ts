@@ -103,7 +103,7 @@ function createValidator(ledger: IdentityLedger): IdentityValidator {
 }
 
 /**
- * Builds the issuer: the Archboard-server-owned identities this session may mint.
+ * Builds the issuer: the server-owned identities this session may mint.
  * @param ledger - The ledger the issuer records into.
  * @returns A frozen issuer.
  */
@@ -115,7 +115,7 @@ function createIssuer(ledger: IdentityLedger): IdentityIssuer {
 		 */
 		mintBrowserCommandId: (): BrowserCommandId => mint(ledger, "browser-command"),
 		/**
-		 * Mints a JSON-RPC request id for a request this Archboard server sends.
+		 * Mints a JSON-RPC request id for a request this server sends.
 		 * @returns The fresh id.
 		 */
 		mintJsonRpcRequestId: (): JsonRpcRequestId => mint(ledger, "json-rpc-request"),
@@ -410,12 +410,18 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 	};
 }
 
+/** The record prefix of a ledger that no host names: the authorities made without one. */
+const UNNAMED_RECORD_PREFIX = "codex";
+
 /**
  * Starts a fresh ledger with a newly minted child and epoch.
+ * @param recordPrefix - The host's record prefix, `^[a-z][a-z0-9-]{0,15}$`. The child is minted
+ * with it, and every identity the ledger spells after that copies the child's.
  * @returns An empty ledger for a new process.
+ * @throws {TypeError} When the record prefix is not of its shape.
  */
-function createIdentityLedger(): IdentityLedger {
-	const childId = mintServerValue("child");
+function createIdentityLedger(recordPrefix: string): IdentityLedger {
+	const childId = mintServerValue(recordPrefix, "child");
 	return {
 		childId,
 		epoch: mintEpochValue(childId),
@@ -425,12 +431,12 @@ function createIdentityLedger(): IdentityLedger {
 }
 
 /**
- * Builds authorities over a ledger, a fresh one by default.
+ * Builds authorities over a ledger, by default a fresh one that no host names.
  * @param ledger - The ledger to build over.
  * @returns The identity and operation authorities.
  */
 function createIdentityAuthorities(
-	ledger: IdentityLedger = createIdentityLedger(),
+	ledger: IdentityLedger = createIdentityLedger(UNNAMED_RECORD_PREFIX),
 ): IdentityAuthorities {
 	return createAuthority(ledger);
 }

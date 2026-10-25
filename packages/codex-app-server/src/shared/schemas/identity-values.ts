@@ -1,14 +1,20 @@
 // The wire vocabulary of workbench identities: which domains exist, how a
 // canonical value is spelled, how a raw server id is encoded into one, and the
-// single place a validated string is branded.
+// single place a validated string is branded. A value is
+// `<record prefix>:<domain>:<token>`. The record prefix is the host's: its
+// ledger mints the child with it, and every value spelled after that copies
+// the child's.
 
-const WIRE_PREFIX = "archboard";
+// 16 keeps the longest operation id, `<prefix>:operation:h<32>.h<32>.h<32>`, within its 128 bytes.
+const RECORD_PREFIX_LIMIT = 16;
+const RECORD_PREFIX_SOURCE = `[a-z][a-z0-9-]{0,${RECORD_PREFIX_LIMIT - 1}}`;
+const RECORD_PREFIX_PATTERN = new RegExp(`^${RECORD_PREFIX_SOURCE}$`, "u");
 const WIRE_TOKEN_LIMIT = 8193;
 const RAW_ID_LIMIT_BYTES = 4096;
-const CANONICAL_ITEM_ID_MAX_LENGTH = `${WIRE_PREFIX}:item:`.length + WIRE_TOKEN_LIMIT;
+const CANONICAL_ITEM_ID_MAX_LENGTH = RECORD_PREFIX_LIMIT + ":item:".length + WIRE_TOKEN_LIMIT;
 const TOKEN_PATTERN = new RegExp(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}}$`, "u");
 const WIRE_PATTERN = new RegExp(
-	`^${WIRE_PREFIX}:([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
+	`^(${RECORD_PREFIX_SOURCE}):([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
 	"u",
 );
 const EPOCH_TOKEN_PATTERN = new RegExp(
@@ -67,7 +73,7 @@ type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
 type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
 type RealtimeSessionId = BrandedIdentity<"realtime-session">;
 type ApprovalId = BrandedIdentity<"approval">;
-/** An Archboard-server-issued workbench mutation correlation, bound to one child epoch. */
+/** A server-issued workbench mutation correlation, bound to one child epoch. */
 type OperationId = BrandedIdentity<"operation">;
 
 type AnyIdentity =
@@ -162,18 +168,22 @@ function brand<Domain extends IdentityDomain>(value: string): IdentityValue<Doma
 }
 
 /**
- * Splits a canonical wire value into its domain and token segments.
+ * Splits a canonical wire value into its record prefix, domain and token segments.
  * @param value - The string to match.
- * @returns The two segments, or null when the string is not a wire value.
+ * @returns The three segments, or null when the string is not a wire value.
  */
-function wireSegments(value: string): { readonly domain: string; readonly token: string } | null {
+function wireSegments(
+	value: string,
+): { readonly prefix: string; readonly domain: string; readonly token: string } | null {
 	const match = WIRE_PATTERN.exec(value);
-	const domain = match?.[1];
-	const token = match?.[2];
-	if (domain === undefined || token === undefined) {
+	if (match === null) {
 		return null;
 	}
-	return { domain, token };
+	const [, prefix, domain, token] = match;
+	if (prefix === undefined || domain === undefined || token === undefined) {
+		return null;
+	}
+	return { prefix, domain, token };
 }
 
 /**
@@ -209,24 +219,39 @@ function requireToken(value: unknown, domain: IdentityDomain): string {
 }
 
 /**
- * Spells a canonical wire value from a domain and a token.
+ * Spells a canonical wire value from a record prefix, a domain and a token.
+ * @param prefix - A valid record prefix: `prefixOf` an identity, or one `requireRecordPrefix` passed.
  * @param domain - The identity domain.
  * @param token - The token, which must match the token grammar.
- * @returns The branded `archboard:<domain>:<token>` value.
+ * @returns The branded `<prefix>:<domain>:<token>` value.
  * @throws {IdentityValidationError} When the token does not fit the grammar.
  */
 function wireValue<Domain extends IdentityDomain>(
+	prefix: string,
 	domain: Domain,
 	token: string,
 ): IdentityValue<Domain> {
 	if (!TOKEN_PATTERN.test(token)) {
 		return fail("invalid-shape", `Invalid ${domain} identity token.`, domain);
 	}
-	return brand<Domain>(`${WIRE_PREFIX}:${domain}:${token}`);
+	return brand<Domain>(`${prefix}:${domain}:${token}`);
 }
 
 /**
- * Mints a fresh random token for an Archboard-server-owned identity.
+ * Checks a host's record prefix, which every identity its ledger spells begins with.
+ * @param prefix - The untrusted prefix.
+ * @returns The same prefix.
+ * @throws {TypeError} When it is not 1 to 16 characters of `[a-z][a-z0-9-]*`.
+ */
+function requireRecordPrefix(prefix: unknown): string {
+	if (typeof prefix !== "string" || !RECORD_PREFIX_PATTERN.test(prefix)) {
+		throw new TypeError(`A record prefix must match ^${RECORD_PREFIX_SOURCE}$.`);
+	}
+	return prefix;
+}
+
+/**
+ * Mints a fresh random token for a server-owned identity.
  * @returns Thirty-two lowercase hexadecimal characters.
  */
 function mintToken(): string {
@@ -248,12 +273,31 @@ function tokenOf(value: BrandedIdentity<IdentityDomain>): string {
 }
 
 /**
- * Mints an Archboard-server-owned identity whose token is marked with the `h` prefix.
+ * Reads the record prefix back out of a branded identity.
+ * @param value - A branded identity of any domain.
+ * @returns The prefix before the domain segment.
+ * @throws {IdentityValidationError} When the string is not canonical after all.
+ */
+function prefixOf(value: BrandedIdentity<IdentityDomain>): string {
+	const segments = wireSegments(value);
+	if (segments === null) {
+		return fail("invalid-shape", "Identity is not a canonical wire value.");
+	}
+	return segments.prefix;
+}
+
+/**
+ * Mints a server-owned identity whose token is marked with the `h` prefix.
+ * @param prefix - The host's record prefix.
  * @param domain - The identity domain to mint in.
  * @returns A fresh branded identity.
+ * @throws {TypeError} When the record prefix is not of its shape.
  */
-function mintServerValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
-	return wireValue(domain, `h${mintToken()}`);
+function mintServerValue<Domain extends IdentityDomain>(
+	prefix: string,
+	domain: Domain,
+): IdentityValue<Domain> {
+	return wireValue(requireRecordPrefix(prefix), domain, `h${mintToken()}`);
 }
 
 /**
@@ -285,10 +329,14 @@ function parseEpochValue(value: unknown, expectedChild?: ChildId): ChildEpoch {
 	if (!match) {
 		return fail("invalid-shape", "A child epoch must bind to a child identity.", "epoch");
 	}
-	if (expectedChild !== undefined && match[1] !== tokenOf(expectedChild)) {
+	const epoch = brand<"epoch">(String(value));
+	if (
+		expectedChild !== undefined &&
+		(match[1] !== tokenOf(expectedChild) || prefixOf(epoch) !== prefixOf(expectedChild))
+	) {
 		return fail("wrong-child", "The child epoch belongs to another child.", "epoch");
 	}
-	return brand<"epoch">(String(value));
+	return epoch;
 }
 
 /**
@@ -297,7 +345,7 @@ function parseEpochValue(value: unknown, expectedChild?: ChildId): ChildEpoch {
  * @returns A fresh branded epoch.
  */
 function mintEpochValue(child: ChildId): ChildEpoch {
-	return wireValue("epoch", `${tokenOf(child)}.h${mintToken()}`);
+	return wireValue(prefixOf(child), "epoch", `${tokenOf(child)}.h${mintToken()}`);
 }
 
 /**
@@ -459,6 +507,7 @@ export {
 	wireValue,
 	mintToken,
 	tokenOf,
+	prefixOf,
 	mintServerValue,
 	parseValue,
 	parseEpochValue,

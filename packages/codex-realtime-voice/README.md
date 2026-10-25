@@ -63,8 +63,7 @@ const server = Bun.serve({
 	}),
 });
 
-const status = await agent.start();
-if (!status.ready) throw new Error(`Codex did not start: ${status.failure}`);
+await agent.start();
 console.log(`Open ${server.url}`);
 
 async function stop(): Promise<void> {
@@ -230,14 +229,21 @@ function Approval({ approval }: { readonly approval: VoiceApproval }) {
 	);
 }
 
-const client = createVoiceClient({ socketPath: "/voice" });
-void client.connect();
-addEventListener("pagehide", () => void client.dispose());
-createRoot(document.getElementById("root")!).render(
-	<VoiceClientProvider client={client}>
-		<App />
-	</VoiceClientProvider>,
-);
+const root = createRoot(document.getElementById("root")!);
+function mount() {
+	const client = createVoiceClient({ socketPath: "/voice" });
+	void client.connect();
+	window.addEventListener("pagehide", () => void client.dispose(), { once: true });
+	root.render(
+		<VoiceClientProvider client={client}>
+			<App />
+		</VoiceClientProvider>,
+	);
+}
+mount();
+window.addEventListener("pageshow", (event) => {
+	if (event.persisted) mount();
+});
 ```
 
 Start the server from the directory that the workhorse works in:
@@ -308,27 +314,27 @@ The state directory is the directory that you give as `storage.directory`. It ho
 
 `createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an instruction is empty, or when an `identity` value has the wrong shape.
 
-| Field                      | Default                        | What it does                                                                                                                                                                                     |
-| -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `storage.directory`        | Required                       | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and have no symbolic link in its path. Keep it outside every checkout. |
-| `storage.ownerDirectory`   | `<directory>/owner`            | Where the process-owner lock and records live.                                                                                                                                                   |
-| `codex.executablePath`     | Required                       | The absolute path of the Codex executable. Use `resolveCodexExecutable()`.                                                                                                                       |
-| `codex.hostEnvironment`    | None                           | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                 |
-| `codex.pathPrefixes`       | None                           | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                 |
-| `codex.diagnosticSecrets`  | None                           | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                 |
-| `codex.onGroupOwned`       | None                           | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                        |
-| `checkouts`                | Required                       | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.       |
-| `instructions.coordinator` | Required                       | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                    |
-| `instructions.workhorse`   | Required                       | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                     |
-| `identity`                 | `DEFAULT_VOICE_AGENT_IDENTITY` | How the agent names itself to Codex and to the person. See the next table.                                                                                                                       |
-| `onFatal`                  | Required                       | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                 |
-| `extensions`               | None                           | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                           |
+| Field                      | Default                        | What it does                                                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage.directory`        | Required                       | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and not be a symbolic link. Links above it, such as `/tmp` on macOS, are resolved once. Keep it outside every checkout. |
+| `storage.ownerDirectory`   | `<directory>/owner`            | Where the process-owner lock and records live.                                                                                                                                                                                                    |
+| `codex.executablePath`     | Required                       | The absolute path of the Codex executable. Use `resolveCodexExecutable()`.                                                                                                                                                                        |
+| `codex.hostEnvironment`    | None                           | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                  |
+| `codex.pathPrefixes`       | None                           | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                  |
+| `codex.diagnosticSecrets`  | None                           | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                  |
+| `codex.onGroupOwned`       | None                           | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                         |
+| `checkouts`                | Required                       | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                        |
+| `instructions.coordinator` | Required                       | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                                                                     |
+| `instructions.workhorse`   | Required                       | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                                                                      |
+| `identity`                 | `DEFAULT_VOICE_AGENT_IDENTITY` | How the agent names itself to Codex and to the person. See the next table.                                                                                                                                                                        |
+| `onFatal`                  | Required                       | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                  |
+| `extensions`               | None                           | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                                                                            |
 
 The agent that `createVoiceAgent` returns has these members:
 
 | Member                    | What it does                                                                                                                                                                                                                                                               |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `start()`                 | Starts the private Codex process and waits for it. It resolves with the status. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
+| `start()`                 | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
 | `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                          |
 | `bunHandlers(options)`    | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the page's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                              |
 | `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work. See [A `node:http` server](#a-nodehttp-server).                                                     |
@@ -419,7 +425,7 @@ The state has these fields:
 
 ### React
 
-`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
+`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. Dispose it on `pagehide`, so a hidden page holds no socket and no microphone. When `pageshow` has `persisted: true`, the browser restored the page from its back-forward cache: create and connect a new client. The tab session id stays in `sessionStorage`, so the new client continues the conversation when the page comes back within 60 seconds. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
 
 ## Security
 
@@ -553,7 +559,7 @@ A `400` answer means that the socket URL has no valid `tabSessionId` or `paneId`
 The same rejection also names a state directory that the package cannot use:
 
 - "must have mode 0700, received 0755": run `chmod 700` on the directory, or let the package create it.
-- "Refusing symlink-escaped Codex storage path component": a directory in the path is a symbolic link. On macOS, `/tmp` and `/var` are symbolic links. Use a real path, such as a directory in your home directory.
+- "Refusing symlink-escaped Codex storage path component": the state directory, or a directory below it, is a symbolic link. `createVoiceAgent` resolves the links above the state directory once, so a directory in `/tmp` or `os.tmpdir()` on macOS works. Give the state directory itself, not a link to it.
 
 ### Other errors from `createVoiceAgent` and `attach`
 

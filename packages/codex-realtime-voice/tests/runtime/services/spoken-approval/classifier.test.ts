@@ -44,10 +44,10 @@ describe("spoken approval classifier contract", () => {
 
 	test("asks a host's classifier through the host's voice namespace, byte for byte as reviewed", () => {
 		// The digest of Archboard's classifier prompt before its names became host identity.
-		const named = SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replaceAll("<product-name>", "Archboard").replace(
-			"<voice-namespace>",
-			"archboard_voice",
-		);
+		const named = SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replaceAll(
+			"<product-name>",
+			"Archboard",
+		).replace("<voice-namespace>", "archboard_voice");
 		expect(new Bun.CryptoHasher("sha256").update(named).digest("hex")).toBe(
 			"1873dd2050fe6f6ce41cd27f43af18d8c7a3cd4af9755dd7b0322e375f636380",
 		);

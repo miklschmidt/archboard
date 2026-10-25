@@ -242,7 +242,7 @@ const UNREACHABLE_WORDS: Readonly<
  */
 function unresolvedWords(unresolved: Unresolved, board: string): string {
 	if (unresolved.kind === "listing-failed") {
-		return `${board} names a repository, and this vault could not be listed to tell whether it is this one. ${unresolved.problem}`;
+		return `The link to ${board} names a repository, and this vault could not be listed to tell whether that is its own. ${unresolved.problem}`;
 	}
 	if (unresolved.kind === "unregistered") {
 		return `${board} is a board of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;

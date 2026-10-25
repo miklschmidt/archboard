@@ -29,39 +29,38 @@ const RECOVERY = {
 	declined: null,
 	cancelled: "The agent must raise the request again if it still needs the effect.",
 	expired: "The agent must raise the request again if it still needs the effect.",
-	stale: "Wait for the Archboard server to publish a fresh snapshot before acting on this.",
+	stale: "Wait for the server to publish a fresh snapshot before acting on this.",
 	disconnected: "Reconnect the workbench; the agent must raise the request again.",
 	delivered: null,
-	not_delivered: "The Archboard server never delivered the decision, so nothing was executed.",
+	not_delivered: "The server never delivered the decision, so nothing was executed.",
 	outcome_unknown:
-		"Archboard never retries an unknown mutation. Read the thread before assuming either result.",
+		"The workbench never retries an unknown mutation. Read the thread before assuming either result.",
 } as const satisfies Record<WorkbenchApprovalPhase, string | null>;
 
 const DECISION_WORDS = {
 	approved: "You approved this request.",
 	declined: "You declined this request.",
-	cancelled: "The Archboard server cancelled this request.",
+	cancelled: "The server cancelled this request.",
 } as const;
 
 const DEFAULT_DETAILS = {
-	staged: "The Archboard server staged this request and has not opened it for a decision.",
-	pending: "The Archboard server is waiting for your decision.",
-	approved: "The Archboard server recorded your approval.",
-	declined: "The Archboard server recorded your decline.",
-	cancelled: "The Archboard server cancelled this request before it was answered.",
+	staged: "The server staged this request and has not opened it for a decision.",
+	pending: "The server is waiting for your decision.",
+	approved: "The server recorded your approval.",
+	declined: "The server recorded your decline.",
+	cancelled: "The server cancelled this request before it was answered.",
 	expired: "This request passed its expiry before it was answered.",
 	stale: "The request no longer belongs to the current child epoch.",
 	disconnected: "The connection that owned this request was lost.",
-	delivered: "The Archboard server delivered your decision.",
-	not_delivered: "The Archboard server could not deliver your decision.",
-	outcome_unknown:
-		"The Archboard server lost the answer, so the outcome of your decision is unknown.",
+	delivered: "The server delivered your decision.",
+	not_delivered: "The server could not deliver your decision.",
+	outcome_unknown: "The server lost the answer, so the outcome of your decision is unknown.",
 } as const satisfies Record<WorkbenchApprovalPhase, string>;
 
 const CLOCK_EXPIRED_ORDINARY =
-	"This request passed its expiry before you answered it. The Archboard server has not published its terminal record yet.";
+	"This request passed its expiry before you answered it. The server has not published its terminal record yet.";
 const CLOCK_EXPIRED_DYNAMIC =
-	"This effect passed its expiry before you answered it. The Archboard server has not published its terminal record yet.";
+	"This effect passed its expiry before you answered it. The server has not published its terminal record yet.";
 
 const DYNAMIC_CAUSES = {
 	person_approved: "You approved this effect.",
@@ -69,7 +68,7 @@ const DYNAMIC_CAUSES = {
 	deadline_reached: "The approval deadline passed before you answered.",
 	call_cancelled: "The agent cancelled its own call.",
 	caller_turn_interrupted: "The calling turn was interrupted.",
-	server_shutdown: "The Archboard server shut down before you answered.",
+	server_shutdown: "The server shut down before you answered.",
 	browser_disconnected: "This browser lost the approval before you answered.",
 	child_disconnected: "The Codex child disconnected before the decision reached it.",
 } as const;
@@ -89,10 +88,10 @@ const DYNAMIC_DECISION_WORDS = {
  */
 function connectionRemoval(context: ApprovalAuthorityContext): string | null {
 	if (context.connection === "stopped") {
-		return context.connectionReason ?? "The browser is not connected to the Archboard server.";
+		return context.connectionReason ?? "The browser is not connected to the server.";
 	}
 	if (context.connection === "reconnecting") {
-		return context.connectionReason ?? "The browser is reconnecting to the Archboard server.";
+		return context.connectionReason ?? "The browser is reconnecting to the server.";
 	}
 	return null;
 }
@@ -115,7 +114,7 @@ function authorityRemoval(
 		return connection;
 	}
 	if (context.staleSnapshot) {
-		return "This snapshot is behind the Archboard server, so a decision could name the wrong request.";
+		return "This snapshot is behind the server, so a decision could name the wrong request.";
 	}
 	if (!context.canCommand) {
 		return "This browser cannot answer approvals until it holds a usable workbench command lease.";

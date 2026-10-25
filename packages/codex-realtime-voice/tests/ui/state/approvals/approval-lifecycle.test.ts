@@ -178,7 +178,7 @@ describe("connection and lease authority", () => {
 		});
 
 		expect(card.offers).toHaveLength(0);
-		expect(card.status.authorityReason).toContain("behind the Archboard server");
+		expect(card.status.authorityReason).toContain("behind the server");
 	});
 
 	test("removes authority without a usable command lease", () => {

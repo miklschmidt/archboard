@@ -1,32 +1,39 @@
 import { createRoot } from "react-dom/client";
-import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { createVoiceClient, type VoiceClient } from "@archboard/codex-realtime-voice/browser";
 import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
+import { followPageLifecycle } from "#ui/clients/workbench/page-client.ts";
 import { Workbench } from "#ui/components/workbench/Workbench.tsx";
 import { ExampleConfigurationSchema, WORKBENCH_SOCKET_PATH } from "#shared/protocol/application.ts";
 
 /**
- * Mount the page over one voice client, and show the checkout it works in.
+ * Mount the page over the page's voice client, and show the checkout it works in.
  */
 function mountWorkbench(): void {
 	const element = document.getElementById("root");
 	if (element === null) throw new Error("The workbench page has no root element.");
 	const root = createRoot(element);
-	const client = createVoiceClient({ socketPath: WORKBENCH_SOCKET_PATH });
-	/**
-	 * Draw the page.
-	 * @param checkout The checkout path, or why it is unknown.
-	 */
-	const render = (checkout: string) => {
+	let checkout = "Connecting to the workbench…";
+	let shown: VoiceClient | undefined;
+	/** Draw the page over the shown client. */
+	const render = () => {
+		if (shown === undefined) return;
 		root.render(
-			<VoiceClientProvider client={client}>
+			<VoiceClientProvider client={shown}>
 				<Workbench checkout={checkout} />
 			</VoiceClientProvider>,
 		);
 	};
-	render("Connecting to the workbench…");
-	void readCheckout().then(render);
-	void client.connect();
-	window.addEventListener("pagehide", () => void client.dispose(), { once: true });
+	followPageLifecycle(
+		() => createVoiceClient({ socketPath: WORKBENCH_SOCKET_PATH }),
+		(client) => {
+			shown = client;
+			render();
+		},
+	);
+	void (async () => {
+		checkout = await readCheckout();
+		render();
+	})();
 }
 
 /**

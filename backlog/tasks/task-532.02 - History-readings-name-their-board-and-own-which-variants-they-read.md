@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T04:03:00Z'
+updated_date: '2026-10-25T04:19:00Z'
 labels: []
 dependencies: []
 references:
@@ -46,4 +46,8 @@ Shared: history-lens/admission.ts holds the refusal type {ok:false, code, proble
 Width: adding HistoryRefusalCode would raise code-intel to 17 over its ceiling of 16. FootprintAnswer left the shared entry: after the head refusal moved into code-intel its only outside users were the CLI (now z.infer<typeof FootprintReplySchema>) and a route test stand-in (now inferred). Width stays 16.
 Behaviour: every status code, refusal code and wire field is kept. One ordering change: a board or variant refusal is now decided inside the checkout work rather than before it, so during a server stop such a request is answered by the checkout work owner's refusal first.
 Vault: .archboard/vault/Archboard server routes.semantic.json anchors steps on the symbol readableVariant at an already stale path (src/server/archboard/lib/locality-route.ts); the vault is out of scope.
+
+Review (review/history-admission): the refusal order during a server stop is kept as merged, not restored. Admitting before the checkout work needs a split point in each reading interface: a second exported operation per reading (code-intel would exceed its width ceiling of 16) or a higher-order runner in place of the plain signal in both request types, which every caller and route stand-in must then learn. The difference is reachable only in the quiesce window of a stop (checkoutWork.quiesce runs before the HTTP listener closes, while mutationAdmission drains): a request that names a missing variant or board now gets the same 500 (checkout work is stopping) as a valid request gets in that window, instead of its 422 or 404. The 500 is honest, the same command run again after the restart gets its refusal, and every status and code outside that window is unchanged. Not worth the wider interface.
+
+Review (review/history-admission, f0032ce74): clean. Every refusal code and status unchanged case by case; locality memory and footprint statelessness kept; every moved route case reappears in history-admission.test.ts. The refusal-order change during a server stop (500 instead of 422 while checkout work drains) was kept on purpose, see the reviewer's note.
 <!-- SECTION:NOTES:END -->

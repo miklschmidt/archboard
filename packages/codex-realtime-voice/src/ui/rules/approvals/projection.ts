@@ -109,7 +109,7 @@ function actionSummary(
 	switch (approval.approvalKind) {
 		case "command_execution":
 			return approval.command === null
-				? "Run a command the Archboard server did not publish."
+				? "Run a command the server did not publish."
 				: bounded(`Run ${approval.command}`);
 		case "exec_command":
 			return bounded(`Run ${approval.command.join(" ")}`);
@@ -279,10 +279,10 @@ const RECONCILIATION_LABELS = {
 } as const;
 
 const RECONCILIATION_DETAILS = {
-	delivered: "The Archboard server confirmed the workbench delivered this decision.",
-	not_delivered: "The Archboard server confirmed nothing was delivered, so nothing was executed.",
+	delivered: "The server confirmed the workbench delivered this decision.",
+	not_delivered: "The server confirmed nothing was delivered, so nothing was executed.",
 	outcome_unknown:
-		"The Archboard server lost the answer. Archboard never retries an unknown mutation; read the thread before assuming either result.",
+		"The server lost the answer. The workbench never retries an unknown mutation; read the thread before assuming either result.",
 } as const;
 
 /**
@@ -342,7 +342,7 @@ function surfaceAuthorityReason(
 		return connection;
 	}
 	if (context.staleSnapshot) {
-		return "This snapshot is behind the Archboard server, so no decision can name the right request.";
+		return "This snapshot is behind the server, so no decision can name the right request.";
 	}
 	return input.canCommand
 		? null
@@ -366,7 +366,7 @@ function connectionAuthorityReason(
 		);
 	}
 	if (context.connection !== "connected") {
-		return context.connectionReason ?? "The browser is not connected to the Archboard server.";
+		return context.connectionReason ?? "The browser is not connected to the server.";
 	}
 	return null;
 }
