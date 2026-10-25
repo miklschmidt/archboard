@@ -23,7 +23,6 @@ import { FoldLayout } from "#shared/rules/blocks/folds/fold-layout.ts";
 import { answeringOnce, type Graphviz } from "#shared/rules/blocks/cards/graphviz-once.ts";
 import { corners, type Insets, type Laid } from "#shared/rules/blocks/tree/laid.ts";
 import { grownInsets, widened } from "#shared/rules/blocks/tree/lone.ts";
-import { NestingSchema, type Nesting } from "#shared/rules/blocks/tree/inline.ts";
 import { bestWrap, weighed } from "#shared/rules/blocks/folds/wraps.ts";
 import { layBoth, settled } from "#shared/rules/blocks/cards/laying.ts";
 import { PackLayout, type Packing } from "#shared/rules/blocks/packing/pack.ts";
@@ -108,14 +107,13 @@ function layCards(
 
 /**
  * Whether a block is packed with its child blocks as the pieces, rather than
- * laid out as cards: a block of blocks, unless the board is drawn inline.
+ * laid out as cards: a block of blocks.
  * @param tree The blocks.
  * @param block The block.
- * @param nesting How containers and group regions are drawn.
  * @returns True when it is packed.
  */
-function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
-	return nesting === "blocks" && block.items.some((item) => tree.blocks.has(item));
+function packsBlocks(tree: BlockTree, block: Block): boolean {
+	return block.items.some((item) => tree.blocks.has(item));
 }
 
 /**
@@ -135,7 +133,7 @@ function layBlock(
 	{ earlier, stacking }: { earlier: Earlier; stacking: Stacking },
 ): Laid {
 	const { tree, laid, packings } = board;
-	if (!packsBlocks(tree, block, tree.nesting)) return layCards(viz, tree, block, laid, stacking);
+	if (!packsBlocks(tree, block)) return layCards(viz, tree, block, laid, stacking);
 	const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
 		earlier.packings.get(block.id),
 	);
@@ -150,7 +148,6 @@ function layBlock(
  * @param viz The initialized Graphviz instance.
  * @param graph The measured hierarchy.
  * @param earlier What an earlier layout decided, kept.
- * @param nesting How containers and group regions are drawn.
  * @param way The blocks whose joins keep ports of their own, and the solve's stacking choice.
  * @param way.apart The blocks whose joins keep ports of their own, by id.
  * @param way.stacking The solve's stacking choice.
@@ -159,11 +156,10 @@ function layBlock(
 function layAll(
 	viz: Graphviz,
 	graph: ElkNode,
-	earlier: Earlier = NOTHING_EARLIER,
-	nesting: Nesting,
+	earlier: Earlier,
 	{ apart, stacking }: { apart: ReadonlySet<string>; stacking: Stacking },
 ): Board {
-	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders, earlier.facing);
+	const tree = new BlockTree(graph, earlier.exits, "blocks", apart, earlier.orders, earlier.facing);
 	const board = { tree, laid: new Map<string, Laid>(), packings: new Map<string, Packing>() };
 	const kept = { earlier, stacking };
 	for (const block of tree.innermostFirst()) {
@@ -213,7 +209,6 @@ interface Board {
  * known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
  * @param graph The measured hierarchy.
- * @param nesting How containers and group regions are drawn.
  * @param way Which joins to keep apart, whether every block faces its walls, and the solve's stacking choice.
  * @param way.apart The blocks whose joins keep ports of their own, by id.
  * @param way.facing Whether every block faces its walls.
@@ -224,17 +219,16 @@ interface Board {
 function layOut(
 	viz: Graphviz,
 	graph: ElkNode,
-	nesting: Nesting,
 	way: { apart: ReadonlySet<string>; facing: boolean; stacking: Stacking },
 ): { tree: BlockTree; laid: Map<string, Laid>; faces: boolean } {
 	const { apart, facing } = way;
-	const first = layAll(viz, graph, undefined, nesting, way);
+	const first = layAll(viz, graph, NOTHING_EARLIER, way);
 	const exits = sidesOf(first.tree, first.laid);
-	const faces = facesOf(graph, exits, nesting, apart);
+	const faces = facesOf(graph, exits, apart);
 	const kept = { exits, packings: first.packings, facing: facing && faces };
-	const last = exits.size === 0 ? first : layAll(viz, graph, kept, nesting, way);
+	const last = exits.size === 0 ? first : layAll(viz, graph, kept, way);
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf });
-	const held = orders.size === 0 ? [] : [layAll(viz, graph, { ...kept, orders }, nesting, way)];
+	const held = orders.size === 0 ? [] : [layAll(viz, graph, { ...kept, orders }, way)];
 	const { tree, laid } = [last, ...held]
 		.map((laying) => settledOrNot(laying))
 		.reduce((one, other) =>
@@ -245,22 +239,19 @@ function layOut(
 
 /**
  * Whether facing every block's walls would change a board's blocks
- * ({@link facingTurns}). Only Blocks faces them: drawn inline, no drawing
- * of either vault changed by facing them (`solves.ts`).
+ * ({@link facingTurns}).
  * @param graph The measured hierarchy.
  * @param exits The wall each port moves to (`sides.ts`).
- * @param nesting How containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
  * @returns True when it would.
  */
 function facesOf(
 	graph: ElkNode,
 	exits: ReadonlyMap<string, Side>,
-	nesting: Nesting,
 	apart: ReadonlySet<string>,
 ): boolean {
-	if (nesting !== "blocks" || exits.size === 0) return false;
-	return facingTurns(new BlockTree(graph, exits, nesting, apart, undefined, true));
+	if (exits.size === 0) return false;
+	return facingTurns(new BlockTree(graph, exits, "blocks", apart, undefined, true));
 }
 
 /**
@@ -317,23 +308,21 @@ const BLOCKS_FACING = "archboard.blocks.facing";
 
 /**
  * Lay a measured hierarchy out as blocks one way and route every
- * relationship: its containers and group regions drawn as its root options
- * name, else packed as blocks, or inline when asked; the joins of the
- * blocks they name kept apart; and its first block that could stack laid
- * only the way they name, if they name one, telling what that way stood at,
- * and answering only that once it is laid where they ask so.
- * Which way reads best is chosen where the renderer runs (`solves.ts`).
+ * relationship: its containers and group regions packed as blocks; the
+ * joins of the blocks its root options name kept apart; and its first block
+ * that could stack laid only the way they name, if they name one, telling
+ * what that way stood at, and answering only that once it is laid where
+ * they ask so. Which way reads best is chosen where the renderer runs
+ * (`solves.ts`). The renderer core lays out every other way (TASK-520.04).
  * @param viz The initialized Graphviz instance.
  * @param graph The measured hierarchy.
- * @param inline Whether containers and group regions are drawn inline, as
- * clusters of the board's own layout, when its options name no way.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Graphviz, graph: ElkNode, inline = false): ElkNode {
-	const { nesting, ...way } = wayOf(graph.layoutOptions ?? {}, inline);
+function placeBlocks(viz: Graphviz, graph: ElkNode): ElkNode {
+	const way = wayOf(graph.layoutOptions ?? {});
 	let laidOut: ReturnType<typeof layOut>;
 	try {
-		laidOut = layOut(answeringOnce(viz), graph, nesting, way);
+		laidOut = layOut(answeringOnce(viz), graph, way);
 	} catch (error) {
 		if (!(error instanceof StoodLaid)) throw error;
 		return answer(graph, { width: 0, height: 0 }, toldStood(error.stood));
@@ -349,16 +338,14 @@ function placeBlocks(viz: Graphviz, graph: ElkNode, inline = false): ElkNode {
 /**
  * The way a solve's root options ask it to lay a board out.
  * @param options The root options.
- * @param inline Whether containers and group regions are drawn inline when the options name no way.
- * @returns How its containers and group regions are drawn, which joins stay
- * apart, whether every block faces its walls, and its stacking choice.
+ * @returns Which joins stay apart, whether every block faces its walls, and its stacking choice.
  */
-function wayOf(
-	options: Readonly<Record<string, string>>,
-	inline: boolean,
-): { nesting: Nesting; apart: ReadonlySet<string>; facing: boolean; stacking: Stacking } {
+function wayOf(options: Readonly<Record<string, string>>): {
+	apart: ReadonlySet<string>;
+	facing: boolean;
+	stacking: Stacking;
+} {
 	return {
-		nesting: NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks")),
 		apart: new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]"))),
 		facing: options[BLOCKS_FACING] === "true",
 		stacking: {

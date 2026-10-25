@@ -56,12 +56,6 @@ import type { Item, Scene } from "#shared/rules/track/scene/scene.ts";
 const STRAY = 2 * LANE;
 /** How much cheaper a new route must be than the old one before the chain takes it. */
 const SAVING = 8 * LANE;
-/**
- * How much of a lap round the drawing a line's cost counts: a quarter of its
- * length, and never more than one crossing and a saving, so a line trades a
- * lap for one more crossing and no more.
- */
-const BEYOND_SHARE = 4;
 /** How many times the chains not yet relaid are tried again, once others moved out of their way. */
 const PASSES = 3;
 /** The spacing of the columns a route may take, besides the edges of what stands on its bands. */
@@ -438,9 +432,7 @@ class Relay {
 
 	/**
 	 * What a chain's line costs with its stations at some x: its sideways
-	 * travel, a share of the length it runs down beyond the drawing
-	 * ({@link Relay.beyond}), and a crossing's worth for each line, or
-	 * trunk, it crosses.
+	 * travel, and a crossing's worth for each line, or trunk, it crosses.
 	 * @param stations The chain's stations.
 	 * @param xs Where each stands.
 	 * @param counted What the lines crossed in one channel count, when not one each.
@@ -452,29 +444,7 @@ class Relay {
 			const [top, bottom] = [xs[index]!, xs[index + 1]!];
 			return sum + Math.abs(meetsAt(upper, bottom, top) - meetsAt(lower, top, bottom));
 		}, 0);
-		const far = this.beyond(stations, xs);
-		const lap = Math.min(far / BEYOND_SHARE, CROSSING + SAVING);
-		return travel + lap + CROSSING * crossingsOf(stations, xs, this.bands, counted);
-	}
-
-	/**
-	 * How far a chain's line runs down beyond everything the drawing holds:
-	 * the height of each band a middle station passes outside the scene's
-	 * extent, where that is the page's ({@link Scene.edgesPage}). A lap round the drawing on its outermost slot crosses nothing,
-	 * and without this its long run, which sets the page's edge, would cost
-	 * nothing either.
-	 * @param stations The chain's stations.
-	 * @param xs Where each stands.
-	 * @returns The length.
-	 */
-	beyond(stations: readonly Station[], xs: readonly number[]): number {
-		const { bands, edgesPage } = this.scene;
-		if (!edgesPage) return 0;
-		return stations.slice(1, -1).reduce((sum, { band }, index) => {
-			if (outside(xs[index + 1]!, this.extent) <= 0) return sum;
-			const [above, below] = [bands[band - 1]!, bands[band + 1]!];
-			return sum + (below.top + below.bottom - above.top - above.bottom) / 2;
-		}, 0);
+		return travel + CROSSING * crossingsOf(stations, xs, this.bands, counted);
 	}
 
 	/**

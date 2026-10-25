@@ -27,7 +27,7 @@ import {
 	type Station,
 } from "#shared/rules/track/routes/chains.ts";
 import type { Net } from "#shared/rules/track/channels/channels.ts";
-import { nudgeLabel, slidePort } from "#shared/rules/track/labels/labels.ts";
+import { nudgeLabel } from "#shared/rules/track/labels/labels.ts";
 import { centreX, cardFace, type Scene } from "#shared/rules/track/scene/scene.ts";
 import { CARD_RADIUS } from "#shared/constants/design.ts";
 
@@ -146,17 +146,14 @@ function onFace(station: Station, x: number): boolean {
 
 /**
  * Move a card's own port along its face to an x, when the port is no trunk's, held to no point
- * (`points.ts`), and clear of the face's corners and its other ports; a block's own
- * port slides along the block's edge instead.
- * @param scene The scene.
+ * (`points.ts`), and clear of the face's corners and its other ports.
  * @param nets Every net.
  * @param net The net whose port moves.
  * @param end Which of its ends is the card.
  * @param x The x.
  * @returns Whether it moved.
  */
-function movePort(scene: Scene, nets: readonly Net[], net: Net, end: End, x: number): boolean {
-	if (scene.slides.has(net[end].item!)) return slidePort(scene, nets, net, end, x);
+function movePort(nets: readonly Net[], net: Net, end: End, x: number): boolean {
 	if (trunkAt(net, end) || net[end].at !== undefined || !onFace(net[end], x)) return false;
 	const others = nets.filter((other) => other !== net && other[end].item === net[end].item);
 	if (others.some((other) => Math.abs(xAt(other, end) - x) < LANE)) return false;
@@ -196,24 +193,18 @@ interface Saved {
 
 /**
  * Keep what moving some stations could change.
- * @param scene The scene, for the ports that slide.
  * @param chains Every relationship's chain.
  * @param nets Every net.
  * @param stations The stations.
  * @returns The saved state.
  */
-function save(
-	scene: Scene,
-	chains: readonly Chain[],
-	nets: readonly Net[],
-	stations: readonly Station[],
-): Saved {
+function save(chains: readonly Chain[], nets: readonly Net[], stations: readonly Station[]): Saved {
 	const lanes = new Map<Station, number>();
 	for (const station of stations)
 		for (const lane of runOf(chains, station)?.lanes ?? []) lanes.set(lane, lane.x);
 	const boxes = new Map(
 		stations
-			.filter(({ kind, item }) => kind === "label" || scene.slides.has(item!))
+			.filter(({ kind }) => kind === "label")
 			.map((station) => [station, { ...station.item! }] as const),
 	);
 	return { lanes, boxes, ends: new Map(nets.map((net) => [net, [net.topX, net.bottomX]])) };
@@ -286,7 +277,7 @@ function moveStation(
 ): boolean {
 	if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x, piece);
 	if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
-	return movePort(scene, nets, net, end, x);
+	return movePort(nets, net, end, x);
 }
 
 /**
@@ -315,7 +306,6 @@ function moveStretch(
 	better: () => boolean = () => true,
 ): boolean {
 	const saved = save(
-		scene,
 		chains,
 		nets,
 		stretch.map(({ station }) => station),
@@ -520,12 +510,8 @@ function closeCardStep(
 
 /**
  * Close every step too short for its two bends that a move can close, and,
- * in the first pass of a block the Blocks engine lays out, every step back
- * at a label ({@link turnsBack}): drawn inline, the band spacing stands a
- * label below a container, and moved beside its wall the label stood the
- * card below out past it (`track-placement.test.ts`); and most such steps
- * run round something, which tried in every pass cost Archboard server
- * whole (Track) 5% more time.
+ * in the first pass, every step back at a label ({@link turnsBack}): most
+ * such steps run round something, which tried in every pass cost time.
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
@@ -542,8 +528,7 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				(kinked(net) || (pass === 0 && !scene.inline && turnsBack(route, index))) &&
-				net.wall === undefined
+				(kinked(net) || (pass === 0 && turnsBack(route, index))) && net.wall === undefined
 					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
