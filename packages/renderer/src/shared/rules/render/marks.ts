@@ -14,9 +14,6 @@ import { coord } from "#shared/rules/geometry.ts";
 /** How loudly a line speaks. */
 type Weight = EdgeEmphasis;
 
-/** Which arrowhead a line ends in. */
-type Head = "filled" | "open";
-
 /** How strong one ink is over the page, in each theme. */
 interface Share {
 	readonly light: number;
@@ -41,9 +38,6 @@ const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4,
 
 /** How long an arrowhead of each weight is, from its base to its tip; it is as wide. */
 const HEAD_LENGTH: Readonly<Record<Weight, number>> = { hero: 11, normal: 11, muted: 11 };
-
-/** Where in its ten-unit box each head meets its line. */
-const HEAD_REF_X: Readonly<Record<Head, number>> = { filled: 8, open: 10 };
 
 /** How strong a removed line's ink is over the page. */
 const REMOVED_STRENGTH: Share = { light: 0.85, dark: 1 };
@@ -172,16 +166,6 @@ function headLength(emphasis: Weight): number {
 }
 
 /**
- * How far an arrowhead reaches past the end of its line.
- * @param head Which head.
- * @param weight How loudly the line speaks.
- * @returns The reach, in diagram units.
- */
-function headReach(head: Head, weight: Weight): number {
-	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_LENGTH[weight];
-}
-
-/**
  * The pin a subject of one standing wears on its corner, as a page draws it:
  * for a key that has to show the mark the picture shows (TASK-383).
  * @param standing How the subject stands.
@@ -250,15 +234,4 @@ function cornerWarning(box: {
 	return lineWarning({ x: box.x + box.width - PIN_INSET, y: box.y + PIN_INSET });
 }
 
-export {
-	type Head,
-	type Weight,
-	cornerWarning,
-	headLength,
-	headReach,
-	lineInk,
-	lineWarning,
-	lineWidth,
-	pulseInk,
-	standingMark,
-};
+export { cornerWarning, headLength, lineInk, lineWarning, lineWidth, pulseInk, standingMark };

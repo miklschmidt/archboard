@@ -1,6 +1,7 @@
 import { placingGroups, type SemanticEdge, type SemanticNode } from "@archboard/board/content";
 import type * as Core from "#shared/protocol/generated/core/types.ts";
 import type { LineLook } from "#shared/rules/render/drawing.ts";
+import { FALLBACK_ICON } from "#shared/rules/render/icons.ts";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 
 /** The independent visual channels of a node in this reading, as the core reads them. */
@@ -111,7 +112,7 @@ function typeAppearance(
 	const type = ownDefinition(policy.nodeKinds, kind);
 	return {
 		typeColor: type?.color,
-		icon: type?.icon ?? "RiQuestionLine",
+		icon: type?.icon ?? FALLBACK_ICON,
 		typeName: type?.name ?? kind,
 		typeKind: kind,
 	};
