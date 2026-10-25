@@ -19,6 +19,8 @@ pub(crate) struct ClearOf {
     merged: OnceCell<Merged>,
 }
 
+/// The stretches as the test reads them once enough x have been asked: merged
+/// and sorted, or none at all where a stretch keeps every x out.
 #[derive(Clone, Debug)]
 enum Merged {
     /// A stretch with an end that is not a number keeps every x out.

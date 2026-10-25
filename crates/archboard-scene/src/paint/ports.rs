@@ -72,6 +72,7 @@ struct Meeting {
     line: f64,
 }
 
+/// Where a line's ends meet the foot of a card's box, between its sides.
 fn meetings_of(routed: &Edge, boxes: &[(String, Rect)]) -> Vec<Meeting> {
     let edge = &routed.edge;
     let end = routed.curve.end();
@@ -91,6 +92,9 @@ fn meetings_of(routed: &Edge, boxes: &[(String, Rect)]) -> Vec<Meeting> {
         .collect()
 }
 
+/// Half the width of a port at `x`: its socket's, narrowed to keep clear of
+/// the card's corners and of the ports beside it; none when that leaves too
+/// little room round the line.
 fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
     let apart = neighbours
         .iter()
@@ -191,6 +195,7 @@ pub(super) fn ports_of(
     ports
 }
 
+/// The slot a port shows in its card's front edge, below the lid and above the sill.
 fn slot_of(port: &Port) -> Rect {
     let top = port.foot - CARD_THICKNESS + LID;
     Rect {
@@ -201,6 +206,7 @@ fn slot_of(port: &Port) -> Rect {
     }
 }
 
+/// A slot's outline as a path: a box with round ends.
 fn outline_of(slot: Rect) -> String {
     let Rect {
         x,
@@ -223,6 +229,7 @@ fn outline_of(slot: Rect) -> String {
     )
 }
 
+/// A slot's outline filled, which takes no pointer events.
 fn outlined(slot: Rect, fill: &str) -> Markup {
     tag(
         "path",
@@ -235,6 +242,8 @@ fn share(value: f64) -> String {
     js::fixed_number(value, 6)
 }
 
+/// A port's hole in its card's clip, in shares of the card's box: the slot, and
+/// the gap its line runs down through to the card's foot.
 fn hole_of(port: &Port, rect: Rect) -> String {
     let Rect {
         x,
@@ -269,6 +278,7 @@ fn hole_of(port: &Port, rect: Rect) -> String {
     )
 }
 
+/// The lower half of a slot's outline, which the port's lip colour fills.
 fn floor_of(slot: Rect) -> String {
     let Rect {
         x,
@@ -362,6 +372,7 @@ pub(super) struct Cut {
     pub markup: Markup,
 }
 
+/// A card's clip with a hole for each of its ports; none for a card with no port. Its id comes from its content.
 fn port_cut(ports: &[Port], rect: Rect) -> Option<Cut> {
     if ports.is_empty() {
         return None;
@@ -426,6 +437,8 @@ pub(super) fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
     PortPlan { wells, cuts }
 }
 
+/// Where a line's pulses start or stop when the line ends at a port's foot: a
+/// little inside the port.
 fn inside_port(point: Point, ports: &[Port]) -> Option<Point> {
     ports
         .iter()

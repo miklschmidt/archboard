@@ -213,6 +213,7 @@ pub fn every_step(steps: &[Step]) -> Vec<&Step> {
     all
 }
 
+/// Push each step and then the steps it holds, depth first.
 fn collect<'a>(steps: &'a [Step], into: &mut Vec<&'a Step>) {
     for step in steps {
         into.push(step);

@@ -14,12 +14,14 @@
 use archboard_router::{Dir, End, Params, Point, Rect, Route, Scene, route};
 use wasm_bindgen::prelude::*;
 
+/// The scene's numbers, read in order.
 struct Reader<'a> {
     numbers: &'a [f64],
     at: usize,
 }
 
 impl Reader<'_> {
+    /// The next number, which must be there and finite.
     fn next(&mut self) -> Result<f64, JsError> {
         let value = *self
             .numbers
@@ -34,6 +36,7 @@ impl Reader<'_> {
         Ok(value)
     }
 
+    /// The next number as a count, which must be whole.
     fn count(&mut self) -> Result<usize, JsError> {
         let value = self.next()?;
         whole_below(value, usize::MAX).ok_or_else(|| {
@@ -41,6 +44,8 @@ impl Reader<'_> {
         })
     }
 
+    /// The next end of a connector: a free point, or a pin on one of the obstacles
+    /// that leaves it one of the four ways.
     fn end(&mut self, obstacles: usize) -> Result<End, JsError> {
         let kind = self.next()?;
         let obstacle = self.next()?;

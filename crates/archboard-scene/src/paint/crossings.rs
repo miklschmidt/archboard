@@ -167,6 +167,7 @@ pub(super) struct Masks {
 /// were first cut, and each cutout once.
 type Grouped = Vec<(String, Vec<(String, Markup)>)>;
 
+/// The cutouts sorted by route, a cutout written alike to one before it left out.
 fn grouped(cutouts: Vec<Cutout>) -> Grouped {
     let mut grouped: Grouped = Vec::new();
     for Cutout { edge_id, markup } in cutouts {

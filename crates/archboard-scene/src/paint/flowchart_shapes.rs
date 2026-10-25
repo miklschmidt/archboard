@@ -29,6 +29,7 @@ const GOLD_FACE_ID: &str = "ab-flow-gold";
 const CORNER: f64 = 5.0;
 const END_SIDES: u32 = 16;
 
+/// A terminal's outline: a box with a half circle at each end, each half drawn in `END_SIDES` steps.
 fn terminal_outline(rect: Rect) -> Polygon {
     let r = rect.height / 2.0;
     let end = |centre: f64, from: f64| -> Vec<Point> {
@@ -47,6 +48,8 @@ fn terminal_outline(rect: Rect) -> Polygon {
     outline
 }
 
+/// A shape's outline in its box: a diamond for a decision, a hexagon for a loop,
+/// a rounded pill for a start or an end.
 fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
     let Rect {
         x,
@@ -98,6 +101,8 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
     }
 }
 
+/// How a shape's slab looks: a gold face with the primary edge, its corners
+/// rounded but for a terminal's, whose outline is already round.
 fn look_of(shape: FlowchartShape) -> SlabLook {
     SlabLook {
         face: format!("url(#{GOLD_FACE_ID})"),
@@ -132,6 +137,7 @@ pub fn flowchart_definitions() -> Markup {
     )
 }
 
+/// A shape's lines of words, centred on its face above its front edge.
 fn centred_words(rect: Rect, words: &[String], fill: &str) -> Markup {
     let top = rect.y + (rect.height - CARD_THICKNESS) / 2.0
         - (words.len() as f64 * SHAPE_TEXT_LINE) / 2.0;
@@ -156,6 +162,7 @@ fn centred_words(rect: Rect, words: &[String], fill: &str) -> Markup {
     )
 }
 
+/// The middle of the outline's side nearest a corner, the first such side on a tie.
 fn side_near(outline: &[Point], corner: Point) -> Point {
     let count = outline.len();
     let middles: Vec<Point> = (0..count)
@@ -179,6 +186,7 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
     })
 }
 
+/// The selection ring round an outline: outside it, or inside it on a removed shape.
 fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Markup {
     let by = if standing == Some(Standing::Removed) {
         OUTLINE_WIDTH / 2.0
