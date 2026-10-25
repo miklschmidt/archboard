@@ -14,7 +14,7 @@ import {
 type Core = typeof import("#shared/protocol/generated/core/archboard_renderer_wasm.js");
 
 /** Why the core was not loaded. */
-type CoreBuildRefusal = "CORE_BUILD_MISSING" | "CORE_BUILD_STALE";
+type CoreBuildRefusal = "CORE_BUILD_MISSING" | "CORE_BUILD_INVALID" | "CORE_BUILD_STALE";
 
 /** A core build that a host refused to load, and the command that makes a good one. */
 class CoreBuildError extends Error {
@@ -38,7 +38,7 @@ class CoreBuildError extends Error {
  * a second load on the same thread checks the hash again and instantiates nothing.
  * @param expected The source hash the build must record; the checkout's own by default.
  * @returns The core.
- * @throws {CoreBuildError} When there is no build, or it was made from other sources.
+ * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
  */
 function loadCore(expected: string = coreSourceHash()): Core {
 	let core: Core;
@@ -56,7 +56,14 @@ function loadCore(expected: string = coreSourceHash()): Core {
 			`The renderer core is not built. Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT} inside \`nix develop\`.`,
 		);
 	}
-	core.initSync({ module: bytes });
+	try {
+		core.initSync({ module: bytes });
+	} catch {
+		throw new CoreBuildError(
+			"CORE_BUILD_INVALID",
+			`The renderer core build cannot be loaded. Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT} inside \`nix develop\`.`,
+		);
+	}
 	const built = core.sourceHash();
 	if (built !== expected) {
 		throw new CoreBuildError(
