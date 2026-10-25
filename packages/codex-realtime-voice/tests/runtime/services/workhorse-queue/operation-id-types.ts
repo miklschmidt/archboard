@@ -8,7 +8,7 @@ import {
 
 declare const operationIdBrand: unique symbol;
 
-/** Stand-in for the canonical shared OperationId of the shared package. */
+/** Stand-in for the server-issued `OperationId` brand of `@archboard/codex-app-server/identity`. */
 type CanonicalOperationId = string & {
 	readonly [operationIdBrand]: "operation";
 };
