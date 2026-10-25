@@ -1,7 +1,8 @@
-// The trunks of a block of blocks, routed with libavoid around the blocks it
-// packs: each between two pins on its blocks' edges, or the block's own port
-// or header, and how much room the routes spend running round the blocks.
-import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
+// The trunks of a block of blocks, routed by the core's orthogonal router
+// (crates/archboard-router, ADR 0057) around the blocks it packs: each
+// between two pins on its blocks' edges, or the block's own port or header,
+// and how much room the routes spend running round the blocks.
+import { routeTrunks } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { SAME, type Laid } from "#shared/rules/blocks/tree/laid.ts";
 import {
@@ -20,8 +21,31 @@ const TRUNK_CLEARANCE = 16;
 const TRUNK_TURN = 60;
 /** How much a trunk pays for crossing another, in diagram points. */
 const TRUNK_CROSSING = 300;
-/** libavoid's pin directions: a port is left the way its edge faces. */
-const DIRECTION: Readonly<Record<Side, number>> = { top: 1, bottom: 2, left: 4, right: 8 };
+/** The router's directions, as `routeTrunks` reads them: a pin is left the way its edge faces. */
+const LEAVES: Readonly<Record<Side, number>> = { top: 0, right: 1, bottom: 2, left: 3 };
+/** The kinds of end `routeTrunks` reads: a pin on an obstacle, or a free point. */
+const PIN = 0;
+const FREE = 1;
+
+/**
+ * Each route of what `routeTrunks` answers: for each trunk, its point count
+ * and its points; no points where the router found no route.
+ * @param answer The flat answer.
+ * @returns Each trunk's points, in order.
+ */
+function routesOf(answer: Float64Array): Point[][] {
+	const routes: Point[][] = [];
+	for (let at = 0; at < answer.length; at += 1 + 2 * answer[at]!) {
+		const count = answer[at]!;
+		routes.push(
+			Array.from({ length: count }, (_, index) => ({
+				x: answer[at + 1 + 2 * index]!,
+				y: answer[at + 2 + 2 * index]!,
+			})),
+		);
+	}
+	return routes;
+}
 
 /** The edge a trunk leaves a block's own port by: into the block. */
 const INWARD: Readonly<Record<Side, Side>> = {
@@ -30,28 +54,6 @@ const INWARD: Readonly<Record<Side, Side>> = {
 	left: "right",
 	right: "left",
 };
-/** A router, its ends and its connectors, as the module makes them. */
-type Router = InstanceType<AvoidEngine["Router"]>;
-type End = InstanceType<AvoidEngine["ConnEnd"]>;
-type Connection = InstanceType<AvoidEngine["ConnRef"]>;
-
-/**
- * Whether a route runs only across and down, never on a slant.
- * @param points The route.
- * @returns True when every run is horizontal or vertical.
- */
-function orthogonal(points: readonly Point[]): boolean {
-	return (
-		points.length >= 2 &&
-		points
-			.slice(1)
-			.every(
-				(point, index) =>
-					Math.abs(point.x - points[index]!.x) < 0.5 || Math.abs(point.y - points[index]!.y) < 0.5,
-			)
-	);
-}
-
 /**
  * A plain dogleg between two ends: across then down for ends that face
  * sideways, down then across for ends that face up or down.
@@ -137,7 +139,7 @@ function between(low: number, high: number, at: number): boolean {
 
 /**
  * The room the trunks running between two neighbouring blocks need: a lane
- * either side of each, where libavoid squeezed more into a gap than it
+ * either side of each, where the router squeezed more into a gap than it
  * holds a lane apart.
  * @param items The packed blocks' boxes.
  * @param lines Every trunk's points.
@@ -168,39 +170,6 @@ function roomNeeded(items: readonly Box[], lines: readonly Point[][], gap: numbe
 	return (Math.max(0, ...most) + 1) * LANE;
 }
 
-/**
- * Whether separate trunks overlap along parallel runs less than a lane apart.
- * @param lines The routed trunks.
- * @returns True when two of them do, over more than a lane.
- */
-function crowdedTrunks(lines: Iterable<readonly Point[]>): boolean {
-	const runs = [...lines].flatMap((points, line) =>
-		points.slice(1).map((to, index) => {
-			const from = points[index]!;
-			const vertical = Math.abs(from.x - to.x) < SAME;
-			return {
-				line,
-				vertical,
-				at: vertical ? from.x : from.y,
-				low: Math.min(vertical ? from.y : from.x, vertical ? to.y : to.x),
-				high: Math.max(vertical ? from.y : from.x, vertical ? to.y : to.x),
-			};
-		}),
-	);
-	return runs.some((one, index) =>
-		runs
-			.slice(index + 1)
-			.some(
-				(other) =>
-					one.line !== other.line &&
-					one.vertical === other.vertical &&
-					Math.abs(one.at - other.at) > SAME &&
-					Math.abs(one.at - other.at) < LANE - SAME &&
-					Math.min(one.high, other.high) - Math.max(one.low, other.low) > LANE,
-			),
-	);
-}
-
 /** The trunks of one block of blocks, routed around its packed blocks. */
 class TrunkRouter {
 	/**
@@ -209,14 +178,12 @@ class TrunkRouter {
 	 * @param laid Every block laid out, its items included.
 	 * @param tree The blocks.
 	 * @param boxes Where the block put its items, header and own ports.
-	 * @param unify Whether libavoid runs its unifying nudging prepass first.
 	 */
 	constructor(
 		readonly block: Block,
 		readonly laid: ReadonlyMap<string, Laid>,
 		readonly tree: BlockTree,
 		readonly boxes: ReadonlyMap<string, Box>,
-		private readonly unify = false,
 	) {}
 
 	/**
@@ -224,26 +191,6 @@ class TrunkRouter {
 	 * free points, for a block too tight for a trunk to turn into a pin.
 	 */
 	directed = true;
-
-	/**
-	 * Add one obstacle.
-	 * @param avoid The initialized libavoid module.
-	 * @param router The router.
-	 * @param box Its box.
-	 * @returns The router's shape.
-	 */
-	shape(avoid: AvoidEngine, router: Router, box: Box): object {
-		const from = new avoid.Point(box.x, box.y);
-		const to = new avoid.Point(box.x + box.width, box.y + box.height);
-		const rectangle = new avoid.Rectangle(from, to);
-		try {
-			return new avoid.ShapeRef(router, rectangle);
-		} finally {
-			rectangle.delete();
-			from.delete();
-			to.delete();
-		}
-	}
 
 	/**
 	 * Where on its obstacle a pinned end stands, and which way it leaves: a
@@ -284,141 +231,86 @@ class TrunkRouter {
 	}
 
 	/**
-	 * One end of a trunk: a pin on a packed block's port, on the block's own
-	 * port, or on the bottom of its header.
-	 * @param avoid The initialized libavoid module.
+	 * One end of a trunk as the router reads it: a pin on a packed block's
+	 * port, on the block's own port, or on the bottom of its header, or the
+	 * middle of an own port as a free point when the ports are not directed.
 	 * @param at The line end.
-	 * @param shapes Every obstacle's shape.
-	 * @param classes The pin class each end was given.
-	 * @returns The router's end.
+	 * @param obstacles Each obstacle's index in the router's scene.
+	 * @returns The end's kind, obstacle, point and the way it leaves.
 	 */
-	end(
-		avoid: AvoidEngine,
-		at: string,
-		shapes: ReadonlyMap<string, object>,
-		classes: Map<string, number>,
-	): End {
+	endOf(at: string, obstacles: ReadonlyMap<string, number>): number[] {
 		if (!this.directed && this.block.ports.has(at)) {
 			const box = this.boxes.get(at)!;
-			const point = new avoid.Point(box.x + box.width / 2, box.y + box.height / 2);
-			try {
-				return new avoid.ConnEnd(point);
-			} finally {
-				point.delete();
-			}
+			return [FREE, -1, box.x + box.width / 2, box.y + box.height / 2, -1];
 		}
 		const { owner, x, y, side } = this.pinOn(at);
-		const shape = shapes.get(owner)!;
-		const known = classes.get(at);
-		const pinClass = known ?? classes.size + 1;
-		if (known === undefined) {
-			classes.set(at, pinClass);
-			const made = new avoid.ShapeConnectionPin(shape, pinClass, x, y, true, 0, DIRECTION[side]);
-			made.setExclusive(false);
-		}
-		return new avoid.ConnEnd(shape, pinClass);
+		const box = this.boxes.get(owner)!;
+		const point = [box.x + x * box.width, box.y + y * box.height];
+		return [PIN, obstacles.get(owner)!, ...point, LEAVES[side]];
 	}
 
 	/**
 	 * Route every trunk around the packed blocks: into the block's own ports
-	 * as pins, or, where libavoid finds no route that way, to them as free
+	 * as pins, or, where the router finds no route that way, to them as free
 	 * points, and a trunk it still finds none for as a plain dogleg.
-	 * @param avoid The initialized libavoid module.
 	 * @returns Each line's points, by key, from its source end.
 	 */
-	route(avoid: AvoidEngine): Map<string, Point[]> {
-		const lines = this.routeOnce(avoid);
+	route(): Map<string, Point[]> {
+		const lines = this.routeOnce();
 		if (lines !== undefined) return lines;
 		this.directed = false;
-		return this.routeOnce(avoid) ?? this.routeOnce(avoid, true)!;
+		return this.routeOnce() ?? this.routeOnce(true)!;
+	}
+
+	/**
+	 * The scene `routeTrunks` reads: the router's parameters, every obstacle
+	 * (the packed blocks, the header and, directed, the block's own ports),
+	 * and each trunk's two ends.
+	 * @param lines The trunks, in the order they are routed.
+	 * @returns The flat scene.
+	 */
+	sceneOf(lines: readonly Line[]): Float64Array {
+		const header = this.block.header === undefined ? [] : [headerOf(this.block)];
+		const owned = this.directed ? [...this.block.ports.keys()] : [];
+		const ids = [...this.block.items, ...header, ...owned];
+		const obstacles = new Map(ids.map((id, index) => [id, index]));
+		return new Float64Array([
+			TRUNK_CLEARANCE,
+			LANE,
+			TRUNK_TURN,
+			TRUNK_CROSSING,
+			ids.length,
+			...ids.flatMap((id) => {
+				const box = this.boxes.get(id)!;
+				return [box.x, box.y, box.width, box.height];
+			}),
+			lines.length,
+			...lines.flatMap((line) => [
+				...this.endOf(line.tail, obstacles),
+				...this.endOf(line.head, obstacles),
+			]),
+		]);
 	}
 
 	/**
 	 * Route every trunk once, the block's own ports as pins or free points.
-	 * @param avoid The initialized libavoid module.
-	 * @param anyway Whether a trunk libavoid finds no route for takes a plain dogleg.
-	 * @returns Each line's points, or nothing when libavoid found no route
+	 * @param anyway Whether a trunk the router finds no route for takes a plain dogleg.
+	 * @returns Each line's points, or nothing when the router found no route
 	 * for some trunk and a dogleg was not asked for.
 	 */
-	routeOnce(avoid: AvoidEngine, anyway = false): Map<string, Point[]> | undefined {
-		const router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
-		try {
-			const connections = this.connect(avoid, router);
-			router.processTransaction();
-			const lines = new Map<string, Point[]>();
-			for (const { line, connection } of connections) {
-				const points = this.pointsOf(line, connection, anyway);
-				if (points === undefined) return undefined;
-				lines.set(line.key, line.from === line.tail ? points : points.toReversed());
-			}
-			return lines;
-		} finally {
-			router.delete();
-		}
-	}
-
-	/**
-	 * Set the router up and connect every trunk's two ends.
-	 * @param avoid The initialized libavoid module.
-	 * @param router The router.
-	 * @returns Each line and its connector.
-	 */
-	connect(avoid: AvoidEngine, router: Router): { line: Line; connection: Connection }[] {
-		// The optional unification prepass repeatedly solves every pair of free
-		// segments. Dense route boards spend tens of seconds there (TASK-512).
-		// Normal nudging still separates the routed lines afterwards, so only a
-		// chosen packing whose trunks still crowd (`crowdedTrunks`) runs it.
-		router.setRoutingOption(
-			avoid.RoutingOption.performUnifyingNudgingPreprocessingStep,
-			this.unify,
+	routeOnce(anyway = false): Map<string, Point[]> | undefined {
+		const lines = [...this.block.lines.values()];
+		const routes = routesOf(routeTrunks(this.sceneOf(lines)));
+		if (!anyway && routes.some((points) => points.length === 0)) return undefined;
+		return new Map(
+			lines.map((line, index) => {
+				const routed = routes[index]!;
+				const route =
+					routed.length === 0 ? dogleg(this.pinPoint(line.tail), this.pinPoint(line.head)) : routed;
+				return [line.key, line.from === line.tail ? route : route.toReversed()];
+			}),
 		);
-		router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, TRUNK_CLEARANCE);
-		router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
-		router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
-		router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
-		const header = this.block.header === undefined ? [] : [headerOf(this.block)];
-		const owned = this.directed ? [...this.block.ports.keys()] : [];
-		const shapes = new Map(
-			[...this.block.items, ...header, ...owned].map((id) => [
-				id,
-				this.shape(avoid, router, this.boxes.get(id)!),
-			]),
-		);
-		const classes = new Map<string, number>();
-		return [...this.block.lines.values()].map((line) => {
-			const from = this.end(avoid, line.tail, shapes, classes);
-			const to = this.end(avoid, line.head, shapes, classes);
-			try {
-				const connection = new avoid.ConnRef(router, from, to);
-				connection.setRoutingType(avoid.ConnType.ConnType_Orthogonal);
-				return { line, connection };
-			} finally {
-				from.delete();
-				to.delete();
-			}
-		});
-	}
-
-	/**
-	 * One trunk's route as libavoid answered it: its points, a plain dogleg
-	 * between its pins when libavoid found no route and one is asked for, or
-	 * nothing.
-	 * @param line The trunk.
-	 * @param connection Its connector, routed.
-	 * @param anyway Whether a trunk with no route takes a dogleg.
-	 * @returns The points, from the trunk's upper end.
-	 */
-	pointsOf(line: Line, connection: Connection, anyway: boolean): Point[] | undefined {
-		const route = connection.displayRoute();
-		const routed = Array.from({ length: route.size() }, (_, index) => {
-			const { x, y } = route.at(index);
-			return { x, y };
-		});
-		// libavoid answers a straight line between the blocks' middles when it
-		// finds no route.
-		if (connection.hasValidRoute() && orthogonal(routed)) return routed;
-		return anyway ? dogleg(this.pinPoint(line.tail), this.pinPoint(line.head)) : undefined;
 	}
 }
 
-export { crowdedTrunks, TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };
+export { TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };

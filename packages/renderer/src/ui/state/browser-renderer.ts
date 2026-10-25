@@ -27,24 +27,12 @@ import {
 	type EngineWorker,
 } from "#shared/rules/engine/engine-pool.ts";
 
-/** What the page supplies to draw here. */
-interface BrowserRendererSetup {
-	/** Where the page serves the routing engine's WebAssembly from. */
-	readonly avoidWasmUrl: string;
-}
-
 /**
- * Start one layout engine worker and tell it where the routing engine is served.
- * @param avoidWasmUrl Where the page serves the routing engine's WebAssembly from.
+ * Start one layout engine worker.
  * @returns The worker.
  */
-function startLayoutWorker(avoidWasmUrl: string): EngineWorker {
-	const worker = new Worker(new URL("../workers/layout-worker.ts", import.meta.url), {
-		type: "module",
-	});
-	// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker.postMessage has no target origin; this rule applies to windows.
-	worker.postMessage({ cmd: "init", wasmUrl: avoidWasmUrl });
-	return worker;
+function startLayoutWorker(): EngineWorker {
+	return new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" });
 }
 
 let started: Promise<void> | undefined;
@@ -70,16 +58,10 @@ function noEmbeddedFaces(): never {
 	);
 }
 
-/**
- * Make this page a renderer host. Once per page: later calls keep the first.
- * @param setup Where the routing engine is served from.
- */
-function startBrowserRenderer(setup: BrowserRendererSetup): void {
+/** Make this page a renderer host. Once per page: later calls keep the first. */
+function startBrowserRenderer(): void {
 	if (started !== undefined) return;
-	const solve = createEnginePool(
-		() => startLayoutWorker(setup.avoidWasmUrl),
-		workerCeiling(navigator.hardwareConcurrency),
-	);
+	const solve = createEnginePool(startLayoutWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({
 		solve,
 		fontBase64: noEmbeddedFaces,
@@ -88,7 +70,7 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	started = loadDiagramFaces();
 	// Start one engine now, while the page boots and reads the board, rather
 	// than when the first picture needs it: a worker's first solve initializes
-	// both engines, and a trivial graph pays that cost here.
+	// its engines, and a trivial graph pays that cost here.
 	void solve(WARM_UP_GRAPH, { [SOLVE_STAGE]: DEFAULT_LAYOUT_ENGINE }).catch(() => undefined);
 }
 
@@ -112,4 +94,4 @@ async function drawBoardHere(
 	return renderBoard(board, { ...choices, fonts: "linked" }, policy);
 }
 
-export { drawBoardHere, startBrowserRenderer, type BrowserRendererSetup };
+export { drawBoardHere, startBrowserRenderer };

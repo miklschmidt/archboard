@@ -7,7 +7,6 @@
 // two ends of every trunk stand in one column where their edges share one,
 // or else as near each other as their edges allow; each block inside is
 // routed again with its ports there, and the block is packed again as it was.
-import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { SAME, corners, type Insets, type Laid } from "#shared/rules/blocks/tree/laid.ts";
 import { PACK_GAP, PackLayout, type Packing } from "#shared/rules/blocks/packing/pack.ts";
@@ -26,7 +25,6 @@ interface Settling {
 	readonly laid: Map<string, Laid>;
 	readonly packings: ReadonlyMap<string, Packing>;
 	readonly insetsOf: (block: Block) => Insets;
-	readonly avoid: AvoidEngine;
 }
 
 /**
@@ -526,7 +524,7 @@ class Settle {
 	 * @param own Where its parent settled its ports, in its own coordinates.
 	 */
 	block(block: Block, own: ReadonlyMap<string, number>): void {
-		const { tree, laid, packings, insetsOf, avoid } = this.settling;
+		const { tree, laid, packings, insetsOf } = this.settling;
 		const before = laid.get(block.id)!;
 		const packing = packings.get(block.id);
 		if (packing === undefined) {
@@ -537,7 +535,7 @@ class Settle {
 		const again = new PackLayout(block, laid, tree, insetsOf(block));
 		again.settled = own;
 		again.held = before.width;
-		laid.set(block.id, again.roomy(avoid, packing));
+		laid.set(block.id, again.roomy(packing));
 	}
 }
 

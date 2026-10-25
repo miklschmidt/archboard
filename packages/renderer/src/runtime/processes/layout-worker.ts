@@ -1,5 +1,4 @@
 import { instance } from "@viz-js/viz";
-import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "#shared/rules/render/host.ts";
 import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
@@ -17,21 +16,11 @@ interface Request {
 // from the engine's memory as loaded. The core loads first, outside the
 // engine's load, and the worker refuses to start on a core built from other
 // sources (ADR 0057).
-const ready = loadCore().then(() =>
-	loadLayoutEngine(async () => {
-		const [viz] = await Promise.all([instance(), AvoidLib.load()]);
-		return [viz, AvoidLib.getInstance()];
-	}),
-);
+const ready = loadCore().then(() => loadLayoutEngine(instance));
 let initFailure = false;
-// The pool starts its next worker once this one says its engine is loaded.
-void ready.then(
-	// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
-	() => self.postMessage({ ready: true }),
-	() => {
-		initFailure = true;
-	},
-);
+void ready.catch(() => {
+	initFailure = true;
+});
 let queue: Promise<void> = Promise.resolve();
 
 self.addEventListener("message", (event: MessageEvent<Request>) => {
@@ -39,10 +28,7 @@ self.addEventListener("message", (event: MessageEvent<Request>) => {
 	queue = queue.then(async () => {
 		try {
 			const solve = await ready;
-			const data = solve(request.graph, request.layoutOptions, (told) =>
-				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
-				self.postMessage({ id: request.id, told }),
-			);
+			const data = solve(request.graph, request.layoutOptions);
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
 			self.postMessage({ id: request.id, data });
 		} catch (error) {
