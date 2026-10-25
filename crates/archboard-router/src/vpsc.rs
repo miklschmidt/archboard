@@ -23,6 +23,20 @@ pub(crate) struct Constraint {
     pub gap: f64,
 }
 
+impl Constraint {
+    /// The variable at the constraint's other end from one of its own, or
+    /// nothing when the variable is neither of its ends.
+    fn other_end(&self, var: usize) -> Option<usize> {
+        if self.left == var {
+            Some(self.right)
+        } else if self.right == var {
+            Some(self.left)
+        } else {
+            None
+        }
+    }
+}
+
 const EPS: f64 = 1e-7;
 
 struct Block {
@@ -186,18 +200,12 @@ impl<'a> Solver<'a> {
         let mut seen = vec![from];
         let mut stack = vec![from];
         while let Some(var) = stack.pop() {
-            for &index in &self.blocks[block].active {
-                if index == without {
-                    continue;
-                }
-                let c = self.constraints[index];
-                let other = if c.left == var {
-                    c.right
-                } else if c.right == var {
-                    c.left
-                } else {
-                    continue;
-                };
+            let others = self.blocks[block]
+                .active
+                .iter()
+                .filter(|&&index| index != without)
+                .filter_map(|&index| self.constraints[index].other_end(var));
+            for other in others {
                 if !seen.contains(&other) {
                     seen.push(other);
                     stack.push(other);
