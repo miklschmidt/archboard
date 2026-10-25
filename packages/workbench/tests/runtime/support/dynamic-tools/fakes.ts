@@ -3,8 +3,10 @@ import type {
 	EpochSnapshot,
 	EpochStageInput,
 	EpochTransaction,
-} from "@archboard/codex-realtime-voice/runtime";
-import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
+	EpochOperationRecord,
+	ThreadLinkTarget,
+	CodexWaitGraph,
+} from "#runtime/protocol/voice/extension.ts";
 import { emptyManifest } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
@@ -31,8 +33,6 @@ import type {
 	DynamicToolApprovalPort,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { DynamicImmutableEffect } from "#runtime/protocol/dynamic-tools/effect-contract.ts";
-import type { ThreadLinkTarget } from "@archboard/codex-realtime-voice/runtime";
-import type { CodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import {
 	CALLER_WIRE_ID,
 	authorityToken,

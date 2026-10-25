@@ -8,8 +8,6 @@
 // it. Nothing here decides anything. It holds no audio, no SDP, no prompt text and no board
 // content: identities, sizes, states and messages only.
 
-import type { Express, Request, Response } from "express";
-
 /** One thing that happened during a voice start. */
 interface VoiceStartTraceEntry {
 	/** Milliseconds since the attempt began. */
@@ -133,20 +131,33 @@ function sessionVoiceStartTrace(trace: VoiceStartTrace = voiceStartTrace): Sessi
 /** Where the trace is read. */
 const VOICE_START_TRACE_ROUTE = "/api/voice/start-trace";
 
+/** The part of an HTTP response the trace answers through. An Express response has it. */
+interface TraceResponse {
+	json(body: unknown): unknown;
+}
+
+/**
+ * The one method of an HTTP application the trace route needs. An Express application has it, so
+ * the published types name no Express package.
+ */
+interface TraceRouteHost {
+	get(path: string, handler: (request: unknown, response: TraceResponse) => void): unknown;
+}
+
 /**
  * Answer with every kept attempt.
- * @param _req The request.
- * @param res Its response.
+ * @param _request The request.
+ * @param response Its response.
  */
-function readVoiceStartTrace(_req: Request, res: Response): void {
-	res.json({ success: true, attempts: voiceStartTrace.attempts() });
+function readVoiceStartTrace(_request: unknown, response: TraceResponse): void {
+	response.json({ success: true, attempts: voiceStartTrace.attempts() });
 }
 
 /**
  * Mount the route the trace is read through.
- * @param app The express application.
+ * @param app The HTTP application, such as an Express application.
  */
-function mountVoiceStartTraceRoute(app: Express): void {
+function mountVoiceStartTraceRoute(app: TraceRouteHost): void {
 	app.get(VOICE_START_TRACE_ROUTE, readVoiceStartTrace);
 }
 

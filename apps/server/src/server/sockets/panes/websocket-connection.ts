@@ -8,7 +8,7 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,
-	type BrowserConnectionInstance,
+	type VoiceAgentBrowserPort,
 	parseTabSessionId,
 	type TabSessionId,
 } from "@archboard/codex-realtime-voice/server";
@@ -315,7 +315,7 @@ interface RegisteredSocket {
 	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
 	acceptanceToken: object | null;
 	/** Its Codex browser connection instance. */
-	codexInstance: BrowserConnectionInstance;
+	codexInstance: Parameters<VoiceAgentBrowserPort["accept"]>[0];
 }
 
 /**

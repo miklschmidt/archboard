@@ -3,7 +3,11 @@ import { z } from "zod";
 import { boundedText } from "#shared/schemas/browser/scalars.ts";
 import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
 
-const DYNAMIC_APPROVAL_NAMESPACE = "archboard_app" as const;
+/**
+ * The host domain namespace a dynamic approval belongs to. The host names it (Archboard sends
+ * `archboard_app`), so the browser accepts any namespace-shaped name rather than one product's.
+ */
+const DynamicApprovalNamespaceSchema = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/u);
 const DYNAMIC_APPROVAL_TOOLS = ["create_thread", "fork_thread", "send_message_to_thread"] as const;
 const DYNAMIC_APPROVAL_DECISIONS = ["approve", "decline"] as const;
 const DYNAMIC_APPROVAL_STATES = [
@@ -140,7 +144,7 @@ function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: 
 			threadId: ThreadIdSchema,
 			turnId: TurnIdSchema,
 			callId: DynamicToolCallIdSchema,
-			namespace: z.literal(DYNAMIC_APPROVAL_NAMESPACE),
+			namespace: DynamicApprovalNamespaceSchema,
 			tool: DynamicApprovalToolSchema,
 			manifestHash: boundedText(256),
 			operationId: OperationIdSchema,
@@ -289,7 +293,6 @@ function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: 
 type DynamicApprovalEffectSchemas = ReturnType<typeof createDynamicApprovalEffectSchemas>;
 
 export {
-	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_TOOLS,
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_STATES,

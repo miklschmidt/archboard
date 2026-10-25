@@ -1,3 +1,8 @@
+import type {
+	EpochExecutionProof,
+	EpochOperationRecord,
+	ThreadLinkClassification,
+} from "#runtime/protocol/voice/extension.ts";
 import { createCodexCoordinatorCallbacks } from "#runtime/services/coordinator-callbacks/callbacks.ts";
 import { createCoordinatorCallbackRealtimePort } from "@archboard/codex-realtime-voice/runtime";
 import {
@@ -11,15 +16,12 @@ import {
 	type CoordinatorCallbackTurnPort,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { COORDINATOR_CAPABILITY_POLICY } from "@archboard/codex-realtime-voice/runtime";
-import type { EpochExecutionProof } from "@archboard/codex-realtime-voice/runtime";
-import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	semanticInput,
 	semanticSources,
 	type SemanticSources,
 } from "#tests/runtime/services/coordinator-callbacks/semantic-sources.ts";
-import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import type { ReverseResponse } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEvent } from "@archboard/codex-realtime-voice/runtime";
 import {

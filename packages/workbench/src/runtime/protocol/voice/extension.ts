@@ -1,7 +1,11 @@
 // Archboard's names for the parts of the voice agent's extension contract that it implements.
 // Every type is read from the one contract the voice package publishes, `VoiceAgentExtensions`,
 // so a change of the contract reaches Archboard's code as a type error, not as a drifted copy.
-import type { VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
+import type {
+	VoiceAgentBrowserPort,
+	VoiceAgentExtensions,
+} from "@archboard/codex-realtime-voice/server";
+import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 
 type Extensions = Required<VoiceAgentExtensions>;
 
@@ -35,3 +39,66 @@ export type CodexWorkbenchTabSession = ReturnType<CodexWorkbenchDomainScope["ses
 export type CodexEpochStore = CodexWorkbenchDomainScope["epoch"];
 /** The thread-link port of a generation. */
 export type CodexThreadLinkPort = CodexWorkbenchDomainScope["threadLink"];
+
+/** One staged epoch or operation, committed, rolled back or marked unknown later. */
+export type EpochTransaction = ReturnType<CodexEpochStore["stageEpoch"]>;
+/** What staging an epoch or operation records. */
+export type EpochStageInput = Parameters<CodexEpochStore["stageEpoch"]>[0];
+/** The durable record of one epoch or operation. */
+export type EpochOperationRecord = ReturnType<CodexEpochStore["startEpoch"]>;
+/** The thread and turn evidence that confirms an operation's outcome. */
+export type EpochConfirmation = NonNullable<Parameters<CodexEpochStore["commitEpoch"]>[1]>;
+/** What asking whether an operation may still execute names. */
+export type EpochExecutionRequest = Parameters<CodexEpochStore["assertCurrent"]>[0];
+/** The proof that an operation belongs to the current epoch. */
+export type EpochExecutionProof = ReturnType<CodexEpochStore["assertCurrent"]>;
+/** The store's whole durable state. */
+export type EpochSnapshot = ReturnType<CodexEpochStore["snapshot"]>;
+/** The thread a link classification is asked about. */
+export type ThreadLinkTarget = Parameters<CodexThreadLinkPort["classify"]>[0];
+/** What the core concluded about a thread: executable, inspect-only or unbound, and why. */
+export type ThreadLinkClassification = Awaited<ReturnType<CodexThreadLinkPort["classify"]>>;
+/** The evidence a thread link's classification rests on. */
+export type ThreadLinkEpochProof = EpochOperationRecord | EpochExecutionProof;
+/** The wait graph that refuses a wait cycle between workhorse threads. */
+export type CodexWaitGraph = ReturnType<typeof createCodexWaitGraph>;
+/** The tool call that owns a set of wait edges. */
+export type WaitOwner = Parameters<CodexWaitGraph["addEdgeSet"]>[0]["owner"];
+/** Why an owner's wait edges were released. */
+export type OwnedWaitCleanupCause = Extract<
+	Parameters<CodexWaitGraph["release"]>[0],
+	{ readonly owner: unknown }
+>["cause"];
+/** One tab session's coordinator, realtime voice and thread components. */
+export type CodexWorkbenchSessionComponents = CodexWorkbenchTabSession["components"];
+/** One workhorse of a tab session, the one that works in one checkout. */
+export type CodexWorkbenchWorkhorse =
+	CodexWorkbenchTabSession["workhorses"] extends ReadonlyMap<string, infer Workhorse>
+		? Workhorse
+		: never;
+/** One workhorse's thread and queue components. */
+export type CodexWorkbenchWorkhorseComponents = CodexWorkbenchWorkhorse["components"];
+/** The browser actions a domain's dynamic approvals answer. */
+export type BrowserDynamicApprovalActions = NonNullable<
+	CodexWorkbenchDomain["approvals"]
+>["browser"];
+/** The lease-bound browser context an approval answer arrives with. */
+export type BrowserActionContext = Parameters<BrowserDynamicApprovalActions["resolve"]>[1];
+/** What answering a browser action resolves with. */
+export type BrowserActionResult = Awaited<ReturnType<BrowserDynamicApprovalActions["resolve"]>>;
+/** The exact physical socket a host registers with the browser port. */
+export type BrowserConnectionInstance = Parameters<VoiceAgentBrowserPort["accept"]>[0];
+/** Where a tab session's or workhorse's host context is published. */
+export type WorkbenchContextPublisher = ReturnType<Extensions["sessionContextFor"]>["publisher"];
+/** The host's policy for the coordinator callbacks its context events become. */
+export type CoordinatorCallbackHostPolicy = ReturnType<
+	Extensions["sessionContextFor"]
+>["callbacks"];
+/** One host-context event as the host announces it to the callback engine. */
+export type CoordinatorHostContextSource = Parameters<
+	Parameters<CoordinatorCallbackHostPolicy["subscribe"]>[0]
+>[0];
+/** One host-context event as the callback engine asks the host how to deliver it. */
+export type CoordinatorHostContextCallback = Parameters<
+	CoordinatorCallbackHostPolicy["delivery"]
+>[0];
