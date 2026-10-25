@@ -1,11 +1,11 @@
 ---
 id: TASK-544
 title: Two panes stay focused on the server after the person focuses each in turn
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T21:46:00Z'
-updated_date: '2026-10-25T21:58:00Z'
+updated_date: '2026-10-25T22:13:00Z'
 labels:
   - frontend
   - bug
@@ -22,10 +22,10 @@ After a person focuses one pane and then the other, the server still counts both
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 After a person focuses pane A and then pane B, the server reports only pane B as focused
-- [ ] #2 `browser show --pane focused` reaches the pane the person focused last
-- [ ] #3 The dock test in tests/system/browser/codex-text-workbench.test.ts passes, with every assertion and timeout unchanged
-- [ ] #4 The task notes name the observed cause and the commit that brought the failure back
+- [x] #1 After a person focuses pane A and then pane B, the server reports only pane B as focused
+- [x] #2 `browser show --pane focused` reaches the pane the person focused last
+- [x] #3 The dock test in tests/system/browser/codex-text-workbench.test.ts passes, with every assertion and timeout unchanged
+- [x] #4 The task notes name the observed cause and the commit that brought the failure back
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,12 @@ Evidence: tagged server logging of every POST /api/panes showed one report from 
 Which commit: e57e8945b (feat(web): a part picked in one pane is picked in the pane beside it, TASK-538.02) brought the failure. It made every pane draw again when the link between the panes changes. The dock test passes at 814c0eedf (e57e8945b^) and fails at e57e8945b, at 9a101c764 (c223a3023^) and at c223a3023. So c223a3023 never made the test pass. Its links derivation is fine, but a link that really changes still draws both panes again.
 
 Fix: the pane core sends a report at once when the focused flag changed since the last facet change, and then arms the debounce as before, so the pane's place on screen is still measured after a layout settles. A unit test in apps/web/tests/ui/state/pane-session/pane-connection.test.ts owns it: a pane that loses focus reports focused=false without the debounce.
+
+Brought onto feat/architecture-insight-ux as 83e7f0c2c. Without the four new lines in facetsChanged the new unit test fails, and with them it passes (checked on this branch). Gate after the fix: bun run check stops only on the two waived wide-boards layout timing tests (4958 pass). test:system 257 pass, test:repository 142 pass, test:serial-browser all pass, the dock test included. The dock test file is unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A pane now reports a change of focus to the server at once, beside its debounced report. Every redraw restarted the 300 ms debounce, and since e57e8945b a change of the pane link redraws both panes, so the report that pane A lost focus came after the clicks, and browser show --pane focused found two focused panes. A unit test in pane-connection.test.ts owns it, and the dock browser test passes again.
+<!-- SECTION:FINAL_SUMMARY:END -->

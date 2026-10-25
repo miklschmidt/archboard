@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T21:51:00Z'
+updated_date: '2026-10-25T22:13:00Z'
 labels:
   - design-questions
   - ui
@@ -25,11 +25,11 @@ ADR 0057 (TASK-537.02) lets a chosen design question light its answer. Without t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Choosing a result of a question lights every subject of its answer and the containers that hold them, with the chosen result's relationships and the parts at their other ends, and recedes the rest. Nothing is written
+- [x] #1 Choosing a result of a question lights every subject of its answer and the containers that hold them, with the chosen result's relationships and the parts at their other ends, and recedes the rest. Nothing is written
 - [ ] #2 The camera frames the chosen result with the parts at the other ends of its relationships, at a size a person can read. When the view does not draw it, the pane opens the whole board first
-- [ ] #3 The Board tab stays open while the person goes from one result to the next, the current result's row is pressed, and choosing that row again lets the question go
-- [ ] #4 A pick shows its own Light, and letting go of the pick brings the light of the chosen question back
-- [ ] #5 Choosing a group or a walkthrough step lets the question go, and choosing a question lets the pick and the group go
+- [x] #3 The Board tab stays open while the person goes from one result to the next, the current result's row is pressed, and choosing that row again lets the question go
+- [x] #4 A pick shows its own Light, and letting go of the pick brings the light of the chosen question back
+- [x] #5 Choosing a group or a walkthrough step lets the question go, and choosing a question lets the pick and the group go
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,4 +72,14 @@ Closing:
 - Footprint read against base 4acc6767f (the plan commit, parent of the first code commit 20441874c): namedAndChanged Render stage states, Viewer entry point, Light connections, List design questions; changedNotNamed and namedNotChanged empty. Unbound containers and drill-downs skipped.
 - Adopted Board viewer@TASK-537.03 at version 154 with the board's scope as its summary. archboard check: 0 diagnostics.
 - Behind: Browser application's Board stage (SemanticBoardStage.tsx) changed in 20441874c. Still right: the stage passes the chosen question to its view and sidebar, and composes the same stage.
+
+Step-through build (2439711c7, 054fc87a6, cc165802b). Each result row is a step. A step lights the whole answer with its containers, plus the step subject's relationships and the parts at their other ends. It rings the subject with the attention ring a walkthrough step uses, and the camera frames the subject with those parts. The light row and its hidden count are gone. The row hover preview stays on every row except the pressed one, because after a click the pointer still rests on that row and would hide the step light.
+
+QA in a dark Chromium at 1920x1080 on the Board viewer board (no web shop board has a pass-through entry point), from the Overview: each of the five steps opened Everything, pressed its row, kept the Board tab open, ringed its entry point and lit 19 to 21 subjects. Camera scale per step: Picture cache 0.42, Board reads 0.39, Follow drill-downs 0.54, Keep the drill trail 0.56, Picture departure 0.33. At 0.33 to 0.42 the card names read and the descriptions do not, because a caller sits far from the entry point. The owner decides whether a step needs a floor on its zoom.
+
+QA found TASK-545: the view null that the fit asked for is the Overview since ADR 0052, so the first build never opened the whole board.
+
+Board: the commits changed List design questions, Light connections, Viewer entry point and Render stage states inside. Board viewer still says what each does: the result rows still show a result and ask the agent about it, and the stage still hands the light the chosen question. archboard check --code reports 41 findings, the same as before the step-through, and none is about the touched files.
+
+Gate after the step-through: bun run check stops only on the two waived wide-boards layout timing tests (4958 pass). test:system 257 pass, test:repository 142 pass, test:serial-browser all pass. Criterion 2 stays open: three steps frame at scale 0.33 to 0.42, where descriptions do not read. Waiting on the owner for that and for ADR 0057.
 <!-- SECTION:NOTES:END -->
