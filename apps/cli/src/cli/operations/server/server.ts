@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-	ensureServerRunning,
-	stopServer,
-	restartServer,
-} from "@archboard/server-lifecycle/server";
+import { ensureServerRunning, stopServer, restartServer } from "@archboard/server-lifecycle/server";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 
 const IgnoredTailSchema = z.array(z.string()).default([]);
