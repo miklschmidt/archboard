@@ -96,6 +96,61 @@ async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: numbe
 	});
 }
 
+/** Barriers sent so far, which makes each one's ping token unique. */
+let barriers = 0;
+
+/**
+ * Wait until every message the server sent before this call has arrived.
+ *
+ * A pong comes back on the same connection after every frame the server wrote first.
+ * @param socket The pane's socket.
+ * @param clientId The pane's client id, which a failure names.
+ */
+async function socketBarrier(socket: WebSocket, clientId: string): Promise<void> {
+	if (socket.readyState !== WebSocket.OPEN) {
+		throw new Error(`Pane ${clientId} cannot synchronize a closed socket.`);
+	}
+	barriers += 1;
+	const token = Buffer.from(`${clientId}:${barriers}`);
+	await new Promise<void>((resolve, reject) => {
+		const cleanup = (): void => {
+			clearTimeout(timer);
+			socket.off("pong", onPong);
+			socket.off("close", onClose);
+			socket.off("error", onError);
+		};
+		const onPong = (data: Buffer): void => {
+			if (!data.equals(token)) {
+				return;
+			}
+			cleanup();
+			resolve();
+		};
+		const onClose = (): void => {
+			cleanup();
+			reject(new Error(`Pane ${clientId} closed before its socket barrier.`));
+		};
+		const onError = (error: Error): void => {
+			cleanup();
+			reject(error);
+		};
+		const timer = setTimeout(() => {
+			cleanup();
+			reject(
+				timeoutError(clientId, "to acknowledge its socket barrier", TEST_PANE_MESSAGE_TIMEOUT_MS),
+			);
+		}, TEST_PANE_MESSAGE_TIMEOUT_MS);
+		socket.on("pong", onPong);
+		socket.once("close", onClose);
+		socket.once("error", onError);
+		try {
+			socket.ping(token);
+		} catch (error) {
+			onError(error as Error);
+		}
+	});
+}
+
 async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	base: string;
 	clientId: string;
@@ -168,6 +223,8 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 			response.body["success"] === true &&
 			response.body["registered"] === true
 		) {
+			// The server tells the pane where its board stands before it answers, on the socket.
+			await socketBarrier(socket, options.clientId);
 			return;
 		}
 		throw new Error(
@@ -205,53 +262,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 			} while (Date.now() < deadline);
 			return undefined;
 		},
-		async sync() {
-			if (socket.readyState !== WebSocket.OPEN) {
-				throw new Error(`Pane ${options.clientId} cannot synchronize a closed socket.`);
-			}
-			const token = Buffer.from(`${options.clientId}:${events.length}:${Date.now()}`);
-			await new Promise<void>((resolve, reject) => {
-				const cleanup = (): void => {
-					clearTimeout(timer);
-					socket.off("pong", onPong);
-					socket.off("close", onClose);
-					socket.off("error", onError);
-				};
-				const onPong = (data: Buffer): void => {
-					if (!data.equals(token)) {
-						return;
-					}
-					cleanup();
-					resolve();
-				};
-				const onClose = (): void => {
-					cleanup();
-					reject(new Error(`Pane ${options.clientId} closed before its socket barrier.`));
-				};
-				const onError = (error: Error): void => {
-					cleanup();
-					reject(error);
-				};
-				const timer = setTimeout(() => {
-					cleanup();
-					reject(
-						timeoutError(
-							options.clientId,
-							"to acknowledge its socket barrier",
-							TEST_PANE_MESSAGE_TIMEOUT_MS,
-						),
-					);
-				}, TEST_PANE_MESSAGE_TIMEOUT_MS);
-				socket.on("pong", onPong);
-				socket.once("close", onClose);
-				socket.once("error", onError);
-				try {
-					socket.ping(token);
-				} catch (error) {
-					onError(error as Error);
-				}
-			});
-		},
+		sync: () => socketBarrier(socket, options.clientId),
 		async close() {
 			if (closedAndUnregistered) {
 				return;
