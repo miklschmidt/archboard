@@ -140,4 +140,6 @@ const fixture = {
 	svg: outcome.reply.svg,
 };
 writeFileSync(FIXTURE, `${JSON.stringify(fixture, null, "\t")}\n`);
-console.log(`Wrote ${FIXTURE}: ${solves.length} solves, ${outcome.reply.svg.length} bytes of SVG.`);
+process.stdout.write(
+	`Wrote ${FIXTURE}: ${solves.length} solves, ${outcome.reply.svg.length} bytes of SVG.\n`,
+);

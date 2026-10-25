@@ -1,4 +1,4 @@
-//! Where a hop may stand and what it draws (`hop-geometry.ts`). A hop is a
+//! Where a hop may stand and what it draws. A hop is a
 //! small arc on a straight run, bulging up from a line across and right of a
 //! line down, over one or more crossings under one crest. It stands where the
 //! rising line runs straight and alone past its feet, the line beneath runs

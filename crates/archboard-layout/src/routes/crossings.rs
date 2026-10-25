@@ -1,5 +1,5 @@
 //! Crossings belong to the final drawing: route and paint order are settled
-//! here (`crossings.ts`).
+//! here.
 //!
 //! Where two lines cross, one of them hops over the other (`hops` says where a
 //! hop may stand), and every hop bulges the same way, so two never face each

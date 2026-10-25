@@ -1,8 +1,8 @@
-//! The lines a reader sees, as opposed to the routes that draw them
-//! (`drawn-lines.ts`). Routes of one kind that lie on one line are a trunk:
-//! one drawn line, whose ink the heaviest of them draws (then the earliest
-//! painted). Crossings are between drawn lines, and each line's straight runs
-//! are what a hop may stand on.
+//! The lines a reader sees, as opposed to the routes that draw them. Routes
+//! of one kind that lie on one line are a trunk: one drawn line, whose ink
+//! the heaviest of them draws (then the earliest painted). Crossings are
+//! between drawn lines, and each line's straight runs are what a hop may
+//! stand on.
 //!
 //! A run, a line and a crossing are named by their index into the lists this
 //! module builds, so two of them are one where the TypeScript compared them by
