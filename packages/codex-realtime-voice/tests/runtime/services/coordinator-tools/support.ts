@@ -1,6 +1,5 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import {
-	VOICE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
 	type CoordinatorToolName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
@@ -383,6 +382,7 @@ function fixture(
 	};
 
 	const dispatcher = createCodexCoordinatorTools({
+		tools: TEST_TOOLS,
 		identity,
 		authority,
 		operation,
@@ -411,12 +411,12 @@ function fixture(
 	): DynamicServerRequest => {
 		const namespace =
 			options.namespace ??
-			(tool === "resolve_spoken_approval" ? "archboard_voice" : "archboard_workhorse");
+			(tool === "resolve_spoken_approval" ? TEST_TOOLS.voice.namespace.name : TEST_TOOLS.workhorse.namespace.name);
 		const manifestHash =
 			options.manifestHash ??
-			(namespace === "archboard_voice"
-				? VOICE_TOOLS_MANIFEST_SHA256
-				: WORKHORSE_TOOLS_MANIFEST_SHA256);
+			(namespace === TEST_TOOLS.voice.namespace.name
+				? TEST_TOOLS.voice.sha256
+				: TEST_TOOLS.workhorse.sha256);
 		const threadId = options.threadId ?? coordinatorThreadId;
 		const turnId = options.turnId ?? expectedTurnId;
 		const callId =

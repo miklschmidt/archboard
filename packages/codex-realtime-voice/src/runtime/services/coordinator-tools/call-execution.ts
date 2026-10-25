@@ -212,7 +212,7 @@ type CallPlan =
  * @returns The plan.
  */
 function planCall(context: ExecutionContext, validated: ValidatedCoordinatorToolCall): CallPlan {
-	if (validated.namespace === "archboard_voice") {
+	if (validated.role === "voice") {
 		return { kind: "voice", validated };
 	}
 	try {

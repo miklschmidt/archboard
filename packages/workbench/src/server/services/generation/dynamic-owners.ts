@@ -15,7 +15,19 @@ import {
 } from "#server/services/generation/operation-lifecycle.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/codex-realtime-voice/server";
-import { closedTransport, requireCreated } from "@archboard/codex-realtime-voice/server";
+
+/**
+ * Whether a generation's transport is closed. A transport that cannot report its state is.
+ * @param transport The generation's transport.
+ * @returns True unless the transport reports itself open.
+ */
+function closedTransport(transport: CodexWorkbenchDomainScope["transport"]): boolean {
+	try {
+		return transport.inspect().state !== "open";
+	} catch {
+		return true;
+	}
+}
 
 interface ArchboardDomainOwners {
 	authority: ServerDynamicAuthorityAdapters | null;
@@ -114,7 +126,7 @@ function createApproval(
 	context: DynamicOwnerContext,
 	created: CodexWorkbenchDomainScope,
 ): ServerDynamicApprovalOwner {
-	const identity = requireCreated(created, "identity");
+	const { identity } = created;
 	const owners = context.owners;
 	const approval = createServerDynamicApprovalOwner({
 		identity,
@@ -164,9 +176,9 @@ function createLifecycle(
 	context: DynamicOwnerContext,
 	created: CodexWorkbenchDomainScope,
 ): ServerDynamicLifecycleOwner {
-	const transport = requireCreated(created, "transport");
+	const { identity, transport } = created;
 	return createServerDynamicLifecycleOwner({
-		identity: requireCreated(created, "identity"),
+		identity,
 		waitGraph: context.waitGraph,
 		waitForTargets: context.server.waitForTargets,
 		/**

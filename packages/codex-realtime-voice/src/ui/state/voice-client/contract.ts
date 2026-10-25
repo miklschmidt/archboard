@@ -79,7 +79,7 @@ interface VoiceClientSnapshot {
 	readonly voice: VoiceClientVoice;
 	/** An action is running. Only the two stops run during another action. */
 	readonly busy: boolean;
-	/** Why the last action failed, or null after one succeeds. */
+	/** Why the last action failed, or null. The next action clears it when it starts. */
 	readonly failure: VoiceClientFailure | null;
 	/** The intent that binds an answer to the approvals of this state, or null while none can be sent. */
 	readonly intent: VoiceCommandIntent | null;
@@ -87,11 +87,17 @@ interface VoiceClientSnapshot {
 
 /**
  * One page view's connection to the voice server. Every action resolves true
- * when it completed, and false when it was refused or failed; the failure is
- * then in the published state.
+ * when it completed. It resolves false when it failed, and the failure is then
+ * in the published state. It also resolves false, and changes nothing, after
+ * `dispose` or while another action runs; only `stopVoice` and `stopWork` run
+ * during another action.
  */
 interface VoiceClient {
-	/** Open the socket with the tab's session id, or open it again. */
+	/**
+	 * Open the socket with the tab's session id, or open it again. The client
+	 * does not reconnect by itself: after the socket closes, `connection` reads
+	 * `reconnecting` until the host calls `connect` again.
+	 */
 	readonly connect: () => Promise<boolean>;
 	/** Read the server's current state again without repeating a command. */
 	readonly refresh: () => Promise<boolean>;
@@ -126,7 +132,11 @@ interface VoiceClient {
 	readonly snapshot: () => VoiceClientSnapshot;
 	/** Hear every publication. Returns the unsubscribe. */
 	readonly subscribe: (listener: () => void) => () => void;
-	/** Stop voice, release the socket and end every subscription. */
+	/**
+	 * Stop voice, release the socket and end every subscription. A disposed
+	 * client never connects again, so a host that mounts twice, as React
+	 * StrictMode does, creates a client for each mount.
+	 */
 	readonly dispose: () => Promise<void>;
 }
 

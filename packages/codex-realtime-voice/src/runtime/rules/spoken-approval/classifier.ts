@@ -3,18 +3,18 @@ import { createHash } from "node:crypto";
 import { boundedWireText } from "#shared/schemas/browser/scalars.ts";
 
 const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
-	"743d72a9e358644cdd8e9cb742188010ee487a2663beeb2e23ba6dd8ea7b569a";
+	"b0c910734cc79a8600cc549d6fd59f0783f2abf8676e9a03fba1a0a734e8a573";
 
 /** The reviewed template, including its one terminal LF. */
 const SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE =
-	"Classify one spoken binary approval. The server has already bound the request identity; do not infer or mention another request.\n\n" +
+	"Classify one spoken binary approval for <product-name>. The <product-name> server has already bound the request identity; do not infer or mention another request.\n\n" +
 	"<spoken_approval>\n" +
 	"effect: <bounded-effect-summary>\n" +
 	"user_final_item_id: <opaque-item-id>\n" +
 	"user_final_sequence: <decimal-sequence>\n" +
 	"user_final_text: <verbatim-bounded-final-user-text>\n" +
 	"</spoken_approval>\n\n" +
-	'If and only if the user clearly accepts or declines this effect, call archboard_voice.resolve_spoken_approval once with {"verdict":"accept"} or {"verdict":"decline"}. Otherwise do not call the tool; say the request must be resolved in the visual workbench.\n';
+	'If and only if the user clearly accepts or declines this effect, call <voice-namespace>.resolve_spoken_approval once with {"verdict":"accept"} or {"verdict":"decline"}. Otherwise do not call the tool; say the request must be resolved in the visual workbench.\n';
 
 /**
  * The SHA-256 of some text, which is how the classifier template's integrity is stated.
@@ -48,6 +48,10 @@ function assertCanonicalTemplate(value: string): void {
 assertCanonicalTemplate(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
 
 interface SpokenApprovalClassifierPromptInput {
+	/** What the user talks with, as the host names it. */
+	readonly productName: string;
+	/** The host's name of the namespace that holds resolve_spoken_approval. */
+	readonly voiceNamespace: string;
 	readonly effectSummary: string;
 	readonly finalUserItemId: string;
 	readonly finalUserSequence: number;
@@ -82,14 +86,19 @@ function createSpokenApprovalClassifierPrompt(input: SpokenApprovalClassifierPro
 		throw new TypeError("final user sequence must be a non-negative safe integer.");
 	}
 	const finalUserText = boundedWireText(16_384).parse(input.finalUserText);
+	if (!/^[a-z][a-z0-9_]{0,63}$/u.test(input.voiceNamespace)) {
+		throw new TypeError("voice namespace must be a namespace name.");
+	}
 	const replacements: Readonly<Record<string, string>> = {
+		"<product-name>": oneLine(input.productName, "product name"),
+		"<voice-namespace>": input.voiceNamespace,
 		"<bounded-effect-summary>": effectSummary,
 		"<opaque-item-id>": finalUserItemId,
 		"<decimal-sequence>": String(input.finalUserSequence),
 		"<verbatim-bounded-final-user-text>": finalUserText,
 	};
 	return SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replace(
-		/<bounded-effect-summary>|<opaque-item-id>|<decimal-sequence>|<verbatim-bounded-final-user-text>/g,
+		/<product-name>|<voice-namespace>|<bounded-effect-summary>|<opaque-item-id>|<decimal-sequence>|<verbatim-bounded-final-user-text>/g,
 		(placeholder) => replacements[placeholder] ?? placeholder,
 	);
 }

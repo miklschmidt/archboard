@@ -2,14 +2,10 @@ import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 
 import {
-	VOICE_TOOLS_MANIFEST_JSON,
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOLS_MANIFEST_JSON,
-	WORKHORSE_TOOL_NAMESPACE,
 	WORKHORSE_TOOL_NAMES,
 	assertCanonicalManifest,
-	verifyCoordinatorManifestIntegrity,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
 import {
 	CODEX_QUEUE_OPERATION_CONTRACTS,
 	CODEX_QUEUE_PARAMETER_SCHEMAS,
@@ -55,16 +51,37 @@ import {
 	WORKHORSE_MANIFEST_SNAPSHOT,
 } from "#tests/runtime/protocol/coordinator-tool-contract/fixtures.ts";
 
+// A host that keeps its names keeps its threads: these are the names Archboard's threads were
+// started with, and the digests their calls carried before the names became host identity.
+const NAMED = createVoiceToolset({
+	productName: "Archboard",
+	toolNamespaces: {
+		workhorse: "archboard_workhorse",
+		voice: "archboard_voice",
+		coordinator: "archboard_coordinator",
+	},
+});
+const WORKHORSE_TOOL_NAMESPACE = NAMED.workhorse.namespace;
+const VOICE_TOOL_NAMESPACE = NAMED.voice.namespace;
+const VOICE_TOOLS_MANIFEST_JSON = NAMED.voice.text;
+
 describe("coordinator namespace manifests", () => {
-	test("matches independent reviewed snapshots and fixed bytes", () => {
+	test("fills each role's reviewed template with the host's names, byte for byte", () => {
 		expect(WORKHORSE_TOOL_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(VOICE_TOOL_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
-		expect(JSON.parse(WORKHORSE_TOOLS_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
+		expect(JSON.parse(NAMED.workhorse.text)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(JSON.parse(VOICE_TOOLS_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
-		expect(verifyCoordinatorManifestIntegrity()).toEqual({
-			workhorseSha256: "22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11",
-			voiceSha256: "04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
+		expect([NAMED.workhorse.sha256, NAMED.voice.sha256, NAMED.coordinator.sha256]).toEqual([
+			"22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11",
+			"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
+			"dc2594074e93dc26f0b95b6bce1f4c08082b26cb67000dbf2b667423fe38eb25",
+		]);
+		const other = createVoiceToolset({
+			productName: "Payments",
+			toolNamespaces: { workhorse: "pay_work", voice: "pay_voice", coordinator: "pay_desk" },
 		});
+		expect(JSON.stringify(other).toLowerCase()).not.toContain("archboard");
+		expect(other.coordinator.namespace.description).toContain("talk with Payments by voice");
 		for (const namespace of [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
 			expect(namespace.tools.every((tool) => tool.type === "function")).toBe(true);
@@ -79,7 +96,7 @@ describe("coordinator namespace manifests", () => {
 		expect(CoordinatorIdentitySchema.parse(COORDINATOR_IDENTITY)).toEqual(
 			JSON.parse(JSON.stringify(COORDINATOR_IDENTITY)),
 		);
-		expect(COORDINATOR_IDENTITY.dynamicTools).toEqual(["archboard_workhorse", "archboard_voice"]);
+		expect(COORDINATOR_IDENTITY.dynamicTools).toEqual(["workhorse", "voice"]);
 		expect(WORKHORSE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			...WORKHORSE_TOOL_NAMES,
 		]);
@@ -93,31 +110,31 @@ describe("coordinator namespace manifests", () => {
 			tools: unknown[];
 		};
 		missing.tools.pop();
-		expect(() => assertCanonicalManifest("archboard_workhorse", missing)).toThrow();
+		expect(() => assertCanonicalManifest(NAMED.workhorse, missing)).toThrow();
 
 		const extra = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		extra.tools.push(structuredClone(extra.tools[0]!));
-		expect(() => assertCanonicalManifest("archboard_workhorse", extra)).toThrow();
+		expect(() => assertCanonicalManifest(NAMED.workhorse, extra)).toThrow();
 
 		const reordered = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		reordered.tools.reverse();
-		expect(() => assertCanonicalManifest("archboard_workhorse", reordered)).toThrow();
+		expect(() => assertCanonicalManifest(NAMED.workhorse, reordered)).toThrow();
 
 		const vague = structuredClone(VOICE_TOOL_NAMESPACE) as unknown as {
 			tools: Array<{ description: string }>;
 		};
 		vague.tools[0]!.description = "Do the thing.";
-		expect(() => assertCanonicalManifest("archboard_voice", vague)).toThrow();
+		expect(() => assertCanonicalManifest(NAMED.voice, vague)).toThrow();
 
 		const byteMutation = VOICE_TOOLS_MANIFEST_JSON.replace(
 			"resolve_spoken_approval",
 			"resolve_spoken_approval_changed",
 		);
-		expect(() => assertCanonicalManifest("archboard_voice", byteMutation)).toThrow();
+		expect(() => assertCanonicalManifest(NAMED.voice, byteMutation)).toThrow();
 	});
 });
 
@@ -273,38 +290,38 @@ describe("dynamic tool schemas and queue protocol", () => {
 
 	test("validates only the declared tool inputs and closed results", () => {
 		expect(
-			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {
+			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {
 				checkout: "/work/payments",
 			}),
 		).toEqual({ checkout: "/work/payments" });
 		// Every workhorse tool names the checkout whose workhorse it works with (ADR 0050).
 		expect(() =>
-			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {}),
+			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {}),
 		).toThrow();
 		expect(
-			parseCoordinatorToolInput("archboard_workhorse", "delegate_to_workhorse", {
+			parseCoordinatorToolInput("workhorse", "delegate_to_workhorse", {
 				checkout: "/work/payments",
 				input: "inspect",
 				transcriptDelta: "heard",
 			}),
 		).toEqual({ checkout: "/work/payments", input: "inspect", transcriptDelta: "heard" });
 		expect(
-			parseCoordinatorToolInput("archboard_voice", "resolve_spoken_approval", {
+			parseCoordinatorToolInput("voice", "resolve_spoken_approval", {
 				verdict: "accept",
 			}),
 		).toEqual({ verdict: "accept" });
 		expect(() =>
-			parseCoordinatorToolInput("archboard_workhorse", "inspect_workhorse", {
+			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {
 				checkout: "/work/payments",
 				target: "other",
 			}),
 		).toThrow();
 		expect(() =>
-			parseCoordinatorToolInput("archboard_voice", "resolve_spoken_approval", { verdict: "maybe" }),
+			parseCoordinatorToolInput("voice", "resolve_spoken_approval", { verdict: "maybe" }),
 		).toThrow();
-		expect(parseCoordinatorToolInput("archboard_workhorse", "stop_workhorses", {})).toEqual({});
+		expect(parseCoordinatorToolInput("workhorse", "stop_workhorses", {})).toEqual({});
 		expect(() =>
-			parseCoordinatorToolInput("archboard_workhorse", "stop_workhorses", {
+			parseCoordinatorToolInput("workhorse", "stop_workhorses", {
 				checkout: "/work/payments",
 			}),
 		).toThrow();

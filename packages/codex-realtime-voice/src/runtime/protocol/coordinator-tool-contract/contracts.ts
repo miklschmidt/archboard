@@ -2,16 +2,11 @@ import { z } from "zod";
 
 import type {
 	JsonSchema,
-	NamespaceName,
+	CoordinatorNamespaceRole,
 	CanonicalTool,
 	CoordinatorToolName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
-import {
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOL_NAMESPACE,
-	canonicalTool,
-	deepFreeze,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { canonicalTool, deepFreeze } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	DynamicToolRefusalReasonSchema,
 	JsonObjectSchema,
@@ -22,10 +17,8 @@ import { TOOL_SUCCESS_RESULT_SCHEMAS } from "#runtime/protocol/coordinator-tool-
 const COORDINATOR_ROLE = "coordinator" as const;
 type CoordinatorRole = typeof COORDINATOR_ROLE;
 
-const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
-	"archboard_workhorse",
-	"archboard_voice",
-] as const);
+/** The roles of the coordinator's namespaces, in the order its thread declares them. */
+const COORDINATOR_NAMESPACE_ROLES = Object.freeze(["workhorse", "voice"] as const);
 
 /**
  * The Codex configuration every coordinator thread starts with.
@@ -55,7 +48,7 @@ const COORDINATOR_IDENTITY = deepFreeze({
 	ephemeral: false,
 	historyMode: "paginated",
 	sessionStartSource: "startup",
-	dynamicTools: [...COORDINATOR_NAMESPACE_NAMES],
+	dynamicTools: [...COORDINATOR_NAMESPACE_ROLES],
 	experimentalRawEvents: false,
 } as const);
 
@@ -74,7 +67,7 @@ const CoordinatorIdentitySchema = z
 		ephemeral: z.literal(false),
 		historyMode: z.literal("paginated"),
 		sessionStartSource: z.literal("startup"),
-		dynamicTools: z.tuple([z.literal("archboard_workhorse"), z.literal("archboard_voice")]),
+		dynamicTools: z.tuple([z.literal("workhorse"), z.literal("voice")]),
 		experimentalRawEvents: z.literal(false),
 	})
 	.strict();
@@ -138,7 +131,7 @@ const CoordinatorToolContractSchema = z
 		description: z.string().min(1),
 		inputSchema: JsonObjectSchema,
 		deferLoading: z.literal(false),
-		namespace: z.enum(["archboard_workhorse", "archboard_voice"]),
+		role: z.enum(COORDINATOR_NAMESPACE_ROLES),
 		authorityTarget: AuthorityTargetSchema,
 		callerRole: z.literal(COORDINATOR_ROLE),
 		requiredLinks: z.array(RequiredLinkSchema),
@@ -153,7 +146,7 @@ type SuccessResultContract = Readonly<{
 }>;
 
 interface CoordinatorToolContract extends CanonicalTool {
-	readonly namespace: NamespaceName;
+	readonly role: CoordinatorNamespaceRole;
 	readonly authorityTarget: AuthorityTarget;
 	readonly callerRole: CoordinatorRole;
 	readonly requiredLinks: readonly RequiredLink[];
@@ -239,55 +232,55 @@ const VOICE_REFUSALS = [
 /**
  * Joins one reviewed manifest tool with the server-side authority facts the catalogue adds:
  * which server object it acts on, the links a call must carry, and how it may be refused.
- * @param namespace - The namespace that declares the tool.
+ * @param role - The role of the namespace that declares the tool.
  * @param toolName - The tool being described.
  * @param metadata - The authority target, required links, success shape and refusal reasons.
  * @returns The frozen contract for that tool.
  */
 function contract(
-	namespace: NamespaceName,
+	role: CoordinatorNamespaceRole,
 	toolName: CoordinatorToolName,
 	metadata: Omit<
 		CoordinatorToolContract,
-		keyof CanonicalTool | "namespace" | "callerRole" | "successResult"
+		keyof CanonicalTool | "role" | "callerRole" | "successResult"
 	> & {
 		successResult: SuccessResultContract;
 	},
 ): CoordinatorToolContract {
 	return deepFreeze({
-		...canonicalTool(namespace, toolName),
-		namespace,
+		...canonicalTool(role, toolName),
+		role,
 		callerRole: COORDINATOR_ROLE,
 		...metadata,
 	});
 }
 
 const WORKHORSE_TOOL_CONTRACTS = deepFreeze([
-	contract("archboard_workhorse", "inspect_workhorse", {
+	contract("workhorse", "inspect_workhorse", {
 		authorityTarget: "server_bound_workhorse",
 		requiredLinks: [...WORKHORSE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.inspect_workhorse },
 		refusalErrors: [...INSPECT_REFUSALS],
 	}),
-	contract("archboard_workhorse", "delegate_to_workhorse", {
+	contract("workhorse", "delegate_to_workhorse", {
 		authorityTarget: "server_bound_workhorse",
 		requiredLinks: [...WORKHORSE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.delegate_to_workhorse },
 		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
 	}),
-	contract("archboard_workhorse", "manage_workhorse_queue", {
+	contract("workhorse", "manage_workhorse_queue", {
 		authorityTarget: "server_created_workhorse_queue",
 		requiredLinks: [...QUEUE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.manage_workhorse_queue },
 		refusalErrors: [...QUEUE_REFUSALS],
 	}),
-	contract("archboard_workhorse", "steer_workhorse", {
+	contract("workhorse", "steer_workhorse", {
 		authorityTarget: "server_proven_workhorse_turn",
 		requiredLinks: [...STEER_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.steer_workhorse },
 		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
 	}),
-	contract("archboard_workhorse", "stop_workhorses", {
+	contract("workhorse", "stop_workhorses", {
 		authorityTarget: "server_tab_session_workhorses",
 		requiredLinks: [...STOP_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.stop_workhorses },
@@ -296,7 +289,7 @@ const WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 ] satisfies readonly CoordinatorToolContract[]);
 
 const VOICE_TOOL_CONTRACTS = deepFreeze([
-	contract("archboard_voice", "resolve_spoken_approval", {
+	contract("voice", "resolve_spoken_approval", {
 		authorityTarget: "server_validated_spoken_approval",
 		requiredLinks: [...VOICE_LINKS],
 		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.resolve_spoken_approval },
@@ -309,24 +302,17 @@ const COORDINATOR_TOOL_CONTRACTS = deepFreeze([
 	...VOICE_TOOL_CONTRACTS,
 ]);
 
-const WORKHORSE_TOOL_CATALOGUE = deepFreeze({
-	namespace: WORKHORSE_TOOL_NAMESPACE,
-	tools: WORKHORSE_TOOL_CONTRACTS,
-});
-const VOICE_TOOL_CATALOGUE = deepFreeze({
-	namespace: VOICE_TOOL_NAMESPACE,
-	tools: VOICE_TOOL_CONTRACTS,
-});
+const WORKHORSE_TOOL_CATALOGUE = deepFreeze({ role: "workhorse", tools: WORKHORSE_TOOL_CONTRACTS });
+const VOICE_TOOL_CATALOGUE = deepFreeze({ role: "voice", tools: VOICE_TOOL_CONTRACTS });
 const COORDINATOR_TOOL_CATALOGUE = deepFreeze({
 	identity: COORDINATOR_IDENTITY,
-	namespaces: [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE],
 	tools: COORDINATOR_TOOL_CONTRACTS,
 });
 
 export {
 	COORDINATOR_ROLE,
 	type CoordinatorRole,
-	COORDINATOR_NAMESPACE_NAMES,
+	COORDINATOR_NAMESPACE_ROLES,
 	COORDINATOR_THREAD_CONFIG,
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,

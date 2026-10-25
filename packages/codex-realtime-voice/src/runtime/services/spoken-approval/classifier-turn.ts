@@ -18,6 +18,9 @@ interface ClassifierTurnContext {
 	readonly approvalBroker: CodexSpokenApprovalGateOptions["approvalBroker"];
 	readonly session: CodexSpokenApprovalGateOptions["session"];
 	readonly identity: IdentityAuthority;
+	/** The host's built-in namespaces: the classifier is told to resolve through the voice one. */
+	readonly tools: CodexSpokenApprovalGateOptions["tools"];
+	readonly productName: string;
 	readonly currentCoordinator: () => {
 		readonly child: ActiveSlot["child"];
 		readonly epoch: ActiveSlot["epoch"];
@@ -259,11 +262,13 @@ function finishTurn(
 /**
  * The turn body that asks the coordinator to classify what the person said: the effect they were
  * read, their exact utterance, and the classifier's own context.
+ * @param context - The classifier turn context.
  * @param slot - The armed gate.
  * @param record - The person's final utterance.
  * @returns The turn/start parameters, or null when they cannot be built.
  */
 function classifierTurnParams(
+	context: ClassifierTurnContext,
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
 ): SessionParams<"turn/start"> | null {
@@ -274,6 +279,8 @@ function classifierTurnParams(
 				threadId: slot.coordinatorThreadId,
 				clientUserMessageId: slot.classifier.clientUserMessageId,
 				prompt: createSpokenApprovalClassifierPrompt({
+					productName: context.productName,
+					voiceNamespace: context.tools.voice.namespace.name,
 					effectSummary: slot.effectSummary,
 					finalUserItemId: record.itemId,
 					finalUserSequence: record.sequence,
@@ -316,7 +323,7 @@ function startClassifier(
 	if (!context.isLive(slot)) {
 		return;
 	}
-	const turnParams = classifierTurnParams(slot, record);
+	const turnParams = classifierTurnParams(context, slot, record);
 	if (turnParams === null) {
 		context.enterFallback(slot, "classifier_lost");
 		return;

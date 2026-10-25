@@ -1,11 +1,8 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 import { describe, expect, test } from "bun:test";
 
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
-import {
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOL_NAMESPACE,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,
@@ -152,7 +149,7 @@ describe("coordinator model and literal profile", () => {
 				historyMode: "paginated",
 				sessionStartSource: "startup",
 				threadSource: "test-host",
-				dynamicTools: [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE],
+				dynamicTools: [TEST_TOOLS.workhorse.namespace, TEST_TOOLS.voice.namespace],
 				experimentalRawEvents: false,
 			}),
 		);

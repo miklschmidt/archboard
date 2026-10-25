@@ -1,3 +1,4 @@
+import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 // Which checkout a workhorse works in (ADR 0050).
 //
 // A workhorse works in the directory that holds its vault: a checkout root, or the holder of an
@@ -30,15 +31,17 @@ function workhorseOfCheckout<Workhorse extends { readonly checkout: string }>(
  * The checkout a coordinator call gives work to, when it is a delegation naming one: the
  * delegation starts that checkout's workhorse when there is none (ADR 0050).
  * @param request The coordinator tool call.
+ * @param tools The host's built-in namespaces.
  * @param resolveCheckout The host checkout admission policy.
  * @returns The checkout, or null when the call delegates nothing to a checkout.
  */
 function delegatedCheckout(
 	request: Pick<DynamicServerRequest, "params">,
+	tools: VoiceToolset,
 	resolveCheckout: (named: string) => string | null,
 ): string | null {
 	const { namespace, tool } = request.params;
-	if (namespace !== "archboard_workhorse" || tool !== "delegate_to_workhorse") {
+	if (toolRoleOf(tools, { namespace }) !== "workhorse" || tool !== "delegate_to_workhorse") {
 		return null;
 	}
 	return checkoutArgument(request.params.arguments, resolveCheckout);
@@ -66,6 +69,7 @@ function checkoutArgument(
  * built because the tab has gone, leaves the delegation to say the checkout has no workhorse, so
  * the coordinator's turn is always answered.
  * @param request The coordinator tool call.
+ * @param tools The host's built-in namespaces.
  * @param workhorseOf The tab's workhorse of a checkout, built on first use.
  * @returns Resolves once the workhorse can run turns, or its start failed, or the call is no
  * delegation to a checkout.
@@ -73,12 +77,13 @@ function checkoutArgument(
  */
 async function readyDelegatedWorkhorse(
 	request: Pick<DynamicServerRequest, "params">,
+	tools: VoiceToolset,
 	workhorseOf: (checkout: string) => {
 		readonly actions: Pick<CodexWorkbenchWorkhorseActions, "ensureStarted">;
 	},
 	resolveCheckout: (named: string) => string | null,
 ): Promise<void> {
-	const checkout = delegatedCheckout(request, resolveCheckout);
+	const checkout = delegatedCheckout(request, tools, resolveCheckout);
 	if (checkout === null) {
 		return;
 	}

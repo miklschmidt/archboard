@@ -4,8 +4,9 @@ import { boundedText } from "#shared/schemas/browser/scalars.ts";
 import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
 
 /**
- * The host domain namespace a dynamic approval belongs to. The host names it (Archboard sends
- * `archboard_app`), so the browser accepts any namespace-shaped name rather than one product's.
+ * The host domain namespace a dynamic approval belongs to. The host names it, and the server makes
+ * an approval only for a call through a namespace the host registered. The namespace is part of
+ * the approval identity a decision must match, so the browser checks only its shape.
  */
 const DynamicApprovalNamespaceSchema = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/u);
 const DYNAMIC_APPROVAL_TOOLS = ["create_thread", "fork_thread", "send_message_to_thread"] as const;

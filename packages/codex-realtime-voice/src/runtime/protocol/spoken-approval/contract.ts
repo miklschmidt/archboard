@@ -1,3 +1,4 @@
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type {
 	ApprovalSettlement,
 	CodexApprovalBroker,
@@ -131,6 +132,10 @@ interface CodexSpokenApprovalGateOptions {
 	readonly realtime: Pick<CodexRealtimeAdapter, "onSemanticEvent" | "transcript">;
 	readonly session: Pick<CodexSession, "turnStart">;
 	readonly identity: IdentityAuthority;
+	/** The host's built-in namespaces: the classifier names the voice one, and a resolve comes through it. */
+	readonly tools: VoiceToolset;
+	/** What the user talks with, as the host names it: the classifier is told whose approval it is. */
+	readonly productName: string;
 	/** The current browser-side realtime correlation, or null when no session is live. */
 	readonly currentRealtime: () => RealtimeCorrelation | null;
 	readonly now?: () => number;

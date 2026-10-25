@@ -18,15 +18,16 @@ import type {
 	WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
-const COORDINATOR_CALLBACK_MANIFEST_SHA256 =
-	"dc2594074e93dc26f0b95b6bce1f4c08082b26cb67000dbf2b667423fe38eb25" as const;
+/** The reviewed bytes of the template whose `{namespace}` and `{product}` the host's names fill. */
+const COORDINATOR_CALLBACK_TEMPLATE_SHA256 =
+	"1e958724435ccf7010e96f6c57e0d07c3149e95979f04b461b5b276b5bff885c" as const;
 
 /** The response owner the workhorse's calls to the coordinator are registered under. */
 const TELL_COORDINATOR_OWNER = "codex-coordinator-callbacks" as const;
 
 const ManifestSchema = z.strictObject({
 	type: z.literal("namespace"),
-	name: z.literal("archboard_coordinator"),
+	name: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/u),
 	description: z.string().min(1),
 	tools: z.tuple([
 		z.strictObject({
@@ -39,36 +40,56 @@ const ManifestSchema = z.strictObject({
 	]),
 });
 
+type CoordinatorCallbackNamespace = z.infer<typeof ManifestSchema>;
+
 const TellCoordinatorArgumentsSchema = z.strictObject({
 	message: z.string().min(1).max(2048),
 });
 
 /**
- * Load the reviewed manifest, refusing bytes whose digest is not the reviewed one: the tool's
+ * Load the reviewed template, refusing bytes whose digest is not the reviewed one: the tool's
  * description is what the workhorse is told, so changing it is a review like changing its
  * instructions.
- * @returns The frozen manifest.
- * @throws {TypeError} When the bytes drifted or are not the manifest's shape.
+ * @returns The template text.
+ * @throws {TypeError} When the bytes drifted.
  */
-function loadManifest(): z.infer<typeof ManifestSchema> {
+function loadTemplate(): string {
 	const bytes = readFileSync(
-		new URL(
-			import.meta.resolve("#runtime/services/coordinator-callbacks/archboard-coordinator.json"),
-		),
+		new URL(import.meta.resolve("#runtime/services/coordinator-callbacks/coordinator.json")),
 	);
 	const digest = createHash("sha256").update(bytes).digest("hex");
-	if (digest !== COORDINATOR_CALLBACK_MANIFEST_SHA256) {
+	if (digest !== COORDINATOR_CALLBACK_TEMPLATE_SHA256) {
 		throw new TypeError(
-			`archboard_coordinator manifest hash drifted. Expected ${COORDINATOR_CALLBACK_MANIFEST_SHA256}, received ${digest}. Human re-review is required before updating this digest.`,
+			`The coordinator callback manifest template hash drifted. Expected ${COORDINATOR_CALLBACK_TEMPLATE_SHA256}, received ${digest}. Human re-review is required before updating this digest.`,
 		);
 	}
-	const manifest = ManifestSchema.parse(JSON.parse(bytes.toString("utf8")));
-	for (const tool of manifest.tools) Object.freeze(tool);
-	Object.freeze(manifest.tools);
-	return Object.freeze(manifest);
+	return bytes.toString("utf8");
 }
 
-const COORDINATOR_CALLBACK_NAMESPACE = loadManifest();
+const TEMPLATE = loadTemplate();
+
+/**
+ * The workhorse's namespace to reach the coordinator, as a host names it and its product, with
+ * the digest of the exact bytes Codex is given.
+ * @param names - The host's namespace name and the product the user talks with.
+ * @param names.namespace - The namespace name.
+ * @param names.productName - The product name, already one plain line.
+ * @returns The namespace and its digest; the toolset freezes both.
+ * @throws {TypeError} When the filled template is not the manifest's shape.
+ */
+function renderCoordinatorCallbackNamespace(names: {
+	readonly namespace: string;
+	readonly productName: string;
+}): { readonly namespace: CoordinatorCallbackNamespace; readonly sha256: string } {
+	const text = TEMPLATE.replace('"name": "{namespace}"', `"name": "${names.namespace}"`).replace(
+		"talk with {product} by voice",
+		`talk with ${names.productName} by voice`,
+	);
+	return {
+		namespace: ManifestSchema.parse(JSON.parse(text)),
+		sha256: createHash("sha256").update(text, "utf8").digest("hex"),
+	};
+}
 
 /** What the workhorse is answered, by what became of its message. */
 const ANSWERS = Object.freeze({
@@ -162,8 +183,8 @@ function answerUnownedTellCoordinator(
 }
 
 export {
-	COORDINATOR_CALLBACK_MANIFEST_SHA256,
-	COORDINATOR_CALLBACK_NAMESPACE,
+	type CoordinatorCallbackNamespace,
+	renderCoordinatorCallbackNamespace,
 	TELL_COORDINATOR_OWNER,
 	answerUnownedTellCoordinator,
 	createTellCoordinator,
