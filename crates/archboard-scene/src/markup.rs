@@ -329,15 +329,6 @@ pub fn content_id(body: &str) -> String {
     )
 }
 
-/// Seven characters of FNV-1a over some markup's UTF-16 code units, in base 36.
-pub fn short_hash(markup: &str) -> String {
-    let mut state: u32 = 0x811c_9dc5;
-    for code in markup.encode_utf16() {
-        state = (state ^ u32::from(code)).wrapping_mul(0x0100_0193);
-    }
-    js::pad_start(&js::radix(state, 36), 7, '0')
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
