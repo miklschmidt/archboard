@@ -143,10 +143,14 @@ rules that will not stop you:
   `packages/board/src/shared/rules/ids.ts` (one to eight characters). No second
   site mints an id. An id is what a proposal is compared by, so renaming one
   makes a change look like a deletion and an addition.
-- **Text width is measured, not estimated**, by the canvas of the place that draws the
-  picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas`
-  under Bun (TASK-247).
-  `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.
+- **The core shapes every word, and nothing else measures text** (ADR 0057,
+  TASK-520.07). `crates/archboard-text` shapes a run with the bundled font files
+  and breaks a paragraph to a width. The layout crates ask
+  `archboard_scene::measure`, never the host. The scene carries each run as
+  glyphs with its string, and a picture draws those glyphs: an SVG defines each
+  glyph it uses once and lays its words over them in no ink, so it needs no font
+  and a search still finds them. `tests/system/browser/drawn-glyphs.test.ts`
+  holds every painter to the glyph positions of the core.
 - **Every duration lives in the `@archboard/timing` package** (`packages/timing`) with what it
   pulls against written beside it.
 - **A node's code binding is part of its meaning**, not a presentation overlay:

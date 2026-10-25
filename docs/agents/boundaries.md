@@ -412,19 +412,20 @@ only in Bun.
 - `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
   with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
-  `renderBoard`, `renderArchitecture`, the diagram icon paths and the text width. `./rasterizer` is the bitmap of a
+  `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture. `./headless-chromium` is the private Chromium, which the walkthrough recorder
   and the README scripts also start. `./theme` reads the colors of the shared stylesheet.
 - The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
-  server's `/assets/diagram-fonts` route, `readme:assets` and the theme parity test take the path from there.
+  renderer core carries the four diagram faces in its build (ADR 0057). `readme:assets` and the theme parity test take
+  the path from there.
   `./theme.css` and the four `./fonts/<filename>` exports expose the stylesheet and fonts that the web app consumes.
   `apps/web/src/ui/theme/app.css` uses these package names in `@import` and `url()` references, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker
   into the renderer build, so a picture kept by an older build is never shown.
-- Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The browser
-  measurement contract (`tests/system/browser/measured-text.test.ts`) holds the Bun canvas, which loads from the root
-  `node_modules`, to what Chrome draws.
+- Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The glyph
+  contract (`tests/system/browser/drawn-glyphs.test.ts`) holds the pictures of the page and of the Bun core to the
+  glyph positions of the core in Chrome.
 - The tests are in `tests/`. `shared/rules/` tests the pure code. `runtime/operations/<behavior>/` holds the
   whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
   `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read board fixtures from

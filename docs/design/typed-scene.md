@@ -93,17 +93,19 @@ it shows, and it computes each operation as CSS defines it. The SVG writer
 spells each colour as the CSS expression that the picture always held, so a
 browser does the same work.
 
-### Text: a setting, a face and the words
+### Text: a glyph run and its words
 
-A text has a point, a face (family and weight), a size, a fill, an optional
-anchor and baseline, whether it keeps its spaces, and its words. Its setting
-says which part of the picture set it: a measured run, a caption, a line
-centred on a flowchart shape, or a row of a fragment. Only the SVG writer
-reads the setting, for the attribute order of the element.
+A text is one run as the core shaped it (TASK-520.07): the left end of its
+baseline, a face (family and weight), a size, a fill, how far its glyphs
+advance, the units per em of its face, its glyphs, and its words. Each glyph
+is an id in the face and a place in font units from the start of the run. The
+core has already resolved centring and a central baseline into the point, so
+a painter draws the glyphs where they stand and does no text layout. The words
+stay with the glyphs, so search, copy and screen readers still find them.
 
-TASK-520.07 makes the core shape text into glyph runs. A glyph run will be one
-more field on a text: the glyphs and their places. The words stay, so search,
-copy and screen readers still find them. Nothing else in the scene changes.
+`archboard-text` shapes a run and breaks a paragraph to a width with the
+bundled font files. The scene's `measure` module is the one place that the
+layout crates and the painters ask for a width or a line break.
 
 ### Icons and viewports
 
@@ -150,8 +152,8 @@ A native painter walks the body in order:
 2. For a shape, it builds a path from the geometry, resolves the fill and
    stroke paint in its theme, and draws them. A halo, a ring and a lit line
    stay hidden until their subject is selected.
-3. For a text, it draws the words in the face and size, or the glyph run once
-   TASK-520.07 adds it.
+3. For a text, it draws each glyph of the run from its face at its place,
+   scaled from font units to the size.
 4. For an icon, it draws the icon from its icon set in the ink.
 5. For traffic, it animates the pulses along the route from the motion.
 6. It reads definitions when it meets them, and it skips breaks.
@@ -164,8 +166,12 @@ itself.
 
 `archboard-svg` holds every SVG and CSS spelling: element names, the order of
 attributes by purpose, the spellings of path data, colours as CSS, the
-ids of definitions, the stylesheet and its class names, the faces, and the
-pulses as SMIL. It is the one place that knows the picture is an SVG document.
+ids of definitions, the stylesheet and its class names, the glyph outlines,
+and the pulses as SMIL. It defines each glyph a picture draws once, as a path
+in font units, and writes each run as a group of uses of those paths. After
+the group it writes the run's words as a `<text>` in no ink, stretched over
+the run's advance with `textLength`, so a page search finds the words where
+they are drawn. It is the one place that knows the picture is an SVG document.
 
 ## Marks a viewer draws beside the picture
 

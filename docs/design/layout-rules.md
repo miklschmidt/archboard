@@ -28,7 +28,7 @@ now shows the whole train of pulses at its phase
 
 | Stage                               | Decided by | Where                                                                                                       |
 | ----------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| Text and card sizes                 | us         | `lib/measurement.ts` (Pretext)                                                                              |
+| Text and card sizes                 | us         | `archboard_scene::measure`, shaped by `crates/archboard-text`                                               |
 | Dependency ranks, cycle breaking    | us         | `lib/layout/rank.ts`                                                                                        |
 | Containment hierarchy, frame insets | us         | `lib/layout/compound-graph.ts` (`containNodes`, `nodeOf`)                                                   |
 | Attachment faces and port order     | **us**     | `compound-graph.ts` (`facesOf`, `sidesOf`, `containmentOf`, `previousSides`, `hasTopApproach`, `portOf`)    |
@@ -2811,8 +2811,8 @@ into `routes.rs`: `reversed` (`layout/routes/curves.ts`) and `pairCrossings`
 (`archboard_scene::geometry`).
 
 The host still gives the core what it does not hold. Text widths and line
-breaks are the canvas and Pretext of the place that draws (TASK-520.07),
-asked through the `Text` trait. A flowchart's graph is laid out by the track
+breaks are the core's own since TASK-520.07: the layout crates ask
+`archboard_scene::measure`, which shapes with the bundled font files. A flowchart's graph is laid out by the track
 engine (TASK-520.04): the core awaits it through `FlowchartHost::track` up to
 three times, as the TypeScript did. A sequence is laid out and painted in one
 synchronous call (`drawSequence`), and a flowchart in one asynchronous call

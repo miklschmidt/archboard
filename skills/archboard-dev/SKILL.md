@@ -646,11 +646,9 @@ Three facts about the evidence that the first batch had to teach:
   tsc colours `error` and `TS2345` as separate sequences, so `grep 'error TS'` matches
   nothing and a failing check looks clean. Lint's type-aware rules are not the compiler
   either: a refactor that passes `bun run lint` can still fail type-check.
-- Text width is measured by the canvas of whatever draws the picture, with the diagram
-  fonts loaded. Under Bun, this is an `@napi-rs/canvas` canvas that the renderer host
-  installs as `OffscreenCanvas`. In a browser, it is the canvas of that browser.
-  Never add a
-  font measurer. Pictures can differ between browsers, because each matches what that
-  browser paints. `tests/system/browser/measured-text.test.ts` holds the Bun
-  canvas to what
-  Chrome draws. The two agree to under one percent.
+- The renderer core shapes and breaks every word with the bundled font files
+  (`crates/archboard-text`, ADR 0057). Never measure text in a host canvas or in
+  TypeScript. A picture draws the glyphs the core placed, so every browser and
+  the CLI draw the same picture, and an exported SVG needs no font.
+  `tests/system/browser/drawn-glyphs.test.ts` holds every painter to the glyph
+  positions of the core.

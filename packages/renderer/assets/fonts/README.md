@@ -16,7 +16,7 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
 - `Onest-Medium-v1.000.ttf` is the static Medium face, from the official
   [`1.000` release](https://github.com/simpals/onest/releases/tag/1.000). The
   renderer draws the weight 500 of a diagram with it
-  (`packages/renderer/src/shared/rules/text/fonts.ts`).
+  (`crates/archboard-text/src/faces.rs`).
   SHA-256:
   `c3014cae121488aea22ae5b50b584db332f130189be95217edf57469ef297cec`.
 - `OFL-Onest-1.1.txt` is the upstream license text, normalized to LF line
@@ -28,8 +28,12 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
 The official static release has no SemiBold file. The variable runtime file is
 therefore required for the application weights 400, 500, 600, and 700. The
 separate static Medium file is the diagrams' weight 500, byte-pinned to the same
-1.000 design. The shell's stylesheet does not register it. A pane loads it only
-to draw a diagram, from the server's `/assets/diagram-fonts`.
+1.000 design. The shell's stylesheet does not register it.
+
+The renderer core builds `Onest-wght-v1.000.ttf`, `Onest-Medium-v1.000.ttf` and
+the two DM Mono files into itself, shapes every word of a diagram with them, and
+writes the outline of each glyph a picture uses into that picture (ADR 0057). A
+browser loads no diagram font.
 
 ## DM Mono 1.000
 
