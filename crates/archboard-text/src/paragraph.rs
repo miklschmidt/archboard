@@ -168,7 +168,7 @@ fn visible(words: &str, bounds: &[usize]) -> Vec<usize> {
     let mut visible = vec![0; bounds.len()];
     for index in 1..bounds.len() {
         let grapheme = &words[bounds[index - 1]..bounds[index]];
-        visible[index] = if grapheme.chars().all(char::is_whitespace) {
+        visible[index] = if spacing(grapheme) {
             visible[index - 1]
         } else {
             index
