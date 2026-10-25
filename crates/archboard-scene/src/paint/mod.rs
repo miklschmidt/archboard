@@ -16,6 +16,7 @@ pub mod colour;
 mod crossings;
 pub mod design;
 mod drill_mark;
+mod edge_line;
 pub mod export;
 mod far_card;
 mod far_view;
@@ -23,6 +24,8 @@ pub mod flowchart_shapes;
 pub mod fonts;
 pub mod icons;
 mod junctions;
+mod legend_entries;
+mod legend_symbols;
 mod measured_cards;
 pub mod page;
 pub mod palette;
@@ -31,6 +34,8 @@ mod ports;
 mod regions;
 mod relay;
 pub mod sequence;
+mod sequence_frames;
+mod sequence_messages;
 pub mod shadow;
 mod shared_ink;
 pub mod slab;
@@ -66,7 +71,7 @@ fn definitions(palette: &palette::Palette) -> Markup {
     for head in [Head::Filled, Head::Open] {
         for weight in WEIGHTS {
             for (colour, suffix) in &inks {
-                parts.push(architecture::arrowhead_marker(
+                parts.push(edge_line::arrowhead_marker(
                     &format!("ah-{}-{}{suffix}", head.as_str(), weight.as_str()),
                     head,
                     weight,

@@ -18,3 +18,4 @@ pub mod paint;
 pub mod request;
 pub mod route;
 pub mod scene;
+mod sequence_picture;
