@@ -29,8 +29,8 @@ navigator:
 2. **Drill levels.** A board sits under the board it drills up from: the
    container it says it describes, else the closest coarser board that drills
    down to it. Both boards must be in the same folder. The dogfood vault is
-   four levels deep: `Archboard`, `Archboard server`, `Agent workbench`,
-   `Codex session`.
+   four levels deep: `Codex realtime voice`, `Browser application`,
+   `Board viewer`, `Semantic renderer`.
 3. **Variants in their lifecycles.** Every board has one or more variants.
    Each is current (at most one per board), draft, historical or shelved. A
    predecessor can have several competing successors.
