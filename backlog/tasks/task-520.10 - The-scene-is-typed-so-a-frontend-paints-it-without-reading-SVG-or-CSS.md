@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T04:29:00Z'
-updated_date: '2026-10-25T07:43:00Z'
+updated_date: '2026-10-25T11:40:00Z'
 labels: []
 dependencies:
   - TASK-520.09
@@ -63,4 +63,38 @@ Decisions on the review findings:
 - marks.ts copies: the core generates them (paint::viewer_marks, archboard-svg's export-marks bin, written by build-core.ts to the ignored generated/core/marks.ts). picture-key.ts still reads the key from the SVG: returning the key with the document needs a change to the render reply and the apps/web DOM reading, which is outside this task's write scope.
 
 Unsettled: Edge.path in the drawing contract and geometry::path_of stay, because archboard-flows still uses them. Item::Break stays as the SVG document's line breaks, which other painters skip.
+
+## Board proposal (2026-10-25)
+
+Semantic renderer@TASK-520.10 (variant t7DPgM6B) adopted at version 110; the board was at version 106 when it branched from TASK-520.04 (GJtbsPFm). Current summary: "Meaning to a typed scene, its SVG and interaction geometry".
+
+Changes, each checked against the code:
+- SVG document (eECDrhMc): kind module, bound to crates/archboard-svg/src. It is the one place that spells a scene as SVG and CSS (xml.rs, colour.rs, path.rs, shapes.rs, groups.rs, definitions.rs, write.rs, pulse.rs). Its export-marks program (src/bin/export-marks.rs) prints the viewer marks, and scripts/build-core.ts:93-103 writes them to generated/core/marks.ts.
+- Scene (GTiZqw4F): bound to crates/archboard-scene/src/scene (its old binding, scene.rs, was deleted by f2d1769b5). The description now lists the typed groups, shapes, colours, text, icons, viewports, definitions and traffic (scene/mod.rs).
+- Theme palette (u1OXg3Yy): every colour is a token or an operation on tokens, not a CSS expression (paint/palette.rs:1-2).
+- Renderer core (OEslPPbt): paintDocument paints a typed scene and answers the document that archboard-svg writes of it (archboard-renderer-wasm/src/scene.rs:57-82). paintScene is gone. build:core writes the contract types (the paint request, the scene, the painted document: export-types.rs:1-2) and the viewer marks.
+- Viewer marks (FxzFUQAt): reads the constants the core generates (marks.ts:1-21).
+- Painting (m6HOX0lf): the scene holds no SVG or CSS.
+- Edges: Scene -> SVG document (2RYupgix) is anchored at archboard-svg lib.rs `Scene` and is now "the typed scene, written as one document". Architecture painter -> Scene (qDiEFiIT, anchor `Item`) and Sequence painter -> Scene (QDc3ch8T, anchor `Group`) now say "groups, shapes, text and traffic". New: SVG document -> Viewer marks (8sb931X2), "the marks' inks, widths and heads, generated at build time", anchored at export-marks.rs `viewer_marks`.
+- Re-anchored, because their symbols were gone from files that f2d1769b5 rewrote: XVvCNvvX at sequence.rs `standing_pin_at`, HDZqKmN4 at sequence.rs `ghost_face`, OVkwk7CO at slab.rs `ink_of`.
+
+Corrected from the implementer's proposal:
+- No new "archboard-svg" part. The existing SVG document part was already archboard-svg (bound to crates/archboard-svg/src/lib.rs), so a second part would draw the same crate twice. I rebound it to the crate and described what it owns.
+- "The scene painter -> archboard-svg" is the existing Scene -> SVG document relationship, now anchored. The core's call into the writer is still Renderer core -> SVG document (3AD13A3I, scene.rs `document`).
+- "The core part answers typed scene values" is not what the code does. No wasm export answers a scene: paintScene is gone, and paintDocument answers the SVG document with its size, atlas and what it placed. The core part now says that it paints a typed scene and answers the written document.
+
+Code check (`archboard check --code`, compared with and without `--variant TASK-520.10`): no `>` lines. Five `<` lines: the ANCHOR_SYMBOL_MISSING findings of qDiEFiIT (Role), QDc3ch8T (TrafficMark), XVvCNvvX (standing_pin), HDZqKmN4 (slab_seat) and OVkwk7CO (standing_ink). The board check's BINDING_PATH_MISSING on Scene (crates/archboard-scene/src/scene.rs) cleared on adoption.
+These findings on this board are in both runs and I left them: 0s8raCUw (label_anchor_of), ryvCaAp5 (standing_pin_at in export.rs; the call is in legend_symbols.rs), t5CUCz5T (paint_heading_views), uGaKoVb8 (coreBuild), steps o1aDteuC (step_path, now in sequence_messages.rs) and 7ZIx3pOn (picture_appearances, now in legend_entries.rs). They predate this task: none of these symbols was in its file at cfdc1d607 either. They come from the port of TASK-520.03.
+
+Footprint read against base cfdc1d607, the parent of f2d1769b5, found with the trailer command. current = TASK-520.04, the proposal's parent.
+- namedAndChanged: Theme palette, Architecture painter, SVG document, Sequence painter, Renderer core, Scene, Viewer marks.
+- namedNotChanged: none.
+- changedNotNamed, changed by f2d1769b5: Subject atlas, Sequence layout, Slab surfaces, Tray surfaces, Card ports, Near and far content, Measured card painter, Export frame, Export legend, Flowchart, Subject standing marks. Each now builds typed scene values (shapes, paints, ids from values) instead of markup. What each part does and what it calls stay as drawn, so the board is still right. f2d1769b5 is marked large (69 files), and it is this task's own refactor, not a sweep.
+- Renderer host, Engine pool, Bun layout worker and Browser layout worker were changed only by cd997ea97 (TASK-520.05) and belong to that task's closing.
+
+archboard check: no diagnostics on Semantic renderer. The four BINDING_PATH_MISSING warnings left are on Renderer layout, for parts that TASK-520.05 removed.
+Behind (check --code), the boards this task's commits put behind:
+- Board viewer: "Render stage states" through 21b0b5d12. SemanticTypeSamples.tsx and SemanticSubjectTip.tsx now read the generated marks through the renderer. The part's responsibility and relationships are unchanged, and the Semantic renderer edges into Viewer marks (N8eFnJ9p, bwa7JRYk) still hold.
+- Renderer layout: Architecture painter through f2d1769b5. It changed inside only, and the part still "paints the settled drawing into a scene and decides no geometry".
+- Archboard: the renderer package. That container is still right.
 <!-- SECTION:NOTES:END -->
