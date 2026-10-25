@@ -2598,7 +2598,8 @@ point, one from the right point, and a third from the bottom point.
 Two things put every answer on the bottom point. The track router gives the
 lines of one kind that leave one card face one shared port and one trunk
 (`channels.ts`), and every line of a flowchart is of one kind. Then
-`flowchart-ports.ts` moved that port to the middle of the side it crosses.
+`flowchart-ports.ts` (now `ports.rs` of `crates/archboard-flows`, section 52)
+moved that port to the middle of the side it crosses.
 Moving the line ends after the layout cannot fix this. An answer whose label
 Graphviz stood inside the diamond's width would run back under the diamond.
 
@@ -2622,7 +2623,7 @@ The layout now places the answers apart:
   and no jog closing moves it.
 - Once the drawing is laid out, the flowchart cuts the box back to the
   diamond. It draws a side line out of the point on that side: sideways,
-  then down where it was laid out (`fromSide`).
+  then down where it was laid out (`fromSide`, now `from_side`).
 
 With four or more answers, the middle ones share the bottom point and split
 below it. A line up out of a decision is not held.
@@ -2667,9 +2668,9 @@ The second round fixes them with four rules:
 - The flowchart lays the graph out twice. The first layout holds no answer
   to a point. Graphviz orders each decision's answers there so that the
   fewest lines cross, a loop's line back up included. The second layout
-  asks for the points in that order (`inFreeOrder` in `flowchart.ts`). If
-  that drawing crosses lines, a third layout asks in the board's order, and
-  the drawing that crosses fewer lines wins. Asked for its points, Graphviz
+  asks for the points in that order (`inFreeOrder` in `flowchart.ts`, now
+  `in_free_order`). If that drawing crosses lines, a third layout asks in
+  the board's order, and the drawing that crosses fewer lines wins. Asked for its points, Graphviz
   can still stand the steps against the first layout's order. A stop and A
   tab session ends crossed because the board's order put the step that loops
   back up on the far side.
@@ -2776,3 +2777,58 @@ into the pool.
 
 The Blocks cases of Browser application and Board viewer no longer need a
 test budget of their own: Board viewer, the slowest, takes about 5 s.
+
+## 52. The core lays out sequences and flowcharts (2026-10-25, TASK-520.06)
+
+The renderer core lays out every message sequence and every flowchart
+(`crates/archboard-flows`,
+[ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+The rules are the TypeScript rules they replace, ported in the same order of
+floating-point operations, so what each rule is for is what the sections above
+say. They now live here, in `crates/archboard-flows/src/`:
+
+| rule                                                         | was (`packages/renderer/src/shared/rules/`) | now                       |
+| ------------------------------------------------------------ | ------------------------------------------- | ------------------------- |
+| columns, cards, lifelines and the stack of flows             | `layout/sequence/dataflow.ts`               | `sequence/layout.rs`      |
+| a participant's card                                         | `layout/sequence/sequence-card.ts`          | `sequence/card.rs`        |
+| a message's words, its note and its pitch                    | `layout/sequence/step-rows.ts`              | `sequence/rows.rs`        |
+| every step down the page, and a frame's rows                 | `layout/sequence/step-placing.ts`           | `sequence/placing.rs`     |
+| activation bars                                              | `layout/sequence/activations.ts`            | `sequence/activations.rs` |
+| a message's ends, its label's plate and its row              | `layout/sequence/messages.ts`               | `sequence/messages.rs`    |
+| a decision's or loop's frame                                 | `layout/sequence/frames.ts`                 | `sequence/frames.rs`      |
+| the sizes                                                    | `layout/sequence/sequence-design.ts`        | `sequence/design.rs`      |
+| what the painter reads, and a picture without its comparison | `render/sequence-picture.ts`, `shownFlows`  | `sequence/mod.rs`         |
+| a flow read as a flowchart's graph                           | `flowchart/flowchart-graph.ts`              | `flowchart/graph.rs`      |
+| where a line meets a diamond, a hexagon or a terminal        | `flowchart/flowchart-ports.ts`              | `flowchart/ports.rs`      |
+| shape sizes, the answers' order, the diamonds                | `flowchart/flowchart.ts`                    | `flowchart/mod.rs`        |
+
+Two route helpers that Track and Blocks still use in TypeScript are copied
+into `routes.rs`: `reversed` (`layout/routes/curves.ts`) and `pairCrossings`
+(`blocks/tree/joins.ts`). The other curve helpers are the painter's
+(`archboard_scene::geometry`).
+
+The host still gives the core what it does not hold. Text widths and line
+breaks are the canvas and Pretext of the place that draws (TASK-520.07),
+asked through the `Text` trait. A flowchart's graph is laid out by the track
+engine (TASK-520.04): the core awaits it through `FlowchartHost::track` up to
+three times, as the TypeScript did. A sequence is laid out and painted in one
+synchronous call (`drawSequence`), and a flowchart in one asynchronous call
+(`drawFlowchart`), so neither drawing crosses back to TypeScript before it is
+painted.
+
+Every sequence and flowchart view of every variant of the dogfood vault and
+of the vaults under `examples/` was drawn with the TypeScript layout and with
+the core, under both engines and both themes, with and without the comparison:
+13,364 sequence drawings and 8,852 flowchart drawings, every one the same
+bytes. The whole corpus, architecture views included, is 35,560 pictures, and
+none of them changed.
+
+The current variants were timed with one job, four runs before and four
+after, each drawing at its fastest run. Sequences take 8,795 ms in place of
+9,229 ms. Flowcharts take 20,933 ms in place of 20,338 ms, about 0.85 ms more
+for each of the 696 drawings. Architecture views, which this change does not
+touch, take 12,101 ms in place of 12,062 ms. The flowchart's extra time is the
+crossing to the track engine. For each of its two or three layouts, the core
+writes the graph as JSON and reads the drawing back as JSON, where the
+TypeScript layout handed the engine its own objects. That crossing ends when
+the core holds the track engine (TASK-520.04).
