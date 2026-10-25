@@ -15,7 +15,7 @@ use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, intersection, polygon_path, translated};
 use crate::paint::shadow::{SHADOW_REACH, shadow_definitions, smooth_shadow};
 use crate::paint::standing::{
-    MEMBERS_ATTRIBUTE, OUTLINE_WIDTH, PART_ATTRIBUTE, outline_dash, standing_ink,
+    MEMBERS_ATTRIBUTE, OUTLINE_WIDTH, PART_ATTRIBUTE, ink_of, outline_dash,
 };
 use crate::request::Standing;
 use crate::scene::Role;
@@ -39,7 +39,7 @@ pub struct SlabLook {
 }
 
 /// How wide the highlight along the top edge of a face is.
-pub const GLINT_WIDTH: f64 = 1.0;
+const GLINT_WIDTH: f64 = 1.0;
 
 /// How far the highlight mixes a face toward the glint, on each ground.
 const GLINT: Share = Share {
@@ -48,7 +48,7 @@ const GLINT: Share = Share {
 };
 
 /// The fine highlight along the top edge of a face.
-pub fn glint_of(face: &str, palette: &Palette) -> String {
+fn glint_of(face: &str, palette: &Palette) -> String {
     tinted(face, Some(palette.slab_glint), GLINT)
 }
 
@@ -126,16 +126,13 @@ pub fn ghost_face(palette: &Palette) -> Attrs {
 }
 
 /// The border a standing draws round a face, inside its edge.
-pub fn standing_border(
+fn standing_border(
     face: Rect,
     radius: f64,
     standing: Option<Standing>,
     palette: &Palette,
 ) -> Markup {
-    let (Some(standing), Some(ink)) = (
-        standing,
-        standing.and_then(|held| standing_ink(held, palette)),
-    ) else {
+    let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
         return Markup::new();
     };
     let half = OUTLINE_WIDTH / 2.0;
@@ -291,10 +288,7 @@ fn solid_border(
     standing: Option<Standing>,
     palette: &Palette,
 ) -> Markup {
-    let (Some(standing), Some(ink)) = (
-        standing,
-        standing.and_then(|held| standing_ink(held, palette)),
-    ) else {
+    let (Some(standing), Some(ink)) = (standing, ink_of(standing, palette)) else {
         return Markup::new();
     };
     let half = OUTLINE_WIDTH / 2.0;

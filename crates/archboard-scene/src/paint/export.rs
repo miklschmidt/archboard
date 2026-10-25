@@ -451,7 +451,7 @@ fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Markup {
 }
 
 /// How many placed subjects carry each mark, in the key's order; none that no subject carries.
-pub fn mark_counts(
+fn mark_counts(
     standing: Option<&BTreeMap<String, Standing>>,
     placed: &HashSet<&str>,
 ) -> Vec<(Standing, &'static str, usize)> {
