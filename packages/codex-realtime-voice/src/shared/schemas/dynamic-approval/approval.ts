@@ -6,7 +6,6 @@ import { effectHashFor } from "#shared/rules/dynamic-approval-hash.ts";
 import {
 	createDynamicApprovalEffectSchemas,
 	DYNAMIC_APPROVAL_DECISIONS,
-	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
 } from "#shared/schemas/dynamic-approval/effects.ts";
@@ -374,7 +373,6 @@ export {
 	type DynamicCoordinationApprovalResponse,
 	type BrowserDynamicCoordinationApproval,
 	DYNAMIC_APPROVAL_DECISIONS,
-	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
 };
