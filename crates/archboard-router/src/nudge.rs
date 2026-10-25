@@ -3,7 +3,10 @@
 //!
 //! - Segments of routes that share an end and run together from it are one
 //!   line until the routes part ([W12] §3).
-//! - The segment that holds a route's pin stays where the pin is.
+//! - The segment that holds a route's pin stays where the pin is. Where
+//!   that leaves a channel too narrow for its lanes, the routes are nudged
+//!   again with only the stub out of each pin's buffer held there: the rest
+//!   of the segment moves like any other, with a jog at the stub's end.
 //! - A middle segment between two turns the same way (a Z or an S) wants the
 //!   middle of its channel; any other segment wants to stay where it is.
 //! - Two segments that run beside each other in one channel keep their order
@@ -13,9 +16,9 @@
 //!
 //! The placement is solved with [`crate::vpsc`]. A segment never leaves its
 //! channel: where a channel is too narrow for its lanes, they stand closer
-//! than a lane, and the caller sees the crowding in the routes.
+//! than a lane, and the answer names each route crowded so.
 
-use crate::grid::{Buffer, SAME};
+use crate::grid::{Buffer, SAME, stub_end};
 use crate::order;
 use crate::search::simplified;
 use crate::vpsc::{self, Constraint, Var};
@@ -100,21 +103,87 @@ impl Groups {
     }
 }
 
-/// Nudge every route, x then y.
+/// Nudge every route, x then y; where that crowds routes, nudge them again
+/// with each pin held only by its stub, and keep the routes crowded less.
 pub fn nudge(scene: &Scene, found: &[Option<Vec<Point>>]) -> Vec<Option<Vec<Point>>> {
     let buffers: Vec<Buffer> = scene
         .obstacles
         .iter()
         .map(|rect| Buffer::around(rect, scene.params.clearance))
         .collect();
-    let mut routes = found.to_vec();
-    for axis in [Axis::X, Axis::Y] {
-        nudge_axis(scene, &buffers, &mut routes, axis);
+    let (mut routes, crowded) = nudged(scene, &buffers, found.to_vec());
+    if crowded > 0 {
+        let stubbed = found
+            .iter()
+            .zip(&scene.connectors)
+            .map(|(route, ends)| {
+                route
+                    .as_ref()
+                    .map(|points| stubbed(&buffers, points, *ends))
+            })
+            .collect();
+        let (again, still) = nudged(scene, &buffers, stubbed);
+        if still < crowded {
+            routes = again;
+        }
     }
     routes
         .into_iter()
         .map(|route| route.map(simplified))
         .collect()
+}
+
+/// The routes nudged, x then y, and how many of them are crowded: a segment
+/// of each stands closer to another than a lane, because its channel is too
+/// narrow for its lanes.
+fn nudged(
+    scene: &Scene,
+    buffers: &[Buffer],
+    mut routes: Vec<Option<Vec<Point>>>,
+) -> (Vec<Option<Vec<Point>>>, usize) {
+    let mut crowded = vec![false; routes.len()];
+    for axis in [Axis::X, Axis::Y] {
+        nudge_axis(scene, buffers, &mut routes, &mut crowded, axis);
+    }
+    let count = crowded.iter().filter(|&&crowded| crowded).count();
+    (routes, count)
+}
+
+/// A route with its first and last segments cut where they leave their
+/// pin's buffer, when that lies inside them: the end of the stub stands
+/// twice, so that nudging the rest of the segment opens a jog there.
+fn stubbed(buffers: &[Buffer], points: &[Point], (tail, head): (End, End)) -> Vec<Point> {
+    let cut = |end: End, pin: Point, next: Point| match end {
+        End::Pin {
+            obstacle, leaves, ..
+        } => {
+            let stub = stub_end(&buffers[obstacle], pin, leaves);
+            let inside = |a: f64, b: f64, c: f64| {
+                (a - c).abs() > SAME && (b - c).abs() > SAME && (a < c) == (c < b)
+            };
+            let on = (stub.x - pin.x).abs() < SAME
+                && (next.x - pin.x).abs() < SAME
+                && inside(pin.y, next.y, stub.y)
+                || (stub.y - pin.y).abs() < SAME
+                    && (next.y - pin.y).abs() < SAME
+                    && inside(pin.x, next.x, stub.x);
+            on.then_some(stub)
+        }
+        End::Free { .. } => None,
+    };
+    let mut out = points.to_vec();
+    let last = out.len() - 1;
+    if last >= 1
+        && let Some(stub) = cut(head, out[last], out[last - 1])
+    {
+        out.splice(last..last, [stub, stub]);
+    }
+    if out.len() >= 2
+        && let Some(stub) = cut(tail, out[0], out[1])
+    {
+        out.splice(1..1, [stub, stub]);
+    }
+    out
 }
 
 fn sign(value: f64) -> i32 {
@@ -311,7 +380,13 @@ fn acyclic(count: usize, mut orders: Vec<(u8, usize, usize)>) -> Vec<(usize, usi
     kept
 }
 
-fn nudge_axis(scene: &Scene, buffers: &[Buffer], routes: &mut [Option<Vec<Point>>], axis: Axis) {
+fn nudge_axis(
+    scene: &Scene,
+    buffers: &[Buffer],
+    routes: &mut [Option<Vec<Point>>],
+    crowded: &mut [bool],
+    axis: Axis,
+) {
     let segments = segments_of(routes, axis);
     if segments.is_empty() {
         return;
@@ -483,6 +558,9 @@ fn nudge_axis(scene: &Scene, buffers: &[Buffer], routes: &mut [Option<Vec<Point>
         let value = placed[v].max(low).min(high);
         for &s in &members[v] {
             let segment = segments[s];
+            // The solver stood it past its channel's wall, which only too
+            // many lanes for the channel make it do.
+            crowded[segment.route] |= (value - placed[v]).abs() > SAME;
             if let Some(points) = routes[segment.route].as_mut() {
                 axis.set(&mut points[segment.index], value);
                 axis.set(&mut points[segment.index + 1], value);
