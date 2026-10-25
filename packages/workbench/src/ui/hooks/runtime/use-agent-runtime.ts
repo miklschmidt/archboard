@@ -9,7 +9,10 @@ import { useExternalStoreRuntime, type AssistantRuntime } from "@assistant-ui/re
 import { useMemo, useSyncExternalStore } from "react";
 
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
-import { mergeConversation, projectTimelineTurns } from "@archboard/codex-realtime-voice/controllers";
+import {
+	mergeConversation,
+	projectTimelineTurns,
+} from "@archboard/codex-realtime-voice/controllers";
 import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 import { type ConversationOwner } from "#ui/state/surfaces/voice-parts.ts";
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
