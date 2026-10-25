@@ -576,7 +576,7 @@ The same rejection also names a state directory that the package cannot use:
 1. Make sure that the server runs and that `start()` resolved.
 2. If the server logs no error, look at the attempts in the browser's network panel. A `403` or `400` answer has the causes in [The socket is refused](#the-socket-is-refused).
 
-A first `connect()` that fails is not repeated. The quickstart's "Connect" button calls it again.
+A first `connect()` whose socket never opens is not repeated. The quickstart's "Connect" button calls it again.
 
 ## License
 
