@@ -210,32 +210,36 @@ impl Track<'_> {
                 .into_iter()
                 .map(|one| self.without_twins(one, side, &line_ends))
                 .flat_map(|one| self.apart(one, nets, side))
+                .filter(|group| group.len() >= 2)
                 .collect();
             for group in pieces {
-                if group.len() < 2 {
-                    continue;
-                }
-                let other = side.other();
-                let mut ends: Set<(bool, usize)> = Set::default();
-                for &net in &group {
-                    let station = self.station(self.net(net).at(other));
-                    ends.insert(if station.kind == Kind::Card {
-                        (true, station.item.map_or(usize::MAX, |item| item.0))
-                    } else {
-                        (false, net.0)
-                    });
-                }
-                let whole = ends.len() == 1;
-                self.trunks.push(Trunk {
-                    side,
-                    nets: group.clone(),
-                    whole,
-                });
-                let trunk = TrunkId(self.trunks.len() - 1);
-                for net in group {
-                    self.net_mut(net).trunk = Some(trunk);
-                }
+                self.add_trunk(side, group);
             }
+        }
+    }
+
+    /// Make a group of nets one trunk at one end, whole when every net reaches
+    /// one card at the other end.
+    fn add_trunk(&mut self, side: End, group: Vec<NetId>) {
+        let other = side.other();
+        let mut ends: Set<(bool, usize)> = Set::default();
+        for &net in &group {
+            let station = self.station(self.net(net).at(other));
+            ends.insert(if station.kind == Kind::Card {
+                (true, station.item.map_or(usize::MAX, |item| item.0))
+            } else {
+                (false, net.0)
+            });
+        }
+        let whole = ends.len() == 1;
+        self.trunks.push(Trunk {
+            side,
+            nets: group.clone(),
+            whole,
+        });
+        let trunk = TrunkId(self.trunks.len() - 1);
+        for net in group {
+            self.net_mut(net).trunk = Some(trunk);
         }
     }
 

@@ -55,19 +55,22 @@ impl J {
                 }
                 out.push(']');
             }
-            J::Obj(members) => {
-                out.push('{');
-                for (index, (key, value)) in members.iter().enumerate() {
-                    if index > 0 {
-                        out.push(',');
-                    }
-                    string_into(out, key);
-                    out.push(':');
-                    value.write(out);
-                }
-                out.push('}');
-            }
+            J::Obj(members) => Self::write_object(members, out),
         }
+    }
+
+    /// Write an object's members, in the order they were set.
+    fn write_object(members: &[(String, J)], out: &mut String) {
+        out.push('{');
+        for (index, (key, value)) in members.iter().enumerate() {
+            if index > 0 {
+                out.push(',');
+            }
+            string_into(out, key);
+            out.push(':');
+            value.write(out);
+        }
+        out.push('}');
     }
 }
 
