@@ -207,7 +207,51 @@ function withWriteClaims(path: string, method?: string): string {
 	return withExpectedVersion(withDoing(path));
 }
 
+/** What one invocation states about itself, which every later request carries. */
+interface InvocationStatement {
+	/** The board it names, or null. */
+	readonly board: string | null;
+	/** The vault directory it names, absolute, or null. */
+	readonly vault: string | null;
+	/** What it says it is doing, or null. */
+	readonly doing: string | null;
+	/** The agent session it writes as, or null. */
+	readonly session: string | null;
+	/** The version it writes against: null for a board that carries none, undefined for unstated. */
+	readonly expectedVersion: number | null | undefined;
+}
+
+/**
+ * State facts of this invocation. A fact left out keeps what was stated before.
+ * @param stated The facts to state.
+ */
+function stateInvocation(stated: Partial<InvocationStatement>): void {
+	const next = { ...statedInvocation(), ...stated };
+	requestedBoard = next.board;
+	requestedVault = next.vault;
+	writeDoing = next.doing;
+	writeSession = next.session;
+	expectedVersion = next.expectedVersion;
+}
+
+/**
+ * What this invocation has stated about itself.
+ * @returns The facts.
+ */
+function statedInvocation(): InvocationStatement {
+	return {
+		board: requestedBoard,
+		vault: requestedVault,
+		doing: writeDoing,
+		session: writeSession,
+		expectedVersion,
+	};
+}
+
 export {
+	type InvocationStatement,
+	stateInvocation,
+	statedInvocation,
 	withVault,
 	setRequestedVault,
 	setWriteSession,

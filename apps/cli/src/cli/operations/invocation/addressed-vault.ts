@@ -7,7 +7,7 @@
 
 import type { AnsweredVault, RegisteredVault } from "#cli/protocol/contract/schemas.ts";
 import { declareIfUnknown, type Declared } from "@archboard/workspace/checkouts";
-import { setRequestedVault } from "@archboard/server-lifecycle/request-context";
+import { stateInvocation } from "@archboard/server-lifecycle/request-context";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import {
 	findVault,
@@ -95,7 +95,7 @@ async function register(found: FoundVault): Promise<RegisteredVault | undefined>
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
 	const vault = await foundAndRegistered({ directory, vaultsBoundTo });
-	setRequestedVault(vault.path);
+	stateInvocation({ vault: vault.path });
 	return vault;
 }
 

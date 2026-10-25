@@ -38,14 +38,14 @@ const server = Bun.serve({
 try {
 	process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 	process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
-	const [{ getSyncStatus }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
+	const [{ ensureServerRunning }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
 			import("@archboard/server-lifecycle/server"),
 			import("#cli/operations/invocation/run.ts"),
 			import("#cli/protocol/contract/contract.ts"),
 			import("#cli/operations/execution/runner.ts"),
 		]);
-	await getSyncStatus();
+	await ensureServerRunning();
 	const source = cliContractRegistry().find((entry) => entry.name === record.path)?.contract;
 	if (!source) {
 		throw new Error(`missing contract ${record.path}`);

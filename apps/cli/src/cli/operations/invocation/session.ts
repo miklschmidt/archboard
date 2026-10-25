@@ -16,12 +16,7 @@ import {
 	SHARED_OPTIONS,
 	SHARED_OPTION_KEYS,
 } from "#cli/protocol/contract/shared-options.ts";
-import {
-	setExpectedVersion,
-	setRequestedBoard,
-	setWriteDoing,
-	setWriteSession,
-} from "@archboard/server-lifecycle/request-context";
+import { stateInvocation } from "@archboard/server-lifecycle/request-context";
 import { packageVersion } from "@archboard/server-lifecycle/config";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "#cli/protocol/routing/route.ts";
@@ -391,10 +386,12 @@ function dispatchedTo(
  * @param stated - What the invocation stated.
  */
 function applyShared(stated: StatedShared): void {
-	setRequestedBoard(stated.board);
-	setWriteDoing(stated.doing);
-	setWriteSession(stated.session);
-	setExpectedVersion(stated.expectVersion);
+	stateInvocation({
+		board: stated.board,
+		doing: stated.doing,
+		session: stated.session,
+		expectedVersion: stated.expectVersion,
+	});
 }
 
 /**

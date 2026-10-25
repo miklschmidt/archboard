@@ -23,10 +23,7 @@ import { codexWiring, resetCodexWorkbenchWiring } from "#server/services/owner/w
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import { workbenchFeedFor } from "#server/services/sessions/feed.ts";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
-import {
-	serverStartupOwnershipRecord,
-	writeServerStartupProtocolRecord,
-} from "@archboard/server-lifecycle/startup-terminal";
+import { reportStartupOwnership } from "@archboard/server-lifecycle/server-host";
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
 import type { CodexWorkbenchTabSession } from "@archboard/codex-realtime-voice/server";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
@@ -334,9 +331,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @param codexGroup The process group identity.
 		 */
 		onCodexProcessGroupOwned: (codexGroup) => {
-			writeServerStartupProtocolRecord(
-				serverStartupOwnershipRecord({ serverPid: process.pid, codexGroup }),
-			);
+			reportStartupOwnership(codexGroup);
 		},
 		/**
 		 * Publish this tab's pane context with the identity of the workhorse bound to voice.
