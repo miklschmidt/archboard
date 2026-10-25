@@ -1,11 +1,11 @@
 ---
 id: TASK-520.08
 title: The renderer package is a thin host of the core
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:54
-updated_date: '2026-10-25T17:19:00Z'
+updated_date: '2026-10-25T18:19:00Z'
 labels:
   - renderer
 dependencies:
@@ -28,7 +28,7 @@ After the layout, painting and text ports, the renderer package still holds the 
 - [x] #1 The core takes the content, the policy and the render choices of a board and answers the render reply with its scene and SVG
 - [x] #2 A cargo test renders a corpus board natively to the same SVG bytes as the WASM build
 - [x] #3 packages/renderer holds no layout, painting or measurement rules in TypeScript
-- [ ] #4 The Semantic renderer and Renderer layout boards draw the core as built
+- [x] #4 The Semantic renderer and Renderer layout boards draw the core as built
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,3 +79,9 @@ Board closing (AC4), steps 1 to 7 of archboard-dev's closing:
 - `archboard check`: no diagnostics. `archboard check --code` behind, boards the task's commits put behind: Board viewer and Browser application (SemanticBoardStage.tsx in 33807e3a0: the stage now takes `{appearances, key}` from the reply). Neither board draws the legend or the key, so both stay true. Their Draw here and Browser renderer still say the core in the page draws and a worker pool lays out each solve. Archboard (renderer and board packages): the renderer still draws a board as a picture, and board gained the reply's AppliedAppearance/PictureKey schemas and levels.ts drillDirection. Both responsibilities still hold, and renderer -> board still anchors at board.ts addressedVariant. Skill evaluation (evals/coverage.json in 6853bb85d): only a test owner path moved. Archboard server and Archboard server routes: no commit of this task touches them. Their render steps say "the picture", and the route answers the whole reply. No finding on these boards differs from the run before the proposals.
 - Rasterized in dark mode: the overviews, Host seam, Key and export, Draw a view, Layout and measuring, Responsibilities, Lay out a drawing, Board layout and Layout workers. Each draws what is described above, with no overlap or missing line.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The renderer package is a thin host of the core. The new crate crates/archboard-render answers the whole render reply through one call, Renderer::render(&RenderRequest, &impl Host): reading, policy and render choices in; the document, its atlas, each subject's appearance, the picture's key and the scene out. The host gives it the solves and the icons; WebAssembly exports only render and layOutBoard. The choosing between solves moved into crates/archboard-layout as async Rust over a Solver port whose Calling handle shares a running or failed solve with a later turn, as TASK-464 chose; the worker pool only schedules solves. A flowchart's track layout calls the layout crate directly, the picture key comes from the core and the web reads it from the reply, the JSON type assertions and the copied helpers are gone, and about 5,900 lines left packages/renderer/src. Every deleted TypeScript test has a Rust owner with the same assertions. A cargo test draws examples/web-shop natively to the bytes of the WebAssembly build, replaying the Graphviz answers it recorded. 0 of 36,360 corpus drawings and 0 of 17,640 exports, replies and keys differ; timing is unchanged within noise. Semantic renderer v125 and Renderer layout v81 draw the core as built. Open: the browser tips still read appearances from the DOM rather than from the reply.
+<!-- SECTION:FINAL_SUMMARY:END -->
