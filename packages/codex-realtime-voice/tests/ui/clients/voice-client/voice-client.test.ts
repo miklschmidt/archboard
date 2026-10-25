@@ -36,6 +36,22 @@ class OpeningSocket extends FakeSocket {
 	}
 }
 
+/** A pane socket that the server refuses: it closes without opening. */
+class RefusedSocket extends FakeSocket {
+	/** Close the socket on the next task. */
+	constructor() {
+		super();
+		queueMicrotask(() => this.dispatchEvent(new Event("close")));
+	}
+}
+
+/** One delayed run the client asked for. */
+interface Timer {
+	readonly delayMs: number;
+	readonly run: () => void;
+	cancelled: boolean;
+}
+
 /** A ready media owner that records the calls the client makes. */
 class RecordingMedia implements BrowserWorkbenchMediaOwner {
 	readonly calls: string[] = [];
@@ -168,10 +184,16 @@ function recordingMedia(): { media: BrowserWorkbenchMediaOwner; calls: string[] 
 /**
  * A client over a gateway double that answers every command with one outcome.
  * @param outcome What each command result says about delivery.
- * @returns The client, the opened sockets, the media calls and the commands sent.
+ * @param refused Which socket opens, counted from 0, the server refuses.
+ * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
-function gateway(outcome: "delivered" | "outcome_unknown" = "delivered") {
-	const sockets: OpeningSocket[] = [];
+function gateway(
+	outcome: "delivered" | "outcome_unknown" = "delivered",
+	refused: readonly number[] = [],
+) {
+	const sockets: FakeSocket[] = [];
+	const urls: string[] = [];
+	const timers: Timer[] = [];
 	const commands: string[] = [];
 	const { media, calls } = recordingMedia();
 	let current = snapshot({ linkState: "executable" });
@@ -214,6 +236,12 @@ function gateway(outcome: "delivered" | "outcome_unknown" = "delivered") {
 			 * @returns The socket.
 			 */
 			openSocket: (url) => {
+				urls.push(url);
+				if (refused.includes(sockets.length)) {
+					const socket = new RefusedSocket();
+					sockets.push(socket);
+					return socket;
+				}
 				const socket = new OpeningSocket(url);
 				socket.onRequest = answer;
 				sockets.push(socket);
@@ -229,15 +257,42 @@ function gateway(outcome: "delivered" | "outcome_unknown" = "delivered") {
 			 * @returns Its URL.
 			 */
 			pageUrl: () => "https://host.test/page",
+			/**
+			 * Keep the run for the test to fire.
+			 * @param delayMs How long the client would wait.
+			 * @param run What runs then.
+			 * @returns How to cancel it.
+			 */
+			after: (delayMs, run) => {
+				const timer: Timer = { delayMs, run, cancelled: false };
+				timers.push(timer);
+				return () => {
+					timer.cancelled = true;
+				};
+			},
 		},
 	);
-	return { client, sockets, calls, commands };
+	return { client, sockets, urls, calls, commands, timers };
+}
+
+/**
+ * Fire the one pending timer and let the reconnect it starts settle.
+ * @param timers The timers the client asked for.
+ */
+async function fire(timers: Timer[]): Promise<void> {
+	const pending = timers.filter((timer) => !timer.cancelled);
+	expect(pending).toHaveLength(1);
+	for (const timer of pending) {
+		timer.cancelled = true;
+		timer.run();
+	}
+	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 test("connect opens the socket with the pane and tab identity and attaches voice", async () => {
-	const { client, sockets, calls } = gateway();
+	const { client, sockets, urls, calls } = gateway();
 	expect(await client.connect()).toBe(true);
-	const url = new URL(sockets[0]?.url ?? "");
+	const url = new URL(urls[0] ?? "");
 	expect(url.protocol).toBe("wss:");
 	expect(url.pathname).toBe("/api/voice");
 	expect(url.searchParams.get("paneId")).toBe("pane-a");
@@ -270,6 +325,36 @@ async function disposeDuringConnect(reconnect: boolean) {
 test("a dispose during connect or reconnect leaves no socket open", async () => {
 	expect(await disposeDuringConnect(false)).toEqual({ connected: false, closed: true });
 	expect(await disposeDuringConnect(true)).toEqual({ connected: false, closed: true });
+});
+
+test("a lost socket opens again by itself, also after failed attempts", async () => {
+	const { client, sockets, timers } = gateway("delivered", [1, 2]);
+	expect(await client.connect()).toBe(true);
+	expect(timers).toHaveLength(0);
+	sockets[0]?.close();
+	expect(client.snapshot().connection).toBe("reconnecting");
+	await fire(timers);
+	await fire(timers);
+	expect(client.snapshot().connection).not.toBe("connected");
+	await fire(timers);
+	expect(sockets).toHaveLength(4);
+	expect(client.snapshot().connection).toBe("connected");
+	expect(timers.filter((timer) => !timer.cancelled)).toHaveLength(0);
+	await client.dispose();
+});
+
+test("a dispose ends a reconnect that waits, and a first connect that fails is not retried", async () => {
+	const lost = gateway();
+	await lost.client.connect();
+	lost.sockets[0]?.close();
+	await lost.client.dispose();
+	expect(lost.timers.map((timer) => timer.cancelled)).toEqual([true]);
+	expect(lost.sockets).toHaveLength(1);
+	const first = gateway("delivered", [0]);
+	expect(await first.client.connect()).toBe(false);
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	expect(first.timers).toHaveLength(0);
+	await first.client.dispose();
 });
 
 test("an uncertain delivery stays visible and is never sent again", async () => {

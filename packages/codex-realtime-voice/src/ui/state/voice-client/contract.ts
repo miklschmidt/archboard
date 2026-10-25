@@ -94,9 +94,12 @@ interface VoiceClientSnapshot {
  */
 interface VoiceClient {
 	/**
-	 * Open the socket with the tab's session id, or open it again. The client
-	 * does not reconnect by itself: after the socket closes, `connection` reads
-	 * `reconnecting` until the host calls `connect` again.
+	 * Open the socket with the tab's session id, or open it again. After a
+	 * socket that was open closes, the client reconnects by itself: `connection`
+	 * reads `reconnecting`, the client opens a new socket after a short wait,
+	 * and it tries again after each attempt that fails, until one opens or the
+	 * client is disposed. A first `connect` that fails is not retried; the host
+	 * calls `connect` again.
 	 */
 	readonly connect: () => Promise<boolean>;
 	/** Read the server's current state again without repeating a command. */
