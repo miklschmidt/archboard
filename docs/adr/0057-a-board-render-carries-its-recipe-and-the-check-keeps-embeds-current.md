@@ -60,12 +60,15 @@ about how it was drawn. The recipe holds:
   the render follows an adoption
 - the view by id, the variant drawn against, and the drawing choices: theme,
   layout, legend and title, and for a PNG its scale and region
-- a fingerprint of what the renderer was given: the drawn variant, the view
-  and the vault's presentation policy
+- a fingerprint of what the renderer was given: the drawn variant without its
+  walkthroughs and the code that it cites, the variant it is drawn against,
+  the view, the board's level, the vault's presentation policy and the title
+  text
 - a hash of the picture as drawn, without the recipe
 
-The recipe holds no output path and no board version. A draft edit raises the
-version and changes nothing that the picture draws.
+The recipe holds no output path and no board version. An edit of a variant
+that the picture neither draws nor is drawn against raises the version and
+changes nothing that the picture draws.
 
 An SVG holds the recipe in its `<metadata>` element, and a PNG in a text chunk.
 A post-processor that keeps the recipe, such as a font subsetter, leaves the
@@ -139,8 +142,10 @@ checkout, and otherwise the answer names it.
 
 A move (ADR 0051) carries the list with the note. The target vault's check
 then names each tracked embed whose recipe still names the old repository, and
-`--fix` rewrites the recipe. A rename needs nothing, because former names
-answer forever and the recipe names the board by id.
+`--fix` rewrites the recipe. A rename needs nothing to find the board, because
+former names answer forever and the recipe names the board by id. A title
+without words names the board, so a titled picture shows the old name after a
+rename. The check then reports it outdated, and `--fix` draws the new name.
 
 ### A vault in another repository
 
