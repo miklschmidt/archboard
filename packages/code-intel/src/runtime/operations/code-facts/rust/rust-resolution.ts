@@ -41,12 +41,13 @@ import type {
 	Target,
 } from "#runtime/operations/code-facts/facts.ts";
 import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
-import { isRustFacts } from "#runtime/operations/code-facts/rust/rust-adapter.ts";
+import type { RustUse } from "#runtime/operations/code-facts/rust/rust-scopes.ts";
 import {
 	type Crates,
 	cratesOf,
 	directoryOf,
 	type Place,
+	type PathTarget,
 	type RustPackage,
 } from "#runtime/operations/code-facts/rust/rust-crates.ts";
 
@@ -56,6 +57,7 @@ const ABOVE = new Set(["crate", "super"]);
 /** A module a glob of a file opens: its file, its facts, and whether its private names are the file's. */
 interface Globbed {
 	readonly file: string;
+	readonly prefix: string;
 	readonly facts: ParsedFacts;
 	readonly open: boolean;
 }
@@ -63,9 +65,7 @@ interface Globbed {
 /** What leading one file's uses needs. */
 interface FileLookup {
 	readonly from: string;
-	/** The names the file binds in a narrower scope. */
-	readonly scoped: ReadonlySet<string>;
-	/** The first names of what the file defines. */
+	/** The names the file defines. */
 	readonly own: ReadonlySet<string>;
 	readonly globbed: readonly Globbed[];
 }
@@ -101,7 +101,7 @@ function resolveImport(crates: Crates, from: string, found: Import): ResolvedImp
 	const [name] = found.names;
 	if (target === undefined || name === undefined) return found;
 	const whole = target.item.length === 0;
-	if (name.imported === "*") return whole ? { ...found, resolved: target.file } : found;
+	if (isGlob(found) && !whole) return found;
 	const imported = whole ? "*" : target.item.join(".");
 	return { ...found, resolved: target.file, names: [{ ...name, imported }] };
 }
@@ -119,37 +119,6 @@ function holds(outer: Place, inner: Place): boolean {
 }
 
 /**
- * Whether a module offers a name to a file: it defines it at its top, or a
- * `use` of it brings it in, open to the file.
- * @param module The module.
- * @param name The name.
- * @returns True when it does.
- */
-function offers(module: Globbed, name: string): boolean {
-	const { facts, open } = module;
-	const defined = facts.definitions.some((each) => each.symbol === name && (open || each.exposed));
-	const imported = facts.imports.some(
-		(found) => (open || found.reexport) && found.names.some((each) => each.local === name),
-	);
-	return defined || imported;
-}
-
-/**
- * Where a use that no import names leads through the globs of its file.
- * @param use The use.
- * @param lookup The file and what its globs open.
- * @returns The target, or undefined where no glob or more than one offers its first name.
- */
-function globTarget(use: Reference, lookup: FileLookup): Target | undefined {
-	const [first = ""] = use.symbol.split(".");
-	const offering = lookup.globbed.filter((module) => offers(module, first));
-	const [only] = offering;
-	return only === undefined || offering.length > 1
-		? undefined
-		: { path: only.file, symbol: use.symbol };
-}
-
-/**
  * Whether a use is the file's own to read: it reaches through an import, is
  * no use in code, starts at a value, at a name the file binds in a narrower
  * scope, or at a name the file defines.
@@ -163,7 +132,7 @@ function ownUse(
 ): boolean {
 	const [first = ""] = use.symbol.split(".");
 	const unled = use.via !== "code" || use.through !== undefined;
-	return unled || first === "" || ownName(first, lookup);
+	return unled || first === "" || lookup.own.has(use.symbol);
 }
 
 /**
@@ -174,7 +143,7 @@ function ownUse(
  * @returns True when it is.
  */
 function ownName(first: string, lookup: FileLookup): boolean {
-	return lookup.scoped.has(first) || (!ABOVE.has(first) && lookup.own.has(first));
+	return !ABOVE.has(first) && lookup.own.has(first);
 }
 
 /**
@@ -229,15 +198,16 @@ function createRustResolver(
 
 	/**
 	 * One module a glob of a file opens.
-	 * @param file The module's file.
+	 * @param target The module's file and inline path.
 	 * @param place The globbing file's place.
 	 * @returns The module, or none where its facts cannot be read.
 	 */
-	const globbedModule = async (file: string, place: Place): Promise<Globbed[]> => {
+	const globbedModule = async (target: PathTarget, place: Place): Promise<Globbed[]> => {
+		const { file, item } = target;
 		const other = crates().placeOf(file);
 		const facts = await parsed(file);
 		const open = other !== undefined && holds(other, place);
-		return facts === undefined ? [] : [{ file, facts, open }];
+		return facts === undefined ? [] : [{ file, prefix: item.join("."), facts, open }];
 	};
 
 	/**
@@ -253,13 +223,76 @@ function createRustResolver(
 		place: Place,
 	): Promise<Globbed[]> => {
 		const files = imports.filter(isGlob).flatMap((found) => {
-			const resolved = resolveImport(crates(), from, found).resolved;
-			return resolved === undefined || resolved === from ? [] : [resolved];
+			const target = crates().resolvePath(from, pathOf(found));
+			return target === undefined ? [] : [target];
 		});
-		const modules = await Promise.all(
-			[...new Set(files)].map((file) => globbedModule(file, place)),
-		);
+		const modules = await Promise.all(files.map((target) => globbedModule(target, place)));
 		return modules.flat();
+	};
+
+	/**
+	 * Whether a module offers a name directly or through public glob re-exports.
+	 * @param module The module and its facts.
+	 * @param name The requested name.
+	 * @param seen The modules already visited on this path.
+	 * @returns True when the name is available.
+	 */
+	const offers = async (
+		module: Globbed,
+		name: string,
+		seen: ReadonlySet<string>,
+	): Promise<boolean> => {
+		const key = `${module.file}#${module.prefix}`;
+		if (seen.has(key)) return false;
+		const qualified = [module.prefix, name].filter(Boolean).join(".");
+		const defined = module.facts.definitions.some(
+			(each) => each.symbol === qualified && (module.open || each.exposed),
+		);
+		if (defined) return true;
+		return offeredImports(module, qualified, new Set([...seen, key]));
+	};
+
+	/**
+	 * Follow imports that a module exposes, including cycles of public globs.
+	 * @param module The module.
+	 * @param name Its qualified name.
+	 * @param seen The modules already visited.
+	 * @returns True when an import offers the name.
+	 */
+	const offeredImports = async (
+		module: Globbed,
+		name: string,
+		seen: ReadonlySet<string>,
+	): Promise<boolean> => {
+		const imports = module.facts.imports.filter((found) => module.open || found.reexport);
+		if (imports.some((found) => found.names.some((each) => each.local === name))) return true;
+		const place = crates().placeOf(module.file);
+		if (place === undefined) return false;
+		const globs = imports.filter(
+			(found) => isGlob(found) && found.names.some((each) => each.local === (module.prefix || "*")),
+		);
+		const modules = await globbedBy(module.file, globs, place);
+		const leaf = name.slice(module.prefix === "" ? 0 : module.prefix.length + 1);
+		return (await Promise.all(modules.map((each) => offers(each, leaf, seen)))).some(Boolean);
+	};
+
+	/**
+	 * The one glob that offers a use's first name. Ambiguous names stay unresolved.
+	 * @param use The use.
+	 * @param lookup The visible modules.
+	 * @returns Its target, if one module offers it.
+	 */
+	const globTarget = async (use: Reference, lookup: FileLookup): Promise<Target | undefined> => {
+		const [first = ""] = use.symbol.split(".");
+		const offered = await Promise.all(
+			lookup.globbed.map(async (module) =>
+				(await offers(module, first, new Set())) ? module : undefined,
+			),
+		);
+		const [only, ...more] = offered.filter((module) => module !== undefined);
+		return only === undefined || more.length > 0
+			? undefined
+			: { path: only.file, symbol: [only.prefix, use.symbol].filter(Boolean).join(".") };
 	};
 
 	/**
@@ -268,7 +301,9 @@ function createRustResolver(
 	 * @param lookup The file and what its globs open.
 	 * @returns The target, or undefined.
 	 */
-	const useTarget = (use: Reference, lookup: FileLookup): Target | undefined => {
+	const useTarget = async (use: Reference, lookup: FileLookup): Promise<Target | undefined> => {
+		const [first = ""] = use.symbol.split(".");
+		if (ownName(first, lookup)) return { path: lookup.from, symbol: use.symbol };
 		const target = crates().resolvePath(lookup.from, use.symbol.split("."));
 		if (target === undefined) return globTarget(use, lookup);
 		const whole = target.item.length === 0;
@@ -286,12 +321,16 @@ function createRustResolver(
 		if (place === undefined) return [];
 		const lookup: FileLookup = {
 			from,
-			scoped: new Set(isRustFacts(facts) ? facts.scoped : []),
-			own: new Set(facts.definitions.map((each) => each.symbol.split(".")[0] ?? "")),
-			globbed: await globbedBy(from, facts.imports, place),
+			own: new Set(facts.definitions.map((each) => each.symbol)),
+			globbed: [],
 		};
-		return facts.references.map((use) =>
-			ownUse(use, lookup) ? undefined : useTarget(use, lookup),
+		return Promise.all(
+			facts.references.map(async (use: Reference & Partial<Pick<RustUse, "local" | "globs">>) => {
+				if (use.local === true || ownUse(use, lookup)) return undefined;
+				const imports = (use.globs ?? []).flatMap((index) => facts.imports[index] ?? []);
+				const globbed = await globbedBy(from, imports, place);
+				return useTarget(use, { ...lookup, globbed });
+			}),
 		);
 	};
 

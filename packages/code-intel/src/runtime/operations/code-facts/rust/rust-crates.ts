@@ -442,15 +442,12 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 	 * @returns The deepest module's file, and the names after it.
 	 */
 	const walk = (start: Start): PathTarget | undefined => {
-		const module = [...start.module];
-		let index = 0;
-		for (const name of start.rest) {
-			if (moduleFile(start.root, [...module, name]) === undefined) break;
-			module.push(name);
-			index += 1;
+		const names = [...start.module, ...start.rest];
+		for (let count = names.length; count >= 0; count -= 1) {
+			const file = moduleFile(start.root, names.slice(0, count));
+			if (file !== undefined) return { file, item: names.slice(count) };
 		}
-		const file = moduleFile(start.root, module);
-		return file === undefined ? undefined : { file, item: start.rest.slice(index) };
+		return undefined;
 	};
 
 	return {

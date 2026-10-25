@@ -27,35 +27,22 @@
 // code of the file names, as a trait is brought in only to call its methods,
 // is a use as a type on the line of the `use`.
 //
-// The facts keep the names the file binds in a scope narrower than the file,
-// a parameter, a local, a pattern's binding or a generic parameter, so the
-// resolver leads a use of one to no other file. Code that did not parse holds
-// no facts; the names written there are kept.
+// Each use keeps the imports visible in its scope and whether it names a
+// local binding. Code that did not parse holds no facts; its names are kept.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import type {
-	Import,
-	ParsedFacts,
-	Reference,
-	ReferenceThroughImport,
-} from "#runtime/operations/code-facts/facts.ts";
+import type { ParsedFacts } from "#runtime/operations/code-facts/facts.ts";
 import type { Grammar } from "#runtime/services/code-facts/grammars.ts";
 import { definitionsOf, typeName } from "#runtime/operations/code-facts/rust/rust-definitions.ts";
+import { fromFile, nestingOf } from "#runtime/operations/code-facts/rust/rust-imports.ts";
 import {
-	fromFile,
-	importsOf,
-	nestingOf,
-} from "#runtime/operations/code-facts/rust/rust-imports.ts";
+	bindReferences,
+	type WrittenUse,
+} from "#runtime/operations/code-facts/rust/rust-scopes.ts";
 import { tokenUses } from "#runtime/operations/code-facts/rust/rust-tokens.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/operations/code-facts/runs.ts";
 import { spansOf, type Spans } from "#runtime/operations/code-facts/spans.ts";
 import { unparsedOf } from "#runtime/operations/code-facts/unparsed.ts";
-
-/** The facts of a Rust file, with the names it binds in a scope narrower than the file. */
-type RustFacts = ParsedFacts & { readonly scoped: readonly string[] };
-
-/** One reference, with the import it reaches through where a `use` brings in its first name. */
-type FileReference = Reference & { readonly through?: ReferenceThroughImport };
 
 /** The captures of one file, by what the query calls them. */
 interface Captured {
@@ -277,9 +264,10 @@ function fieldChain(node: Node): string | undefined {
  * @param typeOnly Whether it is a use only as a type.
  * @returns The reference.
  */
-function use(symbol: string, node: Node, typeOnly: boolean): Reference {
+function use(symbol: string, node: Node, typeOnly: boolean): WrittenUse {
 	return {
 		symbol,
+		node,
 		line: node.startPosition.row + 1,
 		via: "code",
 		kind: typeOnly ? "import" : "call",
@@ -298,7 +286,7 @@ function use(symbol: string, node: Node, typeOnly: boolean): Reference {
  * @param seen The paths already read, which this adds to.
  * @returns The uses, none where the name is no use.
  */
-function pathReferences(node: Node, context: UseContext, seen: Set<number>): Reference[] {
+function pathReferences(node: Node, context: UseContext, seen: Set<number>): WrittenUse[] {
 	const whole = wholePath(node);
 	if (seen.has(whole.id)) return [];
 	seen.add(whole.id);
@@ -349,7 +337,7 @@ function pathSymbols(whole: Node, node: Node): string[] {
  * @returns True when it does.
  */
 function isUse(symbol: string): boolean {
-	return symbol !== "" && !HEADS.has(symbol);
+	return symbol.split(".").some((name) => name !== "" && !HEADS.has(name));
 }
 
 /**
@@ -358,7 +346,7 @@ function isUse(symbol: string): boolean {
  * @param context The file's spans.
  * @returns The use, or undefined in code where no name is a use.
  */
-function memberReference(node: Node, context: UseContext): Reference | undefined {
+function memberReference(node: Node, context: UseContext): WrittenUse | undefined {
 	if (hidden(node, context)) return undefined;
 	const chain = node.parent === null ? undefined : memberChain(node.parent);
 	return use(chain ?? `.${node.text}`, node, false);
@@ -370,15 +358,16 @@ function memberReference(node: Node, context: UseContext): Reference | undefined
  * @param context The file's spans.
  * @returns The uses.
  */
-function tokenReferences(tree: Node, context: UseContext): Reference[] {
+function tokenReferences(tree: Node, context: UseContext): WrittenUse[] {
 	if (context.skip.holds(tree.startIndex) || context.unparsed.holds(tree.startIndex)) return [];
-	return tokenUses(tree).flatMap((found): Reference[] => {
+	return tokenUses(tree).flatMap((found): WrittenUse[] => {
 		const last = found.path.at(-1) ?? "";
 		const symbols = found.member ? [`.${last}`] : prefixes(readPath(found.path, found.node));
 		const line = found.node.startPosition.row + 1;
 		const way = found.called ? {} : { asValue: true as const };
 		return symbols.map((symbol) => ({
 			symbol,
+			node: found.node,
 			line,
 			via: "code",
 			kind: "call",
@@ -389,106 +378,12 @@ function tokenReferences(tree: Node, context: UseContext): Reference[] {
 }
 
 /**
- * The import each local name a `use` or a `mod` declaration brings in reaches through.
- * @param imports The file's imports.
- * @returns Each local name and the index of its import.
- */
-function localsOf(imports: readonly Import[]): Map<string, number> {
-	const locals = new Map<string, number>();
-	imports.forEach((found, index) => {
-		for (const name of found.names)
-			if (name.local !== "*" && !locals.has(name.local)) locals.set(name.local, index);
-	});
-	return locals;
-}
-
-/**
- * The references of a file, one for each spelling, way of use and evidence
- * kind at the first line it occurs, each with the import its first name
- * reaches through.
- * @param uses Every use.
- * @param locals The local names the file's imports bring in.
- * @returns The references.
- */
-function distinct(
-	uses: readonly Reference[],
-	locals: ReadonlyMap<string, number>,
-): FileReference[] {
-	const seen = new Map<string, FileReference>();
-	for (const reference of uses) {
-		const key = keyOf(reference);
-		if (!seen.has(key)) seen.set(key, throughOf(reference, locals));
-	}
-	return [...seen.values()];
-}
-
-/**
- * What tells two uses apart: spelling, way of use and evidence kind.
- * @param reference The use.
- * @returns Its key.
- */
-function keyOf(reference: Reference): string {
-	const { via, symbol, typeOnly, kind, asValue, passed } = reference;
-	return [via, symbol, typeOnly, kind ?? "", asValue, passed].map(String).join("\0");
-}
-
-/**
- * A use with the import its first name reaches through, where a `use` or a `mod` brings it in.
- * @param reference The use.
- * @param locals The local names the file's imports bring in.
- * @returns The use.
- */
-function throughOf(reference: Reference, locals: ReadonlyMap<string, number>): FileReference {
-	const local = reference.symbol.split(".")[0] ?? "";
-	const index = reference.via === "code" ? locals.get(local) : undefined;
-	return index === undefined ? reference : { ...reference, through: { import: index, local } };
-}
-
-/**
- * A use of each name a `use` brings in that no code of the file names, as a
- * trait is brought in only to call its methods on values: a use as a type at
- * the line of the `use`. A name passed on with `pub use` is no use.
- * @param imports The file's imports.
- * @param uses The file's other uses.
- * @returns The uses.
- */
-function importedOnly(imports: readonly Import[], uses: readonly Reference[]): Reference[] {
-	const named = new Set(uses.map((each) => each.symbol.split(".")[0]));
-	return imports.flatMap((found) =>
-		found.reexport
-			? []
-			: found.names.flatMap((name): Reference[] =>
-					name.imported === "*" || name.local === "_" || named.has(name.local)
-						? []
-						: [
-								{
-									symbol: name.local,
-									line: found.line,
-									via: "code",
-									kind: "import",
-									typeOnly: true,
-								},
-							],
-				),
-	);
-}
-
-/**
- * The names a file binds in a scope narrower than the file.
- * @param bindings The names bound where written.
- * @returns The names.
- */
-function scopedNames(bindings: readonly Node[]): string[] {
-	return [...new Set(bindings.map((node) => node.text))];
-}
-
-/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
  * @returns Its facts.
  */
-function rustFacts(tree: Tree, grammar: Grammar): RustFacts {
+function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const captured = sorted(grammar.query.captures(tree.rootNode));
 	const matchedNames = new Set(captured.matched.map((node) => node.id));
 	const binding = captured.binding.filter((node) => !matchedNames.has(node.id));
@@ -500,16 +395,15 @@ function rustFacts(tree: Tree, grammar: Grammar): RustFacts {
 		types: spansOf(captured.type),
 		tokens: spansOf(captured.tokens),
 	};
-	const imports = captured.import
-		.filter((node) => !unparsed.holds(node.startIndex))
-		.flatMap((node) => importsOf(node));
+	const imports = captured.import.filter((node) => !unparsed.holds(node.startIndex));
 	const seen = new Set<number>();
-	const environment = captured.environment.flatMap((node): Reference[] =>
+	const environment = captured.environment.flatMap((node): WrittenUse[] =>
 		unparsed.holds(node.startIndex)
 			? []
 			: [
 					{
 						symbol: node.text,
+						node,
 						line: node.startPosition.row + 1,
 						via: "environment",
 						typeOnly: false,
@@ -522,25 +416,11 @@ function rustFacts(tree: Tree, grammar: Grammar): RustFacts {
 		...captured.tokens.flatMap((node) => tokenReferences(node, context)),
 		...environment,
 	];
-	const uses = [...written, ...importedOnly(imports, written)].toSorted(
-		(left, right) => left.line - right.line,
-	);
 	return {
 		definitions: definitionsOf(tree.rootNode),
-		references: distinct(uses, localsOf(imports)),
-		imports,
+		...bindReferences(written, imports, binding),
 		unparsed: unparsedOf(captured.unparsed),
-		scoped: scopedNames(binding),
 	};
 }
 
-/**
- * Whether facts are a Rust file's.
- * @param facts The facts a file gave.
- * @returns True for the facts of a Rust file.
- */
-function isRustFacts(facts: ParsedFacts): facts is RustFacts {
-	return "scoped" in facts;
-}
-
-export { type RustFacts, isRustFacts, rustFacts };
+export { rustFacts };
