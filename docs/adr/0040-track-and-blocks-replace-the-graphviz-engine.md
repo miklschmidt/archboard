@@ -100,3 +100,10 @@ settlement of routes (`even-pins.ts`), its column fold and
   with a Graphviz-engine graph was therefore deleted. The reset stays, because
   Blocks still routes with libavoid. The test that libavoid loads into the same
   memory on every host stays.
+
+Superseded in part (2026-10-25, TASK-520.02,
+[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
+the router of the renderer core routes the trunks of Blocks, in place of
+libavoid. The engine pool and the workers load the core and Graphviz, and
+libavoid-js, its patch and the test that it loads into the same memory are
+gone.
