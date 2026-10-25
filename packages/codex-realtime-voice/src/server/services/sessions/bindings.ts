@@ -1,3 +1,4 @@
+import { createVoiceToolset, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 // What each owner of one tab session, and of each of its workhorses, is configured with: where it
 // works, what it is bound to, read at the moment it asks, and the context its operations run
 // under.
@@ -171,6 +172,13 @@ function coordinatorBindings(
 ): Pick<CodexWorkbenchSessionBindings, "spokenApproval" | "coordinatorTools" | "coordinatorCall"> {
 	const { shared, scope, server } = context;
 	const { state } = scope;
+	let toolset: VoiceToolset | null = null;
+	/**
+	 * The host's built-in namespaces, filled once on first use.
+	 * @returns The toolset.
+	 */
+	const tools = (): VoiceToolset =>
+		(toolset ??= createVoiceToolset(server.host.instructions.coordinator.identity));
 	return {
 		/**
 		 * What a spoken approval is answered through.
@@ -178,6 +186,7 @@ function coordinatorBindings(
 		 * @returns The spoken approval binding.
 		 */
 		spokenApproval: (created) => ({
+			tools: tools(),
 			/**
 			 * The voice session a spoken approval may be answered on.
 			 * @returns The session, or null while none is running.
@@ -203,6 +212,7 @@ function coordinatorBindings(
 		 * @returns The coordinator tools binding.
 		 */
 		coordinatorTools: (created) => ({
+			tools: tools(),
 			authority: {
 				/**
 				 * The coordinator as it stands now.
@@ -266,6 +276,7 @@ function coordinatorBindings(
 			run: async (request, operation) => {
 				await readyDelegatedWorkhorse(
 					request,
+					tools(),
 					scope.workhorse,
 					context.server.host.resolveCheckout,
 				);
@@ -534,6 +545,7 @@ function createWorkhorseBindings(
 		 * @returns The operations binding.
 		 */
 		operations: (created) => ({
+			tools: createVoiceToolset(server.host.instructions.workhorse.identity),
 			contextCodec: server.host.contextCodec,
 			/**
 			 * The operation binding the coordinator and this workhorse share.

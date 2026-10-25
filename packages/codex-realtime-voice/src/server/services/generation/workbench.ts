@@ -80,7 +80,7 @@ function productionKernelFactory(
 			identity: identity.identity,
 		});
 		if (transport.inspect().state === "open") {
-			installDynamicRegistrations(transport, bindings.dynamicRegistrations);
+			installDynamicRegistrations(transport, bindings.tools, bindings.dynamicRegistrations);
 		}
 		return Object.freeze({
 			kernel: Object.freeze({ identityLedger, transport }),

@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
 import type {
 	RealtimeSemanticEvent,
@@ -28,7 +29,6 @@ import {
 	type ApprovalSnapshot,
 	type CodexApprovalBroker,
 } from "#runtime/services/approvals/contract.ts";
-import { VOICE_TOOLS_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
@@ -296,6 +296,7 @@ function makeHarness(options: HarnessOptions = {}): GateHarness {
 	let currentNow = 1_000;
 	let currentRealtime = REALTIME;
 	const gate = createCodexSpokenApprovalGate({
+		tools: TEST_TOOLS,
 		approvalBroker: broker,
 		coordinator: { snapshot: () => coordinatorState },
 		realtime,
@@ -369,9 +370,9 @@ function resolverRequest(
 	const callId =
 		options.callId ??
 		harness.identity.decoder.adoptDynamicToolCallId(`resolver-call-${harness.startParams.length}`);
-	const namespace = options.namespace ?? "archboard_voice";
+	const namespace = options.namespace ?? TEST_TOOLS.voice.namespace.name;
 	const tool = options.tool ?? "resolve_spoken_approval";
-	const manifestHash = options.manifestHash ?? VOICE_TOOLS_MANIFEST_SHA256;
+	const manifestHash = options.manifestHash ?? TEST_TOOLS.voice.sha256;
 	const params = {
 		threadId: String(threadId),
 		turnId: String(turnId),

@@ -1,8 +1,7 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
 import {
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOL_NAMESPACE,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	VOICE_TOOL_CONTRACTS,
@@ -135,7 +134,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			COORDINATOR_TOOL_CONTRACTS.map(
 				({
 					name,
-					namespace,
+					role,
 					authorityTarget,
 					callerRole,
 					requiredLinks,
@@ -143,7 +142,7 @@ describe("dynamic wire envelopes and metadata", () => {
 					refusalErrors,
 				}) => ({
 					name,
-					namespace,
+					role,
 					authorityTarget,
 					callerRole,
 					requiredLinks,
@@ -154,7 +153,7 @@ describe("dynamic wire envelopes and metadata", () => {
 		).toEqual([
 			{
 				name: "inspect_workhorse",
-				namespace: "archboard_workhorse",
+				role: "workhorse",
 				authorityTarget: "server_bound_workhorse",
 				callerRole: "coordinator",
 				requiredLinks: [
@@ -181,7 +180,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			},
 			{
 				name: "delegate_to_workhorse",
-				namespace: "archboard_workhorse",
+				role: "workhorse",
 				authorityTarget: "server_bound_workhorse",
 				callerRole: "coordinator",
 				requiredLinks: [
@@ -211,7 +210,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			},
 			{
 				name: "manage_workhorse_queue",
-				namespace: "archboard_workhorse",
+				role: "workhorse",
 				authorityTarget: "server_created_workhorse_queue",
 				requiredLinks: [
 					"child",
@@ -244,7 +243,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			},
 			{
 				name: "steer_workhorse",
-				namespace: "archboard_workhorse",
+				role: "workhorse",
 				authorityTarget: "server_proven_workhorse_turn",
 				callerRole: "coordinator",
 				requiredLinks: [
@@ -275,7 +274,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			},
 			{
 				name: "stop_workhorses",
-				namespace: "archboard_workhorse",
+				role: "workhorse",
 				authorityTarget: "server_tab_session_workhorses",
 				callerRole: "coordinator",
 				requiredLinks: [
@@ -302,7 +301,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			},
 			{
 				name: "resolve_spoken_approval",
-				namespace: "archboard_voice",
+				role: "voice",
 				authorityTarget: "server_validated_spoken_approval",
 				callerRole: "coordinator",
 				requiredLinks: [
@@ -343,8 +342,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			expect(CoordinatorToolContractSchema.parse(contract)).toEqual<unknown>(contract);
 		}
 		for (const value of [
-			WORKHORSE_TOOL_NAMESPACE,
-			VOICE_TOOL_NAMESPACE,
+			TEST_TOOLS,
 			COORDINATOR_IDENTITY,
 			WORKHORSE_TOOL_CONTRACTS,
 			VOICE_TOOL_CONTRACTS,

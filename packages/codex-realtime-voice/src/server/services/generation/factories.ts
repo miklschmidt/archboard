@@ -1,10 +1,7 @@
 import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import {
-	COORDINATOR_CALLBACK_MANIFEST_SHA256,
-	COORDINATOR_CALLBACK_NAMESPACE,
-	TELL_COORDINATOR_OWNER,
-} from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
-import { COORDINATOR_DYNAMIC_DISPATCHERS } from "#runtime/protocol/coordinator-tools/contract.ts";
+import { TELL_COORDINATOR_OWNER } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { coordinatorDynamicDispatchers } from "#runtime/protocol/coordinator-tools/contract.ts";
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import { createCodexEpochStore } from "#runtime/store/epoch/epoch.ts";
 import { createCodexSession } from "@archboard/codex-app-server/session";
 import { createCodexThreadLink } from "#runtime/rules/thread-link/thread-link.ts";
@@ -37,15 +34,18 @@ import type {
  * Register every dynamic dispatcher this workbench serves, so the transport
  * can route a tool call to the owner that answers it.
  * @param transport The transport.
+ * @param tools The host's built-in namespaces.
  * @param domains The host domain namespaces and their manifest hashes.
  */
 function installDynamicRegistrations(
 	transport: CodexTransport,
+	tools: VoiceToolset,
 	domains: readonly { readonly namespace: string; readonly manifestHash: string }[] = [],
 ): void {
+	const coordinatorTools = coordinatorDynamicDispatchers(tools);
 	const reserved = new Set<string>([
-		COORDINATOR_CALLBACK_NAMESPACE.name,
-		...COORDINATOR_DYNAMIC_DISPATCHERS.map(({ namespace }) => namespace),
+		tools.coordinator.namespace.name,
+		...coordinatorTools.map(({ namespace }) => namespace),
 	]);
 	const installed = new Set<string>();
 	for (const registration of domains) {
@@ -54,12 +54,11 @@ function installDynamicRegistrations(
 		installed.add(registration.namespace);
 		transport.registerDynamicDispatcher({ owner: "codex-dynamic-tools", ...registration });
 	}
-	for (const registration of COORDINATOR_DYNAMIC_DISPATCHERS)
-		transport.registerDynamicDispatcher(registration);
+	for (const registration of coordinatorTools) transport.registerDynamicDispatcher(registration);
 	transport.registerDynamicDispatcher({
 		owner: TELL_COORDINATOR_OWNER,
-		namespace: COORDINATOR_CALLBACK_NAMESPACE.name,
-		manifestHash: COORDINATOR_CALLBACK_MANIFEST_SHA256,
+		namespace: tools.coordinator.namespace.name,
+		manifestHash: tools.coordinator.sha256,
 	});
 }
 
@@ -146,7 +145,7 @@ function createProductionCodexWorkbenchFactories(
 				...bindings.transport(created),
 				identity,
 			});
-			installDynamicRegistrations(transport, bindings.dynamicRegistrations);
+			installDynamicRegistrations(transport, bindings.tools, bindings.dynamicRegistrations);
 			return transport;
 		},
 		/**
