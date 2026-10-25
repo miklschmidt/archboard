@@ -19,14 +19,16 @@ import {
 	serverRefusal,
 } from "#cli/protocol/contract/refusals.ts";
 import {
-	SemanticBoardResultSchema,
 	SelectorSchema,
-	describedWrite,
 	editedVersion,
 	expectVersionRefusal,
 	statedJson,
-	writeResult,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	SemanticBoardResultSchema,
+	describedWrite,
+	writeResult,
+} from "#cli/operations/semantic/input/write-answer.ts";
 
 const CorrectInputSchema = z.object({
 	name: z.string(),
