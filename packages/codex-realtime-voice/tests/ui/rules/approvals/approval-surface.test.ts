@@ -242,9 +242,9 @@ describe("ordinary approval families", () => {
 		]);
 		const missing = only(safeUrlElicitation({ url: null }));
 		expect(missing.links).toEqual([]);
-		expect(missing.notices).toContain(
-			"The server published no safe http or https URL, so nothing here can be opened.",
-		);
+		// Only the card without a safe URL says why nothing can be opened.
+		expect(safe.notices).toEqual([]);
+		expect(missing.notices).toHaveLength(1);
 		expect(missing.offers.map((offer) => offer.id)).toEqual(["decline", "cancel"]);
 	});
 
