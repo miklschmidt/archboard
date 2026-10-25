@@ -437,10 +437,9 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/` and exposes 9 subpaths with 53 names, where code outside imported 10 module paths and
-two asset paths. It imports `board`, `timing` and `process`. The 2 files of `shared/api/` and the
-1 file of `ui/api/` are safe for the browser, with no Node import. The 6 files of `runtime/api/` are Node-bound and run
-only in Bun.
+`shared/`, `runtime/` and `ui/`. It imports `board`, `timing` and `process`.
+The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node import.
+The files of `runtime/api/` are Node-bound and run only in Bun.
 
 - `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
   measurement: the renderer core in `crates/` draws every picture (ADR 0057). `rules/` is the pure code: `render/` has
@@ -461,7 +460,7 @@ only in Bun.
   icon paths, the bounds, PNG and receipt of the rasterizer, and in `recipe/` the render recipe in a file. `services/rasterizer/` is the rasterizer,
   `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
   `store/` reads the theme stylesheet and names where the assets are.
-- `ui/` holds the browser host. `state/` keeps what the page loads once (the faces, the icons, whether the renderer has
+- `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
   `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite

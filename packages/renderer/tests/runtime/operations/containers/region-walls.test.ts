@@ -1,5 +1,5 @@
 // Lines between a group region's cards and a card beside the region, which
-// cross the region's wall (shared/rules/blocks/packing/walls.ts). Both fixtures are reduced from
+// cross the region's wall (crates/archboard-layout/src/blocks/walls.rs). Both fixtures are reduced from
 // one board of a work vault, names replaced: g2 is a region of cards and n14
 // (n21 in the second) a card beside it, to its right.
 

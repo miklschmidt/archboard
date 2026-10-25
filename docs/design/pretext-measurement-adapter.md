@@ -1,5 +1,11 @@
 # Pretext measurement adapter
 
+This note records the retired TypeScript renderer. TASK-520.07 replaced this
+adapter with `crates/archboard-text`, as
+[ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
+describes. The renderer no longer uses Pretext or its patch. Subtitles still
+use the unpatched Pretext package.
+
 The renderer pins `@chenglou/pretext` 0.0.9 for whitespace handling, Unicode
 segmentation and line breaking. A Bun package patch adds the synchronous
 `setMeasureFunction((text, font) => width)` seam proposed upstream in

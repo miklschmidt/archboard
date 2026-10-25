@@ -75,4 +75,4 @@ function loadCore(expected: string = coreSourceHash()): Core {
 	return core;
 }
 
-export { CoreBuildError, loadCore, type Core, type CoreBuildRefusal };
+export { CoreBuildError, loadCore, type Core };
