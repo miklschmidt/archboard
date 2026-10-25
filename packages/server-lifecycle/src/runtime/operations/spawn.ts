@@ -24,13 +24,7 @@ import {
 	verifyCodexExecutable,
 } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
-import {
-	SERVER_STARTUP_READINESS_MS,
-	SERVER_STOP_CONFIRM_MS,
-	SERVER_STOP_PIDFILE_POLL_MS,
-	SERVER_STOP_PIDFILE_WAIT_MS,
-	SERVER_STOP_PROBE_POLL_MS,
-} from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {
@@ -421,7 +415,7 @@ async function awaitServerReadiness(
  * be started.
  */
 async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureResult> {
-	const timeoutMs = options.timeoutMs ?? SERVER_STARTUP_READINESS_MS;
+	const timeoutMs = options.timeoutMs ?? SERVER_LIFECYCLE_MS.startupReadiness;
 
 	const existing = await healthOrNull();
 	if (existing) {
@@ -474,7 +468,7 @@ function stuckOwnerError(port: number, pid: number): Error {
  * recorded process still runs after the wait.
  */
 async function awaitPidFileGone(port: number, pid: number): Promise<StopResult | undefined> {
-	const deadline = Date.now() + SERVER_STOP_PIDFILE_WAIT_MS;
+	const deadline = Date.now() + SERVER_LIFECYCLE_MS.stopPidfileWait;
 	for (;;) {
 		if (removePidFileIfOwnerGone(port)) {
 			return {
@@ -488,7 +482,7 @@ async function awaitPidFileGone(port: number, pid: number): Promise<StopResult |
 		}
 		if (Date.now() >= deadline) return undefined;
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the pidfile
-		await new Promise((resolve) => setTimeout(resolve, SERVER_STOP_PIDFILE_POLL_MS));
+		await new Promise((resolve) => setTimeout(resolve, SERVER_LIFECYCLE_MS.stopPidfilePoll));
 	}
 }
 
@@ -534,7 +528,7 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + SERVER_STOP_CONFIRM_MS;
+	const deadline = Date.now() + SERVER_LIFECYCLE_MS.stopConfirm;
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
 		const postSignalHealth = await healthOrNull();
@@ -543,10 +537,10 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, SERVER_STOP_PROBE_POLL_MS));
+		await new Promise((resolve) => setTimeout(resolve, SERVER_LIFECYCLE_MS.stopProbePoll));
 	}
 	throw new Error(
-		`Archboard server (pid ${pid}) did not stop within ${SERVER_STOP_CONFIRM_MS / 1000}s.`,
+		`Archboard server (pid ${pid}) did not stop within ${SERVER_LIFECYCLE_MS.stopConfirm / 1000}s.`,
 	);
 }
 

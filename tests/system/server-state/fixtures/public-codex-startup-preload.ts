@@ -62,7 +62,10 @@ if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
 			...actualTiming,
-			SERVER_STARTUP_READINESS_MS: readinessTimeoutMs,
+			SERVER_LIFECYCLE_MS: {
+				...actualTiming.SERVER_LIFECYCLE_MS,
+				startupReadiness: readinessTimeoutMs,
+			},
 		})),
 	);
 }

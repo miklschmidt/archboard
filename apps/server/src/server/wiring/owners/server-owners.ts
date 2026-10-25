@@ -1,4 +1,4 @@
-import { SERVER_MUTATION_DRAIN_TIMEOUT_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,
@@ -8,7 +8,7 @@ import type { Request } from "express";
 
 /** Admits mutation requests while the server is running and drains them when it stops. */
 const mutationAdmission = createServerMutationAdmission({
-	drainTimeoutMs: SERVER_MUTATION_DRAIN_TIMEOUT_MS,
+	drainTimeoutMs: SERVER_LIFECYCLE_MS.mutationDrain,
 });
 
 /** The lease each admitted mutation request holds, so its later work can be tracked. */

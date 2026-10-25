@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import { CODEX_COMPOSED_SHUTDOWN_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 import {
 	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
@@ -11,7 +11,7 @@ import { readProcessObservation } from "#runtime/processes/observation.ts";
 
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,
-	deadlineMs = CODEX_COMPOSED_SHUTDOWN_MS,
+	deadlineMs = CODEX_PROCESS_MS.composedShutdown,
 ): Promise<void> {
 	const deadline = Date.now() + deadlineMs;
 	const operations = createCodexProcessGroupOperations();
@@ -36,7 +36,7 @@ async function waitForChildClose(child: ChildProcess): Promise<void> {
 			reject(
 				new Error(`Detached child ${String(child.pid)} did not close before cleanup deadline.`),
 			);
-		}, CODEX_COMPOSED_SHUTDOWN_MS);
+		}, CODEX_PROCESS_MS.composedShutdown);
 		child.once("close", onClose);
 	});
 }
@@ -109,5 +109,5 @@ test(
 			}
 		}
 	},
-	CODEX_COMPOSED_SHUTDOWN_MS + PROCESS_GROUP_OBSERVATION_POLL_MS * 4,
+	CODEX_PROCESS_MS.composedShutdown + PROCESS_GROUP_OBSERVATION_POLL_MS * 4,
 );
