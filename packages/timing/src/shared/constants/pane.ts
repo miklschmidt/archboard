@@ -35,6 +35,10 @@ const PANE_MS = durations({
 	 * moment does not assume the board is held, because a person refused their
 	 * own edit for a network hiccup is the wall stopping for no reason they can
 	 * see. Only `contactLost` below puts the pane in view mode.
+	 *
+	 * It also pulls against TAB_SESSION_GRACE_MS: the pane socket names its tab
+	 * session, so a reload plus these redials must fit inside that grace, or the
+	 * server ends the tab's Codex conversation before the pane is back.
 	 */
 	socketReconnect: SOCKET_RECONNECT_MS,
 	/**
