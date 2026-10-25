@@ -11,22 +11,19 @@ import { useCallback } from "react";
 
 import type { ConversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import type { AgentSurfaces } from "#ui/hooks/application/use-agent-surfaces.ts";
-import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
 
 /**
  * Ask the agent of one pane's checkout a question, sent at once.
  * @param activate Shows the conversation of a pane's checkout.
- * @param workbench The workbench, whose transport is read again after the switch.
- * @param agent The agent's surfaces, which send the question.
+ * @param transport The focused pane's workbench transport, read again after the switch, or null while it has none.
+ * @param ask Sends the question to the conversation shown.
  * @returns Ask, by the pane and the words of the question.
  */
 function useAskFromPane(
 	activate: ConversationActivation,
-	workbench: Workbench,
-	agent: Pick<AgentSurfaces, "ask">,
+	transport: { readonly refresh: () => Promise<unknown> } | null,
+	ask: AgentSurfaces["ask"],
 ): (paneId: string, text: string) => void {
-	const transport = workbench.owners?.transport ?? null;
-	const { ask } = agent;
 	return useCallback(
 		(paneId: string, text: string): void => {
 			void activate(paneId)

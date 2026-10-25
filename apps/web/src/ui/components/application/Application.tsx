@@ -422,7 +422,8 @@ function ApplicationBody(): JSX.Element {
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
-	const askFromPane = useAskFromPane(activate, workbench, agent);
+	const transport = workbench.owners?.transport ?? null;
+	const askFromPane = useAskFromPane(activate, transport, agent.ask);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay, ask: askFromPane });
 	const mounted = usePaneViews({
 		panes,
@@ -464,7 +465,6 @@ function ApplicationBody(): JSX.Element {
 		[actions, panes, activate, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
-	const transport = workbench.owners?.transport ?? null;
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? servedVault();
 	// A repair goes to the workhorse of the repository diagnosed: the focused pane's.
