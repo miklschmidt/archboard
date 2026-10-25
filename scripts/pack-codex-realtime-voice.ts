@@ -13,6 +13,8 @@ const PUBLISHED_VERSION = "0.1.0";
 const DEPENDENCIES = ["zod", "ws"] as const;
 // The browser hooks import React.
 const OPTIONAL_PEERS = ["react"] as const;
+// The declarations of `bunHandlers` name Bun's global types, which only a TypeScript consumer needs.
+const OPTIONAL_TYPE_PEERS = ["@types/bun"] as const;
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = path.join(root, "packages/codex-realtime-voice");
@@ -29,7 +31,11 @@ const workspace = z
 	})
 	.parse(JSON.parse(await readFile(path.join(source, "package.json"), "utf8")));
 const repository = z
-	.object({ dependencies: Paths, engines: z.object({ bun: z.string() }) })
+	.object({
+		dependencies: Paths,
+		devDependencies: Paths,
+		engines: z.object({ bun: z.string() }),
+	})
 	.parse(JSON.parse(await readFile(path.join(root, "package.json"), "utf8")));
 
 /**
@@ -38,7 +44,7 @@ const repository = z
  * @returns A caret range from the pinned version.
  */
 function pinnedRange(name: string): string {
-	const version = repository.dependencies[name];
+	const version = repository.dependencies[name] ?? repository.devDependencies[name];
 	if (version === undefined) throw new Error(`The repository does not pin ${name}.`);
 	return `^${version}`;
 }
@@ -158,10 +164,12 @@ const manifest = {
 	dependencies: Object.fromEntries(DEPENDENCIES.map((name) => [name, pinnedRange(name)])),
 	peerDependencies: {
 		"@openai/codex": exactVersion("@openai/codex"),
-		...Object.fromEntries(OPTIONAL_PEERS.map((name) => [name, pinnedRange(name)])),
+		...Object.fromEntries(
+			[...OPTIONAL_PEERS, ...OPTIONAL_TYPE_PEERS].map((name) => [name, pinnedRange(name)]),
+		),
 	},
 	peerDependenciesMeta: Object.fromEntries(
-		OPTIONAL_PEERS.map((name) => [name, { optional: true }]),
+		[...OPTIONAL_PEERS, ...OPTIONAL_TYPE_PEERS].map((name) => [name, { optional: true }]),
 	),
 };
 await writeFile(path.join(output, "package.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
