@@ -19,7 +19,7 @@ import {
 	type SemanticPolicy,
 	type VaultDiagnostic,
 } from "@archboard/board/policy";
-import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
+import { keepTalk } from "@archboard/walkthrough/recorder";
 import { archboard, archboardOk, type CliContext } from "#runtime/processes/archboard.ts";
 import type { InspectionRequest, RenderRequest } from "#runtime/rules/outcomes/outcomes.ts";
 import { sequentially } from "#runtime/processes/process.ts";
@@ -448,9 +448,9 @@ async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promis
 	const board = await readBoard(cli, talk.board);
 	// `check` exits 1 on a warning; `semantic record` keeps the warnings in the talk's policy too.
 	const policy = VaultCheckSchema.parse((await archboard(cli, ["check"])).json);
-	writeTalk({
+	keepTalk({
 		...talkOfFixture(talk, board, policy),
-		place: askedTalkPlace(inHome(home, talk.directory)),
+		directory: inHome(home, talk.directory),
 	});
 }
 

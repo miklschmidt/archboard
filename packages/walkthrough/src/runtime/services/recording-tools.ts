@@ -1,7 +1,13 @@
-// The tools a recording runs on: an ffmpeg proven able to encode, and a private Chromium started
-// with the flags its page needs. Both are found before anything is recorded (TASK-381).
+// The tools a recording runs on: the container its file asks for, an ffmpeg proven able to encode
+// it, and a private Chromium started with the flags its page needs. All are found before anything
+// is recorded (TASK-381).
 
-import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
+import { extname } from "node:path";
+
+import {
+	RecordingContainerSchema,
+	type RecordingContainer,
+} from "#shared/protocol/recording-page.ts";
 import { RECORDING_BROWSER_START_MS, RECORDING_BROWSER_STOP_MS } from "@archboard/timing";
 import {
 	HeadlessChromiumError,
@@ -11,6 +17,16 @@ import {
 } from "@archboard/renderer/headless-chromium";
 import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
 import { WalkthroughRecordingError } from "#runtime/operations/recording-errors.ts";
+
+/**
+ * The container a video file's name asks for, by its extension in any case.
+ * @param file The file's name or path.
+ * @returns The container, or null when the name ends in neither .mp4 nor .webm.
+ */
+function recordingContainerOf(file: string): RecordingContainer | null {
+	const parsed = RecordingContainerSchema.safeParse(extname(file).slice(1).toLowerCase());
+	return parsed.success ? parsed.data : null;
+}
 
 /**
  * The ffmpeg a file is encoded with, proven before anything starts.
@@ -63,4 +79,4 @@ async function startBrowser(options: {
 	}
 }
 
-export { resolveEncoder, startBrowser };
+export { recordingContainerOf, resolveEncoder, startBrowser };

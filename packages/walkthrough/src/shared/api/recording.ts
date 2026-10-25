@@ -3,7 +3,6 @@ export {
 	DEFAULT_RECORDING_LANGUAGE,
 	RECORDING_PAGE_GLOBAL,
 	recordingAskedOf,
-	RecordingContainerSchema,
 	RecordingNarrationSchema,
 } from "#shared/protocol/recording-page.ts";
 export type {

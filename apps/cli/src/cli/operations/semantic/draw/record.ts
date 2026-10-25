@@ -29,11 +29,8 @@ import {
 } from "@archboard/server-lifecycle/semantic-board-client";
 import {
 	TalkFileError,
-	askedTalkPlace,
+	freshTalkPlace,
 	recordWalkthrough,
-	requireFreshPlace,
-	stateTalkPlace,
-	type TalkPlace,
 } from "@archboard/walkthrough/recorder";
 import {
 	CliUsageError,
@@ -147,15 +144,16 @@ function recordedRepository(vault: CommandContext["vault"]): string | null {
  * @returns The place, proven free.
  * @throws {CliUsageError} When the directory asked for exists or cannot be made.
  */
-function talkPlaceOf(asked: string | undefined, board: string): TalkPlace {
-	const place = asked === undefined ? stateTalkPlace(board, new Date()) : askedTalkPlace(asked);
+function talkPlaceOf(
+	asked: string | undefined,
+	board: string,
+): ReturnType<typeof freshTalkPlace> {
 	try {
-		requireFreshPlace(place);
+		return freshTalkPlace(asked, board, new Date());
 	} catch (error) {
 		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
 		throw error;
 	}
-	return place;
 }
 
 /**
