@@ -11,7 +11,8 @@
 // A use that no import names leads where its path leads: a path from `crate`
 // or `super`, or from a child module or a crate the package depends on
 // (`archboard_layout::draw`), resolves in the module tree, the file itself
-// included. A bare name that the file does not define leads to the one file a
+// included; a path that names a whole module or crate leads to its file as
+// the name `*`. A bare name that the file does not define leads to the one file a
 // glob of the file opens that offers it: a module offers what it defines or
 // imports, every name to the modules inside it and only what it opens with
 // `pub` to any other. A name the file defines, a name the file binds in a
@@ -268,13 +269,10 @@ function createRustResolver(
 	 * @returns The target, or undefined.
 	 */
 	const useTarget = (use: Reference, lookup: FileLookup): Target | undefined => {
-		const names = use.symbol.split(".");
-		const isPath = ABOVE.has(names[0] ?? "") || names.length > 1;
-		const target = isPath ? crates().resolvePath(lookup.from, names) : undefined;
-		if (target !== undefined && target.item.length > 0) {
-			return { path: target.file, symbol: target.item.join(".") };
-		}
-		return globTarget(use, lookup);
+		const target = crates().resolvePath(lookup.from, use.symbol.split("."));
+		if (target === undefined) return globTarget(use, lookup);
+		const whole = target.item.length === 0;
+		return { path: target.file, symbol: whole ? "*" : target.item.join(".") };
 	};
 
 	/**

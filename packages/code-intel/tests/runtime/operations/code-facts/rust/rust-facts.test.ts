@@ -143,8 +143,13 @@ test("a use leads across crates through a renamed import and a re-export, and th
 		// A trait brought in only for its methods is a use of the trait.
 		"Account import": "crates/ledger/src/lib.rs#Account",
 		"Money import": "crates/ledger/src/money/mod.rs#Money",
+		// A path uses each of its leading parts, and one that names a crate or a module leads to its file.
+		"ledger call": "crates/ledger/src/lib.rs#*",
+		"ledger.money call": "crates/ledger/src/money/mod.rs#*",
+		"ledger.money.Money call": "crates/ledger/src/money/mod.rs#Money",
 		"ledger.money.Money.from_cents call": "crates/ledger/src/money/mod.rs#Money.from_cents",
 		// `use ledger::money::{self}` brings in the whole module.
+		"money call": "crates/ledger/src/money/mod.rs#*",
 		"money.ZERO call": "crates/ledger/src/money/mod.rs#ZERO",
 		"ledger.cents call": "crates/ledger/src/lib.rs#cents",
 		// Locals, and a member only the value's type tells.
@@ -174,6 +179,7 @@ test("a use leads across crates through a renamed import and a re-export, and th
 	});
 	// `mod checkout;` brings in the file of the module.
 	expect(await targets("crates/shop/src/main.rs")).toEqual({
+		"checkout call": "crates/shop/src/checkout.rs#*",
 		"checkout.run call": "crates/shop/src/checkout.rs#run",
 	});
 });
