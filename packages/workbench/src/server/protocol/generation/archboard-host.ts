@@ -1,10 +1,10 @@
 import type {
-	CodexWorkbenchHostPolicy,
 	PendingOperation,
 	WorkbenchOperationAuthority,
 	CodexWorkbenchDomainScope,
 	BrowserLeaseLedger,
-} from "@archboard/codex-realtime-voice/server";
+} from "#runtime/protocol/voice/extension.ts";
+import type { VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -23,7 +23,22 @@ import type { createServerDynamicLifecycleOwner } from "#server/services/generat
  * lifetime. The server provides one of these; the workbench keeps none of it.
  */
 export interface ArchboardWorkbenchServer {
-	readonly host: CodexWorkbenchHostPolicy;
+	readonly host: VoiceAgentExtensions &
+		Required<
+			Pick<
+				VoiceAgentExtensions,
+				| "contextCodec"
+				| "coordinatorContextFor"
+				| "voiceFor"
+				| "contextForOperation"
+				| "sessionContextFor"
+				| "workhorseContextFor"
+				| "repositoryOfCheckout"
+			>
+		> & {
+			readonly resolveCheckout: (named: string) => string | null;
+			readonly onFatal: (error: unknown) => void;
+		};
 	/**
 	 * The checkout whose source this server runs. The Codex child runs its `bin`, and the
 	 * coordinator reads its archboard skill. No thread works in it unless it is that thread's own
@@ -93,7 +108,7 @@ export interface ArchboardWorkbenchServer {
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];
 	readonly installLifecycleSignals: (components: CodexWorkbenchDomainScope) => () => void;
-	readonly installBrowserGateway: NonNullable<CodexWorkbenchHostPolicy["onBrowserGateway"]>;
+	readonly installBrowserGateway: NonNullable<VoiceAgentExtensions["onBrowserGateway"]>;
 	readonly browserLeaseLedger: BrowserLeaseLedger;
 
 	readonly onFatal: (error: unknown) => void;

@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
 
-import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
+import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
 import { ARCHBOARD_APP_NAMESPACE } from "#runtime/protocol/thread-tools/manifest.ts";
+
+const ARCHBOARD_INSTRUCTIONS = archboardProfiles();
 
 test("keeps the reviewed instruction hash at the module boundary", () => {
 	expect(ARCHBOARD_INSTRUCTIONS.workhorse.instructions.text).toEndWith(

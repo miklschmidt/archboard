@@ -281,5 +281,6 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 				failure: null,
 			},
 		browser: ingress.port,
+		instructions: host.instructions,
 	});
 }

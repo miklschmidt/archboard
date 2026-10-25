@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
+import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
+
+const ARCHBOARD_INSTRUCTIONS = archboardProfiles();
 
 // Codex reuses a retained coordinator or workhorse only while its profile bytes are unchanged, so
 // a drift here silently strands every Archboard thread started before it. The digests were taken

@@ -1,16 +1,18 @@
+import type {
+	WorkbenchContextCodec,
+	WorkbenchExecutionContext,
+} from "#runtime/protocol/voice/extension.ts";
 import {
 	WORKHORSE_DOMAIN_INSTRUCTIONS,
 	COORDINATOR_DOMAIN_INSTRUCTIONS,
 } from "#runtime/rules/instructions/authored.ts";
 import { canonicalContext, encodeCanonicalContext } from "#runtime/rules/instructions/context.ts";
 import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "#runtime/protocol/thread-tools/manifest.ts";
-import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
-import type {
-	WorkbenchContextCodec,
-	WorkbenchExecutionContext,
-} from "@archboard/codex-realtime-voice/runtime";
-import type { WorkbenchInstructions } from "@archboard/codex-realtime-voice/runtime";
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
+import type {
+	VoiceAgentExtensions,
+	VoiceAgentOptions,
+} from "@archboard/codex-realtime-voice/server";
 
 const ARCHBOARD_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 	key: "archboard",
@@ -24,22 +26,20 @@ const ARCHBOARD_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 		encodeCanonicalContext(canonicalContext(ArchboardContextSchema.parse(context))),
 });
 
-/** How Archboard names itself to Codex: the values its existing threads were started with. */
-const ARCHBOARD_IDENTITY = Object.freeze({ serviceName: "archboard", threadSource: "archboard" });
-
-const ARCHBOARD_INSTRUCTIONS: WorkbenchInstructions = Object.freeze({
-	coordinator: createWorkbenchThreadProfile({
-		identity: ARCHBOARD_IDENTITY,
-		role: "coordinator",
-		domainInstructions: COORDINATOR_DOMAIN_INSTRUCTIONS,
-		dynamicTools: [],
+/**
+ * How Archboard's voice agent names itself and what it adds to the built-in roles. The identity
+ * keeps the values its existing threads were started with; the workhorse also gets the Archboard
+ * app tools.
+ */
+const ARCHBOARD_AGENT = Object.freeze({
+	identity: Object.freeze({ serviceName: "archboard", threadSource: "archboard" }),
+	instructions: Object.freeze({
+		coordinator: COORDINATOR_DOMAIN_INSTRUCTIONS,
+		workhorse: WORKHORSE_DOMAIN_INSTRUCTIONS,
 	}),
-	workhorse: createWorkbenchThreadProfile({
-		identity: ARCHBOARD_IDENTITY,
-		role: "workhorse",
-		domainInstructions: WORKHORSE_DOMAIN_INSTRUCTIONS,
-		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
-	}),
-});
+	tools: Object.freeze({ workhorse: [...ARCHBOARD_APP_DYNAMIC_TOOLS] }),
+}) satisfies Pick<VoiceAgentOptions, "identity" | "instructions"> & {
+	readonly tools: VoiceAgentExtensions["tools"];
+};
 
-export { ARCHBOARD_CONTEXT_CODEC, ARCHBOARD_INSTRUCTIONS };
+export { ARCHBOARD_AGENT, ARCHBOARD_CONTEXT_CODEC };
