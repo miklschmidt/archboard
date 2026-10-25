@@ -249,9 +249,15 @@ test("a namespace menu includes options accepted by its bare default", async () 
 
 test("a shared option the command does not read is refused before anything runs", async () => {
 	for (const entry of registry) {
+		// A command that declares an option with a shared spelling reads it as its own.
+		const owned = new Set(
+			entry.contract.parameters.flatMap((parameter) =>
+				parameter.kind === "option" ? parameter.spellings : [],
+			),
+		);
 		const unread = sharedOptionsFor(
 			SHARED_OPTION_KEYS.filter((key) => !entry.contract.shared.includes(key)),
-		);
+		).filter((option) => !owned.has(option.spellings[0]));
 		for (const option of unread) {
 			stdout.mockClear();
 			stderr.mockClear();

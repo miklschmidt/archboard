@@ -28,6 +28,20 @@ function takeGlobalFlag(argv: string[], flag: string): string | null {
 }
 
 /**
+ * Removes every `<flag> value` and `<flag>=value` from argv, in place, and returns the values.
+ * @param argv - The arguments to search; each flag and its value are spliced out.
+ * @param flag - The flag as it is spelled, dashes included.
+ * @returns The values in the order they were written; none when the flag is absent.
+ */
+function takeGlobalFlagEach(argv: string[], flag: string): string[] {
+	const values: string[] = [];
+	for (let value = takeGlobalFlag(argv, flag); value !== null; value = takeGlobalFlag(argv, flag)) {
+		values.push(value);
+	}
+	return values;
+}
+
+/**
  * Pull `-C <dir>` out of the arguments before the command sees it.
  *
  * Global for the reason `--board` is: every server call a command makes names
@@ -42,18 +56,19 @@ function takeDirectoryFlag(argv: string[]): string | null {
 }
 
 /**
- * Pull `--board <key>` out of the arguments before the command sees it.
+ * Pull every `--board <key>` out of the arguments before the command sees it.
  *
  * Global, like `--url`, because it applies to every server request a command
  * makes rather than to one of them. It is the only way to name the persisted
  * board for a command because there is no active or default board (ADR 0020).
  * Stripped here so no command has to declare it and none can forget to pass it
- * on.
- * @param argv - The arguments after the command name; the flag is spliced out.
- * @returns The board key, or null when none was passed.
+ * on. A command that reads `--board` as an option of its own, to narrow the
+ * boards it reads, takes them back from the invocation.
+ * @param argv - The arguments after the command name; each flag is spliced out.
+ * @returns The board keys in the order they were written; none when none was passed.
  */
-function takeBoardFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "--board");
+function takeBoardFlags(argv: string[]): string[] {
+	return takeGlobalFlagEach(argv, "--board");
 }
 
 /**
@@ -120,4 +135,4 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	return Number(raw.trim());
 }
 
-export { takeBoardFlag, takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };
+export { takeBoardFlags, takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };
