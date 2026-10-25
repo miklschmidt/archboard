@@ -246,7 +246,10 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	 * @returns The private process owner.
 	 */
 	const requireOwner = (): CodexWorkbenchOwner => {
-		if (owner === null) throw new Error("The Codex workbench has not started.");
+		if (owner === null)
+			throw new Error(
+				"The voice agent has not started. Start it before it serves browser sockets.",
+			);
 		return owner;
 	};
 	/**
@@ -255,7 +258,9 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	 */
 	const requireScope = (): CodexWorkbenchDomainScope => {
 		if (current === null || !requireOwner().snapshot().ready)
-			throw new Error("The Codex workbench has no ready generation.");
+			throw new Error(
+				"The voice agent is not ready for browser sockets. Retry once its status reads ready.",
+			);
 		current.assertCurrent();
 		return current;
 	};
