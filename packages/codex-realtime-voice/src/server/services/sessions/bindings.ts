@@ -187,6 +187,7 @@ function coordinatorBindings(
 		 */
 		spokenApproval: (created) => ({
 			tools: tools(),
+			productName: server.host.instructions.coordinator.identity.productName,
 			/**
 			 * The voice session a spoken approval may be answered on.
 			 * @returns The session, or null while none is running.

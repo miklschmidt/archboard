@@ -16,6 +16,7 @@ describe("spoken approval classifier contract", () => {
 
 	test("substitutes only the captured effect and final user item", () => {
 		const prompt = createSpokenApprovalClassifierPrompt({
+			productName: "Payments",
 			voiceNamespace: "host_voice",
 			effectSummary: "Run echo approved",
 			finalUserItemId: "user-final",
@@ -28,8 +29,10 @@ describe("spoken approval classifier contract", () => {
 		expect(prompt).toContain("user_final_text: yes, run it\n");
 		expect(prompt).not.toContain("<bounded-effect-summary>");
 		expect(prompt).toContain("call host_voice.resolve_spoken_approval once");
+		expect(prompt).toContain("approval for Payments. The Payments server");
 		expect(() =>
 			createSpokenApprovalClassifierPrompt({
+				productName: "Payments",
 				voiceNamespace: "host voice",
 				effectSummary: "Run echo approved",
 				finalUserItemId: "user-final",
@@ -40,10 +43,13 @@ describe("spoken approval classifier contract", () => {
 	});
 
 	test("asks a host's classifier through the host's voice namespace, byte for byte as reviewed", () => {
-		// The digest of the classifier template before the voice namespace became host identity.
-		const named = SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replace("<voice-namespace>", "archboard_voice");
+		// The digest of Archboard's classifier prompt before its names became host identity.
+		const named = SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replaceAll("<product-name>", "Archboard").replace(
+			"<voice-namespace>",
+			"archboard_voice",
+		);
 		expect(new Bun.CryptoHasher("sha256").update(named).digest("hex")).toBe(
-			"743d72a9e358644cdd8e9cb742188010ee487a2663beeb2e23ba6dd8ea7b569a",
+			"1873dd2050fe6f6ce41cd27f43af18d8c7a3cd4af9755dd7b0322e375f636380",
 		);
 	});
 });

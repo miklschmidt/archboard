@@ -1,17 +1,27 @@
 import { expect, test } from "bun:test";
 
 import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
-import { ARCHBOARD_AGENT } from "#runtime/services/host/archboard.ts";
 
 const ARCHBOARD_INSTRUCTIONS = archboardProfiles();
 
 // Codex reuses a retained coordinator or workhorse only while its profile bytes are unchanged, so
 // a drift here silently strands every Archboard thread started before it. The digests were taken
-// before the voice agent's identity became a host option (TASK-530.01).
+// before the voice agent's identity became a host option (TASK-530.01). The names are pinned too:
+// the voice package fills its tool manifests and spoken-approval prompt with them, and pins the
+// digests these names give (TASK-530.04).
 test("Archboard's thread profiles keep the bytes its existing Codex threads were started with", () => {
 	const { coordinator, workhorse } = ARCHBOARD_INSTRUCTIONS;
 
-	expect(coordinator.identity).toEqual(ARCHBOARD_AGENT.identity);
+	expect(coordinator.identity).toEqual({
+		serviceName: "archboard",
+		threadSource: "archboard",
+		productName: "Archboard",
+		toolNamespaces: {
+			workhorse: "archboard_workhorse",
+			voice: "archboard_voice",
+			coordinator: "archboard_coordinator",
+		},
+	});
 	expect(workhorse.identity).toEqual(coordinator.identity);
 	expect([coordinator.manifestHash, coordinator.instructions.sha256]).toEqual([
 		"e7f6bef3f5533f3707d399ce6a90b61ca3d17395316c424b4ad11b1db83bd13e",

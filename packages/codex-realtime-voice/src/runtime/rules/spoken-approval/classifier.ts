@@ -3,11 +3,11 @@ import { createHash } from "node:crypto";
 import { boundedWireText } from "#shared/schemas/browser/scalars.ts";
 
 const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
-	"fcafb4d4eab313951b3e84a28b6a91884e8d98875be98d42df81206da33d99d8";
+	"b0c910734cc79a8600cc549d6fd59f0783f2abf8676e9a03fba1a0a734e8a573";
 
 /** The reviewed template, including its one terminal LF. */
 const SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE =
-	"Classify one spoken binary approval. The server has already bound the request identity; do not infer or mention another request.\n\n" +
+	"Classify one spoken binary approval for <product-name>. The <product-name> server has already bound the request identity; do not infer or mention another request.\n\n" +
 	"<spoken_approval>\n" +
 	"effect: <bounded-effect-summary>\n" +
 	"user_final_item_id: <opaque-item-id>\n" +
@@ -48,6 +48,8 @@ function assertCanonicalTemplate(value: string): void {
 assertCanonicalTemplate(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
 
 interface SpokenApprovalClassifierPromptInput {
+	/** What the user talks with, as the host names it. */
+	readonly productName: string;
 	/** The host's name of the namespace that holds resolve_spoken_approval. */
 	readonly voiceNamespace: string;
 	readonly effectSummary: string;
@@ -88,6 +90,7 @@ function createSpokenApprovalClassifierPrompt(input: SpokenApprovalClassifierPro
 		throw new TypeError("voice namespace must be a namespace name.");
 	}
 	const replacements: Readonly<Record<string, string>> = {
+		"<product-name>": oneLine(input.productName, "product name"),
 		"<voice-namespace>": input.voiceNamespace,
 		"<bounded-effect-summary>": effectSummary,
 		"<opaque-item-id>": finalUserItemId,
@@ -95,7 +98,7 @@ function createSpokenApprovalClassifierPrompt(input: SpokenApprovalClassifierPro
 		"<verbatim-bounded-final-user-text>": finalUserText,
 	};
 	return SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE.replace(
-		/<voice-namespace>|<bounded-effect-summary>|<opaque-item-id>|<decimal-sequence>|<verbatim-bounded-final-user-text>/g,
+		/<product-name>|<voice-namespace>|<bounded-effect-summary>|<opaque-item-id>|<decimal-sequence>|<verbatim-bounded-final-user-text>/g,
 		(placeholder) => replacements[placeholder] ?? placeholder,
 	);
 }

@@ -247,6 +247,7 @@ export function createCodexSpokenApprovalGate(
 		session: options.session,
 		identity: options.identity,
 		tools: options.tools,
+		productName: options.productName,
 		currentCoordinator,
 		currentRealtime,
 		currentTime,

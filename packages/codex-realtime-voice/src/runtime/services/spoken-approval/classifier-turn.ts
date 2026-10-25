@@ -20,6 +20,7 @@ interface ClassifierTurnContext {
 	readonly identity: IdentityAuthority;
 	/** The host's built-in namespaces: the classifier is told to resolve through the voice one. */
 	readonly tools: CodexSpokenApprovalGateOptions["tools"];
+	readonly productName: string;
 	readonly currentCoordinator: () => {
 		readonly child: ActiveSlot["child"];
 		readonly epoch: ActiveSlot["epoch"];
@@ -278,6 +279,7 @@ function classifierTurnParams(
 				threadId: slot.coordinatorThreadId,
 				clientUserMessageId: slot.classifier.clientUserMessageId,
 				prompt: createSpokenApprovalClassifierPrompt({
+					productName: context.productName,
 					voiceNamespace: context.tools.voice.namespace.name,
 					effectSummary: slot.effectSummary,
 					finalUserItemId: record.itemId,
