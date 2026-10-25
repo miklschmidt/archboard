@@ -41,7 +41,9 @@ test("a host starts a Codex workhorse with its own identity and exact composed i
 			.update(params.developerInstructions ?? "")
 			.digest("hex"),
 	).toBe(profile.instructions.sha256);
-	expect(params.dynamicTools?.map((tool) => tool.name)).toEqual([TEST_TOOLS.coordinator.namespace.name]);
+	expect(params.dynamicTools?.map((tool) => tool.name)).toEqual([
+		TEST_TOOLS.coordinator.namespace.name,
+	]);
 	expect(Object.isFrozen(profile.dynamicTools)).toBe(true);
 	expect(() =>
 		captureThreadProfile({

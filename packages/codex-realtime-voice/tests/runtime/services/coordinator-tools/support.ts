@@ -1,7 +1,5 @@
 import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
-import {
-	type CoordinatorToolName,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { type CoordinatorToolName } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	type CodexWorkhorseOperations,
 	type WorkhorseOperationBinding,
@@ -411,7 +409,9 @@ function fixture(
 	): DynamicServerRequest => {
 		const namespace =
 			options.namespace ??
-			(tool === "resolve_spoken_approval" ? TEST_TOOLS.voice.namespace.name : TEST_TOOLS.workhorse.namespace.name);
+			(tool === "resolve_spoken_approval"
+				? TEST_TOOLS.voice.namespace.name
+				: TEST_TOOLS.workhorse.namespace.name);
 		const manifestHash =
 			options.manifestHash ??
 			(namespace === TEST_TOOLS.voice.namespace.name
