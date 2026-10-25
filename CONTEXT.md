@@ -743,6 +743,18 @@ on, and its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the Semantics check reports), issue,
 violation, drift, problem
 
+**Exposed name**:
+A top-level name that the module bound to a container offers to the code
+outside it, such as a function that a root file exports. A name that several
+places declare counts once. The code check reads the files outside the module
+that use it, and the files that pass it on. It counts the names, and it lists
+the names with the most users first. This is what the code exposes. The
+container's interface is the parts that callers reach on the board, which is a
+different thing (ADR 0044, ADR 0046).
+_Avoid_: export (the word of one language), public name, API, symbol (that is
+the name a binding or an anchor cites), entry point (that is a child on the
+board)
+
 ### Working
 
 **Tab session**:

@@ -2,8 +2,6 @@
 export {
 	CheckTimingSchema,
 	CodeCheckAnswerSchema,
-	EXPOSED_NAME_LIMIT,
-	EXPOSED_USER_LIMIT,
 	RememberedExposureSchema,
 	RememberedFindingsSchema,
 } from "#shared/protocol/code-check.ts";

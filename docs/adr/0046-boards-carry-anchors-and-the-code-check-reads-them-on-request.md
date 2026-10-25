@@ -272,16 +272,35 @@ include startup, indexing, questions and cleanup, but exclude idle time between
 questions. Code and history run together, so their times overlap. TASK-429 is
 archived because a first index longer than 30 seconds no longer fails the pass.
 
-Amended by TASK-526.01 (2026-10-24): `archboard check code` runs the code check,
-and `archboard check` and `archboard check all` run it after the semantics
-check. The option that once asked for the code check is removed, with no alias,
-and what this ADR calls the plain check is now `archboard check semantics`.
-`--variant`, `--every-draft` and `--plan` belong to `check code`, `check` and
-`check all`. The answer holds one part for each check, and `check code` fills
-only the code part. The route that the panes poll stays the semantics check, so
-a pane never starts a pass. The other decisions of this ADR hold.
-[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
-decides the split.
+Amended by TASK-539.01 (2026-10-25): the pass keeps what it reads of each module
+that a container binds, and the server remembers it for the panes. For each
+judged container the pass makes an exposure reading. It holds the module's
+directory and root files, the exact count of the names the module exposes, the
+exact count of those that a file outside it uses, and the names. A name has its
+file and line, the files that pass it on (`via`), the exact count of the files
+outside the module that use it, and those files with the first line of each use
+and the ids of the parts of the board that hold that line. The parts come from
+the rule that owns evidence, so a user is held by the same parts as a finding
+puts it in. The names are listed with the most used first, then by name.
+A reading lists at most 200 names and 25 users for a name, and the counts beside
+the lists stay exact. `EXPOSED_UNUSED` and the reading take the names from one
+rule (`exposed-names.ts`), so the number of names exposed, minus the number used
+outside, is the number of names that the finding lists. A name that several
+places declare counts once, and a member of a name counts with that name.
+A reading quotes symbols, paths and lines, and no other text of a file
+("Safety" holds for it).
+
+The reading is no part of the answer of `archboard check --code`. The answer is
+what it was, until a command asks for the names with an option of its own. The
+server remembers each reading with the findings of its board and variant, in
+the memory of TASK-367.24, and a later pass replaces it. Each remembered reading
+of a board now also carries what the pass skipped on that board, what it
+skipped without naming a board, and the counts of each container (module,
+names exposed, names used outside). The panes poll these, so the names stay
+out of them. `GET /api/vault/code-findings/exposure?board=&variant=&container=`
+answers the names of one container from the same memory. Like the other route,
+it requires a vault (ADR 0049), reads memory alone and never starts a pass. It
+answers 404 when no pass has judged that container since the server started.
 
 ## Context
 

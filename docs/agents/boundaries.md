@@ -390,10 +390,10 @@ on a URL, and `learnServedVault` and `servedVault` are the vault a page opens in
 options, the reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
 
-The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
-the code facts of a checkout and the code check of a board's claims. It also holds the history lens
-over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 16 names, where code outside imported 7 module paths. It imports `board`,
+The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board: the code
+facts of a checkout, the code check of a board's claims, the history lens over Git and the language
+servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
+subpaths with 40 names, where code outside imported 7 module paths. It imports `board`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
