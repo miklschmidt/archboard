@@ -151,11 +151,7 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
             (to - from > SHARED_INK).then_some((from, to))
         })
         .collect();
-    stretches.sort_by(|a, b| {
-        (a.0 - b.0)
-            .partial_cmp(&0.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    stretches.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
     merged_stretches(&stretches)
         .into_iter()
         .map(|(from, to)| Curve {

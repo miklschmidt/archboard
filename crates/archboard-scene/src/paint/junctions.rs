@@ -283,16 +283,9 @@ fn mark_of(cluster: &[Junction]) -> Junction {
         return heaviest.clone();
     }
     let mut ordered: Vec<&Junction> = cluster.iter().collect();
+    let ascending = |a: f64, b: f64| a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal);
     ordered.sort_by(|a, b| {
-        let dx = a.point.x - b.point.x;
-        let difference = if dx != 0.0 && !dx.is_nan() {
-            dx
-        } else {
-            a.point.y - b.point.y
-        };
-        difference
-            .partial_cmp(&0.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
+        ascending(a.point.x, b.point.x).then_with(|| ascending(a.point.y, b.point.y))
     });
     Junction {
         point: ordered[0].point,
