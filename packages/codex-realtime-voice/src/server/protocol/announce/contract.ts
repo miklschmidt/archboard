@@ -52,7 +52,7 @@ interface ContextChange {
 	readonly topic?: string;
 	/**
 	 * The workhorses of these checkouts, told as a developer message that starts no turn, also while
-	 * a turn runs. `payload` is your own data: the context codec encodes it with the execution facts,
+	 * a turn runs. `payload` is your own JSON data: the context codec encodes it with the execution facts,
 	 * and it cannot use their keys.
 	 */
 	readonly workhorse?: { readonly checkouts: readonly string[] } & ContextWords<{
