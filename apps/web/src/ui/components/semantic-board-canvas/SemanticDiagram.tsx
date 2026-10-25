@@ -461,6 +461,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
 				<SemanticSubjectTip
 					target={tip.shown}
+					appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
 					reading={reading}
 					far={far}
 					overview={drawing.view === null}
