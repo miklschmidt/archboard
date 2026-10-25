@@ -30,7 +30,7 @@ use crate::board::{Flow, Node, every_step};
 use crate::text::Text;
 use card::title_room;
 use layout::{ActiveAt, Column, DataFlowLayout, FlowLayout, PlacedStep};
-use messages::{Ends, ends_for, label_box, self_start, step_box, travel_of};
+use messages::drawn;
 use rows::pitch_of;
 
 /// Everything a sequence is laid out and painted from.
@@ -73,16 +73,6 @@ pub fn picture(request: SequenceRequest, text: &impl Text) -> PaintRequest {
     }
 }
 
-/// Where a message's line starts and where it ends: a message to itself
-/// starts and ends at its loop.
-fn ends_of(placed: &PlacedStep, active: &ActiveAt, travel: i8) -> Ends {
-    if travel != 0 {
-        return ends_for(placed, active, travel);
-    }
-    let start = self_start(placed, active.at(&placed.step.from, placed.y));
-    Ends { start, end: start }
-}
-
 /// One flow as the painter reads it: each message's run, and each card's room
 /// for its name.
 fn flow_of(layout: &FlowLayout) -> SequenceFlow {
@@ -122,8 +112,7 @@ fn flow_of(layout: &FlowLayout) -> SequenceFlow {
             .steps
             .iter()
             .map(|placed| {
-                let travel = travel_of(placed.step.kind, placed.from_x, placed.to_x);
-                let ends = ends_of(placed, &active, travel);
+                let geometry = drawn(placed, &active);
                 SequenceStep {
                     step: MessageFacts {
                         id: placed.step.id.clone(),
@@ -140,11 +129,11 @@ fn flow_of(layout: &FlowLayout) -> SequenceFlow {
                         bounds: note.bounds,
                         lines: note.lines.clone(),
                     }),
-                    travel,
-                    start: ends.start,
-                    end: ends.end,
-                    label_box: label_box(placed, &active),
-                    bounds: step_box(placed, &active),
+                    travel: geometry.travel,
+                    start: geometry.start,
+                    end: geometry.end,
+                    label_box: geometry.label,
+                    bounds: geometry.bounds,
                     pitch: pitch_of(placed.step.kind),
                 }
             })

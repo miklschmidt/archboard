@@ -22,7 +22,7 @@ use crate::sequence::design::{
     PILL_TEXT_SIZE,
 };
 use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
-use crate::sequence::messages::step_box;
+use crate::sequence::messages::drawn;
 use archboard_scene::paint::fonts::PILL_FONT;
 
 use crate::text::Text;
@@ -59,7 +59,7 @@ fn ink_of(placed: &PlacedStep, active: &ActiveAt) -> Rect {
     let left = js::js_min(placed.from_x, placed.to_x) - ACTIVATION_HALF_WIDTH;
     let width = (placed.to_x - placed.from_x).abs() + ACTIVATION_HALF_WIDTH * 2.0;
     covering(
-        step_box(placed, active),
+        drawn(placed, active).bounds,
         Rect {
             x: left,
             y: placed.y,
