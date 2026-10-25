@@ -363,6 +363,89 @@ fn acyclic(count: usize, mut orders: Vec<(u8, usize, usize)>) -> Vec<(usize, usi
     kept
 }
 
+/// Consecutive segments of one route keep their order, so no run of the
+/// route turns back on itself.
+fn keep_route_order(
+    routes: &[Option<Vec<Point>>],
+    segments: &[Segment],
+    var_of: &[usize],
+    fixed: &[bool],
+    axis: Axis,
+    constraints: &mut Vec<Constraint>,
+) {
+    for (route, points) in routes.iter().enumerate() {
+        let Some(points) = points else { continue };
+        let mine: Vec<usize> = (0..segments.len())
+            .filter(|&s| segments[s].route == route)
+            .collect();
+        for pair in mine.windows(2) {
+            let (s1, s2) = (pair[0], pair[1]);
+            if segments[s2].index != segments[s1].index + 2 {
+                continue;
+            }
+            let (v1, v2) = (var_of[s1], var_of[s2]);
+            if v1 == v2 || (fixed[v1] && fixed[v2]) {
+                continue;
+            }
+            let direction =
+                axis.of(points[segments[s2].index]) - axis.of(points[segments[s1].index]);
+            match sign(direction) {
+                1 => constraints.push(Constraint {
+                    left: v1,
+                    right: v2,
+                    gap: 0.0,
+                }),
+                -1 => constraints.push(Constraint {
+                    left: v2,
+                    right: v1,
+                    gap: 0.0,
+                }),
+                _ => {}
+            }
+        }
+    }
+}
+
+/// Each movable variable's channel, as a fixed wall variable on either side
+/// that it may not pass.
+fn wall_in(
+    channels: &[(f64, f64)],
+    fixed: &[bool],
+    vars: &mut Vec<Var>,
+    constraints: &mut Vec<Constraint>,
+) {
+    for (v, &(low, high)) in channels.iter().enumerate() {
+        if fixed[v] {
+            continue;
+        }
+        if low.is_finite() {
+            vars.push(Var {
+                desired: low,
+                weight: FIXED,
+            });
+            constraints.push(Constraint {
+                left: vars.len() - 1,
+                right: v,
+                gap: 0.0,
+            });
+        }
+        if high.is_finite() {
+            vars.push(Var {
+                desired: high,
+                weight: FIXED,
+            });
+            constraints.push(Constraint {
+                left: v,
+                right: vars.len() - 1,
+                gap: 0.0,
+            });
+        }
+    }
+}
+
+/// Nudge the segments that run along the other axis apart on this one:
+/// one solver variable per joined group of segments, the separation and
+/// order constraints between them, and the walls of each one's channel.
 fn nudge_axis(
     scene: &Scene,
     buffers: &[Buffer],
@@ -471,67 +554,8 @@ fn nudge_axis(
                 gap: lane,
             }),
     );
-    // Consecutive segments of one route keep their order.
-    for (route, points) in routes.iter().enumerate() {
-        let Some(points) = points else { continue };
-        let mine: Vec<usize> = (0..segments.len())
-            .filter(|&s| segments[s].route == route)
-            .collect();
-        for pair in mine.windows(2) {
-            let (s1, s2) = (pair[0], pair[1]);
-            if segments[s2].index != segments[s1].index + 2 {
-                continue;
-            }
-            let (v1, v2) = (var_of[s1], var_of[s2]);
-            if v1 == v2 || (fixed[v1] && fixed[v2]) {
-                continue;
-            }
-            let direction =
-                axis.of(points[segments[s2].index]) - axis.of(points[segments[s1].index]);
-            match sign(direction) {
-                1 => constraints.push(Constraint {
-                    left: v1,
-                    right: v2,
-                    gap: 0.0,
-                }),
-                -1 => constraints.push(Constraint {
-                    left: v2,
-                    right: v1,
-                    gap: 0.0,
-                }),
-                _ => {}
-            }
-        }
-    }
-    // Each movable variable's channel, as two fixed walls.
-    for v in 0..count {
-        if fixed[v] {
-            continue;
-        }
-        let (low, high) = channels[v];
-        if low.is_finite() {
-            vars.push(Var {
-                desired: low,
-                weight: FIXED,
-            });
-            constraints.push(Constraint {
-                left: vars.len() - 1,
-                right: v,
-                gap: 0.0,
-            });
-        }
-        if high.is_finite() {
-            vars.push(Var {
-                desired: high,
-                weight: FIXED,
-            });
-            constraints.push(Constraint {
-                left: v,
-                right: vars.len() - 1,
-                gap: 0.0,
-            });
-        }
-    }
+    keep_route_order(routes, &segments, &var_of, &fixed, axis, &mut constraints);
+    wall_in(&channels, &fixed, &mut vars, &mut constraints);
     let placed = vpsc::solve(&vars, &constraints);
     for v in 0..count {
         if fixed[v] {
