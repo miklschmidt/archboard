@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:54
-updated_date: '2026-10-25T13:09:00Z'
+updated_date: '2026-10-25T14:08:00Z'
 labels:
   - renderer
 dependencies:
@@ -118,4 +118,33 @@ The core WASM grew from 3,687,010 to 5,599,659 bytes, with the fonts, harfrust a
 - rasterize.test.ts and the skills capture tests: source.fonts and facesLoaded are gone from the receipt.
 
 No test that pinned a pixel width or a byte snapshot changed.
+
+## User decisions of 2026-10-25
+
+AC5: the user accepted the nine drawings that are a little worse. In Track, Browser application *TASK-482.07 and TASK-319 after TASK-482.07 are each 2 units of route length longer. In Blocks, six drawings are 1 to 3 units worse on route length or shared corridor. The user also accepted the Blocks trade on Semantic renderer TASK-520.06: crossings fell from 150 to 112, and route length rose about 3 percent, from 97710 to 100895.
+
+Missing glyphs: the user asked for Noto fallback faces in the core.
+
+## Fallback faces
+
+The files are in packages/renderer/assets/fonts. All are under the SIL Open Font License 1.1, and the OFL text of each release sits beside them.
+- NotoSans-Greek-Regular-v2.015.ttf, 20,124 bytes, and NotoSans-Greek-Medium-v2.015.ttf, 20,072 bytes. They hold U+0370-03FF.
+- NotoSansSymbols2-Subset-v2.008.ttf, 78,076 bytes. It holds miscellaneous technical, geometric shapes, miscellaneous symbols, dingbats and U+2B00-2B59.
+- NotoSansMath-Subset-v3.000.ttf, 92,116 bytes. It holds letterlike symbols, arrows, mathematical operators, box drawing, block elements and U+27C0-27FF.
+
+The README records each source URL, release version and SHA-256. subset-fallbacks.sh is the subset command. It uses fonttools 4.63.0 from Nix, and two runs gave the same bytes.
+
+The fallback order is in Face::fallbacks. A run uses its own face, then Noto Sans at the run's weight for Greek, then Noto Sans Symbols 2, then Noto Sans Math. Where no face has the character, the run uses its own face. A space and a grapheme's marks stay with the face of the run or the grapheme. Shaping cuts a run where the face changes. Measuring, breaking and the SVG glyph definitions all read those pieces. Each scene glyph names its face, and the SVG glyph ids are n4 and n5 for Greek, y4 for Symbols 2 and x4 for Math. No bundled face has an emoji such as ❌. Such a character stays a .notdef box.
+
+The crate tests are a_character_its_face_lacks_is_drawn_from_the_first_fallback_that_has_it (α, Ω, ✗, ■, ─, √, ⇄, and → in DM Mono), a_character_its_face_has_stays_in_its_face, and every_face_shares_one_unit. A picture with these characters, made with only DejaVu installed, is /tmp/t7/ac3/chromium-fallback.png.
+
+The core WASM grew from 5,599,659 to 5,813,985 bytes, an increase of 214,326 bytes.
+
+## The four pictures that cut a far-card line one character later
+
+They still differ, and the fallback faces do not change them. Onest has a glyph for →. In Skill evaluation TASK-482.07 One batch: logic, the far card of step RHgiyi2m has a room of 265.08 - 72 - 14 = 179.08. "Batch orchestrator → Pinn…" adds up to exactly 179.08, with each character's width bit-equal to the old canvas. So the cut lands on an exact tie, and the last bits of the card width decide it. The other three pictures cut the same kind of line.
+
+## Rerun with the fallback faces
+
+The scorecard did not change: Track has 3 drawings changed, and Blocks has 12. The corpus did not change: 0 of 36032 drawings differ in size, and the 586 corpus SVGs still take 145,227,288 bytes. Folder: /tmp/archboard-task-520.07/after-fallback.
 <!-- SECTION:NOTES:END -->
