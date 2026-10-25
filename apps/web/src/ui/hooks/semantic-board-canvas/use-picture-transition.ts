@@ -15,7 +15,7 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
-import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@archboard/timing";
+import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
@@ -268,11 +268,11 @@ function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
 	const from = carriedFrom(last, surface, drawing, next);
 	if (shift !== undefined) keepStill(shift);
 	if (from !== null) {
-		return fly(transitionPicture(surface, from, drawing, shift), PICTURE_TRANSITION_MS, onLanded);
+		return fly(transitionPicture(surface, from, drawing, shift), PICTURE_MS.transition, onLanded);
 	}
 	if (entersAfresh(last, surface, drawing, reducedMotion)) {
 		if (last?.surface === surface) ghostPicture(surface, heading, movedSince(seenAt, surface));
-		return fly(enterPicture(surface, drawing), PICTURE_ENTRY_MS, onLanded);
+		return fly(enterPicture(surface, drawing), PICTURE_MS.entry, onLanded);
 	}
 	stagePicture(surface, drawing.svg);
 	return null;

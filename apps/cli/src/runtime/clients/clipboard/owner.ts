@@ -5,7 +5,7 @@
 import { Buffer } from "node:buffer";
 import type { ClipboardManager } from "@teddyzhu/clipboard";
 import type { z } from "zod";
-import { IMAGE_CLIPBOARD_POLL_MS } from "@archboard/timing";
+import { IMAGE_CLIPBOARD_MS } from "@archboard/timing";
 import {
 	ImageClipboardInputSchema,
 	ImageClipboardReplySchema,
@@ -48,7 +48,7 @@ function retainUntilReplaced(manager: ClipboardManager, html: string): void {
 				process.exit(0);
 			}
 		},
-		IMAGE_CLIPBOARD_POLL_MS,
+		IMAGE_CLIPBOARD_MS.ownerPoll,
 	);
 }
 

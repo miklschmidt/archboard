@@ -1,11 +1,5 @@
 import { logger } from "@archboard/diagnostics/logger";
-import {
-	forgetLockAnnouncements,
-	onBoardLockChanged,
-	onBoardSweep,
-	watchBoardLocks,
-} from "@archboard/board/lock";
-import { forgetDoing } from "@archboard/board/doing";
+import { forgetBoardMemory } from "@archboard/board/lock";
 import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
@@ -31,12 +25,8 @@ import {
  * Forget every engine-level announcement, watch and record this process holds.
  */
 function forgetEngineState(): void {
-	watchBoardLocks(null);
-	onBoardLockChanged(null);
+	forgetBoardMemory();
 	forgetSemanticBoardFiles();
-	onBoardSweep(null);
-	forgetLockAnnouncements();
-	forgetDoing();
 	forgetSemanticPaneContexts();
 	panePresentations.forget();
 }

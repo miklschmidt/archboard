@@ -23,7 +23,6 @@
 
 import {
 	BoardHeldError,
-	claimEndReason,
 	claimWriterId,
 	takeClaimRevocation,
 	withBoardLock,
@@ -207,7 +206,7 @@ function admit(
 	}
 	const lost = takeClaimRevocation(vault, key);
 	if (lost !== null) {
-		const problem = `${claimEndReason(lost)}, so your claim has ended; claim the board again before writing`;
+		const problem = `${lost.ended}, so your claim has ended; claim the board again before writing`;
 		return { ok: false, problem, cause: lost.cause };
 	}
 	const claim = claimWriterId(vault, key);

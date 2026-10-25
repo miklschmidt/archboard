@@ -2,9 +2,7 @@
 export { createCodexProcessGroupOperations } from "#runtime/processes/codex-group.ts";
 export type {
 	CodexProcessGroupIdentity,
-	CodexProcessGroupInspection,
 	CodexProcessGroupOperations,
-	CodexProcessGroupSignal,
 } from "#runtime/processes/codex-group.ts";
 export { createProcessGroupCleanup } from "#runtime/processes/group-cleanup.ts";
 export type { ProcessGroupCleanup } from "#runtime/processes/group-cleanup.ts";

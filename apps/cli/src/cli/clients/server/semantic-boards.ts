@@ -1,9 +1,4 @@
-import {
-	VaultCheckSchema,
-	VaultDiagnosticSchema,
-	type VaultDiagnostic,
-	type VaultCheck,
-} from "@archboard/board/policy";
+import { VaultCheckSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
 // How the CLI reaches a semantic board: through the running Archboard server, never the
 // vault directly.
 //
@@ -15,9 +10,8 @@ import {
 
 import { z } from "zod";
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
-import type { HistoricalCorrectionInput } from "@archboard/board/commands";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
-import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/commands";
+import { BoardMoveAnswerSchema } from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,
@@ -32,6 +26,12 @@ import {
 	type StandaloneTheme,
 	type LegendLayout,
 } from "@archboard/board/render-reply";
+import type { HistoricalCorrectionInputSchema } from "@archboard/board/commands";
+
+type HistoricalCorrectionInput = z.infer<typeof HistoricalCorrectionInputSchema>;
+type BoardMoveAnswer = z.infer<typeof BoardMoveAnswerSchema>;
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** One board in the vault's semantic listing. */
 const SemanticBoardEntrySchema = z.object({

@@ -11,7 +11,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { EXPLORING_MS, PICTURE_ENTRY_MS } from "@archboard/timing";
+import { EXPLORING_MS, PICTURE_MS } from "@archboard/timing";
 import {
 	cameraNow,
 	takeFrames,
@@ -132,7 +132,7 @@ async function aboveOnScreen(setup: Setup = {}): Promise<FramesByHand> {
 	});
 	await settle();
 	await settle();
-	if (setup.arrived ?? true) frames.run(PICTURE_ENTRY_MS + 64);
+	if (setup.arrived ?? true) frames.run(PICTURE_MS.entry + 64);
 	server.reply = { status: 200, body: { ...belowPicture(), ...setup.below } };
 	return frames;
 }

@@ -10,9 +10,8 @@ import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import { MoveBoardControl } from "#ui/components/board-move/MoveBoardControl.tsx";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn, IconButton } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellPane } from "#ui/rules/shell/contracts.ts";
-import { IconButton } from "@archboard/ui-kit/controls";
 import { presentShortcutLabel } from "#ui/rules/shell/shortcuts.ts";
 import { StatusDot } from "#ui/components/shell/StatusDot.tsx";
 

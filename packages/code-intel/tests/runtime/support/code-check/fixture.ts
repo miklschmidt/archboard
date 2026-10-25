@@ -3,7 +3,8 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LanguageServers } from "@archboard/workspace/checkouts";
+import type { z } from "zod";
+import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 /**
@@ -85,7 +86,7 @@ function board(vault: string, name: string, variants: readonly FixtureVariant[])
 function register(
 	scratch: string,
 	checkouts: Readonly<Record<string, string>>,
-	servers: LanguageServers = {},
+	servers: z.infer<typeof LanguageServersSchema> = {},
 ): void {
 	write(scratch, {
 		"repos.json": JSON.stringify(

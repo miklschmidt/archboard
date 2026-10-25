@@ -6,7 +6,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
-import { VAULT_CHECK_POLL_MS } from "@archboard/timing";
+import { BOARD_CACHE_MS } from "@archboard/timing";
 import {
 	comparisonKey,
 	fetchSemanticBoards,
@@ -314,8 +314,8 @@ function vaultCheckQuery(vault: string) {
 		 * @returns The checked policy and diagnostics.
 		 */
 		queryFn: (context) => boardReads().vaultCheck(vault, context.signal),
-		staleTime: VAULT_CHECK_POLL_MS,
-		refetchInterval: VAULT_CHECK_POLL_MS,
+		staleTime: BOARD_CACHE_MS.vaultCheck,
+		refetchInterval: BOARD_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,
@@ -347,8 +347,8 @@ function codeFindingsQuery(vault: string) {
 		 * @returns The readings.
 		 */
 		queryFn: (context) => boardReads().codeFindings(vault, context.signal),
-		staleTime: VAULT_CHECK_POLL_MS,
-		refetchInterval: VAULT_CHECK_POLL_MS,
+		staleTime: BOARD_CACHE_MS.vaultCheck,
+		refetchInterval: BOARD_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,

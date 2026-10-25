@@ -10,8 +10,10 @@
 
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
-import type { SemanticWalkthrough } from "@archboard/board/content";
 import { KeyTip } from "#ui/components/semantic-board-canvas/PresentationKeys.tsx";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /** Inputs for one segment. */
 interface StepSegmentProps {

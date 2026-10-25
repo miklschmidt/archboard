@@ -9,7 +9,10 @@ import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl, statedVault } from "@archboard/workbench/host";
 import { boardForPane, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /**
  * What one pane last said it was reading, when that is still about the board

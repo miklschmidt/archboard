@@ -15,16 +15,11 @@ import {
 	paneBoardAddress,
 	parseBoardKey,
 	statedVariant,
-	type BoardIdentity,
 } from "@archboard/board/address";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { logger } from "@archboard/diagnostics/logger";
-import { readSemanticBoard } from "@archboard/board/store-read";
-import {
-	addressedVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
+import { readBoardVariant } from "@archboard/board/store-read";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
 	boardForPane,
@@ -37,12 +32,14 @@ import type { SemanticAgentSwitch } from "@archboard/workbench/semantic-context"
 import { bodyOf, messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { arrivedOnBoard, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
 import { movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
-import { placeOfVault, type VaultPlace } from "@archboard/workspace/repository-listing";
+import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/routes/repositories/repository-routes.ts";
 import {
 	chooseKnownCheckout,
 	registeredRepositoryOfVault as registeredRepositoryOf,
 } from "@archboard/workspace/checkouts";
+
+type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
 /**
  * Point one pane at one board.
@@ -145,7 +142,7 @@ function pointPane(
 	identity: BoardIdentity,
 	vault: string,
 	byAgent: boolean,
-): Pick<VaultPlace, "repository" | "checkout"> & { chose?: ShowChoice } {
+): Pick<ReturnType<typeof placeOfVault>, "repository" | "checkout"> & { chose?: ShowChoice } {
 	const key = paneBoardAddress(identity);
 	// Chosen only here, once nothing can refuse the show (ADR 0050).
 	const chose = byAgent ? chooseShownCheckout(vault) : undefined;
@@ -218,25 +215,24 @@ function shownIdentity(
 	identity: BoardIdentity,
 	res: Response,
 ): BoardIdentity | null {
-	const read = readSemanticBoard(vault, identity.board);
-	if (!read.ok) {
-		res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
+	const opened = readBoardVariant(vault, identity.board, identity.variant);
+	if (opened.ok) {
+		return acceptedIdentity(identity, opened.board, opened.variant);
+	}
+	if (opened.code === "BOARD_MISSING" || opened.code === "BOARD_UNREADABLE") {
+		res.status(opened.code === "BOARD_MISSING" ? 404 : 422).json({
 			success: false,
-			code: read.code,
-			error: read.problem,
+			code: opened.code,
+			error: opened.problem,
 		});
 		return null;
 	}
-	const opened = addressedVariant(read.board, statedVariant(identity));
-	if (!opened.ok) {
-		res.status(404).json({
-			success: false,
-			code: "VARIANT_MISSING",
-			error: `"${identity.board}": ${opened.problem}. Read it with \`archboard semantic show ${identity.board}\` to see what it has.`,
-		});
-		return null;
-	}
-	return acceptedIdentity(identity, read.board, opened.variant);
+	res.status(404).json({
+		success: false,
+		code: "VARIANT_MISSING",
+		error: `"${identity.board}": ${opened.problem}. Read it with \`archboard semantic show ${identity.board}\` to see what it has.`,
+	});
+	return null;
 }
 
 /**

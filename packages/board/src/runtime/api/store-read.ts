@@ -2,5 +2,6 @@
 export { readBoardCatalogue, watchBoardCatalogue } from "#runtime/operations/read/catalogue.ts";
 export { listSemanticBoards } from "#runtime/operations/read/listing.ts";
 export { readSemanticBoard, readSemanticBoardAt } from "#runtime/operations/read/read.ts";
+export { readBoardVariant } from "#runtime/operations/read/variant.ts";
 export { vaultsBoundTo } from "#runtime/store/bound-vaults.ts";
 export { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";

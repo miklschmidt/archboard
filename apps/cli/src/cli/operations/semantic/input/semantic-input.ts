@@ -1,7 +1,6 @@
 import {
 	diagnosticLine,
 	VaultDiagnosticSchema,
-	type VaultDiagnostic,
 } from "@archboard/board/policy";
 // What a person types into a semantic board command, before it is a command.
 //
@@ -28,8 +27,11 @@ import {
 import {
 	LegendLayoutSchema,
 	type RenderedChanges,
-	type RenderedVariant,
 } from "@archboard/board/render-reply";
+import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+
+type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /**
  * What a variant option means when it is left out, said the same way by every

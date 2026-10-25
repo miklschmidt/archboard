@@ -19,7 +19,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
 } from "#shared/protocol/realtime-contract.ts";
-import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import {
 	failure,
 	failureForIdentity,
@@ -415,7 +415,7 @@ function armExpiry(
 	if (time === null || !Number.isFinite(values.approval.expiresAtMs)) {
 		return { ok: false, result: invalid("stale_state") };
 	}
-	const expiresAtMs = Math.min(values.approval.expiresAtMs, time + CODEX_SPOKEN_GATE_EXPIRY_MS);
+	const expiresAtMs = Math.min(values.approval.expiresAtMs, time + CODEX_APPROVAL_MS.spokenGate);
 	if (time >= expiresAtMs) {
 		return { ok: false, result: invalid("timeout") };
 	}

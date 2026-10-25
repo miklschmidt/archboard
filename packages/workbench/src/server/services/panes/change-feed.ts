@@ -12,9 +12,12 @@
 // it can say it has read up to.
 
 import { mintId } from "@archboard/board/ids";
-import { MoveEndSchema, type MoveEnd } from "@archboard/board/commands";
+import { MoveEndSchema } from "@archboard/board/commands";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { onBoardBroadcast } from "#server/services/panes/registry.ts";
+import type { z } from "zod";
+
+type MoveEnd = z.infer<typeof MoveEndSchema>;
 
 /** One settled change, as a context consumer reads it. */
 interface SettledBoardChange {

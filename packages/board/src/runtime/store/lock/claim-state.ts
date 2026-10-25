@@ -1,4 +1,4 @@
-import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 import { boardMemoryKey } from "#runtime/store/address.ts";
 import type {
 	Claim,
@@ -122,7 +122,7 @@ function renewClaim(vault: string, board: string): void {
 	if (!entry) {
 		return;
 	}
-	const renewed = renewRecord(vault, board, entry.holder.id, CLAIM_LEASE_MS);
+	const renewed = renewRecord(vault, board, entry.holder.id, CLAIM_MS.lease);
 	if (renewed) {
 		entry.holder = renewed;
 		return;
@@ -159,7 +159,7 @@ function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
 function startRenewing(vault: string, board: string): ReturnType<typeof setInterval> {
 	const timer = setInterval(() => {
 		renewClaim(vault, board);
-	}, LOCK_RENEW_MS);
+	}, BOARD_LOCK_MS.renew);
 	// Renewal must not be the reason a process stays alive.
 	timer.unref();
 	return timer;

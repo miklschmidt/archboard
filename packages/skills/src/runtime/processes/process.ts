@@ -2,10 +2,7 @@
 // cancellation, and never leave one behind. Every spawn goes through here so
 // there is one answer to what a timed-out or cancelled process looks like.
 
-import {
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-	SKILL_EVAL_CODEX_TERM_GRACE_MS,
-} from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS, SKILL_EVAL_MS } from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -115,7 +112,7 @@ async function stopGroup(
  */
 async function ownProcess(
 	child: Bun.Subprocess,
-	graceMs = SKILL_EVAL_CODEX_TERM_GRACE_MS,
+	graceMs = SKILL_EVAL_MS.codexTermGrace,
 ): Promise<{ readonly stop: () => Promise<void> }> {
 	let identity: CodexProcessGroupIdentity;
 	try {
@@ -246,7 +243,7 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 		clearTimeout(timer);
 		signal.removeEventListener("abort", onAbort);
 		await owner.stop();
-		if (!(await settlesWithin(output, SKILL_EVAL_CODEX_TERM_GRACE_MS))) {
+		if (!(await settlesWithin(output, SKILL_EVAL_MS.codexTermGrace))) {
 			throw new Error(`Evaluation process ${child.pid} left an output pipe open after cleanup.`);
 		}
 		const [stdout, stderr] = await output;

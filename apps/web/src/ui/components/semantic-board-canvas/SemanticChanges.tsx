@@ -27,7 +27,7 @@
 
 import { useId, type JSX } from "react";
 
-import { Checkbox } from "@archboard/ui-kit/controls";
+import { Checkbox } from "@archboard/ui-kit/components";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	SidebarGlyph,
