@@ -24,8 +24,9 @@ const BOARD_LOCK_MS = durations({
 	 * lease, not the board, and this is what that crash costs.
 	 *
 	 * It has to clear the gap between two writes of one holder, plus a write, with
-	 * room to spare, or a holder's own lock expires between them. What actually covers a long drag is renewal,
-	 * not this number, so raising it to survive a long edit is the wrong fix,
+	 * room to spare, or a holder's own lock expires between them. What actually
+	 * covers a long drag is renewal, not this number, so raising it to survive a
+	 * long edit is the wrong fix,
 	 * and it is paid for in how long a crashed holder keeps the board.
 	 */
 	lease: 3000,
@@ -141,15 +142,15 @@ const CLAIM_MS = durations({
 	/**
 	 * How long a claimed board's lease runs between renewals.
 	 *
-	 * Deliberately the same lease as unknown other hold: what makes a claim long is
+	 * Deliberately the same lease as any other hold: what makes a claim long is
 	 * that the server keeps renewing it, not that it is written down for longer. A
 	 * long lease with no renewal would mean a server that died mid-claim costs the
 	 * vault the whole claim, which is the failure the lease exists to prevent
 	 * arriving on a bigger scale.
 	 *
 	 * So it is a name rather than a number, kept separate because the reason for
-	 * the value differs: BOARD_LOCK_MS.lease has to clear a person's trailing idle
-	 * report plus its write, and this has to clear a renewal interval. Both are
+	 * the value differs: BOARD_LOCK_MS.lease has to clear the gap between two
+	 * writes of one holder plus a write, and this has to clear a renewal interval. Both are
 	 * satisfied by the same three seconds today, and the two would be tuned for
 	 * different reasons.
 	 */
