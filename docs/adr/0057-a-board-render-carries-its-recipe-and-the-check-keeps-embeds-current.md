@@ -212,5 +212,7 @@ delete frees the name and the former names. The browser offers no delete.
   does not move, as for `formerNames` and `documents`.
 - Every SVG that this build draws differs from one drawn before, because it
   carries a recipe and follows the reader's colour scheme.
-- The README's render-based SVGs become tracked embeds, and the README shows
-  the feature on itself.
+- The README's architecture SVGs, drawn from this repository's own vault,
+  become tracked embeds, and the README shows the feature on itself. The
+  sequence and web-shop SVGs are drawn from `examples/web-shop`, which is no
+  vault in place, so they carry no recipe.

@@ -1,10 +1,10 @@
 ---
 id: TASK-526
 title: archboard check keeps the board renders that documents embed current
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-24T15:33:00Z'
-updated_date: '2026-10-24T23:58:00Z'
+updated_date: '2026-10-25T00:01:00Z'
 labels:
   - cli
   - renderer
@@ -27,7 +27,7 @@ Documentation sites embed board pictures, often from a vault in another reposito
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every subtask is Done
+- [x] #1 Every subtask is Done
 - [x] #2 A code change that makes an embedded picture outdated is reported by `archboard check` in the repository that holds the embed, and `archboard check --fix` draws it again
 <!-- AC:END -->
 
@@ -36,3 +36,9 @@ Documentation sites embed board pictures, often from a vault in another reposito
 <!-- SECTION:NOTES:BEGIN -->
 Criterion 2, as decided in the design interview, is two checks in sequence: the code check warns that a code change made a board stale (check code), and once the board is corrected, the embeds check in the repository that holds the embed reports it outdated and --fix draws it again (tests/system/semantic-boards/embeds-check.test.ts, embeds-without-vault.test.ts, tracked-embeds.test.ts). archboard check runs both. No test drives both steps from one source edit. The parent stays open while TASK-526.07 criterion 3 waits for the owner.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check and check all run every check, and check semantics, check code and check embeds run one each (ADR 0057, with Amended-by lines in ADR 0045, 0046, 0049 and 0054). Every SVG and PNG render carries a render recipe, and SVG renders follow the reader's colour scheme and draw a legend by default. check embeds finds the embeds that Git tracks, draws each again from its recipe and warns when the board changed what it shows, and --fix draws them again and lists every re-pointing. --track makes a tracked embed that its board lists, so the vault's own check sees embeds in other repositories. A vault of an unregistered repository is fetched shallow and sparse and cached by commit. semantic delete removes a board, and the check names the deleting commit. The skill and the README teach it, and the README's architecture SVGs are tracked embeds. Not measured: the layout timing bounds of wide-boards.test.ts, under another agent's load on this machine (TASK-527).
+<!-- SECTION:FINAL_SUMMARY:END -->
