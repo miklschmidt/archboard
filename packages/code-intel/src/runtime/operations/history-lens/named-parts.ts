@@ -11,7 +11,9 @@
 
 import type { NamedReason } from "#shared/protocol/footprint.ts";
 import { isMessage } from "@archboard/board/flow";
-import type { VariantComparison } from "@archboard/board/comparison";
+import type { compareVariants } from "@archboard/board/comparison";
+
+type VariantComparison = ReturnType<typeof compareVariants>;
 
 /** Every reason a part is named, by the part's id. */
 type Named = Map<string, NamedReason[]>;

@@ -9,24 +9,14 @@ import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
-import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
-	RecordingContainerSchema,
-	type RecordingContainer,
-} from "@archboard/walkthrough/recording";
-import {
 	SAMPLES_PER_FRAME,
-	TALK_FORMAT,
 	TALK_SAMPLE_RATE,
-	TALK_VERSION,
-	TALK_VOICE_FILE,
-	TalkSchema,
 	framesOf,
 	type Talk,
-	type TalkEvent,
 } from "@archboard/walkthrough/talk";
-import { readTalk } from "@archboard/walkthrough/recorder";
+import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
 	type Finding,
@@ -35,6 +25,9 @@ import {
 } from "#runtime/rules/outcomes/reading.ts";
 import type { TalkFixture } from "#runtime/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** A video the harness must look for before the checks run. */
 interface VideoRequest {
@@ -88,14 +81,14 @@ function spelledFromHome(home: string, absolute: string): string {
  * @param fixture What the fixture asks for.
  * @param board The board, as `semantic show` served it.
  * @param policy The vault check, as `archboard check` served it.
- * @returns The talk and its voice.
+ * @returns What the talk is made of, with its voice, for `keepTalk`.
  * @throws {Error} When the board has no such variant or walkthrough.
  */
 function talkOfFixture(
 	fixture: TalkFixture,
 	board: SemanticBoard,
 	policy: VaultCheck,
-): { readonly talk: Talk; readonly voice: Int16Array } {
+): Omit<Parameters<typeof keepTalk>[0], "directory"> {
 	const address = addressedVariant(board, fixture.variant);
 	if (!address.ok) throw new Error(`the fixture's talk: ${address.problem}`);
 	const walkthrough = address.variant.content.walkthroughs.find(
@@ -106,9 +99,9 @@ function talkOfFixture(
 	}
 	const step = (SKILL_EVAL_MS.talkStep / 1000) * TALK_SAMPLE_RATE;
 	const samples = step * walkthrough.beats.length;
-	const events: TalkEvent[] = [
+	const events: Talk["events"] = [
 		{ kind: "drawn", at: 0, version: board.version },
-		...walkthrough.beats.flatMap((beat, index): TalkEvent[] => [
+		...walkthrough.beats.flatMap((beat, index): Talk["events"] => [
 			{ kind: "step", at: index * step, beat: index },
 			{
 				kind: "said",
@@ -120,10 +113,8 @@ function talkOfFixture(
 		]),
 		{ kind: "end", at: samples },
 	];
-	const talk = TalkSchema.parse({
-		format: TALK_FORMAT,
-		version: TALK_VERSION,
-		recordedAt: new Date().toISOString(),
+	return {
+		recordedAt: new Date(),
 		language: "en",
 		theme: fixture.theme,
 		board: {
@@ -133,18 +124,11 @@ function talkOfFixture(
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			steps: walkthrough.beats.length,
 		},
-		audio: {
-			file: TALK_VOICE_FILE,
-			sampleRate: TALK_SAMPLE_RATE,
-			channels: 1,
-			samples,
-			baseLatencyMs: 0,
-		},
-		events,
+		log: { samples, baseLatencyMs: 0, events },
 		document: board,
 		policy,
-	});
-	return { talk, voice: new Int16Array(samples) };
+		voice: new Int16Array(samples),
+	};
 }
 
 /**
@@ -215,7 +199,7 @@ function lastReceipt(
  * @param file The file.
  * @returns The container, or null for neither.
  */
-function containerOf(file: string): RecordingContainer | null {
+function containerOf(file: string): ReturnType<typeof recordingContainerOf> {
 	const head = Buffer.alloc(HEAD_BYTES);
 	const descriptor = fs.openSync(file, "r");
 	try {
@@ -272,8 +256,8 @@ function inspectVideo(
  */
 function fileProblem(video: VideoAttempt): string | null {
 	if (video.bytes === null) return `${video.file} was not written`;
-	const asked = RecordingContainerSchema.safeParse(path.extname(video.file).slice(1).toLowerCase());
-	return asked.success && video.container === asked.data
+	const asked = recordingContainerOf(video.file);
+	return asked !== null && video.container === asked
 		? null
 		: `${video.file} holds ${video.container ?? "neither an MP4 nor a WebM"}, not what its name says`;
 }

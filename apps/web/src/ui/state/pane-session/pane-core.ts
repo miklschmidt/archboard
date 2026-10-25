@@ -6,7 +6,6 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { takeBoardBack } from "#ui/clients/pane-session/pane-requests.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
@@ -34,14 +33,18 @@ import {
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
-import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@archboard/code-binding/opening";
-import { activateCodeTarget, openedNotice } from "@archboard/code-opener/code-target";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
+import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type {
 	BoardIdentity,
 	DoingEntry,
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
 /** What the core reads out of React and writes back into it. */
 interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
@@ -450,18 +453,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * Say what was opened, when it is not the version the binding names; otherwise the person's
-	 * editor is in front of them and says it all.
-	 * @param reply What the server opened.
-	 */
-	function opened(reply: CodeTargetOpenSuccess): void {
-		const notice = openedNotice(reply);
-		if (notice !== null) {
-			tell(notice);
-		}
-	}
-
-	/**
 	 * Open the file a subject's binding names, in the person's editor.
 	 * @param subjectId The semantic id.
 	 */
@@ -470,8 +461,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			vault: status.vault,
 			boardKey: status.boardKey,
 			elementId: subjectId,
-			onSuccess: opened,
-			onFailure: tell,
+			onNotice: tell,
 		});
 	}
 

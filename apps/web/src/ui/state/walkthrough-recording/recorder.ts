@@ -11,12 +11,8 @@
 // takes the talk; this owns nothing else (TASK-381).
 
 import { RECORDING_MS } from "@archboard/timing";
-import type {
-	RecordingPage,
-	RecordingPhase,
-	RecordingState,
-} from "@archboard/walkthrough/recording";
-import { TALK_SAMPLE_RATE, type TalkLog } from "@archboard/walkthrough/talk";
+import type { publishRecordingPage } from "@archboard/walkthrough/recording";
+import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/browser";
 import {
 	sameBoardName,
@@ -38,6 +34,13 @@ import {
 	type RecordingSources,
 	type RecordingTransport,
 } from "#ui/rules/walkthrough-recording/voice-sources.ts";
+
+/** The page's side of the recording contract, as it is published. */
+type RecordingPage = Parameters<typeof publishRecordingPage>[0];
+/** What the page says about its recording. */
+type RecordingState = ReturnType<RecordingPage["state"]>;
+/** The log of a finished talk, stamped on its voice's samples. */
+type TalkLog = NonNullable<ReturnType<RecordingPage["talk"]>>;
 
 /** What the page was opened to record. */
 interface RecordingRequest {
@@ -66,7 +69,7 @@ function recordedStep(walkthrough: string, beat: number): RecordedStep {
 
 /** Whether a page that has not started could start, or why not. */
 interface Readiness {
-	readonly phase: RecordingPhase;
+	readonly phase: RecordingState["phase"];
 	readonly failure: string | null;
 }
 

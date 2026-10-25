@@ -6,7 +6,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { BoardBehindSchema } from "#shared/protocol/code-check.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
@@ -120,7 +120,7 @@ beforeAll(async () => {
 	}
 	writeFileSync(join(root, "src/Shop/settings.json"), '{"enabled":true}\n');
 	commit("change project settings");
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {

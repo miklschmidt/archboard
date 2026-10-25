@@ -13,22 +13,23 @@ import {
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
 	type CodeTargetOpenRequest,
+} from "#shared/schemas/code-target-open.ts";
+import {
 	LINE_TOKEN,
 	OpenerSelectionSchema,
 	OpenerSettingsTestRequestSchema,
 	PATH_TOKEN,
 	type OpenerSelection,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 	type LocalCodeTarget,
 	type LocalCodeTargetResult,
 	type OtherRef,
-	githubUrlForBinding,
 } from "@archboard/code-binding/resolution";
-import { addressedVariant } from "@archboard/board/document";
-import { readSemanticBoard } from "@archboard/board/store-read";
+import { githubUrlForBinding } from "#server/projections/github-link.ts";
+import { readBoardVariant } from "@archboard/board/store-read";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
 import {
 	readOpenerSelection,
@@ -37,11 +38,12 @@ import {
 } from "#server/store/configuration.ts";
 import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/lifecycle/launch.ts";
 import { resolveInVault } from "#server/projections/resolve-target.ts";
-import { symbolLine } from "#server/projections/symbol-line.ts";
+import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
 	validateOpenerSelection,
 	type OpenerPlan,
+	type PlanOptions,
 } from "#server/projections/planning.ts";
 
 type BindingLookup =
@@ -131,13 +133,14 @@ export interface CodeOpenerRouteDependencies {
  */
 function canonicalBinding(vault: string, boardKey: string, subjectId: string): BindingLookup {
 	const address = boardAddressOf(boardKey);
-	const read = readSemanticBoard(vault, address.board);
-	if (!read.ok) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: read.problem };
-	}
-	const opened = addressedVariant(read.board, address.variant);
+	const opened = readBoardVariant(vault, address.board, address.variant);
 	if (!opened.ok) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: `${opened.problem}.` };
+		const variantMissing = opened.code === "VARIANT_MISSING" || opened.code === "VARIANT_UNCHOSEN";
+		return {
+			ok: false,
+			code: "BOARD_NOT_FOUND",
+			error: variantMissing ? `${opened.problem}.` : opened.problem,
+		};
 	}
 	const node = opened.variant.content.nodes.find((one) => one.id === subjectId);
 	if (node === undefined) {
@@ -376,20 +379,21 @@ function shownCommand(selection: OpenerSelection): OpenerPlan {
 }
 
 /**
- * Plans the opener command for a target and launches it when the plan succeeds.
+ * Opens a target in the person's editor: plans the command the selection makes for it and
+ * launches that command when the plan succeeds.
  * @param selection The opener selection to plan with.
  * @param target The path to open.
- * @param launch The launcher to run the planned command.
- * @param line The line to open at, when the opener can.
+ * @param options The line to open at when the opener can, the platform to plan for, and the
+ * launcher that runs the command, the real one unless a test replaces it.
  * @returns The launch result, or the plan failure that prevented a launch.
  */
-async function planAndLaunch(
+export async function openInEditor(
 	selection: OpenerSelection,
 	target: string,
-	launch: CodeOpenerRouteDependencies["launch"],
-	line?: number,
+	options: PlanOptions & { readonly launch?: CodeOpenerRouteDependencies["launch"] } = {},
 ): Promise<OpenerPlan | LaunchResult> {
-	const plan = planOpenerCommand(selection, target, { line });
+	const { launch = launchOpener, ...planning } = options;
+	const plan = planOpenerCommand(selection, target, planning);
 	return plan.ok ? launch(plan.command) : plan;
 }
 
@@ -530,11 +534,9 @@ export function createCodeOpenerRouter(
 					await snapshotCheckoutAccess({ vault: null, signal }),
 				);
 				if (!checkout.ok) return sendFailure(response, checkout);
-				const launched = await planAndLaunch(
-					parsed.data.selection,
-					checkout.root,
-					dependencies.launch,
-				);
+				const launched = await openInEditor(parsed.data.selection, checkout.root, {
+					launch: dependencies.launch,
+				});
 				if (!launched.ok) return sendFailure(response, launched);
 				response.json({ success: true, code: "OPENER_TESTED", repository: checkout.repository });
 			}),
@@ -569,12 +571,10 @@ export function createCodeOpenerRouter(
 				const current = readOpenerSelection();
 				if (!current.ok)
 					return sendFailure(response, current, statusFor(current.code), found.binding, line);
-				const launched = await planAndLaunch(
-					current.selection,
-					target.target,
-					dependencies.launch,
+				const launched = await openInEditor(current.selection, target.target, {
 					line,
-				);
+					launch: dependencies.launch,
+				});
 				if (!launched.ok)
 					return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
 				response.json(openedReply(target));

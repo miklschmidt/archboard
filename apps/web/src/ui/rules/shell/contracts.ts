@@ -4,7 +4,7 @@
 
 import type { ReactNode } from "react";
 
-import type { CodeTargetNoticeAction } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { OutlineNode } from "#ui/rules/board-catalog/outline.ts";
 import type {
@@ -52,7 +52,7 @@ interface SelectableNoticeAction {
  * target shapes. A `settings` action is reported with the id `settings`; a
  * `github` action opens its validated URL in a new tab and reports nothing.
  */
-type ShellNoticeAction = SelectableNoticeAction | CodeTargetNoticeAction;
+type ShellNoticeAction = SelectableNoticeAction | CodeTargetNotice["actions"][number];
 
 /** A persistent notice: it stays up until its owner clears it or the person dismisses it. */
 interface ShellNotice {

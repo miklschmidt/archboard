@@ -9,7 +9,7 @@
 // group's name comes from the vault policy.
 
 import { z } from "zod";
-import { inspectGroup, groupsUsed, type GroupInspection } from "@archboard/board/content";
+import { inspectGroup, groupsUsed } from "@archboard/board/content";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
@@ -40,6 +40,8 @@ import {
 	describedContainer,
 	inspectedContainer,
 } from "#cli/rules/semantic/inspect/container-inspection.ts";
+
+type GroupInspection = ReturnType<typeof inspectGroup>;
 
 const InspectInputSchema = z.object({
 	name: z.string(),

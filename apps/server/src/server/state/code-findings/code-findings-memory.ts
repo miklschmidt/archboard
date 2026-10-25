@@ -16,11 +16,10 @@
 // It is no copy of a board either: it answers what the code said, never what is
 // on a board, and a pane shows it only over the version it was found on.
 
-import type {
-	CodeCheckAnswer,
-	RememberedFindings,
-	RememberedReading,
-} from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
+
+/** What the last pass found on one board at one variant. */
+type RememberedReading = RememberedFindings["readings"][number];
 
 /** What the server remembers of its code passes. */
 interface CodeFindingsMemory {

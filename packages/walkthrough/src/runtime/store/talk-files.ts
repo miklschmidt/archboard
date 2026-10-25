@@ -23,7 +23,9 @@ import {
 	TALK_VERSION,
 	TALK_VOICE_FILE,
 	TalkSchema,
+	talkFrom,
 	type Talk,
+	type TalkParts,
 } from "#shared/protocol/talk.ts";
 
 /** The file that holds a talk's events, board and policy. */
@@ -114,6 +116,21 @@ function requireFreshPlace(place: TalkPlace): void {
 	if (!existsSync(parent) || !statSync(parent).isDirectory()) {
 		throw new TalkFileError(`${parent} is not a directory. Create it, or name another place.`);
 	}
+}
+
+/**
+ * Where a board's talk is kept, proven free before anything starts: the directory asked for, or a
+ * new one in the state directory, named for the moment it was recorded.
+ * @param asked The directory asked for, absolute, if any.
+ * @param board The board recorded, which names a talk kept in the state directory.
+ * @param now When it is recorded.
+ * @returns The place.
+ * @throws {TalkFileError} When the directory asked for exists or has no directory to be made in.
+ */
+function freshTalkPlace(asked: string | undefined, board: string, now: Date): TalkPlace {
+	const place = asked === undefined ? stateTalkPlace(board, now) : askedTalkPlace(asked);
+	requireFreshPlace(place);
+	return place;
 }
 
 /**
@@ -373,11 +390,32 @@ function writeTalk(options: {
 	return place.directory;
 }
 
+/**
+ * Keep a talk of its parts in a directory somebody named: written whole, and never pruned.
+ * @param options What the talk is made of, its voice and its directory.
+ * @param options.voice The voice's samples: 16-bit mono at the talk's sample rate, as many as the log says.
+ * @param options.directory The directory, which does not exist yet.
+ * @returns The talk that was kept.
+ * @throws {Error} When the parts are not a talk that can be rendered.
+ * @throws {TalkFileError} When the voice is not the length the talk says, or the directory is taken.
+ */
+function keepTalk(
+	options: TalkParts & { readonly voice: Int16Array; readonly directory: string },
+): Talk {
+	const { voice, directory, ...parts } = options;
+	const made = talkFrom(parts);
+	if (!made.success) throw made.error;
+	writeTalk({ talk: made.data, voice, place: askedTalkPlace(directory) });
+	return made.data;
+}
+
 export {
 	KEPT_TALKS,
 	TALK_FILE,
 	TalkFileError,
 	askedTalkPlace,
+	freshTalkPlace,
+	keepTalk,
 	readTalk,
 	requireFreshPlace,
 	stateTalkPlace,

@@ -14,14 +14,14 @@
 // nothing now is reported as an ambiguity rather than passed on as though an
 // agent could act on it.
 
-import { comparedWith, compareVariants, type VariantComparison } from "@archboard/board/comparison";
+import { comparedWith, compareVariants } from "@archboard/board/comparison";
 import {
 	currentVariant,
 	findVariant,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { findView, overviewLines, scopedContent, type OverviewLine } from "@archboard/board/views";
+import { findView, overviewLines, scopedContent } from "@archboard/board/views";
 import { subjectsOf, type SubjectKind, type VariantContent } from "@archboard/board/content";
 import { everyStep, stepWords } from "@archboard/board/flow";
 import type {
@@ -36,7 +36,9 @@ import {
 	describeVariant,
 	unbuiltSentence,
 } from "#server/rules/semantic-context/board-description.ts";
-import type { SemanticPaneContext } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** What the board says, and anything about the reading that was not right. */
 interface BoardContext {
@@ -296,7 +298,7 @@ function unreadAndUnbuilt(board: SemanticBoard, mismatch: string | null): BoardC
 function resolvedSelection(
 	pane: SemanticPaneContext | null,
 	subjects: ReadonlyMap<string, NamedSubject>,
-	lines: readonly OverviewLine[],
+	lines: ReturnType<typeof overviewLines>,
 ): { selection: SemanticSubjectInput[]; ambiguity: string[] } {
 	const selection: SemanticSubjectInput[] = [];
 	const ambiguity: string[] = [];
@@ -321,7 +323,7 @@ function resolvedSelection(
  * @param id The picked id.
  * @returns The ids.
  */
-function pickedIds(lines: readonly OverviewLine[], id: string): readonly string[] {
+function pickedIds(lines: ReturnType<typeof overviewLines>, id: string): readonly string[] {
 	return lines.find(({ line }) => line.id === id)?.joins.map((edge) => edge.id) ?? [id];
 }
 
@@ -355,7 +357,7 @@ function readingView(
  * @returns The differences.
  */
 function differencesOf(
-	comparison: VariantComparison,
+	comparison: ReturnType<typeof compareVariants>,
 	subjects: ReadonlyMap<string, NamedSubject>,
 	against: ReadonlyMap<string, NamedSubject>,
 ): SemanticArchitectureInput["differences"] {

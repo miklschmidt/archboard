@@ -1,7 +1,6 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { use } from "react";
 
-import type { DrillDown } from "@archboard/board/content";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import {
 	drillPlace,
@@ -11,6 +10,9 @@ import {
 import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import type { SemanticBoardListing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /**
  * Where a drill-down drawn in this pane's vault leads.
