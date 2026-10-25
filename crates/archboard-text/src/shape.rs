@@ -36,7 +36,7 @@ pub struct Glyph {
 
 /// A run shaped: its glyphs in the order they are drawn, left to right, and
 /// how far the pen moves over all of them, in the units of its face.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Shaped {
     /// The glyphs, placed.
     pub glyphs: Vec<Glyph>,
@@ -47,6 +47,22 @@ pub struct Shaped {
 }
 
 impl Shaped {
+    /// Append a piece at the pen, with its clusters relative to the whole run.
+    fn append(&mut self, piece: &Shaped, start: usize) {
+        let offset = self.advance;
+        self.glyphs.extend(piece.glyphs.iter().map(|glyph| Glyph {
+            x: units(i64::from(glyph.x) + offset),
+            ..*glyph
+        }));
+        self.clusters.extend(
+            piece
+                .clusters
+                .iter()
+                .map(|&(cluster, advance)| (cluster + start, advance)),
+        );
+        self.advance += piece.advance;
+    }
+
     /// How far the pen moves over the glyphs whose clusters begin before a
     /// byte of the words.
     pub(crate) fn advance_before(&self, byte: usize) -> i64 {
@@ -84,30 +100,40 @@ pub fn shape(face: Face, words: &str) -> Rc<Shaped> {
 
 /// Some words shaped in a face, each piece in the face that has its glyphs.
 fn shape_now(face: Face, words: &str) -> Shaped {
+    if words.contains('\t') {
+        return shape_with_tabs(face, words);
+    }
     let pieces = pieces(face, words);
     if let [(only, _)] = pieces.as_slice() {
         return shape_piece(*only, words);
     }
-    let mut shaped = Shaped {
-        glyphs: Vec::new(),
-        advance: 0,
-        clusters: Vec::new(),
-    };
+    let mut shaped = Shaped::default();
     let mut ends = pieces.iter().map(|&(_, start)| start).skip(1);
     for &(piece_face, start) in &pieces {
         let end = ends.next().unwrap_or(words.len());
         let piece = shape_piece(piece_face, &words[start..end]);
-        shaped.glyphs.extend(piece.glyphs.iter().map(|glyph| Glyph {
-            x: units(i64::from(glyph.x) + shaped.advance),
-            ..*glyph
-        }));
-        shaped.clusters.extend(
-            piece
-                .clusters
-                .iter()
-                .map(|&(cluster, advance)| (cluster + start, advance)),
-        );
-        shaped.advance += piece.advance;
+        shaped.append(&piece, start);
+    }
+    shaped
+}
+
+/// Shape tabs as movement to the next eight-space stop, without an ink glyph.
+fn shape_with_tabs(face: Face, words: &str) -> Shaped {
+    let stop = shape(face, " ").advance * 8;
+    let mut shaped = Shaped::default();
+    let mut start = 0;
+    for (index, piece) in words.split('\t').enumerate() {
+        if index > 0 {
+            let advance = if stop > 0 {
+                stop - shaped.advance.rem_euclid(stop)
+            } else {
+                0
+            };
+            shaped.clusters.push((start - 1, units(advance)));
+            shaped.advance += advance;
+        }
+        shaped.append(&shape_now(face, piece), start);
+        start += piece.len() + 1;
     }
     shaped
 }
