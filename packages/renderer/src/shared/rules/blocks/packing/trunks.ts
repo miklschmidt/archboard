@@ -187,12 +187,6 @@ class TrunkRouter {
 	) {}
 
 	/**
-	 * Whether the block's own ports are pins trunks leave into the block, or
-	 * free points, for a block too tight for a trunk to turn into a pin.
-	 */
-	directed = true;
-
-	/**
 	 * Where on its obstacle a pinned end stands, and which way it leaves: a
 	 * pin on a packed block's edge leaves outward, the block's own port
 	 * inward, so no trunk reaches either by running along an edge.
@@ -236,10 +230,13 @@ class TrunkRouter {
 	 * middle of an own port as a free point when the ports are not directed.
 	 * @param at The line end.
 	 * @param obstacles Each obstacle's index in the router's scene.
+	 * @param directed Whether the block's own ports are pins trunks leave
+	 * into the block, or free points, for a block too tight for a trunk to
+	 * turn into a pin.
 	 * @returns The end's kind, obstacle, point and the way it leaves.
 	 */
-	endOf(at: string, obstacles: ReadonlyMap<string, number>): number[] {
-		if (!this.directed && this.block.ports.has(at)) {
+	endOf(at: string, obstacles: ReadonlyMap<string, number>, directed: boolean): number[] {
+		if (!directed && this.block.ports.has(at)) {
 			const box = this.boxes.get(at)!;
 			return [FREE, -1, box.x + box.width / 2, box.y + box.height / 2, -1];
 		}
@@ -251,30 +248,41 @@ class TrunkRouter {
 
 	/**
 	 * Route every trunk around the packed blocks: into the block's own ports
-	 * as pins, or, where the router finds no route that way, to them as free
-	 * points, and a trunk it still finds none for as a plain dogleg.
+	 * as pins, or, where the router finds no route that way for some trunk,
+	 * every trunk to them as free points, and a trunk it still finds none for
+	 * as a plain dogleg.
 	 * @returns Each line's points, by key, from its source end.
 	 */
 	route(): Map<string, Point[]> {
-		const lines = this.routeOnce();
-		if (lines !== undefined) return lines;
-		this.directed = false;
-		return this.routeOnce() ?? this.routeOnce(true)!;
+		const lines = [...this.block.lines.values()];
+		const pinned = this.routed(lines, true);
+		const routes = pinned.some((points) => points.length === 0)
+			? this.routed(lines, false)
+			: pinned;
+		return new Map(
+			lines.map((line, index) => {
+				const routed = routes[index]!;
+				const route =
+					routed.length === 0 ? dogleg(this.pinPoint(line.tail), this.pinPoint(line.head)) : routed;
+				return [line.key, line.from === line.tail ? route : route.toReversed()];
+			}),
+		);
 	}
 
 	/**
-	 * The scene `routeTrunks` reads: the router's parameters, every obstacle
-	 * (the packed blocks, the header and, directed, the block's own ports),
-	 * and each trunk's two ends.
+	 * Every trunk as the router routes it, the router given its parameters,
+	 * every obstacle (the packed blocks, the header and, directed, the block's
+	 * own ports) and each trunk's two ends.
 	 * @param lines The trunks, in the order they are routed.
-	 * @returns The flat scene.
+	 * @param directed Whether the block's own ports are pins or free points.
+	 * @returns Each trunk's points, in order; none where the router found no route.
 	 */
-	sceneOf(lines: readonly Line[]): Float64Array {
+	routed(lines: readonly Line[], directed: boolean): Point[][] {
 		const header = this.block.header === undefined ? [] : [headerOf(this.block)];
-		const owned = this.directed ? [...this.block.ports.keys()] : [];
+		const owned = directed ? [...this.block.ports.keys()] : [];
 		const ids = [...this.block.items, ...header, ...owned];
 		const obstacles = new Map(ids.map((id, index) => [id, index]));
-		return new Float64Array([
+		const scene = new Float64Array([
 			TRUNK_CLEARANCE,
 			LANE,
 			TRUNK_TURN,
@@ -286,30 +294,11 @@ class TrunkRouter {
 			}),
 			lines.length,
 			...lines.flatMap((line) => [
-				...this.endOf(line.tail, obstacles),
-				...this.endOf(line.head, obstacles),
+				...this.endOf(line.tail, obstacles, directed),
+				...this.endOf(line.head, obstacles, directed),
 			]),
 		]);
-	}
-
-	/**
-	 * Route every trunk once, the block's own ports as pins or free points.
-	 * @param anyway Whether a trunk the router finds no route for takes a plain dogleg.
-	 * @returns Each line's points, or nothing when the router found no route
-	 * for some trunk and a dogleg was not asked for.
-	 */
-	routeOnce(anyway = false): Map<string, Point[]> | undefined {
-		const lines = [...this.block.lines.values()];
-		const routes = routesOf(routeTrunks(this.sceneOf(lines)));
-		if (!anyway && routes.some((points) => points.length === 0)) return undefined;
-		return new Map(
-			lines.map((line, index) => {
-				const routed = routes[index]!;
-				const route =
-					routed.length === 0 ? dogleg(this.pinPoint(line.tail), this.pinPoint(line.head)) : routed;
-				return [line.key, line.from === line.tail ? route : route.toReversed()];
-			}),
-		);
+		return routesOf(routeTrunks(scene));
 	}
 }
 
