@@ -4,12 +4,12 @@ use crate::drawing::Node;
 use crate::geometry::Rect;
 use crate::markup::{Markup, group, lines};
 use crate::paint::Ctx;
-use crate::paint::appearance::{appearance_attributes, card_look, tray_look, type_chip};
-use crate::paint::cards::halo;
-use crate::paint::design::{ARCHITECTURE_CARD_PADDING, BAND_RADIUS, CARD_THICKNESS, SLAB_RADIUS};
-use crate::paint::far_card::{NearCard, paint_card_views, words_in};
+use crate::paint::appearance::{appearance_attributes, tray_look};
+use crate::paint::cards::{halo, paint_slab_card};
+use crate::paint::design::{ARCHITECTURE_CARD_PADDING, BAND_RADIUS, CARD_THICKNESS};
+use crate::paint::far_card::{NearCard, Part, paint_card_views, words_in};
 use crate::paint::palette::Palette;
-use crate::paint::slab::{Lift, slab, slab_seat, slab_shadow};
+use crate::paint::slab::{Lift, slab_seat, slab_shadow};
 use crate::paint::standing::{
     PART_ATTRIBUTE, standing_palette, standing_pin, subject, warning_badge,
 };
@@ -31,41 +31,24 @@ pub fn paint_measured_card(
     kind: SubjectKind,
 ) -> Markup {
     let rect = placed.bounds;
-    let styles = Styles::of(palette);
-    let words = standing_palette(palette, standing);
-    let look = card_look(appearance.body_color, palette);
-    let node = &placed.measured.node;
-    group(
-        Role::Card,
-        subject(kind, &node.id, standing),
-        appearance_attributes(appearance),
-        lines(vec![
-            slab_seat(rect, SLAB_RADIUS),
-            if standing == Some(Standing::Removed) {
-                slab_shadow(rect, SLAB_RADIUS, Lift::Card, palette, standing)
-            } else {
-                Markup::new()
-            },
-            halo(rect, SLAB_RADIUS, &styles, standing),
-            slab(rect, &look, palette, standing, cut),
-            paint_card_views(
-                ctx,
-                &node.name,
-                node.responsibility.as_deref(),
-                rect,
-                appearance.drill,
-                &words,
-                NearCard {
-                    chip: type_chip(0.0, 0.0, appearance, palette, standing, ctx.icons),
-                    chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
-                    chip_y: rect.y + ARCHITECTURE_CARD_PADDING,
-                    words: words_in(&placed.measured.runs, rect, &words),
-                },
-            ),
-            standing_pin(rect, standing, palette),
-            warning_badge(rect, unsettled, palette),
-        ]),
-    )
+    let part = Part {
+        kind,
+        node: &placed.measured.node,
+        rect,
+        appearance,
+        standing,
+        unsettled,
+    };
+    let near = NearCard {
+        chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
+        chip_y: rect.y + ARCHITECTURE_CARD_PADDING,
+        words: words_in(
+            &placed.measured.runs,
+            rect,
+            &standing_palette(palette, standing),
+        ),
+    };
+    paint_slab_card(ctx, &part, palette, cut, near)
 }
 
 /// A containing frame below its children and all connections: a neutral well
@@ -106,32 +89,35 @@ pub fn paint_measured_header(
     unsettled: bool,
     appearance: &NodeAppearance,
 ) -> Markup {
-    let words = standing_palette(palette, standing);
     let header = header_of(placed.bounds, placed.measured.header_height);
     let face = Rect {
         height: header.height - CARD_THICKNESS,
         ..header
     };
     let node = &placed.measured.node;
+    let part = Part {
+        kind: SubjectKind::Region,
+        node,
+        rect: face,
+        appearance,
+        standing,
+        unsettled,
+    };
+    let near = NearCard {
+        chip_x: header.x + ARCHITECTURE_CARD_PADDING,
+        chip_y: header.y + ARCHITECTURE_CARD_PADDING,
+        words: words_in(
+            &placed.measured.runs,
+            placed.bounds,
+            &standing_palette(palette, standing),
+        ),
+    };
     group(
         Role::Header,
         subject(SubjectKind::Region, &node.id, standing),
         appearance_attributes(appearance).set(PART_ATTRIBUTE, "header"),
         lines(vec![
-            paint_card_views(
-                ctx,
-                &node.name,
-                node.responsibility.as_deref(),
-                face,
-                appearance.drill,
-                &words,
-                NearCard {
-                    chip: type_chip(0.0, 0.0, appearance, palette, standing, ctx.icons),
-                    chip_x: header.x + ARCHITECTURE_CARD_PADDING,
-                    chip_y: header.y + ARCHITECTURE_CARD_PADDING,
-                    words: words_in(&placed.measured.runs, placed.bounds, &words),
-                },
-            ),
+            paint_card_views(ctx, &part, palette, near),
             warning_badge(header, unsettled, palette),
         ]),
     )
