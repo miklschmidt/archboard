@@ -63,14 +63,20 @@ impl Shaped {
         self.advance += piece.advance;
     }
 
-    /// How far the pen moves over the glyphs whose clusters begin before a
-    /// byte of the words.
-    pub(crate) fn advance_before(&self, byte: usize) -> i64 {
-        self.clusters
-            .iter()
-            .filter(|(cluster, _)| *cluster < byte)
-            .map(|(_, advance)| i64::from(*advance))
-            .sum()
+    /// Advances before ascending byte positions, with each cluster counted once.
+    pub(crate) fn advances_before(&self, bytes: impl Iterator<Item = usize>) -> Vec<i64> {
+        let mut clusters = self.clusters.clone();
+        clusters.sort_by_key(|&(cluster, _)| cluster);
+        let mut clusters = clusters.into_iter().peekable();
+        let mut advance = 0;
+        bytes
+            .map(|byte| {
+                while let Some((_, next)) = clusters.next_if(|&(cluster, _)| cluster < byte) {
+                    advance += i64::from(next);
+                }
+                advance
+            })
+            .collect()
     }
 }
 

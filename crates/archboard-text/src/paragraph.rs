@@ -60,8 +60,8 @@ struct Hard {
     /// before it, each shaped on its own, and of the part of its own word
     /// before it, each to a hundredth of a unit.
     before: Vec<f64>,
-    /// Whether a line may end at each bound without breaking a word.
-    opens: Vec<bool>,
+    /// The bounds where a line can end without breaking a word.
+    opens: Vec<usize>,
     /// The bound the words before each bound end at, the spaces before it left out.
     visible: Vec<usize>,
 }
@@ -91,12 +91,14 @@ impl Hard {
             };
             return (empty, start);
         }
-        let furthest = ((start + 1)..=self.last())
-            .filter(|&at| self.opens[at])
+        let endings = &self.opens[self.opens.partition_point(|&at| at <= start)..];
+        let furthest = endings
+            .iter()
+            .copied()
             .take_while(|&at| fits(start, self.visible_end(start, at)))
             .last();
         furthest.map_or_else(
-            || self.broken_line(start, fits),
+            || Self::broken_line(start, endings[0], fits),
             |end| {
                 let whole = Span {
                     start,
@@ -110,15 +112,19 @@ impl Hard {
 
     /// The line that starts with a word that does not fit on its own: as many
     /// of its graphemes as fit, and always one.
-    fn broken_line(&self, start: usize, fits: &impl Fn(usize, usize) -> bool) -> (Span, usize) {
+    fn broken_line(
+        start: usize,
+        word_end: usize,
+        fits: &impl Fn(usize, usize) -> bool,
+    ) -> (Span, usize) {
         let mut end = start + 1;
-        while end < self.last() && !self.opens[end] && fits(start, end + 1) {
+        while end < word_end && fits(start, end + 1) {
             end += 1;
         }
         let broken = Span {
             start,
             visible: end,
-            broken: !self.opens[end],
+            broken: end < word_end,
         };
         (broken, end)
     }
@@ -144,8 +150,8 @@ impl Hard {
     }
 }
 
-/// Whether a line may end at each bound without breaking a word.
-fn opens(words: &str, bounds: &[usize]) -> Vec<bool> {
+/// The bounds where a line can end without breaking a word.
+fn opens(words: &str, bounds: &[usize]) -> Vec<usize> {
     let mut opens = vec![false; bounds.len()];
     for (at, _) in linebreaks(words) {
         if let Ok(index) = bounds.binary_search(&at) {
@@ -158,6 +164,10 @@ fn opens(words: &str, bounds: &[usize]) -> Vec<bool> {
         opens[index] = tailored(previous, next, opens[index]);
     }
     opens
+        .into_iter()
+        .enumerate()
+        .filter_map(|(at, open)| open.then_some(at))
+        .collect()
 }
 
 /// Whether a line may end between two graphemes, where the line breaking
@@ -234,19 +244,19 @@ fn advances_before(face: Face, size: f64, words: &str, bounds: &[usize]) -> Vec<
     let set = |units: i64| hundredths(scaled(units, face, size));
     let mut before = Vec::with_capacity(bounds.len());
     let mut base = 0.0;
-    let mut bound = bounds.iter().peekable();
     for (start, end) in segments(words) {
         let shaped = shape(face, &words[start..end]);
-        while let Some(&&at) = bound.peek() {
-            if at >= end {
-                break;
-            }
-            before.push(base + set(shaped.advance_before(at - start)));
-            bound.next();
-        }
+        let end_bound = bounds.partition_point(|&at| at < end);
+        let positions = bounds[before.len()..end_bound].iter().map(|&at| at - start);
+        before.extend(
+            shaped
+                .advances_before(positions)
+                .into_iter()
+                .map(|units| base + set(units)),
+        );
         base += set(shaped.advance);
     }
-    before.extend(bound.map(|_| base));
+    before.resize(bounds.len(), base);
     before
 }
 
