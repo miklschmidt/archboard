@@ -22,21 +22,18 @@ const MOST_COLUMNS: usize = 4;
 /// How much better a fold must fit the page than the block unfolded.
 const WORTH_FOLDING: f64 = 1.1;
 
-/// Every way to cut some bands into two to `MOST_COLUMNS` runs, as the index
-/// each later run starts at.
-fn cuts_of(count: usize, from: usize, chosen: &[usize]) -> Vec<Vec<usize>> {
+/// Visit each fold at the permitted boundaries, in search order, without
+/// retaining the candidates. Each cut names the band that starts a later column.
+fn visit_cuts(places: &[usize], chosen: &[usize], visit: &mut impl FnMut(&[usize])) {
     if chosen.len() + 1 >= MOST_COLUMNS {
-        return Vec::new();
+        return;
     }
-    let mut cuts = Vec::new();
-    for at in from..count {
+    for (index, &at) in places.iter().enumerate() {
         let mut next = chosen.to_vec();
         next.push(at);
-        let later = cuts_of(count, at + 1, &next);
-        cuts.push(next);
-        cuts.extend(later);
+        visit(&next);
+        visit_cuts(&places[index + 1..], &next, visit);
     }
-    cuts
 }
 
 /// The width of a run of bands: from its leftmost item to its rightmost.
@@ -160,10 +157,11 @@ fn cluster_spans(block: &Block, bands: &[&Band]) -> Vec<(usize, usize)> {
     spans.into_values().collect()
 }
 
-/// Whether cuts split a cluster: a column holds a container or region whole.
-fn splits(cuts: &[usize], spans: &[(usize, usize)]) -> bool {
-    cuts.iter()
-        .any(|&cut| spans.iter().any(|&(low, high)| low < cut && cut <= high))
+/// The boundaries between bands that keep every container and region whole.
+fn cut_points(count: usize, spans: &[(usize, usize)]) -> Vec<usize> {
+    (1..count)
+        .filter(|&cut| !spans.iter().any(|&(low, high)| low < cut && cut <= high))
+        .collect()
 }
 
 /// The runs of bands that score best folded, when they beat the bands
@@ -177,14 +175,11 @@ fn best_runs<'b>(
     unfolded: &Weighed,
 ) -> Option<(Vec<Vec<&'b Band>>, Weighed)> {
     let crossings = crossings_of(laid.lines.values().map(Vec::as_slice));
-    let spans = cluster_spans(block, bands);
+    let places = cut_points(bands.len(), &cluster_spans(block, bands));
     let mut best: Option<(Vec<Vec<&'b Band>>, Weighed)> = None;
-    for cuts in cuts_of(bands.len(), 1, &[]) {
-        if splits(&cuts, &spans) {
-            continue;
-        }
+    visit_cuts(&places, &[], &mut |cuts| {
         let mut starts = vec![0];
-        starts.extend(&cuts);
+        starts.extend(cuts);
         let runs: Vec<Vec<&Band>> = starts
             .iter()
             .enumerate()
@@ -206,7 +201,7 @@ fn best_runs<'b>(
         {
             best = Some((runs, weighed));
         }
-    }
+    });
     best.filter(|(_, weighed)| score_of(weighed) > score_of(unfolded) * WORTH_FOLDING)
 }
 
@@ -436,4 +431,28 @@ fn part(
         },
     );
     key
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn folds_keep_clusters_whole_in_the_order_that_breaks_score_ties() {
+        let places = cut_points(9, &[(0, 1), (2, 4), (5, 6), (7, 8)]);
+        let mut folds = Vec::new();
+        visit_cuts(&places, &[], &mut |cuts| folds.push(cuts.to_vec()));
+        assert_eq!(
+            folds,
+            vec![
+                vec![2],
+                vec![2, 5],
+                vec![2, 5, 7],
+                vec![2, 7],
+                vec![5],
+                vec![5, 7],
+                vec![7],
+            ]
+        );
+    }
 }
