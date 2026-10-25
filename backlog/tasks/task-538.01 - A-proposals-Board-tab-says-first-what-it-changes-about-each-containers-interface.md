@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:05:00Z'
-updated_date: '2026-10-25T17:41:00Z'
+updated_date: '2026-10-25T17:50:00Z'
 labels:
   - compare
   - ui
@@ -41,3 +41,14 @@ The first slice of TASK-538. An interface change costs every caller, so ADR 0044
 4. Tests: a rendered stage-harness test on a draft read against current (rows by container, part and move; no change; current shows none; choosing picks).
 5. Docs: the Board tab region 1 text in operator-canvas-shell.md and the Changes section of pane-sidebar-hierarchy.md.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built as planned, with these deviations:
+- The reading holds every variant content by id (contents), and rules/semantic-board-canvas/board/interface-changes.ts derives the list with compareInterfaces; SemanticBoardPanel passes it to InterfaceChanges as the children of SemanticChanges, before the counts. board-document.ts stays under the 600-line limit.
+- The proposal drops the planned edge Resolve board meaning -> List interface changes: the derivation lives in a rules file no part binds, and the list reaches the component through Render stage states.
+- Moved parts are indented under their container; checked in a dark screenshot of Browser application@TASK-319 after TASK-482.07 on the served checkout.
+- Code check: archboard check --code --variant TASK-538.01 against the run without --variant shows no difference.
+- The footprint waits for the adoption of TASK-537.01, because TASK-538.01 branches from that proposal.
+<!-- SECTION:NOTES:END -->

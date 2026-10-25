@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:03:00Z'
-updated_date: '2026-10-25T17:11:00Z'
+updated_date: '2026-10-25T17:36:00Z'
 labels:
   - design-questions
   - ui
@@ -46,3 +46,17 @@ It also adds the way a pane asks the agent a question. Today only the diagnostic
 6. Tests: the board rule; a rendered stage-harness test of the region (count, rows, choose picks, ask sends one message naming the ids, no control without an ask); the message builder by ids and flags, not wording.
 7. Update the Board tab region lists in docs/design/operator-canvas-shell.md and pane-sidebar-hierarchy.md and in the SemanticBoardPanel header.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built as planned, with these deviations:
+- DesignQuestions takes the answers from SemanticBoardPanel, which draws the region only when passThroughEntryPoints(content) has a result.
+- No unit test of deletionQuestion: the rendered test sends the message and checks the vault, board, variant, part id and container id, and repair.test.ts already owns the quoting of archboardIn. A hook test (ask-from-pane.test.tsx) holds the order activate, refresh, ask, also when the switch fails. useAskFromPane now takes the transport and the ask, not the whole workbench.
+- The real page showed the Ask control pushed past the sidebar edge; the row now uses the walkthrough row grid (4f80740d9).
+- Board viewer@TASK-537.01: List design questions binds DesignQuestions.tsx as a whole file, because Render stage states binds the directory and claimed the code outside the bound symbol (RELATIONSHIP_UNDRAWN to Pane ask). It gains List design questions -> Pane vault. Two planned edges are dropped: List design questions -> Ask the picture to show (usePeekControl lives in hooks/use-peek.ts, which no part binds, so ANCHOR_MISMATCH) and Browser client -> Pane ask (PaneAskContext lives in state/pane-ask.ts, unbound on this board; Browser application draws who provides it, as Board viewer already leaves Pane vault).
+- Browser application@TASK-537.01: the pane ask edge starts at Pane composition (ApplicationPane.tsx), not Application composition, after the footprint named Pane composition changed and not named. Application composition -> Shown conversation is now anchored at Application.tsx conversationActivation.
+- Code check: archboard check --code --variant TASK-537.01 against the same run without --variant shows no difference.
+- Footprint read against base 0fa07a5fb (the commit before f50c64dc3). Board viewer: namedAndChanged Render stage states, List design questions, Pane ask; changedNotNamed none; namedNotChanged Pane vault, named only by a relationship. Browser application: namedAndChanged Pane composition, Pane ask; changedNotNamed none; namedNotChanged Application composition and Shown conversation, named only by relationships. Application.tsx, use-pane-views.ts, use-page-recording.ts and use-ask-from-pane.ts are bound by no part of either board.
+- Criterion 6: on this checkout Command interface (current TASK-515) has 14 results, the 13 of Commands and runCommand in Command contract; archboard semantic inspect agrees per container. The live page showed 15 because the repository chosen checkout is the feat-reusable-codex-workbench worktree, whose board differs; the rule gives 15 on that file too.
+<!-- SECTION:NOTES:END -->
