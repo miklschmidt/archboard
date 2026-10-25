@@ -209,7 +209,9 @@ draws one.
      the board's own statement of its scope, which C4 asks every diagram to
      make [11]. When the variant has none, nothing stands in for it.
    - _Changes_, only on a variant that is read against another (task 2). It
-     names the variant it is read against and gives one row for each standing
+     names the variant it is read against. Then it lists, before the counts,
+     each container whose interface changed and each part that moved in it
+     (TASK-538.01, ADR 0044). Then it gives one row for each standing
      that occurs: the pin the picture draws on the corner of such a subject
      [8], the word, and how many subjects stand so [22]. The control that shows
      or hides the marks sits under the rows. While the marks are hidden, the

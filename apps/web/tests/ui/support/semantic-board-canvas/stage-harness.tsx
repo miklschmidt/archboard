@@ -565,4 +565,5 @@ export {
 	NO_SUCH_BOARD,
 	UNREADABLE,
 	drawing,
+	pickablePicture,
 } from "#tests/ui/support/semantic-board-canvas/render-answers.ts";

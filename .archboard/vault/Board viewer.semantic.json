@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 137,
+	"version": 138,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-25T17:41:33.939Z",
+	"updatedAt": "2026-10-25T17:46:09.441Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -59576,20 +59576,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardPanel.tsx",
 							"symbol": "InterfaceChanges"
-						}
-					},
-					{
-						"id": "jqu9GoRz",
-						"order": 127000,
-						"from": "ntOE7caV",
-						"to": "3Ix8FkX7",
-						"kind": "data",
-						"label": "what each container's interface changed",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/InterfaceChanges.tsx",
-							"symbol": "interfaceChangesOf"
 						}
 					}
 				],

@@ -5,7 +5,8 @@
 // docs/design/pane-sidebar-hierarchy.md), one region per question:
 //
 // 1. What is this, and what does it change? The variant's own summary of its
-//    scope, and for a variant read against another the key to its marks with how
+//    scope, and for a variant read against another what it changed about each
+//    container's interface (TASK-538.01), then the key to its marks with how
 //    much each one covers.
 // 2. How do I read it? The author's walkthroughs first, the way into a first
 //    read; then the views, the reader's own; then the groups, the concerns the
@@ -28,6 +29,7 @@ import type { JSX, ReactNode } from "react";
 import { passThroughEntryPoints } from "@archboard/board/container-interface";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { DesignQuestions } from "#ui/components/semantic-board-canvas/DesignQuestions.tsx";
+import { InterfaceChanges } from "#ui/components/semantic-board-canvas/InterfaceChanges.tsx";
 import { SemanticChanges } from "#ui/components/semantic-board-canvas/SemanticChanges.tsx";
 import { SemanticEngineBar } from "#ui/components/semantic-board-canvas/SemanticEngineBar.tsx";
 import { SemanticGroupList } from "#ui/components/semantic-board-canvas/SemanticGroupList.tsx";
@@ -42,6 +44,7 @@ import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-wal
 import { keyOf, type AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
+import { interfaceChangesOf } from "#ui/rules/semantic-board-canvas/board/interface-changes.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
@@ -121,12 +124,18 @@ function changes(props: SemanticBoardPanelProps): ReactNode {
 	if (found === null) {
 		return null;
 	}
+	const changed =
+		props.reading === null ? null : interfaceChangesOf(props.reading, found.against.id);
 	return (
 		<SemanticChanges
 			changes={found}
 			comparison={props.comparison}
 			onComparisonChange={props.onComparisonChange}
-		/>
+		>
+			{changed !== null && (
+				<InterfaceChanges changed={changed} look={props.look} onShow={props.onShow} />
+			)}
+		</SemanticChanges>
 	);
 }
 

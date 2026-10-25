@@ -25,7 +25,7 @@
 // is true either way. It is the section's own name: a heading "Changes" over a
 // line that said what they were against said the one thing twice (TASK-388).
 
-import { useId, type JSX } from "react";
+import { useId, type JSX, type ReactNode } from "react";
 
 import { Checkbox } from "@archboard/ui-kit/components";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -49,17 +49,21 @@ interface SemanticChangesProps {
 	 * @param comparison Whether to draw it.
 	 */
 	readonly onComparisonChange: (comparison: boolean) => void;
+	/** What is said before the counts: what the variant changed about each interface. */
+	readonly children?: ReactNode;
 }
 
 /**
  * The key and the count of what this variant changes, and the control that
- * draws the comparison.
+ * draws the comparison. What it changed about each interface comes first,
+ * because an interface change costs every caller (ADR 0044).
  * @param props What changed, and whether the picture shows it.
  * @returns The section.
  */
 function SemanticChanges(props: SemanticChangesProps): JSX.Element {
 	return (
 		<SidebarSection title={`Compared with ${props.changes.against.name}`} slot="semantic-changes">
+			{props.children}
 			<ChangeKey
 				counts={markCounts(props.changes.standing)}
 				comparison={props.comparison}

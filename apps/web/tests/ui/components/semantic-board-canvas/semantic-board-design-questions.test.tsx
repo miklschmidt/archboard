@@ -16,6 +16,7 @@ import {
 	PANE_VAULT,
 	mountStage,
 	openSidebarTab,
+	pickablePicture,
 	server,
 	settle,
 	surface,
@@ -73,57 +74,15 @@ function boardOf(edges: readonly unknown[]): Record<string, unknown> {
 	};
 }
 
-/** Where every drawn subject sits: one box, since nothing here measures. */
-const BOX = { x: 0, y: 0, width: 10, height: 10 };
-
-/**
- * One drawn subject of the picture.
- * @param kind What it is.
- * @param id Its id.
- * @returns The markup.
- */
-function drawn(kind: string, id: string): string {
-	return `<g data-semantic-kind="${kind}" data-semantic-id="${id}"><path class="ab-halo"></path><rect width="10" height="10"></rect></g>`;
-}
-
-/**
- * Where some subjects sit.
- * @param ids The subjects.
- * @returns The atlas entries.
- */
-function placed(ids: readonly string[]): Record<string, typeof BOX> {
-	return Object.fromEntries(ids.map((id) => [id, BOX]));
-}
-
-/**
- * A picture of the variant, whose subjects can be picked.
- * @returns The render route's success body.
- */
-function picture(): Record<string, unknown> {
-	const containers = new Set([CHECKOUT, SHIPPING]);
-	const cards = NODES.map((node) => node.id).filter((id) => !containers.has(id));
-	const edges = EDGES.map((edge) => edge.id);
-	const svg = [
-		...[...containers].map((id) => drawn("region", id)),
-		...cards.map((id) => drawn("node", id)),
-		...edges.map((id) => drawn("edge", id)),
-	].join("");
-	return {
-		success: true,
-		board: "pipeline",
-		version: 1,
-		variant: { id: "v1", name: "as built", lifecycle: "current" },
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		width: 400,
-		height: 300,
-		svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">${svg}</svg>`,
-		drawn: { nodes: [], edges: [], flows: [], steps: [] },
-		atlas: { nodes: placed(cards), edges: placed(edges), regions: placed([...containers]) },
-	};
-}
+/** The picture of the variant, whose subjects can be picked. */
+const PICTURE = pickablePicture(
+	{
+		regions: [CHECKOUT, SHIPPING],
+		nodes: NODES.map((node) => node.id).filter((id) => id !== CHECKOUT && id !== SHIPPING),
+		edges: EDGES.map((edge) => edge.id),
+	},
+	{ variant: { id: "v1", name: "as built", lifecycle: "current" }, changes: null },
+);
 
 /**
  * Put the board in front of a pane whose selection is held above it, and open its Board tab.
@@ -135,7 +94,7 @@ async function served(
 	edges: readonly unknown[] = EDGES,
 ): Promise<void> {
 	server.documents["pipeline"] = boardOf(edges);
-	server.reply = { status: 200, body: picture() };
+	server.reply = { status: 200, body: PICTURE };
 	mountStage(null, { live: true, ask });
 	await settle();
 	await settle();

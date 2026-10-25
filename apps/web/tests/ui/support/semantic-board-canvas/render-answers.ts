@@ -113,4 +113,83 @@ const EXPLAINED_BOARD = {
 	],
 };
 
-export { EXPLAINED_BOARD, NOTHING_DRAWN, NO_SUCH_BOARD, UNREADABLE, drawing };
+/** Where every subject of a pickable picture sits: one box, since nothing here measures. */
+const BOX = { x: 0, y: 0, width: 10, height: 10 };
+
+/** The subjects of a pickable picture, by how the picture draws them. */
+interface Drawn {
+	/** Containers, drawn as regions. */
+	readonly regions: readonly string[];
+	/** Cards. */
+	readonly nodes: readonly string[];
+	/** Relationships. */
+	readonly edges: readonly string[];
+}
+
+/**
+ * One subject of a pickable picture, with the ring a pick lights.
+ * @param kind How it is drawn.
+ * @param id Its id.
+ * @returns The markup.
+ */
+function group(kind: string, id: string): string {
+	return `<g data-semantic-kind="${kind}" data-semantic-id="${id}"><path class="ab-halo"></path><rect width="10" height="10"></rect></g>`;
+}
+
+/**
+ * Where some subjects sit.
+ * @param ids The subjects.
+ * @returns The atlas entries.
+ */
+function placed(ids: readonly string[]): Record<string, typeof BOX> {
+	return Object.fromEntries(ids.map((id) => [id, BOX]));
+}
+
+/**
+ * A picture of the pane's board in which every subject can be picked: each is
+ * drawn with the ring a pick lights, and the atlas places each in one box.
+ * @param drawn The subjects, by how they are drawn.
+ * @param answer What the answer says it is of: the variant, and how it differs
+ *   from the variant it is read against, or null when it is read against none.
+ * @param answer.variant The variant drawn.
+ * @param answer.changes How it differs, as the render route answers it.
+ * @returns The render route's success body.
+ */
+function pickablePicture(
+	drawn: Drawn,
+	answer: { readonly variant: Record<string, unknown>; readonly changes: unknown },
+): Record<string, unknown> {
+	const svg = [
+		...drawn.regions.map((id) => group("region", id)),
+		...drawn.nodes.map((id) => group("node", id)),
+		...drawn.edges.map((id) => group("edge", id)),
+	].join("");
+	return {
+		success: true,
+		board: "pipeline",
+		version: 1,
+		...answer,
+		view: null,
+		views: [],
+		waiting: null,
+		width: 400,
+		height: 300,
+		svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">${svg}</svg>`,
+		drawn: { nodes: [], edges: [], flows: [], steps: [] },
+		atlas: {
+			nodes: placed(drawn.nodes),
+			edges: placed(drawn.edges),
+			regions: placed(drawn.regions),
+		},
+	};
+}
+
+export {
+	EXPLAINED_BOARD,
+	NOTHING_DRAWN,
+	NO_SUCH_BOARD,
+	UNREADABLE,
+	drawing,
+	pickablePicture,
+	type Drawn,
+};

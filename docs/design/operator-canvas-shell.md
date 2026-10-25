@@ -102,7 +102,13 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
   1. **What is this, and what does it change?** The summary of the variant on
      screen, with no heading: the board's own statement of its scope. On a
      variant read against another, the changes: a heading that names the
-     variant it is compared with, one row for each standing that occurs with
+     variant it is compared with. Under it come the interface changes first
+     (TASK-538.01), because an interface change costs every caller (ADR 0044).
+     Each container whose interface changed is a row, followed by one row for
+     each part that moved, with how it moved: entry point added or removed, now
+     an entry point, now hidden, caller gained or lost. A proposal that changed
+     no interface says so. A row lights its part, and choosing it picks the
+     part. Then one row for each standing that occurs, with
      the pin the picture draws and how many subjects stand so, and the control
      that marks the changes on the picture. The counts are of what the picture
      draws, so a view in which nothing differs says so of the view and keeps

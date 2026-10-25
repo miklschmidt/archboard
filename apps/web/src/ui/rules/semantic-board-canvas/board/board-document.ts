@@ -18,17 +18,12 @@ import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
 import type { FlowStep, SemanticFlow } from "@archboard/board/flow";
 import type { SemanticView } from "@archboard/board/views";
-import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
-import type { VariantLifecycleSchema } from "@archboard/board/document";
-import type { z } from "zod";
-import type { VariantContent } from "@archboard/board/content";
-
-type SemanticWalkthrough = VariantContent["walkthroughs"][number];
-type Shelving = NonNullable<SemanticBoard["shelvings"]>[number];
-type Adoption = NonNullable<SemanticBoard["adoptions"]>[number];
-
-type VariantComparison = ReturnType<typeof compareVariants>;
-type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
+import type {
+	SemanticEdge,
+	SemanticNode,
+	SemanticWalkthrough,
+	VariantContent,
+} from "@archboard/board/content";
 
 /** One node, with the containment around it. */
 interface NodeSubject {
@@ -329,6 +324,8 @@ interface VariantReading {
 	readonly opens: string | null;
 	/** The board's level, as the board states it. */
 	readonly level: string;
+	/** Every variant of the board whole, by its id, before any view narrows it. */
+	readonly contents: ReadonlyMap<string, VariantContent>;
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
 	/** That variant whole, or null when the board has no such variant. */
@@ -439,7 +436,7 @@ function idItself(id: string): string {
 function readingOf(
 	family: Pick<
 		VariantReading,
-		"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+		"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level" | "contents"
 	>,
 	variant: SemanticVariant,
 ): VariantReading {
@@ -502,6 +499,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 		views: reading.board.views,
 		opens: named.ok ? named.variant.id : null,
 		level: reading.board.level,
+		contents: new Map(reading.board.variants.map((one) => [one.id, one.content])),
 	};
 	const opened = addressedVariant(reading.board, asked);
 	// The board reads even when the variant asked for is not one of its own: the
@@ -527,7 +525,7 @@ function nothingHeld(): SelectedSubject | undefined {
 /** A reading of a board whose asked-for variant is not one of its own. */
 const NOTHING_SHOWN: Omit<
 	VariantReading,
-	"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+	"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level" | "contents"
 > = Object.freeze({
 	showing: null,
 	variant: null,
