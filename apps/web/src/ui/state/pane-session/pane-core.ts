@@ -34,7 +34,7 @@ import {
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type {
 	BoardIdentity,

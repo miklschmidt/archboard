@@ -13,20 +13,22 @@ import {
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
 	type CodeTargetOpenRequest,
+} from "#shared/schemas/code-target-open.ts";
+import {
 	LINE_TOKEN,
 	OpenerSelectionSchema,
 	OpenerSettingsTestRequestSchema,
 	PATH_TOKEN,
 	type OpenerSelection,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 	type LocalCodeTarget,
 	type LocalCodeTargetResult,
 	type OtherRef,
-	githubUrlForBinding,
 } from "@archboard/code-binding/resolution";
+import { githubUrlForBinding } from "#server/projections/github-link.ts";
 import { addressedVariant } from "@archboard/board/document";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";

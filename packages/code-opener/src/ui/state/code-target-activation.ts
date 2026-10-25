@@ -7,7 +7,7 @@ import type {
 	CodeTargetNotice,
 	CodeTargetOpenFailure,
 	CodeTargetOpenSuccess,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/code-target-open.ts";
 import { openCodeTarget } from "#ui/clients/code-target-requests.ts";
 
 /** What an activation needs. */

@@ -4,9 +4,9 @@ import {
 	PATH_TOKEN,
 	type OpenerCommand,
 	type OpenerSelection,
-	isAbsoluteOrBareOpenerExecutable,
-	type CodeTargetFailureCode,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
+import { isAbsoluteOrBareOpenerExecutable } from "#shared/rules/opener-executable.ts";
+import type { CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
 
 interface OpenerPlanSuccess {
 	ok: true;

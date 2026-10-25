@@ -2,15 +2,14 @@
 // registered checkout, save it, or reset to the platform default. Pure state
 // over an injected api, so the dialog only renders and reports.
 
+import type { CodeTargetNotice, CodeTargetOpenFailure } from "#shared/schemas/code-target-open.ts";
 import type {
-	CodeTargetNotice,
-	CodeTargetOpenFailure,
 	OpenerSelection,
 	OpenerSelectionReply,
 	OpenerSettingsReply,
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
-} from "@archboard/code-binding/opening";
+} from "#shared/schemas/opener-settings.ts";
 import {
 	fetchOpenerSettings,
 	resetOpenerSettings,

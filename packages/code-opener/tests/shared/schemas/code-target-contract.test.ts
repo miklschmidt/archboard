@@ -2,15 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
 import { OpenerSelectionSchema } from "#shared/schemas/opener-settings.ts";
-import { buildInternalCodeTargetUrl } from "#shared/rules/internal-code-target-url.ts";
 import { isAbsoluteOrBareOpenerExecutable } from "#shared/rules/opener-executable.ts";
-
-describe("internal code-target URLs", () => {
-	test("spells board and element identity as the reserved open route", () => {
-		const url = buildInternalCodeTargetUrl({ board: "system/payments", element: "a b" });
-		expect(url).toBe("/api/code-targets/open?board=system%2Fpayments&element=a+b");
-	});
-});
 
 describe("opener selection", () => {
 	test("shares the absolute-or-bare executable rule with browser validation", () => {

@@ -11,7 +11,7 @@ import {
 } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@archboard/code-binding/opening";
+import { GitHubHttpsUrlSchema, type CodeTargetNotice } from "@archboard/code-opener/opening";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
 import { Button, buttonVariants, IconButton } from "@archboard/ui-kit/controls";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/rules/shell/contracts.ts";
@@ -56,7 +56,7 @@ function ReportedAction(props: ReportedActionProps): JSX.Element {
 
 /** Inputs for a GitHub link action. */
 interface GitHubActionProps {
-	action: Extract<CodeTargetNoticeAction, { kind: "github" }>;
+	action: Extract<CodeTargetNotice["actions"][number], { kind: "github" }>;
 }
 
 /**
