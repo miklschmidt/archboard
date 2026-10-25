@@ -40,8 +40,8 @@ import type {
 	StopWorkhorsesResult,
 } from "#runtime/protocol/coordinator-tool-contract/tool-results.ts";
 import {
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+	VOICE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type {
 	UnknownDynamicToolResponseSchema,
@@ -56,12 +56,12 @@ const COORDINATOR_DYNAMIC_DISPATCHERS = Object.freeze([
 	Object.freeze({
 		owner: COORDINATOR_TOOLS_OWNER,
 		namespace: "archboard_workhorse",
-		manifestHash: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+		manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
 	}),
 	Object.freeze({
 		owner: COORDINATOR_TOOLS_OWNER,
 		namespace: "archboard_voice",
-		manifestHash: ARCHBOARD_VOICE_MANIFEST_SHA256,
+		manifestHash: VOICE_TOOLS_MANIFEST_SHA256,
 	}),
 ] as const);
 

@@ -14,8 +14,8 @@ import {
 } from "#runtime/store/epoch/contract.ts";
 import { type CodexWorkhorseQueue } from "#runtime/services/workhorse-queue/contract.ts";
 import {
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOL_NAMESPACE,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	createIdentityAuthorities,
@@ -230,9 +230,9 @@ export function buildFixture(
 			threadId: coordinatorThreadId,
 			turnId: coordinatorTurnId,
 			callId: identity.decoder.adoptDynamicToolCallId("call-" + tool + "-" + callCount++),
-			namespace: ARCHBOARD_WORKHORSE_NAMESPACE.name,
+			namespace: WORKHORSE_TOOL_NAMESPACE.name,
 			tool,
-			manifestHash: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+			manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
 		});
 		currentCall = call;
 		return call;

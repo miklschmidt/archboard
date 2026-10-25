@@ -5,7 +5,7 @@ import {
 } from "#runtime/rules/host/tools.ts";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import { coordinatorDynamicTools } from "#runtime/rules/host/tools.ts";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { VoiceAgentIdentity } from "#runtime/protocol/host/identity.ts";
@@ -52,11 +52,13 @@ function createWorkbenchThreadProfile(input: {
 		serviceName: input.identity.serviceName,
 		threadSource: input.identity.threadSource,
 	});
-	if ([identity.serviceName, identity.threadSource, input.domainInstructions].some((value) => !value)) {
+	if (
+		[identity.serviceName, identity.threadSource, input.domainInstructions].some((value) => !value)
+	) {
 		throw new TypeError("A workbench role requires app identity and domain instructions.");
 	}
 	const builtIns =
-		input.role === "coordinator" ? coordinatorDynamicTools() : [ARCHBOARD_COORDINATOR_NAMESPACE];
+		input.role === "coordinator" ? coordinatorDynamicTools() : [COORDINATOR_CALLBACK_NAMESPACE];
 	if (input.dynamicTools.some((tool) => isReservedWorkbenchNamespace(tool.name)))
 		throw new TypeError("Host tools cannot replace workbench coordination tools.");
 	const dynamicTools = cloneAndFreeze(
