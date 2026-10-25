@@ -12,8 +12,8 @@
 import { cn } from "#ui/rules/class-names.ts";
 import type { JSX, ReactNode } from "react";
 
-import { buttonVariants } from "#ui/components/button.tsx";
-import { Tooltip, TooltipContent, TooltipTrigger } from "#ui/components/tooltip.tsx";
+import { buttonVariants } from "#ui/components/shadcn/button.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "#ui/components/shadcn/tooltip.tsx";
 
 /** A 28px ghost icon button inside a 32px hit area. */
 const ICON_BUTTON_CLASS = buttonVariants({

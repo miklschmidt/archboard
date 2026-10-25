@@ -16,7 +16,7 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { Talk } from "@archboard/walkthrough/talk";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
+import { Tooltip } from "@archboard/ui-kit/components";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { useOverlayPlace } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
@@ -133,7 +133,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 	);
 	return (
 		<QueryClientProvider client={props.client}>
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<OrbStageProvider>
 					<RecordingStage>
 						<div data-slot="pane-stage" className="relative flex min-h-0 min-w-0 flex-1 flex-col">
@@ -153,7 +153,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 					</RecordingStage>
 					<ReplayOrb voice={voice} />
 				</OrbStageProvider>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		</QueryClientProvider>
 	);
 }

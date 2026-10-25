@@ -3,7 +3,7 @@
 
 import { useMemo, type CSSProperties, type JSX } from "react";
 
-import { EXPLORING_MS, PRESENTATION_STEP_MS } from "@archboard/timing";
+import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
 import {
 	useCameraView,
 	type BoardCamera,
@@ -84,7 +84,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			width,
 			height,
 			transform: cameraTransform(camera),
-			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
+			"--presentation-step-ms": `${PRESENTATION_MS.step}ms`,
 			"--lighting-ms": `${EXPLORING_MS.lightingFade}ms`,
 			"--reach-hop-ms": `${EXPLORING_MS.reachHop}ms`,
 		}),

@@ -5,7 +5,7 @@ import {
 	createIdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import { projectionHarness } from "#tests/server/support/generation/projection-harness.ts";
 
 /** A live workhorse holding one thread, as the ready adapter paths need. */
@@ -241,7 +241,7 @@ test("concurrent snapshot re-reads share one read, and a looping client is floor
 	expect(reads).toBe(1);
 
 	// Past the floor, the server reads again.
-	clock += CODEX_QUEUE_REREAD_FLOOR_MS;
+	clock += CODEX_SESSION_MS.queueRereadFloor;
 	const past = harness.options.projection.refresh?.(harness.context);
 	expect(reads).toBe(2);
 	release();

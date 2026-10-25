@@ -3,7 +3,7 @@ import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/timing";
 import {
 	createDefaultWorkbenchHost,
 	type DefaultWorkbenchHostInput,
@@ -241,7 +241,7 @@ describe("the default workbench host", () => {
 			expect(context.paneId).toBe(h.key);
 			expect(context.semantic.brief).toBe("The actual host task.");
 			expect(context.semantic.freshUntilMs - context.semantic.capturedAtMs).toBe(
-				CODEX_SEMANTIC_FRESHNESS_MS,
+				CODEX_REALTIME_MS.semanticFreshness,
 			);
 			expect(context.operation).toEqual({ ...OPERATION, outcome: null });
 			expect(Object.isFrozen(context.semantic)).toBe(true);

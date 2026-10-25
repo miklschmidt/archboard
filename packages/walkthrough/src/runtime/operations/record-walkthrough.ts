@@ -27,7 +27,7 @@ import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-rep
 import type { SemanticBoard } from "@archboard/board/document";
 import type { VaultCheck } from "@archboard/board/policy";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
-import { RECORDING_CALL_MS } from "@archboard/timing";
+import { RECORDER_MS } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
@@ -204,7 +204,7 @@ function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 		saveBlob: async (expression, path, readTimeoutMs) => {
 			const remote = await page.evaluate(expression, {
 				returnByValue: false,
-				timeoutMs: RECORDING_CALL_MS,
+				timeoutMs: RECORDER_MS.call,
 			});
 			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
@@ -232,16 +232,16 @@ async function openRecordingPage(
 		await chromium.browser.call(
 			"Browser.grantPermissions",
 			{ origin: new URL(url).origin, permissions: ["audioCapture"] },
-			RECORDING_CALL_MS,
+			RECORDER_MS.call,
 		);
-		const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
+		const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDER_MS.call);
 		const { page } = window;
 		await page.call(
 			"Emulation.setEmulatedMedia",
 			{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-			RECORDING_CALL_MS,
+			RECORDER_MS.call,
 		);
-		const navigation = await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
+		const navigation = await page.call("Page.navigate", { url }, RECORDER_MS.call);
 		const refused = navigation["errorText"];
 		if (typeof refused === "string" && refused !== "") {
 			throw new Error(

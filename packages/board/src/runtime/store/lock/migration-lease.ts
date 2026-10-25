@@ -2,7 +2,7 @@
 // Ordinary writes keep the async lease path; a read that finds a live holder
 // can show normalized content and retry persistence on the next access.
 
-import { LOCK_LEASE_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import { normalizeBoardKey } from "#runtime/store/address.ts";
 import { createExclusively, freshRecord } from "#runtime/store/lock/acquisition.ts";
 import type { LockRequest } from "#runtime/store/lock/contracts.ts";
@@ -33,7 +33,7 @@ function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): Mig
 	// A lapsed or malformed lease needs the async token-steal guard. Leave it
 	// alone and retry after a regular writer has resolved it.
 	if (current !== null) return { acquired: false };
-	const record = freshRecord(request.holder, request.leaseMs ?? LOCK_LEASE_MS);
+	const record = freshRecord(request.holder, request.leaseMs ?? BOARD_LOCK_MS.lease);
 	const acquired = createExclusively(request.vault, file, record, board, () => {});
 	if (acquired?.ok !== true) return { acquired: false };
 	try {

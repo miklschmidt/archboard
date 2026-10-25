@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import { createDynamicApprovalBrowserSchemas } from "#shared/schemas/dynamic-approval/browser.ts";
 import { effectHashFor } from "#shared/rules/dynamic-approval-hash.ts";
 import {
@@ -285,11 +285,11 @@ function createDynamicApprovalSchemas(identity: IdentitySchemas, context: Identi
 			// A bounded window, not an exact constant: the request is valid while it
 			// expires after it was created and no later than the configured bound.
 			const window = request.expiresAtMs - request.createdAtMs;
-			if (window <= 0 || window > CODEX_APPROVAL_EXPIRY_MS) {
+			if (window <= 0 || window > CODEX_APPROVAL_MS.expiry) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["expiresAtMs"],
-					message: `expiry must be after creation and at most ${CODEX_APPROVAL_EXPIRY_MS}ms after it`,
+					message: `expiry must be after creation and at most ${CODEX_APPROVAL_MS.expiry}ms after it`,
 				});
 			}
 			if (

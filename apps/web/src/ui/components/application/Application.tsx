@@ -60,7 +60,7 @@ import {
 import { listedBoard, listedBoardKey } from "#ui/rules/board-catalog/listing.ts";
 import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
+import { Tooltip } from "@archboard/ui-kit/components";
 import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
 import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
@@ -486,16 +486,16 @@ function ApplicationBody(): JSX.Element {
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<RecordingStage>{recordedPane}</RecordingStage>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		);
 	}
 	return (
 		<OrbStageProvider>
 			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
 			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-				<TooltipProvider>
+				<Tooltip.Provider>
 					<Shell
 						view={view}
 						actions={actions}
@@ -508,7 +508,7 @@ function ApplicationBody(): JSX.Element {
 						attachStage={fullscreen.attachStage}
 					/>
 					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-				</TooltipProvider>
+				</Tooltip.Provider>
 			</VoiceSurfaceProvider>
 		</OrbStageProvider>
 	);

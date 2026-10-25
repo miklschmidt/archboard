@@ -68,4 +68,10 @@ function ResizableHandle({
 	);
 }
 
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup };
+/** A row (or, vertically, a column) of panels that share its space, with the panel and the line between two as its parts. */
+const Resizable = Object.assign(ResizablePanelGroup, {
+	Handle: ResizableHandle,
+	Panel: ResizablePanel,
+});
+
+export { Resizable };

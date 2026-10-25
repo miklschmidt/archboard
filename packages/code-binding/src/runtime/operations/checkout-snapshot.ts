@@ -4,10 +4,9 @@ import path from "node:path";
 import type { CodeBinding } from "#shared/schemas/code-binding.ts";
 import {
 	checkoutHead,
+	chosenCheckouts,
 	repoIdentityAt,
 	repoRootOf,
-	type CheckoutHead,
-	type RegisteredRepoStatus,
 } from "@archboard/workspace/checkouts";
 import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
@@ -17,6 +16,11 @@ import {
 	type RegisteredCheckoutResult,
 	type ResolverDependencies,
 } from "#runtime/operations/binding-resolver.ts";
+
+/** What a checkout has out: the branch it is on and the commit at HEAD. */
+type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
+/** A registered checkout, with whether its directory is still here. */
+type RegisteredRepoStatus = ReturnType<typeof chosenCheckouts>[number];
 
 interface CheckoutInspection {
 	readonly registeredRoot?: string;

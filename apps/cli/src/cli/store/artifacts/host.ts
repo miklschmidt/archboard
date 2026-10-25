@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { writeFileAtomicExclusive } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import type { PendingArtifact } from "#cli/protocol/contract/contract.ts";
 
 /**
@@ -18,12 +18,13 @@ function writeFileSetArtifact(artifact: Extract<PendingArtifact, { encoding: "fi
 		throw new Error(`Artifact directory changed before commit: ${unexpected.join(", ")}`);
 	}
 	for (const file of artifact.files) {
-		writeFileAtomicExclusive(path.join(artifact.path, file.name), Buffer.from(file.content));
+		writeFileAtomic(path.join(artifact.path, file.name), Buffer.from(file.content), {
+			exclusive: true,
+		});
 	}
-	writeFileAtomicExclusive(
-		path.join(artifact.path, artifact.manifest.name),
-		artifact.manifest.content,
-	);
+	writeFileAtomic(path.join(artifact.path, artifact.manifest.name), artifact.manifest.content, {
+		exclusive: true,
+	});
 }
 
 /** The one place a command touches the process: its streams, files, and terminal. */

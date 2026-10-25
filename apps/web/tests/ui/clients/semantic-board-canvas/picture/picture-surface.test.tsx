@@ -11,7 +11,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useState, type JSX } from "react";
 
-import { PICTURE_ENTRY_MS, PICTURE_ENTRY_PHASES, PICTURE_TRANSITION_MS } from "@archboard/timing";
+import { PICTURE_ENTRY_PHASES, PICTURE_MS } from "@archboard/timing";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { TRANSITION_ATTRIBUTE } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 import { enterPicture } from "#ui/clients/semantic-board-canvas/picture/picture-entrance.ts";
@@ -243,7 +243,7 @@ describe("the surface across pictures", () => {
 			rerender(createElement(Surface, { drawing: second, reducedMotion: false }));
 			// The only shared card moved 290 across, so the camera follows it by as much.
 			expect(followed).toEqual([{ x: -290, y: 0 }]);
-			runFrames(1000 + PICTURE_TRANSITION_MS / 2);
+			runFrames(1000 + PICTURE_MS.transition / 2);
 			expect(bodyOf(surface, "n1").x).toBeGreaterThan(A.box.x);
 			expect(bodyOf(surface, "n1").x).toBeLessThan(300);
 			// The same picture answered again is not another picture: the flight
@@ -257,7 +257,7 @@ describe("the surface across pictures", () => {
 			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));
 			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 10, width: 100, height: 60 });
 			expect(surface.querySelector("g[data-semantic-id='n2']")).not.toBeNull();
-			runFrames(1000 + PICTURE_TRANSITION_MS / 2 + PICTURE_TRANSITION_MS + 1);
+			runFrames(1000 + PICTURE_MS.transition / 2 + PICTURE_MS.transition + 1);
 			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 200, width: 100, height: 60 });
 			expect(surface.querySelector(`[${TRANSITION_ATTRIBUTE}]`)).toBeNull();
 			// Reduced motion cuts: the next picture is simply there.
@@ -275,7 +275,7 @@ describe("the surface across pictures", () => {
 			);
 			const surface = container.querySelector("[data-slot='surface']")!;
 			expect(visibility(surface, "n1")).toBe(0);
-			runFrames(PICTURE_ENTRY_MS + 1);
+			runFrames(PICTURE_MS.entry + 1);
 			expect(visibility(surface, "n1")).toBe(1);
 			expect(surface.querySelector<SVGGElement>("g[data-semantic-id='n1']")!.style.opacity).toBe(
 				"",
@@ -289,7 +289,7 @@ describe("the surface across pictures", () => {
 				}),
 			);
 			expect(visibility(surface, "n2")).toBe(0);
-			runFrames(2000 + PICTURE_ENTRY_MS + 1);
+			runFrames(2000 + PICTURE_MS.entry + 1);
 			expect(visibility(surface, "n2")).toBe(1);
 
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));

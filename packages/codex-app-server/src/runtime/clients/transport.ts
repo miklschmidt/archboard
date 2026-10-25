@@ -1,5 +1,5 @@
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
-import { CODEX_COMPOSED_SHUTDOWN_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "@archboard/timing";
 import {
 	attachChildListeners,
 	destroyQuietly,
@@ -409,7 +409,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		if (isClosed()) {
 			return promise;
 		}
-		shutdownTimer = setTimeout(abortShutdown, CODEX_COMPOSED_SHUTDOWN_MS);
+		shutdownTimer = setTimeout(abortShutdown, CODEX_PROCESS_MS.composedShutdown);
 		finishShutdown();
 		return promise;
 	};
