@@ -300,26 +300,35 @@ imported one. `board` imports only `timing`, `diagnostics`, `process`, `workspac
 imports nothing back, so the old import cycle between them is gone.
 
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
-module draws with, in the `ui` area. It adopts the `api/` role for
-`ui/` and exposes 10 subpaths, where code outside imported 29 paths. Every export is safe for the browser.
-`ui/components/` holds the shadcn Base UI components with their `README.md` and the dialog parts in
-`dialog-parts/`; `ui/state/` holds the frame clock and the fullscreen presentation; `ui/rules/`,
-`ui/hooks/` and `ui/constants/` hold the small helpers. The `components` aliases in
-`components.json` name `ui/components/` as `packages/ui-kit/src/ui/components`. The shadcn CLI
-resolves these paths from the repository root with no TypeScript path alias. Generated imports
-still need the package-local `#` rewrite.
+module draws with, in the `ui` area. It adopts the `api/` role for `ui/` and exposes 4 subpaths
+with 37 names (TASK-529.03; before, 10 subpaths with 85 names). Every export is safe for the
+browser. `ui/components/shadcn/` holds the official shadcn Base UI files with their `README.md`,
+private and kept at the registry's bytes. `ui/components/` holds the package's own components and
+one composite per family, which puts the family's parts on its root, and `dialog-parts/` holds the
+parts that every dialog surface shares. `ui/state/` holds the frame clock and the fullscreen
+presentation; `ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
+name `packages/ui-kit/src/ui/components/shadcn`, so the shadcn CLI writes there. It resolves these
+paths from the repository root with no TypeScript path alias. Generated imports still need the
+package-local `#` rewrite, and a new part reaches callers through its family's composite.
 
-- `./controls` is what a person acts on: buttons, inputs, selects, tabs, toggles and form fields,
-  and `usesCommandKey`, the platform's modifier for shortcuts.
-- `./overlays` is the dialog, the dropdown menu and the tooltip. `./display` is the alert, the
-  badge, the separator, the skeleton, the pane chrome and the resizable panels. `./class-names` is
-  `cn`, the class merger that every component draws with.
-- `./dialog-parts` is the failure alert, progress text, technical values, the field messages and
-  the cancel button class that every dialog surface shares.
+- `./components` is every component, one composite per job. A caller imports the family and
+  reaches its parts on it: `Dialog` with `Dialog.Content`, `Dialog.Header`, `Dialog.Title`,
+  `Dialog.Description`, `Dialog.Footer`, `Dialog.Trigger`, `Dialog.Close` and the shared
+  `Dialog.Busy` (progress text), `Dialog.Error` (the host's failure) and `Dialog.Cancel` (the
+  footer's dismissing action); `Field` with its label, description, content, set, legend and
+  `Field.Issues`; and likewise `Select`, `Tabs`, `RadioGroup`, `ToggleGroup`, `InputGroup`,
+  `DropdownMenu`, `Tooltip` (with `Tooltip.Provider`), `Alert`, `Resizable` (the panel group,
+  with `Resizable.Panel` and `Resizable.Handle`) and `RepositoryName` (with
+  `RepositoryName.GitHubMark`). The single components are `Button`, `IconButton`, `Checkbox`,
+  `Input`, `Badge`, `Separator`, `Skeleton` and `Technical`, a value in the mono face. Beside them
+  are `cn`, the class merger every component draws with, `buttonVariants` for an element that is
+  not a button, `usesCommandKey`, the platform's modifier for shortcuts, `shownRepository`, the
+  words a repository's name shows, and the `DialogError` shape that `Dialog.Error` shows.
 - `./time` is the ticking clock hook and the short age and clock text. `./frame-clock` is the clock
-  that moves what a pane draws over time. `./stepped-clock` is the clock that a renderer steps,
-  which the page that renders a recording frame by frame drives. `./fullscreen-presentation` owns
-  presenting one pane fullscreen. `./repository-name` is a repository's name as the chrome shows it.
+  that moves what a pane draws over time, and the stepped clock that a renderer moves, which the
+  page that renders a recording frame by frame drives. `./fullscreen-presentation` owns presenting
+  one pane fullscreen.
+- The pane chrome, what the shell puts in a pane's header, belongs to `apps/web`, its one owner.
 - Tailwind finds class names by scanning source files. `apps/web/src/ui/theme/app.css` turns the scan of
   Vite's root off (`source(none)`), names `apps/web/src` and names `packages/*/src/ui/**/*` with `@source`, so the
   `ui` area of every package is scanned (a bare `packages/*/src/ui` matches nothing). `tsconfig.frontend.json`

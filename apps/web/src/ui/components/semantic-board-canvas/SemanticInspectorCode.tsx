@@ -16,7 +16,7 @@ import {
 	SidebarGlyph,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 
 /** What the code check said about one subject, and when. */
 interface CodeStanding {

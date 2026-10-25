@@ -12,9 +12,12 @@ roles (`text-technical`, `text-body`, `text-control`,
 rather than colours; the
 components import `cn` from there.
 
-The package exposes these components through `src/ui/api/controls.ts`,
-`overlays.ts` and `display.ts`. The aliases in `components.json` are plain
-repository paths, such as `packages/ui-kit/src/ui/components`. The CLI resolves
+These files are private. The package exposes them through the composites in
+`packages/ui-kit/src/ui/components/`, which put a family's parts on its root
+(`Dialog.Content`, `Select.Item`), and its one `src/ui/api/components.ts` entry.
+A composite assembles these parts with the package's own dialog parts, so these
+files keep the registry's bytes. The aliases in `components.json` are plain
+repository paths, such as `packages/ui-kit/src/ui/components/shadcn`. The CLI resolves
 them from the repository root, with no TypeScript path alias. `shadcn info`
 lists them under Resolved Paths. Rewrite the import lines it writes to `#`
 specifiers. Product behaviour never

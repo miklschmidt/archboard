@@ -3,7 +3,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from "@archboard/ui-kit/display";
+import { Alert } from "@archboard/ui-kit/components";
 
 /** Inputs for the refusal. */
 interface MoveRefusalProps {
@@ -20,8 +20,8 @@ function MoveRefusal(props: MoveRefusalProps): JSX.Element {
 	return (
 		<Alert variant="destructive" className="rounded-sm">
 			<RiErrorWarningLine />
-			<AlertTitle>{props.title}</AlertTitle>
-			<AlertDescription>{props.error.message}</AlertDescription>
+			<Alert.Title>{props.title}</Alert.Title>
+			<Alert.Description>{props.error.message}</Alert.Description>
 		</Alert>
 	);
 }
