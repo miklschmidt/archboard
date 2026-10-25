@@ -3,8 +3,9 @@
 // does the About page's control that shows a row on the diagram. A step through
 // a design question's answer asks for its subject with the parts around it,
 // which the fit takes in where the picture draws them. A subject the view on
-// screen does not draw opens the whole board, and is fitted once that picture
-// arrives.
+// screen does not draw opens Everything, the reading of the whole board, and is
+// fitted once that picture arrives. The Overview, which a pane with no view
+// reads, draws every container closed (ADR 0052), so it hides most parts.
 //
 // Whoever asks picks the subject out in the same moment, and a pick moves the
 // camera in its own right: one made off the picture glides just far enough to
@@ -15,6 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { EVERYTHING_VIEW } from "@archboard/board/views";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
@@ -48,7 +50,7 @@ function regionOf(drawing: SemanticRender | undefined, ask: Ask): Rect | null {
  * @param drawing The picture on screen, when one has arrived.
  * @param camera The pane's camera.
  * @param reducedMotion Whether the reader asked for no motion, which lands the camera at once.
- * @param onView Choose a view of the board: null for the whole board.
+ * @param onView Choose a view of the board, by its id.
  * @returns Fit one subject, by its id, with any parts around it.
  */
 function useSubjectFocus(
@@ -58,7 +60,7 @@ function useSubjectFocus(
 	onView: (view: string | null) => void,
 ): (id: string, around?: readonly string[]) => void {
 	const [ask, setAsk] = useState<Ask | null>(null);
-	// The last ask the camera went to, and the last one the whole board was opened for.
+	// The last ask the camera went to, and the last one Everything was opened for.
 	const fitted = useRef<Ask | null>(null);
 	const widened = useRef<Ask | null>(null);
 	const focus = useCallback(
@@ -77,7 +79,7 @@ function useSubjectFocus(
 			fitted.current = ask;
 		} else if (widened.current !== ask) {
 			widened.current = ask;
-			onView(null);
+			onView(EVERYTHING_VIEW.id);
 		}
 	}, [ask, focus, onView]);
 	return useCallback((id: string, around: readonly string[] = []): void => {

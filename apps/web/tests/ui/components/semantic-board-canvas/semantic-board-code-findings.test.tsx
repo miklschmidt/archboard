@@ -290,7 +290,9 @@ test("a warning hidden by a limited view opens the whole board before focusing",
 	act(() => button.click());
 	await settled();
 	expect(mounted.picks).toEqual(["e1"]);
-	expect(server.calls.some((url) => url.includes("render") && !url.includes("view="))).toBe(true);
+	expect(
+		server.calls.some((url) => url.includes("render") && url.includes("view=Everything")),
+	).toBe(true);
 	expect(cameraNow().scale).toBeGreaterThan(fit.scale);
 });
 
