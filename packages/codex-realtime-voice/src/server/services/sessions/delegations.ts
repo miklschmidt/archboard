@@ -1,5 +1,5 @@
-// Which voice coordinator turn delegated each workhorse turn (TASK-319), and which conversation
-// each coordinator turn shows in (ADR 0050).
+// Which voice coordinator turn delegated each workhorse turn, and which conversation each
+// coordinator turn shows in.
 //
 // The workbench shows a delegated workhorse turn with where it came from. The only place that
 // knows is the operation that started it, which names both turns, so a tab session keeps what
@@ -48,7 +48,7 @@ function recordDelegations(delegations: Map<TurnId, TurnId>): (event: Delegation
 }
 
 /**
- * Where one coordinator turn shows (ADR 0050): the conversation the tab showed when it started, and
+ * Where one coordinator turn shows: the conversation the tab showed when it started, and
  * the checkouts whose workhorses it gave work to.
  */
 interface CoordinatorTurnHome {

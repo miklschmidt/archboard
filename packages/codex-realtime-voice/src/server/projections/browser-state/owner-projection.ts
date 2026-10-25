@@ -232,8 +232,8 @@ function presentedQueue(
 }
 
 /**
- * What a chat is shown of the workhorse of its checkout: its settings, its queue and its board
- * news. A checkout no workhorse was started for yet shows none of them.
+ * What a chat is shown of the workhorse of its checkout: its settings, its queue and its context
+ * delivery. A checkout no workhorse was started for yet shows none of them.
  * @param workhorse The workhorse, or null while the checkout has none.
  * @param context The chat being read.
  * @returns The workhorse's parts of the projection.

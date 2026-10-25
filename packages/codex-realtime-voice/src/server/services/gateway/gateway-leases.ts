@@ -122,7 +122,7 @@ interface SessionLeases {
 }
 
 /**
- * Own one lease per tab session (TASK-373). A session the retained ledger already holds gets its
+ * Own one lease per tab session. A session the retained ledger already holds gets its
  * owner at once, so a lease that outlived its generation still expires on time.
  * @param owners What the gateway around it provides.
  * @returns The session leases.

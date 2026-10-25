@@ -70,7 +70,7 @@ function readyThreadPair(
 
 /**
  * The link a callback reports one workhorse against: its binding, the thread, child epoch and
- * operation it is running, and the checkout it works in. A workhorse's board-change delivery is
+ * operation it is running, and the checkout it works in. A workhorse's context delivery is
  * only ever bound to the thread it started, so its snapshot is the whole target.
  * @param workhorse The workhorse.
  * @param assertCurrent Proves the child epoch and operation are this generation's.

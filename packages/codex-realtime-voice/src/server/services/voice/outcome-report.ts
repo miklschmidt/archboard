@@ -1,12 +1,12 @@
-// Giving the coordinator a workhorse outcome while voice is live (TASK-291): the work ended, or it
-// waits on the user, which is not an end (TASK-316).
+// Giving the coordinator a workhorse outcome while voice is live: the work ended, or it
+// waits on the user, which is not an end.
 //
 // Asked by voice to do something, the coordinator delegates and answers, and the work ends later.
 // In a full-duplex voice session nothing appended as text is ever answered, so telling the voice
 // model that the work ended would leave the user waiting until they asked again. The
 // coordinator knows whether the work came from a voice request, so it is given the outcome: what
 // it replies under [FINAL] the voice model says, and what it replies under [COMMENTARY] stays
-// quiet. The outcome goes out the moment it arrives (TASK-321): Codex's turn/start adds it to the
+// quiet. The outcome goes out the moment it arrives: Codex's turn/start adds it to the
 // coordinator's running turn when there is one and starts a turn otherwise (Codex 0.160.0,
 // `start_or_steer`), so nothing waits for the coordinator to be idle and nothing lands in its
 // history without a turn to act on it. Which outcomes are given is the callback module's.
@@ -65,7 +65,7 @@ const NEWS_ACTIONS: Readonly<Record<WorkhorseNewsSituation, string>> = Object.fr
  * What the coordinator is told of workhorse news: one plain sentence and what to do with it. It
  * may start a turn or join one already answering something else, so it reads right either way. A
  * workhorse waiting on the user has not finished, and nothing the coordinator can inspect says
- * what it waits for (TASK-316). A message is the workhorse's own words (TASK-321).
+ * what it waits for. A message is the workhorse's own words.
  * @param news What happened, as one sentence with no identities in it.
  * @param situation Whether work ended, the workhorse waits on the user, or it sent a message.
  * @returns The message.

@@ -22,7 +22,7 @@ interface GenerationOwners {
 	accountListeners: Set<(event: TransportServerNotification) => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
 	timeline: ServerTimelineOwner | null;
-	/** The voice coordinators' threads, read the way the workhorse's is (TASK-319). */
+	/** The voice coordinators' threads, read the way the workhorse's is. */
 	coordinatorTimeline: ServerTimelineOwner | null;
 	retired: boolean;
 }

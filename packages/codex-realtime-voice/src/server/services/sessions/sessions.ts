@@ -1,8 +1,8 @@
-// The tab sessions of one Codex child generation (TASK-373).
+// The tab sessions of one Codex child generation.
 //
 // A tab session owns the coordinator, voice, and the coordinator's tools and callbacks of one
-// browser tab, and one workhorse for each checkout the tab works in (ADR 0050). Each workhorse
-// owns its thread link, its queue, its operations and its board-change delivery. The generation
+// browser tab, and one workhorse for each checkout the tab works in. Each workhorse
+// owns its thread link, its queue, its operations and its context delivery. The generation
 // owns what describes the child and what every tab shares: the transport, the protocol session,
 // the thread link port, the approval broker, the app's dynamic tools, the account and the gateway.
 //
@@ -503,8 +503,8 @@ function createCodexWorkbenchSessions(
 			}).finally(() => ending.delete(session));
 		},
 		/**
-		 * Settle what every session carried for a child that exited: its board
-		 * news, its spoken approval, its coordinator's tool calls.
+		 * Settle what every session carried for a child that exited: its context
+		 * delivery, its spoken approval, its coordinator's tool calls.
 		 * @param child The child.
 		 * @param epoch Its epoch.
 		 * @returns Resolves once every session has settled.

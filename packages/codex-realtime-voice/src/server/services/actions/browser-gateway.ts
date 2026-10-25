@@ -149,7 +149,7 @@ function createServerBrowserGatewayOptions(
 		input.sessions.require(context.tabSessionId);
 	/**
 	 * The workhorse a chat's command is for: the one of its tab session for the checkout the tab
-	 * shows (ADR 0050), built the first time a chat asks for it.
+	 * shows, built the first time a chat asks for it.
 	 * @param context The chat, its tab session and its checkout.
 	 * @param context.tabSessionId The tab session.
 	 * @param context.checkout The checkout the chat's tab shows.

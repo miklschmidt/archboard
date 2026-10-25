@@ -92,7 +92,7 @@ function createGatewayBinding(
 			checkoutLabel: server.host.checkoutLabel,
 			/**
 			 * Watch what the browser is shown, which a change of a tab's shown conversation changes
-			 * too: every chat of the tab shows that checkout's workhorse (ADR 0050).
+			 * too: every chat of the tab shows that checkout's workhorse.
 			 * @param listener What to tell.
 			 * @returns Unsubscribes.
 			 */

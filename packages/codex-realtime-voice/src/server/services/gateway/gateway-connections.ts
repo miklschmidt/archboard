@@ -116,7 +116,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 
 		/**
 		 * The thread link of the workhorse a connection's chat shows: the one of its tab session
-		 * for the checkout the chat's tab shows now (ADR 0050), refusing a binding that does not
+		 * for the checkout the chat's tab shows now, refusing a binding that does not
 		 * describe that workhorse.
 		 * @param state The connection.
 		 * @returns Its binding.

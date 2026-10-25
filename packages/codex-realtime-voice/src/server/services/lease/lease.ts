@@ -291,7 +291,7 @@ function createBrowserLeaseManager(options: {
 	 * @param browserId The claiming browser.
 	 * @param chatId The claiming chat.
 	 * @param tabSessionId The tab the claiming chat belongs to.
-	 * @param checkout The checkout of the claiming chat's vault, whose workhorse it commands.
+	 * @param checkout The checkout of the claiming chat, whose workhorse it commands.
 	 * @param connection The exact socket claiming.
 	 * @param capturedLink The chat's thread-link binding at claim time.
 	 * @returns The new active record.

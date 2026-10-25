@@ -145,7 +145,7 @@ export function createServerCanonicalTextActions(
 		},
 		/**
 		 * Stop the turn that is running on the workhorse of the chat's checkout. The gateway admits
-		 * the command only when its thread is the link of that workhorse (ADR 0050).
+		 * the command only when its thread is the link of that workhorse.
 		 * @param command The thread and the turn.
 		 * @returns The browser outcome.
 		 */

@@ -1,4 +1,4 @@
-// How one tab session ends (TASK-373), and the settlement steps the store shares.
+// How one tab session ends, and the settlement steps the store shares.
 //
 // A session ends once its tab has gone for good. What it was asked is settled first, and what it
 // runs is stopped. Then each thread it started is unsubscribed once nothing runs on it, so Codex

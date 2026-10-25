@@ -246,7 +246,7 @@ type CodexTimelineUsageInput = DeepReadonly<
 > &
 	Readonly<Record<string, unknown>>;
 
-/** Readonly owner view; TASK-143.01.10 owns the live producer. */
+/** Readonly owner view of the timeline. */
 interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>> {
 	readonly kind: "codex_timeline";
 	readonly threadId: ThreadId;
@@ -303,7 +303,7 @@ interface BrowserProjectionInput {
 	readonly login: BrowserLogin;
 	readonly threadLink: ThreadLinkSnapshot;
 	readonly timeline: CodexTimelineProjectionInput | null;
-	/** The voice coordinator's own turns, read the way the timeline is (TASK-319). */
+	/** The voice coordinator's own turns, read the way the timeline is. */
 	readonly coordinatorTimeline?: CodexTimelineProjectionInput | null;
 	/** Which coordinator turn delegated each workhorse turn the server has been told of. */
 	readonly delegations?: ReadonlyMap<TurnId, TurnId>;
@@ -316,7 +316,7 @@ interface BrowserProjectionInput {
 	readonly voice: CodexVoiceProjectionInput;
 	readonly spokenApproval: SpokenApprovalSnapshot;
 	readonly voiceContext?: BrowserVoiceContext | null;
-	/** The tab session's workhorses and the one whose conversation it shows (ADR 0050). */
+	/** The tab session's workhorses and the one whose conversation it shows. */
 	readonly workhorses?: BrowserWorkhorses;
 	readonly lease: BrowserCommandLease | null;
 	readonly operation: BrowserOperationOutcome | null;

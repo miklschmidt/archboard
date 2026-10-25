@@ -26,7 +26,7 @@ function tabSessionLink(tabSessionId: TabSessionId): string {
 }
 
 /**
- * The link of an approval one workhorse asked, shown to the chats of its checkout (ADR 0050).
+ * The link of an approval one workhorse asked, shown to the chats of its checkout.
  * @param tabSessionId The workhorse's tab session.
  * @param checkout The checkout it works in.
  * @returns The link.

@@ -1,7 +1,7 @@
-// The agent dock's list of a tab session's workhorses (ADR 0050, TASK-472.11).
+// The list of a tab session's workhorses.
 //
-// The dock shows one workhorse's conversation, the shown one, and lists every live workhorse of the
-// tab by label and checkout so the person can pick another. A workhorse is live once it has a
+// A chat shows one workhorse's conversation, the shown one, and the list names every live workhorse
+// of the tab by label and checkout so the person can pick another. A workhorse is live once it has a
 // thread: a message, a delegation or New conversation started one. The shown checkout is
 // listed even before that, as not live, because it is where a typed message goes. Each entry says
 // whether a turn runs and whether the workhorse waits for the person: for an approval, or for an

@@ -200,7 +200,7 @@ interface ServerThreadLinkActionOptions {
 /**
  * Give a workhorse's new conversation a ready coordinator before the workhorse starts. The tab's
  * first conversation starts one, and every later one keeps it: the coordinator speaks for the
- * whole tab and every workhorse of it (ADR 0050), so one checkout's new conversation leaves it
+ * whole tab and every workhorse of it, so one checkout's new conversation leaves it
  * alone. The tab claims the ready coordinator's thread.
  * @param options The coordinator, the operation ids its start runs under, and the claim.
  * @throws {Error} With the coordinator's reason when it did not become ready.
@@ -223,7 +223,7 @@ async function readyCoordinator(
 
 /**
  * Start a fresh thread for a workhorse under the link it is expected to replace, and point its
- * board-change delivery at that thread. The thread it leaves is unloaded once nothing runs on it.
+ * context delivery at that thread. The thread it leaves is unloaded once nothing runs on it.
  * @param options The owners.
  * @param expected The link the start replaces, as whoever asked for it last saw it.
  */
@@ -275,7 +275,7 @@ function createServerThreadLinkActions(
 	const threadLinks: BrowserThreadLinkActions = {
 		/**
 		 * Start a new conversation for the chat's checkout and make it its workhorse's link: the
-		 * tab's coordinator first, then the workhorse thread, then board-change delivery to it. A
+		 * tab's coordinator first, then the workhorse thread, then context delivery to it. A
 		 * coordinator that cannot start refuses the create with its reason and starts no workhorse;
 		 * the next message or Talk tries again.
 		 * @param _command The creation, which names nothing to choose.

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * The tab session a browser tab names on every chat socket (TASK-373): minted by the tab, kept
+ * The tab session a browser tab names on every chat socket: minted by the tab, kept
  * in its sessionStorage, shared by both of its chats. Opaque to the server beyond its bounds.
  */
 const TabSessionIdSchema = z.string().min(1).max(128).brand<"TabSessionId">();
@@ -19,7 +19,7 @@ export function parseTabSessionId(value: unknown): TabSessionId | null {
 }
 
 /**
- * The thread-link key of one workhorse (ADR 0050). A tab session has one workhorse for each
+ * The thread-link key of one workhorse. A tab session has one workhorse for each
  * checkout it works in, and each workhorse has a link of its own, keyed by both.
  * @param tabSessionId The tab session.
  * @param checkout The checkout the workhorse works in.
