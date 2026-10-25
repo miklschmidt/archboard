@@ -3,7 +3,6 @@ import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { measureArchitecture } from "#runtime/operations/measure.ts";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -11,6 +10,7 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { across, along, breadth, depth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const NESTED = orderedFixture({
@@ -87,8 +87,7 @@ describe("compound architecture layout", () => {
 				if (point === undefined || box === undefined) throw new Error(`Missing endpoint ${id}`);
 				const other = id === edge.from ? edge.to : edge.from;
 				if (ancestorsOf(other).includes(id)) {
-					const header = measureArchitecture(NESTED).nodes.get(id)!.headerHeight;
-					expect(point.y).toBeCloseTo(box.y + header, 1);
+					expect(point.y).toBeCloseTo(headerFoot(drawing.svg, id), 1);
 				} else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
 				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.02);
 				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.02);

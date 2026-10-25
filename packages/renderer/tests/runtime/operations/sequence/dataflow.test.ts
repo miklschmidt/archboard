@@ -2,7 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
-import { renderDataFlow, renderSemanticView } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
@@ -74,8 +74,11 @@ const SAMPLE: VariantContent = variant({
  * @param theme Which ground to draw it on.
  * @returns The rendered sequence.
  */
-function render(content: VariantContent = SAMPLE, theme: DiagramTheme = "light"): RenderedDiagram {
-	return renderDataFlow({ policy, content, theme });
+async function render(
+	content: VariantContent = SAMPLE,
+	theme: DiagramTheme = "light",
+): Promise<RenderedDiagram> {
+	return await renderSemanticView({ policy, content, theme, grammar: "sequence" });
 }
 
 /**
@@ -136,13 +139,13 @@ function crowd(participants: number, steps: number): VariantContent {
 	});
 }
 
-describe("renderDataFlow", () => {
-	test("the same content and theme produce the same bytes", () => {
-		expect(render().svg).toBe(render().svg);
+describe("a sequence render", () => {
+	test("the same content and theme produce the same bytes", async () => {
+		expect((await render()).svg).toBe((await render()).svg);
 	});
 
-	test("every participant and every step lands somewhere on the page", () => {
-		const rendered = render();
+	test("every participant and every step lands somewhere on the page", async () => {
+		const rendered = await render();
 		const page: DiagramBox = { x: 0, y: 0, width: rendered.width, height: rendered.height };
 		const flow = SAMPLE.flows[0]!;
 
@@ -170,8 +173,8 @@ describe("renderDataFlow", () => {
 		}
 	});
 
-	test("a participant is its card and the whole column of time under it", () => {
-		const rendered = render();
+	test("a participant is its card and the whole column of time under it", async () => {
+		const rendered = await render();
 		const column = rendered.atlas.nodes["io"]!;
 		const frame = rendered.atlas.regions["claim"]!;
 
@@ -216,8 +219,8 @@ describe("renderDataFlow", () => {
 		expect(architecture.atlas.regions["claim"]).toBeUndefined();
 	});
 
-	test("messages are drawn in the order the flow states them", () => {
-		const rendered = render();
+	test("messages are drawn in the order the flow states them", async () => {
+		const rendered = await render();
 		const order = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 		const tops = order.map((id) => rendered.atlas.edges[id]!.y);
 		expect(tops).toEqual([...tops].toSorted((a, b) => a - b));
@@ -234,13 +237,13 @@ describe("renderDataFlow", () => {
 				},
 			],
 		};
-		const after = render(swapped);
+		const after = await render(swapped);
 		expect(rendered.atlas.edges["s1"]!.y).toBeLessThan(rendered.atlas.edges["s2"]!.y);
 		expect(after.atlas.edges["s2"]!.y).toBeLessThan(after.atlas.edges["s1"]!.y);
 	});
 
-	test("a self message stays inside its own column's run", () => {
-		const rendered = render();
+	test("a self message stays inside its own column's run", async () => {
+		const rendered = await render();
 		const loop = rendered.atlas.edges["s3"]!;
 		const sender = rendered.atlas.nodes["server"]!;
 		const neighbour = rendered.atlas.nodes["io"]!;
@@ -262,8 +265,8 @@ describe("renderDataFlow", () => {
 		expect(loop.height).toBeGreaterThan(rendered.atlas.edges["s2"]!.height);
 	});
 
-	test("a message's words belong to the message, in the markup and in the atlas", () => {
-		const rendered = render();
+	test("a message's words belong to the message, in the markup and in the atlas", async () => {
+		const rendered = await render();
 		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read the note");
 
 		expect(labelled).toHaveLength(1);
@@ -285,15 +288,15 @@ describe("renderDataFlow", () => {
 		}
 	});
 
-	test("a repeated step says so rather than being drawn twice", () => {
-		const rendered = render();
+	test("a repeated step says so rather than being drawn twice", async () => {
+		const rendered = await render();
 		const drawn = drawnTexts(rendered.svg).filter((text) => text.subject.id === "s6");
 		expect(drawn.map((text) => text.text)).toEqual(["readFileSync ×2"]);
 		expect(spanFits(drawnSpan(drawn[0]!), rendered.atlas.edges["s6"]!)).toBe(true);
 	});
 
-	test("every drawn word fits its subject, measured in the face it is drawn in", () => {
-		const rendered = render();
+	test("every drawn word fits its subject, measured in the face it is drawn in", async () => {
+		const rendered = await render();
 		const drawn = drawnTexts(rendered.svg);
 
 		expect(drawn.length).toBeGreaterThan(15);
@@ -310,8 +313,8 @@ describe("renderDataFlow", () => {
 		}
 	});
 
-	test("a crossing message arrives at the lifeline it names", () => {
-		const rendered = render();
+	test("a crossing message arrives at the lifeline it names", async () => {
+		const rendered = await render();
 		const arrival = routeEnds(rendered.svg, "step").get("s2");
 		expect(arrival).toBeDefined();
 
@@ -324,8 +327,8 @@ describe("renderDataFlow", () => {
 		expect(arrival!.y).toBeGreaterThan(rendered.atlas.edges["s1"]!.y);
 	});
 
-	test("every subject carries the hooks a viewer selects by", () => {
-		const rendered = render();
+	test("every subject carries the hooks a viewer selects by", async () => {
+		const rendered = await render();
 		expect(rendered.svg).toContain('data-semantic-kind="node" data-semantic-id="io"');
 		expect(rendered.svg).toContain('data-semantic-kind="step" data-semantic-id="s5"');
 		expect(rendered.svg).toContain('data-semantic-kind="flow" data-semantic-id="claim"');
@@ -337,7 +340,7 @@ describe("renderDataFlow", () => {
 		expect(rendered.svg).not.toContain("<script");
 	});
 
-	test("several flows stack down one page, each in its own frame", () => {
+	test("several flows stack down one page, each in its own frame", async () => {
 		const flow = SAMPLE.flows[0]!;
 		const two: VariantContent = {
 			...SAMPLE,
@@ -354,7 +357,7 @@ describe("renderDataFlow", () => {
 				},
 			],
 		};
-		const rendered = render(two);
+		const rendered = await render(two);
 		const first = rendered.atlas.regions["claim"]!;
 		const second = rendered.atlas.regions["stale"]!;
 
@@ -373,8 +376,8 @@ describe("renderDataFlow", () => {
 		expect(rendered.atlas.nodes["cli"]!.x).toBe(rendered.atlas.nodes["agent"]!.x);
 	});
 
-	test("a flow with many participants and many steps is drawn, not refused", () => {
-		const rendered = render(crowd(20, 120));
+	test("a flow with many participants and many steps is drawn, not refused", async () => {
+		const rendered = await render(crowd(20, 120));
 
 		expect(rendered.width).toBeGreaterThan(3000);
 		expect(rendered.height).toBeGreaterThan(4000);
@@ -390,8 +393,8 @@ describe("renderDataFlow", () => {
 		expect(rendered.atlas.edges["m119"]!.y).toBeGreaterThan(rendered.atlas.edges["m0"]!.y);
 	});
 
-	test("a flow with one participant talking to itself is still a sequence", () => {
-		const rendered = render(
+	test("a flow with one participant talking to itself is still a sequence", async () => {
+		const rendered = await render(
 			variant({
 				nodes: [{ id: "job", name: "Nightly Reindex", kind: "job" }],
 				flows: [
@@ -417,10 +420,10 @@ describe("renderDataFlow", () => {
 		]);
 	});
 
-	test("content with no flow is refused rather than drawn", () => {
+	test("content with no flow is refused rather than drawn", async () => {
 		let thrown: unknown;
 		try {
-			render(variant({ nodes: [{ id: "one", name: "Alone", kind: "service" }] }));
+			await render(variant({ nodes: [{ id: "one", name: "Alone", kind: "service" }] }));
 		} catch (error) {
 			thrown = error;
 		}
@@ -428,15 +431,15 @@ describe("renderDataFlow", () => {
 		expect((thrown as SemanticRenderError).code).toBe("NOTHING_TO_RENDER");
 	});
 
-	test("the two themes are different pictures of the same geometry", () => {
-		const light = render(SAMPLE, "light");
-		const dark = render(SAMPLE, "dark");
+	test("the two themes are different pictures of the same geometry", async () => {
+		const light = await render(SAMPLE, "light");
+		const dark = await render(SAMPLE, "dark");
 		expect(dark.svg).not.toBe(light.svg);
 		expect(dark.width).toBe(light.width);
 		expect(dark.height).toBe(light.height);
 		expect(dark.atlas).toEqual(light.atlas);
 	});
-	test("a participant's name is drawn complete however long it is", () => {
+	test("a participant's name is drawn complete however long it is", async () => {
 		// The column cap keeps one long name from widening every column, and a
 		// long name shrinks its title first; but a name is the one text a card
 		// cannot wrap, so past the smallest title size the columns widen rather
@@ -467,7 +470,7 @@ describe("renderDataFlow", () => {
 				},
 			],
 		});
-		const drawn = drawnTexts(render(long).svg);
+		const drawn = drawnTexts((await render(long)).svg);
 		expect(drawn.map((text) => text.text)).toContain("RequestContext.match_request");
 		expect(drawn.some((text) => text.text.endsWith("…"))).toBe(false);
 		// The responsibility still wraps into lines under its card rather than

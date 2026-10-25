@@ -6,6 +6,17 @@ import { expect, test } from "bun:test";
 import { instance } from "@viz-js/viz";
 import { createLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { loadCore } from "#runtime/services/core.ts";
+import type { ElkNode } from "@archboard/elk-rs";
+
+/**
+ * The worker's layout engine, over graphs as objects.
+ * @returns A solve of one graph.
+ */
+async function layoutEngine(): Promise<(graph: ElkNode) => ElkNode> {
+	loadCore();
+	const solve = createLayoutEngine(await instance());
+	return (graph) => JSON.parse(solve(JSON.stringify(graph))) as ElkNode;
+}
 
 /**
  * A framed block holding one card.
@@ -25,10 +36,9 @@ function frame(id: string, width: number, height: number) {
 }
 
 test("a small block late in the order fills the room a short row leaves", async () => {
-	loadCore();
-	const solve = createLayoutEngine(await instance());
+	const solved = await layoutEngine();
 	const call = { "archboard.relationship.kind": "call" };
-	const placed = solve({
+	const placed = solved({
 		id: "root",
 		layoutOptions: { "archboard.blocks.nesting": "blocks" },
 		children: [frame("a", 340, 100), frame("b", 1600, 500), frame("c", 340, 100)],
@@ -46,9 +56,8 @@ test("a small block late in the order fills the room a short row leaves", async 
 });
 
 test("a block alone on its row stands under the block its line comes from", async () => {
-	loadCore();
-	const solve = createLayoutEngine(await instance());
-	const placed = solve({
+	const solved = await layoutEngine();
+	const placed = solved({
 		id: "root",
 		layoutOptions: { "archboard.blocks.nesting": "blocks" },
 		children: [

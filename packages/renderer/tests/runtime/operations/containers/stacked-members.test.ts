@@ -9,9 +9,11 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
-import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import heldLabel from "#tests/runtime/support/fixtures/held-label.json";
 import heldMember from "#tests/runtime/support/fixtures/held-member.json";
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["system"],

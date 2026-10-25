@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/board/render-reply";
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -20,12 +20,13 @@ function within(inner: DiagramBox, outer: DiagramBox): boolean {
 	);
 }
 
-test("every message's loop and words lie inside its own flow's frame, on either edge", () => {
+test("every message's loop and words lie inside its own flow's frame, on either edge", async () => {
 	// The frame is the flow: a self-message's words on the last column, or a
 	// crossing label longer than a first-column hop, reach past the columns, and
 	// a frame that does not follow leaves those words outside the flow.
 	const long = "a label long enough to reach past every column of this flow";
-	const rendered = renderDataFlow({
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
 		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({

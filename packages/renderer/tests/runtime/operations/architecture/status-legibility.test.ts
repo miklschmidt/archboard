@@ -2,7 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import type { DiagramTheme } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
@@ -113,13 +113,14 @@ async function architecture(
  * @param unsettled Which subjects the board has not decided, when any.
  * @returns The rendered picture.
  */
-function sequence(unsettled: readonly string[] = []): RenderedDiagram {
+async function sequence(unsettled: readonly string[] = []): Promise<RenderedDiagram> {
 	return seenIn(
-		renderDataFlow({
+		await renderSemanticView({
 			policy: DEFAULT_SEMANTIC_POLICY,
 			content: CONTENT,
 			standing: STANDING,
 			unsettled,
+			grammar: "sequence",
 		}),
 	);
 }
@@ -340,18 +341,18 @@ describe("a relationship is drawn in one colour from end to end", () => {
 
 	test("a relationship the proposal no longer has sends no pulses", async () => {
 		expect(pulseInks((await architecture()).svg, "gone")).toHaveLength(0);
-		expect(pulseInks(sequence().svg, "answers")).toHaveLength(0);
+		expect(pulseInks((await sequence()).svg, "answers")).toHaveLength(0);
 	});
 });
 
 describe("the words a relationship carries are on top of every dot", () => {
-	test("an exchange's plates are painted after every message's dots", () => {
+	test("an exchange's plates are painted after every message's dots", async () => {
 		// The same rule as the architecture's, and for the same reason. A stack of
 		// horizontal runs at a fixed pitch mostly cannot reach another row's
 		// plate — but "mostly" has to be re-derived every time somebody adds a
 		// self-message loop or a taller plate, and the rule it stands in for is
 		// the simple one.
-		const svg = sequence().svg;
+		const { svg } = await sequence();
 		expect(lastRouteMark(svg)).toBeLessThan(firstWordsAt(svg, "step"));
 	});
 
@@ -392,7 +393,7 @@ describe("what nobody has decided is said in its own corner", () => {
 			"io",
 			"moved",
 		]);
-		expect([...badges(sequence(["f1", "asks", "io"])).keys()].toSorted()).toEqual([
+		expect([...badges(await sequence(["f1", "asks", "io"])).keys()].toSorted()).toEqual([
 			"asks",
 			"f1",
 			"io",
@@ -424,7 +425,7 @@ describe("what nobody has decided is said in its own corner", () => {
 		let checked = 0;
 		for (const drawn of [
 			await architecture(["io", "gw", "moved"]),
-			sequence(["f1", "asks", "io"]),
+			await sequence(["f1", "asks", "io"]),
 		]) {
 			const where = badges(drawn);
 			for (const text of drawnTexts(drawn.svg)) {

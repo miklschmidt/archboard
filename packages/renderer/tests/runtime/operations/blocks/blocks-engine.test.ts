@@ -1,12 +1,9 @@
-// The blocks engine lays every container and group region out as a block of
-// its own and joins the lines between blocks through ports on their edges.
-// What this catches: room a block keeps for trunks that do not use it, lines
-// between blocks that turn back on themselves or run along a border, and
-// lines that join on the way to a card and part again.
-
+// The blocks engine lays every container and group region out as a block of its own and
+// joins the lines between blocks through ports on their edges. What this catches: room a
+// block keeps for trunks that do not use it, lines between blocks that turn back on
+// themselves or run along a border, and lines that join on the way to a card and part again.
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
-import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	bodyShift,
@@ -33,6 +30,9 @@ import tightWallPort from "#tests/runtime/support/fixtures/tight-wall-port.json"
 import twoChains from "#tests/runtime/support/fixtures/two-chains.json";
 import wallPortKinds from "#tests/runtime/support/fixtures/wall-port-kinds.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({

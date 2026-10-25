@@ -5,7 +5,7 @@ import { expect } from "bun:test";
 
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { VariantContent } from "@archboard/board/content";
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
@@ -53,8 +53,13 @@ const STANDINGS = ["added", "removed", "changed", "unchanged"] as const;
  * @param standing What the caller says, when it says anything.
  * @returns The rendered sequence.
  */
-function drawnSequence(standing?: StatedStandings): RenderedDiagram {
-	return renderDataFlow({ policy: DEFAULT_SEMANTIC_POLICY, content: SEQUENCE, standing });
+async function drawnSequence(standing?: StatedStandings): Promise<RenderedDiagram> {
+	return await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: SEQUENCE,
+		standing,
+		grammar: "sequence",
+	});
 }
 
 /**
