@@ -8,11 +8,15 @@ import type { createCodexWorkbench } from "#server/services/owner/workbench.ts";
 
 /** Where browser sockets connect, and the one origin they must come from. */
 export interface VoiceAgentAttachOptions {
-	/** The socket path, such as `/api/voice`. Upgrades to any other path are left to the server's other listeners. */
+	/**
+	 * The absolute socket path, such as `/api/voice`. Upgrades to any other path are left to the
+	 * server's other listeners, so a server with no other listener must end those itself.
+	 */
 	readonly path: string;
 	/**
-	 * The listener's own HTTP origin, such as `http://127.0.0.1:4100`. A socket whose `Host`
-	 * header names another host, or whose `Origin` header names another origin, is refused with 403.
+	 * The listener's own HTTP origin exactly, such as `http://127.0.0.1:4100`, with no path or
+	 * trailing slash. A socket whose `Host` header names another host, or whose `Origin` header
+	 * names another origin, is refused with 403.
 	 */
 	readonly origin: string;
 	/**
@@ -25,6 +29,24 @@ export interface VoiceAgentAttachOptions {
 type BrowserPort = ReturnType<typeof createCodexWorkbench>["browser"];
 
 const PANE_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+
+/**
+ * Refuse attach options that could never admit a socket: a path that is not absolute, or an
+ * origin that is not exactly an HTTP(S) origin. An unparseable origin would otherwise refuse every
+ * upgrade on every path, and one with a path or a trailing slash would refuse every browser.
+ * @param path The socket path.
+ * @param origin The listener's HTTP origin.
+ * @throws {TypeError} When either cannot match a browser socket.
+ */
+function assertAttachable(path: string, origin: string): void {
+	if (!path.startsWith("/"))
+		throw new TypeError(`Name an absolute socket path, such as /api/voice, not ${path}.`);
+	const url = URL.canParse(origin) ? new URL(origin) : null;
+	if (url === null || !["http:", "https:"].includes(url.protocol) || url.origin !== origin)
+		throw new TypeError(
+			`Name the listener's own origin, such as http://127.0.0.1:4100, with no path, not ${origin}.`,
+		);
+}
 
 /**
  * Compare a request's `Host` and `Origin` headers to the exact listener origin.
@@ -122,6 +144,7 @@ function serve(browser: BrowserPort, connection: WebSocket, browserId: string): 
  * @param browser The agent's browser port.
  * @param options The path, origin and checkout of these sockets.
  * @returns Detach: stops accepting, closes this path's sockets and waits for their work.
+ * @throws {TypeError} When the path or origin could never admit a socket.
  */
 export function attachBrowserSockets(
 	server: Server,
@@ -129,6 +152,7 @@ export function attachBrowserSockets(
 	options: Required<VoiceAgentAttachOptions>,
 ): () => Promise<void> {
 	const { path, origin, checkout } = options;
+	assertAttachable(path, origin);
 	const sockets = new WebSocketServer({ noServer: true });
 	/**
 	 * Accept an upgrade to this path from the listener's own origin.

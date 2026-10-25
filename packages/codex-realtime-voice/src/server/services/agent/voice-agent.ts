@@ -94,11 +94,18 @@ export interface VoiceAgent {
 	/** Read the process status without starting anything. */
 	readonly status: () => VoiceAgentStatus;
 	/**
-	 * Serve browser sockets on one path of a `node:http` server, which Bun runs.
+	 * Serve browser sockets on one path of a `node:http` server, which Bun runs. Attach once
+	 * {@link VoiceAgent.start} is ready: a socket that arrives while the process is not ready is
+	 * closed with 1011. A socket that sends a binary or non-JSON frame is closed with 1003.
 	 * @returns Detach: stops accepting, closes those sockets and waits for their work.
+	 * @throws {TypeError} When the path or origin could never admit a socket, or the agent admits
+	 * more than one checkout and the options name none.
 	 */
 	readonly attach: (server: Server, options: VoiceAgentAttachOptions) => () => Promise<void>;
-	/** Detach every attached server, stop the Codex process and forget every browser tab. */
+	/**
+	 * Detach every attached server, stop the Codex process and forget every browser tab. After a
+	 * later {@link VoiceAgent.start}, attach again to serve sockets.
+	 */
 	readonly shutdown: () => Promise<void>;
 	/** The browser connection port; see {@link VoiceAgentBrowserPort}. */
 	readonly browser: VoiceAgentBrowserPort;

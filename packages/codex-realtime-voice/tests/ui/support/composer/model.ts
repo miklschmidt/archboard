@@ -7,7 +7,14 @@ import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
 import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { BrowserWorkbenchTransportError, type BrowserCommandDraft, type BrowserWorkbenchCommandIntent, type BrowserWorkbenchCommandResult, type BrowserWorkbenchCommandTarget, type BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
+import {
+	BrowserWorkbenchTransportError,
+	type BrowserCommandDraft,
+	type BrowserWorkbenchCommandIntent,
+	type BrowserWorkbenchCommandResult,
+	type BrowserWorkbenchCommandTarget,
+	type BrowserWorkbenchState,
+} from "#ui/state/transport/contract.ts";
 import type { WorkbenchComposerTransport } from "#ui/state/composer/contract.ts";
 
 const authorities = createIdentityAuthorities();

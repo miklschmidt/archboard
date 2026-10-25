@@ -6,7 +6,7 @@ import type {
 } from "#ui/clients/media/media-state.ts";
 import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/media-session.ts";
 import { createBrowserWorkbenchTransport } from "#ui/clients/transport/transport.ts";
-import { openVoiceClient } from "#ui/clients/voice-client/voice-client.ts";
+import { createVoiceClient, openVoiceClient } from "#ui/clients/voice-client/voice-client.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import {
 	FakeSocket,
@@ -251,6 +251,27 @@ test("connect opens the socket with the pane and tab identity and attaches voice
 	await client.dispose();
 });
 
+/**
+ * Dispose a client while a connect runs.
+ * @param reconnect Whether a socket is already open when the connect starts.
+ * @returns What the connect resolved and whether every socket it opened is closed.
+ */
+async function disposeDuringConnect(reconnect: boolean) {
+	const { client, sockets } = gateway();
+	if (reconnect) await client.connect();
+	const connecting = client.connect();
+	await client.dispose();
+	return {
+		connected: await connecting,
+		closed: sockets.every((socket) => socket.closeCalls > 0),
+	};
+}
+
+test("a dispose during connect or reconnect leaves no socket open", async () => {
+	expect(await disposeDuringConnect(false)).toEqual({ connected: false, closed: true });
+	expect(await disposeDuringConnect(true)).toEqual({ connected: false, closed: true });
+});
+
 test("an uncertain delivery stays visible and is never sent again", async () => {
 	const { client, commands } = gateway("outcome_unknown");
 	await client.connect();
@@ -275,4 +296,77 @@ test("voice stops during another action and the workhorse keeps working", async 
 	expect(commands).toEqual(["start"]);
 	expect(client.snapshot().busy).toBe(false);
 	await client.dispose();
+});
+
+/** One page load: a client that opens its socket and is disposed. */
+async function loadPage(): Promise<void> {
+	const client = createVoiceClient({ socketPath: "/api/voice" });
+	const connecting = client.connect();
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	await client.dispose();
+	await connecting;
+}
+
+/**
+ * The tab session id that each of two page loads of one tab names, over replaced page globals.
+ * @param storage The tab's `sessionStorage`.
+ * @returns The id each load named on its socket.
+ */
+async function tabSessionIds(storage: Pick<Storage, "getItem" | "setItem">): Promise<string[]> {
+	const urls: string[] = [];
+	const page: Record<string, unknown> = globalThis;
+	const browserSocket = page["WebSocket"];
+	page["WebSocket"] = class extends OpeningSocket {
+		/**
+		 * Record the URL the client opened.
+		 * @param url The URL.
+		 */
+		constructor(url: string) {
+			super(url);
+			urls.push(url);
+		}
+	};
+	page["sessionStorage"] = storage;
+	page["location"] = { href: "https://host.test/page" };
+	try {
+		await loadPage();
+		await loadPage();
+	} finally {
+		page["WebSocket"] = browserSocket;
+		delete page["sessionStorage"];
+		delete page["location"];
+	}
+	return urls.map((url) => new URL(url).searchParams.get("tabSessionId") ?? "");
+}
+
+/** Storage that a privacy setting turned off. */
+function refuseStorage(): never {
+	throw new DOMException("Storage is disabled.", "SecurityError");
+}
+
+test("every page load of a tab names one tab session, also when storage refuses", async () => {
+	const stored = new Map<string, string>();
+	const kept = await tabSessionIds({
+		/**
+		 * Read a stored value.
+		 * @param key The key.
+		 * @returns The value, or null.
+		 */
+		getItem: (key) => stored.get(key) ?? null,
+		/**
+		 * Store a value.
+		 * @param key The key.
+		 * @param value The value.
+		 */
+		setItem: (key, value) => {
+			stored.set(key, value);
+		},
+	});
+	expect(kept).toHaveLength(2);
+	expect(kept[0]).not.toBe("");
+	expect(kept[1]).toBe(kept[0]);
+	const unstored = await tabSessionIds({ getItem: refuseStorage, setItem: refuseStorage });
+	expect(unstored).toHaveLength(2);
+	expect(unstored[0]).not.toBe("");
+	expect(unstored[1]).toBe(unstored[0]);
 });

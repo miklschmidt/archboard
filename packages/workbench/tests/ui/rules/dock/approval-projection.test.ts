@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval, BrowserSpokenApproval } from "@archboard/codex-realtime-voice/contract";
+import type {
+	BrowserApproval,
+	BrowserSpokenApproval,
+} from "@archboard/codex-realtime-voice/contract";
 import { projectApproval, spokenApprovalLine } from "#ui/rules/dock/approval-projection.ts";
 import { identities } from "#tests/ui/support/dock/identities.ts";
 

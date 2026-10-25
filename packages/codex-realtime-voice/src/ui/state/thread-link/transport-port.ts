@@ -7,8 +7,16 @@
 // the transport's own contract spelled structurally, so the real transport
 // satisfies it without an adapter.
 
-import type { BrowserGatewayCommandResult, BrowserGatewayErrorCode } from "#shared/protocol/gateway-envelope.ts";
-import type { BrowserCommand, BrowserCommandLease, BrowserThreadLink, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserGatewayCommandResult,
+	BrowserGatewayErrorCode,
+} from "#shared/protocol/gateway-envelope.ts";
+import type {
+	BrowserCommand,
+	BrowserCommandLease,
+	BrowserThreadLink,
+	DeliveryOutcome,
+} from "#shared/schemas/browser/snapshot.ts";
 import type { CodexLoginAccountParams } from "@archboard/codex-app-server/contract";
 
 /** Every command name the browser contract publishes. */

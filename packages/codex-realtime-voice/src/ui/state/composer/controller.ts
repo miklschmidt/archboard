@@ -6,7 +6,10 @@
 // ever sees came from the server snapshot through the runtime.
 
 import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
-import { BrowserWorkbenchTransportError, type BrowserWorkbenchCommandResult } from "#ui/state/transport/contract.ts";
+import {
+	BrowserWorkbenchTransportError,
+	type BrowserWorkbenchCommandResult,
+} from "#ui/state/transport/contract.ts";
 import type {
 	WorkbenchComposerCommandResult,
 	WorkbenchComposerController,
