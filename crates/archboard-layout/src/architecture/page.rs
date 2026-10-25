@@ -3,7 +3,7 @@
 //! so every side keeps the same margin.
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, path_of, union};
+use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
 use archboard_scene::paint::design::DIAGRAM_MARGIN;
 
 /// A point moved.
@@ -92,7 +92,6 @@ pub(crate) fn fitted_page(
             .into_iter()
             .map(|mut edge| {
                 edge.curve = moved_curve(&edge.curve, by);
-                edge.path = path_of(&edge.curve);
                 if let Some(label) = edge.label.as_mut() {
                     label.bounds = moved(label.bounds, by);
                 }

@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{
-    Curve, Point, Rect, Segment, curve_bounds, inflate, path_of, reversed, segment_start,
+    Curve, Point, Rect, Segment, curve_bounds, inflate, reversed, segment_start,
 };
 use archboard_scene::request::{Arrowhead, Dash};
 
@@ -403,7 +403,6 @@ pub(super) fn replace_runs(
         segments,
     };
     DrawingEdge {
-        path: path_of(&curve),
         curve,
         ..edge.clone()
     }
