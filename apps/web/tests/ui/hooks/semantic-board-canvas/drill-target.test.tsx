@@ -6,7 +6,8 @@
 // listing of the pane's vault answered by guessing another vault, so the
 // inspector offers a way down that the double-click cannot follow; a named
 // variant that is not there swapped for the current one; and a renamed board
-// whose news the inspector stops hearing.
+// whose news the inspector stops hearing, or whose new version in a vault no
+// pane is in the inspector never reads.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -36,6 +37,8 @@ const { useDrillTarget, useDrillTargetReader } =
 	await import("#ui/hooks/semantic-board-canvas/use-drill-target.ts");
 const { announceSemanticBoardChange } =
 	await import("#ui/state/semantic-board-canvas/board-changes.ts");
+const { semanticBoardListQuery } =
+	await import("#ui/clients/semantic-board-canvas/reads/queries.ts");
 
 type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
@@ -171,7 +174,7 @@ function listed(vault: string, repository: string | undefined): void {
  * Both adapters, in a pane in the shop vault, over one cache.
  * @param target The drill-down.
  * @returns What the inspector reads once it has settled, what the double-click
- *   is answered, and the mounted hook.
+ *   is answered, the mounted hook and the cache.
  */
 async function bothRead(target: DrillDown) {
 	globalThis.fetch = Object.assign(serve, { preconnect: realFetch.preconnect });
@@ -200,7 +203,7 @@ async function bothRead(target: DrillDown) {
 		expect(mounted.result.current.inspector.kind).not.toBe("reading");
 	});
 	const doubleClick = await mounted.result.current.read(target);
-	return { inspector: mounted.result.current.inspector, doubleClick, mounted };
+	return { inspector: mounted.result.current.inspector, doubleClick, mounted, client };
 }
 
 /**
@@ -331,4 +334,60 @@ test("a link to a renamed board hears its news under the name it has now", async
 	await waitFor(() => {
 		expect(leads(mounted.result.current.inspector)).toMatchObject({ variant: "e1" });
 	});
+});
+
+test("a link to a renamed board in a vault no pane is in reads it again once that vault is listed at a new version", async () => {
+	// The link says "ledger"; the payments board answers to it as "Ledger Book"
+	// (ADR 0036). No pane is in the payments vault, so no news of its writes
+	// reaches this tab: its listing is what says the board moved.
+	listed(SHOP, OWN);
+	const renamed = { ...boardOf("Ledger Book"), formerNames: ["ledger"] };
+	server.documents.set(`${PAYMENTS}|ledger`, renamed);
+	const { mounted, client } = await bothRead({
+		board: "ledger",
+		variant: { kind: "current" },
+		repo: OTHER,
+	});
+	expect(leads(mounted.result.current.inspector)).toMatchObject({ variant: "e2" });
+
+	const content = { nodes: [], edges: [] };
+	server.documents.set(`${PAYMENTS}|ledger`, {
+		...renamed,
+		version: 2,
+		current: "e1",
+		variants: [
+			{ id: "e1", name: "as built", lifecycle: "current", content },
+			{ id: "e2", name: "shipped", lifecycle: "historical", content },
+		],
+	});
+	server.listings.set(PAYMENTS, {
+		success: true,
+		levels: [],
+		repository: OTHER,
+		boards: [
+			{
+				name: "Ledger Book",
+				key: "ledger book",
+				version: 2,
+				opens: "e1",
+				variants: [],
+				links: [],
+				description: null,
+			},
+		],
+	});
+	await act(() => client.fetchQuery(semanticBoardListQuery(PAYMENTS)));
+
+	await waitFor(() => {
+		expect(leads(mounted.result.current.inspector)).toMatchObject({ variant: "e1" });
+	});
+	expect(
+		leads(
+			await mounted.result.current.read({
+				board: "ledger",
+				variant: { kind: "current" },
+				repo: OTHER,
+			}),
+		),
+	).toMatchObject({ variant: "e1" });
 });

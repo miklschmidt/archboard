@@ -205,7 +205,8 @@ function versionOf(data: unknown): number | undefined {
 
 /**
  * The server listed one vault's boards: every reading this tab holds there of
- * a board at another version than listed is read again.
+ * a board at another version than listed is read again, whichever of the
+ * board's names it was asked by.
  *
  * A pane hears of a write only to a board of the vault it is in, so nothing
  * else tells this tab about a vault none of its panes is in: a board drawn
@@ -224,8 +225,11 @@ function boardsListed(
 	const moved = new Set(
 		cachedReadings(client, vault).flatMap(({ asked, data }) => {
 			const held = versionOf(data);
-			const listed = boards.find(
-				(entry) => sameBoardName(asked, entry.key) || sameBoardName(asked, entry.name),
+			// A reading asked by a former name is listed under the name its board
+			// goes by now, which only the reading itself says (ADR 0036).
+			const names = [asked, ...namesIn(data)];
+			const listed = boards.find((entry) =>
+				names.some((name) => sameBoardName(name, entry.key) || sameBoardName(name, entry.name)),
 			)?.version;
 			return held !== undefined && listed !== undefined && listed !== held ? [asked] : [];
 		}),
