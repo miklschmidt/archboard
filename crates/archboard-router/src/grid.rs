@@ -47,10 +47,32 @@ impl Buffer {
 
     /// Whether a point lies strictly inside, not on the edge.
     pub(crate) fn holds(&self, point: Point) -> bool {
-        point.x > self.left + SAME
-            && point.x < self.right - SAME
-            && point.y > self.top + SAME
-            && point.y < self.bottom - SAME
+        self.spans_x(point.x) && self.spans_y(point.y)
+    }
+
+    /// Whether an x lies strictly between the left and right edges.
+    fn spans_x(&self, x: f64) -> bool {
+        x > self.left + SAME && x < self.right - SAME
+    }
+
+    /// Whether a y lies strictly between the top and bottom edges.
+    fn spans_y(&self, y: f64) -> bool {
+        y > self.top + SAME && y < self.bottom - SAME
+    }
+}
+
+/// Mark the vertices and the edges to their right in one row of the grid
+/// that lie inside a buffer the row runs through.
+fn block_row(xs: &[f64], buffer: &Buffer, free: &mut [bool], across: &mut [bool]) {
+    for (i, &x) in xs.iter().enumerate() {
+        if buffer.spans_x(x) {
+            free[i] = false;
+        }
+        if let Some(&next) = xs.get(i + 1)
+            && buffer.spans_x(f64::midpoint(x, next))
+        {
+            across[i] = false;
+        }
     }
 }
 
@@ -171,22 +193,10 @@ impl Grid {
     fn block_rows(&mut self) {
         let width = self.xs.len();
         for (j, &y) in self.ys.iter().enumerate() {
-            for buffer in &self.blocking {
-                if !(y > buffer.top + SAME && y < buffer.bottom - SAME) {
-                    continue;
-                }
-                for i in 0..width {
-                    let x = self.xs[i];
-                    if x > buffer.left + SAME && x < buffer.right - SAME {
-                        self.free[j * width + i] = false;
-                    }
-                    if i + 1 < width {
-                        let middle = f64::midpoint(x, self.xs[i + 1]);
-                        if middle > buffer.left + SAME && middle < buffer.right - SAME {
-                            self.across[j * width + i] = false;
-                        }
-                    }
-                }
+            let row = j * width..(j + 1) * width;
+            for buffer in self.blocking.iter().filter(|buffer| buffer.spans_y(y)) {
+                let (free, across) = (&mut self.free[row.clone()], &mut self.across[row.clone()]);
+                block_row(&self.xs, buffer, free, across);
             }
         }
     }
@@ -196,13 +206,9 @@ impl Grid {
         let width = self.xs.len();
         let height = self.ys.len();
         for (i, &x) in self.xs.iter().enumerate() {
-            for buffer in &self.blocking {
-                if !(x > buffer.left + SAME && x < buffer.right - SAME) {
-                    continue;
-                }
+            for buffer in self.blocking.iter().filter(|buffer| buffer.spans_x(x)) {
                 for j in 0..height.saturating_sub(1) {
-                    let middle = f64::midpoint(self.ys[j], self.ys[j + 1]);
-                    if middle > buffer.top + SAME && middle < buffer.bottom - SAME {
+                    if buffer.spans_y(f64::midpoint(self.ys[j], self.ys[j + 1])) {
                         self.down[j * width + i] = false;
                     }
                 }
