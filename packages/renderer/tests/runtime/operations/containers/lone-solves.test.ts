@@ -42,9 +42,9 @@ test.each(["track", "blocks"] as const)(
 		let solves = 0;
 		installRendererHost({
 			...host,
-			solve: (graph, options) => {
+			solve: (graph, signal) => {
 				solves += 1;
-				return host.solve(graph, options);
+				return host.solve(graph, signal);
 			},
 		});
 		try {

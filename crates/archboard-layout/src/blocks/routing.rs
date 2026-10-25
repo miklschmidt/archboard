@@ -13,7 +13,7 @@ use crate::track::sides::fit_sides;
 use super::laid::{Band, Insets, Laid};
 use super::leaves::{let_ports_slide, mark_regions, rim_of};
 use super::lone::frame_shape;
-use super::tree::{Block, BlockId, BlockTree, Kind};
+use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
 use super::walls::{
     beside_points, beside_walls, channel_wall, enters_by, inner_points, labelled_out, mark_besides,
     wall_lines,
@@ -29,10 +29,13 @@ pub(super) fn routed(
 ) -> Laid {
     let block = tree.get(id);
     let mut scene = Placement::new(placed);
-    scene.edges_page = block.kind == Kind::Root;
-    scene.inline = true;
+    let inline = tree.nesting != Nesting::Blocks;
+    scene.edges_page = inline && block.kind == Kind::Root;
+    scene.inline = inline;
     mark_regions(&mut scene, block, tree);
-    let_ports_slide(&mut scene, block);
+    if inline {
+        let_ports_slide(&mut scene, block);
+    }
     let beside = beside_walls(block, tree, &scene);
     let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
     mark_besides(&mut scene, &beside);
@@ -68,7 +71,9 @@ pub(super) fn routed(
         .iter()
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
-    read(block, insets, &scene, routes, &edges, held)
+    let mut laid = read(block, insets, &scene, routes, &edges, held);
+    laid.header = placed.header;
+    laid
 }
 
 /// Read the routed scene back into the laid-out block.
@@ -154,6 +159,7 @@ fn read(
                 .collect(),
         ),
         regions: Some(regions),
+        header: None,
         reroute: None,
     }
 }

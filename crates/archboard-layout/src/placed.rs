@@ -75,4 +75,6 @@ pub(crate) struct PlacedBlock {
     pub children: Vec<PlacedNode>,
     pub edges: Vec<PlacedEdge>,
     pub regions: Vec<PlacedRegion>,
+    /// Which of its header's wider sizes the block took, when it took one.
+    pub header: Option<usize>,
 }

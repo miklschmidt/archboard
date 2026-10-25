@@ -3,6 +3,7 @@
 //! running such a line onto the wall once routed, and the points the block's
 //! parent must route around.
 
+use crate::ecma::sorted_by;
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::scene::{ItemId, Map, Placement};
@@ -56,6 +57,79 @@ pub(crate) fn channel_wall(block: &Block, line: &Line) -> Option<Side> {
     } else {
         wall_of(block, line)
     }
+}
+
+/// The wall an item stands apart toward: the one wall that every line to or
+/// from it crosses. Lines to and from a wall are ranked only with their own
+/// labels and stubs, so such an item is a part of the block's graph of its
+/// own. Nothing when some line of it stays inside or they cross both.
+fn wall_reached(block: &Block, item: &str) -> Option<Side> {
+    let mut sides: Vec<Option<Side>> = Vec::new();
+    for line in block.lines.values() {
+        for (end, side) in [
+            (&line.from, wall_of(block, line)),
+            (&line.to, enters_by(block, line)),
+        ] {
+            if end == item && !sides.contains(&side) {
+                sides.push(side);
+            }
+        }
+    }
+    if sides.len() == 1 { sides[0] } else { None }
+}
+
+/// A block's items in the order Graphviz meets them: the items that stand
+/// apart toward the left wall first, those toward the right wall last.
+/// Graphviz sets the parts of a graph side by side in the order it meets
+/// them. In the board's order, Device CA certificate state stood at the far
+/// end of its region from Device Identity beside it, and the line between them
+/// ran the region's width (Device Trust Control Plane, native hosts, Blocks).
+/// An item that some line holds among the rest keeps its place: Graphviz
+/// orders it with them, and moving it only stirs that order.
+fn toward_walls(block: &Block) -> Vec<String> {
+    let at: Map<&str, f64> = block
+        .items
+        .iter()
+        .map(|item| {
+            let toward = match wall_reached(block, item) {
+                Some(Side::Left) => -1.0,
+                Some(Side::Right) => 1.0,
+                _ => 0.0,
+            };
+            (item.as_str(), toward)
+        })
+        .collect();
+    sorted_by(&block.items, |one, other| {
+        at[one.as_str()] - at[other.as_str()]
+    })
+}
+
+/// A block's items in the order Graphviz meets them: toward the walls when
+/// every block faces its walls, else the board's order.
+pub(crate) fn items_of(tree: &BlockTree, block: &Block) -> Vec<String> {
+    if tree.facing {
+        toward_walls(block)
+    } else {
+        block.items.clone()
+    }
+}
+
+/// Whether facing every block's walls changes a board's blocks: some block
+/// that holds a line's label turns it to a wall, or stands an item reached
+/// only through a wall toward it. The tree is the one with every block facing
+/// its walls.
+pub(crate) fn facing_turns(tree: &BlockTree) -> bool {
+    tree.blocks.values().any(|&id| {
+        let block = tree.get(id);
+        block
+            .lines
+            .values()
+            .any(|line| labelled_out(block, line).is_some())
+            || items_of(tree, block)
+                .iter()
+                .zip(&block.items)
+                .any(|(item, at)| item != at)
+    })
 }
 
 /// Every point the lines of a block inside the board draw, which its parent

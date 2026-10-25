@@ -9,7 +9,7 @@ use archboard_scene::drawing::{MeasuredNode, Painted};
 use archboard_scene::geometry::{Point, Rect, Segment};
 
 use super::{Content, FlowchartHost, GraphEdge, Measured};
-use crate::routes::pair_crossings;
+use archboard_layout::pair_crossings;
 
 /// Where an answer first stops below its decision in a drawing: the middle of
 /// its words, or else of the card it reaches. By answer id.

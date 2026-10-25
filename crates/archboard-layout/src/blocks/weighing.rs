@@ -15,16 +15,13 @@ use crate::track::score::{LAP, Weighed, crossings_of, laps_of};
 
 use super::assembly::Placed;
 use super::laid::{Laid, corners};
+use super::packing::routed_weighed as trunk_weighed;
 use super::tree::Projection;
 
 /// The room round a line's two ends it may use to turn without running away.
 const AWAY_SLACK: f64 = 24.0;
 /// How far a line runs away from its ends to read as badly as one crossing: the trunk router's rate.
 const AWAY_CROSSING: f64 = 300.0;
-/// How much a trunk pays for each turn, in diagram points.
-const TRUNK_TURN: f64 = 60.0;
-/// How much a trunk pays for crossing another, in diagram points.
-const TRUNK_CROSSING: f64 = 300.0;
 
 /// What a layout's lines show a reader: their crossings, their bends and their length.
 fn reading_of(width: f64, height: f64, lines: &[Vec<Point>]) -> Weighed {
@@ -114,17 +111,6 @@ pub(crate) fn weighed_laid(laid: &Laid) -> Weighed {
     }
 }
 
-/// How far a route runs beyond the shortest orthogonal path between its ends,
-/// each turn counted as the router counts it.
-fn detour_of(points: &[Point]) -> f64 {
-    let (first, last) = (points[0], points[points.len() - 1]);
-    let length = points.windows(2).fold(0.0, |sum, pair| {
-        sum + abs(pair[1].x - pair[0].x) + abs(pair[1].y - pair[0].y)
-    });
-    let turns = points.len().saturating_sub(2) as f64;
-    length + turns * TRUNK_TURN - abs(last.x - first.x) - abs(last.y - first.y)
-}
-
 /// What a whole drawing is weighed on as the trunk router weighs it, with the
 /// room its lines spend running round what they pass counted as crossings,
 /// and its lines' runs away from their ends.
@@ -134,15 +120,9 @@ pub(crate) fn routed_weighed(placed: &Placed, projections: &[Projection]) -> Wei
         .iter()
         .map(|edge| edge.points.as_slice())
         .collect();
-    let detour = lines
-        .iter()
-        .fold(0.0, |sum, points| sum + detour_of(points));
     Weighed {
-        width: placed.width,
-        height: placed.height,
-        crossings: crossings_of(lines.iter().copied()) + detour / TRUNK_CROSSING,
         away: Some(away_placed(projections, placed)),
-        ..Weighed::default()
+        ..trunk_weighed(placed.width, placed.height, &lines)
     }
 }
 
@@ -186,8 +166,29 @@ fn away_of(points: &[Point], ends: (Rect, Rect)) -> f64 {
         .fold(0.0, |sum, pair| sum + outside(pair[0], pair[1], &region))
 }
 
-/// How many crossings the runs away of a whole drawing's lines weigh: each
-/// line's length outside the box round its ends, in `AWAY_CROSSING`s.
+/// How many crossings some lines' runs away from their ends weigh: each
+/// line's length outside the box round its two ends, in `AWAY_CROSSING`s.
+pub(crate) fn runs_away<'a>(lines: impl Iterator<Item = (&'a [Point], (Rect, Rect))>) -> f64 {
+    lines.fold(0.0, |crossings, (points, ends)| {
+        crossings + (away_of(points, ends) / AWAY_CROSSING).floor()
+    })
+}
+
+/// What a whole drawing as placed is weighed on, its lines joined end to end
+/// through every block, and their runs away from their ends.
+pub(crate) fn weighed_placed(placed: &Placed, projections: &[Projection]) -> Weighed {
+    let lines: Vec<Vec<Point>> = placed
+        .edges
+        .iter()
+        .map(|edge| edge.points.clone())
+        .collect();
+    Weighed {
+        away: Some(away_placed(projections, placed)),
+        ..reading_of(placed.width, placed.height, &lines)
+    }
+}
+
+/// How many crossings the runs away of a whole drawing's lines weigh.
 fn away_placed(projections: &[Projection], placed: &Placed) -> f64 {
     let mut boxes: Map<&str, Rect> = Map::default();
     for one in placed.frames.iter().chain(&placed.cards) {
@@ -202,15 +203,101 @@ fn away_placed(projections: &[Projection], placed: &Placed) -> f64 {
             )
         })
         .collect();
-    let mut crossings = 0.0;
-    for edge in &placed.edges {
-        let Some(&(from, to)) = ends.get(edge.id.as_str()) else {
-            continue;
-        };
-        let (Some(&from), Some(&to)) = (boxes.get(from), boxes.get(to)) else {
-            continue;
-        };
-        crossings += (away_of(&edge.points, (from, to)) / AWAY_CROSSING).floor();
+    runs_away(placed.edges.iter().filter_map(|edge| {
+        let &(from, to) = ends.get(edge.id.as_str())?;
+        Some((edge.points.as_slice(), (*boxes.get(from)?, *boxes.get(to)?)))
+    }))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use super::*;
+    use crate::blocks::assembly::{PlacedCard, PlacedLine};
+    use crate::blocks::tree::BlockId;
+    use crate::graph::Edge;
+    use crate::track::score::reads_better;
+
+    fn card(id: &str, x: f64, y: f64) -> PlacedCard {
+        PlacedCard {
+            id: id.to_owned(),
+            bx: Rect {
+                x,
+                y,
+                width: 200.0,
+                height: 80.0,
+            },
+            depth: 0,
+            header: None,
+        }
     }
-    crossings
+
+    fn placed_line(id: &str, points: &[(f64, f64)]) -> PlacedLine {
+        PlacedLine {
+            id: id.to_owned(),
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+            label: None,
+        }
+    }
+
+    fn projection(id: &str, source: &str, target: &str) -> Projection {
+        Projection {
+            edge: Rc::new(Edge {
+                id: id.to_owned(),
+                sources: vec![source.to_owned()],
+                targets: vec![target.to_owned()],
+                labels: None,
+                layout_options: None,
+            }),
+            at: BlockId(0),
+            out: Vec::new(),
+            into: Vec::new(),
+            from: source.to_owned(),
+            to: target.to_owned(),
+        }
+    }
+
+    /// Four cards with two relationships drawn: one straight down between the
+    /// two middle cards, and one from the left card to the right card along a route.
+    fn weighed_across(across: &[(f64, f64)]) -> Weighed {
+        let placed = Placed {
+            width: 800.0,
+            height: 800.0,
+            cards: vec![
+                card("from", 0.0, 300.0),
+                card("to", 600.0, 300.0),
+                card("above", 300.0, 0.0),
+                card("below", 300.0, 700.0),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![
+                placed_line("down", &[(400.0, 80.0), (400.0, 700.0)]),
+                placed_line("across", across),
+            ],
+            titles: Vec::new(),
+        };
+        let projections = [
+            projection("across", "from", "to"),
+            projection("down", "above", "below"),
+        ];
+        weighed_placed(&placed, &projections)
+    }
+
+    #[test]
+    fn a_line_run_away_from_its_ends_round_the_picture_reads_worse_than_a_crossing() {
+        // The line from the left card to the right card either hops the line
+        // between them, or loops round over the top of the picture to miss it.
+        let hopping = weighed_across(&[(200.0, 340.0), (600.0, 340.0)]);
+        let looping = weighed_across(&[
+            (100.0, 300.0),
+            (100.0, -40.0),
+            (700.0, -40.0),
+            (700.0, 300.0),
+        ]);
+        assert_eq!((hopping.crossings, looping.crossings), (1.0, 0.0));
+        assert!(reads_better(&hopping, &looping));
+        assert!(!reads_better(&looping, &hopping));
+    }
 }

@@ -69,9 +69,17 @@ pub(crate) struct Room<'a> {
     pub beside: &'a [f64],
 }
 
+/// A header the layout took: its size, and which of its sizes that is when it
+/// is a wider one.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Taken {
+    pub size: Size,
+    pub index: Option<usize>,
+}
+
 /// The shortest header a block has room for, as the box it keeps: its least
 /// when none of its wider sizes fits.
-pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Size {
+pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
     let steps = header.steps.as_deref().unwrap_or(&[]);
     let box_of = |step: &Size| js_max(header.width, step.width - room.frame + room.content);
     let mut index = 0;
@@ -85,11 +93,17 @@ pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Size {
         index += 1;
     }
     if index == 0 {
-        return header.size();
+        return Taken {
+            size: header.size(),
+            index: None,
+        };
     }
-    Size {
-        width: box_of(&steps[index]),
-        height: steps[index].height,
+    Taken {
+        size: Size {
+            width: box_of(&steps[index]),
+            height: steps[index].height,
+        },
+        index: Some(index),
     }
 }
 
@@ -130,9 +144,12 @@ mod tests {
         );
         assert_eq!(
             taken,
-            Size {
-                width: 140.0,
-                height: 28.0
+            Taken {
+                size: Size {
+                    width: 140.0,
+                    height: 28.0
+                },
+                index: Some(1)
             }
         );
     }
@@ -149,9 +166,12 @@ mod tests {
         );
         assert_eq!(
             taken,
-            Size {
-                width: 100.0,
-                height: 40.0
+            Taken {
+                size: Size {
+                    width: 100.0,
+                    height: 40.0
+                },
+                index: None
             }
         );
     }

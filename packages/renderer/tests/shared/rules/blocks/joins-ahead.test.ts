@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
 
 import { layJoined } from "#shared/rules/blocks/tree/joins-laid.ts";
-import { type Joined } from "#shared/rules/blocks/tree/joins.ts";
-import { type Page } from "#shared/rules/blocks/tree/weighing.ts";
 
 /** One layout the joins asked for: which blocks apart, and whether it was called off before it was laid out. */
 interface Asked {
@@ -10,13 +8,28 @@ interface Asked {
 	calledOff: boolean;
 }
 
+/** A drawing: a square page, the smaller of two reading better. */
+interface Page {
+	readonly side: number;
+}
+
 /**
- * A page with no lines, so the one that fits the reference pane better reads better.
+ * A page.
  * @param side Its width and height.
  * @returns The page.
  */
 function page(side: number): Page {
-	return { width: side, height: side, edges: [] };
+	return { side };
+}
+
+/**
+ * Whether one page reads better than another: it is smaller.
+ * @param one A page.
+ * @param other Another.
+ * @returns True when the first is smaller.
+ */
+function smaller(one: Page, other: Page): boolean {
+	return one.side < other.side;
 }
 
 /** One choice of joins: the blocks, the side of each page they lay out, and what they ask for. */
@@ -60,7 +73,6 @@ test.each<Choice>([
 ])(
 	"with $blocks joining, a turn kept calls off only the layouts asked for ahead that no turn to come weighs, and one asked for again is laid out afresh",
 	async ({ blocks, sides, asked: expected }) => {
-		const tree: Joined = { joining: new Set(blocks), projections: [] };
 		const asked: Asked[] = [];
 		/**
 		 * Lay a page out a task later, as a worker answers, unless called off while it waits.
@@ -86,9 +98,9 @@ test.each<Choice>([
 			});
 		};
 
-		const drawn = await layJoined(tree, lay);
+		const drawn = await layJoined(blocks, smaller, lay);
 
-		expect(drawn.placed).toEqual(page(2000));
+		expect(drawn).toEqual(page(2000));
 		expect(asked).toEqual(expected);
 	},
 );

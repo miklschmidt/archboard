@@ -186,6 +186,18 @@ fn frames_around(block: &Block, card: &str) -> usize {
         .count()
 }
 
+/// The innermost container a block is, or stands in.
+fn block_frame(tree: &BlockTree, block: &Block) -> Option<String> {
+    let mut at = Some(block);
+    while let Some(one) = at {
+        if one.kind == Kind::Frame {
+            return Some(one.id.clone());
+        }
+        at = one.parent.map(|parent| tree.get(parent));
+    }
+    None
+}
+
 /// A card or container alone in its region: the region, the block around it,
 /// and its region's box and its own.
 struct Alone {
@@ -241,7 +253,8 @@ impl<'a> Assembly<'a> {
             let at = moved(self.laid_of(block).boxes[item.as_str()], origin);
             self.origins
                 .insert(item.clone(), Point { x: at.x, y: at.y });
-            self.depths.insert(item.clone(), depth);
+            let framed = usize::from(self.tree.get(inner).kind == Kind::Frame);
+            self.depths.insert(item.clone(), depth + framed);
             self.descend(inner);
         }
     }
@@ -304,7 +317,9 @@ impl<'a> Assembly<'a> {
                 let block = self.tree.get(alone.block);
                 PlacedArea {
                     group: alone.lone.group.clone(),
-                    parent: block.frame_around(block.cluster_of.get(&alone.id).map(String::as_str)),
+                    parent: block
+                        .frame_around(block.cluster_of.get(&alone.id).map(String::as_str))
+                        .or_else(|| block_frame(self.tree, block)),
                     bx: alone.stop.region,
                     caption: caption_in(alone.stop.region, &alone.lone, lines),
                     depth: self.depths[block.id.as_str()] + frames_around(block, &alone.id),
@@ -314,19 +329,29 @@ impl<'a> Assembly<'a> {
     }
 
     /// Every card or container alone in its region, laid out as the region's
-    /// box: a card as an item of its block, or a container as a cluster of the
-    /// block that draws it inline.
+    /// box: a card as an item of its block, a container as a block of its own
+    /// or as a cluster of the block that draws it inline.
     fn lone_laid(&self) -> Vec<Alone> {
         self.tree
             .lone
             .iter()
             .map(|(id, lone)| {
-                let block = self.tree.holder[id.as_str()];
+                let frame = self.tree.block_of(id).map(|frame| self.tree.get(frame));
+                let block = frame
+                    .and_then(|frame| frame.parent)
+                    .unwrap_or_else(|| self.tree.holder[id.as_str()]);
+                let stop = match frame {
+                    None => self.laid_in(self.tree.get(block), id, lone),
+                    Some(frame) => Stop {
+                        region: self.box_of(frame),
+                        card: self.frame_box(frame),
+                    },
+                };
                 Alone {
                     id: id.clone(),
                     lone: lone.clone(),
                     block,
-                    stop: self.laid_in(self.tree.get(block), id, lone),
+                    stop,
                 }
             })
             .collect()
@@ -372,24 +397,42 @@ impl<'a> Assembly<'a> {
             .map(|alone| &alone.stop)
     }
 
-    /// Every container, in the drawing.
+    /// Every container, in the drawing: those laid out as blocks, then those
+    /// drawn inline.
     fn frames(&self) -> Vec<PlacedCard> {
-        self.blocks()
-            .flat_map(|block| {
-                let origin = self.origin(block);
-                let depth = self.depths[block.id.as_str()];
-                self.laid_of(block)
-                    .frames
-                    .iter()
-                    .flatten()
-                    .map(move |frame| PlacedCard {
-                        id: frame.id.clone(),
-                        bx: moved(frame.bx, origin),
-                        depth: depth + frame.depth,
-                        header: frame.header,
-                    })
-            })
-            .collect()
+        let framed = self
+            .blocks()
+            .filter(|block| block.kind == Kind::Frame)
+            .map(|block| PlacedCard {
+                id: block.id.clone(),
+                bx: self.frame_box(block),
+                depth: block
+                    .parent
+                    .map_or(0, |parent| self.depths[self.tree.get(parent).id.as_str()]),
+                header: self.laid_of(block).header,
+            });
+        let inline = self.blocks().flat_map(|block| {
+            let origin = self.origin(block);
+            let depth = self.depths[block.id.as_str()];
+            self.laid_of(block)
+                .frames
+                .iter()
+                .flatten()
+                .map(move |frame| PlacedCard {
+                    id: frame.id.clone(),
+                    bx: moved(frame.bx, origin),
+                    depth: depth + frame.depth,
+                    header: frame.header,
+                })
+        });
+        framed.chain(inline).collect()
+    }
+
+    /// A container's box in the drawing: inside the region it was laid out as,
+    /// when it is alone in one.
+    fn frame_box(&self, block: &Block) -> Rect {
+        let at = self.box_of(block);
+        block.lone.as_ref().map_or(at, |lone| card_in(at, lone))
     }
 
     /// Every group region, in the drawing.
@@ -399,7 +442,11 @@ impl<'a> Assembly<'a> {
             .filter(|block| block.kind == Kind::Region)
             .map(|block| PlacedArea {
                 group: block.group.clone().unwrap_or_default(),
-                parent: None,
+                parent: block
+                    .parent
+                    .map(|parent| self.tree.get(parent))
+                    .filter(|parent| parent.kind == Kind::Frame)
+                    .map(|parent| parent.id.clone()),
                 bx: self.box_of(block),
                 caption: self.caption(block),
                 depth: self.depths[block.id.as_str()],
@@ -490,25 +537,27 @@ impl<'a> Assembly<'a> {
 
     /// Every container's title row and the band across its top it stands in, in the drawing.
     fn titles(&self) -> Vec<Title> {
-        self.blocks()
-            .flat_map(|block| {
-                let laid = self.laid_of(block);
-                let origin = self.origin(block);
-                laid.frames.iter().flatten().filter_map(move |frame| {
-                    let name = format!("title:{}", frame.id);
-                    laid.boxes.contains_key(&name).then(|| {
-                        let title = self.inside(block, &name);
-                        let at = moved(frame.bx, origin);
-                        Title {
-                            bx: title,
-                            band: Rect {
-                                height: title.y + title.height - at.y,
-                                ..at
-                            },
-                        }
-                    })
-                })
+        let band = |title: Rect, at: Rect| Title {
+            bx: title,
+            band: Rect {
+                height: title.y + title.height - at.y,
+                ..at
+            },
+        };
+        let framed = self
+            .blocks()
+            .filter(|block| block.kind == Kind::Frame)
+            .map(|block| band(self.inside(block, &header_of(block)), self.frame_box(block)));
+        let inline = self.blocks().flat_map(|block| {
+            let laid = self.laid_of(block);
+            let origin = self.origin(block);
+            laid.frames.iter().flatten().filter_map(move |frame| {
+                let name = format!("title:{}", frame.id);
+                laid.boxes
+                    .contains_key(&name)
+                    .then(|| band(self.inside(block, &name), moved(frame.bx, origin)))
             })
-            .collect()
+        });
+        framed.chain(inline).collect()
     }
 }

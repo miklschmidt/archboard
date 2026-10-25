@@ -118,4 +118,63 @@ mod tests {
             }
         }
     }
+
+    // What this catches: a merged test that answers otherwise than the
+    // stretches one by one, which moves a lane and so a drawing: two
+    // stretches that only touch merged into one, so the point between them is
+    // kept out; an empty stretch keeping an x out; or an x at a stretch's end
+    // taken as inside it.
+
+    /// A small deterministic generator, so a failure names the same stretches
+    /// every run: `state * 1103515245 + 12345` modulo 2^32.
+    struct Lcg(u32);
+
+    impl Lcg {
+        /// A whole number in `0..n`, as `Math.floor(next() * n)` of the state over 2^32.
+        fn below(&mut self, n: u64) -> u64 {
+            self.0 = self.0.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+            (u64::from(self.0) * n) >> 32
+        }
+
+        /// An end on a coarse grid, so many stretches touch, overlap, nest, repeat or are empty.
+        fn end(&mut self) -> f64 {
+            (self.below(40) * 4) as f64
+        }
+    }
+
+    /// Some stretches as the generator draws them, with one open to each side every tenth round.
+    fn stretches_of(next: &mut Lcg, round: usize) -> Vec<(f64, f64)> {
+        let count = 1 + next.below(12);
+        let mut stretches: Vec<(f64, f64)> = (0..count).map(|_| (next.end(), next.end())).collect();
+        if round.is_multiple_of(10) {
+            stretches.push((f64::NEG_INFINITY, next.end()));
+            stretches.push((next.end(), f64::INFINITY));
+        }
+        stretches
+    }
+
+    /// Every x of the grid, and beyond it, answered as the stretches one by one answer it.
+    fn assert_answers_as_each(stretches: &[(f64, f64)], round: usize) {
+        let clear = ClearOf::new(stretches.to_vec());
+        for x in (-4..=164).step_by(2).map(f64::from) {
+            let each = stretches.iter().all(|&(low, high)| x <= low || x >= high);
+            assert_eq!(clear.passes(x), each, "x {x} in round {round}");
+        }
+    }
+
+    #[test]
+    fn a_lane_test_answers_as_the_stretches_one_by_one_before_and_after_it_merges_them() {
+        let mut next = Lcg(377);
+        for round in 0..200 {
+            assert_answers_as_each(&stretches_of(&mut next, round), round);
+        }
+    }
+
+    #[test]
+    fn a_stretch_with_an_end_that_is_no_number_keeps_every_x_out_merged_or_not() {
+        let clear = ClearOf::new(vec![(0.0, 10.0), (f64::NAN, 20.0)]);
+        for x in (-20..=40).map(f64::from) {
+            assert!(!clear.passes(x), "{x}");
+        }
+    }
 }

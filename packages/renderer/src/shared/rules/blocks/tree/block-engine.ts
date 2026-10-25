@@ -1,11 +1,11 @@
 // The block engine: the board, every container and every group region laid
 // out as a block of its own, compact around what it holds, and every
 // relationship drawn on tracks through the ports where it crosses a block's
-// edge (`tree.ts`, `place.ts`). The track engine is the same engine with every
-// container and region drawn inline, as clusters of the board's one layout
-// (`inline.ts`, `clusters.ts`). Each way to lay a board out is laid out and
-// routed where the layout engines run, and the one that reads best is chosen
-// here (`solves.ts`); here the geometry becomes the drawing.
+// edge. The track engine is the same engine with every container and region
+// drawn inline, as clusters of the board's one layout. The renderer core lays
+// each way out and routes it where the layout engines run
+// (`crates/archboard-layout`, ADR 0057), and the one that reads best is
+// chosen here (`solves.ts`); here the geometry becomes the drawing.
 import type { ElkNode } from "@archboard/elk-rs";
 import { isMemberOf, type VariantContent } from "@archboard/board/content";
 import type { ChangeKind } from "@archboard/board/comparison";

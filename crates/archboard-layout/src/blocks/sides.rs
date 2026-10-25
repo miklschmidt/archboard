@@ -84,9 +84,10 @@ fn facing_of(
     }
 }
 
-/// How much taller a block stands for the regions round one node it holds.
+/// How much taller a block stands for the regions round one node it is or holds.
 fn grown_in(tree: &BlockTree, block: BlockId) -> f64 {
-    tree.innermost_first(block).iter().fold(0.0, |sum, &inner| {
+    let own = tree.get(block).lone.as_ref().map_or(0.0, grown_by);
+    tree.innermost_first(block).iter().fold(own, |sum, &inner| {
         sum + tree.get(inner).items.iter().fold(0.0, |more, item| {
             more + tree.lone.get(item).map_or(0.0, grown_by)
         })

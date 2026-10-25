@@ -27,7 +27,7 @@
 // answer and calls off what it no longer needs before a worker starts it.
 // The queue keeps its order.
 //
-// The workers accept `{ id, graph, layoutOptions }` and answer with
+// The workers accept `{ id, graph }` and answer with
 // `{ id, data }` or `{ id, error, fatal }`.
 
 import type { RendererHost } from "#shared/rules/render/host.ts";
@@ -60,7 +60,6 @@ interface EngineWorker {
 /** A solve sent to a worker and not yet answered. */
 interface Pending {
 	readonly graph: SolveGraph;
-	readonly layoutOptions: Parameters<Solve>[1];
 	readonly signal: AbortSignal | undefined;
 	readonly cancel: () => void;
 	readonly resolve: (graph: SolveGraph) => void;
@@ -275,9 +274,9 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		engine.solving = { id, pending };
 		engine.worker.ref?.();
 		try {
-			const { graph, layoutOptions } = pending;
+			const { graph } = pending;
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin; the rule is about window.postMessage
-			engine.worker.postMessage({ id, graph, layoutOptions });
+			engine.worker.postMessage({ id, graph });
 		} catch (error) {
 			engine.solving = undefined;
 			engine.worker.unref?.();
@@ -285,7 +284,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		}
 	}
 
-	return (graph, layoutOptions, signal) =>
+	return (graph, signal) =>
 		new Promise<SolveGraph>((resolve, reject) => {
 			if (signal?.aborted === true) {
 				reject(signal.reason);
@@ -301,7 +300,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 				queued.splice(index, 1);
 				reject(signal?.reason);
 			};
-			queued.push({ graph, layoutOptions, signal, cancel, resolve, reject, retried: false });
+			queued.push({ graph, signal, cancel, resolve, reject, retried: false });
 			signal?.addEventListener("abort", cancel, { once: true });
 			dispatch();
 		});

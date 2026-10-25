@@ -12,9 +12,12 @@ use super::lone::{band_of, card_as, frame_header, placing_group};
 use super::tree::{BlockId, BlockTree, Cluster, ClusterKind, Kind, Nesting};
 
 impl BlockTree {
-    /// Fill a block with nodes, each in its group's region.
+    /// Fill a block with nodes, in the board's order, each in its group's region.
     pub(super) fn fill(&mut self, block: BlockId, nodes: &[Node]) -> Result<(), String> {
         let ordered = by_order(nodes);
+        if self.nesting == Nesting::Blocks {
+            return self.fill_nested(block, &ordered);
+        }
         for node in &ordered {
             self.add_inline(block, node, None, &ordered)?;
         }
