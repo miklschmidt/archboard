@@ -18,9 +18,8 @@ import {
 	createLocalPictureSource,
 	type DrawBoard,
 } from "#ui/clients/semantic-board-canvas/reads/local-pictures.ts";
-import { readAgain } from "#ui/clients/semantic-board-canvas/reads/read-again.ts";
+import { readEverythingAgain } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
 import {
-	semanticBoardKeys,
 	semanticBoardListQuery,
 	semanticRenderQuery,
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
@@ -280,7 +279,7 @@ test("an announced change draws the board's states ahead, one at a time, as this
 	expect(draws[0]?.variant).toBeUndefined();
 	expect(most()).toBe(1);
 	// Opening the proposal now finds it drawn, without laying it out again.
-	expect(client.getQueryData(semanticBoardKeys.render(proposal))).toMatchObject({ version: 2 });
+	expect(client.getQueryData(semanticRenderQuery(proposal).queryKey)).toMatchObject({ version: 2 });
 	await client.fetchQuery(semanticRenderQuery(proposal));
 	expect(draws).toHaveLength(4);
 });
@@ -304,7 +303,7 @@ test("reading a board again draws every picture a pane holds from the new docume
 	// again: the documents first, because a drawing reads its board the moment
 	// it is asked for again.
 	server.version = 2;
-	await readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]);
+	await readEverythingAgain(client);
 	await until(() => observers.every((one) => one.getCurrentResult().data?.version === 2));
 	for (const observer of observers) observer.destroy();
 });
@@ -361,7 +360,7 @@ test("a page that loads draws every listed board ahead once, for both themes, an
 	expect(first.draws[0]?.variant).toBeUndefined();
 	expect(first.draws[0]?.view).toBeUndefined();
 	// Opening it finds it drawn, without laying it out again.
-	await until(() => first.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
+	await until(() => first.client.getQueryData(semanticRenderQuery(request).queryKey) !== undefined);
 	await first.client.fetchQuery(semanticRenderQuery(request));
 	expect(first.draws).toHaveLength(1);
 
@@ -369,7 +368,7 @@ test("a page that loads draws every listed board ahead once, for both themes, an
 	await until(() => storage.size() === 1);
 	const again = page(storage);
 	await again.client.fetchQuery(semanticBoardListQuery(VAULT));
-	await until(() => again.client.getQueryData(semanticBoardKeys.render(request)) !== undefined);
+	await until(() => again.client.getQueryData(semanticRenderQuery(request).queryKey) !== undefined);
 	expect(again.draws).toHaveLength(0);
 });
 
@@ -379,10 +378,10 @@ test("a picture drawn ahead is still in the tab when somebody opens its board, h
 	const request = { vault: VAULT, board: "pipeline" } as const;
 	await shortLived.client.fetchQuery(semanticBoardListQuery(VAULT));
 	await until(
-		() => shortLived.client.getQueryData(semanticBoardKeys.render(request)) !== undefined,
+		() => shortLived.client.getQueryData(semanticRenderQuery(request).queryKey) !== undefined,
 	);
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	expect(shortLived.client.getQueryData(semanticBoardKeys.render(request))).toMatchObject({
+	expect(shortLived.client.getQueryData(semanticRenderQuery(request).queryKey)).toMatchObject({
 		version: 1,
 	});
 });

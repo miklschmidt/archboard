@@ -5,34 +5,12 @@
 // board over the pane socket, and every drawing of it is now a picture of
 // something that is no longer there.
 
-import { useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { onSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
-import { readAgain } from "#ui/clients/semantic-board-canvas/reads/read-again.ts";
-import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
-
-/**
- * Read one board again, from after the change rather than from before it.
- *
- * Both reads of it, not only the picture: the drawing and the document are two
- * readings of one versioned board, and a new version makes both of them a
- * description of something that is no longer there. Leaving the document behind
- * would be the quietest kind of wrong — the diagram would move and the panel
- * beside it would go on explaining the architecture from before the edit. The
- * document goes first, because the pictures are drawn from it.
- * @param client The cache.
- * @param vault The vault the board is in.
- * @param board The board that changed.
- * @returns Settles once the fresh reads have been asked for.
- */
-function readBoardAgain(client: QueryClient, vault: string, board: string): Promise<void> {
-	return readAgain(client, [
-		semanticBoardKeys.document(vault, board),
-		semanticBoardKeys.boardRenders(vault, board),
-	]);
-}
+import { boardChanged } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
 
 /**
  * Ask the server for this board's picture again whenever it changes.
@@ -50,7 +28,7 @@ function useSemanticBoardChanges(vault: string, board: string, goesBy: string = 
 					return;
 				}
 				if (sameBoardName(changed, board) || sameBoardName(changed, goesBy)) {
-					void readBoardAgain(client, vault, board);
+					void boardChanged(client, vault, board);
 				}
 			}),
 		[board, client, goesBy, vault],
