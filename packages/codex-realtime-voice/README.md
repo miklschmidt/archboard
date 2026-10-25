@@ -63,8 +63,7 @@ const server = createServer((request, response) => {
 	response.writeHead(200, { "Content-Type": "text/html" }).end(html);
 });
 
-const status = await agent.start();
-if (!status.ready) throw new Error(`Codex did not start: ${status.failure}`);
+await agent.start();
 agent.attach(server, { path: "/voice", origin });
 server.listen(port, "127.0.0.1", () => console.log(`Open ${origin}`));
 
@@ -329,7 +328,7 @@ The agent that `createVoiceAgent` returns has these members:
 
 | Member                    | What it does                                                                                                                                                                                                                                                               |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `start()`                 | Starts the private Codex process and waits for it. It resolves with the status. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
+| `start()`                 | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. |
 | `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                          |
 | `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server, which Bun runs. Call it after `start()` resolves. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work.                                                   |
 | `shutdown()`              | Detaches every attached server, stops the Codex process and forgets every tab session.                                                                                                                                                                                     |

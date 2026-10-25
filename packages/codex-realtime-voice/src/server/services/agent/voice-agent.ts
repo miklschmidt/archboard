@@ -87,8 +87,12 @@ export type VoiceAgentBrowserPort = Workbench["browser"];
 /** One realtime Codex voice agent: a coordinator per browser tab and a workhorse per checkout. */
 export interface VoiceAgent {
 	/**
-	 * Start the private Codex process and wait for it. Resolves with its status; check `ready`.
-	 * Start again after a failure or a shutdown to replace the process.
+	 * Start the private Codex process and wait for it. Start again after a failure or a shutdown
+	 * to replace the process.
+	 * @returns The status once the process is ready: `ready` is always `true`.
+	 * @throws {Error} When Codex cannot start, an error whose `code` is `startup_failed` and whose
+	 * `cause` names the reason; {@link VoiceAgent.status} then reads `failed`. A start during a
+	 * shutdown, or while the process already runs, also rejects.
 	 */
 	readonly start: () => Promise<VoiceAgentStatus>;
 	/** Read the process status without starting anything. */
