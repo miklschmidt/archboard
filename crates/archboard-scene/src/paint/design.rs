@@ -76,6 +76,10 @@ pub const PILL_HEIGHT: f64 = 15.0;
 pub const PILL_PADDING_X: f64 = 8.0;
 /// The size of the words on a label plate.
 pub const PILL_TEXT_SIZE: f64 = 9.0;
+/// The size of words in a flowchart's diamonds, loops and terminals.
+pub const SHAPE_TEXT_SIZE: f64 = 11.0;
+/// The room one line of a flowchart shape's words takes.
+pub const SHAPE_TEXT_LINE: f64 = 14.0;
 /// The corner radius of a label plate.
 pub(crate) const PILL_RADIUS: f64 = 4.0;
 
