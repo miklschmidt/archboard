@@ -2,11 +2,14 @@
 	"schemaVersion": "2.5.0",
 	"kind": "semantic-board",
 	"id": "9ncuT5DP",
-	"name": "Agent workbench",
+	"name": "Codex realtime voice",
+	"formerNames": [
+		"Agent workbench"
+	],
 	"level": "service",
-	"version": 118,
+	"version": 119,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-24T15:05:47.271Z",
+	"updatedAt": "2026-10-25T05:01:36.651Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
