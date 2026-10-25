@@ -9,7 +9,10 @@ import type {
 } from "@archboard/codex-realtime-voice/contract";
 import type { VoiceSignIn } from "@archboard/codex-realtime-voice/browser";
 import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
-import type { DynamicApprovalVerdict, WorkbenchQueueActions } from "#ui/state/surfaces/voice-parts.ts";
+import type {
+	DynamicApprovalVerdict,
+	WorkbenchQueueActions,
+} from "#ui/state/surfaces/voice-parts.ts";
 import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";
 import type { Conversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
 
@@ -127,11 +130,4 @@ interface AgentActions {
 	readonly showConversation: (checkout: string) => void;
 }
 
-export type {
-	AgentActions,
-	AgentContext,
-	AgentView,
-	AgentVoiceView,
-	VoiceLevel,
-	VoiceStage,
-};
+export type { AgentActions, AgentContext, AgentView, AgentVoiceView, VoiceLevel, VoiceStage };

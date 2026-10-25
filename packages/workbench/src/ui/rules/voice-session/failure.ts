@@ -4,7 +4,10 @@
 // carried through untouched.
 
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
-import type { RealtimeRecoverableErrorReason, RealtimeTerminalErrorReason } from "#ui/state/surfaces/voice-parts.ts";
+import type {
+	RealtimeRecoverableErrorReason,
+	RealtimeTerminalErrorReason,
+} from "#ui/state/surfaces/voice-parts.ts";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

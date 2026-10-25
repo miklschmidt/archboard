@@ -5,7 +5,11 @@
 // whatever the pane moved to.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import type { BrowserSnapshot, BrowserThreadLink, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserSnapshot,
+	BrowserThreadLink,
+	DeliveryOutcome,
+} from "#shared/schemas/browser/snapshot.ts";
 import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
