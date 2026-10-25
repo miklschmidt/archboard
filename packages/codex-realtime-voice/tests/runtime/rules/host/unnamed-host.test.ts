@@ -112,5 +112,5 @@ test("a host with no identity and no extensions sends Codex no context in the wo
 		host.contextCodec,
 	);
 
-	expect(JSON.stringify({ inject, turnStart })).not.toMatch(/chat|board|vault|semantic/iu);
+	expect(JSON.stringify({ inject, turnStart })).not.toMatch(/pane|board|vault|semantic/iu);
 });
