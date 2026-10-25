@@ -1,6 +1,6 @@
 //! Variable placement with separation constraints: place variables as close
 //! as their weights allow to where each wants to be, such that every
-//! constraint `left + gap <= right` holds. [D05] §4: `satisfy` merges
+//! constraint `left + gap <= right` holds. \[D05\] §4: `satisfy` merges
 //! variables into blocks along violated constraints in topological order,
 //! and `solve` then splits a block wherever a constraint's Lagrange
 //! multiplier is negative and merges again, until none is.
@@ -135,7 +135,7 @@ impl<'a> Solver<'a> {
         best.map(|(_, index)| index)
     }
 
-    /// [D05] Fig. 2: blocks built in topological order, each merging the
+    /// \[D05\] Fig. 2: blocks built in topological order, each merging the
     /// blocks on its left that it violates.
     fn satisfy(&mut self) {
         for var in self.topological() {
@@ -248,7 +248,7 @@ impl<'a> Solver<'a> {
         self.place(fresh);
     }
 
-    /// [D05] Fig. 4: split at negative multipliers and merge again until
+    /// \[D05\] Fig. 4: split at negative multipliers and merge again until
     /// every multiplier is non-negative, within a bounded number of rounds.
     fn solve(&mut self) {
         self.satisfy();

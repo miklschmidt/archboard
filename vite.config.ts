@@ -249,6 +249,12 @@ export default defineConfig({
 					"cargo clippy --locked --workspace --all-targets --target wasm32-unknown-unknown -- --deny warnings",
 				cache: coreCache,
 			},
+			// rustdoc reads every doc, private ones too, and fails on any of its lints.
+			"lint:core-docs": {
+				command:
+					"RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps --document-private-items",
+				cache: coreCache,
+			},
 			"format:core": {
 				command: "cargo fmt --all --check",
 				cache: coreCache,
@@ -259,7 +265,13 @@ export default defineConfig({
 			},
 			"lint:all": {
 				dependsOn: ["contracts", "core"],
-				command: ["vp run lint:tests", "vp run lint:policy", "vp run lint:css", "vp run lint:core"],
+				command: [
+					"vp run lint:tests",
+					"vp run lint:policy",
+					"vp run lint:css",
+					"vp run lint:core",
+					"vp run lint:core-docs",
+				],
 				cache: false,
 			},
 			"fix:all": {

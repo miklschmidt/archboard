@@ -1,7 +1,7 @@
 //! The grid routes run on: every coordinate that bounds an obstacle's buffer
 //! or that an end stands on, in both axes. A shortest route with the fewest
 //! turns can always run on these coordinates, because a route only needs to
-//! turn where it passes the edge of a buffer or meets an end; [W09] §3 builds
+//! turn where it passes the edge of a buffer or meets an end; \[W09\] §3 builds
 //! the same choice of coordinates as its orthogonal visibility graph.
 
 use crate::{Dir, End, Point, Rect, Scene};
