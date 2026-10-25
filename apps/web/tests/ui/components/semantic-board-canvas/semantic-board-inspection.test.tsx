@@ -283,8 +283,7 @@ test("a drill-down whose board the vault has not got names the board rather than
 	mountStage("n1");
 	await settled();
 
-	expect(slot("semantic-go-deeper")?.textContent).toContain("could not be opened");
-	expect(slot("semantic-go-deeper")?.textContent).toContain("engine");
+	expect(slot("semantic-drill-unreadable")?.textContent).toContain("engine");
 	expect(slot("semantic-drill-down-open")).toBeNull();
 });
 
