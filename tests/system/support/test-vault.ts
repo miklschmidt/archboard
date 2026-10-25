@@ -6,7 +6,6 @@
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, sep } from "node:path";
 
-import type { UntrackedVault } from "@archboard/workspace/checkouts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /**
@@ -44,7 +43,7 @@ function holderOf(vault: string): string {
  */
 function listOnlyVault(registry: string, vault: string): string {
 	const root = realpathSync.native(holderOf(vault));
-	const entries: UntrackedVault[] = [
+	const entries = [
 		{ name: basename(root), root, addedAt: new Date().toISOString() },
 	];
 	mkdirSync(dirname(registry), { recursive: true });

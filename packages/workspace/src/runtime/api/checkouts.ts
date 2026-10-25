@@ -7,13 +7,8 @@ export {
 	ConfiguredServerSchema,
 	LanguageServersSchema,
 } from "#runtime/store/language-servers.ts";
-export type { ConfiguredServer, LanguageServers } from "#runtime/store/language-servers.ts";
 export { registryPath, RepoRegistryError } from "#runtime/store/registry-file.ts";
-export type {
-	RegisteredRepo,
-	RegisteredRepoStatus,
-	UntrackedVault,
-} from "#runtime/store/registry-file.ts";
+export type { RegisteredRepo, RegisteredRepoStatus } from "#runtime/store/registry-file.ts";
 export {
 	chooseKnownCheckout,
 	chosenCheckouts,
@@ -23,4 +18,3 @@ export {
 	repositoryOfVault as registeredRepositoryOfVault,
 	setLanguageServer,
 } from "#runtime/store/repo-registry.ts";
-export type { RegistryListing } from "#runtime/store/repo-registry.ts";

@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { GIT_COMMAND_TIMEOUT_MS } from "@archboard/timing";
 import { existingDir, repoIdentityFor } from "#runtime/clients/git.ts";
-import { GitCommandError } from "#runtime/clients/git-failure.ts";
+import { GitCommandError } from "@archboard/process/git";
 
 /** The checkout that holds a vault: its canonical root, and what it calls itself. */
 interface VaultGitCheckout {
