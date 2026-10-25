@@ -19,7 +19,7 @@ function exhaustiveBrowserDto(dto: BrowserDto): string {
 		case "settings":
 		case "approval":
 		case "text_command":
-		case "semantic_delivery":
+		case "context_delivery":
 		case "coordinator":
 		case "voice":
 		case "spoken_approval":
@@ -89,7 +89,7 @@ type _BrowserDtoIsClosed = Assert<
 		| "settings"
 		| "approval"
 		| "text_command"
-		| "semantic_delivery"
+		| "context_delivery"
 		| "coordinator"
 		| "voice"
 		| "spoken_approval"

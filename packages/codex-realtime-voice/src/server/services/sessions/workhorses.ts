@@ -30,7 +30,7 @@ interface CodexWorkbenchWorkhorseComponents {
 	readonly workhorse: CodexWorkhorseStart;
 	/** Publishes the changes of the boards of this workhorse's checkout, as this workhorse is told. */
 	readonly semanticPublisher: WorkbenchContextPublisher;
-	readonly semanticDelivery: CodexThreadContextController;
+	readonly contextDelivery: CodexThreadContextController;
 	readonly queue: CodexWorkhorseQueue<OperationId>;
 	readonly operations: CodexWorkhorseOperations;
 }

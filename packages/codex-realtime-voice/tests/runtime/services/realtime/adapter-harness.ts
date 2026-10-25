@@ -151,7 +151,7 @@ function harness(
 		identity,
 		coordinatorContext,
 		voice: createTestVoicePolicy(presentationChanges?.subscribe),
-		freshSemanticBrief: () => semanticBrief(),
+		freshSemanticBrief: () => startBrief(),
 		currentBinding: () => bindingState.binding,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
@@ -173,7 +173,7 @@ function harness(
 	};
 }
 
-function semanticBrief(): string {
+function startBrief(): string {
 	return '{"source":"fresh_brief","board":"Architecture"}';
 }
 
@@ -237,7 +237,7 @@ export {
 	COORDINATOR_WIRE_THREAD_ID,
 	transitionFailures,
 	harness,
-	semanticBrief,
+	startBrief,
 	notificationEvent,
 	notify,
 	correlation,

@@ -123,7 +123,7 @@ export function projectServerVoiceContext(
 		kind: "voice_context",
 		sessionId: generation.browserSessionId,
 		ledgerId,
-		canonicalBrief: generation.semanticBrief,
+		canonicalBrief: generation.startBrief,
 		ownerEntriesTruncated: history.omittedPrefixCount,
 		entriesTruncated: history.omittedPrefixCount,
 		entries,

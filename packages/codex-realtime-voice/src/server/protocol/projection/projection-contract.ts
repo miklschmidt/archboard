@@ -8,7 +8,7 @@ import type {
 	BrowserLogin,
 	BrowserOperationOutcome,
 	BrowserReadiness,
-	BrowserSemanticDelivery,
+	BrowserContextDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserVoiceContext,
@@ -255,11 +255,11 @@ interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>>
 	readonly usage: CodexTimelineUsageInput | null;
 }
 
-interface CodexSemanticProjectionInput {
-	readonly kind: "codex_semantic";
+interface CodexContextDeliveryProjectionInput {
+	readonly kind: "codex_context_delivery";
 	readonly outcome: {
-		readonly targetThreadId: BrowserSemanticDelivery["threadId"] | null;
-		readonly outcome: BrowserSemanticDelivery["delivery"];
+		readonly targetThreadId: BrowserContextDelivery["threadId"] | null;
+		readonly outcome: BrowserContextDelivery["delivery"];
 		readonly reason: string | null;
 	} | null;
 	readonly freshness: {
@@ -311,7 +311,7 @@ interface BrowserProjectionInput {
 	readonly settings: readonly CodexSettingsProjectionInput[];
 	readonly approvals: readonly ApprovalOwnerView[];
 	readonly dynamicApprovals: readonly BrowserDynamicApproval[];
-	readonly semantic: CodexSemanticProjectionInput;
+	readonly contextDelivery: CodexContextDeliveryProjectionInput;
 	readonly coordinator: CodexCoordinatorProjectionInput;
 	readonly voice: CodexVoiceProjectionInput;
 	readonly spokenApproval: SpokenApprovalSnapshot;
@@ -345,7 +345,7 @@ export {
 	type CodexTimelineUsageInput,
 	type CodexTimelineFileChangeEntry,
 	type CodexTimelineProjectionInput,
-	type CodexSemanticProjectionInput,
+	type CodexContextDeliveryProjectionInput,
 	type CodexCoordinatorProjectionInput,
 	type CodexVoiceProjectionInput,
 	type BrowserProjectionInput,

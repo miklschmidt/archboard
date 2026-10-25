@@ -62,7 +62,7 @@ function exampleSnapshot(running = false): BrowserSnapshot {
 		settings: [],
 		approvals: [],
 		dynamicApprovals: [],
-		semantic: null,
+		contextDelivery: null,
 		coordinator: {
 			kind: "coordinator",
 			state: "unbound",

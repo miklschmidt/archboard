@@ -297,7 +297,7 @@ function snapshot(options: SnapshotOptions = {}): SnapshotFixture {
 		settings: [],
 		approvals: filled.approvals,
 		dynamicApprovals: filled.dynamicApprovals,
-		semantic: null,
+		contextDelivery: null,
 		coordinator: { ...UNBOUND_COORDINATOR },
 		voice: voiceFor(filled.voiceState),
 		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,

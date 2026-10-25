@@ -72,7 +72,7 @@ test("the production generation creates every owner once before readiness and sh
 		code: 1,
 		signal: null,
 	});
-	expect(events).toContain("semantic:child-exit");
+	expect(events).toContain("context:child-exit");
 	// Child-exit settlement, not shutdown, is what retires the dynamic wait and
 	// quarantine owner: this holds before any stop has run.
 	expect(events).toContain("dynamic:child-exit:child:epoch");
@@ -96,7 +96,7 @@ test("the production generation creates every owner once before readiness and sh
 		"session:dispose",
 		"callbacks:dispose",
 		"spoken:dispose",
-		"semantic:dispose",
+		"context:dispose",
 		"coordinator-tools:dispose",
 		"dynamic:dispose",
 		"transport:shutdown",

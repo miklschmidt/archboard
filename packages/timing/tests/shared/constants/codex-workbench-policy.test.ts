@@ -20,7 +20,7 @@ const REVIEWED_GROUPS = {
 		start: 15_000,
 		stop: 3000,
 		recovery: 45_000,
-		semanticFreshness: 30_000,
+		contextFreshness: 30_000,
 	},
 	CODEX_APPROVAL_MS: {
 		browserCommandLease: 150_000,
@@ -53,7 +53,7 @@ describe("Codex workbench timing policy", () => {
 		expect(session.queueRereadFloor).toBeLessThan(session.requestSettlement);
 		expect(approval.expiry).toBeLessThan(approval.browserCommandLease);
 		expect(approval.spokenGate).toBeLessThanOrEqual(approval.expiry);
-		expect(realtime.semanticFreshness).toBeLessThan(realtime.recovery);
+		expect(realtime.contextFreshness).toBeLessThan(realtime.recovery);
 		expect(realtime.stop).toBeLessThan(process.termGrace);
 		expect(process.stdinEofGrace).toBeGreaterThan(0);
 		expect(

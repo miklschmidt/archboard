@@ -242,9 +242,9 @@ function createWorkhorseFactories(
 		 * @param created What the workhorse has built so far.
 		 * @returns The controller.
 		 */
-		semanticDelivery: (created) =>
+		contextDelivery: (created) =>
 			createCodexThreadContextController({
-				...bindings.semanticDelivery(created),
+				...bindings.contextDelivery(created),
 				session,
 				threadLink,
 				identity: identity.identity,
@@ -351,14 +351,14 @@ function constructWorkhorseComponents(
 		const workhorse = (created.workhorse = factories.workhorse(created));
 		const semanticPublisher = (created.semanticPublisher = factories.semanticPublisher(created));
 		cleanups.push(() => semanticPublisher.dispose());
-		const semanticDelivery = (created.semanticDelivery = factories.semanticDelivery(created));
-		cleanups.push(() => semanticDelivery.dispose());
+		const contextDelivery = (created.contextDelivery = factories.contextDelivery(created));
+		cleanups.push(() => contextDelivery.dispose());
 		const queue = (created.queue = factories.queue(created));
 		const operations = factories.operations(created);
 		return Object.freeze({
 			workhorse,
 			semanticPublisher,
-			semanticDelivery,
+			contextDelivery,
 			queue,
 			operations,
 		} satisfies CodexWorkbenchWorkhorseComponents);
@@ -423,7 +423,7 @@ function buildProductionWorkhorse(
 			identity: shared.identity,
 			workhorse: components.workhorse,
 			threadLink: shared.threadLink,
-			semanticDelivery: components.semanticDelivery,
+			contextDelivery: components.contextDelivery,
 			key: scope.key,
 			claimThread: scope.claimThread,
 			claimCoordinatorThread: scope.claimCoordinatorThread,

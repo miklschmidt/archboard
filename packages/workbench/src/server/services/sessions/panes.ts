@@ -148,7 +148,7 @@ function operationPane(
  * @returns True once its delivery is bound.
  */
 function deliveryBound(workhorse: CodexWorkbenchWorkhorse): boolean {
-	return workhorse.components.semanticDelivery.snapshot().binding !== null;
+	return workhorse.components.contextDelivery.snapshot().binding !== null;
 }
 
 /**

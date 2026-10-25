@@ -2,7 +2,7 @@ import type {
 	BrowserAccount,
 	BrowserCoordinator,
 	BrowserQueue,
-	BrowserSemanticDelivery,
+	BrowserContextDelivery,
 	BrowserSettings,
 	BrowserVoice,
 } from "#shared/schemas/browser/snapshot.ts";
@@ -14,7 +14,7 @@ import type {
 	CodexCoordinatorProjectionInput,
 	CodexQueueProjectionInput,
 	CodexQueuedSubmissionProjectionInput,
-	CodexSemanticProjectionInput,
+	CodexContextDeliveryProjectionInput,
 	CodexSettingsProjectionInput,
 	CodexVoiceProjectionInput,
 } from "#server/protocol/projection/projection-contract.ts";
@@ -225,16 +225,18 @@ function projectQueue(
 }
 
 /**
- * Project the last semantic delivery, when the server holds a complete, fresh record of one.
- * @param input The semantic projection input.
- * @returns The browser semantic delivery, or null.
+ * Project the last context delivery, when the server holds a complete, fresh record of one.
+ * @param input The context delivery projection input.
+ * @returns The browser context delivery, or null.
  */
-function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDelivery | null {
+function projectContextDelivery(
+	input: CodexContextDeliveryProjectionInput,
+): BrowserContextDelivery | null {
 	const { outcome, freshness } = input;
 	if (outcome === null || freshness === null) return null;
 	if (outcome.targetThreadId === null) return null;
 	return {
-		kind: "semantic_delivery",
+		kind: "context_delivery",
 		threadId: outcome.targetThreadId,
 		delivery: outcome.outcome,
 		capturedAtMs: freshness.capturedAtMs,
@@ -353,7 +355,7 @@ export function projectCodexBrowserState(
 			settings: input.settings.map(projectSettings),
 			approvals: input.approvals.map(projectApproval),
 			dynamicApprovals: input.dynamicApprovals,
-			semantic: projectSemantic(input.semantic),
+			contextDelivery: projectContextDelivery(input.contextDelivery),
 			coordinator: projectCoordinator(input.coordinator),
 			voice: projectVoice(input.voice),
 			spokenApproval: projectSpokenApproval(

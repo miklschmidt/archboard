@@ -241,7 +241,7 @@ describe("the default workbench host", () => {
 			expect(context.paneId).toBe(h.key);
 			expect(context.semantic.brief).toBe("The actual host task.");
 			expect(context.semantic.freshUntilMs - context.semantic.capturedAtMs).toBe(
-				CODEX_REALTIME_MS.semanticFreshness,
+				CODEX_REALTIME_MS.contextFreshness,
 			);
 			expect(context.operation).toEqual({ ...OPERATION, outcome: null });
 			expect(Object.isFrozen(context.semantic)).toBe(true);

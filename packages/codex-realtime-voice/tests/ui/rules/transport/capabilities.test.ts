@@ -66,9 +66,9 @@ function invalidDeltas(): readonly (readonly [string, unknown])[] {
 		["approvals", [{}]],
 		["dynamicApprovals", [{}]],
 		[
-			"semantic",
+			"contextDelivery",
 			{
-				kind: "semantic_delivery",
+				kind: "context_delivery",
 				threadId: wire.threadA,
 				delivery: "delivered",
 				capturedAtMs: 0,

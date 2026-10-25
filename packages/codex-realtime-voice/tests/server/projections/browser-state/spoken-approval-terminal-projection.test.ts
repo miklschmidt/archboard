@@ -126,7 +126,7 @@ test("a real unknown owner settlement remains unknown through the browser projec
 			settings: [],
 			approvals: [owner],
 			dynamicApprovals: [],
-			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
+			contextDelivery: { kind: "codex_context_delivery", outcome: null, freshness: null },
 			coordinator: {
 				kind: "codex_coordinator",
 				state: "ready",

@@ -31,8 +31,8 @@ interface CodexRealtimeGeneration extends CodexRealtimeBinding {
 	readonly browserSessionId: BrowserRealtimeSessionId;
 	readonly browserCorrelationId: RealtimeCorrelationId;
 	readonly wireSessionId: RealtimeSessionId;
-	/** Byte-exact semantic context captured once for this realtime start. */
-	readonly semanticBrief: string;
+	/** The host context captured once for this realtime start, byte for byte. */
+	readonly startBrief: string;
 }
 
 interface CodexRealtimeAdapterOptions {

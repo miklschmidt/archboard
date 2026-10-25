@@ -513,7 +513,7 @@ function createCodexWorkbenchSessions(
 			settleEach(
 				every().flatMap(({ components, workhorses }) => [
 					...[...workhorses.values()].map(
-						(workhorse) => () => workhorse.components.semanticDelivery.childExit(child, epoch),
+						(workhorse) => () => workhorse.components.contextDelivery.childExit(child, epoch),
 					),
 					() => components.spokenApproval.onChildExit({ child, epoch }),
 					() => components.coordinatorTools.onChildExit({ child, epoch }),
@@ -555,7 +555,7 @@ function createCodexWorkbenchSessions(
 						() => components.callbacks.dispose(),
 						() => components.spokenApproval.dispose(),
 						...[...workhorses.values()].map(
-							(workhorse) => () => workhorse.components.semanticDelivery.dispose(),
+							(workhorse) => () => workhorse.components.contextDelivery.dispose(),
 						),
 						() => components.coordinatorTools.dispose(),
 					]),

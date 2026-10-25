@@ -37,11 +37,11 @@ type WorkhorseComponents = CodexWorkbenchWorkhorseComponents;
 type ProjectionContext = Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0];
 
 /** One record of a semantic context delivery, as the controller kept it. */
-type SemanticDelivery = ReturnType<WorkhorseComponents["semanticDelivery"]["inspect"]>[number];
+type SemanticDelivery = ReturnType<WorkhorseComponents["contextDelivery"]["inspect"]>[number];
 
 /** The binding a semantic delivery was made under. */
 type SemanticBinding = NonNullable<
-	ReturnType<WorkhorseComponents["semanticDelivery"]["snapshot"]>["binding"]
+	ReturnType<WorkhorseComponents["contextDelivery"]["snapshot"]>["binding"]
 >;
 
 /**
@@ -117,11 +117,11 @@ function presentedSemantic(
 	components: WorkhorseComponents,
 	context: ProjectionContext,
 ): SemanticDelivery | undefined {
-	const binding = components.semanticDelivery.snapshot().binding;
+	const binding = components.contextDelivery.snapshot().binding;
 	if (binding === null || !bindingIsForPane(binding, context)) {
 		return undefined;
 	}
-	const latest = components.semanticDelivery.inspect().at(-1);
+	const latest = components.contextDelivery.inspect().at(-1);
 	return deliveryIsForBinding(latest, binding) ? latest : undefined;
 }
 
@@ -135,12 +135,12 @@ function presentedSemantic(
 function semanticPanel(
 	delivery: SemanticDelivery | undefined,
 	publisher: WorkhorseComponents["semanticPublisher"],
-): BrowserOwnerProjection["semantic"] {
+): BrowserOwnerProjection["contextDelivery"] {
 	if (delivery === undefined) {
-		return { kind: "codex_semantic", outcome: null, freshness: null };
+		return { kind: "codex_context_delivery", outcome: null, freshness: null };
 	}
 	return {
-		kind: "codex_semantic",
+		kind: "codex_context_delivery",
 		outcome: {
 			targetThreadId: delivery.targetThreadId,
 			outcome: delivery.outcome,
@@ -243,19 +243,22 @@ function presentedQueue(
 function workhorsePanels(
 	workhorse: ServerOwnerProjectionInput["workhorse"],
 	context: ProjectionContext,
-): Pick<BrowserOwnerProjection, "settings" | "queue" | "semantic"> {
+): Pick<BrowserOwnerProjection, "settings" | "queue" | "contextDelivery"> {
 	if (workhorse === null) {
 		return {
 			settings: [],
 			queue: UNAVAILABLE_QUEUE,
-			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
+			contextDelivery: { kind: "codex_context_delivery", outcome: null, freshness: null },
 		};
 	}
 	const { components, state } = workhorse;
 	return {
 		settings: workhorseSettings(components.workhorse.snapshot()),
 		queue: presentedQueue(state, context),
-		semantic: semanticPanel(presentedSemantic(components, context), components.semanticPublisher),
+		contextDelivery: semanticPanel(
+			presentedSemantic(components, context),
+			components.semanticPublisher,
+		),
 	};
 }
 
@@ -338,7 +341,7 @@ function readBrowserOwnerProjection(
 		settings: [...owned.settings, ...coordinatorSettings(coordinator)],
 		approvals: visibleApprovalViews(input.approvals, context.tabSessionId, context.checkout),
 		dynamicApprovals: dynamicApprovals?.pending(context.tabSessionId) ?? [],
-		semantic: owned.semantic,
+		contextDelivery: owned.contextDelivery,
 		coordinator: {
 			kind: "codex_coordinator",
 			state: coordinator.state,

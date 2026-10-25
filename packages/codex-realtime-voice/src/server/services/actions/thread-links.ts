@@ -186,7 +186,7 @@ interface ServerThreadLinkActionOptions {
 	readonly identity: Pick<CodexWorkbenchComponents["identity"], "operation">;
 	readonly workhorse: CodexWorkbenchWorkhorseComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
-	readonly semanticDelivery: CodexWorkbenchWorkhorseComponents["semanticDelivery"];
+	readonly contextDelivery: CodexWorkbenchWorkhorseComponents["contextDelivery"];
 	/** The workhorse's link key: its tab session and its checkout. */
 	readonly key: string;
 	/** Record that the workhorse started a thread, so what Codex says about it finds it. */
@@ -242,7 +242,7 @@ async function startWorkhorseThread(
 	if (ready === null) {
 		throw new Error("The created workhorse did not return exact target authority.");
 	}
-	replaceThreadContextBinding(options.semanticDelivery, ready.target, started.binding);
+	replaceThreadContextBinding(options.contextDelivery, ready.target, started.binding);
 	const left = expected.threadId;
 	if (left !== null && left !== ready.target.threadId) {
 		void options.retireThread(left);

@@ -33,7 +33,7 @@ interface BrowserSnapshotRelationshipFields {
 		readonly threadId: string | null;
 	};
 	readonly timeline: { readonly threadId: string } | null;
-	readonly semantic: { readonly threadId: string } | null;
+	readonly contextDelivery: { readonly threadId: string } | null;
 	readonly voice?: { readonly realtimeSessionId: string | null } | undefined;
 	readonly voiceContext?: { readonly sessionId: string } | null | undefined;
 	readonly coordinator: { readonly threadId: string | null };
@@ -56,11 +56,12 @@ function contradictsThreadLink(
 /**
  * Tells whether an unbound link is accompanied by thread-scoped state.
  * @param value - The snapshot fields.
- * @returns True when the link is unbound yet a timeline or semantic receipt is present.
+ * @returns True when the link is unbound yet a timeline or context delivery receipt is present.
  */
 function unboundLinkPublishesThreadState(value: BrowserSnapshotRelationshipFields): boolean {
 	return (
-		value.threadLink.state === "unbound" && (value.timeline !== null || value.semantic !== null)
+		value.threadLink.state === "unbound" &&
+		(value.timeline !== null || value.contextDelivery !== null)
 	);
 }
 
@@ -98,7 +99,7 @@ function browserSnapshotRelationshipIssues(
 	const issues: BrowserSnapshotRelationshipIssue[] = [];
 	for (const [name, scoped] of [
 		["timeline", value.timeline],
-		["semantic", value.semantic],
+		["contextDelivery", value.contextDelivery],
 	] as const) {
 		if (contradictsThreadLink(value, scoped)) {
 			issues.push({
@@ -161,7 +162,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 			settings: z.array(session.BrowserSettingsSchema),
 			approvals: z.array(BrowserApprovalSchema),
 			dynamicApprovals: z.array(dynamic.BrowserDynamicApprovalSchema),
-			semantic: voice.BrowserSemanticDeliverySchema.nullable(),
+			contextDelivery: voice.BrowserContextDeliverySchema.nullable(),
 			coordinator: voice.BrowserCoordinatorSchema,
 			voice: voice.BrowserVoiceSchema,
 			spokenApproval: BrowserSpokenApprovalSchema,
@@ -195,7 +196,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		BrowserApprovalSchema,
 		dynamic.BrowserDynamicApprovalSchema,
 		commands.BrowserTextCommandSchema,
-		voice.BrowserSemanticDeliverySchema,
+		voice.BrowserContextDeliverySchema,
 		voice.BrowserCoordinatorSchema,
 		voice.BrowserVoiceSchema,
 		BrowserSpokenApprovalSchema,
@@ -215,7 +216,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		BrowserWorkhorsesSchema: session.BrowserWorkhorsesSchema,
 		BrowserApprovalSchema,
 		BrowserTextCommandSchema: commands.BrowserTextCommandSchema,
-		BrowserSemanticDeliverySchema: voice.BrowserSemanticDeliverySchema,
+		BrowserContextDeliverySchema: voice.BrowserContextDeliverySchema,
 		BrowserCoordinatorSchema: voice.BrowserCoordinatorSchema,
 		BrowserVoiceSchema: voice.BrowserVoiceSchema,
 		BrowserSpokenApprovalSchema,
@@ -243,7 +244,7 @@ type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
 type BrowserWorkhorses = z.infer<BrowserSchemas["BrowserWorkhorsesSchema"]>;
 type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
 type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
-type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
+type BrowserContextDelivery = z.infer<BrowserSchemas["BrowserContextDeliverySchema"]>;
 type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
 type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
 type BrowserSpokenApproval = z.infer<BrowserSchemas["BrowserSpokenApprovalSchema"]>;
@@ -281,7 +282,7 @@ export {
 	type BrowserWorkhorses,
 	type BrowserApproval,
 	type BrowserTextCommand,
-	type BrowserSemanticDelivery,
+	type BrowserContextDelivery,
 	type BrowserCoordinator,
 	type BrowserVoice,
 	type BrowserSpokenApproval,

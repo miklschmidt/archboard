@@ -270,7 +270,7 @@ const DELTA_PARSERS: DeltaParsers = {
 	settings: parserFor(z.array(browserModel.BrowserSettingsSchema)),
 	approvals: parserFor(z.array(browserModel.BrowserApprovalSchema)),
 	dynamicApprovals: parserFor(z.array(browserModel.BrowserDynamicApprovalSchema)),
-	semantic: parserFor(browserModel.BrowserSemanticDeliverySchema.nullable()),
+	contextDelivery: parserFor(browserModel.BrowserContextDeliverySchema.nullable()),
 	coordinator: parserFor(browserModel.BrowserCoordinatorSchema),
 	voice: parserFor(browserModel.BrowserVoiceSchema),
 	spokenApproval: parserFor(browserModel.BrowserSpokenApprovalSchema),

@@ -97,8 +97,8 @@ test("fits timeline history after every competing snapshot field is present", as
 					},
 				},
 			],
-			semantic: {
-				kind: "codex_semantic",
+			contextDelivery: {
+				kind: "codex_context_delivery",
 				outcome: { targetThreadId: threadId, outcome: "delivered", reason: null },
 				freshness: { capturedAtMs: 1_787_682_840_000, freshUntilMs: 1_787_682_870_000 },
 			},
@@ -134,7 +134,7 @@ test("fits timeline history after every competing snapshot field is present", as
 	]);
 	expect(snapshot.approvals).toHaveLength(1);
 	expect(snapshot.dynamicApprovals).toHaveLength(1);
-	expect(snapshot.semantic).toMatchObject({ threadId, delivery: "delivered" });
+	expect(snapshot.contextDelivery).toMatchObject({ threadId, delivery: "delivered" });
 	expect(snapshot.voice.transcript).toHaveLength(1);
 	expect(snapshot.lease).toMatchObject({ commandId: lease.commandId, state: "active" });
 	expect(snapshot.operation).toMatchObject({ operationId: lease.commandId, outcome: "delivered" });

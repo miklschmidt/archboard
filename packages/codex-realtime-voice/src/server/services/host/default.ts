@@ -326,7 +326,7 @@ function createDefaultWorkbenchHost(
 			freshness: {
 				state: "fresh" as const,
 				capturedAtMs,
-				freshUntilMs: capturedAtMs + CODEX_REALTIME_MS.semanticFreshness,
+				freshUntilMs: capturedAtMs + CODEX_REALTIME_MS.contextFreshness,
 			},
 		});
 	};

@@ -471,7 +471,7 @@ function createWorkhorseBindings(
 		 * @param created What the workhorse has built so far.
 		 * @returns The delivery binding.
 		 */
-		semanticDelivery: (created) => ({
+		contextDelivery: (created) => ({
 			contextCodec: server.host.contextCodec,
 			/**
 			 * Compare the captured host payload with the event before core authority gates allow delivery.

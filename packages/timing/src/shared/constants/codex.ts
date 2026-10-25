@@ -84,10 +84,10 @@ const CODEX_REALTIME_MS = durations({
 	start: 15_000,
 	/** Realtime-stop timeout classification. Pulls against TERM grace so realtime stops first. */
 	stop: 3000,
-	/** Realtime-recovery window classification. Pulls against semantic freshness while reconnecting. */
+	/** Realtime-recovery window classification. Pulls against context freshness while reconnecting. */
 	recovery: 45_000,
-	/** Semantic-freshness expiry classification. Pulls against realtime recovery. */
-	semanticFreshness: 30_000,
+	/** How long an announced context change stays fresh enough to deliver. Pulls against realtime recovery. */
+	contextFreshness: 30_000,
 });
 
 /** A browser command an agent leases, and the approvals a person answers. */
