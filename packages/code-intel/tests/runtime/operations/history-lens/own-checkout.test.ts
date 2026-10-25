@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createBehindReading } from "#runtime/operations/history-lens/behind.ts";
 import { createLocalityReading } from "#runtime/operations/history-lens/locality.ts";
-import { readFootprint } from "#runtime/operations/history-lens/footprint.ts";
+import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
@@ -152,7 +152,7 @@ test("behind counts the commits of the checkout that holds the vault", async () 
 
 test("footprint and locality read the part in the checkout that holds the vault", async () => {
 	const current = currentVariant(board)!;
-	const footprint = await readFootprint({ vault, board, against: current, base: first });
+	const footprint = await readVariantFootprint({ vault, board, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();
 	const locality = await createLocalityReading().read(vault, board, current, undefined);

@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readFootprint } from "#runtime/operations/history-lens/footprint.ts";
+import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
 	currentVariant,
 	SemanticBoardSchema,
@@ -119,7 +119,7 @@ test("bound declarations retain historical C, Objective-C and Nix parser context
 		});
 		const current = currentVariant(board);
 		if (current === undefined) throw new Error("Missing current variant");
-		const answer = await readFootprint({ vault: scratch, board, against: current, base });
+		const answer = await readVariantFootprint({ vault: scratch, board, against: current, base });
 		if (answer.proposal !== null) throw new Error("Unexpected proposal");
 		expect(answer.changed).toMatchObject([
 			{

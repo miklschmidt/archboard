@@ -328,7 +328,7 @@ beforeAll(async () => {
 		await lens.createLocalityReading().read(scratch, board, current, new Date("2000-01-01")),
 	);
 	const request = { vault: scratch, board, against: current, base };
-	const answer = FootprintAnswerSchema.parse(await lens.readFootprint(request));
+	const answer = FootprintAnswerSchema.parse(await lens.readVariantFootprint(request));
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	footprint = answer.changed;
 	footprintCommits = answer.commits;
