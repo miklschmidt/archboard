@@ -320,7 +320,10 @@ export default defineConfig({
 		ignorePatterns: [
 			".archboard/vault/**/*.semantic.json",
 			"examples/**/*.semantic.json",
+			// Third-party agent skills keep their authors' formatting: those in .agents/skills
+			// here, and those in .claude/skills through .claude/**.
 			".claude/**",
+			".agents/skills/**",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
