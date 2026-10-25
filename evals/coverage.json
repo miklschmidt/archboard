@@ -807,7 +807,7 @@
 					"expectedUse": "author real relationships; the renderer reserves space for fixed-radius bends and full straight arrow approaches instead of shrinking visible geometry",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/routes/route-approach.test.ts; packages/renderer/tests/runtime/operations/crossings/crossing-rounding.test.ts"
+					"owner": "packages/renderer/tests/runtime/operations/routes/route-approach.test.ts; crates/archboard-layout/src/routes/tests/mod.rs"
 				},
 				{
 					"path": "automatic downward column wrapping",
