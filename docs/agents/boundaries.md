@@ -120,7 +120,7 @@ split by behavior.
   code outside the package imports stays private, and so does a piece that callers only connect.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
@@ -197,16 +197,16 @@ derives the checkout root from `SOURCE_CHECKOUT`.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
-exposes 3 subpaths, where it exposed 9 files. Everything in `shared/api/` is safe for the browser,
-with no Node import. `./bindings` holds the binding, anchor and document-reference schemas and the
-files a binding names. `board` imports them and the resolver parses with `CodeBindingSchema`, so
-they stay here. `./opening` holds the wire contract of the open route, the contract of the opener
-settings and the pure rules for an opener executable. `./resolution` is Node-bound, in
-`runtime/api/`. It captures the registered checkouts and the paths of some bindings once, then
-resolves a binding or a repository against that snapshot alone. It also carries the result types
-and the resolution rules that the snapshot feeds, the checkout that holds a vault with the
-checkouts a reader of that vault resolves identities in, and the GitHub URL that a card opens when
-the code is not local.
+exposes 2 subpaths with 18 names, where it exposed 9 files. Everything in `shared/api/` is safe for
+the browser, with no Node import. `./bindings` holds the binding, anchor and document-reference
+schemas and the files a binding names. `board` imports them and the resolver parses with
+`CodeBindingSchema`, so they stay here. `./resolution` is Node-bound, in `runtime/api/`. It captures
+the registered checkouts and the paths of some bindings once, then resolves a binding or a
+repository against that snapshot alone. It also carries the result types and the resolution rules
+that the snapshot feeds. It finds the checkout that holds a vault, and the checkouts in which a
+reader of that vault resolves identities. The resolver names its own failure codes, and the open contract in
+`code-opener` holds each of them. The wire contract of the open, the opener settings and the GitHub
+link of a binding are not here: only the code opener reads them, so they live in `code-opener`.
 
 The sixth is `codex-app-server` (`@archboard/codex-app-server`). It owns one private Codex app-server session over stdio.
 It holds protocol contracts, the process owner, the stdio transport, and the session.
@@ -384,25 +384,33 @@ vault and board query builders (`inVault`, `boardQuery`) and the vault a page op
 (`learnServedVault`, `servedVault`). The reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
 
-The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board: the code
-facts of a checkout, the code check of a board's claims, the history lens over Git and the language
-servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 36 names, where code outside imported 7 module paths. It imports `board`,
+The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
+the code facts of a checkout and the code check of a board's claims. It also holds the history lens
+over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
+subpaths with 16 names, where code outside imported 7 module paths. It imports `board`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
-- `./code-check` is the answer of the code check and of the route that remembers it: the findings,
-  their evidence, what the check skipped, how far a board is behind its code and the timings. The
-  schema is in `shared/protocol/code-check.ts`. `./history` is the answers of the locality and
-  footprint routes and the label of a commit's attribution, from `shared/protocol/` and
-  `shared/schemas/`.
-- `./code-check-run` reads the boards to check, runs the pass and reads the plans an agent names.
-  `./history-lens` creates the behind and locality readings and reads a footprint. `./code-facts`
-  creates the code facts and finds a symbol, which the code opener uses to place a line.
-- The language servers have no api file, because no code outside the package imports them. The code
-  check opens them through its own session. A name needs a caller outside the package before it
-  becomes public.
+- `./code-check` is the answer of the code check and the answer of the route that remembers it:
+  `CodeCheckAnswer` and `RememberedFindings`, with their schemas. The schema is in
+  `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes
+  and the start of a period, from `shared/protocol/`. It also gives the label of a commit's
+  attribution, from `shared/schemas/`. A part of an answer, such as a finding, a skip, a timing or a commit, has no
+  public name. A reader names it by its place in the answer, such as
+  `CodeCheckAnswer["findings"][number]`.
+- `./code-check-run` gives one operation for each job. `createCodeCheck()` makes the code check,
+  and its `run` does the whole pass: it reads the boards to check and the plans an agent names,
+  reads the claims and behind side by side, and gives the answer. A draft that no board has, or a
+  plan the check does not read, gives a refusal (`NO_SUCH_DRAFT`, `PLAN_REFUSED`) with its words.
+  The code check keeps what behind read, so a server makes one. `checkCandidateCode` and
+  `suggestHistoricalCommits` check the candidate of a correction. `./history-lens` makes the
+  locality reading and reads a footprint. `./code-facts` is `symbolLine`: the line that defines a
+  binding's symbol in the one file the binding names. The code opener opens the file at that line.
+- The steps of a pass, behind, the code facts reader and the language servers have no api file. The
+  code check opens the language servers through its own session. The package's tests reach the
+  steps and the readings through `tests/runtime/support/code-check/pass.ts` and
+  `tests/runtime/support/history-lens/lens.ts`.
 - `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
   facts, `modules/` for what a module exposes, and one folder for each language or format
   (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `nix/`, `kubernetes/`, `compose/`,
@@ -465,29 +473,36 @@ only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `server/` and `ui/` and exposes 4 subpaths with 13 names, where code outside imported
-5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace` and `server-requests`. The 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
+imported 5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
+The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, the
-  plan of an opener command and its launch. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opening` is the wire contract of the open, as a reader outside sees it. It holds the notice a person reads,
+  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
+  the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
+  contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
+  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
-- `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run, the
-  target inside a vault and the line that defines a symbol, which asks `code-intel` for the code facts. `lifecycle/`
-  launches the editor. `store/` holds the opener configuration, a file in the state directory that
+- `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and
+  the target inside a vault. It also makes the GitHub link of a binding (`github-link.ts`). The line that defines a
+  symbol comes from `code-intel/code-facts`. `lifecycle/`
+  launches the editor. `store/` holds the opener settings, a file in the state directory that
   `@archboard/workspace/atomic-write` writes. It is in `store/` because lint refuses a `node:fs` import in a `state/`
   folder. `middleware/` holds the guard and the CSRF check.
-- `./code-target` asks the server to open the code a subject is bound to and gives the notice that the outcome
-  deserves. `./opener-settings` is the dialog that sets which editor opens the code, and the flow it runs against. The
-  flow reads, tests, saves and resets through `ui/clients/code-target-requests.ts`, which parses each reply strictly
-  against the schemas of `code-binding/opening`.
-- `ui/` keeps the dialog's `components/`, the flow's `hooks/` and `state/`, the endpoints in `clients/` and the pure
+- `./code-target` is `activateCodeTarget`. It asks the server to open the code a subject is bound to. It gives
+  `onNotice` the one notice that the outcome deserves: each failure, and an open of a version that the binding does
+  not name. A plain open gives no notice. `./opener-settings` is `OpenerSettings`, the dialog that sets which editor
+  opens the code, open over the flow that it runs against. The flow reads, tests, saves and resets through
+  `ui/clients/code-target-requests.ts`, which parses each reply strictly against the schemas of `shared/schemas/`.
+- `ui/` keeps the dialogs in `components/`, the flow's `hooks/` and `state/`, the endpoints in `clients/` and the pure
   command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
   area.
-- The tests are in `tests/`: `server/middleware/`, `server/projections/` and `server/store/` test the server files,
-  `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay in `tests/system/code-targets` and
-  `tests/system/browser/opener-settings.test.ts`.
+- The tests are in `tests/`: `shared/schemas/` tests the contract, `server/middleware/`, `server/projections/` and
+  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay
+  in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records a narrated walkthrough of a board to a video
 (ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one

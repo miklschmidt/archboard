@@ -3,16 +3,14 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
+import type { CodeTargetNotice } from "#shared/schemas/code-target-open.ts";
 import type {
-	CodeTargetNotice,
 	OpenerSelection,
 	OpenerSettingsTestRequest,
-} from "@archboard/code-binding/opening";
-import { OpenerSettingsDialog } from "@archboard/code-opener/opener-settings";
-import {
-	useOpenerSettingsFlow,
-	type OpenerSettingsFlowListener,
-} from "@archboard/code-opener/opener-settings";
+} from "#shared/schemas/opener-settings.ts";
+import { OpenerSettingsDialog } from "#ui/components/OpenerSettingsDialog.tsx";
+import { useOpenerSettingsFlow } from "#ui/hooks/use-opener-settings-flow.ts";
+import type { OpenerSettingsFlowListener } from "#ui/state/opener-settings-flow.ts";
 
 /** Inputs for the opener settings dialog. */
 interface OpenerSettingsProps {

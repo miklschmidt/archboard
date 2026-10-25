@@ -1,13 +1,7 @@
 import path from "node:path";
 
-import { buildInternalCodeTargetUrl } from "#shared/rules/internal-code-target-url.ts";
-import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
-import {
-	GitHubHttpsUrlSchema,
-	type CodeTargetOpenRequest,
-	type GitHubHttpsUrl,
-} from "#shared/schemas/code-target-open.ts";
-import type { LocalCodeTargetResult } from "#runtime/operations/binding-resolver.ts";
+import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import { GitHubHttpsUrlSchema, type GitHubHttpsUrl } from "#shared/schemas/code-target-open.ts";
 
 /**
  * Percent-encodes one URL path segment.
@@ -118,26 +112,4 @@ function githubUrlForBinding(binding: CodeBinding, line?: number): GitHubHttpsUr
 	return validated.success ? validated.data : undefined;
 }
 
-/**
- * Chooses the URL a card opens: the internal opener when the target resolved
- * locally on the ref the binding names, otherwise the GitHub fallback at that
- * ref, and the local target on another ref only when there is no fallback.
- * @param binding - The binding to present.
- * @param identity - The open request the internal opener answers.
- * @param local - The local resolution outcome for the binding.
- * @returns The URL to open, or undefined when neither surface can show it.
- */
-function presentationTargetForBinding(
-	binding: CodeBinding,
-	identity: CodeTargetOpenRequest,
-	local: LocalCodeTargetResult,
-): string | undefined {
-	if (local.ok && local.otherRef === undefined) {
-		return buildInternalCodeTargetUrl(identity);
-	}
-	return (
-		githubUrlForBinding(binding) ?? (local.ok ? buildInternalCodeTargetUrl(identity) : undefined)
-	);
-}
-
-export { githubUrlForBinding, presentationTargetForBinding };
+export { githubUrlForBinding };

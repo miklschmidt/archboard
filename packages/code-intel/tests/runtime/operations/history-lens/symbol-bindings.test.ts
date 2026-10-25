@@ -6,7 +6,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import {
 	FootprintAnswerSchema,
 	type FootprintAnswer,
@@ -321,7 +321,7 @@ beforeAll(async () => {
 	write("infra/resources.tf", resources(undefined, 7));
 	for (let at = 0; at < 31; at += 1) write(`bulk/${at}.txt`, "bulk\n");
 	large = commit("change second resource in a large commit");
-	const lens: typeof LensModule = await import("#runtime/api/history-lens.ts");
+	const lens: typeof LensModule = await import("#tests/runtime/support/history-lens/lens.ts");
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	locality = LocalityAnswerSchema.parse(

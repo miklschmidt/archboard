@@ -13,7 +13,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema, type FootprintAnswer } from "#shared/protocol/footprint.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -258,7 +258,7 @@ beforeAll(async () => {
 	commit(shop, "change the ledger on the second layer", { "src/ledger.ts": "2\n" });
 	git(shop, "update-ref", "refs/remotes/origin/remote-only", git(shop, "rev-parse", "stack-two"));
 	git(shop, "checkout", "-q", "feature");
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {

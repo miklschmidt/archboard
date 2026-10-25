@@ -12,7 +12,9 @@ import path from "node:path";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { LocalCodeTarget } from "@archboard/code-binding/resolution";
-import { createCodeFacts, findSymbol, type FileFacts } from "@archboard/code-intel/code-facts";
+import type { FileFacts } from "#runtime/operations/code-facts/facts.ts";
+import { findSymbol } from "#runtime/operations/code-facts/lookup.ts";
+import { createCodeFacts } from "#runtime/services/code-facts/reader.ts";
 
 /** One cache for the opener: a file is parsed again only when its bytes change. */
 const codeFacts = createCodeFacts();

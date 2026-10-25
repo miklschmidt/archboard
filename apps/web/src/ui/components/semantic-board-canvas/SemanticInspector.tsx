@@ -25,7 +25,7 @@ import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { DetailsPanel } from "#ui/components/semantic-board-canvas/DetailsPanel.tsx";
 import { LineBody } from "#ui/components/semantic-board-canvas/SemanticInspectorLine.tsx";
-import type { RememberedReading } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,
@@ -70,6 +70,9 @@ import type { ReconciliationIssueSchema } from "@archboard/board/reconciliation"
 import type { z } from "zod";
 
 type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
+
+/** What the last pass found on one board at one variant. */
+type RememberedReading = RememberedFindings["readings"][number];
 
 /**
  * What a part is called, or the id the board names it by when the variant no
