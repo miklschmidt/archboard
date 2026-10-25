@@ -27,7 +27,9 @@ import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
 
-type SemanticPanePresentation = NonNullable<z.infer<typeof SemanticPaneContextSchema>["presentation"]>;
+type SemanticPanePresentation = NonNullable<
+	z.infer<typeof SemanticPaneContextSchema>["presentation"]
+>;
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-two-browsers-"));

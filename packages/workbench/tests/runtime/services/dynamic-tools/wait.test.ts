@@ -1,3 +1,4 @@
+import type { ThreadLinkClassification } from "#runtime/protocol/voice/extension.ts";
 import { expect, test } from "bun:test";
 
 import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
@@ -7,7 +8,6 @@ import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 } from "#runtime/protocol/thread-tools/manifest.ts";
-import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import {
 	optionsFor,
 	requestFor,
