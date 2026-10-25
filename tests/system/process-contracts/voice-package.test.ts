@@ -66,10 +66,38 @@ function pinned(names: readonly string[]): string[] {
 	});
 }
 
+/**
+ * Every line of the packed package that names a concept of the host that publishes it: Archboard,
+ * its boards, vaults, panes, walkthroughs, narration, dock and canvas, or a decision or task of
+ * its backlog. The `@archboard/` npm scope and the URL of the repository that holds the source
+ * are the two names the package keeps. The browser global `navigator` is not in the list: the
+ * browser client reads it.
+ * @returns Each hit as `file:line: text`.
+ */
+function archboardConceptsInPackedPackage(): string[] {
+	const concept =
+		/archboard|\b(?:boards?|vaults?|panes?|walkthroughs?|narration|dock|canvas)\b|ADR [0-9]{4}|TASK-[0-9]+/i;
+	const kept = /@archboard\/|github\.com\/miklschmidt\/archboard/gi;
+	const files = readdirSync(packed, { recursive: true, withFileTypes: true })
+		.filter((entry) => entry.isFile())
+		.map((entry) => path.join(entry.parentPath, entry.name))
+		.filter((file) => !file.includes(`${path.sep}node_modules${path.sep}`));
+	return files.flatMap((file) =>
+		readFileSync(file, "utf8")
+			.split("\n")
+			.flatMap((line, index) =>
+				concept.test(line.replace(kept, ""))
+					? [`${path.relative(packed, file)}:${index + 1}: ${line.trim().slice(0, 160)}`]
+					: [],
+			),
+	);
+}
+
 test("an outside Bun project installs the packed package, uses every public entry and the README's code", () => {
 	const project = realpathSync(mkdtempSync(path.join(tmpdir(), "codex-realtime-voice-consumer-")));
 	try {
 		run(["bun", "run", "pack:voice"], root);
+		expect(archboardConceptsInPackedPackage()).toEqual([]);
 		const manifest = JSON.parse(readFileSync(path.join(packed, "package.json"), "utf8")) as {
 			name: string;
 			exports: Record<string, unknown>;
