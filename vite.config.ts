@@ -275,6 +275,8 @@ export default defineConfig({
 					"vp run lint:css",
 					"vp fmt --config vite.config.ts",
 					"cargo fmt --all",
+					// Formatting the Rust sources or the build script invalidates the first core build.
+					"vp run core",
 				],
 				cache: false,
 			},
