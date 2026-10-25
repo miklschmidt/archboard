@@ -139,7 +139,8 @@ function keepCommitOrThrow(
 }
 
 /**
- * Write `data` to `file` atomically: temp file, fsync, rename.
+ * Write `data` to `file` atomically: temp file, fsync, rename. With `exclusive`,
+ * the commit is a hard link instead of the rename (`writeFileAtomicExclusive`).
  *
  * Throws what the underlying write threw, having removed the temp file first,
  * so a failure leaves the destination exactly as it was and the directory no
