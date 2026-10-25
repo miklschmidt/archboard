@@ -18,7 +18,7 @@ import {
 	type BoardRenderOutcome,
 } from "#shared/rules/render/board.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
-import initCore, * as core from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+import { loadBrowserCore } from "#ui/clients/core.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
 import {
 	createEnginePool,
@@ -37,14 +37,14 @@ function startLayoutWorker(): EngineWorker {
 let started: Promise<void> | undefined;
 
 /** The renderer core, once its glue fetched and started its WebAssembly. */
-let loaded: typeof core | undefined;
+let loaded: Awaited<ReturnType<typeof loadBrowserCore>> | undefined;
 
 /**
  * The renderer core, which this page loads before it paints its first picture.
  * @returns The core.
  * @throws {Error} When the page asks for a picture before the core is loaded.
  */
-function loadedCore(): typeof core {
+function loadedCore(): Awaited<ReturnType<typeof loadBrowserCore>> {
 	if (loaded === undefined) throw new Error("The renderer core is not loaded yet.");
 	return loaded;
 }
@@ -65,7 +65,7 @@ function startBrowserRenderer(): void {
 	const solve = createEnginePool(startLayoutWorker, workerCeiling(navigator.hardwareConcurrency));
 	// The core's glue fetches its WebAssembly beside it, as the build serves it,
 	// and is ready before the first picture is painted.
-	const painter = initCore().then(() => (loaded = core));
+	const painter = loadBrowserCore().then((core) => (loaded = core));
 	installRendererHost({
 		core: loadedCore,
 		solve,
