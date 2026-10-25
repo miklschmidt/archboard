@@ -203,7 +203,7 @@ mod tests {
     use super::paint;
     use crate::measure::fixed::Monospace;
     use crate::request::{PaintRequest, Standing};
-    use crate::scene::{Item, Motion, Role, Subject, SubjectKind};
+    use crate::scene::{Item, Motion, Role, Scene, Subject, SubjectKind};
 
     /// Two cards, the first one added, and a line with traffic between them.
     const REQUEST: &str = r#"{
@@ -250,11 +250,16 @@ mod tests {
         all
     }
 
-    #[test]
-    fn each_group_names_its_subject_and_role_and_traffic_is_data() {
+    /// The scene of the test board.
+    fn painted() -> Scene {
         let request: PaintRequest =
             serde_json::from_str(&REQUEST.replace("EDGE", EDGE)).expect("the request reads");
-        let scene = paint(&request, &Monospace);
+        paint(&request, &Monospace)
+    }
+
+    #[test]
+    fn each_group_names_its_subject_and_role() {
+        let scene = painted();
         let items = every(&scene.body);
         let drawn = |kind: SubjectKind, id: &str| -> Vec<(Role, Subject)> {
             items
@@ -287,7 +292,12 @@ mod tests {
                 .iter()
                 .any(|(role, _)| *role == Role::Line)
         );
+    }
 
+    #[test]
+    fn traffic_is_data_the_painter_does_not_animate() {
+        let scene = painted();
+        let items = every(&scene.body);
         let traffic: Vec<_> = items
             .iter()
             .filter_map(|item| match item {

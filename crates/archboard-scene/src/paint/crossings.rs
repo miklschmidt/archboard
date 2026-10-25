@@ -163,9 +163,12 @@ pub(super) struct Masks {
     pub masks: HashMap<String, String>,
 }
 
-/// One mask per route with anything to hide, keeping all the rest of its ink.
-pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
-    let mut grouped: Vec<(String, Vec<(String, Markup)>)> = Vec::new();
+/// Each route's cutouts, as written and as markup: routes in the order they
+/// were first cut, and each cutout once.
+type Grouped = Vec<(String, Vec<(String, Markup)>)>;
+
+fn grouped(cutouts: Vec<Cutout>) -> Grouped {
+    let mut grouped: Grouped = Vec::new();
     for Cutout { edge_id, markup } in cutouts {
         let written = markup_of(&markup);
         let at = if let Some(at) = grouped.iter().position(|(id, _)| *id == edge_id) {
@@ -179,30 +182,41 @@ pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
             paths.push((written, markup));
         }
     }
+    grouped
+}
+
+/// One route's mask, named by its content: all of the route's ink but its cutouts.
+fn mask_of(routed: &Edge, paths: Vec<(String, Markup)>) -> (String, Markup) {
+    let rect = inflate(curve_bounds(&routed.curve), 18.0);
+    let bounds = attrs! {
+        "x": coord(rect.x),
+        "y": coord(rect.y),
+        "width": coord(rect.width),
+        "height": coord(rect.height),
+    };
+    let mut body = tag("rect", bounds.clone().set("fill", "white"));
+    for (_, path) in paths {
+        body.extend(path);
+    }
+    let id = format!("crossing-{}", content_id(&markup_of(&body)));
+    let definition = wrap(
+        "mask",
+        attrs! { "id": id.as_str(), "maskUnits": "userSpaceOnUse", "maskContentUnits": "userSpaceOnUse" }.with(bounds),
+        body,
+    );
+    (id, definition)
+}
+
+/// One mask per route with anything to hide, keeping all the rest of its ink.
+pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
     let mut masks = HashMap::new();
     let mut definitions = Vec::new();
-    for (edge_id, paths) in grouped {
-        let Some(routed) = edges.iter().rev().find(|routed| routed.edge.id == edge_id) else {
-            continue;
-        };
-        let rect = inflate(curve_bounds(&routed.curve), 18.0);
-        let bounds = attrs! {
-            "x": coord(rect.x),
-            "y": coord(rect.y),
-            "width": coord(rect.width),
-            "height": coord(rect.height),
-        };
-        let mut body = tag("rect", bounds.clone().set("fill", "white"));
-        for (_, path) in paths {
-            body.extend(path);
+    for (edge_id, paths) in grouped(cutouts) {
+        if let Some(routed) = edges.iter().rev().find(|routed| routed.edge.id == edge_id) {
+            let (id, definition) = mask_of(routed, paths);
+            masks.insert(edge_id, id);
+            definitions.push(definition);
         }
-        let id = format!("crossing-{}", content_id(&markup_of(&body)));
-        masks.insert(edge_id, id.clone());
-        definitions.push(wrap(
-            "mask",
-            attrs! { "id": id, "maskUnits": "userSpaceOnUse", "maskContentUnits": "userSpaceOnUse" }.with(bounds),
-            body,
-        ));
     }
     Masks {
         definitions: if definitions.is_empty() {

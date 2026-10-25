@@ -18,27 +18,16 @@ use crate::paint::tray::{header_of, tray};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{Role, SubjectKind};
 
-/// One measured card with its kind glyph and its standing's treatment.
-#[allow(clippy::too_many_arguments)]
+/// One measured card with its kind glyph and its standing's treatment: the
+/// card drawn as `part`, its words where the layout measured them.
 pub(super) fn paint_measured_card(
     ctx: &Ctx<'_>,
     placed: &Node,
+    part: &Part<'_>,
     palette: &Palette,
-    standing: Option<Standing>,
-    unsettled: bool,
-    appearance: &NodeAppearance,
     cut: Option<&str>,
-    kind: SubjectKind,
 ) -> Markup {
-    let rect = placed.bounds;
-    let part = Part {
-        kind,
-        node: &placed.measured.node,
-        rect,
-        appearance,
-        standing,
-        unsettled,
-    };
+    let (rect, standing) = (placed.bounds, part.standing);
     let near = NearCard {
         chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
         chip_y: rect.y + ARCHITECTURE_CARD_PADDING,
@@ -48,7 +37,7 @@ pub(super) fn paint_measured_card(
             &standing_palette(palette, standing),
         ),
     };
-    paint_slab_card(ctx, &part, palette, cut, near)
+    paint_slab_card(ctx, part, palette, cut, near)
 }
 
 /// A containing frame below its children and all connections: a neutral well

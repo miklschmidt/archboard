@@ -107,12 +107,9 @@ fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
     (half >= line / 2.0 + 0.5).then_some(half)
 }
 
-/// Every port of a drawing: where a line drawn whole meets the foot of a card drawn whole.
-pub(super) fn ports_of(
-    cards: &[Node],
-    edges: &[Edge],
-    drawn_whole: &dyn Fn(&str) -> bool,
-) -> Ports {
+/// The box of every card drawn whole, each card once at its last box, in the
+/// order the cards first come.
+fn whole_boxes(cards: &[Node], drawn_whole: &dyn Fn(&str) -> bool) -> Vec<(String, Rect)> {
     let mut boxes: Vec<(String, Rect)> = Vec::new();
     for card in cards
         .iter()
@@ -124,6 +121,59 @@ pub(super) fn ports_of(
             None => boxes.push((id.clone(), card.bounds)),
         }
     }
+    boxes
+}
+
+impl Ports {
+    /// The ports of one card: one at each place a line meets its foot, where
+    /// the room beside its neighbours leaves a port wide enough.
+    fn add_card(&mut self, card: &str, rect: Rect, here: &[&Meeting]) {
+        let mut places: Vec<f64> = Vec::new();
+        for meeting in here {
+            if !places.contains(&meeting.x) {
+                places.push(meeting.x);
+            }
+        }
+        for &x in &places {
+            let at: Vec<&Meeting> = here.iter().copied().filter(|one| one.x == x).collect();
+            let line = js::max(at.iter().map(|one| one.line));
+            let others: Vec<f64> = places.iter().copied().filter(|other| *other != x).collect();
+            if let Some(half) = half_at(rect, x, line, &others) {
+                let port = Port {
+                    x,
+                    foot: rect.y + rect.height,
+                    half,
+                    line,
+                };
+                self.add_port(card, port, &at);
+            }
+        }
+    }
+
+    /// One port of a card, in the slots of the card and of each line that meets it there.
+    fn add_port(&mut self, card: &str, port: Port, at: &[&Meeting]) {
+        let index = self.all.len();
+        self.all.push(port);
+        match self.by_card.iter_mut().find(|(held, _)| held == card) {
+            Some(entry) => entry.1.push(index),
+            None => self.by_card.push((card.to_owned(), vec![index])),
+        }
+        for one in at {
+            self.by_edge
+                .entry(one.edge.clone())
+                .or_default()
+                .push(index);
+        }
+    }
+}
+
+/// Every port of a drawing: where a line drawn whole meets the foot of a card drawn whole.
+pub(super) fn ports_of(
+    cards: &[Node],
+    edges: &[Edge],
+    drawn_whole: &dyn Fn(&str) -> bool,
+) -> Ports {
+    let boxes = whole_boxes(cards, drawn_whole);
     let meetings: Vec<Meeting> = edges
         .iter()
         .filter(|routed| drawn_whole(&routed.edge.id))
@@ -135,38 +185,7 @@ pub(super) fn ports_of(
             .iter()
             .filter(|meeting| &meeting.card == card)
             .collect();
-        let mut places: Vec<f64> = Vec::new();
-        for meeting in &here {
-            if !places.contains(&meeting.x) {
-                places.push(meeting.x);
-            }
-        }
-        for x in &places {
-            let at: Vec<&&Meeting> = here.iter().filter(|one| one.x == *x).collect();
-            let line = js::max(at.iter().map(|one| one.line));
-            let others: Vec<f64> = places.iter().copied().filter(|other| other != x).collect();
-            let Some(half) = half_at(*rect, *x, line, &others) else {
-                continue;
-            };
-            let index = ports.all.len();
-            ports.all.push(Port {
-                x: *x,
-                foot: rect.y + rect.height,
-                half,
-                line,
-            });
-            match ports.by_card.iter_mut().find(|(held, _)| held == card) {
-                Some(entry) => entry.1.push(index),
-                None => ports.by_card.push((card.clone(), vec![index])),
-            }
-            for one in at {
-                ports
-                    .by_edge
-                    .entry(one.edge.clone())
-                    .or_default()
-                    .push(index);
-            }
-        }
+        ports.add_card(card, *rect, &here);
     }
     ports.boxes = boxes;
     ports

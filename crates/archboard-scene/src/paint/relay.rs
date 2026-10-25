@@ -126,7 +126,6 @@ fn phases_of(
     across: &dyn Fn(&str, Point, Point) -> f64,
 ) -> HashMap<String, f64> {
     let mut phases: HashMap<String, f64> = HashMap::new();
-    let mut queue: std::collections::VecDeque<&Lane> = std::collections::VecDeque::new();
     let unfed: Vec<&Lane> = chain
         .iter()
         .copied()
@@ -137,17 +136,28 @@ fn phases_of(
     } else {
         unfed
     };
-    for start in starts.iter().chain(chain.iter()) {
-        if phases.contains_key(&start.id) {
-            continue;
+    for &start in starts.iter().chain(chain.iter()) {
+        if !phases.contains_key(&start.id) {
+            phases.insert(start.id.clone(), seeded(&start.from) * spacing);
+            hand_on(chain, start, spacing, across, &mut phases);
         }
-        phases.insert(start.id.clone(), seeded(&start.from) * spacing);
-        queue.push_back(start);
-        while let Some(lane) = queue.pop_front() {
-            for next in chain {
-                if phases.contains_key(&next.id) || !hands_on(lane, next) {
-                    continue;
-                }
+    }
+    phases
+}
+
+/// The phase of every lane a start's pulses are handed on to, nearest first:
+/// each pulse leaves a lane as it arrives at its end, and crosses to the next.
+fn hand_on(
+    chain: &[&Lane],
+    start: &Lane,
+    spacing: f64,
+    across: &dyn Fn(&str, Point, Point) -> f64,
+    phases: &mut HashMap<String, f64>,
+) {
+    let mut queue: std::collections::VecDeque<&Lane> = std::collections::VecDeque::from([start]);
+    while let Some(lane) = queue.pop_front() {
+        for &next in chain {
+            if !phases.contains_key(&next.id) && hands_on(lane, next) {
                 let arrived = within(phases[&lane.id] - lane.length, spacing);
                 phases.insert(
                     next.id.clone(),
@@ -157,7 +167,6 @@ fn phases_of(
             }
         }
     }
-    phases
 }
 
 /// How every lane's pulses move, by id.
