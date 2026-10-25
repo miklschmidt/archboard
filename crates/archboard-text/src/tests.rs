@@ -192,3 +192,12 @@ fn wrapped_tabs_start_from_the_new_line() {
     assert_eq!(texts(&paragraph, limit), ["ab\tc", "de\tf"]);
     assert!(lines.iter().all(|line| line.width <= limit));
 }
+
+#[test]
+fn a_mixed_script_word_breaks_only_at_grapheme_boundaries() {
+    let words = "a\u{301}δб".repeat(32);
+    let paragraph = Paragraph::new(FACE, 10.0, &words);
+    let graphemes: Vec<&str> = (0..32).flat_map(|_| ["a\u{301}", "δ", "б"]).collect();
+    assert_eq!(texts(&paragraph, 0.0), graphemes);
+    assert_eq!(texts(&paragraph, f64::INFINITY), [words]);
+}
