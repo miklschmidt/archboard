@@ -1,3 +1,18 @@
+// The browser side of the voice agent. A host page uses `createVoiceClient`; the
+// transport and media owners below stay for a host that multiplexes its own socket. Safe for the browser.
+export { createVoiceClient } from "#ui/clients/voice-client/voice-client.ts";
+export type {
+	VoiceApproval,
+	VoiceApprovalResponse,
+	VoiceClient,
+	VoiceClientFailure,
+	VoiceClientOptions,
+	VoiceClientSnapshot,
+	VoiceClientVoice,
+	VoiceCommandIntent,
+	VoiceSignIn,
+} from "#ui/state/voice-client/contract.ts";
+
 export { type RealtimeMediaSnapshot } from "#ui/clients/realtime/media-session.ts";
 
 export {

@@ -13,6 +13,7 @@
 		"./contract": "./src/shared/api/contract.ts",
 		"./realtime": "./src/shared/api/realtime.ts",
 		"./browser": "./src/ui/api/browser.ts",
+		"./react": "./src/ui/api/react.ts",
 		"./runtime": "./src/runtime/api/runtime.ts",
 		"./server": "./src/server/api/server.ts"
 	}

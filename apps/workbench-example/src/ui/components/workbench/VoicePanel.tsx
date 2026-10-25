@@ -1,31 +1,25 @@
 import { useCallback } from "react";
-import type { ExampleClient, ExampleClientSnapshot } from "#ui/clients/workbench/client.ts";
+import type { VoiceClientSnapshot } from "@archboard/codex-realtime-voice/browser";
+import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
 
 const LIVE_PHASES = new Set(["listening", "speaking", "muted", "processing"]);
 const STOPPABLE_PHASES = new Set([...LIVE_PHASES, "requesting_permission", "negotiating"]);
 
 /**
  * Present coordinator voice with a stop that does not interrupt repository work.
- * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
- * @param props.state The current page projection.
  * @returns The rendered controls or content.
  */
-function VoicePanel({
-	client,
-	state,
-}: {
-	readonly client: ExampleClient;
-	readonly state: ExampleClientSnapshot;
-}) {
-	const phase = state.media === null ? "idle" : state.media.state.phase;
+function VoicePanel() {
+	const client = useVoiceClient();
+	const state = useVoiceState();
+	const phase = state.voice.phase;
 	const live = LIVE_PHASES.has(phase);
 	const start = useCallback(() => {
 		void client.startVoice();
 	}, [client]);
 	const mute = useCallback(() => {
-		void client.toggleMute();
-	}, [client]);
+		void client.setMuted(phase !== "muted");
+	}, [client, phase]);
 	const stop = useCallback(() => {
 		void client.stopVoice();
 	}, [client]);
@@ -37,7 +31,7 @@ function VoicePanel({
 			</div>
 			<p>Talk through the work. The coordinator delegates sustained tasks to the workhorse.</p>
 			<div className="actions">
-				<button className="primary" disabled={!canStart(state, phase)} onClick={start}>
+				<button className="primary" disabled={!canStart(state)} onClick={start}>
 					Start voice
 				</button>
 				<button disabled={state.busy || !live} onClick={mute}>
@@ -47,7 +41,7 @@ function VoicePanel({
 					Stop voice
 				</button>
 			</div>
-			<MediaProblem state={state} />
+			<MediaProblem voice={state.voice} />
 			<VoiceTranscript state={state} />
 		</section>
 	);
@@ -55,47 +49,39 @@ function VoicePanel({
 
 /**
  * Decide whether a new voice run can start.
- * @param state The current page projection.
- * @param phase The phase value.
- * @returns The rendered controls or content.
+ * @param state The client state.
+ * @returns Whether Start voice is offered.
  */
-function canStart(state: ExampleClientSnapshot, phase: string): boolean {
-	if (state.busy || STOPPABLE_PHASES.has(phase) || state.mediaState.state !== "ready") return false;
-	return (
-		state.transport.connection === "connected" &&
-		state.transport.snapshot?.account.state === "ready"
-	);
+function canStart(state: VoiceClientSnapshot): boolean {
+	if (state.busy || STOPPABLE_PHASES.has(state.voice.phase) || !state.voice.available) return false;
+	return state.connection === "connected" && state.server?.account.state === "ready";
 }
 
 /**
  * Explain browser media failures without hiding the conversation.
- * @param props The rendered state and its action owners.
- * @param props.state The current page projection.
+ * @param props The rendered state.
+ * @param props.voice The coordinator's voice run.
  * @returns The rendered controls or content.
  */
-function MediaProblem({ state }: { readonly state: ExampleClientSnapshot }) {
-	if (state.mediaState.state === "unavailable")
+function MediaProblem({ voice }: { readonly voice: VoiceClientSnapshot["voice"] }) {
+	if (voice.problem === null) return null;
+	if (!voice.available)
 		return (
 			<p role="alert">
-				{state.mediaState.message} Allow microphone access in your browser, then select Reconnect.
+				{voice.problem} Allow microphone access in your browser, then select Reconnect.
 			</p>
 		);
-	if (state.media === null) return null;
-	const media = state.media.state;
-	if (media.phase === "recoverable_error" || media.phase === "terminal_error")
-		return <p role="alert">{media.reason}</p>;
-	return null;
+	return <p role="alert">{voice.problem}</p>;
 }
 
 /**
- * Read the coordinator transcript from its shared owner.
- * @param props The rendered state and its action owners.
- * @param props.state The current page projection.
+ * Read the coordinator transcript from the server state.
+ * @param props The rendered state.
+ * @param props.state The client state.
  * @returns The rendered controls or content.
  */
-function VoiceTranscript({ state }: { readonly state: ExampleClientSnapshot }) {
-	const snapshot = state.transport.snapshot;
-	const items = snapshot === null ? [] : snapshot.voice.transcript;
+function VoiceTranscript({ state }: { readonly state: VoiceClientSnapshot }) {
+	const items = state.server === null ? [] : state.server.voice.transcript;
 	return (
 		<div className="voice-transcript" aria-label="Voice transcript">
 			{items.length === 0 && <p className="empty">The voice transcript appears here.</p>}
