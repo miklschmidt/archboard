@@ -19,9 +19,8 @@ import type { JSX } from "react";
 import { VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
 import { PaneSubtitles } from "#ui/components/application/PaneSubtitles.tsx";
 import type { VoiceFeed } from "#ui/rules/application/subtitled-transcript.ts";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { Tooltip } from "@archboard/ui-kit/components";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import {
 	OrbStageProvider,
 	subtitlePreference,
@@ -219,7 +218,7 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
 	const given = { ...LIVE_PANE, ...setup };
 	return (
 		<OrbStageProvider>
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<VoiceSurfaceProvider voice={voiceIn(given.stage)} actions={NO_ACTIONS}>
 					<PaneSubtitles
 						feed={given.feed}
@@ -228,7 +227,7 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
 						dockless={given.dockless}
 					/>
 				</VoiceSurfaceProvider>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		</OrbStageProvider>
 	);
 }

@@ -14,9 +14,8 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
 import { VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { Tooltip } from "@archboard/ui-kit/components";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { OrbStageProvider } from "#ui/components/orb/OrbStage.tsx";
 import { subtitlePreference } from "#ui/state/subtitles/preference.ts";
 import { type SubtitleSource } from "#ui/hooks/subtitles/use-voice-subtitles.ts";
@@ -106,7 +105,7 @@ function box(setup: Partial<BoxSetup> = {}): JSX.Element {
 	const { voice, actions, shown, reducedMotion, transcript } = given(setup);
 	return (
 		<OrbStageProvider>
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<VoiceBox
 					voice={voice}
 					actions={actions}
@@ -115,7 +114,7 @@ function box(setup: Partial<BoxSetup> = {}): JSX.Element {
 					shown={shown}
 					place="free"
 				/>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		</OrbStageProvider>
 	);
 }

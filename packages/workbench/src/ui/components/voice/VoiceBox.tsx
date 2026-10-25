@@ -41,7 +41,7 @@ import {
 	VOICE_BOX_OUT_MS,
 	VOICE_WORD_IN_MS,
 } from "@archboard/timing/voice";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot } from "#ui/components/orb/OrbStage.tsx";
 import { SubtitleWords } from "#ui/components/subtitles/VoiceSubtitles.tsx";
 import { SubtitlesToggle } from "#ui/components/subtitles/SubtitlesToggle.tsx";

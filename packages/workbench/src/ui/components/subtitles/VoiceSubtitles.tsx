@@ -24,7 +24,7 @@ import {
 	SUBTITLE_SWAP_MS,
 	SUBTITLE_WORD_MS,
 } from "@archboard/timing/voice";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import { useMeasuredLines } from "#ui/hooks/subtitles/use-measured-lines.ts";
 import { useSubtitleFade } from "#ui/hooks/subtitles/use-subtitle-fade.ts";
 import { useVoiceSubtitles, type SubtitleSource } from "#ui/hooks/subtitles/use-voice-subtitles.ts";
