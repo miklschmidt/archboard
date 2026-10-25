@@ -131,7 +131,7 @@ pub trait FlowchartHost: Text {
     fn measure_label(&self, words: &str) -> MeasuredLabel;
 
     /// The one size every card's name is set at from far away (`farSizeFor`).
-    fn far_size(&self, subjects: &[FarSubject]) -> f64;
+    fn far_size(&self, subjects: &[FarSubject<'_>]) -> f64;
 
     /// The graph laid out by the track engine.
     fn track(
@@ -567,7 +567,7 @@ pub async fn picture<H: FlowchartHost>(
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
     };
-    let subjects: Vec<FarSubject> = drawing
+    let subjects: Vec<FarSubject<'_>> = drawing
         .drawing
         .cards
         .iter()

@@ -11,7 +11,7 @@ use super::leaves::PORT;
 use super::tree::{Block, BlockTree, Kind, Line};
 
 /// A line drawn straight from a card's side to the block's wall.
-pub struct Beside {
+pub(crate) struct Beside {
     pub key: String,
     pub card: String,
     pub wall: Side,
@@ -24,17 +24,17 @@ fn wall(side: Option<&Side>) -> Option<Side> {
 }
 
 /// The wall a line leaves the block by, when its port is on one.
-pub fn wall_of(block: &Block, line: &Line) -> Option<Side> {
+pub(crate) fn wall_of(block: &Block, line: &Line) -> Option<Side> {
     wall(block.ports.get(&line.to))
 }
 
 /// The wall a line enters the block by, when its port is on one.
-pub fn enters_by(block: &Block, line: &Line) -> Option<Side> {
+pub(crate) fn enters_by(block: &Block, line: &Line) -> Option<Side> {
     wall(block.ports.get(&line.from))
 }
 
 /// The wall a line leaves the block by carrying its label, when its port is on one.
-pub fn labelled_out(block: &Block, line: &Line) -> Option<Side> {
+pub(crate) fn labelled_out(block: &Block, line: &Line) -> Option<Side> {
     if line.labelled {
         wall_of(block, line)
     } else {
@@ -44,13 +44,13 @@ pub fn labelled_out(block: &Block, line: &Line) -> Option<Side> {
 
 /// Whether Graphviz ranks a line of the block: every line but one to a wall
 /// that carries no label there, which runs from its card along the channel under it.
-pub fn ranks(block: &Block, line: &Line) -> bool {
+pub(crate) fn ranks(block: &Block, line: &Line) -> bool {
     wall_of(block, line).is_none() || line.labelled
 }
 
 /// The wall a line runs to along the channel under its card: a line to a
 /// wall that Graphviz does not rank.
-pub fn channel_wall(block: &Block, line: &Line) -> Option<Side> {
+pub(crate) fn channel_wall(block: &Block, line: &Line) -> Option<Side> {
     if ranks(block, line) {
         None
     } else {
@@ -61,7 +61,7 @@ pub fn channel_wall(block: &Block, line: &Line) -> Option<Side> {
 /// Every point the lines of a block inside the board draw, which its parent
 /// must route around: all but the end where a line to or from a wall meets
 /// the wall, which stands where the block ends.
-pub fn inner_points(block: &Block, lines: &Map<String, Vec<Point>>) -> Vec<Point> {
+pub(crate) fn inner_points(block: &Block, lines: &Map<String, Vec<Point>>) -> Vec<Point> {
     if block.kind == Kind::Root {
         return Vec::new();
     }
@@ -110,7 +110,7 @@ fn walled_points(
 
 /// Run every line to a wall onto the block's own wall, and stand its port
 /// there. Answers the height of every such line's track, which the block must hold.
-pub fn wall_lines(
+pub(crate) fn wall_lines(
     block: &Block,
     lines: &mut Map<String, Vec<Point>>,
     boxes: &mut Map<String, Rect>,
@@ -154,7 +154,7 @@ pub fn wall_lines(
 /// card that stands outermost on its band toward the wall, with nothing
 /// between, and no other line to that wall from that side. A group region
 /// keeps its lines on the tracks.
-pub fn beside_walls(block: &Block, tree: &BlockTree, scene: &Placement) -> Vec<Beside> {
+pub(crate) fn beside_walls(block: &Block, tree: &BlockTree, scene: &Placement) -> Vec<Beside> {
     if block.kind == Kind::Region {
         return Vec::new();
     }
@@ -191,7 +191,7 @@ pub fn beside_walls(block: &Block, tree: &BlockTree, scene: &Placement) -> Vec<B
 
 /// Mark on a scene the stretch of its band that each line drawn straight to
 /// a wall runs along, which the scene's router does not route.
-pub fn mark_besides(scene: &mut Placement, beside: &[Beside]) {
+pub(crate) fn mark_besides(scene: &mut Placement, beside: &[Beside]) {
     for one in beside {
         let item = *scene.item(scene.cards[one.card.as_str()]);
         let run = if one.wall == Side::Left {
@@ -227,7 +227,11 @@ fn outermost(scene: &Placement, item: ItemId, wall: Side) -> bool {
 /// The points of the lines drawn straight from a card's side to a wall, level
 /// with the card's middle; the end at the wall stands a lane out from the
 /// card, and is run onto the wall once the block's width is known.
-pub fn beside_points(scene: &Placement, beside: &[Beside], left: f64) -> Vec<(String, Vec<Point>)> {
+pub(crate) fn beside_points(
+    scene: &Placement,
+    beside: &[Beside],
+    left: f64,
+) -> Vec<(String, Vec<Point>)> {
     beside
         .iter()
         .map(|one| {

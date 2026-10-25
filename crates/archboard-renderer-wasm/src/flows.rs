@@ -157,7 +157,7 @@ impl FlowchartHost for FlowchartLayoutHost {
         answer(&self.measure_label_of(words), "measured label")
     }
 
-    fn far_size(&self, subjects: &[FarSubject]) -> f64 {
+    fn far_size(&self, subjects: &[FarSubject<'_>]) -> f64 {
         self.far_size_of(&json_of(&subjects))
     }
 

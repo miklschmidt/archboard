@@ -9,14 +9,14 @@ use crate::track::scene::Set;
 
 /// [`Track::crossings_for`]: how many other chains a line would cross, for
 /// any x its own stations stand at.
-pub struct CrossingsFor {
+pub(crate) struct CrossingsFor {
     own: Vec<StationId>,
     others: Vec<Vec<(f64, f64)>>,
 }
 
 impl CrossingsFor {
     /// The count, for where the line's stations stand.
-    pub fn count(&self, track: &Track<'_>, xs: &[f64]) -> f64 {
+    pub(crate) fn count(&self, track: &Track<'_>, xs: &[f64]) -> f64 {
         let mut count = 0.0;
         for index in 0..self.own.len().saturating_sub(1) {
             let (above, below) = (xs[index], xs[index + 1]);
@@ -35,7 +35,7 @@ impl Track<'_> {
     /// Straighten every run of lanes onto one column where that column is free
     /// on every band the run passes and keeps the frames; a run no one column
     /// is free for takes as few columns as hold it, from the top down.
-    pub fn straighten_lanes(&mut self, chains: &[ChainId]) {
+    pub(crate) fn straighten_lanes(&mut self, chains: &[ChainId]) {
         let mut occupancy = Occupancy::new(self.scene, &Set::default());
         let mut runs = self.lane_runs(chains);
         sort_by(&mut runs, |one, other| {
@@ -161,7 +161,7 @@ impl Track<'_> {
     }
 
     /// The column a run of lanes takes, or nothing when no column is free on every band.
-    pub fn column_of(
+    pub(crate) fn column_of(
         &self,
         run: &LaneRun,
         occupancy: &mut Occupancy,
@@ -221,7 +221,7 @@ impl Track<'_> {
 
     /// How many other chains a line would cross between one band and the
     /// next, as `crossings_of` counts them, for any x its own stations stand at.
-    pub fn crossings_for(&self, own: &[StationId], bands: &[ByBand]) -> CrossingsFor {
+    pub(crate) fn crossings_for(&self, own: &[StationId], bands: &[ByBand]) -> CrossingsFor {
         let others = (0..own.len().saturating_sub(1))
             .map(|index| {
                 let (upper, lower) = (own[index], own[index + 1]);

@@ -11,19 +11,19 @@ use crate::track::scene::{ItemId, Placement, Set};
 /// How far apart two ends may be and still be drawn as one straight drop.
 const STRAIGHT: f64 = 0.5;
 /// From the band above to the first track: room for the bend off a face.
-pub const TRACK_TOP: f64 = 2.0 * BEND_RADIUS;
+pub(crate) const TRACK_TOP: f64 = 2.0 * BEND_RADIUS;
 /// From the band above to the first track when a line on that track rises into it.
 const TRACK_TOP_RISING: f64 = BEND_RADIUS + APPROACH_STRAIGHT;
 /// From the last track to the band below: room for the bend and a straight arrow approach.
 const TRACK_BOTTOM: f64 = APPROACH_STRAIGHT + 2.0 * BEND_RADIUS;
 /// The height of a channel no line turns in.
-pub const EMPTY_CHANNEL: f64 = 24.0;
+pub(crate) const EMPTY_CHANNEL: f64 = 24.0;
 /// Room between a container's bottom edge and the band below it.
 const BELOW_CONTAINER: f64 = 12.0;
 
 /// The room a block that draws its own edge keeps where no line turns.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct Rim {
+pub(crate) struct Rim {
     /// From the header row to the first thing the block holds.
     pub head: f64,
     /// From the lowest thing it holds to its bottom edge, when its bottom ports stand there.
@@ -39,7 +39,7 @@ fn first_track(closing: f64, rising: bool) -> f64 {
 }
 
 /// How tall a channel is for the tracks it holds, below the containers that end above it.
-pub fn channel_height(tracks: usize, closing: f64, rising: bool, facing: bool) -> f64 {
+pub(crate) fn channel_height(tracks: usize, closing: f64, rising: bool, facing: bool) -> f64 {
     if tracks == 0 {
         js_max(
             EMPTY_CHANNEL,
@@ -80,7 +80,7 @@ impl Track<'_> {
     }
 
     /// Lay out every band and channel again, from the tracks each channel needs.
-    pub fn space_bands(
+    pub(crate) fn space_bands(
         &mut self,
         nets: &[NetId],
         closings: &[f64],

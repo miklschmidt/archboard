@@ -28,7 +28,7 @@ const LINED_UP_GAP: f64 = 20.0;
 /// How strongly a title row holds each member below it.
 const TITLE_WEIGHT: f64 = 10.0;
 /// Horizontal room Graphviz keeps between neighbours in a rank.
-pub const NODE_GAP: f64 = 40.0;
+pub(crate) const NODE_GAP: f64 = 40.0;
 
 /// The room a cluster keeps round what it holds, as Graphviz draws it and as
 /// a card inside it may move.
@@ -45,7 +45,7 @@ fn inset_of(cluster: &Cluster) -> f64 {
 }
 
 /// The vendor node heading a cluster: a frame's title row or a region's caption.
-pub fn title_of(cluster: &str) -> String {
+pub(crate) fn title_of(cluster: &str) -> String {
     format!("title:{cluster}")
 }
 
@@ -55,13 +55,13 @@ fn titled(name: &str) -> Option<&str> {
 }
 
 /// Whether a vendor node heads a cluster.
-pub fn is_title(name: &str) -> bool {
+pub(crate) fn is_title(name: &str) -> bool {
     name.starts_with("title:")
 }
 
 /// A line Graphviz ranks, between the vendor nodes it joins.
 #[derive(Clone, Debug)]
-pub struct Link {
+pub(crate) struct Link {
     pub tail: String,
     pub head: String,
     /// Whether a label sits between.
@@ -73,7 +73,7 @@ pub struct Link {
 
 impl Link {
     /// The line as the columns line it up.
-    pub fn join(&self) -> Join {
+    pub(crate) fn join(&self) -> Join {
         Join {
             tail: self.tail.clone(),
             head: self.head.clone(),
@@ -85,14 +85,14 @@ impl Link {
 
 /// Where nodes go: the block's graph, or one of its clusters.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Holder {
+pub(crate) enum Holder {
     Graph,
     Cluster(usize),
 }
 
 /// A Graphviz cluster: its name, its margin, its nodes and the clusters inside it.
 #[derive(Clone, Debug)]
-pub struct ClusterGraph {
+pub(crate) struct ClusterGraph {
     pub name: String,
     pub margin: f64,
     pub nodes: Vec<Node>,
@@ -112,7 +112,7 @@ fn pulls_down(edges: &[Edge]) -> Map<String, f64> {
 }
 
 /// A block's inline clusters, in its Graphviz graph and read back from it.
-pub struct Clusters<'t> {
+pub(crate) struct Clusters<'t> {
     pub block: &'t Block,
     /// Each cluster's graph, in the block's order.
     pub graphs: Vec<ClusterGraph>,
@@ -136,7 +136,7 @@ pub struct Clusters<'t> {
 
 impl<'t> Clusters<'t> {
     /// Make every cluster of a block, each headed by its title.
-    pub fn new(block: &'t Block) -> Clusters<'t> {
+    pub(crate) fn new(block: &'t Block) -> Clusters<'t> {
         let mut clusters = Clusters {
             block,
             graphs: Vec::new(),
@@ -183,7 +183,7 @@ impl<'t> Clusters<'t> {
 
     /// Every line Graphviz ranks, by where its ends stand in the board's order,
     /// a container at its first member.
-    pub fn board_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
+    pub(crate) fn board_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
         let block = self.block;
         let mut place: Map<String, f64> = block
             .items
@@ -216,13 +216,13 @@ impl<'t> Clusters<'t> {
     }
 
     /// The size of a cluster's title node, when the vendor node heads one.
-    pub fn size_of(&self, name: &str) -> Option<Size> {
+    pub(crate) fn size_of(&self, name: &str) -> Option<Size> {
         let cluster = self.block.clusters.get(titled(name)?)?;
         Some(cluster.header.size())
     }
 
     /// Where a member's node goes: its innermost cluster, or the block's graph.
-    pub fn holder_of(&self, member: &str) -> Holder {
+    pub(crate) fn holder_of(&self, member: &str) -> Holder {
         self.block
             .cluster_of
             .get(member)
@@ -231,7 +231,7 @@ impl<'t> Clusters<'t> {
 
     /// The clusters around a vendor node, innermost first: a title stands inside
     /// its own cluster, and ports, pins and headers inside none.
-    pub fn around<'a>(&'a self, vendor: &'a str) -> Vec<&'a str> {
+    pub(crate) fn around<'a>(&'a self, vendor: &'a str) -> Vec<&'a str> {
         let start = match titled(vendor) {
             Some(cluster) => Some(cluster),
             None => self.block.cluster_of.get(vendor).map(String::as_str),
@@ -254,7 +254,7 @@ impl<'t> Clusters<'t> {
     /// Where labels are anchored, it is held below a labelled line into the
     /// same card from inside the container instead. Answers where the label
     /// goes, and the edge holding it below its cluster's title, if it needs one.
-    pub fn hold_label(
+    pub(crate) fn hold_label(
         &self,
         tail: &str,
         head: &str,
@@ -281,7 +281,7 @@ impl<'t> Clusters<'t> {
     }
 
     /// The vendor node a member of a cluster stands at: a nested cluster at its title.
-    pub fn vendor_of(&self, member: &str) -> String {
+    pub(crate) fn vendor_of(&self, member: &str) -> String {
         if self.block.clusters.contains_key(member) {
             title_of(member)
         } else {
@@ -301,7 +301,7 @@ impl<'t> Clusters<'t> {
 
     /// Pull every title a little harder onto its members where it is pulled up
     /// exactly as hard as down, unless ties are kept.
-    pub fn untie(&mut self, edges: &mut [Edge]) {
+    pub(crate) fn untie(&mut self, edges: &mut [Edge]) {
         let pulls = pulls_down(edges);
         let downs: Vec<usize> = self
             .block
@@ -330,7 +330,7 @@ impl<'t> Clusters<'t> {
 
     /// How strongly a line pulls its lower end: one that holds it below its
     /// cluster's title pulls as hard as that title's own edge would.
-    pub fn weight_of(&self, tail: &str, head: &str) -> f64 {
+    pub(crate) fn weight_of(&self, tail: &str, head: &str) -> f64 {
         if self.holds(tail, head) {
             TITLE_WEIGHT
         } else {
@@ -341,7 +341,7 @@ impl<'t> Clusters<'t> {
     /// The invisible edges that hold each title above its cluster's members,
     /// but for a member some line from inside its own cluster already holds,
     /// or something else holds down.
-    pub fn title_edges(&self, lower: &Set<String>, links: &[Link]) -> Vec<Edge> {
+    pub(crate) fn title_edges(&self, lower: &Set<String>, links: &[Link]) -> Vec<Edge> {
         self.block
             .cluster_of
             .iter()
@@ -368,7 +368,7 @@ impl<'t> Clusters<'t> {
     /// The invisible edges that hold a container a line from another container
     /// enters below the line's source, so containers in a chain stack, but for
     /// one that would close a loop.
-    pub fn entering_edges(&self, links: &[Link]) -> Vec<Edge> {
+    pub(crate) fn entering_edges(&self, links: &[Link]) -> Vec<Edge> {
         let mut below = Below::default();
         for link in links {
             below.add(&link.tail, &link.head);
@@ -441,7 +441,7 @@ impl<'t> Clusters<'t> {
     /// Line up the joined cards Graphviz stacked a few points out of one column:
     /// a card or label moves inside its cluster, or the block, and clear of the
     /// other clusters and the lines.
-    pub fn line_up(
+    pub(crate) fn line_up(
         &mut self,
         joins: &[Join],
         centres: &mut Map<String, Point>,
@@ -498,7 +498,11 @@ impl<'t> Clusters<'t> {
     /// # Errors
     ///
     /// When Graphviz answered geometry that is not a number.
-    pub fn boxes(&self, output: &Output, origin: Point) -> Result<Map<String, Rect>, String> {
+    pub(crate) fn boxes(
+        &self,
+        output: &Output,
+        origin: Point,
+    ) -> Result<Map<String, Rect>, String> {
         let mut boxes = Map::default();
         for object in &output.objects {
             let (Some(id), Some(bb)) = (self.names.get(&object.name), &object.bb) else {
@@ -547,7 +551,7 @@ impl<'t> Clusters<'t> {
     /// The placed block's children nested as the track scene reads them: every
     /// frame a node around its members with its title row, every region a row
     /// on the root.
-    pub fn nest(
+    pub(crate) fn nest(
         &self,
         leaves: Vec<PlacedNode>,
         centres: &Map<String, Point>,
@@ -648,7 +652,7 @@ impl<'t> Clusters<'t> {
     /// The innermost container a line enters: a frame its lower end stands in
     /// and its upper end does not. A group region is no boundary a line must go
     /// round, so a line enters none.
-    pub fn entered_frame<'a>(&'a self, tail: &'a str, head: &'a str) -> Option<&'a str> {
+    pub(crate) fn entered_frame<'a>(&'a self, tail: &'a str, head: &'a str) -> Option<&'a str> {
         if is_title(head) {
             return None;
         }
@@ -680,7 +684,7 @@ impl<'t> Clusters<'t> {
 
     /// Whether anchoring would hold some entering line's label below another
     /// line rather than below its container's title.
-    pub fn anchorable(&self, links: &[Link]) -> bool {
+    pub(crate) fn anchorable(&self, links: &[Link]) -> bool {
         links.iter().any(|link| {
             let entered = if link.labelled {
                 self.entered_frame(&link.tail, &link.head)
@@ -707,7 +711,7 @@ impl<'t> Clusters<'t> {
 
     /// How much harder a line's label is pulled onto its lower end than onto
     /// its upper: one where the line leaves a container and its block pulls such labels.
-    pub fn leaving_pull(&self, tail: &str, head: &str) -> f64 {
+    pub(crate) fn leaving_pull(&self, tail: &str, head: &str) -> f64 {
         if self.pulls_leaving && !self.left_frames(tail, head).is_empty() {
             1.0
         } else {
@@ -716,7 +720,7 @@ impl<'t> Clusters<'t> {
     }
 
     /// How many lines' labels a laid-out block stands beside a container the line leaves.
-    pub fn labels_beside(&self, links: &[Link], laid: &Laid) -> usize {
+    pub(crate) fn labels_beside(&self, links: &[Link], laid: &Laid) -> usize {
         let frames: Map<&str, Rect> = laid
             .frames
             .iter()
@@ -748,7 +752,7 @@ enum Nested {
 }
 
 /// What lining a block's cards up reads and moves.
-pub struct LinedUp<'a> {
+pub(crate) struct LinedUp<'a> {
     /// Every vendor node's box; the moved ones are replaced.
     pub boxes: &'a mut Map<String, Rect>,
     /// Every cluster's box.

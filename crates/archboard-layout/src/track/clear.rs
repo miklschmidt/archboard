@@ -13,7 +13,7 @@ const ASKED_BEFORE_MERGING: usize = 8;
 /// Whether an x stands clear of every one of some stretches: at or beyond an
 /// end of each, as `x <= low || x >= high` asks of each one.
 #[derive(Clone, Debug)]
-pub struct ClearOf {
+pub(crate) struct ClearOf {
     stretches: Vec<(f64, f64)>,
     asked: Cell<usize>,
     merged: OnceCell<Merged>,
@@ -31,7 +31,7 @@ enum Merged {
 
 impl ClearOf {
     /// The test of some stretches.
-    pub fn new(stretches: Vec<(f64, f64)>) -> ClearOf {
+    pub(crate) fn new(stretches: Vec<(f64, f64)>) -> ClearOf {
         ClearOf {
             stretches,
             asked: Cell::new(0),
@@ -40,7 +40,7 @@ impl ClearOf {
     }
 
     /// Whether an x stands clear of every stretch.
-    pub fn passes(&self, x: f64) -> bool {
+    pub(crate) fn passes(&self, x: f64) -> bool {
         self.asked.set(self.asked.get() + 1);
         if self.merged.get().is_none() && self.asked.get() <= ASKED_BEFORE_MERGING {
             return self

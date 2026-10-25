@@ -75,7 +75,7 @@ pub fn picture(request: SequenceRequest, text: &impl Text) -> PaintRequest {
 
 /// One flow as the painter reads it: each message's run, and each card's room
 /// for its name.
-fn flow_of(layout: &FlowLayout) -> SequenceFlow {
+fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
     let active = ActiveAt::of(&layout.columns);
     SequenceFlow {
         flow: FlowFacts {
@@ -156,7 +156,7 @@ fn flow_of(layout: &FlowLayout) -> SequenceFlow {
 }
 
 /// A stack of flows as the painter reads it.
-fn drawing_of(layout: &DataFlowLayout) -> SequenceDrawing {
+fn drawing_of(layout: &DataFlowLayout<'_>) -> SequenceDrawing {
     SequenceDrawing {
         width: layout.width,
         height: layout.height,
@@ -168,7 +168,7 @@ fn drawing_of(layout: &DataFlowLayout) -> SequenceDrawing {
 /// bar only dropped messages opened or held is dropped with them; a bar a kept
 /// message stands in stays whole, since that message's ends are placed
 /// against it.
-fn shown_column(column: &Column, steps: &[PlacedStep]) -> Column {
+fn shown_column(column: &Column, steps: &[PlacedStep<'_>]) -> Column {
     let node = column.card.node.id.as_str();
     let activations = column
         .activations

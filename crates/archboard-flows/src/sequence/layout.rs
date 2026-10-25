@@ -46,11 +46,11 @@ use crate::text::{Text, fitted_size};
 /// decision id. Two messages on different alternatives of one decision never
 /// both run, so a reply on one cannot answer a call on the other.
 #[derive(Clone, Debug, Default)]
-pub struct Branch(Vec<(String, String)>);
+pub(super) struct Branch(Vec<(String, String)>);
 
 impl Branch {
     /// The alternative it runs on of one decision, if that decision holds it.
-    pub fn of(&self, decision: &str) -> Option<&str> {
+    pub(super) fn of(&self, decision: &str) -> Option<&str> {
         self.0
             .iter()
             .find(|(held, _)| held == decision)
@@ -58,14 +58,14 @@ impl Branch {
     }
 
     /// Every decision that holds it, and the alternative it runs on.
-    pub fn iter(&self) -> impl Iterator<Item = (&str, &str)> {
+    pub(super) fn iter(&self) -> impl Iterator<Item = (&str, &str)> {
         self.0
             .iter()
             .map(|(decision, alternative)| (decision.as_str(), alternative.as_str()))
     }
 
     /// It runs on one alternative of one more decision.
-    pub fn set(&mut self, decision: &str, alternative: &str) {
+    pub(super) fn set(&mut self, decision: &str, alternative: &str) {
         match self.0.iter_mut().find(|(held, _)| held == decision) {
             Some(held) => held.1 = alternative.to_owned(),
             None => self.0.push((decision.to_owned(), alternative.to_owned())),
@@ -75,7 +75,7 @@ impl Branch {
 
 /// One participant, as a column of the drawing.
 #[derive(Clone, Debug)]
-pub struct Column {
+pub(super) struct Column {
     /// The card heading the column.
     pub card: Card,
     /// Where its lifeline runs.
@@ -88,7 +88,7 @@ pub struct Column {
 
 /// One message, placed on its row.
 #[derive(Clone, Debug)]
-pub struct PlacedStep<'a> {
+pub(super) struct PlacedStep<'a> {
     pub step: &'a Message,
     pub branch: Branch,
     /// The label's lines, wrapped to the room between the lifelines it stands between.
@@ -110,14 +110,14 @@ pub struct PlacedStep<'a> {
 
 /// A decision or a loop of a flow.
 #[derive(Clone, Copy, Debug)]
-pub enum FrameStep<'a> {
+pub(super) enum FrameStep<'a> {
     Decision(&'a Decision),
     Loop(&'a Loop),
 }
 
 impl FrameStep<'_> {
     /// Its id.
-    pub fn id(&self) -> &str {
+    pub(super) fn id(&self) -> &str {
         match self {
             FrameStep::Decision(decision) => &decision.id,
             FrameStep::Loop(repeat) => &repeat.id,
@@ -127,7 +127,7 @@ impl FrameStep<'_> {
 
 /// A decision or loop placed down the page, before its sides are known.
 #[derive(Clone, Debug)]
-pub struct FrameRows<'a> {
+pub(super) struct FrameRows<'a> {
     pub step: FrameStep<'a>,
     /// Where its frame begins.
     pub top: f64,
@@ -143,7 +143,7 @@ pub struct FrameRows<'a> {
 
 /// A decision's or loop's frame, placed.
 #[derive(Clone, Debug)]
-pub struct PlacedFrame<'a> {
+pub(super) struct PlacedFrame<'a> {
     pub rows: FrameRows<'a>,
     /// The frame.
     pub bounds: Rect,
@@ -157,7 +157,7 @@ pub struct PlacedFrame<'a> {
 
 /// One flow, placed.
 #[derive(Clone, Debug)]
-pub struct FlowLayout<'a> {
+pub(super) struct FlowLayout<'a> {
     pub flow: &'a Flow,
     /// The box around the whole exchange.
     pub frame: Rect,
@@ -177,7 +177,7 @@ pub struct FlowLayout<'a> {
 
 /// A stack of flows, placed down one page.
 #[derive(Clone, Debug)]
-pub struct DataFlowLayout<'a> {
+pub(super) struct DataFlowLayout<'a> {
     /// The width the frames asked for.
     pub width: f64,
     /// The height they asked for.
@@ -190,13 +190,13 @@ pub struct DataFlowLayout<'a> {
 /// activated column is a bar rather than a line, so an arrow that touches one
 /// stops at its edge; every caller that draws or measures a message asks this
 /// first.
-pub struct ActiveAt<'a> {
+pub(super) struct ActiveAt<'a> {
     by_node: HashMap<&'a str, &'a [Activation]>,
 }
 
 impl<'a> ActiveAt<'a> {
     /// The question for one flow's columns.
-    pub fn of(columns: &'a [Column]) -> Self {
+    pub(super) fn of(columns: &'a [Column]) -> Self {
         ActiveAt {
             by_node: columns
                 .iter()
@@ -206,7 +206,7 @@ impl<'a> ActiveAt<'a> {
     }
 
     /// Whether a participant is busy at a height.
-    pub fn at(&self, node: &str, y: f64) -> bool {
+    pub(super) fn at(&self, node: &str, y: f64) -> bool {
         self.by_node
             .get(node)
             .is_some_and(|bars| bars.iter().any(|bar| bar.top <= y && y <= bar.bottom))
@@ -214,7 +214,7 @@ impl<'a> ActiveAt<'a> {
 }
 
 /// The largest of some numbers, and the floor when there are none.
-pub fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
+pub(super) fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
     values.into_iter().fold(floor, js::js_max)
 }
 
@@ -462,7 +462,11 @@ fn layout_flow<'a>(
 }
 
 /// Every flow of one variant, stacked down one page.
-pub fn lay_out<'a>(text: &impl Text, flows: &'a [Flow], nodes: &[Node]) -> DataFlowLayout<'a> {
+pub(super) fn lay_out<'a>(
+    text: &impl Text,
+    flows: &'a [Flow],
+    nodes: &[Node],
+) -> DataFlowLayout<'a> {
     let by_id: HashMap<&str, &Node> = nodes.iter().map(|node| (node.id.as_str(), node)).collect();
     let measurement = measure_columns(text, flows, &by_id);
     let mut placed = Vec::new();

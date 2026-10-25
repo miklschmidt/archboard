@@ -14,7 +14,7 @@ use super::laid::{Band, Insets, Laid};
 use super::tree::{Block, BlockId, BlockTree, Kind, Line, Piece, Route};
 
 /// The narrowest gutter between two columns.
-pub const MIN_GUTTER: f64 = 48.0;
+pub(crate) const MIN_GUTTER: f64 = 48.0;
 /// The most columns a block folds into.
 const MOST_COLUMNS: usize = 4;
 /// How much better a fold must fit the page than the block unfolded.
@@ -64,7 +64,7 @@ fn folded_size(laid: &Laid, runs: &[Vec<&Band>], insets: Insets) -> (f64, f64) {
 
 /// A fold of a block: its items, column by column, and what the fold is
 /// estimated to be weighed on.
-pub struct FoldPlan {
+pub(crate) struct FoldPlan {
     pub items: Vec<Vec<String>>,
     pub weighed: Weighed,
 }
@@ -72,7 +72,7 @@ pub struct FoldPlan {
 /// The columns a block of cards would better fold into, if any: the cut of
 /// its ranks into runs that scores best, when that beats the block unfolded
 /// by a clear margin. Only the board folds.
-pub fn fold_plan(
+pub(crate) fn fold_plan(
     block: &Block,
     laid: &Laid,
     insets: Insets,
@@ -209,7 +209,11 @@ fn best_runs<'b>(
 /// order, each cluster the block draws inline into the column that holds its
 /// cards, and every line of the block is cut where it leaves and enters a
 /// column. Answers the columns.
-pub fn fold_block(tree: &mut BlockTree, block: BlockId, groups: &[Vec<String>]) -> Vec<BlockId> {
+pub(crate) fn fold_block(
+    tree: &mut BlockTree,
+    block: BlockId,
+    groups: &[Vec<String>],
+) -> Vec<BlockId> {
     tree.get_mut(block).items.clear();
     let id = tree.get(block).id.clone();
     let columns: Vec<BlockId> = groups

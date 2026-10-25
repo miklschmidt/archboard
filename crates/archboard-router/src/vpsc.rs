@@ -10,14 +10,14 @@
 
 /// One variable: where it wants to be and how much it cares.
 #[derive(Clone, Copy, Debug)]
-pub struct Var {
+pub(crate) struct Var {
     pub desired: f64,
     pub weight: f64,
 }
 
 /// `position[left] + gap <= position[right]`.
 #[derive(Clone, Copy, Debug)]
-pub struct Constraint {
+pub(crate) struct Constraint {
     pub left: usize,
     pub right: usize,
     pub gap: f64,
@@ -258,7 +258,7 @@ impl<'a> Solver<'a> {
 }
 
 /// Where each variable goes.
-pub fn solve(vars: &[Var], constraints: &[Constraint]) -> Vec<f64> {
+pub(crate) fn solve(vars: &[Var], constraints: &[Constraint]) -> Vec<f64> {
     let mut solver = Solver::new(vars, constraints);
     solver.solve();
     (0..vars.len()).map(|var| solver.at(var)).collect()

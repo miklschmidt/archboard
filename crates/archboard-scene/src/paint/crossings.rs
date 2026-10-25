@@ -20,18 +20,18 @@ const BRIDGE_INK_GAP: f64 = 1.5;
 const CUT_GAP: f64 = 3.0;
 
 /// One piece of ink a route must not show, as mask markup.
-pub struct Cutout {
+pub(super) struct Cutout {
     pub edge_id: String,
     pub markup: Markup,
 }
 
 /// How thick a pulse is on a line of one width: the width of its core.
-pub fn pulse_breadth(line_width: f64) -> f64 {
+pub(super) fn pulse_breadth(line_width: f64) -> f64 {
     js::js_max(1.5, line_width + 0.6)
 }
 
 /// Lower ink cleared narrowly beneath each hop that crosses over it.
-pub fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout> {
+pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for bridge in bridges {
         let Some(upper) = edges
@@ -99,7 +99,7 @@ fn past_end(piece: &Curve, end: Point, past: f64) -> Curve {
 }
 
 /// Every stretch of a route's ink another route of its trunk draws, hidden.
-pub fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
+pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for (index, pieces) in shared_ink(routes) {
         let routed = &routes[index];
@@ -130,7 +130,7 @@ fn overlaps(a: Rect, b: Rect) -> bool {
 }
 
 /// Every line's ink hidden behind a label that is drawn see-through.
-pub fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
+pub(super) fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for label in labels {
         let markup = tag(
@@ -158,13 +158,13 @@ pub fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
 }
 
 /// The masks of a drawing: their definitions, and each affected route's mask id.
-pub struct Masks {
+pub(super) struct Masks {
     pub definitions: Markup,
     pub masks: HashMap<String, String>,
 }
 
 /// One mask per route with anything to hide, keeping all the rest of its ink.
-pub fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
+pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
     let mut grouped: Vec<(String, Vec<(String, Markup)>)> = Vec::new();
     for Cutout { edge_id, markup } in cutouts {
         let written = markup_of(&markup);

@@ -98,7 +98,7 @@ pub fn moved_atlas(atlas: &Atlas, dx: f64, dy: f64) -> Atlas {
 
 /// A page framed as planned: the drawing moved in, a dashed frame round it and
 /// the label on the frame's top edge.
-fn framed_as_planned(ctx: &Ctx, page: PaintedPage, palette: &Palette) -> PaintedPage {
+fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> PaintedPage {
     let label_width = ctx.measurer.measure(PLANNED_LABEL, PILL_FONT, LABEL_SIZE);
     let dx = PLANNED_FRAME_MARGIN;
     let dy = PLANNED_FRAME_MARGIN + LABEL_RISE;
@@ -165,7 +165,12 @@ fn framed_as_planned(ctx: &Ctx, page: PaintedPage, palette: &Palette) -> Painted
 }
 
 /// The page a painting is drawn on: as painted, or framed as planned.
-pub fn page_for(ctx: &Ctx, painting: PaintedPage, palette: &Palette, unbuilt: bool) -> PaintedPage {
+pub fn page_for(
+    ctx: &Ctx<'_>,
+    painting: PaintedPage,
+    palette: &Palette,
+    unbuilt: bool,
+) -> PaintedPage {
     if unbuilt {
         framed_as_planned(ctx, painting, palette)
     } else {

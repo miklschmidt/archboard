@@ -454,6 +454,6 @@ impl Settle<'_> {
 
 /// Settle every port on a block's top and bottom where both ends of its line
 /// are known, and route every block again with its ports there.
-pub fn settle_ports(tree: &BlockTree, laid: &mut LaidMap) {
+pub(crate) fn settle_ports(tree: &BlockTree, laid: &mut LaidMap) {
     Settle { tree, laid }.block(tree.root, &Map::default());
 }

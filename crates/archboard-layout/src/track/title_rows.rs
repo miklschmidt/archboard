@@ -86,7 +86,7 @@ fn respan(scene: &mut Placement, index: usize) {
 impl Track<'_> {
     /// Give every frame's title row the widest size it has room for, before
     /// anything reads its words' reach or its band's height.
-    pub fn fit_title_rows(&mut self, chains: &[ChainId]) {
+    pub(crate) fn fit_title_rows(&mut self, chains: &[ChainId]) {
         let lanes: Vec<(usize, f64)> = chains
             .iter()
             .flat_map(|&chain| self.chain(chain).stations.iter().copied())

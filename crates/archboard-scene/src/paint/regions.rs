@@ -313,7 +313,7 @@ fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[
 
 #[allow(clippy::too_many_arguments)]
 fn far_caption(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     region: &DrawingRegion,
     run: &TextRun,
     far_size: f64,
@@ -351,8 +351,8 @@ fn far_caption(
 }
 
 /// One group's region: its frame and its corner brackets, and its caption on its tab, near and far.
-pub fn paint_region(
-    ctx: &Ctx,
+pub(super) fn paint_region(
+    ctx: &Ctx<'_>,
     region: &DrawingRegion,
     palette: &Palette,
     color: Option<PaletteColor>,

@@ -10,14 +10,14 @@ use crate::track::scene::{Item, ItemId, Placement};
 
 /// A chain's route relaid: its stations, where each stands, and what it costs.
 #[derive(Clone, Debug)]
-pub struct Relaid {
+pub(crate) struct Relaid {
     pub stations: Vec<StationId>,
     pub route: Vec<f64>,
     pub cost: f64,
 }
 
 /// A chain's stations by band.
-pub fn by_band(track: &Track<'_>, stations: &[StationId]) -> ByBand {
+pub(crate) fn by_band(track: &Track<'_>, stations: &[StationId]) -> ByBand {
     stations
         .iter()
         .map(|&station| (track.station(station).band, station))
@@ -25,7 +25,7 @@ pub fn by_band(track: &Track<'_>, stations: &[StationId]) -> ByBand {
 }
 
 /// A label box moved onto another band, centred on it.
-pub fn on_band(scene: &Placement, label: &Item, band: usize) -> Item {
+pub(crate) fn on_band(scene: &Placement, label: &Item, band: usize) -> Item {
     let (top, bottom) = (scene.bands[band].top, scene.bands[band].bottom);
     Item::new(
         Rect {
@@ -41,7 +41,7 @@ impl Track<'_> {
     /// has a label box, with the box on the band above or below between its
     /// ends, where that band is tall enough to hold it, and a lane where the
     /// box stood. The standing one comes first.
-    pub fn readings_of(&mut self, chain: ChainId) -> Vec<Vec<StationId>> {
+    pub(crate) fn readings_of(&mut self, chain: ChainId) -> Vec<Vec<StationId>> {
         let stations = self.chain(chain).stations.clone();
         let Some(&label) = stations
             .iter()
@@ -90,7 +90,7 @@ impl Track<'_> {
     /// Put a chain on its relaid route: its stations, its label box moved onto
     /// its station's band where the reading moved it, and each station between
     /// its ends at its x, a label box's moving with it.
-    pub fn take(&mut self, chain: ChainId, relaid: &Relaid) {
+    pub(crate) fn take(&mut self, chain: ChainId, relaid: &Relaid) {
         let stations: Vec<StationId> = relaid
             .stations
             .iter()

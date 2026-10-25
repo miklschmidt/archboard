@@ -12,7 +12,7 @@ const STACKED: f64 = 100.0;
 
 /// What a channel assigns a track to: a run between pins that rise from it and pins that drop from it.
 #[derive(Clone, Debug)]
-pub struct Unit {
+pub(crate) struct Unit {
     pub tops: Vec<f64>,
     pub bottoms: Vec<f64>,
     pub low: f64,
@@ -149,7 +149,7 @@ fn least_crossing(units: &[Unit], order: &mut Vec<usize>) {
 
 /// Stack a channel's units on tracks: each unit's place in `units` and its
 /// track, in the order the tracks were given.
-pub fn stack_units(units: &[Unit]) -> Vec<(usize, usize)> {
+pub(crate) fn stack_units(units: &[Unit]) -> Vec<(usize, usize)> {
     let preference: Vec<f64> = (0..units.len())
         .map(|unit| preference_of(unit, units))
         .collect();
@@ -183,7 +183,7 @@ pub fn stack_units(units: &[Unit]) -> Vec<(usize, usize)> {
 }
 
 /// A unit that is no net: a run between pins that rise from its track and pins that drop from it.
-pub fn unit_across(tops: Vec<f64>, bottoms: Vec<f64>, order: f64) -> Unit {
+pub(crate) fn unit_across(tops: Vec<f64>, bottoms: Vec<f64>, order: f64) -> Unit {
     let low = min(tops.iter().chain(&bottoms).copied());
     let high = max(tops.iter().chain(&bottoms).copied());
     Unit {

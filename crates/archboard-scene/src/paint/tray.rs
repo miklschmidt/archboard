@@ -30,7 +30,7 @@ const WALL_SHADOW: [f64; 2] = [0.5, 0.2];
 const SHADOW_BAND: f64 = 1.5;
 
 /// The floor's box: inside the walls, the lip and the crease.
-pub fn floor_of(rect: Rect) -> Rect {
+pub(super) fn floor_of(rect: Rect) -> Rect {
     Rect {
         x: rect.x + TRAY_WALL,
         y: rect.y + TRAY_WALL,
@@ -40,7 +40,7 @@ pub fn floor_of(rect: Rect) -> Rect {
 }
 
 /// The box of a tray's header slab.
-pub fn header_of(rect: Rect, height: f64) -> Rect {
+pub(super) fn header_of(rect: Rect, height: f64) -> Rect {
     Rect {
         x: rect.x + HEADER_SLAB_INSET,
         y: rect.y + HEADER_SLAB_INSET,
@@ -50,7 +50,12 @@ pub fn header_of(rect: Rect, height: f64) -> Rect {
 }
 
 /// One tray; a removed container draws nothing here.
-pub fn tray(rect: Rect, look: &TrayLook, palette: &Palette, standing: Option<Standing>) -> Markup {
+pub(super) fn tray(
+    rect: Rect,
+    look: &TrayLook,
+    palette: &Palette,
+    standing: Option<Standing>,
+) -> Markup {
     if standing == Some(Standing::Removed) {
         return Markup::new();
     }

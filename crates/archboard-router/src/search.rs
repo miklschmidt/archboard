@@ -15,20 +15,20 @@ use crate::{Dir, End, Point, Scene};
 const DIRS: [Dir; 4] = [Dir::Up, Dir::Right, Dir::Down, Dir::Left];
 
 /// Which vertices earlier routes run straight through, by axis.
-pub struct Taken {
+pub(crate) struct Taken {
     /// Bit 1: a route runs straight through across; bit 2: down.
     through: Vec<u8>,
 }
 
 impl Taken {
-    pub fn new(grid: &Grid) -> Taken {
+    pub(crate) fn new(grid: &Grid) -> Taken {
         Taken {
             through: vec![0; grid.len()],
         }
     }
 
     /// Mark where a route runs straight through.
-    pub fn add(&mut self, grid: &Grid, points: &[Point]) {
+    pub(crate) fn add(&mut self, grid: &Grid, points: &[Point]) {
         let width = grid.xs.len();
         for pair in points.windows(2) {
             let (Some(i0), Some(j0), Some(i1), Some(j1)) = (
@@ -156,7 +156,7 @@ fn distance(a: Point, b: Point) -> f64 {
 
 /// The cheapest route of one connector, its points simplified to its turns,
 /// or nothing when no route through free space reaches its head.
-pub fn shortest(
+pub(crate) fn shortest(
     grid: &Grid,
     scene: &Scene,
     tail: End,
@@ -256,7 +256,7 @@ fn path_of(grid: &Grid, tail: End, head: End, prev: &[usize], last: usize) -> Ve
 
 /// A route's points with repeated points and points inside a straight run
 /// left out.
-pub fn simplified(points: Vec<Point>) -> Vec<Point> {
+pub(crate) fn simplified(points: Vec<Point>) -> Vec<Point> {
     let mut kept: Vec<Point> = Vec::with_capacity(points.len());
     for point in points {
         if kept.last().is_some_and(|last| close(*last, point)) {

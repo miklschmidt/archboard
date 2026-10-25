@@ -522,7 +522,7 @@ fn entries_of(body: &[Item], marks: &[(Standing, &'static str, usize)]) -> Vec<V
     lists
 }
 
-fn width_of(ctx: &Ctx, entry: &Entry) -> f64 {
+fn width_of(ctx: &Ctx<'_>, entry: &Entry) -> f64 {
     let words = ctx
         .measurer
         .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE);
@@ -535,7 +535,7 @@ fn width_of(ctx: &Ctx, entry: &Entry) -> f64 {
     round_coord(GLYPH + WORD_GAP + words + count)
 }
 
-fn drawn_entry(ctx: &Ctx, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Markup {
+fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Markup {
     let words = |at: f64| {
         attrs! { "x": coord(at), "y": coord(y + ROW / 2.0), "dominant-baseline": "central", "font-size": WORD_SIZE }
     };
@@ -579,7 +579,7 @@ struct Placed {
     height: f64,
 }
 
-fn extent(ctx: &Ctx, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
+fn extent(ctx: &Ctx<'_>, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
     let right = js::max(
         std::iter::once(DIAGRAM_MARGIN).chain(
             lists
@@ -596,7 +596,7 @@ fn extent(ctx: &Ctx, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Place
     }
 }
 
-fn column(ctx: &Ctx, lists: &[Vec<Entry>]) -> Placed {
+fn column(ctx: &Ctx<'_>, lists: &[Vec<Entry>]) -> Placed {
     let mut at = Vec::new();
     let mut y = DIAGRAM_MARGIN;
     for (index, list) in lists.iter().enumerate() {
@@ -614,7 +614,7 @@ fn column(ctx: &Ctx, lists: &[Vec<Entry>]) -> Placed {
     extent(ctx, lists, at, y)
 }
 
-fn row(ctx: &Ctx, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
+fn row(ctx: &Ctx<'_>, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
     let mut at = Vec::new();
     let mut x = DIAGRAM_MARGIN;
     let mut y = DIAGRAM_MARGIN;
@@ -649,7 +649,7 @@ struct Legend {
 }
 
 impl Legend {
-    fn draw(&self, ctx: &Ctx, x: f64, y: f64, palette: &Palette) -> Markup {
+    fn draw(&self, ctx: &Ctx<'_>, x: f64, y: f64, palette: &Palette) -> Markup {
         group(
             Role::Slot,
             None,
@@ -669,7 +669,7 @@ impl Legend {
 }
 
 fn legend_of(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
     layout: LegendLayout,
@@ -688,7 +688,12 @@ fn legend_of(
     }
 }
 
-fn with_legend(ctx: &Ctx, page: PaintedPage, legend: &Legend, palette: &Palette) -> PaintedPage {
+fn with_legend(
+    ctx: &Ctx<'_>,
+    page: PaintedPage,
+    legend: &Legend,
+    palette: &Palette,
+) -> PaintedPage {
     if legend.layout == LegendLayout::Vertical {
         return PaintedPage {
             body: lines(vec![page.body, legend.draw(ctx, page.width, 0.0, palette)]),
@@ -705,7 +710,7 @@ fn with_legend(ctx: &Ctx, page: PaintedPage, legend: &Legend, palette: &Palette)
     }
 }
 
-fn under_title(ctx: &Ctx, page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
+fn under_title(ctx: &Ctx<'_>, page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
     let words = text_node(
         attrs! {
             "x": DIAGRAM_MARGIN,
@@ -781,7 +786,7 @@ pub fn placed_on(atlas: &Atlas) -> Vec<String> {
 /// A page as an export carries it: with its legend under it or beside it, or
 /// its legend alone, under its title when it has one.
 pub fn framed_for_export(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     page: PaintedPage,
     frame: Option<&ExportFrame>,
     standing: Option<&BTreeMap<String, Standing>>,

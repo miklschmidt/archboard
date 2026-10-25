@@ -12,7 +12,7 @@ use super::laid::Size;
 /// A container's title row, at its least width, and each wider size it can
 /// take, narrowest first, the first of them the least; absent where it has one size.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Header {
+pub(crate) struct Header {
     pub width: f64,
     pub height: f64,
     pub steps: Option<Vec<Size>>,
@@ -20,7 +20,7 @@ pub struct Header {
 
 impl Header {
     /// A header of one size.
-    pub fn of(size: Size) -> Header {
+    pub(crate) fn of(size: Size) -> Header {
         Header {
             width: size.width,
             height: size.height,
@@ -29,7 +29,7 @@ impl Header {
     }
 
     /// Its least size.
-    pub fn size(&self) -> Size {
+    pub(crate) fn size(&self) -> Size {
         Size {
             width: self.width,
             height: self.height,
@@ -42,7 +42,7 @@ impl Header {
 /// # Errors
 ///
 /// When the measured sizes are not the JSON measurement writes.
-pub fn steps_of(node: &Node, band: f64) -> Result<Option<Vec<Size>>, String> {
+pub(crate) fn steps_of(node: &Node, band: f64) -> Result<Option<Vec<Size>>, String> {
     let Some(rows) = node.option(HEADER_STEPS) else {
         return Ok(None);
     };
@@ -60,7 +60,7 @@ pub fn steps_of(node: &Node, band: f64) -> Result<Option<Vec<Size>>, String> {
 }
 
 /// How much room a block gives its header.
-pub struct Room<'a> {
+pub(crate) struct Room<'a> {
     /// How wide the container is.
     pub frame: f64,
     /// How wide what the block holds is, between its insets.
@@ -71,7 +71,7 @@ pub struct Room<'a> {
 
 /// The shortest header a block has room for, as the box it keeps: its least
 /// when none of its wider sizes fits.
-pub fn header_within(header: &Header, room: &Room<'_>) -> Size {
+pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Size {
     let steps = header.steps.as_deref().unwrap_or(&[]);
     let box_of = |step: &Size| js_max(header.width, step.width - room.frame + room.content);
     let mut index = 0;

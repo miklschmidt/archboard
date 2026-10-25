@@ -3,10 +3,10 @@
 
 use wasm_bindgen::prelude::*;
 
-mod flows;
-mod layout;
-mod router;
-mod scene;
+pub mod flows;
+pub mod layout;
+pub mod router;
+pub mod scene;
 
 /// The hash of the core sources this build was made from, as
 /// `scripts/build-core.ts` recorded it. A host compares it with the sources in

@@ -173,7 +173,7 @@ fn same_turn(a: &Curve, b: &Curve) -> bool {
 }
 
 /// For each route's index, the stretches and turns of its ink another route draws.
-pub fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
+pub(super) fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
     let runs = straight_runs(edges);
     let turns: Vec<(usize, Curve)> = edges
         .iter()

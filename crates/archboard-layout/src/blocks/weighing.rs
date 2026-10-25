@@ -98,7 +98,7 @@ fn turns_round_of(lines: &[Vec<Point>], frames: &[FrameShape]) -> f64 {
 /// What a block of cards laid out is weighed on, each line that laps round it
 /// past every card it holds or turns round a container it has no end in
 /// counted as a crossing more. A label rides its line, so it does not hide a lap.
-pub fn weighed_laid(laid: &Laid) -> Weighed {
+pub(crate) fn weighed_laid(laid: &Laid) -> Weighed {
     let lines: Vec<Vec<Point>> = laid.lines.values().map(|points| corners(points)).collect();
     let cards: Vec<Rect> = laid
         .boxes
@@ -128,7 +128,7 @@ fn detour_of(points: &[Point]) -> f64 {
 /// What a whole drawing is weighed on as the trunk router weighs it, with the
 /// room its lines spend running round what they pass counted as crossings,
 /// and its lines' runs away from their ends.
-pub fn routed_weighed(placed: &Placed, projections: &[Projection]) -> Weighed {
+pub(crate) fn routed_weighed(placed: &Placed, projections: &[Projection]) -> Weighed {
     let lines: Vec<&[Point]> = placed
         .edges
         .iter()

@@ -12,7 +12,7 @@ use crate::sequence::layout::PlacedStep;
 
 /// Whether two messages can both run in one pass through the flow: no
 /// decision holds them on different alternatives.
-fn together(one: &PlacedStep, other: &PlacedStep) -> bool {
+fn together(one: &PlacedStep<'_>, other: &PlacedStep<'_>) -> bool {
     one.branch.iter().all(|(decision, alternative)| {
         other
             .branch
@@ -22,7 +22,7 @@ fn together(one: &PlacedStep, other: &PlacedStep) -> bool {
 }
 
 /// Whether one message is the reply that answers a call.
-fn answers(candidate: &PlacedStep, call: &PlacedStep) -> bool {
+fn answers(candidate: &PlacedStep<'_>, call: &PlacedStep<'_>) -> bool {
     candidate.step.kind == MessageKind::Return
         && candidate.step.from == call.step.to
         && candidate.step.to == call.step.from
@@ -33,7 +33,7 @@ fn answers(candidate: &PlacedStep, call: &PlacedStep) -> bool {
 /// the first, and the first on each alternative of a decision that the first
 /// does not run on, since a call answered on one answer of a decision is
 /// answered on the others too.
-fn answer_indexes(steps: &[PlacedStep], index: usize, claimed: &HashSet<usize>) -> Vec<usize> {
+fn answer_indexes(steps: &[PlacedStep<'_>], index: usize, claimed: &HashSet<usize>) -> Vec<usize> {
     let call = &steps[index];
     let mut found: Vec<usize> = Vec::new();
     for (position, candidate) in steps.iter().enumerate() {
@@ -50,7 +50,7 @@ fn answer_indexes(steps: &[PlacedStep], index: usize, claimed: &HashSet<usize>) 
 }
 
 /// The lowest row a participant is still involved in, from a given message on.
-fn last_involvement(steps: &[PlacedStep], from: usize, node: &str) -> f64 {
+fn last_involvement(steps: &[PlacedStep<'_>], from: usize, node: &str) -> f64 {
     let mut lowest = steps.get(from).map_or(0.0, |step| step.y);
     for candidate in steps.iter().skip(from) {
         if candidate.step.from == node || candidate.step.to == node {
@@ -85,7 +85,7 @@ fn merged_bars(bars: Vec<Activation>) -> Vec<Activation> {
 /// drawing never shows the work finishing. An asynchronous message and a
 /// self-message activate nothing. A bar runs a little past the call and the
 /// reply, so each arrow meets its straight side rather than its rounded end.
-pub fn activations_for(node: &str, steps: &[PlacedStep]) -> Vec<Activation> {
+pub(super) fn activations_for(node: &str, steps: &[PlacedStep<'_>]) -> Vec<Activation> {
     let mut claimed = HashSet::new();
     let mut bars = Vec::new();
     for (index, call) in steps.iter().enumerate() {
@@ -102,7 +102,7 @@ pub fn activations_for(node: &str, steps: &[PlacedStep]) -> Vec<Activation> {
 /// nothing answers it.
 fn bar_of(
     node: &str,
-    steps: &[PlacedStep],
+    steps: &[PlacedStep<'_>],
     index: usize,
     claimed: &mut HashSet<usize>,
 ) -> Activation {

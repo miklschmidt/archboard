@@ -23,7 +23,7 @@ impl Track<'_> {
     /// Whether a line leaving a station into a channel and another line
     /// entering the station below from the same channel stand within a lane
     /// of each other, and so read as one line.
-    pub fn collinear(&self, leaving: NetId, entering: NetId) -> bool {
+    pub(crate) fn collinear(&self, leaving: NetId, entering: NetId) -> bool {
         let (up, down) = (self.net(leaving), self.net(entering));
         let within = abs(up.top_x - down.bottom_x) < LANE;
         if up.channel != down.channel || !within {
@@ -49,7 +49,7 @@ impl Track<'_> {
     }
 
     /// How many pairs of lines read as one.
-    pub fn collinear_pairs(&self, nets: &[NetId]) -> f64 {
+    pub(crate) fn collinear_pairs(&self, nets: &[NetId]) -> f64 {
         let mut count = 0.0;
         for channel in by_channel(self, nets.iter().copied(), |&net| net).values() {
             for &leaving in channel {
@@ -149,7 +149,7 @@ impl Track<'_> {
 
     /// Part every pair of lines that read as one where a move can: moving
     /// whole runs of lanes first, then only the pieces of runs a stretch stands on.
-    pub fn part_collinear(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
+    pub(crate) fn part_collinear(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
         let places: Vec<(NetId, Place)> = routes
             .iter()
             .enumerate()

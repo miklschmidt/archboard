@@ -19,20 +19,20 @@ const COLUMN_ROOM: f64 = 40.0;
 
 /// A loose card and its size.
 #[derive(Clone, Debug)]
-pub struct Loose {
+pub(crate) struct Loose {
     pub id: String,
     pub width: f64,
     pub height: f64,
 }
 
 /// Whether some loose cards are enough to set out as a grid.
-pub fn grids(count: usize) -> bool {
+pub(crate) fn grids(count: usize) -> bool {
     count >= MIN_GRID
 }
 
 /// The invisible edges that set loose cards out as a grid, in their order,
 /// row by row, with as many columns as bring the grid nearest the page's shape.
-pub fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
+pub(crate) fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
     if !grids(cards.len()) {
         return Vec::new();
     }
@@ -59,7 +59,7 @@ pub fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
 
 /// The invisible edges that keep a wrapped rank's rows in columns: every
 /// lowered card chained to the card above it in its column.
-pub fn wrap_edges(plan: &Plan) -> Vec<Edge> {
+pub(crate) fn wrap_edges(plan: &Plan) -> Vec<Edge> {
     let mut rows: Vec<Vec<&String>> = Vec::new();
     for (card, &row) in plan {
         if rows.len() <= row {

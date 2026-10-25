@@ -172,7 +172,7 @@ impl<'a, T: Text> Placing<'a, '_, T> {
 
 /// Every step of one flow, stacked down the page in the order it is stated:
 /// the placed messages, and the frames closed, inner before outer.
-pub fn place_steps<'a>(
+pub(super) fn place_steps<'a>(
     text: &impl Text,
     steps: &'a [Step],
     centre_of: &HashMap<&str, f64>,
@@ -195,7 +195,7 @@ pub fn place_steps<'a>(
 
 /// How far down the page one flow's own drawing reaches: the lowest row
 /// anything was drawn on, or the first message's row when nothing is below it.
-pub fn lowest_drawn(steps: &[PlacedStep], frames: &[FrameRows], floor: f64) -> f64 {
+pub(super) fn lowest_drawn(steps: &[PlacedStep<'_>], frames: &[FrameRows<'_>], floor: f64) -> f64 {
     let mut lowest = floor;
     for placed in steps {
         let reach = if placed.step.kind == MessageKind::Myself {

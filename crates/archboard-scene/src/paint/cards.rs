@@ -23,8 +23,8 @@ use crate::request::{NodeAppearance, SequenceCard, Standing};
 use crate::scene::{Role, SubjectKind};
 
 /// How far outside its subject a selection ring sits.
-pub const HALO_INSET: f64 = 3.0;
-pub const HALO_WIDTH: f64 = 2.0;
+pub(super) const HALO_INSET: f64 = 3.0;
+pub(super) const HALO_WIDTH: f64 = 2.0;
 
 /// Where a card's name sits when it carries a responsibility under it.
 const TITLE_BASELINE_WITH_NOTE: f64 = 23.0;
@@ -34,7 +34,12 @@ const OPTICAL_CENTRE: f64 = 0.34;
 
 /// The ring a viewer turns on to show what is selected; round a removed part
 /// it is drawn over the dashed footprint the part left.
-pub fn halo(rect: Rect, radius: f64, styles: &Styles, standing: Option<Standing>) -> Markup {
+pub(super) fn halo(
+    rect: Rect,
+    radius: f64,
+    styles: &Styles<'_>,
+    standing: Option<Standing>,
+) -> Markup {
     let inset = if standing == Some(Standing::Removed) {
         -OUTLINE_WIDTH / 2.0
     } else {
@@ -56,8 +61,8 @@ pub fn halo(rect: Rect, radius: f64, styles: &Styles, standing: Option<Standing>
 }
 
 /// One participant's card in a sequence.
-pub fn paint_card(
-    ctx: &Ctx,
+pub(super) fn paint_card(
+    ctx: &Ctx<'_>,
     placed: &SequenceCard,
     palette: &Palette,
     standing: Option<Standing>,
@@ -133,9 +138,9 @@ pub fn paint_card(
 /// A part drawn as a card, in either grammar: its seat, its halo, its slab
 /// (cut through by its ports, if it has any), its near and far views, and
 /// its standing's pin and warning.
-pub fn paint_slab_card(
-    ctx: &Ctx,
-    part: &Part,
+pub(super) fn paint_slab_card(
+    ctx: &Ctx<'_>,
+    part: &Part<'_>,
     palette: &Palette,
     cut: Option<&str>,
     near: NearCard,
@@ -168,12 +173,12 @@ pub fn paint_slab_card(
 }
 
 /// A flow's title block, printed on its frame's header slab.
-pub fn paint_header(
-    ctx: &Ctx,
+pub(super) fn paint_header(
+    ctx: &Ctx<'_>,
     header: Rect,
     name: &str,
     responsibility: Option<&str>,
-    styles: &Styles,
+    styles: &Styles<'_>,
 ) -> Markup {
     let name_baseline = header_anchor(header).y;
     let note_baseline = header.y + PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_SIZE;
@@ -200,7 +205,7 @@ pub fn paint_header(
 }
 
 /// Where a flow's title block starts: the left end of its name's baseline.
-pub fn header_anchor(header: Rect) -> Place {
+pub(super) fn header_anchor(header: Rect) -> Place {
     Place {
         x: header.x,
         y: header.y + PART_TITLE_SIZE,

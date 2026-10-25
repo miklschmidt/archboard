@@ -4,22 +4,22 @@
 //! and the track router drawing their lines; every container and every other
 //! group region is drawn inline, as a cluster of the block that lays it out.
 
-pub mod assembly;
-pub mod card_layout;
-pub mod clusters;
-pub mod fold;
-pub mod fold_layout;
-pub mod headers;
-pub mod laid;
-pub mod laying;
-pub mod leaves;
-pub mod lone;
-pub mod place;
-pub mod settle;
-pub mod sides;
-pub mod stacking;
-pub mod steps;
-pub mod tree;
-pub mod walls;
-pub mod weighing;
-pub mod wraps;
+pub(crate) mod assembly;
+pub(crate) mod card_layout;
+pub(crate) mod clusters;
+pub(crate) mod fold;
+pub(crate) mod fold_layout;
+pub(crate) mod headers;
+pub(crate) mod laid;
+pub(crate) mod laying;
+pub(crate) mod leaves;
+pub(crate) mod lone;
+pub(crate) mod place;
+pub(crate) mod settle;
+pub(crate) mod sides;
+pub(crate) mod stacking;
+pub(crate) mod steps;
+pub(crate) mod tree;
+pub(crate) mod walls;
+pub(crate) mod weighing;
+pub(crate) mod wraps;

@@ -443,7 +443,7 @@ fn paint_column(
 
 /// The frame around one flow, with the flow's name and summary on it.
 fn paint_frame(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     layout: &SequenceFlow,
     palette: &Palette,
     standing: Option<Standing>,
@@ -826,7 +826,7 @@ fn appearance_of<'a>(picture: &'a SequencePicture, id: &str) -> &'a NodeAppearan
 
 /// One flow, painted: everything it draws, and the words that go above every flow's runs.
 fn paint_flow(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     picture: &SequencePicture,
     layout: &SequenceFlow,
     palette: &Palette,
@@ -951,7 +951,7 @@ fn paint_flow(
 
 /// One variant's flows, painted as a stack of message sequences.
 pub fn paint_sequence(
-    ctx: &Ctx,
+    ctx: &Ctx<'_>,
     picture: &SequencePicture,
     palette: &Palette,
     standings: &Standings,

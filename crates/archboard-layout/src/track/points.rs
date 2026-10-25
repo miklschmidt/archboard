@@ -85,7 +85,7 @@ impl Track<'_> {
 
     /// A line's chain, when it is one to hold: it leaves its card from the
     /// card's points, and runs down from it to a lower band.
-    fn held_chain(&self, line: &SceneLine, chains: &Map<String, ChainId>) -> Option<ChainId> {
+    fn held_chain(&self, line: &SceneLine<'_>, chains: &Map<String, ChainId>) -> Option<ChainId> {
         line.placed.option(FROM_POINTS)?;
         let &chain = chains.get(&line.id)?;
         let one = self.chain(chain);
@@ -111,7 +111,7 @@ impl Track<'_> {
     /// The lines to hold, by the card they leave.
     fn held_by_card(
         &self,
-        lines: &[&SceneLine],
+        lines: &[&SceneLine<'_>],
         chains: &Map<String, ChainId>,
     ) -> Map<ItemId, Vec<Held>> {
         let mut leaving: Map<ItemId, Vec<Held>> = Map::default();
@@ -216,7 +216,11 @@ impl Track<'_> {
 
     /// Hold each line down out of a card that leaves from its points to its
     /// point, and each line down into such a card to the middle of its top.
-    pub fn hold_to_points(&mut self, lines: &[&SceneLine], chains: &Map<String, ChainId>) {
+    pub(crate) fn hold_to_points(
+        &mut self,
+        lines: &[&SceneLine<'_>],
+        chains: &Map<String, ChainId>,
+    ) {
         let leaving = self.held_by_card(lines, chains);
         for (&item, out) in &leaving {
             let card = *self.scene.item(item);
