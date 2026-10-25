@@ -223,11 +223,6 @@ pub fn sign(value: f64) -> f64 {
     }
 }
 
-/// `a % b`: the remainder with the sign of the dividend.
-pub fn remainder(a: f64, b: f64) -> f64 {
-    a % b
-}
-
 /// `x ** n` for a small whole exponent, as JavaScriptCore multiplies it out.
 pub fn powi(base: f64, exponent: u32) -> f64 {
     let mut result = 1.0;
