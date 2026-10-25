@@ -18,7 +18,7 @@ import type {
 	WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
-const ARCHBOARD_COORDINATOR_MANIFEST_SHA256 =
+const COORDINATOR_CALLBACK_MANIFEST_SHA256 =
 	"dc2594074e93dc26f0b95b6bce1f4c08082b26cb67000dbf2b667423fe38eb25" as const;
 
 /** The response owner the workhorse's calls to the coordinator are registered under. */
@@ -57,9 +57,9 @@ function loadManifest(): z.infer<typeof ManifestSchema> {
 		),
 	);
 	const digest = createHash("sha256").update(bytes).digest("hex");
-	if (digest !== ARCHBOARD_COORDINATOR_MANIFEST_SHA256) {
+	if (digest !== COORDINATOR_CALLBACK_MANIFEST_SHA256) {
 		throw new TypeError(
-			`archboard_coordinator manifest hash drifted. Expected ${ARCHBOARD_COORDINATOR_MANIFEST_SHA256}, received ${digest}. Human re-review is required before updating this digest.`,
+			`archboard_coordinator manifest hash drifted. Expected ${COORDINATOR_CALLBACK_MANIFEST_SHA256}, received ${digest}. Human re-review is required before updating this digest.`,
 		);
 	}
 	const manifest = ManifestSchema.parse(JSON.parse(bytes.toString("utf8")));
@@ -68,7 +68,7 @@ function loadManifest(): z.infer<typeof ManifestSchema> {
 	return Object.freeze(manifest);
 }
 
-const ARCHBOARD_COORDINATOR_NAMESPACE = loadManifest();
+const COORDINATOR_CALLBACK_NAMESPACE = loadManifest();
 
 /** What the workhorse is answered, by what became of its message. */
 const ANSWERS = Object.freeze({
@@ -162,8 +162,8 @@ function answerUnownedTellCoordinator(
 }
 
 export {
-	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
-	ARCHBOARD_COORDINATOR_NAMESPACE,
+	COORDINATOR_CALLBACK_MANIFEST_SHA256,
+	COORDINATOR_CALLBACK_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
 	answerUnownedTellCoordinator,
 	createTellCoordinator,

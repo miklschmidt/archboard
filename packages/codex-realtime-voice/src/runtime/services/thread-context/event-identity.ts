@@ -1,16 +1,16 @@
 import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
-type SemanticCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
+type ContextCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
 import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextEventId,
 } from "#runtime/services/thread-context/contract.ts";
 
 /**
- * The opaque board cursor carried by the canonical context for one feed event.
+ * The opaque cursor token the canonical context carries for one feed event.
  * @param cursor - The feed cursor a settled event was published under.
  * @returns The `feedId:sequence` token the context adapter must reproduce.
  */
-function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
+function canonicalContextCursorToken(cursor: ContextCursor): string {
 	return `${cursor.feedId}:${cursor.sequence}`;
 }
 
@@ -50,4 +50,4 @@ function eventIdentityReason(
 		: "stale_cursor";
 }
 
-export { canonicalSemanticCursorToken, eventId, eventIdentityReason, eventKey };
+export { canonicalContextCursorToken, eventId, eventIdentityReason, eventKey };

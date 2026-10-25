@@ -22,7 +22,7 @@ import fs from "node:fs";
 import { boardMemoryKey, locateSemanticBoard } from "@archboard/board/address";
 import { onBoardSweep } from "@archboard/board/lock";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { broadcast, onBoardBroadcast } from "@archboard/workbench/panes";
 
 /**

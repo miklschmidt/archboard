@@ -2,11 +2,8 @@ import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { basename, join } from "node:path";
-import { createCodexWorkbench } from "@archboard/codex-realtime-voice/server";
-import { createWorkbenchThreadProfile } from "@archboard/codex-realtime-voice/runtime";
-import { resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
+import { createVoiceAgent, resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
 import type { ExampleOptions } from "#server/rules/startup/options.ts";
-import { attachBrowserSockets, sameOrigin } from "#server/sockets/browser/browser.ts";
 import { WORKBENCH_SOCKET_PATH, type ExampleConfiguration } from "#shared/protocol/application.ts";
 
 const assets = new Map([
@@ -32,23 +29,18 @@ function requireAssets(directory: string): void {
 }
 
 /**
- * Add the example's short domain instructions to the core role protocol.
- * @param role The thread's role.
- * @param domainInstructions The application's instructions.
- * @returns The immutable thread profile.
+ * Compare browser request metadata to the exact loopback listener.
+ * @param host The request host header.
+ * @param origin The optional browser origin header.
+ * @param expected The listener's HTTP origin.
+ * @returns Whether the request belongs to this localhost application.
  */
-function profile(role: "coordinator" | "workhorse", domainInstructions: string) {
-	return createWorkbenchThreadProfile({
-		serviceName: "workbench-example",
-		threadSource: "workbench-example",
-		role,
-		domainInstructions,
-		dynamicTools: [],
-	});
+function sameOrigin(host: string | undefined, origin: string | undefined, expected: string) {
+	return host === new URL(expected).host && (origin === undefined || origin === expected);
 }
 
 /**
- * Start one localhost application around the public Codex workbench factory.
+ * Start one localhost application around the public voice agent.
  * @param options The admitted host inputs.
  * @param onFatal The application lifetime's failure handler.
  * @param signal Stops owned resources even while Codex startup is pending.
@@ -63,23 +55,17 @@ export async function startExample(
 	const executablePath = resolveCodexExecutable(
 		options.codex === undefined ? {} : { executablePath: options.codex },
 	);
-	const workbench = createCodexWorkbench({
-		storage: { rootDirectory: options.state },
-		process: { executablePath },
-		host: {
-			allowedCheckouts: [options.checkout],
-			onFatal,
-			instructions: {
-				coordinator: profile(
-					"coordinator",
-					"Answer brief questions and coordinate sustained work in the admitted checkout.\n",
-				),
-				workhorse: profile(
-					"workhorse",
-					"Complete the person's requested work in the admitted checkout.\n",
-				),
-			},
+	const agent = createVoiceAgent({
+		storage: { directory: options.state },
+		codex: { executablePath },
+		checkouts: [options.checkout],
+		identity: { serviceName: "workbench-example", threadSource: "workbench-example" },
+		instructions: {
+			coordinator:
+				"Answer brief questions and coordinate sustained work in the admitted checkout.\n",
+			workhorse: "Complete the person's requested work in the admitted checkout.\n",
 		},
+		onFatal,
 	});
 	let origin = "";
 	const server = createServer((request, response) => {
@@ -118,7 +104,6 @@ export async function startExample(
 				.end("Cannot read the browser build. Rebuild it and restart the example server.");
 		});
 	});
-	let closeSockets: (() => Promise<void>) | undefined;
 	let stopping: Promise<void> | undefined;
 	/**
 	 * Close only this host's listener, sockets, and private child, once.
@@ -135,13 +120,9 @@ export async function startExample(
 				);
 			});
 			try {
-				await closeSockets?.();
+				await agent.shutdown();
 			} finally {
-				try {
-					await workbench.shutdown();
-				} finally {
-					await closed;
-				}
+				await closed;
 			}
 		})());
 	/** Stop the private child without waiting for startup readiness. */
@@ -151,7 +132,7 @@ export async function startExample(
 	signal.addEventListener("abort", abort, { once: true });
 	try {
 		signal.throwIfAborted();
-		const status = await workbench.start();
+		const status = await agent.start();
 		signal.throwIfAborted();
 		if (!status.ready)
 			throw new Error(
@@ -168,7 +149,7 @@ export async function startExample(
 		if (address === null || typeof address === "string")
 			throw new Error("The localhost listener has no TCP address.");
 		origin = `http://127.0.0.1:${address.port}`;
-		closeSockets = attachBrowserSockets(server, workbench, options.checkout, origin);
+		agent.attach(server, { path: WORKBENCH_SOCKET_PATH, origin });
 		server.on("error", onFatal);
 		return { url: origin, shutdown };
 	} catch (error) {

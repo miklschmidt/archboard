@@ -7,6 +7,7 @@ import type {
 	CoordinatorPaneNews,
 	CoordinatorSemanticSubject,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import { archboardContextOf } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
 
 const CALLBACK_MAX_UTF8_BYTES = 32_768;
@@ -486,50 +487,52 @@ function callbackDocument(callback: CoordinatorCallback) {
 		"correlation",
 		"threadLinkState",
 		"threadLinkReason",
-		"semantic",
+		"context",
 	]);
 	if (!["change", "focus", "selection"].includes(callback.type)) {
-		throw new TypeError("Unknown semantic callback discriminant.");
+		throw new TypeError("Unknown host context callback discriminant.");
 	}
-	requireExactKeys(callback.semantic, [
+	const { context } = callback;
+	requireExactKeys(context, [
 		"feedId",
 		"sequence",
-		"origin",
-		"significance",
 		"brief",
 		"capturedAtMs",
 		"freshUntilMs",
-		"paneId",
-		"focused",
-		"selection",
-		"detail",
-		"news",
+		"identity",
+		"coalesces",
+		"payload",
 	]);
+	const payload = archboardContextOf(callback);
+	if (payload === null) {
+		throw new TypeError("Host context callback carries no Archboard payload.");
+	}
+	// The record keeps the document Archboard has always written: a `semantic` callback.
 	return {
 		schema: CALLBACK_SCHEMA,
-		kind: callback.kind,
+		kind: "semantic",
 		type: callback.type,
 		correlation: correlation(callback.correlation),
 		threadLinkState: callback.threadLinkState,
 		threadLinkReason: requireString(callback.threadLinkReason),
 		semantic: {
-			feedId: requireString(callback.semantic.feedId),
-			sequence: callback.semantic.sequence,
-			origin: callback.semantic.origin,
-			significance: callback.semantic.significance,
-			brief: requireString(callback.semantic.brief),
-			capturedAtMs: callback.semantic.capturedAtMs,
-			paneId: requireString(callback.semantic.paneId),
-			focused: callback.semantic.focused,
-			selection: requireSubjects(callback.semantic.selection),
-			detail: requireString(callback.semantic.detail),
-			news: newsDocument(callback.semantic.news),
+			feedId: requireString(context.feedId),
+			sequence: context.sequence,
+			origin: payload.origin,
+			significance: payload.significance,
+			brief: requireString(context.brief),
+			capturedAtMs: context.capturedAtMs,
+			paneId: requireString(payload.paneId),
+			focused: payload.focused,
+			selection: requireSubjects(payload.selection),
+			detail: requireString(payload.detail),
+			news: newsDocument(payload.news),
 		},
 	};
 }
 
 /**
- * Encode the pane news a semantic callback carries, under its closed schema.
+ * Encode the pane news a host-context callback carries, under its closed schema.
  * @param news - The pane news, or null.
  * @returns The JSON-safe document, or null.
  */

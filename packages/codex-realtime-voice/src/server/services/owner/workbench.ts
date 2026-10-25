@@ -10,7 +10,7 @@ import {
 import { createTabSessions, type TabSessions } from "#server/services/sessions/browser-tabs.ts";
 import { createWorkbenchBrowserConnections } from "#server/services/browser-socket/connections.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
-import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
+import { captureWorkbenchInstructions } from "#runtime/rules/host/instructions.ts";
 import {
 	CODEX_WORKBENCH_OWNER,
 	installProductionCodexWorkbench,
@@ -23,7 +23,6 @@ import { createServerCodexWorkbenchApplication } from "#server/services/owner/ap
 import type { CodexWorkbenchHostPolicy } from "#server/protocol/generation/host.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
 import type { BrowserLeaseLedger } from "#server/protocol/gateway/contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
 /** An installation supplies private paths, the executable environment, and frozen domain policy. */
 export interface CreateCodexWorkbenchOptions {
@@ -115,10 +114,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	let owner: CodexWorkbenchOwner | null = null;
 	const host: CodexWorkbenchHostPolicy = Object.freeze({
 		...policy,
-		instructions: Object.freeze({
-			coordinator: captureThreadProfile(policy.instructions.coordinator, "coordinator"),
-			workhorse: captureThreadProfile(policy.instructions.workhorse, "workhorse"),
-		}),
+		instructions: captureWorkbenchInstructions(policy.instructions),
 		contextCodec: Object.freeze({ ...policy.contextCodec }),
 		...(policy.domainTools === undefined
 			? {}
@@ -284,35 +280,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 				ready: false,
 				failure: null,
 			},
-		/**
-		 * Read the gateway of the ready generation.
-		 * @returns The active browser gateway.
-		 */
-		gateway: () => requireOwner().gateway(),
-		/**
-		 * Read one live tab session from the ready generation.
-		 * @param id The tab session identity.
-		 * @returns The live tab session.
-		 */
-		session: (id: TabSessionId) => requireScope().sessions.require(id),
-		/**
-		 * Read every live tab session from the ready generation.
-		 * @returns The live tab sessions.
-		 */
-		sessions: () => requireScope().sessions.list(),
-		/**
-		 * Apply a browser activation to an admitted checkout.
-		 * @param id The tab session identity.
-		 * @param checkout The checkout the browser activated.
-		 * @returns Whether the shown checkout changed.
-		 */
-		activateConversation: (id: TabSessionId, checkout: string) => {
-			const admitted = host.resolveCheckout(checkout);
-			if (admitted === null)
-				throw new Error("The checkout is not admitted by this workbench host.");
-			requireScope().sessions.require(id);
-			return tabs.show(id, admitted);
-		},
 		browser: ingress.port,
+		instructions: host.instructions,
 	});
 }

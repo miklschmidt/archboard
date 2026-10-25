@@ -6,7 +6,7 @@
 // (TASK-480).
 
 import type { AnsweredVault, RegisteredVault } from "#cli/protocol/contract/schemas.ts";
-import { setRequestedVault } from "@archboard/server-lifecycle/request-context";
+import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import { findAndRegisterVault } from "@archboard/workspace/vault";
 
@@ -48,7 +48,7 @@ function registrationLine(registration: RegisteredVault): string {
  */
 async function addressVault(directory: string | null): Promise<AnsweredVault> {
 	const vault = await foundAndRegistered({ directory, vaultsBoundTo });
-	setRequestedVault(vault.path);
+	stateInvocation({ vault: vault.path });
 	return vault;
 }
 

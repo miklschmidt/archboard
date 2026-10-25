@@ -148,7 +148,7 @@ function stopAgainstSilentPort(): Promise<{ port: number; stopServer: () => Prom
 		probe.stop(true);
 		originalUrl = process.env["ARCHBOARD_URL"];
 		process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${port}`;
-		const { stopServer } = await import("#runtime/operations/spawn.ts");
+		const { stopServer } = await import("#runtime/operations/stop.ts");
 		return { port, stopServer };
 	})();
 	return silentPort;

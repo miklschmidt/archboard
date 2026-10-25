@@ -1,3 +1,4 @@
+import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/protocol/voice/extension.ts";
 import type { CodexWorkbenchSessionComponents } from "@archboard/codex-realtime-voice/server";
 import { boardLockState } from "@archboard/board/lock";
 import { recentDoing } from "@archboard/board/doing";
@@ -12,10 +13,9 @@ import type {
 	SettledSemanticChangeEvent,
 } from "#runtime/schemas/semantic-context-types.ts";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
+import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import type { SemanticBoard } from "@archboard/board/document";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "@archboard/codex-realtime-voice/server";
 import type { CodexWorkbenchWorkhorseComponents } from "@archboard/codex-realtime-voice/server";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
 import {
@@ -69,7 +69,7 @@ function canonicalContextFromBrief(
 			name: brief.board.name,
 			key: brief.board.key,
 			version: brief.version ?? 0,
-			cursor: brief.cursor === null ? null : canonicalSemanticCursorToken(brief.cursor),
+			cursor: brief.cursor === null ? null : canonicalContextCursorToken(brief.cursor),
 		},
 		threadLink: brief.threadLink,
 		child: { id: brief.child.id, epoch: brief.child.epoch },

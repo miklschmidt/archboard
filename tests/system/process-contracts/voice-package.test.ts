@@ -54,10 +54,17 @@ test("an outside Bun project installs the packed package and uses every public e
 			path.join(project, "consumer.ts"),
 			[
 				...specifiers.map((specifier, index) => `import * as entry${index} from "${specifier}";`),
-				`import { resolveCodexExecutable } from "${manifest.name}/server";`,
+				`import { createVoiceAgent, resolveCodexExecutable, type VoiceAgent } from "${manifest.name}/server";`,
 				`export const entries = [${specifiers.map((_, index) => `entry${index}`).join(", ")}];`,
-				"export const resolve: (options?: { readonly executablePath?: string }) => string =",
-				"\tresolveCodexExecutable;",
+				"export function start(directory: string, checkout: string): VoiceAgent {",
+				"\treturn createVoiceAgent({",
+				"\t\tstorage: { directory },",
+				"\t\tcodex: { executablePath: resolveCodexExecutable() },",
+				"\t\tcheckouts: [checkout],",
+				'\t\tinstructions: { coordinator: "", workhorse: "" },',
+				"\t\tonFatal: (error: unknown) => console.error(error),",
+				"\t});",
+				"}",
 				"",
 			].join("\n"),
 		);
@@ -83,11 +90,11 @@ test("an outside Bun project installs the packed package and uses every public e
 			[
 				"bun",
 				"-e",
-				`const server = await import("${manifest.name}/server"); console.log(typeof server.resolveCodexExecutable);`,
+				`const server = await import("${manifest.name}/server"); console.log(typeof server.createVoiceAgent, typeof server.resolveCodexExecutable);`,
 			],
 			project,
 		);
-		expect(imported.trim()).toBe("function");
+		expect(imported.trim()).toBe("function function");
 	} finally {
 		rmSync(project, { recursive: true, force: true });
 	}

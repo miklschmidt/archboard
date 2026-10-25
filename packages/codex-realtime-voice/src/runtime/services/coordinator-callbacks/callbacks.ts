@@ -18,7 +18,7 @@ import {
 } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import type {
 	CoordinatorCallback,
-	CoordinatorSemanticCallback,
+	CoordinatorHostContextCallback,
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbackDeliveryOutcome,
 	CoordinatorCallbackDeliveryReason,
@@ -132,11 +132,10 @@ function ownSessionWrite(
 
 /**
  * Why a callback is told to nobody from the moment it arrives: this session made it itself, or
- * an outside agent wrote a board no pane of this canvas shows (TASK-293.06). Both are decided as
- * the event lands: a pane that turns to the board afterwards reads it as it now is.
+ * the host policy refuses it as it arrives (TASK-293.06). Both are decided as the event lands.
  * @param event - The source event.
  * @param callback - Its normalized callback.
- * @param options - The callback options, for the live identities and the canvas.
+ * @param options - The callback options, for the live identities and the host policy.
  * @returns The reason, or null when it goes on to delivery.
  */
 function arrivalRefusal(
@@ -145,7 +144,7 @@ function arrivalRefusal(
 	options: CoordinatorCallbackOptions,
 ): CoordinatorCallbackDeliveryReason | null {
 	if (ownSessionWrite(event, options)) return "own_change";
-	if (callback.kind !== "semantic") return null;
+	if (callback.kind !== "host_context") return null;
 	return hostArrivalRefusal(event, callback, options);
 }
 
@@ -158,7 +157,7 @@ function arrivalRefusal(
  */
 function hostArrivalRefusal(
 	event: CoordinatorCallbackSource,
-	callback: CoordinatorSemanticCallback,
+	callback: CoordinatorHostContextCallback,
 	options: CoordinatorCallbackOptions,
 ): CoordinatorCallbackDeliveryReason | null {
 	if (!("kind" in event) || event.kind !== "host") return null;
@@ -189,19 +188,19 @@ function sessionThreads(options: CoordinatorCallbackOptions): readonly string[] 
 }
 
 /**
- * The freshness a semantic callback carries; a callback of any other kind has none, and is fresh
- * from the moment it arrives instead.
+ * The freshness a host-context callback carries; a callback of any other kind has none, and is
+ * fresh from the moment it arrives instead.
  * @param callback - The normalized callback, or null when normalization failed.
- * @returns The semantic freshness fields, or null.
+ * @returns The host-context freshness fields, or null.
  */
-function semanticFreshnessOf(
+function hostContextFreshnessOf(
 	callback: CoordinatorCallback | null,
 ): { readonly capturedAtMs: number; readonly freshUntilMs: number } | null {
-	return callback?.kind === "semantic" ? callback.semantic : null;
+	return callback?.kind === "host_context" ? callback.context : null;
 }
 
 /**
- * Build the module that turns workhorse and semantic events into coordinator callbacks and
+ * Build the module that turns workhorse and host-context events into coordinator callbacks and
  * delivers each one at most once, in source order, down a single path. Callbacks with the same
  * identity share one delivery; a newer callback that supersedes a pending one replaces it in
  * place; and everything the buffer cannot hold settles as not delivered with the reason why.
@@ -222,21 +221,21 @@ export function createCodexCoordinatorCallbacks(
 	const now = options.now ?? Date.now;
 
 	/**
-	 * Stamp one event with its arrival order and freshness window. A semantic callback keeps the
+	 * Stamp one event with its arrival order and freshness window. A host-context callback keeps the
 	 * time the person's gesture was captured; anything else is fresh from now.
 	 * @param callback - The normalized callback, or null when normalization failed.
 	 * @returns The frozen evidence.
 	 */
 	const captureEvidence = (callback: CoordinatorCallback | null): CallbackDeliveryEvidence => {
-		const semantic = semanticFreshnessOf(callback);
-		const capturedAtMs = semantic === null ? now() : semantic.capturedAtMs;
+		const context = hostContextFreshnessOf(callback);
+		const capturedAtMs = context === null ? now() : context.capturedAtMs;
 		return Object.freeze({
 			sourceOrder: nextSourceOrder++,
 			capturedAtMs,
 			freshUntilMs:
-				semantic === null
+				context === null
 					? capturedAtMs + CODEX_REALTIME_MS.semanticFreshness
-					: semantic.freshUntilMs,
+					: context.freshUntilMs,
 		});
 	};
 
@@ -392,7 +391,7 @@ export function createCodexCoordinatorCallbacks(
 			return Promise.resolve(invalidDelivery(captureEvidence(null)));
 		}
 		const evidence = captureEvidence(callback);
-		// A session hears every board update except the ones it makes itself, and
+		// A session hears every host change except the ones it makes itself, and
 		// the coordinator is the other half of one session. Asked here rather than
 		// on the subscription because this is the one gate both paths pass through,
 		// and asked before delivery rather than after normalization — a normalized

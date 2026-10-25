@@ -93,7 +93,7 @@ function assertOwnedWorkhorse(binding: WorkhorseOperationBinding): void {
 		);
 	}
 	if (binding.workhorse.operationId.length === 0) {
-		fail("unknown_provenance", "The workhorse binding has no Archboard server ownership proof.");
+		fail("unknown_provenance", "The workhorse binding has no server ownership proof.");
 	}
 }
 
