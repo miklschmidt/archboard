@@ -20,9 +20,11 @@
 #![forbid(unsafe_code)]
 
 mod grid;
+mod joining;
 mod nudge;
 mod order;
 mod search;
+mod segments;
 mod vpsc;
 
 /// A point in diagram units.
