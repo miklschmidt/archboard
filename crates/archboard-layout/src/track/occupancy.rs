@@ -41,6 +41,28 @@ fn outside_frame(wall: f64, walls: (f64, f64), items: &[(f64, f64)]) -> (f64, f6
     }
 }
 
+/// The stretch a wall keeps a lane off, outside it only up to the middle of
+/// the gutter it shares with a facing wall of another container, where that
+/// middle is a lane or more from both: two containers side by side leave a
+/// line their gutter, which each wall's whole clearance would close.
+fn shared_gutter(
+    (low, high): (f64, f64),
+    wall: f64,
+    side: usize,
+    facing: impl Iterator<Item = f64>,
+) -> (f64, f64) {
+    facing.fold((low, high), |(low, high), other| {
+        let middle = f64::midpoint(wall, other);
+        if side == 0 && other < wall {
+            (js_max(low, js_min(wall - LANE, middle)), high)
+        } else if side == 1 && other > wall {
+            (low, js_min(high, js_max(wall + LANE, middle)))
+        } else {
+            (low, high)
+        }
+    })
+}
+
 /// Which horizontal intervals of each band are taken by items and settled lanes.
 pub(crate) struct Occupancy {
     pub taken: Vec<Vec<(f64, f64)>>,
@@ -90,15 +112,22 @@ impl Occupancy {
         let walls: Vec<Map<(String, usize), (f64, f64)>> = (0..scene.bands.len())
             .map(|band| {
                 let held = &held[band];
+                let walled = scene.walled(band);
                 let mut walls = Map::default();
-                for (id, &pair) in scene.walled(band).iter() {
+                for (id, &pair) in walled.iter() {
                     for (side, wall) in [pair.0, pair.1].into_iter().enumerate() {
                         let stretch = if scene.frames.contains_key(id) {
                             outside_frame(wall, pair, held)
                         } else {
                             beside_region(wall, held)
                         };
-                        walls.insert((id.clone(), side), stretch);
+                        let facing = walled
+                            .values()
+                            .map(|&(left, right)| if side == 0 { right } else { left });
+                        walls.insert(
+                            (id.clone(), side),
+                            shared_gutter(stretch, wall, side, facing),
+                        );
                     }
                 }
                 walls
@@ -213,4 +242,38 @@ pub(crate) fn nearest(
         )
     });
     ordered.into_iter().map(|(x, _)| x).find(|&x| passes(x))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Whether an x stands clear of the stretches two facing walls keep a lane off.
+    fn clear_between(left: f64, right: f64, x: f64) -> bool {
+        let one = shared_gutter(
+            (left - WALL_CLEARANCE, left + REGION_CLEARANCE),
+            left,
+            1,
+            [right].into_iter(),
+        );
+        let other = shared_gutter(
+            (right - REGION_CLEARANCE, right + WALL_CLEARANCE),
+            right,
+            0,
+            [left].into_iter(),
+        );
+        [one, other]
+            .iter()
+            .all(|&(low, high)| x <= low || x >= high)
+    }
+
+    #[test]
+    fn two_containers_side_by_side_leave_a_line_the_middle_of_their_gutter() {
+        assert!(clear_between(100.0, 140.0, 120.0));
+    }
+
+    #[test]
+    fn a_gutter_without_a_lane_either_side_of_its_middle_stays_closed() {
+        assert!(!(100..=120).any(|x| clear_between(100.0, 120.0, f64::from(x))));
+    }
 }
