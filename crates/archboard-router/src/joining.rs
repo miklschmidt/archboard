@@ -1,5 +1,5 @@
 //! Segments that are one line: routes that share an end and run together
-//! from it ([W12] §3) are joined into one group of segments until the routes
+//! from it (\[W12\] §3) are joined into one group of segments until the routes
 //! part, so that nudging moves them as one.
 
 use crate::grid::{close, sign};

@@ -1,5 +1,5 @@
 //! Which side of another route a route runs on where the two share a line.
-//! [W12] §4 orders the routes of a shared path by where they part: walked
+//! \[W12\] §4 orders the routes of a shared path by where they part: walked
 //! along the path, a route that parts to the left of the other runs on its
 //! left the whole way, so the two never cross on the shared stretch. A pair
 //! is walked forward and backward from the segment where they meet; where
