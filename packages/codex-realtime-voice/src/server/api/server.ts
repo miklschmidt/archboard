@@ -12,10 +12,12 @@ export {
 } from "#runtime/protocol/host/identity.ts";
 export type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
 
+export { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+export type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
+
 // Below: seams that Archboard's pane sockets, domain tools and dynamic approvals still use. A host
 // that serves its browser through `attach` needs none of them.
-export { parseTabSessionId, parseWorkhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
-export type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
+export { parseWorkhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 export {
 	createServerCodexBrowserSocketOwner,
 	createServerCodexBrowserSocketSend,
