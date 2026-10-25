@@ -521,7 +521,7 @@ export async function fileSaved(agent: VoiceAgent, checkout: string, file: strin
 
 `announce` resolves with one receipt for each tab session and audience, and for each checkout of a workhorse. A receipt with `outcome_unknown` means that the message possibly arrived. The agent never sends it again.
 
-A receipt for an audience that you told nothing has the reason `withheld`. The receipt does not hold your reason text. The page does: each entry of `voiceContext.entries` in the state from `./contract` has a `withheld` field. For the coordinator and the voice, it holds the text that you gave as `withheld`, and it is `null` for every entry that has another reason. The agent cuts the text at 256 UTF-8 bytes and replaces each NUL character, so a long reason never stops the page from showing its state.
+A receipt for an audience that you told nothing has the reason `withheld`, unless a reason that is checked first applies, such as `voice_inactive` or `no_workhorse`. The receipt does not hold your reason text. The page does: each entry of `voiceContext.entries` in the state from `./contract` has a `withheld` field. For the coordinator and the voice, it holds the text that you gave as `withheld`, and it is `null` for every entry that has another reason. The agent cuts the text at 256 UTF-8 bytes and replaces each NUL character, so a long reason never stops the page from showing its state.
 
 ### A host that owns its sockets
 
