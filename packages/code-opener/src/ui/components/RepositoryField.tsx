@@ -3,7 +3,7 @@
 
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
-import type { OpenerSettingsReply } from "@archboard/code-binding/opening";
+import type { OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
 import { Badge, Field, RepositoryName, Select, Technical } from "@archboard/ui-kit/components";
 
 type CheckoutChoice = OpenerSettingsReply["repositories"][number];

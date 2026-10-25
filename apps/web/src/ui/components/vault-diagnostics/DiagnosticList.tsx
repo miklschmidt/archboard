@@ -1,5 +1,9 @@
 import type { JSX } from "react";
-import { describeSubject, type VaultDiagnostic } from "@archboard/board/policy";
+import { describeSubject } from "@archboard/board/policy";
+import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /**
  * The last check stays visible while the next check is pending or failed.

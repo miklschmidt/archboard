@@ -6,13 +6,19 @@
 // read is only in `skipped`, with the reason, and must never look like a part
 // that no commit changed.
 
-import type { BehindSkip } from "@archboard/code-intel/code-check";
-import type {
-	CoupledPair,
-	LocalityAnswer,
-	LocalityCommit,
-	LocalityPeriod,
-} from "@archboard/code-intel/history";
+import type { LocalityAnswer } from "@archboard/code-intel/history";
+
+/** A part the reading did not read, and why. */
+type BehindSkip = LocalityAnswer["skipped"][number];
+
+/** Two parts that change together. */
+type CoupledPair = LocalityAnswer["coupling"][number];
+
+/** One commit in the period. */
+type LocalityCommit = LocalityAnswer["commits"][number];
+
+/** One period of the reading. */
+type LocalityPeriod = LocalityAnswer["periods"][number];
 
 /** One part this part changes together with, as seen from this part. */
 interface Partner {

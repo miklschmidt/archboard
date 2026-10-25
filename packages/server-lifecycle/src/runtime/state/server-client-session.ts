@@ -7,8 +7,6 @@
 // it once is what keeps a write's `--board`, `--doing` and `--expect-version`
 // from being forgotten by whichever call site was written last.
 
-import { isRecord } from "@archboard/diagnostics/unknown-record";
-
 /** The board this invocation names, or null when it names none. */
 let requestedBoard: string | null = null;
 
@@ -29,30 +27,6 @@ let writeSession: string | null = null;
  * "against a board that carries no version", or undefined for "states none".
  */
 let expectedVersion: number | null | undefined;
-
-/**
- * Name the board every later request is about.
- * @param key The board key, or null to name none.
- */
-function setRequestedBoard(key: string | null): void {
-	requestedBoard = key;
-}
-
-/**
- * Name the vault every later request is about.
- * @param vault The vault directory, absolute, or null to name none.
- */
-function setRequestedVault(vault: string | null): void {
-	requestedVault = vault;
-}
-
-/**
- * The board this invocation named.
- * @returns The key, or null.
- */
-function currentRequestedBoard(): string | null {
-	return requestedBoard;
-}
 
 /**
  * A path with one more query parameter on it.
@@ -91,47 +65,6 @@ function withBoard(path: string): string {
 }
 
 /**
- * Say what this invocation is doing, which every write states.
- * @param doing The line, or null when nothing was said.
- */
-function setWriteDoing(doing: string | null): void {
-	writeDoing = doing;
-}
-
-/**
- * Say which agent session this invocation is writing as.
- *
- * Per invocation, never from the environment: one private app-server child
- * serves every thread of a workbench, so a value read out of that process's
- * environment would stamp one session's identity on another's writes — the
- * exact failure that made the old pane attribution worse than nothing.
- *
- * What it is for is one thing: letting that session skip the board news it
- * wrote itself. Nothing on a board rests on it, nothing validates it, and a
- * write that says nothing is delivered to everybody, its own author included.
- * @param session The session's own thread identity, or null when there is none to state.
- */
-function setWriteSession(session: string | null): void {
-	writeSession = session;
-}
-
-/**
- * Which session this invocation is writing as.
- * @returns The identity, or null.
- */
-function currentWriteSession(): string | null {
-	return writeSession;
-}
-
-/**
- * What this invocation says it is doing.
- * @returns The line, or null.
- */
-function currentWriteDoing(): string | null {
-	return writeDoing;
-}
-
-/**
  * A path carrying what this invocation is doing, when it said.
  *
  * Unless the caller has already said it. A command that builds its own query —
@@ -150,22 +83,6 @@ function withDoing(path: string): string {
 }
 
 /**
- * State the version this invocation is writing against.
- * @param version The version, null for a board that carries none, undefined for unstated.
- */
-function setExpectedVersion(version: number | null | undefined): void {
-	expectedVersion = version;
-}
-
-/**
- * The version this invocation states.
- * @returns The version, null, or undefined when it states none.
- */
-function currentExpectedVersion(): number | null | undefined {
-	return expectedVersion;
-}
-
-/**
  * A path carrying the version this invocation states, when it states one.
  * @param path The path.
  * @returns The path, with `?expectVersion=` when there is one to state.
@@ -177,19 +94,6 @@ function withExpectedVersion(path: string): string {
 	// The same rule, for the same reason: the caller that built the query is the
 	// one that knows what it is writing against.
 	return /[?&]expectVersion=/u.test(path) ? path : addQuery(path, "expectVersion", expectedVersion);
-}
-
-/**
- * The board an answer says it was about, when it says.
- * @param data The answer body.
- * @returns The board key, or null.
- */
-function answeredBoard(data: unknown): string | null {
-	if (!isRecord(data)) {
-		return null;
-	}
-	const board = data["board"];
-	return typeof board === "string" ? board : null;
 }
 
 /**
@@ -207,21 +111,57 @@ function withWriteClaims(path: string, method?: string): string {
 	return withExpectedVersion(withDoing(path));
 }
 
+/** What one invocation states about itself, which every later request carries. */
+interface InvocationStatement {
+	/** The board it names, or null. */
+	readonly board: string | null;
+	/** The vault directory it names, absolute, or null. */
+	readonly vault: string | null;
+	/** What it says it is doing, or null. */
+	readonly doing: string | null;
+	/**
+	 * The agent session it writes as, or null. Per invocation, never from the environment: one
+	 * private app-server child serves every thread of a workbench, so a value read out of that
+	 * process's environment would stamp one session's identity on another's writes. It lets that
+	 * session skip the board news it wrote itself, and nothing on a board rests on it.
+	 */
+	readonly session: string | null;
+	/** The version it writes against: null for a board that carries none, undefined for unstated. */
+	readonly expectedVersion: number | null | undefined;
+}
+
+/**
+ * State facts of this invocation. A fact left out keeps what was stated before.
+ * @param stated The facts to state.
+ */
+function stateInvocation(stated: Partial<InvocationStatement>): void {
+	const next = { ...statedInvocation(), ...stated };
+	requestedBoard = next.board;
+	requestedVault = next.vault;
+	writeDoing = next.doing;
+	writeSession = next.session;
+	expectedVersion = next.expectedVersion;
+}
+
+/**
+ * What this invocation has stated about itself.
+ * @returns The facts.
+ */
+function statedInvocation(): InvocationStatement {
+	return {
+		board: requestedBoard,
+		vault: requestedVault,
+		doing: writeDoing,
+		session: writeSession,
+		expectedVersion,
+	};
+}
+
 export {
-	withVault,
-	setRequestedVault,
-	setWriteSession,
-	currentWriteSession,
-	addQuery,
-	withWriteClaims,
-	answeredBoard,
-	currentExpectedVersion,
-	currentRequestedBoard,
-	currentWriteDoing,
-	setExpectedVersion,
-	setRequestedBoard,
-	setWriteDoing,
+	type InvocationStatement,
+	stateInvocation,
+	statedInvocation,
 	withBoard,
-	withDoing,
-	withExpectedVersion,
+	withVault,
+	withWriteClaims,
 };

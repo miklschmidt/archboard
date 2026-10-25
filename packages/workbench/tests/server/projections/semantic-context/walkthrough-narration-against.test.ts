@@ -28,8 +28,12 @@ import {
 	SemanticBoardSchema,
 	type SemanticBoard,
 } from "@archboard/board/document";
-import type { SemanticPaneContext, SemanticPanePresentation } from "@archboard/board/pane-context";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePresentation = NonNullable<z.infer<typeof SemanticPaneContextSchema>["presentation"]>;
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-narration-against-"));
 const BOARD = "Stacked";

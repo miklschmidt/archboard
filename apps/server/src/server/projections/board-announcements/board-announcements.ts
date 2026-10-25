@@ -7,10 +7,10 @@
 // moved, or this board changed hands.
 
 import type { Response } from "express";
-import { boardLockState, onBoardLockChanged, type LockHolder } from "@archboard/board/lock";
-import { recentDoing, recordDoing, type DoingEntry } from "@archboard/board/doing";
+import { boardLockState, onBoardLockChanged } from "@archboard/board/lock";
+import { recentDoing, recordDoing } from "@archboard/board/doing";
 import { normalizeBoardKey } from "@archboard/board/address";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { createAgentActivity } from "#server/state/agent-activity/agent-activity.ts";
 import { broadcastEverywhere } from "#server/state/pane-vaults/pane-vaults.ts";
 import {
@@ -20,6 +20,9 @@ import {
 	sendToPane,
 	syncLockWatch,
 } from "@archboard/workbench/panes";
+
+type DoingEntry = ReturnType<typeof recentDoing>[number];
+type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
 
 /**
  * A board's writer changed, so every pane showing it is told (ADR 0016).

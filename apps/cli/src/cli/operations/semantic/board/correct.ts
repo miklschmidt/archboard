@@ -5,7 +5,7 @@ import {
 	HistoricalCorrectionSuggestionsAnswerSchema,
 	correctHistoricalBoardOnServer,
 	suggestHistoricalCommitsOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import {
 	CliUsageError,
 	defineCommand,

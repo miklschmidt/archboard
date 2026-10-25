@@ -14,7 +14,7 @@ import type {
 	CoordinatorCallbackDeliveryReason,
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackOptions,
-	CoordinatorSemanticCallback,
+	CoordinatorHostContextCallback,
 	CoordinatorCallbackRealtimeRequest,
 	WorkhorseNewsSituation,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -365,16 +365,12 @@ function recordOnly(
 }
 
 /**
- * Give the live voice session the pane news a semantic callback is, or record the callback when
- * there is none to give: no voice session, or nothing of it that was the user's own doing.
+ * Give the live voice session the words the host policy chose for a host-context callback, or
+ * record the callback when there are none: no voice session, or a host reason to tell nobody.
  *
- * News of what an outside agent did is told to the coordinator as well (TASK-293.06); a write to a
- * board no pane shows was refused as it arrived.
- *
- * Pane news is quiet context, except during a narration, where news that stops a talk is speech:
- * the voice model finishes what it is saying (appended speech does not cut into audio in progress,
- * TASK-293.05), asks about what the user picked, then finishes its step and waits (TASK-251).
- * @param callback - The normalized semantic callback.
+ * Words the policy marks as coordinator context are put into the coordinator thread first
+ * (TASK-293.06). Speech is appended, which does not cut into audio in progress (TASK-293.05).
+ * @param callback - The normalized host-context callback.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
@@ -382,7 +378,7 @@ function recordOnly(
  * @returns The delivery record.
  */
 function deliverPaneNews(
-	callback: CoordinatorSemanticCallback,
+	callback: CoordinatorHostContextCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
@@ -421,7 +417,7 @@ function deliverPaneNews(
  * @returns The settled delivery.
  */
 async function deliverOutsideNews(
-	callback: CoordinatorSemanticCallback,
+	callback: CoordinatorHostContextCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
@@ -471,10 +467,9 @@ function deliverOperationWhileVoiceIsLive(
  * any other operation callback is recorded and told to nobody. With no voice session the
  * coordinator is never run (it is the voice model's subconscious, TASK-321), so neither is sent.
  *
- * A semantic callback (a change, a focus, a selection) reaches the voice model only as pane news:
- * one sentence of names saying where the user's reading now stands, and only for what the pane
- * marked as the user's own doing (TASK-293, ADR 0034), quietly or, during a narration, as speech.
- * Everything else is recorded and told to nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
+ * A host-context callback (a change, a focus, a selection) reaches the voice model only as the
+ * words its host policy chooses (TASK-293, ADR 0034), quietly or as speech. Everything else is
+ * recorded and told to nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
  * serialized brief on every report, one per walkthrough step the voice model had asked for, which
  * it then answered (33 of them in the sessions of 2026-09-20). The sentence is a hint for what
  * "this" means; the coordinator still reads the live pane through its own tools when asked.
@@ -496,7 +491,7 @@ async function deliverOne(
 	}
 	const { text } = cleared;
 	const generation = callback.correlation.realtimeGeneration;
-	if (callback.kind === "semantic") {
+	if (callback.kind === "host_context") {
 		return deliverPaneNews(callback, options, isDisposed, evidence, text);
 	}
 	if (generation === null) {

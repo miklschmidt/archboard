@@ -1,11 +1,11 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PanesReport } from "@archboard/server-lifecycle/panes";
+import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
 import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
 
-type PanesBody = PanesReport & { success: boolean };
+type PanesBody = ReturnType<typeof buildPanesReport> & { success: boolean };
 type HealthBody = { websocket_clients: number };
 type ElementsBody = { elements: unknown[] };
 type ChangesBody = { cursor: number };

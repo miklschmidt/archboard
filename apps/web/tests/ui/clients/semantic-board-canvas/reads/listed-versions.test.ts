@@ -8,11 +8,14 @@
 import { afterEach, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
-import type { BoardListing } from "@archboard/board/board-listing";
 import {
 	semanticBoardKeys,
 	semanticBoardListQuery,
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import type { BoardListingSchema } from "@archboard/board/board-listing";
+import type { z } from "zod";
+
+type BoardListing = z.infer<typeof BoardListingSchema>;
 
 /** The vault the listing is of. */
 const VAULT = "/work/shop/.archboard/vault";

@@ -19,7 +19,7 @@ import type {
 } from "#runtime/protocol/host/context-source.ts";
 import type {
 	CoordinatorCallbackHostPolicy,
-	CoordinatorHostCallbackSource,
+	CoordinatorHostContextSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type {
 	CodexWorkbenchHostPolicy,
@@ -372,7 +372,7 @@ function createDefaultWorkbenchHost(
 		let sequence = 0;
 		let disposed = false;
 		const changes = new Set<(event: WorkbenchContextEvent) => void>();
-		const callbacks = new Set<(event: CoordinatorHostCallbackSource) => void>();
+		const callbacks = new Set<(event: CoordinatorHostContextSource) => void>();
 		/**
 		 * Publish exact-identity events only after an actual source invalidation.
 		 */
@@ -403,7 +403,7 @@ function createDefaultWorkbenchHost(
 				truncated: false,
 				change: { feedId, cursor, origin: "mixed", significance: "structural", by: null },
 			});
-			const callback: CoordinatorHostCallbackSource = cloneAndFreeze({
+			const callback: CoordinatorHostContextSource = cloneAndFreeze({
 				kind: "host",
 				type: "change",
 				child: event.child,
@@ -411,19 +411,15 @@ function createDefaultWorkbenchHost(
 				coordinator: event.coordinator,
 				threadLink: { state: "executable", reason: null },
 				author: null,
-				semantic: {
+				context: {
 					feedId,
 					sequence,
-					origin: event.origin,
-					significance: event.change.significance,
 					brief: event.brief,
 					capturedAtMs: event.freshness.capturedAtMs,
 					freshUntilMs: event.freshness.freshUntilMs,
-					paneId: before.execution.paneId,
-					focused: true,
-					selection: [],
-					detail: null,
-					news: null,
+					identity: "",
+					coalesces: true,
+					payload: null,
 				},
 			});
 			changes.forEach((listener) => listener(event));
@@ -479,7 +475,7 @@ function createDefaultWorkbenchHost(
 			 */
 			delivery: (callback) => ({
 				channel: "context",
-				text: callback.semantic.brief,
+				text: callback.context.brief,
 				reason: null,
 				coordinatorContext: false,
 			}),

@@ -324,7 +324,7 @@ function createCoordinatorStarter(
 				started,
 				options.workingDirectory,
 				selection.configuredServiceTier,
-				options.profile.threadSource,
+				options.profile.identity.threadSource,
 			);
 			return { ok: true, started, startedThreadId: started.thread.id };
 		} catch (error) {

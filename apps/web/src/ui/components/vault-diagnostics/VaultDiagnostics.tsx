@@ -2,12 +2,15 @@ import { RiNotification3Line } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 
-import type { VaultCheck } from "@archboard/board/policy";
 import { Button, Dialog } from "@archboard/ui-kit/components";
 import { DiagnosticList } from "#ui/components/vault-diagnostics/DiagnosticList.tsx";
 import { useVaultCheck } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
 import { useVaultRepair } from "#ui/hooks/vault-diagnostics/use-vault-repair.ts";
 import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */

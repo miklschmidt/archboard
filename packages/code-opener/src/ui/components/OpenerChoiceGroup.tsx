@@ -3,7 +3,7 @@
 
 import { useCallback, useId, type JSX } from "react";
 
-import type { OpenerCommand, OpenerSettingsReply } from "@archboard/code-binding/opening";
+import type { OpenerCommand, OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
 import { Badge, Field, RadioGroup, Technical } from "@archboard/ui-kit/components";
 import { choiceOfSelection, presetChoice } from "#ui/rules/custom-command.ts";
 import { formatCommand } from "#ui/rules/format-command.ts";
