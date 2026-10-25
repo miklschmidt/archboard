@@ -95,7 +95,7 @@ function validateCurrentThread(
 
 /**
  * Build the handlers for the three reverse requests the app-server may send this session: the
- * clock it answers, and the two authentication requests Archboard refuses by policy.
+ * clock it answers, and the two authentication requests the client refuses by policy.
  * @param context - The transport, identity authority, clock and disposal flag.
  * @returns The handlers and the transport listener that routes to them.
  */
@@ -118,7 +118,7 @@ function createReverseRequestHandlers(context: ReverseRequestContext): ReverseRe
 	};
 
 	/**
-	 * Refuse a ChatGPT token refresh: Archboard signs in on its own and never refreshes tokens
+	 * Refuse a ChatGPT token refresh: the client signs in on its own and never refreshes tokens
 	 * on the app-server's behalf.
 	 * @param request - The refresh request.
 	 */

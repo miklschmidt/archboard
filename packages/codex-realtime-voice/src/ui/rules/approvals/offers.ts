@@ -113,7 +113,7 @@ function commandDecisionOffer(
 			id,
 			label: "Approve with the proposed exec policy amendment",
 			tone: "secondary",
-			description: `The Archboard server proposed: ${decision.acceptWithExecpolicyAmendment.execpolicy_amendment.join(" · ")}`,
+			description: `The server proposed: ${decision.acceptWithExecpolicyAmendment.execpolicy_amendment.join(" · ")}`,
 		});
 	}
 	const amendment = decision.applyNetworkPolicyAmendment.network_policy_amendment;
