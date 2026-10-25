@@ -323,20 +323,20 @@ page contract stated below.
 
 All values are milliseconds:
 
-| Constant                         |   Value | Required relationship                                      |
-| -------------------------------- | ------: | ---------------------------------------------------------- |
-| `CODEX_PROCESS_RESTART_BASE_MS`  |   1,000 | first retry delay                                          |
-| `CODEX_PROCESS_RESTART_MAX_MS`   |  30,000 | at least request settlement; exponential backoff caps here |
-| `CODEX_REQUEST_SETTLEMENT_MS`    |  30,000 | lost non-idempotent response becomes `outcome_unknown`     |
-| `CODEX_BROWSER_COMMAND_LEASE_MS` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
-| `CODEX_APPROVAL_EXPIRY_MS`       |  90,000 | shorter than browser lease                                 |
-| `CODEX_SPOKEN_GATE_EXPIRY_MS`    |  60,000 | no longer than approval expiry                             |
-| `CODEX_SEMANTIC_FRESHNESS_MS`    |  30,000 | shorter than realtime recovery                             |
-| `CODEX_REALTIME_START_MS`        |  15,000 | bounds permission-independent SDP/start readiness          |
-| `CODEX_REALTIME_STOP_MS`         |   3,000 | completes before TERM grace                                |
-| `CODEX_REALTIME_RECOVERY_MS`     |  45,000 | longer than semantic freshness                             |
-| `CODEX_TERM_GRACE_MS`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
-| `CODEX_COMPOSED_SHUTDOWN_MS`     |  10,000 | greater than realtime stop plus TERM grace                 |
+| Duration                                |   Value | Required relationship                                      |
+| --------------------------------------- | ------: | ---------------------------------------------------------- |
+| `CODEX_PROCESS_MS.restartBase`          |   1,000 | first retry delay                                          |
+| `CODEX_PROCESS_MS.restartMax`           |  30,000 | at least request settlement; exponential backoff caps here |
+| `CODEX_SESSION_MS.requestSettlement`    |  30,000 | lost non-idempotent response becomes `outcome_unknown`     |
+| `CODEX_APPROVAL_MS.browserCommandLease` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
+| `CODEX_APPROVAL_MS.expiry`              |  90,000 | shorter than browser lease                                 |
+| `CODEX_APPROVAL_MS.spokenGate`          |  60,000 | no longer than approval expiry                             |
+| `CODEX_REALTIME_MS.semanticFreshness`   |  30,000 | shorter than realtime recovery                             |
+| `CODEX_REALTIME_MS.start`               |  15,000 | bounds permission-independent SDP/start readiness          |
+| `CODEX_REALTIME_MS.stop`                |   3,000 | completes before TERM grace                                |
+| `CODEX_REALTIME_MS.recovery`            |  45,000 | longer than semantic freshness                             |
+| `CODEX_PROCESS_MS.termGrace`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
+| `CODEX_PROCESS_MS.composedShutdown`     |  10,000 | greater than realtime stop plus TERM grace                 |
 
 Expiry never proves a remote mutation failed. Restart delay doubles from base
 to max and resets only after one account-ready session. Shutdown stops
@@ -1355,7 +1355,7 @@ contracts:
 		},
 		"expiry": {
 			"durationMs": 90000,
-			"source": "CODEX_APPROVAL_EXPIRY_MS",
+			"source": "CODEX_APPROVAL_MS.expiry",
 			"expiresAtMs": "createdAtMs + durationMs",
 			"expiredWhen": "nowMs >= expiresAtMs",
 			"extendable": false
