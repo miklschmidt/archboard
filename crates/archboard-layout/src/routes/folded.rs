@@ -471,7 +471,7 @@ fn exchange<'a>(scene: &Scene<'a>, legs: [&Leg; 2]) -> Option<Scene<'a>> {
 /// corners (`unfoldCrossings`), after putting crossed fans in order. Cards and
 /// every other route keep their geometry; a label on a moved lane moves with
 /// it. Only a route that is exactly its rounded vertices is redrawn.
-pub fn unfold_crossings(
+pub(crate) fn unfold_crossings(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
 ) -> ArchitectureDrawing<NodeFacts, EdgeFacts> {
     let vertices: Vec<Option<Vec<Point>>> = drawing
