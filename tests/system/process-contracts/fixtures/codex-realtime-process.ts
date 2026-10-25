@@ -24,7 +24,8 @@ import {
 	type CodexTransportChild,
 } from "@archboard/codex-app-server/transport";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
+	createIdentityLedger,
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
@@ -228,7 +229,8 @@ async function createHarness(
 	const unsubscribeChild = owner.onChild((child) => {
 		bridge = new PublicChildBridge(child);
 		bridgeExitForwarded = false;
-		const identity = createIdentityAuthority();
+		// The identity Archboard's server mints, with the record prefix its host passes.
+		const identity = createIdentityAuthorities(createIdentityLedger("archboard")).identity;
 		const binding = makeBinding(identity);
 		writeControl(
 			controlPath,
