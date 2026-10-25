@@ -16,7 +16,6 @@
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import { CONTAINER_INSET, REGION_INSET } from "#shared/constants/spacing.ts";
-import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
 import { Assembly } from "#shared/rules/blocks/tree/assembly.ts";
 import { CardLayout } from "#shared/rules/blocks/cards/card-layout.ts";
 import { foldBlock, foldPlan } from "#shared/rules/blocks/folds/fold.ts";
@@ -122,7 +121,6 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
 /**
  * Lay one block out: packed with its child blocks as the pieces, or as cards.
  * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
  * @param board The blocks, every block laid out so far and each block of blocks' packing; the block's are set.
  * @param block The block.
  * @param kept What an earlier layout decided, and the solve's stacking choice.
@@ -132,7 +130,6 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  */
 function layBlock(
 	viz: Graphviz,
-	avoid: AvoidEngine,
 	board: Board,
 	block: Block,
 	{ earlier, stacking }: { earlier: Earlier; stacking: Stacking },
@@ -140,7 +137,6 @@ function layBlock(
 	const { tree, laid, packings } = board;
 	if (!packsBlocks(tree, block, tree.nesting)) return layCards(viz, tree, block, laid, stacking);
 	const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
-		avoid,
 		earlier.packings.get(block.id),
 	);
 	packings.set(block.id, packed.packing);
@@ -152,7 +148,6 @@ function layBlock(
  * whose caption needs the region wider is laid out again, standing in the
  * middle of the wider region (`lone.ts`).
  * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param earlier What an earlier layout decided, kept.
  * @param nesting How containers and group regions are drawn.
@@ -163,7 +158,6 @@ function layBlock(
  */
 function layAll(
 	viz: Graphviz,
-	avoid: AvoidEngine,
 	graph: ElkNode,
 	earlier: Earlier = NOTHING_EARLIER,
 	nesting: Nesting,
@@ -173,13 +167,13 @@ function layAll(
 	const board = { tree, laid: new Map<string, Laid>(), packings: new Map<string, Packing>() };
 	const kept = { earlier, stacking };
 	for (const block of tree.innermostFirst()) {
-		const once = layBlock(viz, avoid, board, block, kept);
+		const once = layBlock(viz, board, block, kept);
 		const wider = block.lone && widened(block.lone, once.width);
 		if (wider !== undefined) {
 			block.lone = wider;
 			tree.lone.set(block.id, wider);
 		}
-		board.laid.set(block.id, wider === undefined ? once : layBlock(viz, avoid, board, block, kept));
+		board.laid.set(block.id, wider === undefined ? once : layBlock(viz, board, block, kept));
 	}
 	return board;
 }
@@ -218,7 +212,6 @@ interface Board {
  * block's top and bottom are settled where both ends of their trunks are
  * known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
  * @param way Which joins to keep apart, whether every block faces its walls, and the solve's stacking choice.
@@ -230,22 +223,20 @@ interface Board {
  */
 function layOut(
 	viz: Graphviz,
-	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
 	way: { apart: ReadonlySet<string>; facing: boolean; stacking: Stacking },
 ): { tree: BlockTree; laid: Map<string, Laid>; faces: boolean } {
 	const { apart, facing } = way;
-	const first = layAll(viz, avoid, graph, undefined, nesting, way);
+	const first = layAll(viz, graph, undefined, nesting, way);
 	const exits = sidesOf(first.tree, first.laid);
 	const faces = facesOf(graph, exits, nesting, apart);
 	const kept = { exits, packings: first.packings, facing: facing && faces };
-	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, way);
-	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
-	const held =
-		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, way)];
+	const last = exits.size === 0 ? first : layAll(viz, graph, kept, nesting, way);
+	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf });
+	const held = orders.size === 0 ? [] : [layAll(viz, graph, { ...kept, orders }, nesting, way)];
 	const { tree, laid } = [last, ...held]
-		.map((laying) => settledOrNot(laying, avoid))
+		.map((laying) => settledOrNot(laying))
 		.reduce((one, other) =>
 			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
 		);
@@ -287,15 +278,16 @@ function facesOf(
  * Public ownership (Common-WebLib, Blocks) crossed four lines more and IIS
  * data (Cloud Infrastructure, Blocks) one, each settling a parted join.
  * @param laying The layout; its blocks are replaced.
- * @param avoid The initialized libavoid module.
  * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
  */
-function settledOrNot(
-	laying: Board,
-	avoid: AvoidEngine,
-): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
+function settledOrNot(laying: Board): {
+	tree: BlockTree;
+	laid: Map<string, Laid>;
+	crossings: number;
+	bends: number;
+} {
 	const unsettled = new Map(laying.laid);
-	settlePorts({ ...laying, insetsOf, avoid });
+	settlePorts({ ...laying, insetsOf });
 	const [was, is] = [unsettled, laying.laid].map((laid) => {
 		const placed = new Assembly(laying.tree, laid).placed();
 		return scoreOf({
@@ -332,17 +324,16 @@ const BLOCKS_FACING = "archboard.blocks.facing";
  * and answering only that once it is laid where they ask so.
  * Which way reads best is chosen where the renderer runs (`solves.ts`).
  * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param inline Whether containers and group regions are drawn inline, as
  * clusters of the board's own layout, when its options name no way.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
+function placeBlocks(viz: Graphviz, graph: ElkNode, inline = false): ElkNode {
 	const { nesting, ...way } = wayOf(graph.layoutOptions ?? {}, inline);
 	let laidOut: ReturnType<typeof layOut>;
 	try {
-		laidOut = layOut(answeringOnce(viz), avoid, graph, nesting, way);
+		laidOut = layOut(answeringOnce(viz), graph, nesting, way);
 	} catch (error) {
 		if (!(error instanceof StoodLaid)) throw error;
 		return answer(graph, { width: 0, height: 0 }, toldStood(error.stood));

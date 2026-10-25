@@ -1,5 +1,4 @@
 import { instance } from "@viz-js/viz";
-import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "#shared/rules/render/host.ts";
 import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
@@ -17,12 +16,7 @@ interface Request {
 // from the engine's memory as loaded. The core loads first, outside the
 // engine's load, and the worker refuses to start on a core built from other
 // sources (ADR 0057).
-const ready = loadCore().then(() =>
-	loadLayoutEngine(async () => {
-		const [viz] = await Promise.all([instance(), AvoidLib.load()]);
-		return [viz, AvoidLib.getInstance()];
-	}),
-);
+const ready = loadCore().then(() => loadLayoutEngine(instance));
 let initFailure = false;
 void ready.catch(() => {
 	initFailure = true;

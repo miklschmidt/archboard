@@ -7,6 +7,7 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
+import { routePoints, turnsOf } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
@@ -67,12 +68,10 @@ test("a block moves up beside an earlier one only to fill real room", async () =
 });
 
 // Reduced from a board of a work vault, letters replaced: a chain of cards
-// above a wide pool its last line enters. Slid onto that line, the chain
-// stood off the pool's middle; centred, it reads straight down into it.
-test("a block slid in line with its lines is kept only where it reads better than centred", async () => {
+// above a wide pool its last line enters. Neither centring the chain nor
+// sliding it in line with the line may leave a step in that line.
+test("a chain over a wide container reads straight down into it", async () => {
 	const content = orderedFixture(legacyRouting);
-	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const [balancer, pool] = [atlas.nodes["zYCHWE5R"]!, atlas.nodes["2cGTPFaw"]!];
-	const offset = balancer.x + balancer.width / 2 - (pool.x + pool.width / 2);
-	expect(Math.abs(offset)).toBeLessThanOrEqual(1);
+	const { svg } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(turnsOf(routePoints(svg).get("amhQ7pOU")!)).toBe(0);
 });

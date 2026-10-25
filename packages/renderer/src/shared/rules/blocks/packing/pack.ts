@@ -1,9 +1,8 @@
 // A block of blocks: its items are blocks alone (`tree.ts` gathers its loose
 // cards into a cluster), packed in rows or columns in the order their lines
-// run, scored by fit, crossings and detours (`scoreOf` in score.ts). Libavoid
-// routes the unlabelled trunks around them. Labels stay inside the child
+// run, scored by fit, crossings and detours (`scoreOf` in score.ts). The
+// core's router (`trunks.ts`) routes the unlabelled trunks around them. Labels stay inside the child
 // blocks beside their cards.
-import type { AvoidEngine } from "#shared/rules/engine/layout-engine.ts";
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
 import {
@@ -33,7 +32,6 @@ import { nearestAway } from "#shared/rules/blocks/lines/away.ts";
 import {
 	TRUNK_CLEARANCE,
 	TrunkRouter,
-	crowdedTrunks,
 	packedWeighed,
 	roomNeeded,
 } from "#shared/rules/blocks/packing/trunks.ts";
@@ -57,8 +55,6 @@ class PackLayout {
 	settled: ReadonlyMap<string, number> = new Map();
 	/** The width it keeps, once its parent has placed it. */
 	held = 0;
-	/** Whether libavoid's unifying prepass routes its trunks: a chosen packing's, when they crowd. */
-	private unify = false;
 	/** Room between two packed blocks, for the trunks that pass between them. */
 	gap = PACK_GAP;
 	/** Room left of the packed blocks, for trunks that run round the leftmost. */
@@ -400,13 +396,10 @@ class PackLayout {
 		}
 	}
 
-	/**
-	 * Route every trunk around the packed blocks.
-	 * @param avoid The initialized libavoid module.
-	 */
-	route(avoid: AvoidEngine): void {
-		const router = new TrunkRouter(this.block, this.laid, this.tree, this.boxes, this.unify);
-		for (const [key, points] of router.route(avoid)) this.lines.set(key, points);
+	/** Route every trunk around the packed blocks. */
+	route(): void {
+		const router = new TrunkRouter(this.block, this.laid, this.tree, this.boxes);
+		for (const [key, points] of router.route()) this.lines.set(key, points);
 	}
 
 	/**
@@ -414,25 +407,24 @@ class PackLayout {
 	 * each promising way, keeping the one that scores best once its trunks
 	 * are routed ({@link scoresBetter}) of those {@link nearestAway}. An estimate
 	 * of the packed size cannot tell a compact packing from one whose trunks run round the page.
-	 * @param avoid The initialized libavoid module.
 	 * @param kept The packing an earlier layout chose, to keep.
 	 * @returns The laid-out block, and the packing it used.
 	 */
-	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
-		if (kept !== undefined) return this.roomy(avoid, kept);
+	lay(kept?: Packing): Laid & { packing: Packing } {
+		if (kept !== undefined) return this.roomy(kept);
 		const tried = this.packings()
 			.flatMap((packing) =>
 				this.slid(packing) ? [packing, { ...packing, aligned: true }] : [packing],
 			)
 			.map((packing) => {
 				const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
-				return { layout, laid: layout.layOut(avoid, packing) };
+				return { layout, laid: layout.layOut(packing) };
 			});
 		const near = nearestAway(this.tree, this.laid, this.block, tried);
 		const { layout, laid } = near.reduce((one, other) =>
 			scoresBetter(packedWeighed(other.laid), packedWeighed(one.laid)) ? other : one,
 		);
-		return layout.roomy(avoid, laid.packing, laid);
+		return layout.roomy(laid.packing, laid);
 	}
 
 	/**
@@ -461,47 +453,36 @@ class PackLayout {
 
 	/**
 	 * Route the chosen packing with enough room between its trunks.
-	 * @param avoid The initialized libavoid module.
 	 * @param packing The packing.
 	 * @param laid Its routed geometry, when the choice already laid it out.
 	 * @returns The laid-out block, and the packing it used.
 	 */
-	roomy(
-		avoid: AvoidEngine,
-		packing: Packing,
-		laid = this.layOut(avoid, packing),
-	): Laid & { packing: Packing } {
-		const room = this.widened(avoid, laid);
-		if (!crowdedTrunks(room.lines.values())) return room;
-		this.unify = true;
-		return this.widened(avoid, this.layOut(avoid, room.packing));
+	roomy(packing: Packing, laid = this.layOut(packing)): Laid & { packing: Packing } {
+		return this.widened(laid);
 	}
 
 	/**
 	 * Widen gaps whose trunks crowd closer than a lane, and keep the left wall inset.
-	 * @param avoid The initialized libavoid module.
 	 * @param laid The block as this layout laid it out.
 	 * @returns The laid-out block.
 	 */
-	widened(avoid: AvoidEngine, laid: Laid & { packing: Packing }): Laid & { packing: Packing } {
+	widened(laid: Laid & { packing: Packing }): Laid & { packing: Packing } {
 		const boxes = this.block.items.map((id) => this.boxes.get(id)!);
 		const room = roomNeeded(boxes, [...this.lines.values()], this.gap);
 		const short = leftShortOf(this.lines.values(), this.insets.side);
 		if (room <= this.gap && short === 0) return laid;
 		const again = new PackLayout(this.block, this.laid, this.tree, this.insets);
 		[again.settled, again.held] = [this.settled, this.held];
-		again.unify = this.unify;
 		const margin = (laid.packing.margin ?? 0) + short;
-		return again.layOut(avoid, { ...laid.packing, gap: Math.max(room, this.gap), margin });
+		return again.layOut({ ...laid.packing, gap: Math.max(room, this.gap), margin });
 	}
 
 	/**
 	 * Lay the block of blocks out packed one way.
-	 * @param avoid The initialized libavoid module.
 	 * @param packing The packing.
 	 * @returns The laid-out block, and the packing it used.
 	 */
-	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
+	layOut(packing: Packing): Laid & { packing: Packing } {
 		this.place(packing);
 		this.alignPins();
 		if (packing.aligned === true) slideToTrunks(this, packing.across, this.extentOf(packing));
@@ -515,7 +496,7 @@ class PackLayout {
 		const items = top + this.headRoom();
 		const low = items + size.height + (ended ? HEAD_GAP : 0);
 		this.placeEdges(width, { top, bottom: low });
-		this.route(avoid);
+		this.route();
 		const bottom = this.closeStrips(items, low, ended);
 		const reach = [...this.boxes.values()].flatMap((one) => [
 			{ x: one.x + one.width, y: one.y + one.height },

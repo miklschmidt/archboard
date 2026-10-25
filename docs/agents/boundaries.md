@@ -396,11 +396,10 @@ only in Bun.
   `store/` reads the theme stylesheet and names where the assets are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the faces, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
-  `startBrowserRenderer({ avoidWasmUrl })` and draws a board with `drawBoardHere`. The worker is started inside the
+  `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
-  bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The page
-  tells the worker where the routing engine's WebAssembly is, because `apps/web/src/main.tsx` finds it in the root
-  `node_modules`, where `libavoid-js` does not export it.
+  bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
+  worker loads the renderer core, whose glue fetches the core's WebAssembly beside it, and then Graphviz.
 - `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
   with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
@@ -805,9 +804,8 @@ of `dist/`.
 entry, the page and the stylesheet. Inside the app a file is `#ui/components/semantic-board-canvas/LevelMark.tsx`. No
 behavior has an index: a caller imports the file that defines a name.
 
-- `src/main.tsx` is the browser entry. It starts the pictures drawn in the page, mounts the application or the
-  renderer of a recorded talk, and finds the routing engine's WebAssembly with a file URL
-  (`../../../node_modules/libavoid-js/dist/libavoid.wasm`), since the package exports only its entry. `index.html` and
+- `src/main.tsx` is the browser entry. It starts the pictures drawn in the page and mounts the application or the
+  renderer of a recorded talk. `index.html` and
   `favicon.svg` sit beside `src/`; Vite takes `apps/web` as its root and writes the bundle to the repository's
   `dist/frontend`, which `apps/server` serves. `index.html` links `/src/ui/theme/app.css`. That file is the only one in
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are

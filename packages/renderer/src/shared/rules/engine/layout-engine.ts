@@ -1,105 +1,24 @@
-// Pure layout shared by the Bun and browser workers. Hosts initialize WASM
-// through `loadLayoutEngine`, which puts back what each engine held as loaded
+// Pure layout shared by the Bun and browser workers. Hosts initialize
+// Graphviz through `loadLayoutEngine`, which puts back what it held as loaded
 // before every solve.
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
-import { z } from "zod";
 import { placeBlocks } from "#shared/rules/blocks/tree/place.ts";
 import { SOLVE_STAGE } from "#shared/rules/render/host.ts";
-import { markingUnsatisfiable } from "#shared/rules/engine/unsatisfiable.ts";
-
-/** A value owned by the WASM heap. */
-interface Owned {
-	delete(): void;
-}
-/** A point copied from the WASM heap. */
-interface AvoidPoint extends Owned {
-	x: number;
-	y: number;
-}
-/** An Embind enum value. */
-interface AvoidEnum {
-	readonly value: number;
-}
-/** One connector owned by its router. */
-interface AvoidConnection {
-	setRoutingType(type: AvoidEnum): void;
-	setRoutingCheckpoints(checkpoints: AvoidCheckpointVector): void;
-	displayRoute(): { size(): number; at(index: number): AvoidPoint };
-	hasValidRoute(): boolean;
-	hasCrossingObstacles(): boolean;
-}
-interface AvoidCheckpointVector extends Owned {
-	push_back(checkpoint: Owned): void;
-}
-/** The router owns its shapes, pins and connectors until deletion. */
-interface AvoidRouter extends Owned {
-	setRoutingParameter(parameter: AvoidEnum, value: number): void;
-	setRoutingOption(option: AvoidEnum, value: boolean): void;
-	processTransaction(): void;
-}
 
 /**
- * Pinned libavoid-js 0.5.0-beta.5 Embind ABI. This release's exported types
- * target a missing file; its fallback declarations describe the previous
- * WebIDL API (numeric enums, different constructors). Keep the narrow actual
- * ABI here until upstream publishes usable types. Engine contract tests run
- * these constructors and routing methods against the installed WASM.
- */
-export interface AvoidEngine {
-	Point: new (x: number, y: number) => AvoidPoint;
-	Rectangle: new (from: AvoidPoint, to: AvoidPoint) => Owned;
-	Router: new (flags: number) => AvoidRouter;
-	ShapeRef: new (router: AvoidRouter, polygon: Owned) => object;
-	ShapeConnectionPin: new (
-		shape: object,
-		id: number,
-		x: number,
-		y: number,
-		proportional: boolean,
-		offset: number,
-		direction: number,
-	) => { setExclusive(exclusive: boolean): void; setConnectionCost(cost: number): void };
-	ConnEnd: { new (point: AvoidPoint): Owned; new (shape: object, pin: number): Owned };
-	ConnRef: new (router: AvoidRouter, from: Owned, to: Owned) => AvoidConnection;
-	Checkpoint: new (point: AvoidPoint) => Owned;
-	CheckpointVector: new () => AvoidCheckpointVector;
-	RouterFlag: { OrthogonalRouting: AvoidEnum };
-	ConnType: { ConnType_Orthogonal: AvoidEnum };
-	RoutingParameter: Record<
-		"shapeBufferDistance" | "idealNudgingDistance" | "segmentPenalty" | "crossingPenalty",
-		AvoidEnum
-	>;
-	RoutingOption: Record<
-		"nudgeOrthogonalSegmentsConnectedToShapes" | "performUnifyingNudgingPreprocessingStep",
-		AvoidEnum
-	>;
-}
-
-/**
- * Bind initialized vendor engines without I/O or environment-specific loading.
- * A solve's answer can depend on what the engines solved before it; an engine
+ * Bind an initialized Graphviz without I/O or environment-specific loading.
+ * A solve's answer can depend on what Graphviz solved before it; an engine
  * that must answer the same graph the same way every time is loaded with
  * {@link loadLayoutEngine}.
  * @param viz The initialized Graphviz instance.
- * @param instance The initialized libavoid Embind module.
  * @returns A complete layout operation.
  */
-export function createLayoutEngine(viz: Viz, instance: unknown) {
-	const avoid = z
-		.custom<AvoidEngine>(
-			(value) =>
-				typeof value === "object" &&
-				value !== null &&
-				"Router" in value &&
-				typeof value.Router === "function" &&
-				"RouterFlag" in value,
-		)
-		.parse(instance);
+export function createLayoutEngine(viz: Viz) {
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
-		if (stage === "track") return placeBlocks(viz, avoid, graph, true);
-		if (stage === "blocks") return placeBlocks(viz, avoid, graph);
+		if (stage === "track") return placeBlocks(viz, graph, true);
+		if (stage === "blocks") return placeBlocks(viz, graph);
 		throw new Error(
 			`A solve names its stage in ${SOLVE_STAGE}, "track" or "blocks"; this one said ${String(stage)}.`,
 		);
@@ -125,23 +44,15 @@ function exportedMemories(answered: unknown): WebAssembly.Memory[] {
 	);
 }
 
-/** What loading the engines instantiated: each memory a module exports, and whether libavoid was marked. */
-interface Loading {
-	readonly memories: WebAssembly.Memory[];
-	marked: boolean;
-}
-
 /**
- * The same instantiation, which instantiates libavoid with its unsatisfiable
- * constraints marked rather than thrown (`shared/rules/engine/unsatisfiable.ts`) and keeps
- * each memory a module exports.
+ * The same instantiation, which keeps each memory a module exports.
  * @param instantiate `WebAssembly.instantiate`.
- * @param loading Where each memory is kept, and whether libavoid was marked.
+ * @param memories Where each memory is kept.
  * @returns The instantiation, of the same type.
  */
 function instantiating(
 	instantiate: typeof WebAssembly.instantiate,
-	loading: Loading,
+	memories: WebAssembly.Memory[],
 ): typeof WebAssembly.instantiate {
 	return new Proxy(instantiate, {
 		/**
@@ -152,14 +63,8 @@ function instantiating(
 		 * @returns What it answered.
 		 */
 		async apply(target, self, args: unknown[]) {
-			const [source, ...rest] = args;
-			const bytes =
-				source instanceof ArrayBuffer || ArrayBuffer.isView(source)
-					? markingUnsatisfiable(source)
-					: source;
-			loading.marked ||= bytes !== source;
-			const answered: unknown = await Reflect.apply(target, self, [bytes, ...rest]);
-			loading.memories.push(...exportedMemories(answered));
+			const answered: unknown = await Reflect.apply(target, self, args);
+			memories.push(...exportedMemories(answered));
 			return answered;
 		},
 	});
@@ -167,7 +72,7 @@ function instantiating(
 
 /**
  * A streaming instantiation that reads the module's bytes whole and hands
- * them to an instantiation, so that one sees libavoid's bytes too.
+ * them to an instantiation, so that one sees every module's memory too.
  * @param instantiate The instantiation.
  * @returns The streaming instantiation.
  */
@@ -197,51 +102,39 @@ function heldBytes(memory: WebAssembly.Memory): Uint8Array {
 }
 
 /**
- * Load Graphviz and libavoid and bind the layout, every solve starting from
- * what both engines held when they were loaded.
+ * Load Graphviz and bind the layout, every solve starting from what Graphviz
+ * held when it was loaded.
  *
- * libavoid breaks some ties by where its objects lie in memory, so a graph
- * routed after other solves could be drawn differently from the same graph
- * routed first: which worker answered a solve, and what that worker had solved
- * before, decided the picture. Putting back what each engine held as loaded,
- * its allocator included, hands every solve's objects the same places, so a
- * solve's answer is decided by its graph and options alone. What is put back
- * is a few hundred kilobytes, which costs microseconds. libavoid is
- * instantiated with the constraints vpsc cannot satisfy marked where it meets
- * them, not thrown, which draws the same (`shared/rules/engine/unsatisfiable.ts`).
- * @param load Instantiates both engines, answering the Graphviz instance and
- * the initialized libavoid module. It must instantiate them itself: an engine
- * loaded earlier has nothing as loaded to go back to.
+ * Putting back what Graphviz held as loaded, its allocator included, hands
+ * every solve's objects the same places, so a solve's answer is decided by
+ * its graph and options alone, not by which worker answered it or what that
+ * worker solved before. What is put back is a few hundred kilobytes, which
+ * costs microseconds. The renderer core, which routes the trunks, holds no
+ * state between calls, and a host loads it before this (ADR 0057).
+ * @param load Instantiates Graphviz, answering its instance. It must
+ * instantiate it itself: an engine loaded earlier has nothing as loaded to
+ * go back to.
  * @returns The layout engine.
- * @throws {Error} When the load did not instantiate both engines, or the
- * libavoid it instantiated is not the build `shared/rules/engine/unsatisfiable.ts` edits.
+ * @throws {Error} When the load did not instantiate one WebAssembly memory.
  */
-export async function loadLayoutEngine(
-	load: () => Promise<readonly [Viz, unknown]>,
-): Promise<LayoutEngine> {
-	const loading: Loading = { memories: [], marked: false };
-	const { memories } = loading;
+export async function loadLayoutEngine(load: () => Promise<Viz>): Promise<LayoutEngine> {
+	const memories: WebAssembly.Memory[] = [];
 	const { instantiate, instantiateStreaming } = WebAssembly;
-	WebAssembly.instantiate = instantiating(instantiate, loading);
+	WebAssembly.instantiate = instantiating(instantiate, memories);
 	WebAssembly.instantiateStreaming = streaming(WebAssembly.instantiate);
-	let loaded: readonly [Viz, unknown];
+	let viz: Viz;
 	try {
-		loaded = await load();
+		viz = await load();
 	} finally {
 		WebAssembly.instantiate = instantiate;
 		WebAssembly.instantiateStreaming = instantiateStreaming;
 	}
-	if (memories.length !== 2) {
+	if (memories.length !== 1) {
 		throw new Error(
-			`Loading the layout engine instantiated ${memories.length} WebAssembly memories where Graphviz and libavoid make two: load both engines in the call, not before it.`,
+			`Loading the layout engine instantiated ${memories.length} WebAssembly memories where Graphviz makes one: load Graphviz in the call, and the renderer core before it.`,
 		);
 	}
-	if (!loading.marked) {
-		throw new Error(
-			"The libavoid it loaded is not the libavoid-js 0.5.0-beta.5 build whose unsatisfiable constraints shared/rules/engine/unsatisfiable.ts marks: read that edit again against the new build, or take it out.",
-		);
-	}
-	const solve = createLayoutEngine(...loaded);
+	const solve = createLayoutEngine(viz);
 	const asLoaded = memories.map((memory) => ({ memory, held: heldBytes(memory) }));
 	return (graph, options) => {
 		for (const { memory, held } of asLoaded) new Uint8Array(memory.buffer).set(held);

@@ -169,11 +169,10 @@ uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.
-The preload still applies its 60-second wall-clock ceiling. Only the Blocks
-cases of Browser application and Board viewer declare a real-time exception,
-with their own `TEST_HEAVY_BLOCKS_CASE_MS` case deadline on CI and locally:
-their layout alone took 47.85 seconds on CI, past 60 on a slower runner, and
-52.9 seconds locally on a loaded machine (TASK-377 owns the cause).
+The preload still applies its 60-second wall-clock ceiling to every case. The
+Blocks cases of Browser application and Board viewer had a real-time exception
+while libavoid routed their trunks. Since the core's router routes them
+(TASK-520.02), Board viewer, the slowest, takes about 5 seconds locally.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`

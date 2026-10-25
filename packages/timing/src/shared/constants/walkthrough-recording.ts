@@ -13,7 +13,7 @@
  * rest, and the agent at a phase from which voice can start.
  *
  * A cold page fetches the bundle, lays the board out in its worker (Graphviz and
- * libavoid in WebAssembly) and reads the workbench snapshot; a large board
+ * the renderer core in WebAssembly) and reads the workbench snapshot; a large board
  * takes a few seconds. It pulls against an agent that waits this long to be
  * told the server cannot record.
  */

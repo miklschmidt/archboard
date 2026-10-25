@@ -1,5 +1,5 @@
 // The layout engine's workers, in the browser and under Bun alike: a few
-// workers, each running the Graphviz/libavoid engine pair and solving one
+// workers, each running Graphviz and the renderer core and solving one
 // graph at a time.
 //
 // A render settles several candidate drawings, and a worker answers its

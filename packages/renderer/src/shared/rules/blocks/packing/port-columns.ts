@@ -1,5 +1,5 @@
 // Ports that share an edge stand a lane apart. Unrelated ports that face
-// each other also need separate columns: libavoid fixes their end segments
+// each other also need separate columns: the router fixes their end segments
 // and can overlap those segments when the pins stand on the same column.
 import type { Box } from "#shared/rules/geometry.ts";
 import { SAME, type Laid } from "#shared/rules/blocks/tree/laid.ts";
