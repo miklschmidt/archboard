@@ -33,7 +33,7 @@
 		"lint": "vp run lint:all",
 		"fix": "vp run fix:all",
 		"fmt": "vp fmt --config vite.config.ts && cargo fmt --all",
-		"fmt:check": "vp run format:check",
+		"fmt:check": "vp run format:check && vp run format:core",
 		"check": "vp run check:all",
 		"test": "vp run test:all",
 		"type-check": "vp run types",
