@@ -15,7 +15,7 @@ use serde::Deserialize;
 
 use super::graph::Graph;
 use super::joins::{Apart, Lay, lay_joined};
-use super::solving::{Boxed, Calling, Solver, Unsolved, both};
+use super::solving::{Boxed, Calling, Solver, Unsolved, try_both};
 use crate::blocks::choosing::{
     draws_better, has_regions, joining_of, reads_better_packed, stacks_of,
 };
@@ -241,12 +241,11 @@ async fn stacked_solved<S: Solver>(
         until: true,
         ..way.clone()
     };
-    let (stacked, plain) = both(
+    let (stacked, plain) = try_both(
         answered(solver, graph, nesting, &partly(true), calling),
         answered(solver, graph, nesting, &partly(false), calling),
     )
-    .await;
-    let (stacked, plain) = (stacked?, plain?);
+    .await?;
     let (Some(high), Some(low)) = (&stacked.stood, &plain.stood) else {
         return Ok(drawing_of(plain)?);
     };
@@ -327,12 +326,11 @@ pub(crate) async fn placed_blocks<S: Solver>(
         let laid = joined_out(solver, graph, nesting, false).await?;
         return Ok(unshared(laid));
     }
-    let (laid, packed) = both(
+    let (laid, packed) = try_both(
         joined_out(solver, graph, nesting, true),
         joined_out(solver, graph, Nesting::Groups, true),
     )
-    .await;
-    let (laid, packed) = (laid?, packed?);
+    .await?;
     let chosen = if reads_better_packed(packed.reading()?, laid.reading()?)? {
         packed
     } else {
