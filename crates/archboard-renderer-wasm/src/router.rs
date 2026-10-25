@@ -36,12 +36,9 @@ impl Reader<'_> {
 
     fn count(&mut self) -> Result<usize, JsError> {
         let value = self.next()?;
-        if value < 0.0 || value.fract() != 0.0 {
-            return Err(JsError::new(
-                "The router's scene holds a count that is not a whole number",
-            ));
-        }
-        Ok(value as usize)
+        whole_below(value, usize::MAX).ok_or_else(|| {
+            JsError::new("The router's scene holds a count that is not a whole number")
+        })
     }
 
     fn end(&mut self, obstacles: usize) -> Result<End, JsError> {
@@ -55,29 +52,23 @@ impl Reader<'_> {
         if kind == 1.0 {
             return Ok(End::Free { at });
         }
-        let obstacle = obstacle as usize;
-        if kind != 0.0 || obstacle >= obstacles || obstacle as f64 != self.numbers[self.at - 4] {
+        let pin = whole_below(obstacle, obstacles).zip(whole_below(leaves, 4));
+        let (0.0, Some((obstacle, leaves))) = (kind, pin) else {
             return Err(JsError::new(
                 "The router's scene names an end it does not hold",
             ));
-        }
-        let leaves = match leaves as i64 {
-            0 => Dir::Up,
-            1 => Dir::Right,
-            2 => Dir::Down,
-            3 => Dir::Left,
-            _ => {
-                return Err(JsError::new(
-                    "The router's scene names a direction it does not hold",
-                ));
-            }
         };
         Ok(End::Pin {
             obstacle,
             at,
-            leaves,
+            leaves: [Dir::Up, Dir::Right, Dir::Down, Dir::Left][leaves],
         })
     }
+}
+
+/// A number as an index below `limit`, if it is a whole number that is one.
+fn whole_below(value: f64, limit: usize) -> Option<usize> {
+    (value >= 0.0 && value.fract() == 0.0 && value < limit as f64).then_some(value as usize)
 }
 
 /// Route a scene's connectors around its obstacles.
