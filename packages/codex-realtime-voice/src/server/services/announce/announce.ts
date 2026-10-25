@@ -47,11 +47,44 @@ const Topic = z
 		`a topic is at most ${BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES} UTF-8 bytes`,
 	);
 const Checkouts = z.array(z.string().min(1)).min(1);
+
+/**
+ * Whether the context codec writes a value as itself, as `JSON.stringify` does.
+ * @param value A value of the host's payload.
+ * @param path The containers that hold it, so a cycle is refused.
+ * @returns False for a function, a symbol, a bigint, a number that is not finite, a class
+ * instance or a cycle.
+ */
+function isJsonValue(value: unknown, path: readonly object[]): boolean {
+	if (typeof value === "number") return Number.isFinite(value);
+	if (typeof value === "object" && value !== null) return isJsonContainer(value, path);
+	return value === null || typeof value === "string" || typeof value === "boolean";
+}
+
+/**
+ * Whether an array or a plain object holds only JSON values. An absent entry is left out, or
+ * written as null in an array, as `JSON.stringify` does.
+ * @param value The container.
+ * @param path The containers that hold it.
+ * @returns True when the codec writes it as itself.
+ */
+function isJsonContainer(value: object, path: readonly object[]): boolean {
+	const prototype: unknown = Object.getPrototypeOf(value);
+	const plain = Array.isArray(value) || prototype === Object.prototype || prototype === null;
+	if (!plain || path.includes(value)) return false;
+	const inside = [...path, value];
+	return Object.values(value).every((entry) => entry === undefined || isJsonValue(entry, inside));
+}
+
 const Payload = z
 	.record(z.string(), z.unknown())
 	.refine(
 		(payload) => Object.keys(payload).every((key) => !EXECUTION_CONTEXT_KEYS.includes(key)),
 		`a payload cannot use the keys ${EXECUTION_CONTEXT_KEYS.join(", ")}`,
+	)
+	.refine(
+		(payload) => isJsonContainer(payload, []),
+		"a payload is JSON data: no function, symbol, bigint, number that is not finite, class instance or cycle",
 	);
 const ContextChangeSchema = z
 	.strictObject({
