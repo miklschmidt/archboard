@@ -103,7 +103,7 @@ function ResultRow(props: ResultRowProps): JSX.Element {
 	const leave = useCallback((): void => point(null), [point]);
 	const show = useCallback((): void => onShow(part.id), [onShow, part.id]);
 	return (
-		<div className="flex min-w-0 items-start">
+		<div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1">
 			<SidebarChoice
 				data-slot="semantic-board-question-result"
 				data-part={part.id}
@@ -154,7 +154,6 @@ function AskAboutDeletion(props: ResultRowProps): JSX.Element | null {
 			label={`Ask the agent what deleting ${found.part.name} would cost`}
 			tip="Ask the agent"
 			slot="semantic-board-question-ask"
-			className="text-muted-foreground hover:text-foreground shrink-0"
 			onClick={send}
 		>
 			<RiChat3Line />
