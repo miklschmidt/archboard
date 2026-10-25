@@ -1,12 +1,12 @@
 import { type BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/schemas";
 import { projectDynamicApproval } from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserDynamicApprovalActions,
-} from "@archboard/codex-realtime-voice/server";
-import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/schemas";
+} from "#runtime/protocol/voice/extension.ts";
 import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,

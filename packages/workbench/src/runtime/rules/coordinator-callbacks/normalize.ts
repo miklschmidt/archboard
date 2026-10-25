@@ -1,11 +1,13 @@
+import type {
+	CoordinatorHostContextSource,
+	CoordinatorHostContextCallback,
+} from "#runtime/protocol/voice/extension.ts";
 import {
 	normalizeCoordinatorCallback as normalizeCoreCallback,
 	coordinatorCallbackKey,
 	coordinatorCallbackCoalescingKey,
-	type CoordinatorHostContextSource,
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackRealtimeGeneration,
-	type CoordinatorHostContextCallback,
 } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	PaneFocusEvent,

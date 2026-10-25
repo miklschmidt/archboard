@@ -1,4 +1,4 @@
-import type { EpochTransaction } from "@archboard/codex-realtime-voice/runtime";
+import type { EpochTransaction } from "#runtime/protocol/voice/extension.ts";
 import type { SessionThread } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {

@@ -640,7 +640,8 @@ The identity sets the Codex service name and thread source, with the neutral def
 A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, voice presentation, and its own browser routing.
 A host that multiplexes its own socket uses `agent.browser` instead of `attach`.
 That extension contract is one type, and a host derives the parts it names from it.
-`./runtime` holds only what Archboard's domain tools and callbacks still need from the core: epoch, wait-graph and thread-link types, the callback engine and its types, and instruction byte checks.
+`./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, instruction byte checks, and the realtime adapter and thread-context delivery its tests build on.
+The namespace of a dynamic approval on the browser wire is whatever the host names; Archboard sends `archboard_app`.
 A consumer never assembles the internal factories.
 Host context events carry generic fields (feed, sequence, freshness, identity, coalescing) and a payload that only the host's policy reads.
 

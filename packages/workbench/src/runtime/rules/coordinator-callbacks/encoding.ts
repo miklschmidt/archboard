@@ -1,6 +1,8 @@
-import type { EpochExecutionProof } from "@archboard/codex-realtime-voice/runtime";
-import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
-import type { ThreadLinkEpochProof } from "@archboard/codex-realtime-voice/runtime";
+import type {
+	EpochExecutionProof,
+	EpochOperationRecord,
+	ThreadLinkEpochProof,
+} from "#runtime/protocol/voice/extension.ts";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
