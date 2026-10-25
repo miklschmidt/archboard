@@ -303,7 +303,7 @@ function declaredTool(call: LogicalToolCallCorrelation): DeclaredTool {
 function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
 	const expectedTurnId = options.authority.expectedTurnId();
 	if (expectedTurnId === null) {
-		fail("busy", "The Archboard server has not proven an active workhorse turn.");
+		fail("busy", "The server has not proven an active workhorse turn.");
 	}
 	try {
 		options.identity.decoder.parseTurnId(expectedTurnId);

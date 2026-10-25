@@ -33,7 +33,7 @@ const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
  * `project_doc_max_bytes: 0` stops Codex loading the checkout's `AGENTS.md` into the coordinator.
  * That file is written for an agent doing work in the repository: it tells every request to
  * begin with project procedure. The coordinator is a voice front desk whose whole brief is the
- * instructions Archboard gives it, and in its first narrated walkthrough (TASK-251) that
+ * instructions the host gives it, and in its first narrated walkthrough (TASK-251) that
  * procedure cost eight seconds of silence before it presented a step. The workhorse, which does
  * work in the repository, still reads the file.
  */
@@ -42,18 +42,19 @@ const COORDINATOR_THREAD_CONFIG = deepFreeze({
 	project_doc_max_bytes: 0,
 } as const);
 
-/** The reviewed identity that a coordinator turn must carry. */
+/**
+ * The reviewed settings that a coordinator turn must carry. How the host names itself to Codex
+ * (service name and thread source) is not here: it is the host's own, on its thread profile.
+ */
 const COORDINATOR_IDENTITY = deepFreeze({
 	role: COORDINATOR_ROLE,
 	model: "gpt-6-sol",
 	effort: "low",
 	allowProviderModelFallback: false,
 	config: COORDINATOR_THREAD_CONFIG,
-	serviceName: "archboard",
 	ephemeral: false,
 	historyMode: "paginated",
 	sessionStartSource: "startup",
-	threadSource: "archboard",
 	dynamicTools: [...COORDINATOR_NAMESPACE_NAMES],
 	experimentalRawEvents: false,
 } as const);
@@ -70,11 +71,9 @@ const CoordinatorIdentitySchema = z
 				project_doc_max_bytes: z.literal(0),
 			})
 			.strict(),
-		serviceName: z.literal("archboard"),
 		ephemeral: z.literal(false),
 		historyMode: z.literal("paginated"),
 		sessionStartSource: z.literal("startup"),
-		threadSource: z.literal("archboard"),
 		dynamicTools: z.tuple([z.literal("archboard_workhorse"), z.literal("archboard_voice")]),
 		experimentalRawEvents: z.literal(false),
 	})
