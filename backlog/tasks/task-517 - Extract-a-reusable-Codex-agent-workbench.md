@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: 2026-10-24 11:37
-updated_date: '2026-10-24T15:09:00Z'
+updated_date: '2026-10-25T00:06:00Z'
 labels: []
 dependencies: []
 references:
@@ -80,6 +80,8 @@ The .03 complete gate at 74751d397 passes lint, formatting, both type projects, 
 The complete repaired gate at 33aa81f0f passes all 13 stages in 534 seconds: 5,378 passes, one skip, no failures, lint zero warnings. The eight adopted boards pass archboard check with zero diagnostics. The first seven adoptions exposed two visual diagnostics, corrected before closure: Workbench interface now nests under Child ownership, and Shared instruction policy no longer draws a redundant line to its own part. The post-adoption sweep discovered Live panes tab ownership, now drawn as a pane adapter plus core tab sessions. Its footprint against main names both changed parts, has no namedNotChanged entries, and adds no code finding. Its other changedNotNamed parts change imports in b2c7508b9/dec053209, retaining their behavior. Board rasterizer Recording page and Recording pace change only shared type imports in 751fdfedd/816b6d79c. Their descriptions remain true. Remaining global code findings are pre-existing and outside this extraction; introduced warnings are zero.
 
 Post-adoption document validation passes: architecture asset generation, 149 repository tests, and formatting. The final regular board check has zero diagnostics. All non-Codex README assets are current. Four owner-run assets remain stale because this task does not spend model usage on recordings: bun run readme:assets explainer pr-walkthrough newcomer ask. Refreshed animated clips remain under /tmp/nix-shell.SqUKhs/archboard-readme-assets/attachments; no attachment or package was published. Existing README attachment URLs remain. Live microphone capture, audible playback, and model speech still require account/hardware acceptance. Controlled SDP negotiation, browser permission failure/recovery, and independent stop behavior passed. Existing aggregate Vite chunk size and libavoid initialization messages remain outside the changed contract and did not fail any gate.
+
+PR 2 now targets origin/main at 7488ab12, which precedes the local task base and includes the earlier Vite+ and overview-label work. The requested archboard-pr body accounts for that scope. A focused Workbench reuse view and branch-bound new package/example support the comparison with TASK-500.06. Seventeen footprints have no unread repository. The already-adopted TASK-517 variant refuses proposal footprint mode, so its normal footprint and explicit parent comparison provide the evidence. The picture passes native and half-size inspection. A private recording server at port 46549 uses an isolated registry and leaves the global chosen checkout unchanged. A temporary reviewer walkthrough is recording and will be removed after capture.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

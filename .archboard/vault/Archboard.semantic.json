@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 80,
+	"version": 81,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-24T15:04:47.294Z",
+	"updatedAt": "2026-10-25T00:05:07.194Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -98,6 +98,23 @@
 					"Gh6v3DzI",
 					"YBT0ys2i"
 				],
+				"flows": []
+			}
+		},
+		{
+			"id": "oTGqN2Ow",
+			"name": "Workbench reuse",
+			"grammar": "architecture",
+			"summary": "Archboard policy and the independent example share one Codex execution package.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"sw4oFps0",
+					"lU0khwR0",
+					"xssnUgIk",
+					"vEVm326r"
+				],
+				"edges": [],
 				"flows": []
 			}
 		}
@@ -9678,7 +9695,8 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/agent-workbench"
+							"path": "packages/agent-workbench",
+							"branch": "feat/reusable-codex-workbench"
 						}
 					},
 					{
@@ -9692,7 +9710,8 @@
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/workbench-example"
+							"path": "apps/workbench-example",
+							"branch": "feat/reusable-codex-workbench"
 						}
 					}
 				],
@@ -11125,6 +11144,58 @@
 								"subjects": [
 									"PxnjFfV3"
 								]
+							}
+						]
+					},
+					{
+						"id": "EvdYdODi",
+						"name": "Review: feat/reusable-codex-workbench",
+						"beats": [
+							{
+								"id": "RiUsuIoD",
+								"heading": "Reuse the same agent design",
+								"body": "Another application needs the same voice, coordinator, and checkout workhorse design. Shared execution must preserve its existing authority and lifecycle rules.",
+								"subjects": [],
+								"view": "oTGqN2Ow"
+							},
+							{
+								"id": "1AgKReey",
+								"heading": "agent-workbench owns execution",
+								"body": "The new agent-workbench package owns coordinator and workhorse lifetimes, transcript recovery, queues, and approval settlement. Hosts start it through one public factory.",
+								"subjects": [
+									"lU0khwR0"
+								],
+								"view": "oTGqN2Ow"
+							},
+							{
+								"id": "oOcfSyvz",
+								"heading": "workbench retains Archboard policy",
+								"body": "The workbench package supplies board context, domain tools, narration, and checkout admission. The shared runtime keeps execution identity separate from application context.",
+								"subjects": [
+									"sw4oFps0",
+									"lU0khwR0"
+								],
+								"view": "oTGqN2Ow"
+							},
+							{
+								"id": "eifFivZ7",
+								"heading": "Workbench example proves independence",
+								"body": "Workbench example uses the same server factory and browser owners with private state and one admitted checkout. It needs no Archboard server, board, or vault.",
+								"subjects": [
+									"xssnUgIk",
+									"lU0khwR0"
+								],
+								"view": "oTGqN2Ow"
+							},
+							{
+								"id": "PSrMpnKE",
+								"heading": "Review the authority boundary",
+								"body": "The public factory and its host context boundary carry the main merge risk. Make sure that exact generation identity survives asynchronous calls and uncertain delivery never causes a blind retry.",
+								"subjects": [
+									"lU0khwR0",
+									"vEVm326r"
+								],
+								"view": "oTGqN2Ow"
 							}
 						]
 					}
