@@ -3015,3 +3015,36 @@ helpers, the flows, painting, measurement, the drawing and shown drawing,
 step lines, appearances, the picture key scan, the engines, the solves, the
 joins choice, the compound graph, page fit, the routes and the spacing. The
 tests of the removed rules moved into the crates.
+
+## 56. A frame that closes a cycle turns its line, and side-by-side containers share their gutter (2026-10-25, TASK-520)
+
+Two faults of Track came to light when TASK-520.08 adopted new content on
+the boards Renderer layout and Semantic renderer. The same content drew
+clean before that adoption, and the TypeScript engine had both faults too.
+
+A cycle can close through a container's link to one of its own members,
+such as a line out of a frame's title that comes back into the frame. That
+link carries no relationship, so the cycle check reversed nothing, and
+Graphviz broke the cycle its own way. On Renderer layout it put a label one
+row above the frame, outside the rows its line spans, so the label stayed
+off its line. The cycle check now remembers the relationship that led into
+each item on its path. When a containment link closes a cycle, the check
+reverses the last relationship on that cycle (`blocks/cycles.rs`).
+
+Each container wall keeps lines a clearance away on its outer side
+(`track/occupancy.rs`). Two containers 40 units apart each kept 24 units,
+so their zones closed the whole gap, and straightening left a line where
+Graphviz had put it, 4.4 units off a wall. A wall's outer clearance now ends
+at the middle of the gap it shares with a facing wall of another container,
+when that middle is at least one lane (16 units) from both walls. A minimum
+of half a lane squeezed a line 10 units from two region walls on Command
+interface, so the minimum is one lane.
+
+Eight of the 2,344 current drawings changed: two views, each in both themes
+and with and without comparison. Renderer layout's Responsibilities lost
+its label off a route and its one crossing, and its routes got shorter
+(6,196 to 5,512), but its page grew from 3.14 to 4.24 megapixels. Archboard's
+Workspace packages improved on every measure: crossings 46 to 42, route
+length 83,854 to 65,397, page area 12.37 to 9.91 megapixels.
+`wide-boards.test.ts` holds both boards whole, and a Rust test in each file
+holds each rule.
