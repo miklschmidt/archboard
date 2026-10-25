@@ -3,6 +3,7 @@
 
 use wasm_bindgen::prelude::*;
 
+mod flows;
 mod router;
 mod scene;
 
