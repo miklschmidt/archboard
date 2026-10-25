@@ -157,13 +157,15 @@ type CallbackPart = NonNullable<ContextChange["coordinator" | "voice"]>;
 
 /**
  * The coordinator's thread and the live voice session of a tab session, as a change names them.
+ * The thread is named whenever the coordinator has one, also while it starts or can only be
+ * inspected: this is who the workhorse is paired with, not what may drive it.
  * @param session The tab session.
  * @returns Both, each null while there is none.
  */
 function liveCoordinator(session: CodexWorkbenchTabSession): WorkhorseContextEvent["coordinator"] {
 	const coordinator = session.components.coordinator.snapshot();
 	return {
-		threadId: coordinator.state === "ready" ? coordinator.threadId : null,
+		threadId: coordinator.threadId,
 		realtimeSessionId: session.components.realtime.generation()?.wireSessionId ?? null,
 	};
 }
