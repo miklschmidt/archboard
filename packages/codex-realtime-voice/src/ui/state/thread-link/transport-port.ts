@@ -1,6 +1,6 @@
 // What the thread link needs from a workbench transport, and nothing more.
 //
-// `ui/clients/transport` implements this port (TASK-150.07). The thread
+// `ui/clients/transport` implements this port. The thread
 // link never owns or starts a transport: it captures the target an action is
 // offered against, and sends the four
 // account and thread-link commands the gateway publishes. Every shape here is

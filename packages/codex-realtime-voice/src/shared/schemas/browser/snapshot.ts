@@ -167,9 +167,9 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 			voice: voice.BrowserVoiceSchema,
 			spokenApproval: BrowserSpokenApprovalSchema,
 			voiceContext: voice.BrowserVoiceContextSchema.nullable().optional(),
-			/** The voice coordinator's own turns (TASK-319); absent from a server that predates them. */
+			/** The voice coordinator's own turns; absent from a server that predates them. */
 			coordinatorTimeline: thread.BrowserTimelineSchema.nullable().optional(),
-			/** The tab session's workhorses and the shown one (TASK-472.11); absent from a server that predates them. */
+			/** The tab session's workhorses and the shown one; absent from a server that predates them. */
 			workhorses: session.BrowserWorkhorsesSchema.optional(),
 			lease: commands.BrowserCommandLeaseSchema.nullable(),
 			operation: commands.BrowserOperationOutcomeSchema.nullable(),

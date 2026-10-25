@@ -22,6 +22,9 @@ const REVIEWED_GROUPS = {
 		recovery: 45_000,
 		contextFreshness: 30_000,
 	},
+	CODEX_VOICE_CLIENT_MS: {
+		reconnect: 3000,
+	},
 	CODEX_APPROVAL_MS: {
 		browserCommandLease: 150_000,
 		expiry: 90_000,
@@ -54,6 +57,7 @@ describe("Codex workbench timing policy", () => {
 		expect(approval.expiry).toBeLessThan(approval.browserCommandLease);
 		expect(approval.spokenGate).toBeLessThanOrEqual(approval.expiry);
 		expect(realtime.contextFreshness).toBeLessThan(realtime.recovery);
+		expect(timing.CODEX_VOICE_CLIENT_MS.reconnect).toBeLessThan(timing.TAB_SESSION_GRACE_MS);
 		expect(realtime.stop).toBeLessThan(process.termGrace);
 		expect(process.stdinEofGrace).toBeGreaterThan(0);
 		expect(
