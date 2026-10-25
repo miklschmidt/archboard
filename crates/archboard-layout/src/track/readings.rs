@@ -106,7 +106,7 @@ impl Track<'_> {
                 }
             })
             .collect();
-        self.chains[chain.0].stations = stations.clone();
+        self.chains[chain.0].stations.clone_from(&stations);
         for (index, &station) in stations[1..stations.len() - 1].iter().enumerate() {
             self.set_x(station, relaid.route[index + 1]);
         }

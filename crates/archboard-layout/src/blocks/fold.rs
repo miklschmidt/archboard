@@ -4,6 +4,8 @@
 //! the block's lines are cut where they leave and enter a column;
 //! `fold_layout.rs` draws the folded block.
 
+use std::rc::Rc;
+
 use crate::ecma::{max, min};
 use crate::geometry::Side;
 use crate::track::scene::{Map, Set};
@@ -364,7 +366,7 @@ fn cut(tree: &mut BlockTree, block: BlockId, columns: &[BlockId], line: &Line) -
     let (leaving, from) = match upper {
         None => (Vec::new(), line.tail.clone()),
         Some(column) => {
-            let port = tree.port(column, format!("fold|{}", line.key), Side::Bottom);
+            let port = tree.port(column, &format!("fold|{}", line.key), Side::Bottom);
             let key = part(
                 tree,
                 column,
@@ -379,7 +381,7 @@ fn cut(tree: &mut BlockTree, block: BlockId, columns: &[BlockId], line: &Line) -
     let (entering, to) = match lower {
         None => (Vec::new(), line.head.clone()),
         Some(column) => {
-            let port = tree.port(column, format!("fold|{}", line.key), Side::Top);
+            let port = tree.port(column, &format!("fold|{}", line.key), Side::Top);
             let key = part(
                 tree,
                 column,
@@ -422,7 +424,7 @@ fn part(
         key.clone(),
         Line {
             key: key.clone(),
-            edge: line.edge.clone(),
+            edge: Rc::clone(&line.edge),
             from: from.to_owned(),
             to: to.to_owned(),
             tail: tail.to_owned(),

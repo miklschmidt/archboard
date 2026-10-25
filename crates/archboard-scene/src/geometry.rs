@@ -388,8 +388,8 @@ pub fn label_anchor_of(curve: &Curve) -> Point {
             best = Some((
                 length,
                 Point {
-                    x: (start.x + to.x) / 2.0,
-                    y: (start.y + to.y) / 2.0,
+                    x: f64::midpoint(start.x, to.x),
+                    y: f64::midpoint(start.y, to.y),
                 },
             ));
         }

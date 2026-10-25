@@ -42,10 +42,11 @@ pub fn to_fixed(value: f64, digits: usize) -> String {
     }
     let negative = value < 0.0;
     let magnitude = value.abs();
-    let mut fixed = format!("{magnitude:.digits$}");
-    if is_tie(magnitude, digits) {
-        fixed = rounded_up(&format!("{magnitude:.width$}", width = digits + 1));
-    }
+    let fixed = if is_tie(magnitude, digits) {
+        rounded_up(&format!("{magnitude:.width$}", width = digits + 1))
+    } else {
+        format!("{magnitude:.digits$}")
+    };
     if negative { format!("-{fixed}") } else { fixed }
 }
 
@@ -79,7 +80,7 @@ fn rounded_up(longer: &str) -> String {
         }
         index -= 1;
         match digits[index] {
-            b'.' => continue,
+            b'.' => {}
             b'9' => digits[index] = b'0',
             digit => {
                 digits[index] = digit + 1;
@@ -325,6 +326,10 @@ pub fn pad_start(text: &str, width: usize, fill: char) -> String {
 }
 
 #[cfg(test)]
+#[expect(
+    clippy::unreadable_literal,
+    reason = "the expected numbers are spelt as ECMAScript prints them, digit for digit"
+)]
 mod tests {
     use super::*;
 

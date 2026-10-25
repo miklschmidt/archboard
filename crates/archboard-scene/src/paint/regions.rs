@@ -22,6 +22,10 @@ use crate::scene::{Role, SubjectKind};
 const DARK_CORNER: ToneStep = ToneStep::new(0.765, 0.95);
 
 /// The lightness of a group's full colour on the light ground, by colour.
+#[expect(
+    clippy::match_same_arms,
+    reason = "a table of one row per colour: two colours that share a value do so by chance"
+)]
 fn light_corner(color: PaletteColor) -> f64 {
     match color {
         PaletteColor::Red => 0.68,
@@ -93,7 +97,7 @@ fn tab_path(rect: Rect, corner: Corner) -> String {
             x + width - inward
         })
     };
-    let sweep = if corner == Corner::Start { 1 } else { 0 };
+    let sweep = i32::from(corner == Corner::Start);
     [
         format!("M{},{}", at(0.0), coord(foot)),
         format!("V{}", coord(y + shared)),
@@ -230,7 +234,7 @@ fn brackets(rect: Rect, ink: &str) -> Markup {
         corners
             .iter()
             .map(|(x, y, across, down)| {
-                let sweep = if across * down > 0.0 { 1 } else { 0 };
+                let sweep = i32::from(across * down > 0.0);
                 let start = format!("{},{}", coord(*x), coord(y + down * ARM));
                 let arc_from = format!("{},{}", coord(*x), coord(y + down * radius));
                 let arc_to = format!("{},{}", coord(x + across * radius), coord(*y));
@@ -311,21 +315,18 @@ fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[
     rect.x + rect.width - js::max(std::iter::once(rect.x).chain(stops))
 }
 
-#[allow(clippy::too_many_arguments)]
-fn far_caption(
+/// The caption's run as it is set from far away: as large as `far_size`, the
+/// caption's height and the `room` along the region's top edge let it be.
+fn far_run(
     ctx: &Ctx<'_>,
     region: &DrawingRegion,
     run: &TextRun,
     far_size: f64,
-    corner: Corner,
-    crossings: &[Crossing],
-    colours: &GroupColours,
-    palette: &Palette,
-) -> Markup {
+    room: f64,
+) -> TextRun {
     let rect = region.bounds;
     let caption = region.caption.bounds;
     let margin = caption.x + run.x - rect.x;
-    let room = far_room(region, run, corner, crossings);
     let size = js::js_max(
         run.font_size,
         js::min([
@@ -334,20 +335,12 @@ fn far_caption(
             (run.font_size * (room - margin)) / js::js_max(1.0, margin + run.width),
         ]),
     );
-    let grown = TextRun {
+    TextRun {
         font_size: size,
         width: ctx.measurer.measure(&run.text, run.font, size),
         y: caption.height / 2.0 + size * 0.35,
         ..run.clone()
-    };
-    far_layer(caption_tab(
-        region,
-        &grown,
-        corner,
-        size / run.font_size,
-        colours,
-        palette,
-    ))
+    }
 }
 
 /// One group's region: its frame and its corner brackets, and its caption on its tab, near and far.
@@ -366,7 +359,7 @@ pub(super) fn paint_region(
     let rect = region.bounds;
     group(
         Role::Region,
-        subject(SubjectKind::GroupRegion, &region.group, None),
+        Some(subject(SubjectKind::GroupRegion, &region.group, None)),
         attrs! { MEMBERS_ATTRIBUTE: region.members.join(" "), "pointer-events": "none" },
         lines(vec![
             tag(
@@ -384,12 +377,15 @@ pub(super) fn paint_region(
             brackets(rect, &colours.corner),
             match near {
                 None => Markup::new(),
-                Some(run) => concat(vec![
-                    near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
-                    far_caption(
-                        ctx, region, run, far_size, corner, &crossings, &colours, palette,
-                    ),
-                ]),
+                Some(run) => {
+                    let room = far_room(region, run, corner, &crossings);
+                    let far = far_run(ctx, region, run, far_size, room);
+                    let grown = far.font_size / run.font_size;
+                    concat(vec![
+                        near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
+                        far_layer(caption_tab(region, &far, corner, grown, &colours, palette)),
+                    ])
+                }
             },
         ]),
     )

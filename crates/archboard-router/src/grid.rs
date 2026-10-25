@@ -181,7 +181,7 @@ impl Grid {
                         self.free[j * width + i] = false;
                     }
                     if i + 1 < width {
-                        let middle = (x + self.xs[i + 1]) / 2.0;
+                        let middle = f64::midpoint(x, self.xs[i + 1]);
                         if middle > buffer.left + SAME && middle < buffer.right - SAME {
                             self.across[j * width + i] = false;
                         }
@@ -201,7 +201,7 @@ impl Grid {
                     continue;
                 }
                 for j in 0..height.saturating_sub(1) {
-                    let middle = (self.ys[j] + self.ys[j + 1]) / 2.0;
+                    let middle = f64::midpoint(self.ys[j], self.ys[j + 1]);
                     if middle > buffer.top + SAME && middle < buffer.bottom - SAME {
                         self.down[j * width + i] = false;
                     }

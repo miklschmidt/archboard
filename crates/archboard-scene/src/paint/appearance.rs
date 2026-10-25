@@ -35,6 +35,10 @@ const CARD_EDGE: Tone = Tone {
 };
 
 /// A grouped card's face on the light ground, by colour: its lightness and its chroma.
+#[expect(
+    clippy::match_same_arms,
+    reason = "a table of one row per colour: two colours that share a value do so by chance"
+)]
 fn light_face(color: PaletteColor) -> (f64, f64) {
     match color {
         PaletteColor::Red => (0.89, 0.053),

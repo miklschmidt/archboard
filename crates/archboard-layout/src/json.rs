@@ -2,6 +2,8 @@
 //! them, keys in the order they were set. What the layout answers and what it
 //! asks Graphviz are compared with what the TypeScript engine wrote.
 
+use std::fmt::Write;
+
 use crate::ecma;
 
 /// A JSON value, its object keys in the order they were set.
@@ -90,8 +92,8 @@ pub(crate) fn string_into(out: &mut String, value: &str) {
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
-            control if (control as u32) < 0x20 => {
-                out.push_str(&format!("\\u{:04x}", control as u32));
+            control if u32::from(control) < 0x20 => {
+                write!(out, "\\u{:04x}", u32::from(control)).expect("a String takes every write");
             }
             other => out.push(other),
         }

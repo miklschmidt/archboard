@@ -48,6 +48,16 @@ pub(crate) struct Reach {
 /// Which steps count as new ones a move must not open.
 pub(crate) type Guard = fn(&Track<'_>, NetId) -> bool;
 
+/// What a stretch's move must keep: no new step `guard` counts on another
+/// line, and a drawing `better` calls better when it is given; `piece` moves
+/// only the pieces of runs the stretch stands on.
+#[derive(Clone, Copy)]
+pub(crate) struct Keeping<'b> {
+    pub guard: Guard,
+    pub piece: bool,
+    pub better: Option<&'b dyn Fn(&Track<'_>) -> bool>,
+}
+
 /// What a pass keeps from growing: a count over every net, never more after a move than before it.
 pub(crate) type Kept<'k> = &'k dyn Fn(&Track<'_>, &[NetId]) -> f64;
 
@@ -305,19 +315,20 @@ impl Track<'_> {
     }
 
     /// Move a stretch of stations onto one column: all of it moves, or none,
-    /// and none when the move would open a step `guard` counts on another line,
-    /// or when `better` says the drawing is no better for it.
-    #[allow(clippy::too_many_arguments)]
+    /// and none when the move would not keep what `keeping` asks.
     pub(crate) fn move_stretch(
         &mut self,
         chains: &[ChainId],
         nets: &[NetId],
         stretch: &[Reach],
         x: f64,
-        guard: Guard,
-        piece: bool,
-        better: Option<&dyn Fn(&Track<'_>) -> bool>,
+        keeping: Keeping<'_>,
     ) -> bool {
+        let Keeping {
+            guard,
+            piece,
+            better,
+        } = keeping;
         let stations: Vec<StationId> = stretch.iter().map(|one| one.station).collect();
         let saved = self.save(chains, nets, &stations);
         let notches: Set<NetId> = nets
@@ -389,7 +400,12 @@ impl Track<'_> {
     ) -> bool {
         let before = kept(self, nets);
         let better = |track: &Track<'_>| kept(track, nets) <= before;
-        self.move_stretch(chains, nets, moved, x, kinked, false, Some(&better))
+        let keeping = Keeping {
+            guard: kinked,
+            piece: false,
+            better: Some(&better),
+        };
+        self.move_stretch(chains, nets, moved, x, keeping)
     }
 
     /// The lines that run straight on through a card laid out as the region
@@ -545,7 +561,12 @@ impl Track<'_> {
                     let other = self.net(net).x_at(end.other());
                     let x = other + sign(self.net(net).x_at(end) - other) * 2.0 * BEND_RADIUS;
                     let stretch = self.stretch_beyond(route, index, end);
-                    if self.move_stretch(chains, &nets, &stretch, x, notched, false, None) {
+                    let keeping = Keeping {
+                        guard: notched,
+                        piece: false,
+                        better: None,
+                    };
+                    if self.move_stretch(chains, &nets, &stretch, x, keeping) {
                         break;
                     }
                 }

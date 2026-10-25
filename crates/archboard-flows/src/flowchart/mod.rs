@@ -553,6 +553,10 @@ fn node_appearances(
 }
 
 /// Every flow of a reading laid out as a flowchart, as the painter's request.
+///
+/// # Errors
+///
+/// What the host's track engine failed with ([`FlowchartHost::track`]).
 pub async fn picture<H: FlowchartHost>(
     request: FlowchartRequest,
     host: &H,

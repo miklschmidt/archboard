@@ -56,7 +56,7 @@ impl SubjectKind {
 }
 
 /// The subject a group draws: which sort it is, its id, and how it stands.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct Subject {
     pub kind: SubjectKind,
     pub id: String,

@@ -10,7 +10,7 @@
 use crate::ecma::{abs, number_key, or, sorted_by};
 use crate::track::chains::{ChainId, Kind, LANE, Track};
 use crate::track::channels::{End, NetId};
-use crate::track::jogs::{PASSES, Place, Reach, STRAIGHT, notched};
+use crate::track::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
 use crate::track::scene::{Map, Set};
 
 impl Track<'_> {
@@ -140,10 +140,14 @@ impl Track<'_> {
         let better = |track: &Track<'_>| {
             track.collinear_pairs(&nets) < count && track.swapped(&nets) <= crossing
         };
+        // A lane aside opens a 16 px step on purpose: only a notch is new.
+        let keeping = Keeping {
+            guard: notched,
+            piece,
+            better: Some(&better),
+        };
         moves.iter().any(|(x, from, stretch)| {
-            abs(x - from) > STRAIGHT
-                // A lane aside opens a 16 px step on purpose: only a notch is new.
-                && self.move_stretch(chains, &nets, stretch, *x, notched, piece, Some(&better))
+            abs(x - from) > STRAIGHT && self.move_stretch(chains, &nets, stretch, *x, keeping)
         })
     }
 

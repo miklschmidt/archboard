@@ -101,7 +101,7 @@ fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Opt
             if index == 0 {
                 0.0
             } else {
-                (widths[index - 1] + width) / 2.0 + LABEL_LABEL_CLEARANCE
+                f64::midpoint(widths[index - 1], width) + LABEL_LABEL_CLEARANCE
             }
         })
         .collect();

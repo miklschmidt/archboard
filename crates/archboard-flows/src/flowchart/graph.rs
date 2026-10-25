@@ -245,7 +245,7 @@ impl<'a> Building<'a> {
             responsibility: flow.summary.clone(),
         });
         self.subject(&flow.id);
-        self.flow = flow.id.clone();
+        self.flow.clone_from(&flow.id);
         let start = format!("{}~start", flow.id);
         self.add_node(
             start.clone(),

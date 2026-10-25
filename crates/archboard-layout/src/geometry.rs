@@ -36,7 +36,7 @@ pub(crate) fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
             continue;
         }
         if high - low < 1e-6 {
-            return Some((one.x + other.x) / 2.0);
+            return Some(f64::midpoint(one.x, other.x));
         }
         return Some(one.x + ((other.x - one.x) * (y - one.y)) / (other.y - one.y));
     }

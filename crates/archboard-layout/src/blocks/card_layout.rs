@@ -647,7 +647,7 @@ impl<'t> CardLayout<'t> {
     /// The block as the track scene reads it: its items, header, ports and pins
     /// as cards, and its lines as placed relationships.
     fn placed(
-        &mut self,
+        &self,
         graph: &Graph,
         centres: &Map<String, Point>,
         polylines: &Map<String, Vec<Point>>,

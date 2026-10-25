@@ -150,6 +150,12 @@ fn read_only(declaration: &str) -> String {
     out
 }
 
+/// Print the declarations, each exported and read-only, under the header that
+/// says where they came from.
+#[expect(
+    clippy::print_stdout,
+    reason = "the binary's output is the TypeScript it prints, which build-core.ts reads"
+)]
 fn main() {
     let config = Config::new();
     let mut declarations = Declarations {

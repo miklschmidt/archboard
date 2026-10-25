@@ -52,6 +52,7 @@ pub enum Dir {
 
 impl Dir {
     /// The direction back the way this one came.
+    #[must_use]
     pub fn reverse(self) -> Dir {
         match self {
             Dir::Up => Dir::Down,

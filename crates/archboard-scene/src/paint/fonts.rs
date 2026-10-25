@@ -14,6 +14,7 @@ pub const SANS_STACK: &str = "\"Archboard Diagram Sans\", ui-sans-serif, system-
 pub const MONO_STACK: &str = "\"Archboard Diagram Mono\", ui-monospace, monospace";
 
 /// One registered face: its family and weight, its CSS family, and its file.
+#[derive(Debug)]
 pub struct Face {
     pub weight: u16,
     pub css_family: &'static str,

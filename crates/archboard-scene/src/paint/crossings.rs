@@ -168,12 +168,11 @@ pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
     let mut grouped: Vec<(String, Vec<(String, Markup)>)> = Vec::new();
     for Cutout { edge_id, markup } in cutouts {
         let written = markup_of(&markup);
-        let at = match grouped.iter().position(|(id, _)| *id == edge_id) {
-            Some(at) => at,
-            None => {
-                grouped.push((edge_id, Vec::new()));
-                grouped.len() - 1
-            }
+        let at = if let Some(at) = grouped.iter().position(|(id, _)| *id == edge_id) {
+            at
+        } else {
+            grouped.push((edge_id, Vec::new()));
+            grouped.len() - 1
         };
         let paths = &mut grouped[at].1;
         if !paths.iter().any(|(held, _)| *held == written) {

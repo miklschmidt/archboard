@@ -24,6 +24,17 @@ pub struct Measurer<'host> {
     known: RefCell<HashMap<(String, DiagramFont, u64), f64>>,
 }
 
+/// The host is the place's canvas, which has nothing to show: a measurer shows
+/// how many widths it knows.
+impl std::fmt::Debug for Measurer<'_> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Measurer")
+            .field("known", &self.known.borrow().len())
+            .finish_non_exhaustive()
+    }
+}
+
 /// The ellipsis a cut line ends in.
 const ELLIPSIS: &str = "…";
 
@@ -82,6 +93,7 @@ pub mod fixed {
     use crate::drawing::DiagramFont;
 
     /// Every character `size * 0.5` wide.
+    #[derive(Debug)]
     pub struct Monospace;
 
     impl Measure for Monospace {

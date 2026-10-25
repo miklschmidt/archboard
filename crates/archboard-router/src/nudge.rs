@@ -496,7 +496,11 @@ fn nudge_axis(
                 && low.is_finite()
                 && high.is_finite();
             Var {
-                desired: if centred { (low + high) / 2.0 } else { at[v] },
+                desired: if centred {
+                    f64::midpoint(low, high)
+                } else {
+                    at[v]
+                },
                 weight: if fixed[v] { FIXED } else { 1.0 },
             }
         })

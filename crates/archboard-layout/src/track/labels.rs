@@ -345,7 +345,7 @@ impl Track<'_> {
             if centre < lowest - 0.5 || centre > highest + 0.5 {
                 continue;
             }
-            let middle = js_min(highest, js_max(lowest, (face.0 + face.1) / 2.0));
+            let middle = js_min(highest, js_max(lowest, f64::midpoint(face.0, face.1)));
             self.scene.item_mut(slider.item).bx.x = middle - half;
         }
     }

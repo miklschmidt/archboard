@@ -73,16 +73,17 @@ fn face_source(file: &str, document: &DocumentRequest) -> Result<String, Documen
 
 /// The `@font-face` rules the document registers its own type with.
 fn face_rules(document: &DocumentRequest) -> Result<String, DocumentError> {
-    let mut rules = String::new();
-    for face in &FACES {
-        rules.push_str(&format!(
-            "@font-face{{font-family:\"{}\";font-style:normal;font-weight:{};src:{}}}",
-            face.css_family,
-            face.weight,
-            face_source(face.file, document)?
-        ));
-    }
-    Ok(rules)
+    FACES
+        .iter()
+        .map(|face| {
+            face_source(face.file, document).map(|source| {
+                format!(
+                    "@font-face{{font-family:\"{}\";font-style:normal;font-weight:{};src:{source}}}",
+                    face.css_family, face.weight
+                )
+            })
+        })
+        .collect()
 }
 
 /// How a picture swaps its cards' near and far views (TASK-428).
@@ -239,6 +240,11 @@ fn standing_alone(
 }
 
 /// A scene written as one standalone SVG document.
+///
+/// # Errors
+///
+/// A document that embeds its fonts and was given no bytes for one, and a
+/// document that stands alone in a theme the request holds no colour for.
 pub fn document(scene: &Scene, document: &DocumentRequest) -> Result<String, DocumentError> {
     let mut painted = stylesheet(document)?;
     painted.push('\n');
