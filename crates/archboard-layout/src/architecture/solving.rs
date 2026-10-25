@@ -154,8 +154,16 @@ where
     }
 }
 
-/// Both futures' answers, the first started first.
-pub(crate) async fn both<A: Future, B: Future>(first: A, second: B) -> (A::Output, B::Output) {
+/// Both answers in request order, or either failure without waiting for the
+/// other answer. Returning or dropping this future drops both solves.
+pub(crate) async fn try_both<A, B, One, Other, Error>(
+    first: A,
+    second: B,
+) -> Result<(One, Other), Error>
+where
+    A: Future<Output = Result<One, Error>>,
+    B: Future<Output = Result<Other, Error>>,
+{
     let mut first = Box::pin(first);
     let mut second = Box::pin(second);
     let mut one = None;
@@ -172,7 +180,8 @@ pub(crate) async fn both<A: Future, B: Future>(first: A, second: B) -> (A::Outpu
             other = Some(answer);
         }
         match (one.take(), other.take()) {
-            (Some(one), Some(other)) => Poll::Ready((one, other)),
+            (Some(Err(error)), _) | (_, Some(Err(error))) => Poll::Ready(Err(error)),
+            (Some(Ok(one)), Some(Ok(other))) => Poll::Ready(Ok((one, other))),
             (held_one, held_other) => {
                 one = held_one;
                 other = held_other;
