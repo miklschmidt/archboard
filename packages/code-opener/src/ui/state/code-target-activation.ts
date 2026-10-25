@@ -18,8 +18,12 @@ interface CodeTargetActivationOptions {
 	boardKey: string | null;
 	/** The stable semantic id whose binding to open. */
 	elementId: string;
-	onSuccess: (reply: CodeTargetOpenSuccess) => void;
-	onFailure: (notice: CodeTargetNotice) => void;
+	/**
+	 * What the person is told of the outcome: every failure, and an open of
+	 * another version than the binding names. A plain open tells nothing, because
+	 * the editor that shows the code says it all.
+	 */
+	onNotice: (notice: CodeTargetNotice) => void;
 }
 
 /**
@@ -54,13 +58,13 @@ function openedNotice(reply: CodeTargetOpenSuccess): CodeTargetNotice | null {
 }
 
 /**
- * Open a board subject's code target, reporting the typed outcome.
- * @param options The board, the subject and where outcomes go.
+ * Open a board subject's code target, and tell the person what the outcome deserves.
+ * @param options The board, the subject and where a notice goes.
  */
 function activateCodeTarget(options: CodeTargetActivationOptions): void {
-	const { vault, boardKey, elementId, onSuccess, onFailure } = options;
+	const { vault, boardKey, elementId, onNotice } = options;
 	if (boardKey === null || boardKey === "") {
-		onFailure({
+		onNotice({
 			kind: "error",
 			message: "No board is available for this code target.",
 			actions: [],
@@ -68,13 +72,12 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 		return;
 	}
 	void openCodeTarget(vault, { board: boardKey, element: elementId }).then((reply) => {
-		if (reply.success) {
-			onSuccess(reply);
-		} else {
-			onFailure(failureNotice(reply));
+		const notice = reply.success ? openedNotice(reply) : failureNotice(reply);
+		if (notice !== null) {
+			onNotice(notice);
 		}
 		return reply;
 	});
 }
 
-export { activateCodeTarget, openedNotice, type CodeTargetActivationOptions };
+export { activateCodeTarget, type CodeTargetActivationOptions };

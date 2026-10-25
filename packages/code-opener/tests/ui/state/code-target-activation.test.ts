@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { CodeTargetNotice, CodeTargetOpenSuccess } from "@archboard/code-binding/opening";
-import { activateCodeTarget, openedNotice } from "#ui/state/code-target-activation.ts";
+import type { CodeTargetNotice } from "@archboard/code-binding/opening";
+import { activateCodeTarget } from "#ui/state/code-target-activation.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -31,17 +31,16 @@ function answering(body: unknown, status = 200): ReturnType<typeof mock> {
 }
 
 /**
- * An activation with spies for both outcomes.
- * @returns The two spies.
+ * Activate a subject's code target, with a spy for what the person is told.
+ * @param boardKey The board key the subject is on.
+ * @returns The spy.
  */
-function outcomes(): {
-	onSuccess: ReturnType<typeof mock<(reply: CodeTargetOpenSuccess) => void>>;
-	onFailure: ReturnType<typeof mock<(notice: CodeTargetNotice) => void>>;
-} {
-	return {
-		onSuccess: mock((_reply: CodeTargetOpenSuccess) => undefined),
-		onFailure: mock((_notice: CodeTargetNotice) => undefined),
-	};
+function activate(
+	boardKey: string | null = "board-a",
+): ReturnType<typeof mock<(notice: CodeTargetNotice) => void>> {
+	const onNotice = mock((_notice: CodeTargetNotice) => undefined);
+	activateCodeTarget({ vault: VAULT, boardKey, elementId: "7c40IV7N", onNotice });
+	return onNotice;
 }
 
 /** Let the reply settle. */
@@ -62,17 +61,10 @@ const SUCCESS = {
 const VAULT = "/work/archboard/.archboard/vault";
 
 describe("code-target activation", () => {
-	test("posts the board and the subject's identity, and nothing else", async () => {
+	test("posts the board and the subject's identity, and a plain open tells nothing", async () => {
 		const fetchMock = answering(SUCCESS);
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "system/payments",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate("system/payments");
 		// The browser states which board and which subject; the binding, the
 		// checkout registry and the opener are all the server's (ADR 0023).
 		expect(fetchMock).toHaveBeenCalledWith("/api/code-targets/open", {
@@ -81,21 +73,14 @@ describe("code-target activation", () => {
 			body: JSON.stringify({ board: "system/payments", element: "7c40IV7N", vault: VAULT }),
 		});
 		await settle();
-		expect(onSuccess).toHaveBeenCalledWith(SUCCESS);
-		expect(onFailure).not.toHaveBeenCalled();
+		// The editor that shows the code says it all.
+		expect(onNotice).not.toHaveBeenCalled();
 	});
 
-	test("carries the variant a pane is reading, because a proposal binds its own code", async () => {
+	test("carries the variant a pane is reading, because a proposal binds its own code", () => {
 		const fetchMock = answering(SUCCESS);
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "system/payments@proposed",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		activate("system/payments@proposed");
 
 		expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
 			body: JSON.stringify({
@@ -108,18 +93,11 @@ describe("code-target activation", () => {
 
 	test("refuses a pane that is on no board without reaching the server", () => {
 		const fetchMock = answering({});
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: null,
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate(null);
 
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(onFailure.mock.calls[0]?.[0]).toMatchObject({
+		expect(onNotice.mock.calls[0]?.[0]).toMatchObject({
 			message: "No board is available for this code target.",
 		});
 	});
@@ -134,20 +112,12 @@ describe("code-target activation", () => {
 			},
 			422,
 		);
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "board-a",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate();
 		await settle();
 
-		expect(onSuccess).not.toHaveBeenCalled();
-		expect(onFailure).toHaveBeenCalledTimes(1);
-		expect(onFailure.mock.calls[0]?.[0]).toEqual({
+		expect(onNotice).toHaveBeenCalledTimes(1);
+		expect(onNotice.mock.calls[0]?.[0]).toEqual({
 			kind: "error",
 			message: "Cursor is not installed.",
 			actions: [{ kind: "settings", label: "Opener settings" }],
@@ -160,43 +130,27 @@ describe("code-target activation", () => {
 			code: "OPENER_UNAVAILABLE",
 			error: "This must not use the normal failure path.",
 		});
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "board-a",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate();
 		await settle();
 
-		expect(onSuccess).not.toHaveBeenCalled();
-		expect(onFailure).toHaveBeenCalledTimes(1);
-		expect(onFailure.mock.calls[0]?.[0]).toMatchObject({
+		expect(onNotice).toHaveBeenCalledTimes(1);
+		expect(onNotice.mock.calls[0]?.[0]).toMatchObject({
 			message: expect.stringContaining("RESPONSE_INVALID"),
 		});
-		expect(onFailure.mock.calls[0]?.[0]).not.toMatchObject({
+		expect(onNotice.mock.calls[0]?.[0]).not.toMatchObject({
 			message: "This must not use the normal failure path.",
 		});
 	});
 
 	test.each([200, 500])("converts an invalid %i reply to RESPONSE_INVALID", async (status) => {
 		answering({ success: true, path: "/tmp/private" }, status);
-		const { onSuccess, onFailure } = outcomes();
 
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "board-a",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate();
 		await settle();
 
-		expect(onSuccess).not.toHaveBeenCalled();
-		expect(onFailure).toHaveBeenCalledTimes(1);
-		expect(onFailure.mock.calls[0]?.[0]).toMatchObject({
+		expect(onNotice).toHaveBeenCalledTimes(1);
+		expect(onNotice.mock.calls[0]?.[0]).toMatchObject({
 			kind: "error",
 			message: expect.stringContaining("RESPONSE_INVALID"),
 		});
@@ -204,12 +158,14 @@ describe("code-target activation", () => {
 });
 
 describe("code on another ref than the binding names", () => {
-	test("a checkout's version opened in its place names both refs, and a plain open says nothing", () => {
-		expect(openedNotice(SUCCESS)).toBeNull();
-		const notice = openedNotice({
-			...SUCCESS,
-			otherRef: { named: "release/2.1", checkedOut: "main" },
-		});
+	test("a checkout's version opened in its place names both refs", async () => {
+		answering({ ...SUCCESS, otherRef: { named: "release/2.1", checkedOut: "main" } });
+
+		const onNotice = activate("system/payments");
+		await settle();
+
+		expect(onNotice).toHaveBeenCalledTimes(1);
+		const notice = onNotice.mock.calls[0]?.[0];
 		expect(notice?.kind).toBe("info");
 		expect(notice?.message).toContain("release/2.1");
 		expect(notice?.message).toContain("main");
@@ -226,16 +182,9 @@ describe("code on another ref than the binding names", () => {
 			},
 			409,
 		);
-		const { onSuccess, onFailure } = outcomes();
-		activateCodeTarget({
-			vault: VAULT,
-			boardKey: "system/payments",
-			elementId: "7c40IV7N",
-			onSuccess,
-			onFailure,
-		});
+		const onNotice = activate("system/payments");
 		await settle();
-		expect(onFailure).toHaveBeenCalledWith(
+		expect(onNotice).toHaveBeenCalledWith(
 			expect.objectContaining({ kind: "info", actions: [expect.objectContaining({ href })] }),
 		);
 	});
