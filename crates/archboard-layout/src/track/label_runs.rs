@@ -269,3 +269,42 @@ pub(crate) fn place_run(scene: &mut Placement, sliders: &[Slider], low: f64, hig
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::geometry::Rect;
+
+    use super::*;
+    use crate::track::scene::Item;
+
+    /// A label box on a line that runs straight through one x above and
+    /// below it, Graphviz standing its left edge at `x`.
+    fn slider(scene: &mut Placement, x: f64, end: f64) -> Slider {
+        let bx = Rect {
+            x,
+            y: 0.0,
+            width: 100.0,
+            height: 20.0,
+        };
+        Slider {
+            item: scene.add(Item::new(bx, 0)),
+            wanted: end,
+            reaches: vec![(end, end), (end, end)],
+            ends: [end, end],
+            inward: 0.0,
+        }
+    }
+
+    // A port settled after Graphviz ranked its block can stand one label's
+    // line on the far side of another's; kept in Graphviz's order, the two
+    // lines cross between their labels and their ends.
+    #[test]
+    fn labels_whose_lines_graphviz_s_order_would_cross_stand_in_the_order_of_their_lines() {
+        let mut scene = Placement::default();
+        let left = slider(&mut scene, 0.0, 500.0);
+        let right = slider(&mut scene, 200.0, 100.0);
+        let (one, other) = (left.item, right.item);
+        place_run(&mut scene, &[left, right], 0.0, 800.0);
+        assert!(scene.item(other).bx.x < scene.item(one).bx.x);
+    }
+}

@@ -54,7 +54,7 @@ async function drawn(
 }
 
 // The line from n19 to n14 joins n20's line to n14 on the way, so its label
-// sits in the region, before the join (joins.ts). What this catches: the
+// sits in the region, before the join (crates/archboard-layout/src/blocks/choosing.rs). What this catches: the
 // region kept that line's port on its bottom, and the line ran from n19 down
 // the region, along its foot below every card, and up its wall to n14.
 test("a line that leaves a region by its wall carrying its label runs above the region's foot", async () => {

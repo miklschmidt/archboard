@@ -425,7 +425,7 @@ impl<'t> CardLayout<'t> {
         for pin in self.pins() {
             leaves.push(pinned_leaf(self.tree, self.laid, &pin, centres));
         }
-        corner_header(&mut leaves, self.block, self.insets.side);
+        let header = corner_header(&mut leaves, self.block, self.insets.side);
         let edges = self
             .block
             .lines
@@ -437,6 +437,7 @@ impl<'t> CardLayout<'t> {
             children,
             edges,
             regions,
+            header,
         }
     }
 

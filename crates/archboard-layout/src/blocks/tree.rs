@@ -1,8 +1,12 @@
-//! The board and every group region packed as a block of its own (`groups`)
-//! are blocks, each laid out on its own from its cards and child blocks; a
-//! folded block's columns are blocks too (`fold.rs`). Track draws every
-//! container and every other region inline, as a cluster of the block that
-//! lays it out (TASK-349).
+//! Drawn as blocks (the Blocks engine), the board, every container and every
+//! group region round more than one node is a block, laid out on its own from
+//! its cards and child blocks; its parent places it as one box, as compact as
+//! what it holds. A block of blocks gathers the cards it holds outside every
+//! block into a cluster, so each block holds cards alone or blocks alone.
+//! Drawn inline (the Track engine), only the board and every group region
+//! packed as a block of its own (`groups`) are blocks, and every container and
+//! every other region is a cluster of the block that lays it out (TASK-349).
+//! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
 //! crosses the edge of every block below that through a port: out of the
@@ -12,9 +16,6 @@
 //! item shares one port, and every one that runs between the same two ends of
 //! a block without a label of its own there shares one line, so what runs
 //! between two blocks is drawn once, as a trunk.
-//!
-//! The TypeScript engine also packed containers as blocks (the Blocks
-//! engine); a Track solve never does, so no block here is a container.
 //!
 //! This file holds the blocks and what they hold. Filling them from the
 //! hierarchy is `inline.rs`, drawing the relationships through them is
@@ -31,24 +32,47 @@ use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
 use super::projection::join_ways;
 
-/// How a board's containers and group regions are drawn: every one inline
-/// as a cluster of the board's layout, or containers inline with each group's
-/// region packed as a block.
+/// How a board's containers and group regions are drawn: each packed as a
+/// block of its own, every one inline as a cluster of the board's layout, or
+/// containers inline with each group's region packed as a block.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Nesting {
+    Blocks,
     Inline,
     Groups,
+}
+
+impl Nesting {
+    /// The way a solve's options name: `blocks`, `inline` or `groups`.
+    ///
+    /// # Errors
+    ///
+    /// When it names another.
+    pub(crate) fn named(name: &str) -> Result<Nesting, String> {
+        match name {
+            "blocks" => Ok(Nesting::Blocks),
+            "inline" => Ok(Nesting::Inline),
+            "groups" => Ok(Nesting::Groups),
+            other => Err(format!(
+                "A board is drawn as blocks, inline or with its groups packed (blocks, inline or groups); not {other}."
+            )),
+        }
+    }
 }
 
 /// A block's place in the tree.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub usize);
 
-/// What a block is: the board, a group region packed whole, or a column a block folds into.
+/// What a block is: the board, a container, a group region packed whole, the
+/// cluster of cards a block of blocks holds outside every block, or a column a
+/// block folds into.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Kind {
     Root,
+    Frame,
     Region,
+    Cluster,
     Column,
 }
 
@@ -103,7 +127,8 @@ pub(crate) struct Ends {
     pub head: String,
 }
 
-/// A block: the board, a group region packed whole, or a column a block folds into.
+/// A block: the board, a container, a group region, the cluster of cards a
+/// block of blocks holds outside every block, or a column a block folds into.
 #[derive(Clone, Debug)]
 pub(crate) struct Block {
     pub id: String,
@@ -111,8 +136,11 @@ pub(crate) struct Block {
     pub parent: Option<BlockId>,
     /// The group, for a region.
     pub group: Option<String>,
-    /// A region's caption tab down to the caption's foot.
+    /// A container's title row at its top-left, or a region's caption tab
+    /// down to the caption's foot.
     pub header: Option<Header>,
+    /// The region round a container alone in it, which it is laid out as.
+    pub lone: Option<Lone>,
     /// Its cards and the blocks directly inside it, in the board's order.
     pub items: Vec<String>,
     /// The lines it draws, by key.
@@ -223,11 +251,28 @@ pub(crate) struct BlockTree {
     pub routes: Map<String, Route>,
     /// Where each pin meets its child block.
     pub pins: Map<String, Pin>,
+    /// The blocks that joins of lines on the way to one card move labels to, by id.
+    pub joining: Set<String>,
     /// The relationships that keep ports of their own rather than join others, by id.
     pub apart: Set<String>,
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
+    /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
+    pub orders: Map<String, Vec<String>>,
+    /// Whether every block faces its walls (`exit_of`, `walls.rs`).
+    pub facing: bool,
+}
+
+/// What an earlier layout of a board decided, which laying it out again keeps.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Kept {
+    /// The wall each port moves to, keyed by `exit_key` (`sides.rs`).
+    pub exits: Map<String, Side>,
+    /// The ports each block holds in an order on a face, keyed `block|face`.
+    pub orders: Map<String, Vec<String>>,
+    /// Whether every block faces its walls.
+    pub facing: bool,
 }
 
 impl BlockTree {
@@ -239,7 +284,7 @@ impl BlockTree {
     /// names a node the hierarchy does not hold.
     pub(crate) fn new(
         graph: &Node,
-        exits: Map<String, Side>,
+        kept: Kept,
         nesting: Nesting,
         apart: &Set<String>,
     ) -> Result<BlockTree, String> {
@@ -255,12 +300,16 @@ impl BlockTree {
             projections: Vec::new(),
             routes: Map::default(),
             pins: Map::default(),
+            joining: Set::default(),
             apart: Set::default(),
-            exits,
+            exits: kept.exits,
             nesting,
+            orders: kept.orders,
+            facing: kept.facing,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
         tree.fill(tree.root, graph.kids())?;
+        tree.gather(tree.root);
         tree.projections = graph
             .edges
             .iter()
@@ -270,7 +319,8 @@ impl BlockTree {
             .map(|edge| tree.project(edge))
             .collect::<Result<_, _>>()?;
         let back = tree.back_edges();
-        let (before, own) = join_ways(&tree.projections, &tree.arena, &back, apart);
+        let (joining, before, own) = join_ways(&tree.projections, &tree.arena, &back, apart);
+        tree.joining = joining;
         tree.apart = own;
         for index in 0..tree.projections.len() {
             let projection = tree.projections[index].clone();
@@ -316,6 +366,7 @@ impl BlockTree {
             parent,
             group,
             header,
+            lone: None,
             items: Vec::new(),
             lines: Map::default(),
             ports: Map::default(),

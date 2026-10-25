@@ -81,11 +81,11 @@ function sentTo(worker: HeldWorker): string[] {
 
 test("a cancellable solve lets its caller reject queued speculation before the next solve starts", async () => {
 	const { solve, workers } = heldPool(1);
-	const first = solve({ id: "first" }, {}, new AbortController().signal);
+	const first = solve({ id: "first" }, new AbortController().signal);
 	const controller = new AbortController();
-	const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+	const obsolete = solve({ id: "obsolete" }, controller.signal);
 	const refused = obsolete.catch((error: unknown) => error);
-	const needed = solve({ id: "needed" }, {});
+	const needed = solve({ id: "needed" });
 	const started = Promise.withResolvers<void>();
 	const worker = workers[0]!;
 	const send = worker.postMessage.bind(worker);
@@ -128,13 +128,13 @@ test.each(["fatal", "stopped"] as const)(
 			workers.push(worker);
 			return worker;
 		}, 1);
-		const first = solve({ id: "first" }, {}, new AbortController().signal);
+		const first = solve({ id: "first" }, new AbortController().signal);
 		workers[0]!.answer(0, { error: "WASM failed to load", fatal: true });
 		expect(sentTo(workers[1]!)).toEqual(["first"]);
 		const controller = new AbortController();
-		const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+		const obsolete = solve({ id: "obsolete" }, controller.signal);
 		const refused = obsolete.catch((error: unknown) => error);
-		const needed = solve({ id: "needed" }, {});
+		const needed = solve({ id: "needed" });
 		const selected = first.catch((error: unknown) => {
 			controller.abort();
 			return error;
@@ -154,9 +154,9 @@ test.each(["fatal", "stopped"] as const)(
 test("an uncancelled handoff resumes FIFO work, including a solve enqueued by its caller", async () => {
 	const { solve, workers } = heldPool(1);
 	const signal = new AbortController().signal;
-	const first = solve({ id: "first" }, {}, signal);
-	const second = solve({ id: "second" }, {}, signal);
-	const third = solve({ id: "third" }, {});
+	const first = solve({ id: "first" }, signal);
+	const second = solve({ id: "second" }, signal);
+	const third = solve({ id: "third" });
 	const started = Promise.withResolvers<void>();
 	const worker = workers[0]!;
 	const send = worker.postMessage.bind(worker);
@@ -170,7 +170,7 @@ test("an uncancelled handoff resumes FIFO work, including a solve enqueued by it
 	};
 	let appended: ReturnType<typeof solve> | undefined;
 	const selected = first.then((answer) => {
-		appended = solve({ id: "appended" }, {});
+		appended = solve({ id: "appended" });
 		return answer;
 	});
 	worker.answer(0, { data: { id: "first!" } });
@@ -195,11 +195,11 @@ test("an uncancelled handoff resumes FIFO work, including a solve enqueued by it
 
 test("an obsolete queued solve never occupies a worker", async () => {
 	const { solve, workers } = heldPool(1);
-	const first = solve({ id: "first" }, {});
+	const first = solve({ id: "first" });
 	const controller = new AbortController();
-	const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+	const obsolete = solve({ id: "obsolete" }, controller.signal);
 	const refused = obsolete.catch((error: unknown) => error);
-	const needed = solve({ id: "needed" }, {});
+	const needed = solve({ id: "needed" });
 	controller.abort();
 	expect(await refused).toHaveProperty("name", "AbortError");
 	workers[0]!.answer(0, { data: { id: "first!" } });
@@ -211,12 +211,13 @@ test("an obsolete queued solve never occupies a worker", async () => {
 test("cancellation refuses unstarted work but leaves an active engine intact", async () => {
 	const { solve, workers } = heldPool(1);
 	const stopped = AbortSignal.abort();
-	expect(
-		await solve({ id: "unstarted" }, {}, stopped).catch((error: unknown) => error),
-	).toHaveProperty("name", "AbortError");
+	expect(await solve({ id: "unstarted" }, stopped).catch((error: unknown) => error)).toHaveProperty(
+		"name",
+		"AbortError",
+	);
 	expect(workers).toHaveLength(0);
 	const controller = new AbortController();
-	const active = solve({ id: "active" }, {}, controller.signal);
+	const active = solve({ id: "active" }, controller.signal);
 	controller.abort();
 	workers[0]!.answer(0, { data: { id: "active!" } });
 	expect(await active).toEqual({ id: "active!" });
@@ -228,9 +229,9 @@ test.each(["worker error", "engine abort"] as const)(
 	async (failure) => {
 		const { solve, workers } = heldPool(1);
 		const controller = new AbortController();
-		const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+		const obsolete = solve({ id: "obsolete" }, controller.signal);
 		const refused = obsolete.catch((error: unknown) => error);
-		const needed = solve({ id: "needed" }, {});
+		const needed = solve({ id: "needed" });
 		controller.abort();
 		if (failure === "worker error") workers[0]!.dispatchEvent(new Event("error"));
 		else workers[0]!.answer(0, { error: "program has already aborted!", fatal: true });
@@ -248,13 +249,13 @@ test.each(["worker error", "engine abort"] as const)(
 test("a retried solve can be cancelled while it waits behind needed work", async () => {
 	const { solve, workers } = heldPool(1);
 	const controller = new AbortController();
-	const obsolete = solve({ id: "obsolete" }, {}, controller.signal);
+	const obsolete = solve({ id: "obsolete" }, controller.signal);
 	const refused = obsolete.catch((error: unknown) => error);
-	const first = solve({ id: "first" }, {});
+	const first = solve({ id: "first" });
 	workers[0]!.dispatchEvent(new Event("error"));
 	// The retry is queued again, behind work that was already waiting.
 	expect(sentTo(workers[1]!)).toEqual(["first"]);
-	const next = solve({ id: "next" }, {});
+	const next = solve({ id: "next" });
 	controller.abort();
 	expect(await refused).toBe(controller.signal.reason);
 	expect(workers[1]!.terminated).toBe(false);
@@ -267,7 +268,7 @@ test("a retried solve can be cancelled while it waits behind needed work", async
 test("a retry that has started answers normally after cancellation", async () => {
 	const { solve, workers } = heldPool(1);
 	const controller = new AbortController();
-	const active = solve({ id: "active" }, {}, controller.signal);
+	const active = solve({ id: "active" }, controller.signal);
 	workers[0]!.dispatchEvent(new Event("error"));
 	expect(sentTo(workers[1]!)).toEqual(["active"]);
 	controller.abort();
@@ -278,8 +279,8 @@ test("a retry that has started answers normally after cancellation", async () =>
 
 test("a solve waits for the first worker free, and the pool grows one worker at a time up to its ceiling", async () => {
 	const { solve, workers } = heldPool(2);
-	const first = solve({ id: "a" }, {});
-	const second = solve({ id: "b" }, {});
+	const first = solve({ id: "a" });
+	const second = solve({ id: "b" });
 	// The first worker has not answered, so it is still starting: the second
 	// solve waits rather than compiling the engine again beside it.
 	expect(workers).toHaveLength(1);
@@ -290,9 +291,9 @@ test("a solve waits for the first worker free, and the pool grows one worker at 
 
 	// It has started and is busy, so the next solve starts a second worker; the
 	// ceiling keeps the ones after that waiting in the pool.
-	const third = solve({ id: "c" }, {});
-	const fourth = solve({ id: "d" }, {});
-	const fifth = solve({ id: "e" }, {});
+	const third = solve({ id: "c" });
+	const fourth = solve({ id: "d" });
+	const fifth = solve({ id: "e" });
 	expect(workers).toHaveLength(2);
 	expect(sentTo(workers[1]!)).toEqual(["c"]);
 
@@ -317,9 +318,9 @@ test("a solve waits for the first worker free, and the pool grows one worker at 
 test("a solve called off while it waits is never sent, and one a worker holds still answers", async () => {
 	const { solve, workers } = heldPool(1);
 	const calling = new AbortController();
-	const held = solve({ id: "a" }, {}, calling.signal);
-	const waiting = solve({ id: "b" }, {}, calling.signal);
-	const next = solve({ id: "c" }, {});
+	const held = solve({ id: "a" }, calling.signal);
+	const waiting = solve({ id: "b" }, calling.signal);
+	const next = solve({ id: "c" });
 	const reason = new Error("not needed");
 	calling.abort(reason);
 	const refusal = await waiting.then(
@@ -336,7 +337,7 @@ test("a solve called off while it waits is never sent, and one a worker holds st
 
 test("an engine refusal rejects the solve with an error that keeps the engine's words", async () => {
 	const { solve, workers } = heldPool(1);
-	const solving = solve({ id: "a" }, {});
+	const solving = solve({ id: "a" });
 	workers[0]!.answer(0, { error: { message: "nodeOrder[l][0].layer" } });
 	const failure = await solving.then(
 		() => undefined,
@@ -348,7 +349,7 @@ test("an engine refusal rejects the solve with an error that keeps the engine's 
 
 test("a worker that stops is replaced, and the solve it held is answered by the replacement", async () => {
 	const { solve, workers } = heldPool(1);
-	const first = solve({ id: "a" }, {});
+	const first = solve({ id: "a" });
 	workers[0]!.dispatchEvent(new Event("error"));
 	expect(workers).toHaveLength(2);
 	expect(workers[0]!.terminated).toBe(true);
@@ -358,8 +359,8 @@ test("a worker that stops is replaced, and the solve it held is answered by the 
 
 test("an engine that aborted is replaced, and the solve it held is sent once more", async () => {
 	const { solve, workers } = heldPool(1);
-	const first = solve({ id: "a" }, {});
-	const second = solve({ id: "b" }, {});
+	const first = solve({ id: "a" });
+	const second = solve({ id: "b" });
 	workers[0]!.answer(0, { error: "program has already aborted!", fatal: true });
 	expect(workers[0]!.terminated).toBe(true);
 	expect(sentTo(workers[1]!)).toEqual(["b"]);
@@ -371,7 +372,7 @@ test("an engine that aborted is replaced, and the solve it held is sent once mor
 
 test("a solve whose second worker fails too is refused with the engine's words", async () => {
 	const { solve, workers } = heldPool(1);
-	const solving = solve({ id: "a" }, {});
+	const solving = solve({ id: "a" });
 	workers[0]!.answer(0, { error: "WASM failed to load", fatal: true });
 	workers[1]!.answer(0, { error: "WASM failed to load", fatal: true });
 	const failure = await solving.then(
@@ -379,7 +380,7 @@ test("a solve whose second worker fails too is refused with the engine's words",
 		(error: unknown) => error,
 	);
 	expect(String(failure)).toContain("WASM failed to load");
-	const next = solve({ id: "b" }, {});
+	const next = solve({ id: "b" });
 	workers[2]!.answer(0, { data: { id: "b!" } });
 	expect(await next).toEqual({ id: "b!" });
 });

@@ -9,6 +9,7 @@
 //! crossing (`score_of`).
 
 use archboard_scene::geometry::{Point, Rect};
+use serde::{Deserialize, Serialize};
 
 use crate::constants::fit_in;
 use crate::ecma::{abs, js_min, max, min, number_key, pow, round, via_text};
@@ -38,17 +39,22 @@ pub(crate) struct Crossing {
 
 /// What a layout is weighed on: its page, its crossings and its lines between
 /// columns, and what else a reader sees in it where an engine counts it.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub(crate) struct Weighed {
     pub width: f64,
     pub height: f64,
     pub crossings: f64,
     /// What its lines' runs away from their ends weigh, in crossings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub away: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bus: Option<f64>,
     /// Its line ends hooking into a card's side, its pairs of lines that touch and its crowded joins.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hooks: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bends: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length: Option<f64>,
 }
 
@@ -326,4 +332,191 @@ pub(crate) fn sinks(
             .into_iter()
             .any(|&(other, _)| across(&boxes[other.as_str()], &boxes[card.as_str()]))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // How the layout choosers compare two layouts (ADR 0039), on layouts
+    // weighed by hand: each measure decides only between layouts alike on
+    // every earlier one, fit only between layouts that read alike, and a
+    // chooser keeps its earlier pick wherever its reading pick reads worse on
+    // some measure. What this catches: a rank of the order dropped or moved,
+    // fit buying a reading measure, and a guarded choice taking a layout that
+    // reads worse.
+
+    /// A layout on a page that fits the reference pane at full scale, read cleanly.
+    fn clean() -> Weighed {
+        Weighed {
+            width: 1000.0,
+            height: 700.0,
+            crossings: 4.0,
+            hooks: Some(0.0),
+            bends: Some(20.0),
+            length: Some(10_000.0),
+            ..Weighed::default()
+        }
+    }
+
+    /// The clean layout on a page too tall for the reference pane, fitting it worse.
+    fn cramped() -> Weighed {
+        Weighed {
+            height: 2800.0,
+            ..clean()
+        }
+    }
+
+    #[test]
+    fn the_clean_page_fits_the_pane_whole_and_the_cramped_page_does_not() {
+        assert_eq!(fit_in(clean().width, clean().height), 1.0);
+        assert!(fit_in(cramped().width, cramped().height) < 1.0);
+    }
+
+    #[test]
+    fn each_reading_measure_decides_before_every_later_one_and_before_fit() {
+        // A layout worse by one on a measure, against one alike up to it and
+        // worse on every later measure and on fit.
+        let ranks = [
+            (
+                Weighed {
+                    crossings: 5.0,
+                    ..clean()
+                },
+                Weighed {
+                    hooks: Some(3.0),
+                    bends: Some(40.0),
+                    length: Some(20_000.0),
+                    ..cramped()
+                },
+            ),
+            (
+                Weighed {
+                    hooks: Some(1.0),
+                    ..clean()
+                },
+                Weighed {
+                    bends: Some(40.0),
+                    length: Some(20_000.0),
+                    ..cramped()
+                },
+            ),
+            (
+                Weighed {
+                    bends: Some(21.0),
+                    ..clean()
+                },
+                Weighed {
+                    length: Some(20_000.0),
+                    ..cramped()
+                },
+            ),
+            (
+                Weighed {
+                    length: Some(11_000.0),
+                    ..clean()
+                },
+                cramped(),
+            ),
+        ];
+        for (rank, (worse, later)) in ranks.iter().enumerate() {
+            assert!(reads_better(later, worse), "rank {rank}");
+            assert!(!reads_better(worse, later), "rank {rank}");
+        }
+    }
+
+    #[test]
+    fn route_lengths_within_a_twentieth_of_each_other_are_alike_and_fit_decides() {
+        let longer = Weighed {
+            length: Some(10_400.0),
+            ..clean()
+        };
+        assert!(reads_better(&longer, &cramped()));
+        let longest = Weighed {
+            length: Some(10_600.0),
+            ..clean()
+        };
+        assert!(!reads_better(&longest, &cramped()));
+    }
+
+    #[test]
+    fn a_guarded_choice_keeps_the_earlier_pick_where_the_reading_pick_reads_worse_somewhere() {
+        let fewer = Weighed {
+            crossings: 2.0,
+            bends: Some(28.0),
+            length: Some(13_000.0),
+            ..clean()
+        };
+        // The reading order takes the drawing with fewer crossings ...
+        assert!(reads_better(&fewer, &clean()));
+        // ... but it turns more and runs longer, so the earlier pick stands.
+        assert!(!takes(&fewer, &clean(), false, None));
+        assert!(takes(&clean(), &fewer, true, None));
+        // Where the two agree, that pick is taken.
+        assert!(takes(&fewer, &clean(), true, None));
+    }
+
+    #[test]
+    fn a_guarded_choice_takes_the_reading_pick_where_it_is_nowhere_worse() {
+        let cleaner = Weighed {
+            crossings: 2.0,
+            ..clean()
+        };
+        assert!(takes(&cleaner, &clean(), false, None));
+        assert!(!takes(&clean(), &cleaner, true, None));
+    }
+
+    // Whether a wrap sinks a card rather than wrapping it, on wraps laid by
+    // hand. What this catches: a group region the wrap lowers whole refused,
+    // because its topmost cards stand under cards of the fan rather than of
+    // the region, so the region stands on a row of its own above the fan's
+    // other cards (Starting a workhorse, Track); and a lowered card under no
+    // card at all taken.
+
+    /// Where the wrap lays each card: a fan of two over the two cards of one region, and one card astray.
+    fn wrapped() -> Map<String, Rect> {
+        [
+            ("hub", 0.0),
+            ("peer", 300.0),
+            ("first", 0.0),
+            ("second", 300.0),
+            ("astray", 900.0),
+        ]
+        .into_iter()
+        .map(|(card, x)| {
+            (
+                card.to_owned(),
+                Rect {
+                    x,
+                    y: 0.0,
+                    width: 200.0,
+                    height: 80.0,
+                },
+            )
+        })
+        .collect()
+    }
+
+    /// The cluster round a card: the region's two cards stand in one.
+    fn around(card: &str) -> Option<String> {
+        matches!(card, "first" | "second").then(|| "region".to_owned())
+    }
+
+    fn plan(rows: &[(&str, usize)]) -> Plan {
+        rows.iter()
+            .map(|&(card, row)| (card.to_owned(), row))
+            .collect()
+    }
+
+    #[test]
+    fn a_region_the_wrap_lowers_whole_may_stand_under_any_card_of_the_row_above() {
+        let plan = plan(&[("hub", 0), ("peer", 0), ("first", 1), ("second", 1)]);
+        assert!(!sinks(&plan, &wrapped(), around));
+    }
+
+    #[test]
+    fn a_lowered_card_under_no_card_of_the_row_above_sinks() {
+        let plan = plan(&[("hub", 0), ("peer", 0), ("astray", 1)]);
+        assert!(sinks(&plan, &wrapped(), around));
+    }
 }

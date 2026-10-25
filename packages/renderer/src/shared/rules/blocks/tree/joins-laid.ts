@@ -1,9 +1,12 @@
-// The joins choice laid out side by side (`joins.ts` weighs it): every
-// layout the choice reads, as far as the layouts answered so far decide, is
-// asked for at once, and weighed as each comes, in the order laying them out
-// one by one weighs them, so the drawing is the one that order gives.
-import { drawsBetter, type Drawn, type Joined } from "#shared/rules/blocks/tree/joins.ts";
-import type { Page } from "#shared/rules/blocks/tree/weighing.ts";
+// The joins choice laid out side by side. Lines that join on the way to one
+// card stay one line into it: each such join is kept whole by its labels
+// before the join, or by its lines keeping ports of their own, and the joins
+// whose labels would move to one block take one way together. Each such
+// block takes the way that reads better in the drawing as a whole, as the
+// caller weighs it (the renderer core's `drawsBetter`). Every layout the
+// choice reads, as far as the layouts answered so far decide, is asked for
+// at once, and weighed as each comes, in the order laying them out one by one
+// weighs them, so the drawing is the one that order gives.
 
 /**
  * A set with one member taken out, or put in when it was not there.
@@ -20,8 +23,10 @@ function toggled(set: ReadonlySet<string>, member: string): Set<string> {
 /** Lay a drawing out with some blocks' joins apart, by block id, unless called off first. */
 type Lay<Placed> = (apart: ReadonlySet<string>, signal: AbortSignal) => Promise<Placed>;
 
-/** A drawing as a solve answers it: whether facing every block's walls would change it (`place.ts`). */
-type Facing = Page & { readonly faces?: boolean | undefined };
+/** A drawing as a solve answers it: whether facing every block's walls would change it. */
+interface Facing {
+	readonly faces?: boolean | undefined;
+}
 
 /** One layout asked for: its answer once it came, how to call it off, and whether a turn to come weighs it. */
 interface Asked<Placed> {
@@ -134,19 +139,19 @@ interface Awaited {
 }
 
 /** What the joins choice reads next: the layouts it weighs, and what it waits for or the drawing it chose. */
-interface Weighing<Placed extends Page> {
+interface Weighing<Placed> {
 	/** Every layout it weighs, as far as the answers that came decide which. */
 	readonly needed: readonly ReadonlySet<string>[];
 	/** The layout facing the blocks' walls it weighs, if any. */
 	readonly faced: readonly ReadonlySet<string>[];
 	/** The first layout it waits for, or the drawing it chose once it waits for none. */
-	readonly next: Awaited | Drawn<Placed>;
+	readonly next: Awaited | { readonly placed: Placed };
 }
 
 /** The turns weighed so far: every layout they read, the drawing kept, and the first layout they wait for. */
-interface Turned<Placed extends Page> {
+interface Turned<Placed> {
 	readonly needed: ReadonlySet<string>[];
-	readonly best: Drawn<Placed>;
+	readonly best: Placed;
 	readonly apart: ReadonlySet<string>;
 	readonly waits: Awaited | undefined;
 }
@@ -158,35 +163,33 @@ interface Answered<Placed> {
 }
 
 /** Whether one drawing reads better than another. */
-type Better<Placed extends Page> = (one: Drawn<Placed>, other: Drawn<Placed>) => boolean;
+type Better<Placed> = (one: Placed, other: Placed) => boolean;
 
 /**
  * Weigh each turn from the drawing kept, kept where it reads better. A turn
  * whose layout has not come is waited for and read as if it read worse,
  * which most turns do: the turns after it are then the ones it would weigh.
- * @param tree The blocks.
  * @param turns Each turn, from the blocks apart in the drawing kept.
  * @param laid Each layout's answer, once it came.
  * @param better Whether one drawing reads better than another.
  * @param first The drawing with every join before its labels.
  * @returns The turns weighed.
  */
-function turned<Placed extends Page>(
-	tree: Joined,
+function turned<Placed>(
 	turns: readonly ((apart: ReadonlySet<string>) => Set<string>)[],
 	laid: Answered<Placed>["laid"],
 	better: Better<Placed>,
 	first: Placed,
 ): Turned<Placed> {
 	const needed: ReadonlySet<string>[] = [new Set()];
-	let [best, apart]: [Drawn<Placed>, ReadonlySet<string>] = [{ tree, placed: first }, new Set()];
+	let [best, apart]: [Placed, ReadonlySet<string>] = [first, new Set()];
 	let waits: Awaited | undefined;
 	for (const turn of turns) {
 		const trial = turn(apart);
 		needed.push(trial);
 		const placed = laid(trial);
 		if (placed === undefined) waits ??= { apart: trial, facing: false };
-		else if (better({ tree, placed }, best)) [best, apart] = [{ tree, placed }, trial];
+		else if (better(placed, best)) [best, apart] = [placed, trial];
 	}
 	return { needed, best, apart, waits };
 }
@@ -199,38 +202,35 @@ function turned<Placed extends Page>(
  * @param chosen The drawing it chooses once it waits for nothing.
  * @returns The weighing.
  */
-function waitingOr<Placed extends Page>(
+function waitingOr<Placed>(
 	needed: readonly ReadonlySet<string>[],
 	faced: readonly ReadonlySet<string>[],
 	waits: Awaited | undefined,
-	chosen: Drawn<Placed>,
+	chosen: Placed,
 ): Weighing<Placed> {
-	return { needed, faced, next: waits ?? chosen };
+	return { needed, faced, next: waits ?? { placed: chosen } };
 }
 
 /**
  * The turns weighed, and last the drawing kept laid out facing its blocks'
  * walls where that would change it, kept where it reads better as a turn
  * does.
- * @param tree The blocks.
  * @param turns The turns weighed.
  * @param faced Each layout facing the blocks' walls, once it came; none where the drawing never faces them.
  * @param better Whether one drawing reads better than another.
  * @returns What the choice reads next.
  */
 function facedChoice<Placed extends Facing>(
-	tree: Joined,
 	turns: Turned<Placed>,
 	faced: Answered<Placed>["faced"],
 	better: Better<Placed>,
 ): Weighing<Placed> {
 	const { needed, best, apart, waits } = turns;
-	if (faced === undefined || best.placed.faces !== true) return waitingOr(needed, [], waits, best);
+	if (faced === undefined || best.faces !== true) return waitingOr(needed, [], waits, best);
 	const placed = faced(apart);
 	if (placed === undefined)
 		return waitingOr(needed, [apart], waits ?? { apart, facing: true }, best);
-	const turnedTo = { tree, placed };
-	return waitingOr(needed, [apart], waits, better(turnedTo, best) ? turnedTo : best);
+	return waitingOr(needed, [apart], waits, better(placed, best) ? placed : best);
 }
 
 /**
@@ -240,14 +240,12 @@ function facedChoice<Placed extends Facing>(
  * Until the first layout comes, the choice waits for it and reads the turns
  * from it. A turn answered after all is weighed again with the rest, so the
  * drawing is the one laying them out one by one gives.
- * @param tree The blocks.
  * @param turns Each turn, from the blocks apart in the drawing kept.
  * @param answered Each layout's answer, once it came.
  * @param better Whether one drawing reads better than another.
  * @returns What the choice reads next.
  */
 function weighed<Placed extends Facing>(
-	tree: Joined,
 	turns: readonly ((apart: ReadonlySet<string>) => Set<string>)[],
 	answered: Answered<Placed>,
 	better: Better<Placed>,
@@ -260,28 +258,24 @@ function weighed<Placed extends Facing>(
 			faced: answered.faced === undefined ? [] : [none],
 			next: { apart: none, facing: false },
 		};
-	return facedChoice(
-		tree,
-		turned(tree, turns, answered.laid, better, first),
-		answered.faced,
-		better,
-	);
+	return facedChoice(turned(turns, answered.laid, better, first), answered.faced, better);
 }
 
 /**
- * Whether one drawing reads better than another ({@link drawsBetter}), each
- * pair weighed once however often the choice weighs it again.
+ * Whether one drawing reads better than another, each pair weighed once
+ * however often the choice weighs it again.
+ * @param better Whether one drawing reads better than another.
  * @returns The weighing.
  */
-function weighingOnce<Placed extends Page>(): Better<Placed> {
+function weighingOnce<Placed extends object>(better: Better<Placed>): Better<Placed> {
 	const known = new WeakMap<Placed, WeakMap<Placed, boolean>>();
 	return (one, other) => {
-		const row = known.get(one.placed) ?? new WeakMap<Placed, boolean>();
-		known.set(one.placed, row);
-		const found = row.get(other.placed);
+		const row = known.get(one) ?? new WeakMap<Placed, boolean>();
+		known.set(one, row);
+		const found = row.get(other);
 		if (found !== undefined) return found;
-		const answer = drawsBetter(one, other);
-		row.set(other.placed, answer);
+		const answer = better(one, other);
+		row.set(other, answer);
 		return answer;
 	};
 }
@@ -289,11 +283,11 @@ function weighingOnce<Placed extends Page>(): Better<Placed> {
 /**
  * The turns of the joins choice: every join apart, where more than one block
  * joins, and then each block's joins turned the other way in turn.
- * @param tree The blocks.
+ * @param joining The blocks joins move labels to, by id.
  * @returns Each turn, from the blocks apart in the drawing kept.
  */
-function turnsOf(tree: Joined): ((apart: ReadonlySet<string>) => Set<string>)[] {
-	const blocks = [...tree.joining];
+function turnsOf(joining: readonly string[]): ((apart: ReadonlySet<string>) => Set<string>)[] {
+	const blocks = [...joining];
 	return [
 		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
 		...blocks.map(
@@ -379,27 +373,29 @@ function neverLaid<Placed>(): Laying<Placed> {
  * Plane, native hosts, Blocks). Faced to its walls in every way of keeping
  * the joins, Two doors to a turn (Blocks) drew less line than the way that
  * crossed 14 lines fewer, and this choice could no longer take that way.
- * @param tree The blocks, which name the blocks joins move labels to.
+ * @param joining The blocks joins move labels to, by id.
+ * @param better Whether one drawing reads better than another.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
- * @param face Lay it out so with every block facing its walls (`BlockTree`);
- * none where the drawing never faces them.
+ * @param face Lay it out so with every block facing its walls; none where
+ * the drawing never faces them.
  * @returns The drawing laid out best.
  */
-async function layJoined<Placed extends Facing>(
-	tree: Joined,
+async function layJoined<Placed extends Facing & object>(
+	joining: readonly string[],
+	better: Better<Placed>,
 	lay: Lay<Placed>,
 	face?: Lay<Placed>,
-): Promise<Drawn<Placed>> {
+): Promise<Placed> {
 	const laying = layingOnce(lay);
 	const faced = face === undefined ? neverLaid<Placed>() : layingOnce(face);
 	const answered = { laid: laying.answered, faced: face && faced.answered };
-	const [turns, better] = [turnsOf(tree), weighingOnce<Placed>()];
+	const [turns, once] = [turnsOf(joining), weighingOnce(better)];
 	try {
 		for (;;) {
-			const { needed, faced: facing, next } = weighed(tree, turns, answered, better);
+			const { needed, faced: facing, next } = weighed(turns, answered, once);
 			askingOnly(laying, needed);
 			askingOnly(faced, facing);
-			if ("placed" in next) return next;
+			if ("placed" in next) return next.placed;
 			const waited = (next.facing ? faced : laying).ask(next.apart);
 			// oxlint-disable-next-line no-await-in-loop -- each answer decides what the choice reads next
 			await Promise.race([waited, ...unanswered(laying, needed), ...unanswered(faced, facing)]);

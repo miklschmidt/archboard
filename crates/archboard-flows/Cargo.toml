@@ -10,6 +10,8 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+# How often a flowchart's lines cross, counted as the board layout counts them.
+archboard-layout = { path = "../archboard-layout" }
 archboard-scene = { path = "../archboard-scene" }
 serde = { version = "1", features = ["derive"] }
 

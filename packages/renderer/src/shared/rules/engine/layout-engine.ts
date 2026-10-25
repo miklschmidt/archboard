@@ -1,15 +1,14 @@
 // Pure layout shared by the Bun and browser workers. Hosts initialize
 // Graphviz through `loadLayoutEngine`, which puts back what it held as loaded
-// before every solve. The renderer core lays Track boards out and asks this
-// host's Graphviz for each graph it ranks (ADR 0057, TASK-520.04).
-import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
+// before every solve. The renderer core lays every board out, Track and
+// Blocks, and asks this host's Graphviz for each graph it ranks (ADR 0057,
+// TASK-520.04, TASK-520.05).
+import type { ElkNode } from "@archboard/elk-rs";
 import type { Graph, Viz } from "@viz-js/viz";
 import {
-	layOutTrack,
+	layOutBoard,
 	type GraphvizHost,
 } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
-import { placeBlocks } from "#shared/rules/blocks/tree/place.ts";
-import { SOLVE_STAGE } from "#shared/rules/render/host.ts";
 
 /**
  * Bind an initialized Graphviz without I/O or environment-specific loading.
@@ -33,20 +32,12 @@ export function createLayoutEngine(viz: Viz) {
 				{ yInvert: true, format: "json0" },
 			),
 	};
-	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
-		const stage = options[SOLVE_STAGE];
-		if (stage === "track") {
-			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it answers the root of an ELK node
-			return JSON.parse(layOutTrack(JSON.stringify(graph), graphviz)) as ElkNode;
-		}
-		if (stage === "blocks") return placeBlocks(viz, graph);
-		throw new Error(
-			`A solve names its stage in ${SOLVE_STAGE}, "track" or "blocks"; this one said ${String(stage)}.`,
-		);
-	};
+	return (graph: ElkNode): ElkNode =>
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it answers the root of an ELK node
+		JSON.parse(layOutBoard(JSON.stringify(graph), graphviz)) as ElkNode;
 }
 
-/** One solve: a measured graph and its options in, its geometry out. */
+/** One solve: a measured graph, its root options naming how it is laid out, in; its geometry out. */
 type LayoutEngine = ReturnType<typeof createLayoutEngine>;
 
 /**
@@ -130,9 +121,8 @@ function heldBytes(memory: WebAssembly.Memory): Uint8Array {
  * every solve's objects the same places, so a solve's answer is decided by
  * its graph and options alone, not by which worker answered it or what that
  * worker solved before. What is put back is a few hundred kilobytes, which
- * costs microseconds. The renderer core, which lays Track boards out and
- * routes the trunks, holds no state between calls, and a host loads it before
- * this (ADR 0057).
+ * costs microseconds. The renderer core, which lays every board out, holds
+ * no state between calls, and a host loads it before this (ADR 0057).
  * @param load Instantiates Graphviz, answering its instance. It must
  * instantiate it itself: an engine loaded earlier has nothing as loaded to
  * go back to.
@@ -158,8 +148,8 @@ export async function loadLayoutEngine(load: () => Promise<Viz>): Promise<Layout
 	}
 	const solve = createLayoutEngine(viz);
 	const asLoaded = memories.map((memory) => ({ memory, held: heldBytes(memory) }));
-	return (graph, options) => {
+	return (graph) => {
 		for (const { memory, held } of asLoaded) new Uint8Array(memory.buffer).set(held);
-		return solve(graph, options);
+		return solve(graph);
 	};
 }

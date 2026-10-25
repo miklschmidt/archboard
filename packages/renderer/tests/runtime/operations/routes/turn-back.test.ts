@@ -1,5 +1,5 @@
 // A line that steps aside past a label and back is closed onto one column
-// where the label can move (`jogs.ts` `turnsBack`). What this catches: a
+// where the label can move (crates/archboard-layout/src/track/jogs.rs `turns_back`). What this catches: a
 // labelled line that runs out one way to its label and back the other way to
 // reach its card, since the step back was wider than a kink. Reduced from a
 // dogfood board: in Command interface (Blocks) 'the stated board, doing and

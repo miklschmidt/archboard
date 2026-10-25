@@ -6,6 +6,7 @@ version = 4
 name = "archboard-flows"
 version = "0.0.0"
 dependencies = [
+ "archboard-layout",
  "archboard-scene",
  "serde",
  "serde_json",
@@ -15,6 +16,7 @@ dependencies = [
 name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
+ "archboard-router",
  "archboard-scene",
  "indexmap",
  "rustc-hash",
@@ -28,7 +30,6 @@ version = "0.0.0"
 dependencies = [
  "archboard-flows",
  "archboard-layout",
- "archboard-router",
  "archboard-scene",
  "archboard-svg",
  "js-sys",
