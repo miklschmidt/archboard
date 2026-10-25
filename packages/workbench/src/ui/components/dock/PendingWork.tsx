@@ -6,7 +6,7 @@
 import { RiArrowDownLine, RiArrowUpLine, RiCloseLine, RiSendPlaneLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { HeldMessage } from "#ui/state/agent-setup/held.ts";
 import type { SetupStep } from "#ui/state/agent-setup/setup.ts";
 import { ApprovalCard } from "#ui/components/panel/ApprovalCard.tsx";

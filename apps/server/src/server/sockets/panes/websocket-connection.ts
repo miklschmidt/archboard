@@ -4,17 +4,15 @@ import { WebSocket, WebSocketServer } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,
-	codexWiring,
 	type BrowserConnectionInstance,
 	parseTabSessionId,
 	type TabSessionId,
-	forgetTabSession,
-	noteTabSession,
-} from "@archboard/workbench/server";
+} from "@archboard/codex-realtime-voice/server";
+import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
 import {
 	agentActivity,
 	tellPaneAboutLock,

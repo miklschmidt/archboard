@@ -1,5 +1,5 @@
 import { createCodexCoordinatorCallbacks } from "#runtime/services/coordinator-callbacks/callbacks.ts";
-import { createCoordinatorCallbackRealtimePort } from "#runtime/services/coordinator-callbacks/realtime.ts";
+import { createCoordinatorCallbackRealtimePort } from "@archboard/codex-realtime-voice/runtime";
 import {
 	type CoordinatorCallbackCurrentChild,
 	type CoordinatorCallbackLinkCorrelation,
@@ -10,18 +10,18 @@ import {
 	type CoordinatorCallbackRealtimeRequest,
 	type CoordinatorCallbackTurnPort,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { COORDINATOR_CAPABILITY_POLICY } from "#runtime/protocol/coordinator/contract.ts";
-import type { EpochExecutionProof } from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
+import { COORDINATOR_CAPABILITY_POLICY } from "@archboard/codex-realtime-voice/runtime";
+import type { EpochExecutionProof } from "@archboard/codex-realtime-voice/runtime";
+import type { EpochOperationRecord } from "@archboard/codex-realtime-voice/runtime";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	semanticInput,
 	semanticSources,
 	type SemanticSources,
 } from "#tests/runtime/services/coordinator-callbacks/semantic-sources.ts";
-import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkClassification } from "@archboard/codex-realtime-voice/runtime";
 import type { ReverseResponse } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operations/contract.ts";
+import type { WorkhorseOperationEvent } from "@archboard/codex-realtime-voice/runtime";
 import {
 	restoreIdentityAuthorities,
 	type IdentityAuthorities,
@@ -30,7 +30,7 @@ import {
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/codex-realtime-voice/realtime";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;

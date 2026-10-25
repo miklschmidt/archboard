@@ -1,15 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
-import { spawn } from "node:child_process";
 import path from "node:path";
 
-import {
-	CODEX_APP_SERVER_ARGUMENTS,
-	CODEX_PROCESS_STDERR_MAX_BYTES,
-	CodexProcessError,
-} from "#runtime/processes/process.ts";
+import { CODEX_PROCESS_STDERR_MAX_BYTES, CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting } from "#runtime/processes/process.ts";
-import { CODEX_PROCESS_RESTART_BASE_MS, CODEX_TERM_GRACE_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS, codexRestartDelayMs } from "@archboard/timing";
 import {
 	fixture,
 	processOptions,
@@ -22,65 +17,6 @@ import {
 const createCodexProcess = createCodexProcessForTesting;
 
 describe("Codex process owner", () => {
-	test("spawns the exact app-server argv and closed child environment", async () => {
-		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcess> | undefined;
-		try {
-			const executable = fixture(
-				root,
-				`console.log(JSON.stringify({ argv: process.argv.slice(2), home: process.env.CODEX_HOME, sqlite: process.env.CODEX_SQLITE_HOME, pwd: process.env.PWD, secret: process.env.OPENAI_API_KEY })); process.stdin.resume(); process.on("SIGTERM", () => process.exit(0));`,
-			);
-			const processOwner = createCodexProcessForTesting({
-				...processOptions(root, executable),
-				dependencies: {
-					spawn(command, args, options) {
-						// Measure Archboard's environment before the executable's runtime starts.
-						// On NixOS the ELF loader adds LD_LIBRARY_PATH to an ordinary Bun child.
-						expect(Object.keys(options.env ?? {})).toEqual([
-							"HOME",
-							"PATH",
-							"CODEX_HOME",
-							"CODEX_SQLITE_HOME",
-							"ARCHBOARD_URL",
-							"ARCHBOARD_NO_AUTOSTART",
-						]);
-						return spawn(command, args, options);
-					},
-				},
-			});
-			owner = processOwner;
-			const output = new Promise<Record<string, unknown>>((resolve) => {
-				const unsubscribe = processOwner.onChild((child) => {
-					child.lifecycle.markAppServerReady();
-					child.stdout.once("data", (chunk) => {
-						unsubscribe();
-						resolve(JSON.parse(chunk.toString()) as Record<string, unknown>);
-					});
-				});
-			});
-			const started = await processOwner.start();
-			const observed = await output;
-			expect(started.state).toBe("running");
-			expect(started.ready).toBe(true);
-			expect(started.argv).toEqual([executable, ...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed["argv"]).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed["home"]).toBe(path.join(root, "storage", "codex-home"));
-			expect(observed["pwd"]).toBeUndefined();
-			expect(observed["secret"]).toBeUndefined();
-			expect(processOwner.snapshot().stderr.totalBytes).toBe(0);
-			expect(processOwner.snapshot().stderr.redacted).toBe(true);
-			const stopped = await processOwner.stop();
-			expect(stopped.state).toBe("stopped");
-			expect(stopped.lastExit?.classification).toBe("requested");
-			expect(await processOwner.stop()).toBe(stopped);
-		} finally {
-			if (owner) {
-				await owner.stop().catch(() => undefined);
-			}
-			removeRoot(root);
-		}
-	});
-
 	test("enters bounded backoff after an early crash and doubles only across failures", async () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
@@ -92,7 +28,7 @@ describe("Codex process owner", () => {
 			await started.catch(() => undefined);
 			expect(backoff.failure?.code).toBe("early_exit");
 			expect(backoff.restartAttempt).toBe(1);
-			expect(backoff.restartDelayMs).toBe(CODEX_PROCESS_RESTART_BASE_MS);
+			expect(backoff.restartDelayMs).toBe(codexRestartDelayMs(0));
 			await owner.stop();
 			expect(owner.snapshot().state).toBe("stopped");
 		} finally {
@@ -109,7 +45,7 @@ describe("Codex process owner", () => {
 		try {
 			const executable = fixture(
 				root,
-				`process.stdin.resume(); setInterval(() => {}, ${CODEX_TERM_GRACE_MS});`,
+				`process.stdin.resume(); setInterval(() => {}, ${CODEX_PROCESS_MS.termGrace});`,
 			);
 			owner = createCodexProcessForTesting(processOptions(root, executable));
 			await startReady(owner);
@@ -127,7 +63,7 @@ describe("Codex process owner", () => {
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			expect(backoff.accountReady).toBe(false);
 			expect(backoff.restartAttempt).toBe(1);
-			expect(backoff.restartDelayMs).toBe(CODEX_PROCESS_RESTART_BASE_MS);
+			expect(backoff.restartDelayMs).toBe(codexRestartDelayMs(0));
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);

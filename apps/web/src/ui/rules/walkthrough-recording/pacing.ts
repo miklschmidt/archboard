@@ -12,15 +12,8 @@
 //
 // Pure: each tick the page observes the voice and the pane and asks what to do.
 
-import {
-	RECORDING_LEAD_MS,
-	RECORDING_QUIET_MS,
-	RECORDING_SPEECH_START_MS,
-	RECORDING_STEP_MAX_MS,
-	RECORDING_TAIL_MS,
-	RECORDING_VOICE_START_MS,
-} from "@archboard/timing";
-import type { BrowserSnapshot } from "@archboard/workbench/browser-contract";
+import { RECORDING_MS } from "@archboard/timing";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 
 /**
@@ -134,11 +127,11 @@ function paceStart(
 	if (observed.voice.kind === "live") {
 		return { state: { kind: "lead", since: observed.now }, action: { kind: "begin" } };
 	}
-	if (observed.now - state.since <= RECORDING_VOICE_START_MS) {
+	if (observed.now - state.since <= RECORDING_MS.voiceStart) {
 		return { state, action: NOTHING };
 	}
 	return failed(
-		`Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
+		`Voice did not go live within ${RECORDING_MS.voiceStart / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
 	);
 }
 
@@ -184,19 +177,19 @@ interface StepReading {
 function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const step = beat + 1;
 	const { waited } = reading;
-	if (!reading.landed && waited > RECORDING_SPEECH_START_MS) {
+	if (!reading.landed && waited > RECORDING_MS.speechStart) {
 		return failed(
 			`Step ${step} never finished arriving on screen. Check that the board still states the walkthrough and that step, then record again.`,
 		);
 	}
-	if (reading.spoken.length === 0 && waited > RECORDING_SPEECH_START_MS) {
+	if (reading.spoken.length === 0 && waited > RECORDING_MS.speechStart) {
 		return failed(
-			`The voice said nothing about step ${step} within ${RECORDING_SPEECH_START_MS / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
+			`The voice said nothing about step ${step} within ${RECORDING_MS.speechStart / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
 		);
 	}
-	return waited > RECORDING_STEP_MAX_MS
+	return waited > RECORDING_MS.stepMax
 		? failed(
-				`The voice was still explaining step ${step} after ${RECORDING_STEP_MAX_MS / 60_000} minutes. Shorten that step, then record again.`,
+				`The voice was still explaining step ${step} after ${RECORDING_MS.stepMax / 60_000} minutes. Shorten that step, then record again.`,
 			)
 		: null;
 }
@@ -253,7 +246,7 @@ function paceStep(
 	const late = overdue(state.beat, reading);
 	if (late !== null) return late;
 	const quiet = quietSince(state, reading, observed);
-	if (place === null || quiet === null || observed.now - quiet < RECORDING_QUIET_MS) {
+	if (place === null || quiet === null || observed.now - quiet < RECORDING_MS.quiet) {
 		return { state: { ...state, landed: reading.landed, quietSince: quiet }, action: NOTHING };
 	}
 	return after(state.beat, place.of, observed);
@@ -288,8 +281,8 @@ function paceLive(
 ): PaceTurn {
 	if (state.kind === "step") return paceStep(state, observed);
 	if (state.kind === "lead")
-		return held(state, observed, RECORDING_LEAD_MS, () => showing(0, observed));
-	return held(state, observed, RECORDING_TAIL_MS, () => ({
+		return held(state, observed, RECORDING_MS.lead, () => showing(0, observed));
+	return held(state, observed, RECORDING_MS.tail, () => ({
 		state: { kind: "done" },
 		action: { kind: "finish" },
 	}));

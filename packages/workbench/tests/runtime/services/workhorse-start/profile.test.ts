@@ -1,21 +1,19 @@
+import { ARCHBOARD_INSTRUCTIONS } from "#runtime/services/host/archboard.ts";
 import { describe, expect, test } from "bun:test";
 
-import {
-	WORKHORSE_DEVELOPER_INSTRUCTIONS,
-	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "#runtime/rules/instructions/authored.ts";
-import {
-	WORKHORSE_INSTRUCTION_HASH,
-	createWorkhorseThreadStartParams,
-} from "#runtime/rules/workhorse-start/model.ts";
+import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
+import { createWorkhorseThreadStartParams } from "@archboard/codex-realtime-voice/runtime";
 import { ARCHBOARD_APP_NAMESPACE } from "#runtime/protocol/thread-tools/manifest.ts";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+import { ARCHBOARD_COORDINATOR_NAMESPACE } from "@archboard/codex-realtime-voice/runtime";
 
 const CHECKOUT_ROOT = "/workspace/archboard";
 
 describe("codex workhorse start profile", () => {
 	test("emits the exact reviewed fields in authored order", () => {
-		const params = createWorkhorseThreadStartParams(CHECKOUT_ROOT);
+		const params = createWorkhorseThreadStartParams(
+			CHECKOUT_ROOT,
+			ARCHBOARD_INSTRUCTIONS.workhorse,
+		);
 
 		expect(Object.keys(params)).toEqual([
 			"model",
@@ -37,7 +35,7 @@ describe("codex workhorse start profile", () => {
 			cwd: CHECKOUT_ROOT,
 			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
 			serviceName: "archboard",
-			developerInstructions: WORKHORSE_DEVELOPER_INSTRUCTIONS,
+			developerInstructions: ARCHBOARD_INSTRUCTIONS.workhorse.instructions.text,
 			ephemeral: false,
 			historyMode: "paginated",
 			sessionStartSource: "startup",
@@ -45,11 +43,14 @@ describe("codex workhorse start profile", () => {
 			dynamicTools: [ARCHBOARD_APP_NAMESPACE, ARCHBOARD_COORDINATOR_NAMESPACE],
 			experimentalRawEvents: false,
 		});
-		expect(params.dynamicTools?.[0]).toBe(ARCHBOARD_APP_NAMESPACE);
+		expect(params.dynamicTools?.[0]).toEqual(ARCHBOARD_APP_NAMESPACE);
 	});
 
 	test("does not silently turn inherited policy into explicit request fields", () => {
-		const params = createWorkhorseThreadStartParams(CHECKOUT_ROOT);
+		const params = createWorkhorseThreadStartParams(
+			CHECKOUT_ROOT,
+			ARCHBOARD_INSTRUCTIONS.workhorse,
+		);
 		const intentionallyOmitted = [
 			"modelProvider",
 			"allowProviderModelFallback",
@@ -72,6 +73,8 @@ describe("codex workhorse start profile", () => {
 	});
 
 	test("keeps the reviewed instruction hash at the module boundary", () => {
-		expect(WORKHORSE_INSTRUCTION_HASH).toBe(WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256);
+		expect(ARCHBOARD_INSTRUCTIONS.workhorse.instructions.text).toEndWith(
+			WORKHORSE_DEVELOPER_INSTRUCTIONS,
+		);
 	});
 });

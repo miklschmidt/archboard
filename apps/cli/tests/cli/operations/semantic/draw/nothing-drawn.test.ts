@@ -34,9 +34,8 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { runCli }] = await Promise.all([
+const [config, { runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
 ]);
 if (config.ARCHBOARD_URL !== url) {
@@ -44,7 +43,7 @@ if (config.ARCHBOARD_URL !== url) {
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);
 }
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {

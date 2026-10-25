@@ -18,7 +18,7 @@ import { readSemanticBoard } from "#runtime/operations/read/read.ts";
 import { locateSemanticBoard } from "#runtime/store/location.ts";
 import { BoardCreateInputSchema, VariantEditInputSchema } from "#shared/protocol/board-input.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
-import * as timing from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-semantic-store-"));
 
@@ -66,7 +66,7 @@ const namesOn = (board: SemanticBoard) =>
 async function advanceLockTime(ms: number): Promise<void> {
 	let elapsed = 0;
 	while (elapsed < ms) {
-		const step = Math.min(timing.LOCK_POLL_MS, ms - elapsed);
+		const step = Math.min(BOARD_LOCK_MS.poll, ms - elapsed);
 		await Promise.resolve();
 		await Promise.resolve();
 		jest.advanceTimersByTime(step);
@@ -325,7 +325,7 @@ describe("one writer at a time, over the whole board", () => {
 				),
 				expectedVersion: 1,
 			});
-			await advanceLockTime(timing.LOCK_WAIT_CAP_MS);
+			await advanceLockTime(BOARD_LOCK_MS.waitCap);
 			const refused = await refusal;
 			expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_HELD");
 			expect(readFileSync(location.file, "utf-8")).toBe(before);

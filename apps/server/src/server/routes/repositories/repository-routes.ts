@@ -41,7 +41,8 @@ import {
 	vaultIn,
 } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
-import { CheckoutChoiceSchema, type CheckoutChoice } from "@archboard/workspace/repositories";
+import type { z } from "zod";
+import { CheckoutChoiceSchema } from "@archboard/workspace/repositories";
 
 /**
  * The repositories, as the navigator lists them.
@@ -99,7 +100,7 @@ function refuseUnknownCheckout(res: Response, repository: string, root: string):
  * @param res Its response, which carries the refusal when there is one.
  * @returns The repository and the checkout, or null once refused.
  */
-function statedChoice(req: Request, res: Response): CheckoutChoice | null {
+function statedChoice(req: Request, res: Response): z.infer<typeof CheckoutChoiceSchema> | null {
 	const parsed = CheckoutChoiceSchema.safeParse(req.body);
 	if (!parsed.success) {
 		res.status(400).json({

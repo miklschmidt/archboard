@@ -7,18 +7,15 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
-import {
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CodeFinding,
-	CheckTimingSchema,
-} from "@archboard/code-intel/code-check";
-import {
-	DEFAULT_SEMANTIC_POLICY,
-	VaultCheckSchema,
-	type VaultCheck,
-} from "@archboard/board/policy";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
+
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -118,9 +115,8 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { runCli }] = await Promise.all([
+const [config, { runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
 ]);
 if (config.ARCHBOARD_URL !== url) {
@@ -128,7 +124,7 @@ if (config.ARCHBOARD_URL !== url) {
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);
 }
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {
@@ -177,7 +173,7 @@ test("check --code asks the plain check, then the code check, and a board behind
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check"]);
 	const result = VaultCheckSchema.extend({
-		timings: CheckTimingSchema.array(),
+		timings: CodeCheckAnswerSchema.shape.timings,
 		codeCheck: CodeCheckAnswerSchema,
 	}).parse(JSON.parse(stdout));
 	expect(result.diagnostics).toEqual([]);
@@ -306,7 +302,7 @@ test("check without --code never asks the code check", async () => {
 	const { stdout, stderr, exited } = await run(["check"]);
 	expect(exited).toBe(0);
 	expect(asked).toEqual(["/api/vault/check"]);
-	const result = VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).parse(
+	const result = VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings }).parse(
 		JSON.parse(stdout),
 	);
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");

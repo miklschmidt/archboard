@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { claimBoard, releaseBoardClaim } from "@archboard/server-lifecycle/server-client";
+import { claimBoard, releaseBoardClaim } from "#cli/clients/server/board-claim.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { claimRefusals, commonRefusals } from "#cli/protocol/contract/refusals.ts";
 

@@ -6,12 +6,10 @@
 import fs from "fs";
 import path from "path";
 
-import { git, type GitOptions } from "#runtime/clients/git-command.ts";
-import { GitCommandError } from "#runtime/clients/git-failure.ts";
-import type { GitFailure } from "#runtime/clients/git-failure.ts";
+import { git, GitCommandError } from "@archboard/process/git";
 
 /** How a caller cancels a Git inspection. */
-type InspectOptions = Pick<GitOptions, "signal" | "timeoutMs">;
+type InspectOptions = Pick<NonNullable<Parameters<typeof git>[2]>, "signal" | "timeoutMs">;
 
 /**
  * Turn a git remote URL into a stable identity: host/owner/name, with the
@@ -278,9 +276,6 @@ export {
 	type CheckoutHead,
 	worktreePaths,
 	checkoutHead,
-	type GitFailure,
-	GitCommandError,
-	git,
 	repoIdentityFromRemote,
 	existingDir,
 	repoRootOf,

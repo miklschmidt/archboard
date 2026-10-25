@@ -6,8 +6,8 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
-import type { BrowserWorkhorses } from "#shared/schemas/browser/snapshot.ts";
-import { ToggleGroup, ToggleGroupItem } from "@archboard/ui-kit/controls";
+import type { BrowserWorkhorses } from "@archboard/codex-realtime-voice/contract";
+import { ToggleGroup } from "@archboard/ui-kit/components";
 
 /** One workhorse as the list draws it. */
 type Workhorse = BrowserWorkhorses["entries"][number];
@@ -48,14 +48,14 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 				className="w-full"
 			>
 				{workhorses.entries.map((entry) => (
-					<ToggleGroupItem
+					<ToggleGroup.Item
 						key={entry.checkout}
 						value={entry.checkout}
 						title={entry.checkout}
 						className="h-auto justify-start py-1 text-left"
 					>
 						<WorkhorseLabel workhorse={entry} />
-					</ToggleGroupItem>
+					</ToggleGroup.Item>
 				))}
 			</ToggleGroup>
 		</div>

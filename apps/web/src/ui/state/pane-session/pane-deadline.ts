@@ -7,7 +7,7 @@
 // the compromise, and `immediate` is the escape for the one case that cannot
 // wait — a pane arriving on a board, which the next CLI turn reads.
 
-import { PANE_DEBOUNCE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 
 /** A clock the deadline schedules against; the browser's by default. */
 interface PaneDeadlineClock {
@@ -92,7 +92,7 @@ function createPaneReportDeadline(
 			send();
 			return;
 		}
-		handle = clock.set(PANE_DEBOUNCE_MS, () => {
+		handle = clock.set(PANE_MS.report, () => {
 			handle = null;
 			send();
 		});

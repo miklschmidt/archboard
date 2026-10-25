@@ -2,7 +2,7 @@
 	"name": "@archboard/workbench",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The Codex workbench: the coordinator, the workhorses, the conversation and the voice. It holds the browser-safe contracts that the browser and the server exchange, the Codex runtime (the foundation, the coordinator with its callbacks, tool calls and spoken approval, and the workhorses), the server side (the gateway that serves the browser connections, the pane registry and tab sessions, the sessions, generations and owners that wire the runtime into the server, and the projection of the workbench into the snapshot a pane renders) and the browser UI (the transport, the conversation, the composer and the realtime media, the dock and panel, the approvals, the queue, the agent setup and the voice).",
+	"description": "Archboard integration for the reusable Codex agent workbench: board context, vault admission, domain tools, narration, pane services, and the browser shell.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -12,6 +12,7 @@
 	"exports": {
 		"./browser-contract": "./src/shared/api/browser-contract.ts",
 		"./runtime": "./src/runtime/api/runtime.ts",
+		"./semantic-context": "./src/runtime/api/semantic-context.ts",
 		"./server": "./src/server/api/server.ts",
 		"./panes": "./src/server/api/panes.ts",
 		"./host": "./src/server/api/host.ts",

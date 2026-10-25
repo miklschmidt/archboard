@@ -127,21 +127,25 @@ async function openApplicationSocket(
 		readonly tabSession?: string;
 		/** The vault the pane names; the one the server at `base` reports unless stated. */
 		readonly vault?: string;
+		/** An independent host's exact socket endpoint, without Archboard pane discovery. */
+		readonly endpoint?: string;
 	} = {},
 ): Promise<ApplicationSocket> {
-	const endpoint = new URL(base);
+	const endpoint = new URL(options.endpoint ?? base);
 	// The pane names the one vault the server reports, as the browser does.
-	const vault =
-		options.vault ??
-		(
-			(await (await fetch(new URL("/api/served-vault", base))).json()) as {
-				vault: string;
-			}
-		).vault;
+	if (options.endpoint === undefined) {
+		const vault =
+			options.vault ??
+			(
+				(await (await fetch(new URL("/api/served-vault", base))).json()) as {
+					vault: string;
+				}
+			).vault;
+		endpoint.searchParams.set("clientId", clientId);
+		endpoint.searchParams.set("vault", vault);
+		endpoint.searchParams.set("tabSession", options.tabSession ?? "system-tab");
+	}
 	endpoint.protocol = "ws:";
-	endpoint.searchParams.set("clientId", clientId);
-	endpoint.searchParams.set("vault", vault);
-	endpoint.searchParams.set("tabSession", options.tabSession ?? "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<
 		string,

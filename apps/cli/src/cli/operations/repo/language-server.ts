@@ -8,7 +8,6 @@ import {
 	type RegisteredRepo,
 	ConfiguredServerSchema,
 	LanguageServersSchema,
-	type ConfiguredServer,
 } from "@archboard/workspace/checkouts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { commandLine } from "#cli/rules/repo/command-line.ts";
@@ -158,7 +157,9 @@ const repoLanguageServerContract = defineCommand({
  * @returns The command and arguments to set, or undefined to remove the server.
  * @throws {CliUsageError} When the options ask for both or neither, or the command is not one.
  */
-function requestedServer(input: RepoLanguageServerInput): ConfiguredServer | undefined {
+function requestedServer(
+	input: RepoLanguageServerInput,
+): z.infer<typeof ConfiguredServerSchema> | undefined {
 	if (input.remove) {
 		if (input.command === undefined && input.arg.length === 0) return undefined;
 		throw new CliUsageError("--remove takes no command and no --arg");

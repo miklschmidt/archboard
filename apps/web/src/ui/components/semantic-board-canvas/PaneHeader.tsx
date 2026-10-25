@@ -29,16 +29,8 @@ import {
 } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
 
-import { cn } from "@archboard/ui-kit/class-names";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@archboard/ui-kit/overlays";
-import { usePaneChrome } from "@archboard/ui-kit/display";
-import { Tabs, TabsList, TabsTrigger } from "@archboard/ui-kit/controls";
-import { RepositoryName } from "@archboard/ui-kit/repository-name";
+import { cn, DropdownMenu, RepositoryName, Tabs } from "@archboard/ui-kit/components";
+import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import { LevelMark } from "#ui/components/semantic-board-canvas/LevelMark.tsx";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import { SidebarToggle } from "#ui/components/semantic-board-canvas/SidebarToggle.tsx";
@@ -204,21 +196,21 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
 	return (
 		<li className="flex shrink-0 items-center gap-1 @min-[880px]/pane-header:hidden">
 			<DropdownMenu>
-				<DropdownMenuTrigger
+				<DropdownMenu.Trigger
 					aria-label="Boards above"
 					className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-control flex size-7 items-center justify-center"
 				>
 					<RiMoreLine className="size-4" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start" sideOffset={6} className="w-56">
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="start" sideOffset={6} className="w-56">
 					{props.places.map(({ place, key }) => (
-						<DropdownMenuItem key={key} onClick={place.open} className="gap-2">
+						<DropdownMenu.Item key={key} onClick={place.open} className="gap-2">
 							<RepositoryOf repository={place.repository} />
 							<LevelMark level={place.level} vault={place.vault ?? paneVault} />
 							{place.name}
-						</DropdownMenuItem>
+						</DropdownMenu.Item>
 					))}
-				</DropdownMenuContent>
+				</DropdownMenu.Content>
 			</DropdownMenu>
 			<Step />
 		</li>
@@ -294,7 +286,7 @@ function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab">): JSX.Element {
 	);
 	return (
 		<Tabs value={props.tab} onValueChange={choose} className="h-full shrink-0 gap-0">
-			<TabsList
+			<Tabs.List
 				variant="underline"
 				aria-label="Ways to read this board"
 				className="h-full! border-b-0"
@@ -302,7 +294,7 @@ function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab">): JSX.Element {
 				{TABS.map((entry) => (
 					<PageTab key={entry.tab} entry={entry} open={props.tab === entry.tab} />
 				))}
-			</TabsList>
+			</Tabs.List>
 		</Tabs>
 	);
 }
@@ -328,7 +320,7 @@ function PageTab(props: {
 	const { entry, open } = props;
 	const Icon = entry.icon;
 	return (
-		<TabsTrigger
+		<Tabs.Trigger
 			value={entry.tab}
 			data-slot="board-tab"
 			data-tab={entry.tab}
@@ -339,7 +331,7 @@ function PageTab(props: {
 			<span className={open ? "" : "sr-only @min-[880px]/pane-header:not-sr-only"}>
 				{entry.label}
 			</span>
-		</TabsTrigger>
+		</Tabs.Trigger>
 	);
 }
 

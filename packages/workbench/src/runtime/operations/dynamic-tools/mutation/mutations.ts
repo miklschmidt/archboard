@@ -1,5 +1,5 @@
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
-import type { EpochTransaction } from "#runtime/store/epoch/contract.ts";
+import type { EpochTransaction } from "@archboard/codex-realtime-voice/runtime";
 import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {

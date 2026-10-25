@@ -21,12 +21,11 @@ import {
 	type SemanticVariant,
 } from "@archboard/board/document";
 import { everyStep, isMessage, stepWords, type FlowStep } from "@archboard/board/flow";
-import type { ReconciliationIssue } from "@archboard/board/reconciliation";
 import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { DetailsPanel } from "#ui/components/semantic-board-canvas/DetailsPanel.tsx";
 import { LineBody } from "#ui/components/semantic-board-canvas/SemanticInspectorLine.tsx";
-import type { RememberedReading } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,
@@ -44,7 +43,7 @@ import {
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import type { CodeStanding } from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import {
 	useCodeFindings,
 	type ReadingOnScreen,
@@ -67,6 +66,13 @@ import {
 } from "#ui/rules/semantic-board-canvas/board/overview-line.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
+import type { ReconciliationIssueSchema } from "@archboard/board/reconciliation";
+import type { z } from "zod";
+
+type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
+
+/** What the last pass found on one board at one variant. */
+type RememberedReading = RememberedFindings["readings"][number];
 
 /**
  * What a part is called, or the id the board names it by when the variant no

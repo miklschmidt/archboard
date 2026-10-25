@@ -12,7 +12,6 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { use, useCallback, useEffect, useRef } from "react";
 
-import type { DrillDown } from "@archboard/board/content";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
 	drillPlace,
@@ -25,6 +24,9 @@ import {
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /**
  * The repository identity of the vault a link is drawn in, read only when the

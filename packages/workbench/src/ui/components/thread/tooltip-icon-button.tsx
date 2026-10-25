@@ -1,13 +1,6 @@
 import { type ComponentPropsWithRef, forwardRef } from "react";
 
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@archboard/ui-kit/overlays";
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
+import { Button, cn, Tooltip } from "@archboard/ui-kit/components";
 
 export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 	tooltip: string;
@@ -17,9 +10,9 @@ export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 export const TooltipIconButton = forwardRef<HTMLButtonElement, TooltipIconButtonProps>(
 	({ children, tooltip, side = "bottom", className, ...rest }, ref) => {
 		return (
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<Tooltip>
-					<TooltipTrigger
+					<Tooltip.Trigger
 						render={
 							<Button
 								variant="ghost"
@@ -32,10 +25,10 @@ export const TooltipIconButton = forwardRef<HTMLButtonElement, TooltipIconButton
 					>
 						{children}
 						<span className="aui-sr-only sr-only">{tooltip}</span>
-					</TooltipTrigger>
-					<TooltipContent side={side}>{tooltip}</TooltipContent>
+					</Tooltip.Trigger>
+					<Tooltip.Content side={side}>{tooltip}</Tooltip.Content>
 				</Tooltip>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		);
 	},
 );

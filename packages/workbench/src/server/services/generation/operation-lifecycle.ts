@@ -20,7 +20,7 @@ import type {
 	DynamicWaitOwner,
 } from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
 import type { DynamicOperationTerminalDisposition } from "#runtime/rules/dynamic-tools/errors.ts";
-import type { CodexWaitGraph, WaitOwner } from "#runtime/state/wait-graph/wait-graph.ts";
+import type { CodexWaitGraph, WaitOwner } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,

@@ -2,17 +2,18 @@ import type { Stats } from "node:fs";
 import path from "node:path";
 
 import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
-import { type CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
-import type { CheckoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
+import type { checkoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
 
-type ResolutionFailureCode = Extract<
-	CodeTargetFailureCode,
+/** What a checkout has out: the branch it is on and the commit at HEAD. */
+type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
+
+/** Why a binding resolves to no code here; the code opener answers each as a failure of the open. */
+type ResolutionFailureCode =
 	| "BINDING_UNAVAILABLE"
 	| "CHECKOUT_UNAVAILABLE"
 	| "CHECKOUT_IDENTITY_CHANGED"
 	| "TARGET_UNAVAILABLE"
-	| "TARGET_OUTSIDE_CHECKOUT"
->;
+	| "TARGET_OUTSIDE_CHECKOUT";
 interface ResolutionFailure {
 	ok: false;
 	code: ResolutionFailureCode;

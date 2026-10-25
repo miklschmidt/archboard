@@ -9,12 +9,9 @@ import type { Express, Request, Response } from "express";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import {
 	BoardLockCancelledError,
-	boardLockState,
 	claimBoard,
-	claimEndReason,
-	holdBoard,
 	releaseClaim,
-	releaseHold,
+	takeBackBoard,
 	takeClaimRevocation,
 } from "@archboard/board/lock";
 import { readSemanticBoard } from "@archboard/board/store-read";
@@ -62,7 +59,7 @@ function refuseRevokedClaim(res: Response, vault: string, board: string): boolea
 		code: "CLAIM_REVOKED",
 		cause: lost.cause,
 		error:
-			`${claimEndReason(lost)}, so your claim${reason}` +
+			`${lost.ended}, so your claim${reason}` +
 			" has ended. Everything you had already written is on the board and nothing was undone, so it is " +
 			"part way through whatever you were doing — say what state you left it in rather than carrying on. " +
 			"Writing again is an ordinary write, and takes the board only for as long as that write.",
@@ -132,14 +129,9 @@ function requiredClientId(req: Request, res: Response, refusal: string): string 
 /**
  * The user wants a claimed board back (ADR 0022).
  *
- * The one control that ends an agent's claim. The lease is taken with the
- * claim revoked and given straight back, so the board goes to nobody and the
- * next write takes it as any write does. Nothing already written is undone;
- * the agent hears once, on its next write or re-claim, that it lost the board.
- *
- * It does not wait: a claim is revoked at once, and an unclaimed writer
- * holding the board at that instant is refused by name so the user can ask
- * again (TASK-153).
+ * The one control that ends an agent's claim (`takeBackBoard`). Nothing
+ * already written is undone; the agent hears once, on its next write or
+ * re-claim, that it lost the board.
  * @param req The request.
  * @param res Its response.
  */
@@ -156,17 +148,11 @@ function takeBackRoute(req: Request, res: Response): void {
 	if (clientId === null) {
 		return;
 	}
-	const holder = { id: clientId, kind: "human" as const };
 	const vault = vaultOfRequest(req);
-	const standing = boardLockState(vault, key);
-	const claim = standing?.kind === "agent" && standing.claimed ? standing : null;
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-		holdBoard({ vault, board: key, holder, revokeClaim: true, signal }),
+		takeBackBoard({ vault, board: key, by: clientId, signal }),
 	)
-		.then((hold) => {
-			if (hold.created) {
-				releaseHold(vault, key, hold.holder.id);
-			}
+		.then((claim) => {
 			return res.json({
 				success: true,
 				board: key,

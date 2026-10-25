@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, type RefObject } from "react";
 
-import { usePaneChrome } from "@archboard/ui-kit/display";
+import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 
 /** How far each stepping key moves. */
 const STEP_KEYS: Readonly<Record<string, number>> = {

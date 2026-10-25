@@ -2,7 +2,7 @@
 // its active turn, its child, the coordinator that queues through it, and
 // how many pending approvals hold it.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { WorkbenchQueueCorrelation, WorkbenchQueueState } from "#ui/state/queue/contracts.ts";
 import { WORKBENCH_QUEUE_NARRATIVES } from "#ui/rules/queue/narratives.ts";
 import { childIdentityOf } from "#ui/rules/queue/state.ts";

@@ -9,7 +9,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { usePaneChrome } from "@archboard/ui-kit/display";
+import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import { asksForSearch } from "#ui/rules/semantic-board-canvas/board/search-shortcut.ts";
 

@@ -31,16 +31,13 @@ if (
 	process.env["ARCHBOARD_STARTUP_TERMINAL_FD"] !== undefined &&
 	((Number.isFinite(shutdownDelayMs) && shutdownDelayMs > 0) || shutdownFailure)
 ) {
-	const applicationPath = resolve(
-		import.meta.dir,
-		"../../../../packages/workbench/src/server/services/owner/application.ts",
-	);
+	const applicationPath = "@archboard/codex-realtime-voice/server";
 	const actualApplicationModule = await import(applicationPath);
-	const createApplication = actualApplicationModule.createServerCodexWorkbenchApplication;
+	const createApplication = actualApplicationModule.createCodexWorkbench;
 	await Promise.resolve(
 		mock.module(applicationPath, () => ({
 			...actualApplicationModule,
-			createServerCodexWorkbenchApplication: (...args: Parameters<typeof createApplication>) => {
+			createCodexWorkbench: (...args: Parameters<typeof createApplication>) => {
 				const application = createApplication(...args);
 				let delay: Promise<void> | null = null;
 				return {
@@ -65,7 +62,10 @@ if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
 			...actualTiming,
-			SERVER_STARTUP_READINESS_MS: readinessTimeoutMs,
+			SERVER_LIFECYCLE_MS: {
+				...actualTiming.SERVER_LIFECYCLE_MS,
+				startupReadiness: readinessTimeoutMs,
+			},
 		})),
 	);
 }

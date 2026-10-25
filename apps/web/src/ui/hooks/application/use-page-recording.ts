@@ -8,7 +8,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneOverlay, PaneRecording } from "#ui/hooks/application/use-pane-views.ts";
 import type { PaneList } from "#ui/rules/application/pane-list.ts";
-import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/workbench/voice";
+import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/codex-realtime-voice/browser";
 import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
 import type { WorkspaceAddress } from "#ui/rules/board-routing/address.ts";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";

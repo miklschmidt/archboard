@@ -14,14 +14,15 @@
 // The wire shape is `@archboard/board/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import {
-	SEMANTIC_PANE_CONTEXT_ROUTE,
-	type SemanticPaneContext,
-	type SemanticPanePart,
-} from "@archboard/board/pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
-import { inVault, post } from "@archboard/server-requests";
+import { inVault, requestJson } from "@archboard/server-requests";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -97,7 +98,10 @@ interface ReadingReply {
  * @returns The server's answer.
  */
 function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
-	return post<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), body);
+	return requestJson<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), {
+		method: "POST",
+		payload: body,
+	});
 }
 
 /**
@@ -167,7 +171,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		if (timer !== null) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(flush, SELECTION_DEBOUNCE_MS);
+		timer = setTimeout(flush, PANE_MS.selectionDebounce);
 	}
 
 	/**

@@ -15,9 +15,7 @@ import { RiArrowRightLine, RiFocus3Line } from "@remixicon/react";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
-import { cn } from "@archboard/ui-kit/class-names";
-import { IconButton } from "@archboard/ui-kit/controls";
-import { RepositoryName, shownRepository } from "@archboard/ui-kit/repository-name";
+import { cn, IconButton, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
 import { KindIcon, RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { LevelMark } from "#ui/components/semantic-board-canvas/LevelMark.tsx";
 import { SemanticGroupChip } from "#ui/components/semantic-board-canvas/SemanticGroupChip.tsx";

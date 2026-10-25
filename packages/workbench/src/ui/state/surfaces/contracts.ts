@@ -2,10 +2,13 @@
 // dock and the conversation panel read one `AgentView` and act through one
 // `AgentActions`; the application composes both from the workbench owners.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import type { DYNAMIC_APPROVAL_DECISIONS } from "#shared/schemas/dynamic-approval/effects.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+	DYNAMIC_APPROVAL_DECISIONS,
+	BrowserSnapshot,
+} from "@archboard/codex-realtime-voice/contract";
+
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
 import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";
 import type { ThreadLinkLoginParams } from "#ui/state/thread-link/transport-port.ts";

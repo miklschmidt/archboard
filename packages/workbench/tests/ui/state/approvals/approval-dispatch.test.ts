@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval, BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+
 import { applyApprovalFormEvent, initialApprovalForm } from "#ui/rules/approval-forms/form.ts";
 import { projectWorkbenchApprovals } from "#ui/rules/approvals/projection.ts";
 import { submitApprovalDecision } from "#ui/state/approvals/submit.ts";

@@ -11,8 +11,6 @@ import { z } from "zod";
 import {
 	inspectContainer,
 	interfaceMeasures,
-	type ContainerInspection,
-	type InterfaceMeasures,
 } from "@archboard/board/container-interface";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
@@ -25,6 +23,9 @@ import {
 	inspectedEdge,
 	inspectedNode,
 } from "#cli/rules/semantic/inspect/inspected-subjects.ts";
+
+type ContainerInspection = ReturnType<typeof inspectContainer>;
+type InterfaceMeasures = ReturnType<typeof interfaceMeasures>;
 
 /** A relationship with both its ends named, because one end is often outside the container. */
 const NamedEdgeSchema = InspectedEdgeSchema.extend({ fromName: z.string(), toName: z.string() });

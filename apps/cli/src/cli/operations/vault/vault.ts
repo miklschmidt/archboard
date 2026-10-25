@@ -4,15 +4,14 @@ import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
-import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
-import {
-	CheckTimingSchema,
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CheckTiming,
-} from "@archboard/code-intel/code-check";
-import { diagnosticLine, VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
+import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
+/** How long one check took. */
+type CheckTiming = CodeCheckAnswer["timings"][number];
 
 const output = {
 	cases: [
@@ -131,7 +130,7 @@ function timingLine(timing: CheckTiming): string {
 
 /** The plain check's answer, and with `--code` the code check's beside it. */
 const CheckResultSchema = VaultCheckSchema.extend({
-	timings: z.array(CheckTimingSchema),
+	timings: CodeCheckAnswerSchema.shape.timings,
 	codeCheck: CodeCheckAnswerSchema.optional(),
 });
 const checkContract = defineCommand({

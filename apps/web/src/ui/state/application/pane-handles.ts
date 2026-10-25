@@ -7,9 +7,9 @@ import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwnerOptions,
-} from "@archboard/workbench/voice";
+} from "@archboard/codex-realtime-voice/browser";
 import type { PaneSession as SessionOf } from "#ui/rules/pane-session/session-contracts.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
 
 /** The session of one pane, over the production transport. */
 type PaneSession = SessionOf<BrowserWorkbenchTransport>;

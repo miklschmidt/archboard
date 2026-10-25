@@ -10,7 +10,7 @@ import {
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { parseRealtimeItemId } from "@archboard/workbench/browser-contract";
+import { parseRealtimeItemId } from "@archboard/codex-realtime-voice/realtime";
 import {
 	browserCorrelation,
 	expectPendingOffer,

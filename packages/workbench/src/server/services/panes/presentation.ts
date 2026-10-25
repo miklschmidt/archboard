@@ -14,13 +14,15 @@
 
 import { randomUUID } from "node:crypto";
 
-import type {
-	PanePresentRequest,
-	SemanticPaneContext,
-	SemanticPanePresentation,
-} from "@archboard/board/pane-context";
-import { PRESENTATION_ARRIVAL_TIMEOUT_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 import { paneBoardOf, panes, sendToPane } from "#server/services/panes/registry.ts";
+import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+
+type SemanticPanePresentation = NonNullable<z.infer<typeof SemanticPaneContextSchema>["presentation"]>;
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =
@@ -220,7 +222,7 @@ function awaitAnswer(
 	return new Promise<PresentOutcome>((resolve) => {
 		const timer = setTimeout(() => {
 			settle({ kind: "refused", reason: "timeout" });
-		}, PRESENTATION_ARRIVAL_TIMEOUT_MS);
+		}, PANE_MS.presentationArrival);
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.

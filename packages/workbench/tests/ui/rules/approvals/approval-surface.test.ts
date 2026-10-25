@@ -6,8 +6,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval, BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+
 import { approvalKicker, projectWorkbenchApprovals } from "#ui/rules/approvals/projection.ts";
 import { validateApprovalForm } from "#ui/rules/approval-forms/form-validation.ts";
 import type {

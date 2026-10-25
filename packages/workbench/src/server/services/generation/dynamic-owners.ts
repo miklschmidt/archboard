@@ -1,9 +1,6 @@
 import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
-import type { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
-import type {
-	CodexWorkbenchComponents,
-	CodexWorkbenchGenerationInput,
-} from "#server/services/generation/workbench.ts";
+import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import type { CodexWorkbenchDomainScope } from "@archboard/codex-realtime-voice/server";
 import {
 	createServerDynamicApprovalOwner,
 	type ServerDynamicApprovalOwner,
@@ -16,20 +13,24 @@ import {
 	createServerDynamicLifecycleOwner,
 	type ServerDynamicLifecycleOwner,
 } from "#server/services/generation/operation-lifecycle.ts";
-import type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
-import { parseWorkhorseLinkKey, type TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import {
-	closedTransport,
-	requireCreated,
-	type GenerationOwners,
-} from "#server/services/generation/owners.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
+import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/codex-realtime-voice/server";
+import { closedTransport, requireCreated } from "@archboard/codex-realtime-voice/server";
+
+interface ArchboardDomainOwners {
+	authority: ServerDynamicAuthorityAdapters | null;
+	approval: ServerDynamicApprovalOwner | null;
+	lifecycle: ServerDynamicLifecycleOwner | null;
+	dynamicProjectionUnsubscribe: (() => void) | null;
+	readonly publish: () => void;
+}
 
 /** What building one generation's dynamic owners needs from around it. */
 interface DynamicOwnerContext {
-	readonly server: CodexWorkbenchServer;
+	readonly server: ArchboardWorkbenchServer;
 	readonly waitGraph: ReturnType<typeof createCodexWaitGraph>;
-	readonly input: CodexWorkbenchGenerationInput;
-	readonly owners: GenerationOwners;
+	readonly scope: CodexWorkbenchDomainScope;
+	readonly owners: ArchboardDomainOwners;
 }
 
 /** The three dynamic owners every dynamic adapter is served from. */
@@ -48,15 +49,8 @@ interface DynamicOwners {
  */
 function createAuthority(
 	context: DynamicOwnerContext,
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: CodexWorkbenchDomainScope,
 ): ServerDynamicAuthorityAdapters {
-	if (
-		created.identity === undefined ||
-		created.epoch === undefined ||
-		created.threadLink === undefined
-	) {
-		throw new Error("Dynamic authority dependencies are not ready.");
-	}
 	return createServerDynamicAuthorityAdapters({
 		identity: created.identity,
 		epoch: created.epoch,
@@ -66,7 +60,7 @@ function createAuthority(
 		 * @param threadId The thread.
 		 * @returns The key, or null when no workhorse did.
 		 */
-		linkKeyForThread: (threadId) => created.sessions?.workhorseForThread(threadId)?.key ?? null,
+		linkKeyForThread: (threadId) => created.sessions.workhorseForThread(threadId)?.key ?? null,
 		/**
 		 * The canonical context one dynamic effect runs under, captured against
 		 * the caller's own tab session and thread rather than whatever is current.
@@ -118,7 +112,7 @@ function tabSessionOfLinkKey(key: string | null): TabSessionId | null {
  */
 function createApproval(
 	context: DynamicOwnerContext,
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: CodexWorkbenchDomainScope,
 ): ServerDynamicApprovalOwner {
 	const identity = requireCreated(created, "identity");
 	const owners = context.owners;
@@ -154,8 +148,7 @@ function createApproval(
 		},
 	});
 	owners.dynamicProjectionUnsubscribe = approval.subscribe(() => {
-		if (!owners.approvalProjectionInstalled) return;
-		for (const listener of owners.projectionListeners) listener();
+		owners.publish();
 	});
 	return approval;
 }
@@ -169,7 +162,7 @@ function createApproval(
  */
 function createLifecycle(
 	context: DynamicOwnerContext,
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: CodexWorkbenchDomainScope,
 ): ServerDynamicLifecycleOwner {
 	const transport = requireCreated(created, "transport");
 	return createServerDynamicLifecycleOwner({
@@ -188,7 +181,7 @@ function createLifecycle(
 		 * @returns What the teardown proved.
 		 */
 		shutdownEpoch: async (child, epoch) => {
-			const terminal = await context.input.shutdownOwner();
+			const terminal = await context.scope.shutdown();
 			const transportClosed = closedTransport(transport);
 			const sessionClosed =
 				transportClosed && terminal.state !== "ready" && terminal.childPid === null;
@@ -212,7 +205,7 @@ function createLifecycle(
  */
 function requireDynamicOwners(
 	context: DynamicOwnerContext,
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: CodexWorkbenchDomainScope,
 ): DynamicOwners {
 	const owners = context.owners;
 	owners.authority ??= createAuthority(context, created);
@@ -222,4 +215,4 @@ function requireDynamicOwners(
 }
 
 export { requireDynamicOwners };
-export type { DynamicOwnerContext, DynamicOwners };
+export type { DynamicOwnerContext, DynamicOwners, ArchboardDomainOwners };

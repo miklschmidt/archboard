@@ -15,8 +15,7 @@
 import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
-import type { ReconciliationIssue } from "@archboard/board/reconciliation";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
 import {
 	CodeBlock,
 	type CodeStanding,
@@ -25,6 +24,10 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
+import type { ReconciliationIssueSchema } from "@archboard/board/reconciliation";
+import type { z } from "zod";
+
+type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
 
 /** How the selected subject stands against the variant this one is read against. */
 interface StandingProps {

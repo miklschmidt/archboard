@@ -2,7 +2,7 @@
 
 import { useMemo, type JSX } from "react";
 
-import { FieldError } from "#ui/components/field.tsx";
+import { FieldError } from "#ui/components/shadcn/field.tsx";
 
 /** Inputs for a field's validation messages. */
 interface FieldIssuesProps {

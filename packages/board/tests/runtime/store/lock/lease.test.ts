@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import * as timing from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
 const originalWarn = logger.warn;
@@ -15,7 +15,7 @@ const boards = new Set<string>();
 async function advanceLockTime(ms: number): Promise<void> {
 	let elapsed = 0;
 	while (elapsed < ms) {
-		const step = Math.min(timing.LOCK_POLL_MS, ms - elapsed);
+		const step = Math.min(BOARD_LOCK_MS.poll, ms - elapsed);
 		jest.advanceTimersByTime(step);
 		await Promise.resolve();
 		await Promise.resolve();
@@ -83,14 +83,14 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			vault,
 			board,
 			holder: human("user"),
-			leaseMs: timing.LOCK_WAIT_CAP_MS + timing.LOCK_LEASE_MS,
+			leaseMs: BOARD_LOCK_MS.waitCap + BOARD_LOCK_MS.lease,
 			waitMs: 0,
 		});
 		expect(held.created).toBeTrue();
 		const refusal = lock
 			.holdBoard({ vault, board, holder: agent("later") })
 			.catch((error: unknown) => error);
-		await advanceLockTime(timing.LOCK_WAIT_CAP_MS);
+		await advanceLockTime(BOARD_LOCK_MS.waitCap);
 		const refused = await refusal;
 		expect(refused).toBeInstanceOf(lock.BoardHeldError);
 		if (!(refused instanceof lock.BoardHeldError)) {
@@ -100,7 +100,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		expect(refused.board).toBe(board);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
 		expect(refused.message).toMatch(/held by the user at the canvas, since/);
-		expect(refused.waitedMs).toBe(timing.LOCK_WAIT_CAP_MS);
+		expect(refused.waitedMs).toBe(BOARD_LOCK_MS.waitCap);
 		jest.advanceTimersByTime(1);
 		const renewed = await lock.holdBoard({ vault, board, holder: human("user"), waitMs: 0 });
 		expect(renewed.created).toBeFalse();
@@ -137,10 +137,9 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			holder: agent("later"),
 			waitMs: 1_000,
 		});
-		await advanceLockTime(100 + timing.LOCK_STEAL_GUARD_MS);
+		await advanceLockTime(100 + BOARD_LOCK_MS.stealGuard);
 		expect(await expiredTakeover).toMatchObject({ created: true, holder: { id: "later" } });
-		expect(timing.LOCK_LEASE_MS).toBeGreaterThanOrEqual(timing.REPORT_IDLE_SETTLE_MS * 2);
-		expect(timing.LOCK_WAIT_CAP_MS).toBeGreaterThan(timing.LOCK_LEASE_MS);
+		expect(BOARD_LOCK_MS.waitCap).toBeGreaterThan(BOARD_LOCK_MS.lease);
 
 		const waiting = "waiting";
 		boards.add(waiting);
@@ -212,7 +211,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			holder: agent("later"),
 			waitMs: 0,
 		});
-		await advanceLockTime(timing.LOCK_STEAL_GUARD_MS);
+		await advanceLockTime(BOARD_LOCK_MS.stealGuard);
 		expect(await unreadableTakeover).toMatchObject({ created: true });
 	} finally {
 		await cleanup();

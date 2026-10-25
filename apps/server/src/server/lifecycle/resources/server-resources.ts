@@ -1,16 +1,6 @@
 import { logger } from "@archboard/diagnostics/logger";
-import {
-	forgetLockAnnouncements,
-	onBoardLockChanged,
-	onBoardSweep,
-	watchBoardLocks,
-} from "@archboard/board/lock";
-import { forgetDoing } from "@archboard/board/doing";
-import {
-	removePidFile,
-	sweepDeadPidFiles,
-	writePidFile,
-} from "@archboard/server-lifecycle/server-host";
+import { forgetBoardMemory } from "@archboard/board/lock";
+import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	panePresentations,
@@ -35,12 +25,8 @@ import {
  * Forget every engine-level announcement, watch and record this process holds.
  */
 function forgetEngineState(): void {
-	watchBoardLocks(null);
-	onBoardLockChanged(null);
+	forgetBoardMemory();
 	forgetSemanticBoardFiles();
-	onBoardSweep(null);
-	forgetLockAnnouncements();
-	forgetDoing();
 	forgetSemanticPaneContexts();
 	panePresentations.forget();
 }
@@ -229,12 +215,8 @@ function listen(
 				}
 				http.phase = "running";
 				logger.info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
-				writePidFile(PORT, process.pid);
+				recordServerPid(PORT);
 				http.ownsPidFile = true;
-				const swept = sweepDeadPidFiles();
-				if (swept > 0) {
-					logger.debug(`Removed ${swept} pidfiles of servers that are gone`);
-				}
 				settleStart();
 			});
 		} catch (error) {

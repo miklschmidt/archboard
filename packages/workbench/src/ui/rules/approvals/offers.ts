@@ -2,7 +2,7 @@
 // also be answered by voice. Offers exist only while a request is pending
 // and this browser holds authority; every other state is read-only.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserApproval } from "@archboard/codex-realtime-voice/contract";
 import type {
 	WorkbenchApprovalOffer,
 	WorkbenchApprovalPhase,

@@ -11,11 +11,11 @@ import { useMemo, useSyncExternalStore } from "react";
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
 import { mergeConversation, projectTimelineTurns } from "#ui/rules/timeline/projection.ts";
 import { type ConversationOwner, type ConversationTurn } from "#ui/state/timeline/contract.ts";
-import type { BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "@archboard/codex-realtime-voice/browser";
 
 /** The conversation, or why it could not be read. */
 interface Conversation {

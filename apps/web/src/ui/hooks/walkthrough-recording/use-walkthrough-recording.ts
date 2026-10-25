@@ -5,7 +5,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 
-import { RECORDING_PAGE_GLOBAL } from "@archboard/walkthrough/recording";
+import { publishRecordingPage } from "@archboard/walkthrough/recording";
 
 import type {
 	RecordedStep,
@@ -20,9 +20,9 @@ import type { RecordingSources } from "#ui/rules/walkthrough-recording/voice-sou
 function usePublished(recorder: WalkthroughRecorder | null): void {
 	useEffect(() => {
 		if (recorder === null) return undefined;
-		Reflect.set(window, RECORDING_PAGE_GLOBAL, recorder.page);
+		const withdraw = publishRecordingPage(recorder.page);
 		return () => {
-			Reflect.deleteProperty(window, RECORDING_PAGE_GLOBAL);
+			withdraw();
 			recorder.dispose();
 		};
 	}, [recorder]);

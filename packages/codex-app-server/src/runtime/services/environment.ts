@@ -41,22 +41,6 @@ const CODEX_RETAINED_ENVIRONMENT_KEYS: readonly string[] = Object.freeze([
 type CodexAmbientEnvironment = Readonly<Record<string, string | undefined>>;
 type CodexChildEnvironment = Readonly<Record<string, string>>;
 
-/**
- * The Archboard server that owns the child. A thread runs `archboard` like any agent does, and
- * that CLI finds its server in its environment, so the child must name its own. The child names
- * no vault (ADR 0050): a thread's command finds its vault from its directory or `-C`.
- */
-interface CodexArchboardServer {
-	/** The URL the server listens at. */
-	readonly url: string;
-	/**
-	 * The `bin` directory of the checkout whose source the server runs. It leads the child's PATH,
-	 * so a thread's `archboard` runs the server's own source in whichever checkout the thread
-	 * works in, and the server's identity probe accepts it.
-	 */
-	readonly binDirectory: string;
-}
-
 interface CodexChildEnvironmentInput {
 	/** The reviewed ambient environment; the current process environment when absent. */
 	readonly ambient?: CodexAmbientEnvironment;
@@ -64,8 +48,10 @@ interface CodexChildEnvironmentInput {
 	readonly codexHome: string;
 	/** The canonical private CODEX_SQLITE_HOME root. */
 	readonly sqliteHome: string;
-	/** The server that started the child. */
-	readonly archboardServer: CodexArchboardServer;
+	/** Explicit host additions override retained ambient values, except the protected Codex roots. */
+	readonly hostEnvironment?: CodexChildEnvironment | undefined;
+	/** Absolute directories that lead the resulting PATH, in the supplied order. */
+	readonly pathPrefixes?: readonly string[] | undefined;
 }
 
 class CodexEnvironmentError extends Error {
@@ -113,61 +99,87 @@ function requirePath(value: string, name: string): string {
 function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | undefined {
 	if (!Object.hasOwn(ambient, key)) return undefined;
 	const value = ambient[key];
-	if (value === undefined) return undefined;
+	return value === undefined ? undefined : requireEnvironmentValue(value, key);
+}
+
+/**
+ * Refuse a value that a child cannot receive intact.
+ * @param value - The candidate environment value.
+ * @param key - The environment key for the refusal.
+ * @returns The validated string.
+ */
+function requireEnvironmentValue(value: unknown, key: string): string {
 	if (typeof value !== "string") {
-		throw new CodexEnvironmentError(
-			`Retained environment key ${key} must have a string value.`,
-			key,
-		);
+		throw new CodexEnvironmentError(`Environment key ${key} must have a string value.`, key);
 	}
 	if (value.includes("\0")) {
-		throw new CodexEnvironmentError(`Retained environment key ${key} contains a NUL byte.`, key);
+		throw new CodexEnvironmentError(`Environment key ${key} contains a NUL byte.`, key);
 	}
 	return value;
 }
 
 /**
- * Build the child environment from the reviewed allowlist. The Codex roots and
- * the server's address are assigned last so ambient values can never win by
- * insertion order or precedence.
- *
- * The server's own `bin` leads PATH, so `archboard` in a thread is the server's source.
- *
- * Auto-start is off in the child. It lives only as long as its server, so a thread's CLI that
- * finds no server has outlived it, and starting one would put a second server nobody asked for
- * beside it. An explicit `archboard start` still overrides it.
- * @param input - Canonical private Codex roots, the owning server and an optional reviewed ambient
- * environment.
- * @returns The frozen allowlisted environment for the owned app-server child.
+ * Build the child environment from the ambient allowlist and explicit host additions.
+ * Assign the private Codex roots last so neither source can replace them.
+ * @param input - Private Codex roots, host additions, PATH prefixes and reviewed ambient values.
+ * @returns The frozen environment for the owned app-server child.
  */
 function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChildEnvironment {
 	const codexHome = requirePath(input.codexHome, "CODEX_HOME");
 	const sqliteHome = requirePath(input.sqliteHome, "CODEX_SQLITE_HOME");
 	const ambient = input.ambient ?? process.env;
-	const child: Record<string, string> = {};
+	const retained: Record<string, string> = {};
 
 	for (const key of RETAINED_ENVIRONMENT_KEYS) {
 		const value = retainedValue(ambient, key);
-		if (value !== undefined) child[key] = value;
+		if (value !== undefined) retained[key] = value;
 	}
 
-	const binDirectory = requirePath(
-		input.archboardServer.binDirectory,
-		"The Archboard bin directory",
-	);
-	child["PATH"] =
-		child["PATH"] === undefined ? binDirectory : `${binDirectory}${path.delimiter}${child["PATH"]}`;
+	const child = { ...retained, ...hostAdditions(input.hostEnvironment) };
+	prependPath(child, input.pathPrefixes);
 	child["CODEX_HOME"] = codexHome;
 	child["CODEX_SQLITE_HOME"] = sqliteHome;
-	child["ARCHBOARD_URL"] = input.archboardServer.url;
-	child["ARCHBOARD_NO_AUTOSTART"] = "1";
 	return Object.freeze(child);
 }
 
+/**
+ * Validate explicit additions before merging them into the child environment.
+ * @param additions - Host-owned environment entries.
+ * @returns The validated host additions.
+ */
+function hostAdditions(additions: CodexChildEnvironment = {}): CodexChildEnvironment {
+	return Object.fromEntries(
+		Object.entries(additions).map(([key, value]) => {
+			if (key.length === 0 || key.includes("=") || key.includes("\0")) {
+				throw new CodexEnvironmentError(
+					"Host environment keys must be nonempty and contain no equals sign or NUL byte.",
+					key,
+				);
+			}
+			return [key, requireEnvironmentValue(value, key)];
+		}),
+	);
+}
+
+/**
+ * Put host executable directories before the resulting PATH.
+ * @param child - The merged child environment.
+ * @param directories - Absolute directories in precedence order.
+ */
+function prependPath(child: Record<string, string>, directories: readonly string[] = []): void {
+	const prefixes = Array.from(directories, (prefix) => {
+		const directory = requirePath(prefix, "PATH prefix");
+		if (directory.includes(path.delimiter)) {
+			throw new CodexEnvironmentError("Each PATH prefix must name one absolute directory.", "PATH");
+		}
+		return directory;
+	});
+	if (prefixes.length > 0) {
+		child["PATH"] = [...prefixes, ...(child["PATH"] === undefined ? [] : [child["PATH"]])].join(
+			path.delimiter,
+		);
+	}
+}
+
 export { CODEX_RETAINED_ENVIRONMENT_KEYS, CodexEnvironmentError, buildCodexChildEnvironment };
-export type {
-	CodexAmbientEnvironment,
-	CodexArchboardServer,
-	CodexChildEnvironment,
-	CodexChildEnvironmentInput,
-};
+export type { CodexAmbientEnvironment, CodexChildEnvironment, CodexChildEnvironmentInput };

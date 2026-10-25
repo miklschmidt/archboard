@@ -26,11 +26,12 @@ const ADOPTERS: {
 	{ name: "server-requests", areas: ["ui"] },
 	{ name: "code-intel", areas: ["shared", "runtime"] },
 	{ name: "renderer", areas: ["shared", "runtime", "ui"] },
-	{ name: "code-opener", areas: ["server", "ui"] },
+	{ name: "code-opener", areas: ["shared", "server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
 	{ name: "server-lifecycle", areas: ["runtime"] },
 	{ name: "workbench", areas: ["shared", "runtime", "server", "ui"] },
+	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
 	{
 		name: "process",
 		areas: ["runtime"],
