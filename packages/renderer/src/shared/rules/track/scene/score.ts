@@ -22,11 +22,19 @@ const CROSSING_COST = 0.97;
  */
 const BUS_COST = CROSSING_COST ** 8;
 
-/** A straight run of one line. */
+/** A straight run of one line, with whether each of its ends is a bend of that line. */
 interface Run {
 	readonly line: number;
 	readonly from: Point;
 	readonly to: Point;
+	readonly bends: readonly [boolean, boolean];
+}
+
+/** A place two lines cross: a level run of one through an upright run of the other, and its key. */
+interface Crossing {
+	readonly key: string;
+	readonly level: Run;
+	readonly upright: Run;
 }
 
 /**
@@ -63,72 +71,47 @@ function inside(value: number, one: number, other: number): boolean {
 }
 
 /**
- * Count the places different lines cross, with each shared trunk counted once.
+ * Where two different lines cross: a level run of one through an upright run
+ * of another, each with its place's key. Lines on one trunk run together and
+ * do not cross each other, and where a trunk crosses a line its lines cross
+ * it at one place, so every crossing at one place has one key.
+ * @param lines Every line's points.
+ * @returns Each crossing of two runs.
+ */
+function crossingPlaces(lines: Iterable<readonly Point[]>): Crossing[] {
+	const runs: Run[] = [...lines].flatMap((points, line) =>
+		points.slice(1).map((to, index) => ({
+			line,
+			from: points[index]!,
+			to,
+			bends: [index > 0, index + 2 < points.length] as const,
+		})),
+	);
+	const level = runs.filter(({ from, to }) => Math.abs(from.y - to.y) < 0.5);
+	const upright = runs.filter(({ from, to }) => Math.abs(from.x - to.x) < 0.5);
+	return level.flatMap((one) =>
+		upright
+			.filter(
+				(other) =>
+					other.line !== one.line &&
+					inside(other.from.x, one.from.x, one.to.x) &&
+					inside(one.from.y, other.from.y, other.to.y),
+			)
+			.map((other) => ({
+				key: `${Math.round(other.from.x)},${Math.round(one.from.y)}`,
+				level: one,
+				upright: other,
+			})),
+	);
+}
+
+/**
+ * How many places two different lines cross, drawn as one hop each ({@link crossingPlaces}).
  * @param lines Every line's points.
  * @returns The crossings.
  */
 function crossingsOf(lines: Iterable<readonly Point[]>): number {
-	const { level, upright } = runsOf(lines);
-	upright.sort((one, other) => one.from.x - other.from.x);
-	const crossed = new Set<string>();
-	for (const one of level) addCrossings(crossed, one, upright);
-	return crossed.size;
-}
-
-/**
- * Collect the horizontal and vertical runs of the lines.
- * @param lines Every line's points.
- * @returns Each run with the line that owns it.
- */
-function runsOf(lines: Iterable<readonly Point[]>): { level: Run[]; upright: Run[] } {
-	const level: Run[] = [];
-	const upright: Run[] = [];
-	let line = 0;
-	for (const points of lines) {
-		for (let index = 1; index < points.length; index += 1) {
-			const from = points[index - 1]!;
-			const to = points[index]!;
-			const run = { line, from, to };
-			if (Math.abs(from.y - to.y) < 0.5) level.push(run);
-			if (Math.abs(from.x - to.x) < 0.5) upright.push(run);
-		}
-		line += 1;
-	}
-	return { level, upright };
-}
-
-/**
- * Find the first upright strictly right of an x.
- * @param upright The runs sorted by x.
- * @param x The left bound.
- * @returns The first candidate's index.
- */
-function firstRight(upright: readonly Run[], x: number): number {
-	let start = 0;
-	let end = upright.length;
-	while (start < end) {
-		const middle = (start + end) >>> 1;
-		if (upright[middle]!.from.x <= x) start = middle + 1;
-		else end = middle;
-	}
-	return start;
-}
-
-/**
- * Keep the distinct crossings on one horizontal run.
- * @param crossed The places already counted.
- * @param one The horizontal run.
- * @param upright The upright runs sorted by x.
- */
-function addCrossings(crossed: Set<string>, one: Run, upright: readonly Run[]): void {
-	const low = Math.min(one.from.x, one.to.x) + 1;
-	const high = Math.max(one.from.x, one.to.x) - 1;
-	for (let index = firstRight(upright, low); index < upright.length; index += 1) {
-		const other = upright[index]!;
-		if (other.from.x >= high) break;
-		if (other.line !== one.line && inside(one.from.y, other.from.y, other.to.y))
-			crossed.add(`${Math.round(other.from.x)},${Math.round(one.from.y)}`);
-	}
+	return new Set(crossingPlaces(lines).map(({ key }) => key)).size;
 }
 
 /** How long an upright run beyond everything a block holds must be to lap round it. */
@@ -405,5 +388,6 @@ export {
 	sinks,
 	takes,
 	wrapPlans,
+	type Crossing,
 	type Weighed,
 };

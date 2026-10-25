@@ -254,22 +254,23 @@ class Occupancy {
 	 * kept off only as far as it is on the band beside the line where a card
 	 * stands nearest it, so a line squeezed past a card beside a wall need not
 	 * step aside on the bands above and below to keep further off it.
+	 * @param band The band.
 	 * @param bands Every band the line's lanes pass.
 	 * @returns The stretches a lane keeps out of.
 	 */
-	along(bands: readonly number[]): readonly (readonly [number, number])[] {
-		const walls = new Map<string, readonly [number, number]>();
-		for (const band of bands)
-			for (const [wall, stretch] of this.walls[band]!) {
-				const held = walls.get(wall);
-				walls.set(
-					wall,
-					held === undefined
-						? stretch
-						: [Math.max(held[0], stretch[0]), Math.min(held[1], stretch[1])],
-				);
-			}
-		return [...bands.flatMap((band) => this.held[band]!), ...walls.values()];
+	along(band: number, bands: readonly number[]): readonly (readonly [number, number])[] {
+		const walls = [...this.walls[band]!].map(([wall, [low, high]]) =>
+			bands.reduce<readonly [number, number]>(
+				(narrowest, other) => {
+					const stretch = this.walls[other]!.get(wall);
+					return stretch === undefined
+						? narrowest
+						: [Math.max(narrowest[0], stretch[0]), Math.min(narrowest[1], stretch[1])];
+				},
+				[low, high],
+			),
+		);
+		return [...this.held[band]!, ...walls];
 	}
 
 	/**
@@ -310,7 +311,7 @@ class Occupancy {
 	fitting(run: LaneRun): (x: number) => boolean {
 		const bands = run.lanes.map(({ band }) => band);
 		const key = bands.join(",");
-		const clear = this.alongs.get(key) ?? clearOf(this.along(bands));
+		const clear = this.alongs.get(key) ?? clearOf(bands.flatMap((band) => this.along(band, bands)));
 		this.alongs.set(key, clear);
 		const frames = this.scene.keepsFrames(run);
 		return (x) => clear(x) && frames(x);
@@ -338,11 +339,8 @@ class Occupancy {
  */
 function meetsAt(station: Station, toward: number, at = station.x): number {
 	if (station.kind !== "card") return at;
-	if (station.item === undefined) return station.x;
-	const { x, width } = station.item.box;
-	if (station.at !== undefined) return x + station.at;
-	const margin = Math.min(FACE_MARGIN, width / 2);
-	return Math.min(x + width - margin, Math.max(x + margin, toward));
+	const [low, high] = reachOf(station);
+	return Math.min(high, Math.max(low, toward));
 }
 
 /**
@@ -353,6 +351,60 @@ function meetsAt(station: Station, toward: number, at = station.x): number {
  */
 function meets(one: Station, other: Station): boolean {
 	return one === other || (one.item !== undefined && one.item === other.item);
+}
+
+/** What the chains a line crosses in one channel count, between its stations above and below it. */
+type Counted = (
+	crossed: readonly ReadonlyMap<number, Station>[],
+	upper: Station,
+	lower: Station,
+) => number;
+
+/**
+ * How many other chains a line would cross between each band and the next,
+ * its lanes and label standing at some x: those whose order against it
+ * swaps across a channel, where no track order undoes it.
+ * @param own The chain's stations, or a run of them with the stations either side.
+ * @param xs Where each of them stands; a card's is ignored.
+ * @param bands Every chain's stations, by band.
+ * @param counted What the chains crossed in one channel count: one each, unless told.
+ * @returns The count.
+ */
+function crossingsOf(
+	own: readonly Station[],
+	xs: readonly number[],
+	bands: readonly ReadonlyMap<number, Station>[],
+	counted?: Counted,
+): number {
+	return own.slice(1).reduce((count, lower, index) => {
+		const upper = own[index]!;
+		const [above, below] = [xs[index]!, xs[index + 1]!];
+		const [top, bottom] = [meetsAt(upper, below, above), meetsAt(lower, above, below)];
+		const crossed = bands.filter((other) => {
+			const [one, two] = [other.get(upper.band), other.get(lower.band)];
+			if (one === undefined || two === undefined || meets(one, upper) || meets(two, lower))
+				return false;
+			return (top - meetsAt(one, two.x)) * (bottom - meetsAt(two, one.x)) < 0;
+		});
+		return count + (counted?.(crossed, upper, lower) ?? crossed.length);
+	}, 0);
+}
+
+/**
+ * How many other chains a run on one column would cross between one band
+ * and the next.
+ * @param run The run.
+ * @param x The column.
+ * @param bands Every chain's stations, by band.
+ * @returns The count.
+ */
+function inversions(
+	run: LaneRun,
+	x: number,
+	bands: readonly ReadonlyMap<number, Station>[],
+): number {
+	const own = [run.before, ...run.lanes, run.after];
+	return crossingsOf(own, [run.before.x, ...run.lanes.map(() => x), run.after.x], bands);
 }
 
 /**
@@ -387,29 +439,13 @@ function moveRun(
 	x: number,
 	piece = false,
 ): boolean {
-	const run = runOf(chains, lane);
+	const runs = laneRuns(chains);
+	const run = runs.find(({ lanes }) => lanes.includes(lane));
 	if (run === undefined) return false;
 	const moving = piece ? piecesOf(run).find(({ lanes }) => lanes.includes(lane))! : run;
-	const occupancy = withoutRun(scene, chains, run);
-	if (!occupancy.fits(moving, x)) return false;
+	if (!freeWithout(scene, runs, run).fits(moving, x)) return false;
 	for (const each of moving.lanes) each.x = x;
 	return true;
-}
-
-/**
- * Keep every other lane in place while one run searches.
- * @param scene The scene.
- * @param chains Every chain.
- * @param run The run left out.
- * @returns What the moving run must avoid.
- */
-function withoutRun(scene: Scene, chains: readonly Chain[], run: LaneRun): Occupancy {
-	const occupancy = new Occupancy(scene);
-	const own = new Set(run.lanes);
-	for (const { stations } of chains)
-		for (const station of stations)
-			if (station.kind === "lane" && !own.has(station)) occupancy.take(station);
-	return occupancy;
 }
 
 /**
@@ -438,27 +474,7 @@ function piecesOf(run: LaneRun): LaneRun[] {
  * @returns The run, with the stations either side of it.
  */
 function runOf(chains: readonly Chain[], lane: Station): LaneRun | undefined {
-	if (lane.kind !== "lane") return undefined;
-	for (const { stations } of chains) {
-		const index = stations.indexOf(lane);
-		if (index < 0) continue;
-		return runAt(stations, index);
-	}
-	return undefined;
-}
-
-/**
- * Find the lane run around one station.
- * @param stations Its chain.
- * @param index Its place in that chain.
- * @returns The run and its two ends.
- */
-function runAt(stations: readonly Station[], index: number): LaneRun {
-	let start = index;
-	let end = index + 1;
-	while (stations[start - 1]?.kind === "lane") start -= 1;
-	while (stations[end]?.kind === "lane") end += 1;
-	return { lanes: stations.slice(start, end), before: stations[start - 1]!, after: stations[end]! };
+	return laneRuns(chains).find(({ lanes }) => lanes.includes(lane));
 }
 
 /**
@@ -526,7 +542,6 @@ function nearest(
 	passes: (x: number) => boolean,
 	edges: readonly number[] = [],
 ): number | undefined {
-	if (passes(from)) return from;
 	const steps = Array.from({ length: SEARCH_STEPS + 1 }, (_, step) => [
 		from - (step * LANE) / 4,
 		from + (step * LANE) / 4,
@@ -547,7 +562,9 @@ export {
 	Occupancy,
 	REGION_CLEARANCE,
 	chainOf,
+	crossingsOf,
 	freeWithout,
+	inversions,
 	labelStation,
 	laneRuns,
 	meeting,
@@ -560,6 +577,7 @@ export {
 	runOf,
 	straightOn,
 	type Chain,
+	type Counted,
 	type LaneRun,
 	type Station,
 };

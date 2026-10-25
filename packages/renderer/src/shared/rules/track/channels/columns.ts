@@ -13,25 +13,20 @@ import { LABEL_CARD_CLEARANCE } from "#shared/constants/spacing.ts";
 import {
 	LANE,
 	Occupancy,
+	crossingsOf,
 	meetsAt,
 	nearest,
 	reachOf,
 	type Chain,
 	type Station,
 } from "#shared/rules/track/routes/chains.ts";
-import { channelsFor, crossingsIn } from "#shared/rules/track/routes/crossings.ts";
 import { extentOf } from "#shared/rules/track/labels/labels.ts";
 import { byBand, onBand, readingsOf, take } from "#shared/rules/track/routes/readings.ts";
 import type { Scene } from "#shared/rules/track/scene/scene.ts";
+import { crossingsFor } from "#shared/rules/track/routes/straighten.ts";
 
 /** What a line costs: the other lines it crosses, then the sideways steps it takes. */
 type Cost = readonly [number, number];
-
-/** What stays fixed while one labelled line tries its readings and columns. */
-interface Search {
-	readonly occupancy: Occupancy;
-	readonly channels: ReturnType<typeof channelsFor>;
-}
 
 /** A column a line may stand on, and what it costs there. */
 interface Placing {
@@ -101,7 +96,7 @@ function straightenThroughLabels(scene: Scene, chains: readonly Chain[]): void {
 		const others = chains.flatMap((one) =>
 			one === chain ? [] : one.stations.filter(({ kind }) => kind === "lane"),
 		);
-		straighten(scene, chain, others, bands);
+		straighten(scene, { chain, index }, others, bands);
 		bands[index] = byBand(chain.stations);
 	}
 }
@@ -111,34 +106,31 @@ function straightenThroughLabels(scene: Scene, chains: readonly Chain[]): void {
  * label's own band, unless only a reading with its label on the band above
  * or below runs straight from card to card, crossing no more lines.
  * @param scene The placed scene.
- * @param chain The chain; its stations move.
+ * @param line The line's chain and its index among the chains.
+ * @param line.chain The chain; its stations move.
+ * @param line.index Its index.
  * @param others Every other line's lanes.
  * @param bands Every chain's stations, by band; the line's own are read back as they stand.
  */
 function straighten(
 	scene: Scene,
-	chain: Chain,
+	line: { chain: Chain; index: number },
 	others: readonly Station[],
-	bands: readonly ReadonlyMap<number, Station>[],
+	bands: ReadonlyMap<number, Station>[],
 ): void {
+	const { chain, index } = line;
 	const standing = stretchOf(chain.stations)!;
-	const own = stationsOf(standing);
-	const labels = standing.middle.filter(({ kind }) => kind === "label");
-	const occupancy = new Occupancy(scene, new Set(labels.map(({ item }) => item!)));
-	others.forEach((lane) => occupancy.take(lane));
-	const search: Search = { occupancy, channels: channelsFor(own, bands) };
-	const was: Cost = [
-		crossingsIn(own, xsOf(standing), search.channels),
-		stepsOf(own, xsOf(standing)),
-	];
-	const kept = columnOf(scene, standing, search, was);
+	const was = costOf(stationsOf(standing), xsOf(standing), bands);
+	const kept = columnOf(scene, standing, others, bands, was);
 	if (kept?.cost[1] === 0) {
 		stand(standing, kept.x);
 		return;
 	}
 	const [, ...moved] = readingsOf(scene, chain);
 	const straight = moved.flatMap((stations) => {
-		const found = columnOf(scene, stretchOf(stations)!, search, kept?.cost ?? was);
+		bands[index] = byBand(stations);
+		const found = columnOf(scene, stretchOf(stations)!, others, bands, kept?.cost ?? was);
+		bands[index] = byBand(chain.stations);
 		return found?.cost[1] === 0 ? [{ stations, ...found }] : [];
 	});
 	const best = straight.toSorted((one, other) => one.cost[0] - other.cost[0])[0];
@@ -177,29 +169,32 @@ function stretchOf(stations: readonly Station[]): Stretch | undefined {
  * takes the best of them by {@link leastCrossing}.
  * @param scene The placed scene.
  * @param stretch The line's stations between its cards.
- * @param search What stays fixed during the line's search.
+ * @param others Every other line's lanes.
+ * @param bands Every chain's stations, by band.
  * @param standing What the line costs where it stands.
  * @returns The column and what the line costs on it, or nothing when none will do.
  */
 function columnOf(
 	scene: Scene,
 	stretch: Stretch,
-	search: Search,
+	others: readonly Station[],
+	bands: readonly ReadonlyMap<number, Station>[],
 	standing: Cost,
 ): Placing | undefined {
 	const { middle, before, after } = stretch;
-	const label = middle.find(({ kind }) => kind === "label")!;
-	const { occupancy, channels } = search;
+	const labels = middle.filter(({ kind }) => kind === "label");
+	const occupancy = new Occupancy(scene, new Set(labels.map(({ item }) => item!)));
+	others.forEach((lane) => occupancy.take(lane));
 	const fits = fitting(scene, occupancy, stretch);
-	const wanted = label.x;
+	const wanted = labels[0]!.x;
 	const [low, high] = [reachOf(before), reachOf(after)];
 	const both = [Math.max(low[0], high[0]), Math.min(low[1], high[1])] as const;
 	const straight = both[0] <= both[1] ? [Math.min(both[1], Math.max(both[0], wanted))] : [];
-	const columns = [...new Set([...straight, ...middle.map(({ x }) => x), after.x, before.x])];
-	const chosen = leastCrossing(stretch, columns.filter(fits), channels, standing);
+	const columns = [...straight, ...middle.map(({ x }) => x), after.x, before.x];
+	const chosen = leastCrossing(stretch, columns.filter(fits), bands, standing);
 	if (chosen !== undefined) return chosen;
 	const found = nearest(wanted, fits, occupancy.edges(middle));
-	return found === undefined ? undefined : leastCrossing(stretch, [found], channels, standing);
+	return found === undefined ? undefined : leastCrossing(stretch, [found], bands, standing);
 }
 
 /**
@@ -208,21 +203,22 @@ function columnOf(
  * no more lines than the line does where it stands, and steps fewer times.
  * @param stretch The line's stations between its cards.
  * @param columns The columns, best first.
- * @param channels The other chains' endpoints for this search.
+ * @param bands Every chain's stations, by band.
  * @param standing What the line costs where it stands.
  * @returns The column and what the line costs on it, or nothing.
  */
 function leastCrossing(
 	stretch: Stretch,
 	columns: readonly number[],
-	channels: Search["channels"],
+	bands: readonly ReadonlyMap<number, Station>[],
 	standing: Cost,
 ): Placing | undefined {
 	const own = stationsOf(stretch);
+	const crossings = crossingsFor(own, bands);
 	const better = columns
 		.map((x) => {
 			const xs = xsOf(stretch, x);
-			return { x, cost: [crossingsIn(own, xs, channels), stepsOf(own, xs)] as Cost };
+			return { x, cost: [crossings(xs), stepsOf(own, xs)] as Cost };
 		})
 		.filter(({ cost }) => cost[0] <= standing[0] && cost[1] < standing[1]);
 	const best = better.toSorted(
@@ -249,6 +245,22 @@ function stationsOf(stretch: Stretch): Station[] {
  */
 function xsOf(stretch: Stretch, column?: number): number[] {
 	return [stretch.before.x, ...stretch.middle.map(({ x }) => column ?? x), stretch.after.x];
+}
+
+/**
+ * What a line costs, its stations standing at some x: the other lines it
+ * crosses, then the sideways steps it takes.
+ * @param own The line's stations, top to bottom.
+ * @param xs Where each stands.
+ * @param bands Every chain's stations, by band.
+ * @returns The two counts.
+ */
+function costOf(
+	own: readonly Station[],
+	xs: readonly number[],
+	bands: readonly ReadonlyMap<number, Station>[],
+): Cost {
+	return [crossingsOf(own, xs, bands), stepsOf(own, xs)];
 }
 
 /**

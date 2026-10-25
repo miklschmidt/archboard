@@ -10,6 +10,7 @@ import {
 	LANE,
 	Occupancy,
 	freeWithout,
+	inversions,
 	laneRuns,
 	piecesOf,
 	reachOf,
@@ -18,7 +19,6 @@ import {
 	type LaneRun,
 	type Station,
 } from "#shared/rules/track/routes/chains.ts";
-import { inversions } from "#shared/rules/track/routes/crossings.ts";
 import type { Net } from "#shared/rules/track/channels/channels.ts";
 import { slidePort } from "#shared/rules/track/labels/labels.ts";
 import { centreX, type Scene } from "#shared/rules/track/scene/scene.ts";
@@ -92,22 +92,13 @@ function closeLaneSteps(scene: Scene, chains: readonly Chain[]): boolean {
 function eachRun(
 	scene: Scene,
 	chains: readonly Chain[],
-	move: (
-		run: LaneRun,
-		free: () => Occupancy,
-		bands: readonly ReadonlyMap<number, Station>[],
-	) => boolean,
+	move: (run: LaneRun, free: Occupancy, bands: readonly ReadonlyMap<number, Station>[]) => boolean,
 ): boolean {
 	const runs = laneRuns(chains);
 	const bands = chains.map(
 		({ stations }) => new Map(stations.map((station) => [station.band, station])),
 	);
-	return runs
-		.map((run) => {
-			let occupancy: Occupancy | undefined;
-			return move(run, () => (occupancy ??= freeWithout(scene, runs, run)), bands);
-		})
-		.some(Boolean);
+	return runs.map((run) => move(run, freeWithout(scene, runs, run), bands)).some(Boolean);
 }
 
 /**
@@ -121,7 +112,7 @@ function eachRun(
  */
 function unstrandRun(
 	run: LaneRun,
-	free: () => Occupancy,
+	free: Occupancy,
 	bands: readonly ReadonlyMap<number, Station>[],
 ): boolean {
 	const x = run.lanes[0]!.x;
@@ -130,7 +121,7 @@ function unstrandRun(
 	const crossed = inversions(run, x, bands);
 	const column = [run.after, run.before]
 		.map((station) => meetingColumn(station, x))
-		.find((one) => free().fits(run, one) && inversions(run, one, bands) <= crossed);
+		.find((one) => free.fits(run, one) && inversions(run, one, bands) <= crossed);
 	if (column === undefined) return false;
 	for (const lane of run.lanes) lane.x = column;
 	return true;
@@ -149,7 +140,7 @@ function unstrandRun(
  */
 function closeSteps(
 	run: LaneRun,
-	free: () => Occupancy,
+	free: Occupancy,
 	bands: readonly ReadonlyMap<number, Station>[],
 ): boolean {
 	// Lowest first, so a piece that joins the one below it is where the next one up can join.
@@ -161,7 +152,7 @@ function closeSteps(
 			const crossed = inversions(piece, x, bands);
 			const column = [piece.after, piece.before]
 				.map((station) => meetingColumn(station, x))
-				.find((one) => free().fits(piece, one) && inversions(piece, one, bands) <= crossed);
+				.find((one) => free.fits(piece, one) && inversions(piece, one, bands) <= crossed);
 			if (column === undefined) return false;
 			for (const lane of piece.lanes) lane.x = column;
 			return true;
