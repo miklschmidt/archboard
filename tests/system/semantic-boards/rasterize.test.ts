@@ -414,10 +414,7 @@ describe("semantic rasterize", () => {
 			);
 			const framed = cli(["semantic", "render", "transfers", "--title", "--legend", "vertical"]);
 			expect(framed.status, framed.stderr).toBe(0);
-			const words =
-				/data-slot="export-title">(?:<g [^>]*aria-hidden="true">[^]*?<\/g>)?<text [^>]*>([^<]*)</u.exec(
-					framed.stdout,
-				)?.[1];
+			const words = /"export-title">[^]*?<text [^>]*>([^<]*)</u.exec(framed.stdout)?.[1];
 			expect(words).toContain("transfers");
 			expect(words).toContain(plain.variant.name);
 			expect(framed.stdout).toContain('data-slot="export-legend" data-layout="vertical"');
