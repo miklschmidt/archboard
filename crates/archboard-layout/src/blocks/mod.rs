@@ -5,16 +5,24 @@
 //! group region is drawn inline, as a cluster of the block that lays it out.
 
 pub(crate) mod assembly;
+pub(crate) mod card_graph;
 pub(crate) mod card_layout;
 pub(crate) mod clusters;
+pub(crate) mod cycles;
 pub(crate) mod fold;
 pub(crate) mod fold_layout;
 pub(crate) mod headers;
+pub(crate) mod holding;
+pub(crate) mod inline;
+pub(crate) mod label_rules;
 pub(crate) mod laid;
 pub(crate) mod laying;
 pub(crate) mod leaves;
 pub(crate) mod lone;
 pub(crate) mod place;
+pub(crate) mod projection;
+pub(crate) mod readback;
+pub(crate) mod routing;
 pub(crate) mod settle;
 pub(crate) mod sides;
 pub(crate) mod stacking;
