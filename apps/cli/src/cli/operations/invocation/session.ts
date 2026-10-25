@@ -16,8 +16,8 @@ import {
 	SHARED_OPTIONS,
 	SHARED_OPTION_KEYS,
 } from "#cli/protocol/contract/shared-options.ts";
-import { stateInvocation } from "@archboard/server-lifecycle/request-context";
-import { packageVersion } from "@archboard/server-lifecycle/config";
+import { stateInvocation } from "@archboard/server-lifecycle/server-client";
+import { packageVersion } from "#cli/store/package-version/package-version.ts";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "#cli/protocol/routing/route.ts";
 import { helpText, usageLine } from "#cli/rules/routing/help.ts";

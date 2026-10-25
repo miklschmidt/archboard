@@ -16,12 +16,7 @@ import {
 import { z } from "zod";
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import type { HistoricalCorrectionInput } from "@archboard/board/commands";
-import {
-	currentExpectedVersion,
-	currentWriteDoing,
-	currentWriteSession,
-	requestJson,
-} from "#runtime/clients/server-client.ts";
+import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { BoardMoveAnswerSchema, type BoardMoveAnswer } from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,
@@ -115,9 +110,9 @@ interface SemanticWriteAnswer {
  * @param expected The version the writer saw: the one this invocation was told, unless stated.
  * @returns The route with the writer's claims attached.
  */
-function withWriterClaims(path: string, expected = currentExpectedVersion()): string {
+function withWriterClaims(path: string, expected = statedInvocation().expectedVersion): string {
 	const query = new URLSearchParams();
-	const doing = currentWriteDoing();
+	const doing = statedInvocation().doing;
 	if (doing !== null) {
 		query.set("doing", doing);
 	}
@@ -133,7 +128,7 @@ function withWriterClaims(path: string, expected = currentExpectedVersion()): st
  * @returns The field to state, or nothing when no session was named.
  */
 function statedSession(): { session?: string } {
-	const session = currentWriteSession();
+	const session = statedInvocation().session;
 	return session === null ? {} : { session };
 }
 

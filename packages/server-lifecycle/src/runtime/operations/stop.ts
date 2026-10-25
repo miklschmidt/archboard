@@ -9,7 +9,8 @@ import {
 	SERVER_STOP_PROBE_POLL_MS,
 } from "@archboard/timing";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
-import { foreignServiceError, type HealthStatus } from "#runtime/clients/server-client.ts";
+import { type HealthStatus } from "#runtime/clients/server-client.ts";
+import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";
 import {
 	pidFilePath,
 	pidFileRecordsStartTime,

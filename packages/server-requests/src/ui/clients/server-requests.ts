@@ -128,18 +128,45 @@ function plainFailure(
 	return new Error(typeof message === "string" ? message : `${method} ${url} failed (${status})`);
 }
 
+/** One JSON request: GET unless it names a method, with a JSON body when it carries a payload. */
+interface JsonRequest {
+	readonly method?: "GET" | "POST" | "PUT" | "DELETE";
+	/** The body, serialised as JSON. */
+	readonly payload?: unknown;
+	/** Cancels the request. */
+	readonly signal?: AbortSignal | undefined;
+}
+
 /**
- * Fetch a JSON reply, throwing when the server refuses.
+ * The fetch options of one JSON request.
+ * @param asked The request.
+ * @returns The fetch options.
+ */
+function fetchOptions(asked: JsonRequest): RequestInit {
+	return {
+		...(asked.method === undefined ? {} : { method: asked.method }),
+		...(asked.payload === undefined
+			? {}
+			: {
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(asked.payload),
+				}),
+		...(asked.signal === undefined ? {} : { signal: asked.signal }),
+	};
+}
+
+/**
+ * Make one JSON request, throwing when the server refuses.
  * @param url The endpoint.
- * @param init Request options; GET when absent.
+ * @param asked The method, payload and cancellation; a plain GET when absent.
  * @returns The decoded reply, trusted to be the endpoint's contract.
  */
-async function json<T>(url: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(url, init);
+async function requestJson<T>(url: string, asked: JsonRequest = {}): Promise<T> {
+	const response = await fetch(url, fetchOptions(asked));
 	const body = await readBody(response);
 	const record = isRecord(body) ? body : null;
 	if (refused(response, record)) {
-		throw plainFailure(record, init?.method ?? "GET", url, response.status);
+		throw plainFailure(record, asked.method ?? "GET", url, response.status);
 	}
 	return trustReply<T>(body);
 }
@@ -154,30 +181,6 @@ function refused(response: Response, record: JsonRecord | null): boolean {
 	return !response.ok || record?.["success"] === false;
 }
 
-/**
- * Request options for a JSON mutation.
- * @param method POST, PUT or DELETE.
- * @param payload The body, serialised as JSON.
- * @returns The fetch options.
- */
-function mutation(method: "POST" | "PUT" | "DELETE", payload: unknown): RequestInit {
-	return {
-		method,
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(payload),
-	};
-}
-
-/**
- * POST a JSON payload and decode the reply.
- * @param url The endpoint.
- * @param payload The body.
- * @returns The decoded reply.
- */
-function post<T>(url: string, payload: unknown): Promise<T> {
-	return json<T>(url, mutation("POST", payload));
-}
-
 /** A Zod-shaped parser for one reply schema. */
 interface ReplySchema<T> {
 	safeParse(value: unknown): { success: true; data: T } | { success: false };
@@ -187,7 +190,7 @@ interface ReplySchema<T> {
  * Fetch a reply that must match a schema exactly: a success schema on a 2xx,
  * the failure schema otherwise. Anything else is reported as invalid.
  * @param url The endpoint.
- * @param init Request options.
+ * @param asked The method, payload and cancellation; a plain GET when absent.
  * @param successSchema The schema a 2xx body must satisfy.
  * @param failureSchema The schema a non-2xx body must satisfy.
  * @param invalid Builds the failure reported for an unparseable reply.
@@ -195,13 +198,13 @@ interface ReplySchema<T> {
  */
 async function strictReply<T, F>(
 	url: string,
-	init: RequestInit | undefined,
+	asked: JsonRequest | undefined,
 	successSchema: ReplySchema<T>,
 	failureSchema: ReplySchema<F>,
 	invalid: (error?: unknown) => F,
 ): Promise<T | F> {
 	try {
-		const response = await fetch(url, init);
+		const response = await fetch(url, asked === undefined ? undefined : fetchOptions(asked));
 		const body: unknown = await response.json();
 		const parsed = response.ok ? successSchema.safeParse(body) : failureSchema.safeParse(body);
 		return parsed.success ? parsed.data : invalid();
@@ -210,32 +213,10 @@ async function strictReply<T, F>(
 	}
 }
 
-/**
- * Request options carrying a caller's cancellation, when it has one.
- * @param signal Cancels the request, when the caller has a signal.
- * @returns The fetch options for a GET.
- */
-function cancellable(signal?: AbortSignal): RequestInit {
-	return signal === undefined ? {} : { signal };
-}
-
-/**
- * The `?board=` query for a board-scoped endpoint.
- * @param board The board key, or null for none.
- * @returns The query string, empty when no board is named.
- */
-function boardQuery(board: string | null): string {
-	return board === null || board === "" ? "" : `?board=${encodeURIComponent(board)}`;
-}
-
 export {
-	boardQuery,
-	cancellable,
 	inVault,
-	json,
 	learnServedVault,
-	mutation,
-	post,
+	requestJson,
 	servedVault,
 	strictReply,
 	type ReplySchema,

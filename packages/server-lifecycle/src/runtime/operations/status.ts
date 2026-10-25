@@ -2,12 +2,8 @@
 // Archboard server, or the server with what it reports about itself.
 
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
-import {
-	getHealth,
-	getSyncStatus,
-	OtherSourceError,
-	type HealthStatus,
-} from "#runtime/clients/server-client.ts";
+import { getHealth, getSyncStatus, type HealthStatus } from "#runtime/clients/server-client.ts";
+import { OtherSourceError } from "#runtime/clients/server-client-transport.ts";
 import { isServerHealth, serverPort } from "#runtime/operations/server-spawn-target.ts";
 import { readPidFile } from "#runtime/store/pidfile.ts";
 

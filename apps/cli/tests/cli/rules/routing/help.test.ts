@@ -18,7 +18,7 @@ import { commanderTree } from "#cli/rules/routing/help.ts";
 import { type CommandRoute } from "#cli/protocol/routing/route.ts";
 import { applyCliBootstrap, isHelpInvocation } from "#cli/operations/bootstrap/bootstrap.ts";
 import { SHARED_OPTION_KEYS, sharedOptionsFor } from "#cli/protocol/contract/shared-options.ts";
-import { statedInvocation } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 
 const registry = cliContractRegistry();
 const routes = Object.fromEntries(

@@ -1,11 +1,10 @@
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import {
 	addressablePanes,
 	panesInOrder,
-	resolvePaneSpec,
-	soloPane,
+	resolvePane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
@@ -343,9 +342,9 @@ function copyableBoards(clientId: string, vault: string): string[] {
  */
 function paneFromRequest(vault: string, spec: unknown): PaneRegistration | null {
 	if (typeof spec === "string" && spec.trim()) {
-		return resolvePaneSpec([...panes.values()], spec);
+		return resolvePane([...panes.values()], spec);
 	}
-	return soloPane(panesOfVault(vault));
+	return resolvePane(panesOfVault(vault));
 }
 
 /**

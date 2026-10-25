@@ -7,7 +7,7 @@ import {
 	type CheckoutChoice,
 	type RepositoryListing,
 } from "@archboard/workspace/repositories";
-import { cancellable, json, mutation } from "@archboard/server-requests";
+import { requestJson } from "@archboard/server-requests";
 
 /**
  * Every repository the navigator lists, with the vault each one reads.
@@ -17,7 +17,7 @@ import { cancellable, json, mutation } from "@archboard/server-requests";
  */
 async function fetchRepositories(signal?: AbortSignal): Promise<RepositoryListing> {
 	const parsed = RepositoryListingSchema.safeParse(
-		await json<unknown>("/api/repositories", cancellable(signal)),
+		await requestJson<unknown>("/api/repositories", { signal }),
 	);
 	if (!parsed.success) {
 		throw new Error("The Archboard server did not list the repositories of this machine.");
@@ -31,7 +31,7 @@ async function fetchRepositories(signal?: AbortSignal): Promise<RepositoryListin
  * @returns When the server has chosen it.
  */
 async function chooseCheckout(choice: CheckoutChoice): Promise<void> {
-	await json("/api/repositories/chosen", mutation("PUT", choice));
+	await requestJson("/api/repositories/chosen", { method: "PUT", payload: choice });
 }
 
 export { chooseCheckout, fetchRepositories };
