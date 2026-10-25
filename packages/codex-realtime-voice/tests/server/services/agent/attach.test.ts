@@ -9,19 +9,22 @@ type BrowserPort = Parameters<typeof attachBrowserSockets>[1];
 
 /**
  * A browser port that records what attach hands it.
- * @returns The port and the requests it received.
+ * @returns The port, the requests it received and the sockets it closed.
  */
 function recordingPort() {
 	const handled: unknown[] = [];
+	const closed: object[] = [];
 	const port: BrowserPort = {
 		accept: () => undefined,
 		handle: async (_instance, _browserId, input) => {
 			handled.push(input);
 		},
-		close: async () => undefined,
+		close: async (instance) => {
+			closed.push(instance);
+		},
 		drain: async () => undefined,
 	};
-	return { port, handled };
+	return { port, handled, closed };
 }
 
 /**
@@ -43,7 +46,8 @@ async function listen(): Promise<{ server: Server; origin: string }> {
  */
 function upgradeStatus(origin: string, path: string, headers: Record<string, string> = {}) {
 	return new Promise<number | undefined>((resolve, reject) => {
-		const upgrade = request(`${origin}${path}`, {
+		const upgrade = request(origin, {
+			path,
 			headers: { Connection: "Upgrade", Upgrade: "websocket", ...headers },
 		});
 		upgrade.once("response", (response) => {
@@ -75,6 +79,8 @@ test("attach refuses a foreign origin on its path and leaves other paths to othe
 		).toBe(403);
 		expect(await upgradeStatus(origin, `/voice?paneId=main`)).toBe(400);
 		expect(await upgradeStatus(origin, `/other${SURFACE}`)).toBe(418);
+		// A target that is no URL is refused, never thrown out of the server's upgrade listener.
+		expect(await upgradeStatus(origin, "http://[")).toBe(400);
 	} finally {
 		await detach();
 		server.close();
@@ -102,6 +108,30 @@ test("attach forwards JSON frames and closes a socket that sends anything else w
 		expect(code).toBe(1003);
 	} finally {
 		await detach();
+		server.close();
+	}
+});
+
+test("attach detach closes the open socket and releases it in the port once", async () => {
+	const { server, origin } = await listen();
+	const { port, closed } = recordingPort();
+	const detach = attachBrowserSockets(server, port, {
+		path: "/voice",
+		origin,
+		checkout: "/work/checkout",
+	});
+	try {
+		const socket = new WebSocket(`${origin.replace("http:", "ws:")}/voice${SURFACE}`, { origin });
+		await new Promise((resolve, reject) => {
+			socket.once("open", resolve);
+			socket.once("error", reject);
+		});
+		const code = new Promise<number>((resolve) => socket.once("close", resolve));
+		await detach();
+		expect(await code).not.toBe(1000);
+		expect(closed).toHaveLength(1);
+		expect(server.listenerCount("upgrade")).toBe(0);
+	} finally {
 		server.close();
 	}
 });
