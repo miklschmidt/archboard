@@ -14,8 +14,7 @@ import {
 function profile(domainInstructions = "Host instructions with trailing spaces.  \n") {
 	return createWorkbenchThreadProfile({
 		role: "coordinator",
-		serviceName: "test-host",
-		threadSource: "test-host",
+		identity: { serviceName: "test-host", threadSource: "test-host" },
 		domainInstructions,
 		dynamicTools: [
 			{
@@ -111,8 +110,7 @@ test.each(["instructions", "tools"] as const)(
 				? profile("Changed host instructions.\n")
 				: createWorkbenchThreadProfile({
 						role: "coordinator",
-						serviceName: original.serviceName,
-						threadSource: original.threadSource,
+						identity: original.identity,
 						domainInstructions: "Host instructions with trailing spaces.  \n",
 						dynamicTools: [],
 					});

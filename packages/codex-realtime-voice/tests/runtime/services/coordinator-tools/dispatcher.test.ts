@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	ARCHBOARD_VOICE_TOOL_NAMES,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	VOICE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
+	VOICE_TOOL_NAMES,
+	WORKHORSE_TOOL_NAMES,
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
@@ -58,20 +58,20 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			{
 				owner: "codex-coordinator-tools",
 				namespace: "archboard_workhorse",
-				manifestHash: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+				manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
 			},
 			{
 				owner: "codex-coordinator-tools",
 				namespace: "archboard_voice",
-				manifestHash: ARCHBOARD_VOICE_MANIFEST_SHA256,
+				manifestHash: VOICE_TOOLS_MANIFEST_SHA256,
 			},
 		]);
 		expect(COORDINATOR_TOOL_MANIFEST_DIGESTS).toEqual({
-			workhorse: ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-			voice: ARCHBOARD_VOICE_MANIFEST_SHA256,
+			workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
+			voice: VOICE_TOOLS_MANIFEST_SHA256,
 		});
-		expect(ARCHBOARD_WORKHORSE_TOOL_NAMES).toHaveLength(5);
-		expect(ARCHBOARD_VOICE_TOOL_NAMES).toEqual(["resolve_spoken_approval"]);
+		expect(WORKHORSE_TOOL_NAMES).toHaveLength(5);
+		expect(VOICE_TOOL_NAMES).toEqual(["resolve_spoken_approval"]);
 	});
 
 	test("routes every workhorse tool through its matching operation port", async () => {

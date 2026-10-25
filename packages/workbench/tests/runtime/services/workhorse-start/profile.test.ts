@@ -13,7 +13,7 @@ test("keeps the reviewed instruction hash at the module boundary", () => {
 test("the Archboard workhorse profile names Archboard and carries its app tools", () => {
 	const profile = ARCHBOARD_INSTRUCTIONS.workhorse;
 
-	expect(profile.serviceName).toBe("archboard");
-	expect(profile.threadSource).toBe("archboard");
+	expect(profile.identity.serviceName).toBe("archboard");
+	expect(profile.identity.threadSource).toBe("archboard");
 	expect(profile.dynamicTools[0]).toEqual(ARCHBOARD_APP_NAMESPACE);
 });

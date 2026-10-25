@@ -10,7 +10,7 @@ import {
 import { createTabSessions, type TabSessions } from "#server/services/sessions/browser-tabs.ts";
 import { createWorkbenchBrowserConnections } from "#server/services/browser-socket/connections.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
-import { captureThreadProfile } from "#runtime/rules/host/instructions.ts";
+import { captureWorkbenchInstructions } from "#runtime/rules/host/instructions.ts";
 import {
 	CODEX_WORKBENCH_OWNER,
 	installProductionCodexWorkbench,
@@ -114,10 +114,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	let owner: CodexWorkbenchOwner | null = null;
 	const host: CodexWorkbenchHostPolicy = Object.freeze({
 		...policy,
-		instructions: Object.freeze({
-			coordinator: captureThreadProfile(policy.instructions.coordinator, "coordinator"),
-			workhorse: captureThreadProfile(policy.instructions.workhorse, "workhorse"),
-		}),
+		instructions: captureWorkbenchInstructions(policy.instructions),
 		contextCodec: Object.freeze({ ...policy.contextCodec }),
 		...(policy.domainTools === undefined
 			? {}

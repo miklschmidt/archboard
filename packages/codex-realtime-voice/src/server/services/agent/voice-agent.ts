@@ -1,6 +1,10 @@
 import type { Server } from "node:http";
 import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
 import type { WorkbenchDynamicTools } from "#runtime/protocol/host/instructions.ts";
+import {
+	DEFAULT_VOICE_AGENT_IDENTITY,
+	type VoiceAgentIdentity,
+} from "#runtime/protocol/host/identity.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
@@ -15,20 +19,6 @@ import {
 	type CodexWorkbenchExtensions,
 	type CreateCodexWorkbenchOptions,
 } from "#server/services/owner/workbench.ts";
-
-/** The Codex service name and thread source that every thread of the agent carries. */
-export interface VoiceAgentIdentity {
-	/** Codex `serviceName` of every thread. */
-	readonly serviceName: string;
-	/** Codex `threadSource` of every thread, which Codex shows as where a thread came from. */
-	readonly threadSource: string;
-}
-
-/** The identity a host gets when it names none. */
-export const DEFAULT_VOICE_AGENT_IDENTITY: VoiceAgentIdentity = Object.freeze({
-	serviceName: "codex-realtime-voice",
-	threadSource: "codex-realtime-voice",
-});
 
 /**
  * Deliberate extension points for a host that adds its own domain to the agent: context sources,
@@ -120,7 +110,6 @@ export interface VoiceAgent {
  * @returns The coordinator and workhorse profiles.
  */
 function threadProfiles(options: VoiceAgentOptions, tools: VoiceAgentExtensions["tools"]) {
-	const identity = options.identity ?? DEFAULT_VOICE_AGENT_IDENTITY;
 	/**
 	 * Compose one role.
 	 * @param role The role.
@@ -128,8 +117,7 @@ function threadProfiles(options: VoiceAgentOptions, tools: VoiceAgentExtensions[
 	 */
 	const profile = (role: "coordinator" | "workhorse") =>
 		createWorkbenchThreadProfile({
-			serviceName: identity.serviceName,
-			threadSource: identity.threadSource,
+			identity: options.identity ?? DEFAULT_VOICE_AGENT_IDENTITY,
 			role,
 			domainInstructions: options.instructions[role],
 			dynamicTools: tools?.[role] ?? [],

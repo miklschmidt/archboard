@@ -43,11 +43,11 @@ export {
 	DynamicToolResponseSchema,
 } from "#runtime/protocol/coordinator-tool-contract/dynamic-tool-envelopes.ts";
 export {
-	ARCHBOARD_VOICE_MANIFEST_JSON,
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	VOICE_TOOLS_MANIFEST_JSON,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_JSON,
+	WORKHORSE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMES,
 	assertCanonicalManifest,
 	verifyCoordinatorManifestIntegrity,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
@@ -124,7 +124,7 @@ export {
 	normalizeCoordinatorCallback,
 } from "#runtime/services/coordinator-callbacks/callbacks.ts";
 export { createCoordinatorCallbackRealtimePort } from "#runtime/services/coordinator-callbacks/realtime.ts";
-export { ARCHBOARD_COORDINATOR_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
+export { COORDINATOR_CALLBACK_NAMESPACE } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 export { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
 export {
 	type CodexRealtimeAdapter,

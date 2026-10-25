@@ -1,7 +1,7 @@
 import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
 import {
-	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_SHA256,
+	WORKHORSE_TOOL_NAMESPACE,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	CodexWorkhorseOperationsError,
@@ -62,9 +62,9 @@ function parseCall(
  */
 function callNamesTool(parsed: WorkhorseCoordinatorCall, tool: WorkhorseOperationName): boolean {
 	return (
-		parsed.namespace === ARCHBOARD_WORKHORSE_NAMESPACE.name &&
+		parsed.namespace === WORKHORSE_TOOL_NAMESPACE.name &&
 		parsed.tool === tool &&
-		parsed.manifestHash === ARCHBOARD_WORKHORSE_MANIFEST_SHA256
+		parsed.manifestHash === WORKHORSE_TOOLS_MANIFEST_SHA256
 	);
 }
 

@@ -69,7 +69,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 	try {
 		ensureEpochDirectory(fileSystem, rootDirectory);
 	} catch (error) {
-		throw storageError("unable to establish the Archboard-owned epoch root", error);
+		throw storageError("unable to establish the voice agent's own epoch root", error);
 	}
 	const manifestPath = join(rootDirectory, "epoch-manifest.json");
 	const now = options.now ?? Date.now;
