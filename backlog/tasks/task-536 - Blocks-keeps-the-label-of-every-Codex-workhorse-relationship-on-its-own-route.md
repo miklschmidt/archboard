@@ -4,7 +4,7 @@ title: Blocks keeps the label of every Codex workhorse relationship on its own r
 status: In Progress
 assignee: []
 created_date: '2026-10-25T14:14:00Z'
-updated_date: '2026-10-25T14:32:00Z'
+updated_date: '2026-10-25T17:43:00Z'
 labels: []
 dependencies: []
 ordinal: 958000
@@ -26,4 +26,6 @@ CI fails on feat/reusable-codex-workbench (PR #2): packages/renderer/tests/runti
 
 <!-- SECTION:NOTES:BEGIN -->
 Cause and fix (d8fbfb7cd): the Blocks step pass (packages/renderer/src/shared/rules/blocks/lines/steps.ts) refused a slide only when it ran through the line's own label box, so a slide could put a turn within BEND_RADIUS (8 units) of the label, which then sat on the rounded bend (docs/design/layout-rules.md section 32). The pass now grows the line's own label box by BEND_RADIUS. Regression owner: joined-steps.test.ts, red before and green after. CI run 40201286232 also timed out 'Codex realtime voice (blocks)' at 60 s, before this fix and unrelated to it: its Blocks layout took 75.7 s locally at load 8 (49 nodes, 89 edges, 10 containers, the class of Browser application with 55 and 68, and Board viewer with 59 and 128). It gets the heavy Blocks budget with its own evidence after TASK-530.05 reshapes that board, with docs/agents/test-suite.md updated.
+
+With the budget (commit above), the Codex realtime voice (blocks) case runs to its end locally in 34.7 s under CI=true and fails 'routes through cards': relationships 2ed6AqSF, mxl6bmYW, zEsrkAfC, mAyzTmDD and o63C7KPd route through the card ME7EbWl8 (Workhorse list). The timeout had hidden it before.
 <!-- SECTION:NOTES:END -->
