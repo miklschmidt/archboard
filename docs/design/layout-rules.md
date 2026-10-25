@@ -2714,3 +2714,59 @@ On the page the join stands under the card, and the drawing turns twice
 less. The 100 labels that still stand off their line enter an End terminal,
 which the flowchart also draws to its middle. The extra layouts made rendering
 the whole corpus take 161 s in place of 155 s.
+
+## 51. The core's router routes the trunks of Blocks (2026-10-25, TASK-520.02)
+
+The renderer core routes the trunks of Blocks with its own orthogonal router
+(`crates/archboard-router`), in place of libavoid
+([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+The router is written from the published papers that its module cites. It
+searches a grid of the obstacles' buffer edges with A*, and charges each turn
+and each crossing of a route found before it. It then nudges the routes on
+one line apart one axis at a time with a separation solver. Routes from one
+shared pin run as one line until they part, and routes that share a line
+stand in the order in which they part. Where those orders contradict each
+other, the surest orders are kept and the rest are dropped, so no order
+closes a cycle. Where a channel is too narrow for its lanes, the routes are
+nudged again with each pin held only by the stub out of its buffer, and the
+answer that crowds fewer routes is kept. On Agent workbench a line whose
+segment into its pin, held at the pin, ran 424 px up a corridor left three
+other lines the room of one, and they stood 5.8 px apart. A trunk that the
+router cannot route still falls back to undirected ends and then to a dogleg
+(`trunks.ts`). The router never throws.
+
+All 5,295 trunk scenes that libavoid routed for the corpus were replayed
+through the router. Crossings fell from 260,419 to 195,096 (25% fewer), turns
+rose from 306,189 to 322,437 (5% more) and the routes are 3% shorter. No
+connector was left unrouted, and the replay took 6.5 s.
+
+| drawing, Blocks, one at a time | libavoid | the core's router |
+| ------------------------------ | -------- | ----------------- |
+| all 293 drawings               | 18.0 s   | 14.4 s            |
+| Workspace packages             | 3.0 s    | 0.56 s            |
+| One tab session                | 1.1 s    | 0.39 s            |
+
+One drawing takes longer: Agent workbench's Workhorse operations
+responsibilities, about 210 ms in place of 150 ms when the board's views are
+drawn in order. Alone, each of its seven solves is faster than with libavoid.
+
+On whole boards drawn with their groups, Blocks can choose another packing
+with the new routes, and some boards count more crossings than before
+(Agent workbench 399 to 565), others fewer (Board persistence 398 to 279).
+Over the 23 boards and fixtures, crossings rose from 4,200 to 4,352 (4%),
+the page area fell 17%, the route length 8%, and the ink of lines in a
+margin lane by more than half.
+The user compared every board in dark mode, side by side, and judged the
+router's pictures better on all of them. The scorecard weighs crossings
+before position, packing, grouping and order, which decide more of how a
+board reads, so it was not the judge.
+
+The legacy-routing fixture now stands its chain of cards in line with the
+line into the wide pool below it, not over the pool's middle. With libavoid
+the slid packing's straight line came back with two turns 5e-14 px apart,
+which tied it with the centred packing, and the centred packing won by
+order. The router returns the straight line. Both final pictures run straight
+into the pool.
+
+The Blocks cases of Browser application and Board viewer no longer need a
+test budget of their own: Board viewer, the slowest, takes about 5 s.

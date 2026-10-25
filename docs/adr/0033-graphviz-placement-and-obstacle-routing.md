@@ -55,3 +55,8 @@ Superseded (2026-09-27,
 [ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md)): ADR 0040
 removes the Graphviz engine, and Track and Blocks lay out every board. Graphviz
 still places their cards. libavoid still routes Blocks' trunks.
+
+Superseded in part (2026-10-25, TASK-520.02,
+[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
+the router of the renderer core routes Blocks' trunks, and libavoid-js is gone
+from the repository.
