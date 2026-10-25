@@ -8,4 +8,3 @@ export {
 } from "#runtime/services/vault-finder.ts";
 export type { BoundVault } from "#runtime/services/vault-finder.ts";
 export { findAndRegisterVault } from "#runtime/services/vault-address.ts";
-export type { VaultRegistration } from "#runtime/services/vault-address.ts";
