@@ -7,34 +7,19 @@ export {
 	type CoordinatorCallbacks,
 	type CoordinatorHostContextCallback,
 	type CoordinatorHostContextSource,
-	type WorkhorseNewsSource,
-	type WorkhorseNewsSituation,
-	type CoordinatorWorkhorseNewsCallback,
 	type CoordinatorCallbackCorrelation,
-	type CoordinatorOperationCallback,
 	type CoordinatorCallbackContextPort,
 	type CoordinatorCallback,
 	type CoordinatorCallbackRealtimeRequest,
-	type CoordinatorCallbackDeliveryOutcome,
-	type CoordinatorCallbackMutationResult,
-	type CoordinatorCallbackRealtimePort,
 	type CoordinatorCallbackTurnPort,
-	type CoordinatorCallbackTurnResult,
 	type CoordinatorCallbackCurrentChild,
 	type CoordinatorCallbackReadyCoordinator,
-	type CoordinatorCallbackDeliveryPath,
-	type CallbackBufferOverflowReason,
-	type CoordinatorCallbackDeliveryReason,
-	type CoordinatorCallbackDelivery,
-	type CoordinatorCallbackHistory,
-	type CoordinatorCallbackClassification,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 export { COORDINATOR_CAPABILITY_POLICY } from "#runtime/protocol/coordinator/contract.ts";
 export {
 	type WorkbenchContextEvent,
 	type WorkbenchContextPublisher,
 } from "#runtime/protocol/host/context-source.ts";
-export { type WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
 export { type WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operations/contract.ts";
 export { coordinatorCallbackCoalescingKey } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 export { type ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
@@ -82,7 +67,6 @@ export {
 export { createCodexThreadContextController } from "#runtime/services/thread-context/controller.ts";
 export { createCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
 export { canonicalContextCursorToken } from "#runtime/services/thread-context/event-identity.ts";
-export { sameStringValues } from "#runtime/services/thread-context/link-equality.ts";
 export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 export {
 	type CodexWaitGraph,
