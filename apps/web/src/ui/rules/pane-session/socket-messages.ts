@@ -9,7 +9,7 @@
 // about the layout, which step of a walkthrough somebody narrating it asked for,
 // and that a checkout was chosen somewhere.
 
-import { PanePresentRequestSchema, type PanePresentRequest } from "@archboard/board/pane-context";
+import { PanePresentRequestSchema } from "@archboard/board/pane-context";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type {
@@ -19,6 +19,9 @@ import type {
 	LockHolder,
 	WebSocketMessage,
 } from "#ui/rules/pane-session/session-types.ts";
+import type { z } from "zod";
+
+type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Where the server says a pane is: a vault, and the repository it is listed under. */
 interface PanePlace {

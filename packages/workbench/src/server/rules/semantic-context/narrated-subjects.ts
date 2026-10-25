@@ -12,12 +12,16 @@ import {
 	changeOf,
 	compareVariants,
 	type FieldChange,
-	type VariantComparison,
 	comparedWith,
 } from "@archboard/board/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import type { VariantContent, WalkthroughBeat } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
+import type { WalkthroughBeatSchema } from "@archboard/board/content";
+import type { z } from "zod";
+
+type VariantComparison = ReturnType<typeof compareVariants>;
+type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** A value a moved field had that is longer than this is said to have changed, not what it was. */
 const MOVED_VALUE_MAX_CHARS = 120;

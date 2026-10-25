@@ -20,7 +20,7 @@ import {
 } from "#runtime/protocol/thread-tools/results.ts";
 import { WAIT_THREADS_TIMEOUT_MAX_MS } from "#runtime/protocol/thread-tools/limits.ts";
 import { parseToolArguments } from "#runtime/protocol/thread-tools/arguments.ts";
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import {
 	APPROVAL_REQUIRED_ENVELOPE,
 	OUTCOME_UNKNOWN_ENVELOPE,
@@ -152,7 +152,7 @@ describe("strict six-tool argument boundary", () => {
 
 	test("keeps wait timeout and target count at the reviewed boundaries", () => {
 		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBe(120_000);
-		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(CODEX_BROWSER_COMMAND_LEASE_MS);
+		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(CODEX_APPROVAL_MS.browserCommandLease);
 		expect(parseToolArguments("wait_threads", { threadIds: ["t"], timeoutMs: 0 })).toBeTruthy();
 		expect(
 			parseToolArguments("wait_threads", {

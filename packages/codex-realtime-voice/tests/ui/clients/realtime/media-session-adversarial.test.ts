@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_REALTIME_START_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { createRealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
 import type { RealtimeMediaSession } from "#ui/state/realtime/session-contract.ts";
 import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
@@ -326,7 +326,7 @@ describe("realtime browser media lifecycle boundaries", () => {
 		const media = session(env);
 		const starting = media.start(correlation());
 		await settle();
-		env.advance(CODEX_REALTIME_START_MS);
+		env.advance(CODEX_REALTIME_MS.start);
 		const timedOut = await starting;
 		expect(timedOut.state).toMatchObject({ phase: "recoverable_error", reason: "sdp_failed" });
 		env.release();
@@ -341,7 +341,7 @@ describe("realtime browser media lifecycle boundaries", () => {
 		const media = session(env);
 		const starting = media.start(correlation());
 		await settle();
-		env.advance(CODEX_REALTIME_START_MS - 1);
+		env.advance(CODEX_REALTIME_MS.start - 1);
 		env.release();
 		expect((await starting).state).toEqual({
 			phase: "listening",
@@ -368,7 +368,7 @@ describe("realtime browser media lifecycle boundaries", () => {
 			phase: "recoverable_error",
 			reason: "sdp_failed",
 		});
-		expect(env.now).toBe(CODEX_REALTIME_START_MS);
+		expect(env.now).toBe(CODEX_REALTIME_MS.start);
 		env.release();
 		await settle();
 		env.assertReleased();

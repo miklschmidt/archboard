@@ -2,7 +2,7 @@
 	"name": "@archboard/code-binding",
 	"version": "0.0.0",
 	"private": true,
-	"description": "A node's code binding and where its path lives in a checkout: the binding, anchor and document-reference schemas, the opener contract, and the resolver that turns a binding into a file or directory.",
+	"description": "A node's code binding and where its path lives in a checkout: the binding, anchor and document-reference schemas, and the resolver that turns a binding into a file or directory.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -11,7 +11,6 @@
 	},
 	"exports": {
 		"./bindings": "./src/shared/api/bindings.ts",
-		"./opening": "./src/shared/api/opening.ts",
 		"./resolution": "./src/runtime/api/resolution.ts"
 	}
 }

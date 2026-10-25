@@ -7,7 +7,7 @@
 
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { SOCKET_RECONNECT_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 
 import {
 	FakeSocket,
@@ -252,7 +252,7 @@ test("a socket that comes back forgets the agent work it heard, since the server
 			socket.dispatchEvent(new CloseEvent("close", { code: 1006 }));
 		});
 		act(() => {
-			jest.advanceTimersByTime(SOCKET_RECONNECT_MS);
+			jest.advanceTimersByTime(PANE_MS.socketReconnect);
 		});
 	} finally {
 		jest.useRealTimers();

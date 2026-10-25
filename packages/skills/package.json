@@ -11,8 +11,7 @@
 	},
 	"exports": {
 		"./distribution": "./src/runtime/api/distribution.ts",
-		"./evaluation-run": "./src/runtime/api/evaluation-run.ts",
-		"./grading": "./src/runtime/api/grading.ts",
+		"./evaluation": "./src/runtime/api/evaluation.ts",
 		"./citations": "./src/runtime/api/citations.ts"
 	}
 }

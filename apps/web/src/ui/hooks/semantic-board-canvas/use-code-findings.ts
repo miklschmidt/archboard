@@ -10,9 +10,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import type { RememberedFindings, RememberedReading } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { codeFindingsQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+
+/** What the last pass found on one board at one variant. */
+type RememberedReading = RememberedFindings["readings"][number];
 
 /** One board as it is on screen: its name, the variant drawn, by id, and the version drawn. */
 interface ReadingOnScreen {

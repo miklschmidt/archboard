@@ -8,8 +8,7 @@ import { cn } from "cn";
 import { useCallback, useRef, type JSX } from "react";
 import { flushSync } from "react-dom";
 
-import { buttonVariants } from "@archboard/ui-kit/controls";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@archboard/ui-kit/overlays";
+import { buttonVariants, Tooltip } from "@archboard/ui-kit/components";
 import { useSubtitlesWanted } from "#ui/hooks/subtitles/use-subtitle-preference.ts";
 import { subtitlePreference, type SubtitlePreference } from "#ui/state/subtitles/preference.ts";
 
@@ -123,7 +122,7 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 	}, [preference]);
 	return (
 		<Tooltip>
-			<TooltipTrigger
+			<Tooltip.Trigger
 				ref={trigger}
 				data-slot="voice-subtitles-toggle"
 				className={cn(
@@ -138,8 +137,8 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 			>
 				<Glyph filled={face.filled} />
 				<span className="sr-only">{label}</span>
-			</TooltipTrigger>
-			<TooltipContent side={props.tipSide ?? "top"}>{label}</TooltipContent>
+			</Tooltip.Trigger>
+			<Tooltip.Content side={props.tipSide ?? "top"}>{label}</Tooltip.Content>
 		</Tooltip>
 	);
 }

@@ -7,17 +7,7 @@
 
 import { useCallback, type JSX } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@archboard/ui-kit/overlays";
-import { BusyText, CANCEL_BUTTON_CLASS } from "@archboard/ui-kit/dialog-parts";
+import { Button, Dialog } from "@archboard/ui-kit/components";
 import { MoveRefusal } from "#ui/components/board-move/MoveRefusal.tsx";
 import { MoveRewrites } from "#ui/components/board-move/MoveRewrites.tsx";
 import { MoveTargets } from "#ui/components/board-move/MoveTargets.tsx";
@@ -60,16 +50,16 @@ function MoveBoardDialog(props: MoveBoardDialogProps): JSX.Element {
 	);
 	return (
 		<Dialog open={props.open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-lg" initialFocus={firstTarget}>
-				<DialogHeader>
-					<DialogTitle>Move {props.title}</DialogTitle>
-					<DialogDescription>
+			<Dialog.Content className="sm:max-w-lg" initialFocus={firstTarget}>
+				<Dialog.Header>
+					<Dialog.Title>Move {props.title}</Dialog.Title>
+					<Dialog.Description>
 						Every variant moves, and each drill-down that names it is rewritten to open it where it
 						is then.
-					</DialogDescription>
-				</DialogHeader>
+					</Dialog.Description>
+				</Dialog.Header>
 				<MoveBoardForm board={props.board} onMoved={onOpenChange} />
-			</DialogContent>
+			</Dialog.Content>
 		</Dialog>
 	);
 }
@@ -94,21 +84,19 @@ function MoveBoardForm(props: {
 	return (
 		<>
 			{targets === undefined ? (
-				<BusyText busy text="Reading the repositories…" />
+				<Dialog.Busy busy text="Reading the repositories…" />
 			) : (
 				<MoveTargets targets={targets} chosen={chosen} disabled={moving} onChoose={choose} />
 			)}
 			{chosen !== null && <MoveRewrites preview={preview} />}
 			{refused !== null && <MoveRefusal title="The board was not moved" error={refused} />}
-			<BusyText busy={moving} text="Moving the board…" />
-			<DialogFooter>
-				<DialogClose className={CANCEL_BUTTON_CLASS} disabled={moving}>
-					Cancel
-				</DialogClose>
+			<Dialog.Busy busy={moving} text="Moving the board…" />
+			<Dialog.Footer>
+				<Dialog.Cancel disabled={moving}>Cancel</Dialog.Cancel>
 				<Button size="sm" disabled={moving || preview.data === undefined} onClick={confirm}>
 					Move
 				</Button>
-			</DialogFooter>
+			</Dialog.Footer>
 		</>
 	);
 }

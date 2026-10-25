@@ -13,7 +13,6 @@ import {
 	inspectContainer,
 	interfaceMeasures,
 	type Caller,
-	type ContainerInterface as Derived,
 } from "@archboard/board/container-interface";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
@@ -28,6 +27,8 @@ import {
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+
+type Derived = Parameters<typeof interfaceMeasures>[0];
 
 /** Inputs for the interface. */
 interface ContainerInterfaceProps {

@@ -16,13 +16,15 @@ import type { Express, Request, Response } from "express";
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticPaneContextSchema,
-	type SemanticPaneContext,
 } from "@archboard/board/pane-context";
 import { publishPaneContext } from "#server/services/owner/wiring-hooks.ts";
 import { panePresentations } from "#server/services/panes/presentation.ts";
 import { paneVaults, panes } from "#server/services/panes/registry.ts";
 import { bodyOf } from "#server/services/request/board.ts";
 import { requireVault, vaultOfRequest } from "#server/services/request/vault.ts";
+import type { z } from "zod";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** The latest report from each pane, by the client id that sent it. */
 const reports = new Map<string, SemanticPaneContext>();

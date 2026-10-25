@@ -20,7 +20,7 @@
 // These are the browser's own animations rather than frames of this code's,
 // because nothing here reads board content or needs a step drawn by hand.
 
-import { PICTURE_EXIT_MS } from "@archboard/timing";
+import { PICTURE_MS } from "@archboard/timing";
 import { clockOf, setClock } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
 import {
 	runTraffic,
@@ -136,7 +136,7 @@ function leavePicture(root: SVGElement, departure: Departure, reducedMotion: boo
 			{ opacity: 0, transform: `scale(${scale})` },
 		],
 		{
-			duration: PICTURE_EXIT_MS,
+			duration: PICTURE_MS.exit,
 			easing: LEAVE_EASING,
 			fill: "forwards",
 		},
@@ -292,7 +292,7 @@ function ghostPicture(surface: HTMLElement, heading: Departure | null, moved: Of
 			{ opacity: look.opacity, transform: look.transform },
 			{ opacity: 0, transform: to.transform },
 		],
-		{ duration: PICTURE_EXIT_MS * look.opacity, easing: "ease-out", fill: "forwards" },
+		{ duration: PICTURE_MS.exit * look.opacity, easing: "ease-out", fill: "forwards" },
 	);
 	fade.addEventListener("finish", () => {
 		stopTraffic(made.ghost);

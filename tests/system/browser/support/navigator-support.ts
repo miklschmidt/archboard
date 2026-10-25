@@ -2,7 +2,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PanesReport } from "@archboard/server-lifecycle/panes";
-import type { RepositoryListing } from "@archboard/workspace/repositories";
+import type { z } from "zod";
+import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
 
 type PanesBody = PanesReport & { success: boolean };
 type HealthBody = { websocket_clients: number };
@@ -22,7 +23,7 @@ async function servedRepository(base: string): Promise<string> {
 	const response = await fetch(`${base}/api/repositories`, {
 		headers: { Origin: base, "Sec-Fetch-Site": "same-origin" },
 	});
-	const body = (await response.json()) as RepositoryListing;
+	const body = (await response.json()) as z.infer<typeof RepositoryListingSchema>;
 	const served =
 		body.served === null
 			? undefined

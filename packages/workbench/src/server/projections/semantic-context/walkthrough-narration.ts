@@ -18,13 +18,8 @@ import type {
 	RealtimePresentationChange,
 } from "#runtime/rules/realtime/presentation-mode.ts";
 import { parseBoardKey, statedVariant } from "@archboard/board/address";
-import { readSemanticBoard } from "@archboard/board/store-read";
-import {
-	addressedVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
-import type { SemanticWalkthrough } from "@archboard/board/content";
+import { readBoardVariant } from "@archboard/board/store-read";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
 	panePresentations,
 	type UserPresentationChange,
@@ -35,6 +30,9 @@ import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { aggregateKey } from "#server/projections/semantic-context/board-context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
+import type { VariantContent } from "@archboard/board/content";
+
+type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /**
  * The board a pane shows: what the pane itself last said is on screen, which
@@ -91,18 +89,14 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 	if (showing === null) {
 		return undefined;
 	}
-	const read = readSemanticBoard(showing.vault, showing.board);
-	if (!read.ok) {
-		return undefined;
-	}
-	const opened = addressedVariant(read.board, showing.variant);
+	const opened = readBoardVariant(showing.vault, showing.board, showing.variant);
 	if (!opened.ok) {
 		return undefined;
 	}
 	const walkthrough = opened.variant.content.walkthroughs.find((one) => one.id === walkthroughId);
 	return walkthrough === undefined
 		? undefined
-		: { board: read.board, variant: opened.variant, walkthrough };
+		: { board: opened.board, variant: opened.variant, walkthrough };
 }
 
 /**
