@@ -3,10 +3,8 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::attrs;
-use crate::drawing::{Emphasis, ReadingDirection};
-use crate::geometry::coord;
-use crate::markup::{Markup, concat, tag, wrap};
+use crate::drawing::ReadingDirection;
+use crate::markup::{Markup, concat};
 use crate::measure::{Measure, Measurer};
 use crate::request::{PaintRequest, Picture, Standing};
 use crate::scene::{Atlas, Boxes, Scene};
@@ -51,7 +49,7 @@ pub struct Ctx<'a> {
 
 /// Every arrowhead marker and shared gradient a picture's body refers to.
 fn definitions(palette: &palette::Palette) -> Markup {
-    use styles::{Head, LIT_HEAD, WEIGHTS, head_ref_x, head_widths, line_colour};
+    use styles::{Head, LIT_HEAD, WEIGHTS, line_colour};
 
     let mut inks: Vec<(String, String)> = vec![(line_colour(palette, None), String::new())];
     for standing in [Standing::Added, Standing::Changed, Standing::Removed] {
@@ -61,41 +59,16 @@ fn definitions(palette: &palette::Palette) -> Markup {
         ));
     }
     inks.push((palette.selection.to_owned(), LIT_HEAD.to_owned()));
-    let marker = |head: Head, weight: Emphasis, colour: &str, suffix: &str| {
-        let size = coord(head_widths(weight));
-        let shape = match head {
-            Head::Filled => tag("path", attrs! { "d": "M0,0 L10,5 L0,10 z", "fill": colour }),
-            Head::Open => tag(
-                "path",
-                attrs! {
-                    "d": "M2,1 L10,5 L2,9",
-                    "fill": "none",
-                    "stroke": colour,
-                    "stroke-width": 1.7,
-                    "stroke-linecap": "round",
-                    "stroke-linejoin": "round",
-                },
-            ),
-        };
-        wrap(
-            "marker",
-            attrs! {
-                "id": format!("ah-{}-{}{suffix}", head.as_str(), weight.as_str()),
-                "viewBox": "0 0 10 10",
-                "refX": head_ref_x(head),
-                "refY": 5.0,
-                "markerWidth": size.as_str(),
-                "markerHeight": size.as_str(),
-                "orient": "auto-start-reverse",
-            },
-            shape,
-        )
-    };
     let mut parts = Vec::new();
     for head in [Head::Filled, Head::Open] {
         for weight in WEIGHTS {
             for (colour, suffix) in &inks {
-                parts.push(marker(head, weight, colour, suffix));
+                parts.push(architecture::arrowhead_marker(
+                    &format!("ah-{}-{}{suffix}", head.as_str(), weight.as_str()),
+                    head,
+                    weight,
+                    colour,
+                ));
             }
         }
     }
