@@ -10,10 +10,12 @@
 // become one. A slide is kept only where the line's new stretch keeps the
 // router's clearance from every card and title, half a lane from every
 // label, a lane from every other line and a lane and a half from every wall,
-// crosses no more lines and no wall it did not cross, and still runs through
-// the line's own label. A run other lines share, a trunk, moves only with all
-// of them and only where none runs much longer for it; a line's first or
-// last run never leaves the card face it meets.
+// crosses no more lines and no wall it did not cross, and still runs straight
+// through the line's own label: no turn comes within a bend's radius of the
+// label, since a turn rounds that far along each run it joins and a label on
+// the curve sits off its line. A run other lines share, a trunk, moves only
+// with all of them and only where none runs much longer for it; a line's
+// first or last run never leaves the card face it meets.
 import { APPROACH_STRAIGHT, BEND_RADIUS } from "#shared/constants/spacing.ts";
 import { inflate, type Box, type Point } from "#shared/rules/geometry.ts";
 import { corners } from "#shared/rules/blocks/tree/laid.ts";
@@ -90,6 +92,7 @@ interface Weighing {
 	readonly walls: readonly Box[];
 	/** Every title band, grown by a lane. */
 	readonly bands: readonly Box[];
+	/** The line's own label, grown by a bend's radius: what its turns keep clear of. */
 	readonly label: Box | undefined;
 }
 
@@ -316,8 +319,8 @@ function keepsClear(next: readonly Point[], old: readonly Point[], weighing: Wei
 
 /**
  * Whether what a slide adds to a line and takes from it stays clear: nothing
- * it takes is the run through its label, and nothing it adds runs through a
- * box, a title band or its label, or crowds another line. A trunk it takes
+ * it takes or adds comes within a bend of its label, and nothing it adds runs
+ * through a box or a title band, or crowds another line. A trunk it takes
  * moves with every line on it (`trunkOf`).
  * @param added The stretches the slide adds.
  * @param gone The stretches it takes away.
@@ -464,6 +467,9 @@ function weighingOf(
 	const labels = lines.map(({ label }) =>
 		label === undefined ? undefined : inflate(label, LABEL_CLEARANCE),
 	);
+	const own = lines.map(({ label }) =>
+		label === undefined ? undefined : inflate(label, BEND_RADIUS),
+	);
 	const bands = around.bands.map((band) => inflate(band, LANE));
 	return (moved, line) => ({
 		others: runs.flatMap((spans, at) => (moved.has(at) ? [] : spans)),
@@ -473,7 +479,7 @@ function weighingOf(
 		],
 		walls: around.walls,
 		bands,
-		label: lines[line]!.label,
+		label: own[line],
 	});
 }
 
