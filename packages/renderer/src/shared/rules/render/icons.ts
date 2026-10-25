@@ -11,4 +11,4 @@ const FLOW_ICON = "RiFlowChart";
 /** Every icon the renderer draws whatever the policy says. */
 const OWN_ICONS: readonly string[] = [FALLBACK_ICON, FLOW_ICON];
 
-export { FLOW_ICON, OWN_ICONS };
+export { FALLBACK_ICON, OWN_ICONS };
