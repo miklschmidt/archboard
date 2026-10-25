@@ -68,17 +68,20 @@ const semanticDeleteContract = defineCommand({
 	path: ["semantic", "delete"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Delete a board, with every variant",
-	description:
-		"Deletes the whole board in the vault this command finds: the note with every variant goes, " +
-		"and the board's name and its former names are free for a new board. It takes the board's " +
-		"lease as every write does, and states the version it read. It is refused while somebody " +
-		"else holds the board, and while a node on a current or draft variant of another board in " +
-		"the vault opens the board: the refusal names each of them, to remove or point elsewhere " +
-		"first. A board in another repository's vault that opens the board cannot be seen from " +
-		"here, and its own check names the link once the board is gone. The answer lists the " +
-		"embeds the board tracked; each one's embeds check then reports the board missing. Every " +
-		"pane that showed the board is told that it is gone. The delete ends this writer's claim " +
-		"on the board.",
+	description: [
+		"Deletes the whole board in the vault that this command finds. The note goes with every variant, and the board's name and former names are free for a new board. It takes the board's lease, as every write does, and states the version it read.",
+		"",
+		"It is refused:",
+		"- BOARD_HELD: while somebody else holds the board.",
+		"- BOARD_OPENED_BY: while a node on a current or draft variant of another board in the vault opens the board. The refusal names each node, to remove or point elsewhere first.",
+		"",
+		"After the delete:",
+		"- The answer lists the embeds that the board tracked. The embeds check of each one then reports the board as missing.",
+		"- Every pane that showed the board is told that it is gone.",
+		"- This writer's claim on the board ends.",
+		"",
+		"A board in another repository's vault that opens the board cannot be seen from here. That vault's own check names the link once the board is gone.",
+	].join("\n"),
 	examples: [
 		'archboard semantic delete "Old ingest" --expect-version 14 --doing "deleting the board of the ingest that was removed"',
 	],
