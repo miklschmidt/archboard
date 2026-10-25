@@ -5,7 +5,6 @@
 // instead be recreated. Ordinary engine failures must keep reaching the
 // required turn.
 import { expect, test } from "bun:test";
-import type { ElkNode } from "@archboard/elk-rs";
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { installBunHost } from "#runtime/services/bun-host.ts";
@@ -46,12 +45,17 @@ function joining(sources: readonly string[], tag: string): VariantContent {
 	});
 }
 
+/** A solve's graph, as far as these tests read and answer it: its root options. */
+interface Graph {
+	readonly layoutOptions?: Readonly<Record<string, string>>;
+}
+
 /**
  * The blocks a candidate keeps apart, sorted.
  * @param graph The candidate graph.
  * @returns Their ids, joined by commas.
  */
-function apartOf(graph: ElkNode): string {
+function apartOf(graph: Graph): string {
 	const apart = JSON.parse(graph.layoutOptions?.["archboard.blocks.apart"] ?? "[]") as string[];
 	return apart.toSorted().join(",");
 }
@@ -66,7 +70,7 @@ function apartOf(graph: ElkNode): string {
  * @param length How long its line is.
  * @returns The host's solved graph, as the core reads it.
  */
-function answer(content: VariantContent, graph: ElkNode, length: number): string {
+function answer(content: VariantContent, graph: Graph, length: number): string {
 	const placed = {
 		width: 3000,
 		height: 3000,
@@ -171,7 +175,7 @@ test.each([
 		const content = joining(blocks, "ahead");
 		const asked: Asked[] = [];
 		const drawing = await drawnWith(content, (written, signal) => {
-			const graph = JSON.parse(written) as ElkNode;
+			const graph = JSON.parse(written) as Graph;
 			const one: Asked = { apart: apartOf(graph), calledOff: false };
 			// The drawing kept, faced to its blocks' walls, is the walls' choice, not a join turn.
 			if (graph.layoutOptions?.["archboard.blocks.facing"] !== "true") asked.push(one);
@@ -210,10 +214,10 @@ test.each(["active", "queued", "cancelling", "failed"] as const)(
 		const reached = Promise.withResolvers<void>();
 		const held = Promise.withResolvers<string>();
 		const failure = new Error("Active candidate failed after becoming needed again");
-		let heldGraph: ElkNode | undefined;
+		let heldGraph: Graph | undefined;
 		let heldSignal: AbortSignal | undefined;
 		const rendering = drawnWith(content, (written, signal) => {
-			const graph = JSON.parse(written) as ElkNode;
+			const graph = JSON.parse(written) as Graph;
 			const key = apartOf(graph);
 			calls.push(key);
 			if (key === "three,two") reached.resolve();
