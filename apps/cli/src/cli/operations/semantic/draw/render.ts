@@ -108,17 +108,24 @@ const semanticRenderContract = defineCommand({
 	path: ["semantic", "render"],
 	shared: ["url", "directory"],
 	summary: "Draw a semantic board as SVG",
-	description:
-		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer. Without --out, stdout carries the same SVG as --out, including its accessibility metadata and its render recipe, which names the board, variant and view by id and the drawing choices. " +
-		"With --out, the receipt names every node, edge, flow and step the picture draws and the counts of the marks " +
-		"its key shows; semantic views lists that for every view at once. " +
-		"Use --no-comparison to hide comparison marks and removed subjects. " +
-		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
-		"leaving out the Planned frame. " +
-		"Use semantic rasterize --clipboard for PNG and HTML clipboard output. " +
-		"A picture is refused with RENDER_RECIPE_UNAVAILABLE when the server's SVG carries no recipe (restart the server), " +
-		"and with VAULT_REPOSITORY_UNKNOWN when Git does not say which repository holds the vault.",
+	description: [
+		"Draws a semantic board at one variant as SVG, optionally through a named view of the board. The renderer owns the layout, the typography and the routing.",
+		"",
+		"Output:",
+		"- Without --out, stdout carries the SVG. It is the same SVG that --out writes, with its accessibility metadata and its render recipe.",
+		"- With --out, the answer is a receipt. It names every node, edge, flow and step that the picture draws, and the counts of the marks that its key shows. `semantic views` lists that for every view at once.",
+		"- The render recipe names the board, the variant and the view by id, and the drawing choices.",
+		"",
+		"Comparison:",
+		"- --no-comparison hides the comparison marks and the removed subjects.",
+		"- --against draws relative to another variant. It marks only what the drawn variant changes over that variant, and leaves out the Planned frame.",
+		"",
+		"For PNG, and for PNG and HTML on the clipboard, use `semantic rasterize`.",
+		"",
+		"Refusals:",
+		"- RENDER_RECIPE_UNAVAILABLE: the server's SVG carries no recipe. Restart the server.",
+		"- VAULT_REPOSITORY_UNKNOWN: Git does not say which repository holds the vault.",
+	].join("\n"),
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
