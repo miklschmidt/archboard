@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
 import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import type { StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import type { StatedStandings } from "#shared/protocol/render-request.ts";
 import { cornersOf, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import formerNames from "#tests/runtime/support/fixtures/former-names.json";

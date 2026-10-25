@@ -1,7 +1,7 @@
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
 import type { MessageKind } from "@archboard/board/flow";
-import { SHADOW_REACH } from "#shared/rules/svg/parts/shadow.ts";
-import { headReach, type Head, type Weight } from "#shared/rules/svg/page/styles.ts";
+import { SHADOW_REACH } from "#shared/constants/design.ts";
+import { headReach, type Head, type Weight } from "#shared/rules/render/marks.ts";
 
 // Sequence-diagram measurements, used by the sequence renderer.
 // Participants occupy columns; their dashed vertical lifelines show progression
@@ -26,8 +26,6 @@ const COLUMN_GAP = 16;
 
 /** The card's full shadow reach, plus air for the selected lifeline's stroke. */
 const LIFELINE_GAP = SHADOW_REACH + 1;
-/** Preserve the dash phase of the original start, six units below the card. */
-const LIFELINE_DASH_OFFSET = LIFELINE_GAP - 6;
 /** How far the first message sits below the lifeline of the tallest participant card. */
 const FIRST_MESSAGE_DROP = 36;
 /** The vertical step from one message to the next, and from one self-message. */
@@ -45,18 +43,8 @@ const FLOW_GAP = 32;
  * above it.
  */
 const HEAD_REACH = 64;
-/** The class of the ground under a moved head, which the picture shows only then. */
-const HEAD_SHADE_CLASS = "ab-head-shade";
-
-/** Dash pattern for the vertical participant lifelines. */
-const LIFELINE_DASH = "3 5";
-
 /** Half the width of an activation bar, and how far it holds arrows off the lifeline. */
 const ACTIVATION_HALF_WIDTH = 6;
-/** The corner radius of an activation bar. */
-const ACTIVATION_RADIUS = 3;
-/** How thick an activation bar's slab is: its front edge, inside its box along its foot. */
-const BAR_THICKNESS = 2.5;
 /**
  * How far an activation bar runs past the call that starts it and the reply
  * that ends it: past its rounded corner and half an arrowhead (5.5 for a head
@@ -150,29 +138,21 @@ function arrowStandoff(kind: MessageKind): number {
 }
 
 export {
-	STEP_WEIGHT,
 	MAX_PULSES_PER_STEP,
 	COLUMN_MIN_WIDTH,
 	COLUMN_MAX_WIDTH,
 	COLUMN_GAP,
 	LIFELINE_GAP,
-	LIFELINE_DASH,
-	LIFELINE_DASH_OFFSET,
 	FIRST_MESSAGE_DROP,
 	MESSAGE_PITCH,
 	SELF_MESSAGE_PITCH,
 	FLOW_BOTTOM_PADDING,
 	FLOW_GAP,
 	HEAD_REACH,
-	HEAD_SHADE_CLASS,
 	ACTIVATION_HALF_WIDTH,
-	ACTIVATION_RADIUS,
-	BAR_THICKNESS,
 	BAR_OVERHANG,
-	STEP_HEAD,
 	arrowStandoff,
 	SELF_LOOP_REACH,
-	SELF_LOOP_DROP,
 	SELF_LOOP_CORNER,
 	SELF_LOOP_EXTENT,
 	MESSAGE_LABEL_GAP,

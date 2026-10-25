@@ -6,7 +6,7 @@
 // diagram font files are registered on it under the family names the SVG
 // paints with, so a word is measured in the face a browser will draw it in.
 // The layout engine is a pool of Bun Workers; the theme colours are read from
-// the shared stylesheet on disk.
+// the shared stylesheet on disk; the core is this checkout's build of it.
 
 import { readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
@@ -22,8 +22,22 @@ import {
 	type EngineWorker,
 } from "#shared/rules/engine/engine-pool.ts";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
+import { coreBuild, type Core } from "#runtime/services/core.ts";
 
 let installed = false;
+
+/** The core, once something asked for it. */
+let core: Core | undefined;
+
+/**
+ * The renderer core, loaded on first use.
+ * @returns The core.
+ * @throws {CoreBuildError} When there is no build, or it was made from other sources.
+ */
+function loadedCore(): Core {
+	core ??= coreBuild();
+	return core;
+}
 
 /**
  * Make a canvas the way `new OffscreenCanvas(width, height)` makes one: called
@@ -99,6 +113,7 @@ function installBunHost(): void {
 		}
 	}
 	installRendererHost({
+		core: loadedCore,
 		solve: createEnginePool(startEngineWorker, workerCeiling(availableParallelism())),
 		themeColors: readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")),
 		fontBase64,

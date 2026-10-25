@@ -1,7 +1,6 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
 import { withFixtureOrders } from "#tests/runtime/services/rasterizer/fixture-orders.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { themeColor } from "#runtime/store/theme/source.ts";
@@ -15,6 +14,9 @@ import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/rasterizer/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The page tokens a picture paints its ground and its cards' edges in. */
+const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
 
 // The rasterizer is held to what it promises about the bitmap: real pixels of
 // the renderer's own picture, exactly the diagram's size at the stated scale,
@@ -158,7 +160,7 @@ describe("what one capture is", () => {
 		// and not a blank page of the right size. A card's flat front edge is the
 		// one of its tones no light falls across.
 		const colors = pngRgbCounts(capture.png);
-		for (const color of [PALETTE.background, PALETTE.slabEdge]) {
+		for (const color of [PAGE.background, PAGE.slabEdge]) {
 			expect(colors.get(rgbOf(lightValue(color))) ?? 0).toBeGreaterThan(1000);
 		}
 		// Every one of the renderer's faces was declared and loaded before the shot.
@@ -185,7 +187,7 @@ describe("what one capture is", () => {
 		// Every card stands on a front edge of the same flat tone, so the capture
 		// holds all of them and not only the ones a display would have shown.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get(rgbOf(lightValue(PALETTE.slabEdge))) ?? 0).toBeGreaterThan(24 * 500);
+		expect(colors.get(rgbOf(lightValue(PAGE.slabEdge))) ?? 0).toBeGreaterThan(24 * 500);
 	});
 
 	test("a sequence draws through the sequence grammar with its animation paused", async () => {

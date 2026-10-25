@@ -24,7 +24,7 @@
 
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
-import type { DiagramAtlas } from "@archboard/board/render-reply";
+import { SHAPE_TEXT } from "#shared/constants/design.ts";
 import type { VariantContent } from "@archboard/board/content";
 import type {
 	DrawingEdge,
@@ -45,25 +45,22 @@ import {
 	type FlowchartGraph,
 	type FlowchartShape,
 } from "#shared/rules/flowchart/flowchart-graph.ts";
-import { atShapePoints } from "#shared/rules/flowchart/flowchart-ports.ts";
+import { atShapePoints, onOutline } from "#shared/rules/flowchart/flowchart-ports.ts";
 import {
 	SemanticRenderError,
 	type DiagramRenderRequest,
 	type RenderedDiagram,
 } from "#shared/protocol/render-request.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
-import { paintArchitecture, type ShapePainter } from "#shared/rules/svg/parts/architecture.ts";
-import { svgDocument } from "#shared/rules/svg/page/document.ts";
-import { FLOW_ICON } from "#shared/rules/svg/page/icons.ts";
-import { exportedName, framedForExport } from "#shared/rules/svg/page/export-frame.ts";
+import { FLOW_ICON } from "#shared/rules/render/icons.ts";
 import {
-	SHAPE_TEXT,
-	flowchartDefinitions,
-	onOutline,
-	shapePainter,
-} from "#shared/rules/svg/sequence/flowchart-shapes.ts";
-import { pageFor, plannedTitle } from "#shared/rules/svg/page/planned-frame.ts";
-import { standingsFrom, unsettledFrom } from "#shared/rules/svg/parts/standing.ts";
+	documentRequest,
+	groupColours,
+	iconsFor,
+	pageRequest,
+	paintDocument,
+} from "#shared/rules/render/paint.ts";
+import { lineAppearance, nodeAppearances } from "#shared/rules/render/semantic-appearance.ts";
+import { farSizeFor } from "#shared/rules/text/measurement.ts";
 
 /** The widest a shape's words run before they wrap. */
 const SHAPE_WORDS_WIDTH = 150;
@@ -387,24 +384,6 @@ function withOutlines(
 }
 
 /**
- * The atlas with only what a reader can pick: the flows and their steps. The
- * lines and the terminals belong to the picture alone.
- * @param atlas The painted atlas.
- * @param subjects The ids a reader can pick.
- * @returns The atlas of those.
- */
-function subjectAtlas(atlas: DiagramAtlas, subjects: ReadonlySet<string>): DiagramAtlas {
-	/**
-	 * One map of the atlas, cut down to the subjects.
-	 * @param boxes The map.
-	 * @returns The map of subjects alone.
-	 */
-	const kept = <Value>(boxes: Readonly<Record<string, Value>>): Record<string, Value> =>
-		Object.fromEntries(Object.entries(boxes).filter(([id]) => subjects.has(id)));
-	return { nodes: kept(atlas.nodes), edges: kept(atlas.edges), regions: kept(atlas.regions) };
-}
-
-/**
  * What a flowchart draws: with its comparison, the reading with what the
  * variant lost put back; without it, the variant's own reading.
  * @param request What to draw.
@@ -413,49 +392,6 @@ function subjectAtlas(atlas: DiagramAtlas, subjects: ReadonlySet<string>): Diagr
  */
 function toldOf(request: DiagramRenderRequest, plain: boolean): VariantContent {
 	return plain ? (request.held ?? request.content) : request.content;
-}
-
-/** What the flowchart's page is painted from. */
-interface Painting {
-	readonly request: DiagramRenderRequest;
-	readonly plain: boolean;
-	readonly policy: SemanticPolicy;
-	readonly graph: FlowchartGraph;
-	readonly words: ReadonlyMap<string, string[]>;
-	readonly drawing: PaintedDrawing;
-}
-
-/**
- * The flowchart's page: its frames, lines and boxes painted as an
- * architecture's, its shapes by their own painters, and an atlas of only what
- * a reader can pick.
- * @param painting What it is painted from.
- * @returns The page, framed for export.
- */
-function painted(painting: Painting): ReturnType<typeof framedForExport> {
-	const { request, plain, policy, graph, words, drawing } = painting;
-	const shapes = new Map<string, ShapePainter>(
-		[...graph.shapes].map(([id, shape]) => [id, shapePainter(shape, words.get(id) ?? [], PALETTE)]),
-	);
-	const standingOf = standingsFrom(plain ? undefined : request.standing);
-	const architecture = paintArchitecture(
-		drawing,
-		PALETTE,
-		standingOf,
-		unsettledFrom(request.unsettled),
-		{ policy, level: request.level },
-		new Set(),
-		{ drawing, standingOf, shapes, cardKind: "step" },
-	);
-	return framedForExport(
-		pageFor(
-			{ ...architecture, atlas: subjectAtlas(architecture.atlas, graph.subjects) },
-			PALETTE,
-			request.unbuilt,
-		),
-		request,
-		PALETTE,
-	);
 }
 
 /**
@@ -481,22 +417,39 @@ async function renderFlowchart(request: DiagramRenderRequest): Promise<RenderedD
 	const { measure, words } = measured(graph, policy);
 	const laid = await laidOut(graph.content, measure);
 	const drawing = withOutlines(toDiamonds(laid, graph.shapes), graph.shapes);
-	const page = painted({ request, plain, policy, graph, words, drawing });
-	const svg = svgDocument({
-		width: page.width,
-		height: page.height,
-		palette: PALETTE,
-		title: exportedName(
-			plannedTitle(`Flowchart: ${told.flows.map((flow) => flow.name).join(", ")}`, request.unbuilt),
-			request.frame,
-		),
-		description: `Showing the logic of ${told.flows.map((flow) => flow.name).join(", ")}.`,
-		fonts: request.fonts ?? "linked",
-		body: flowchartDefinitions() + page.body,
-		reading: drawing.direction,
-		theme: request.theme,
+	const names = told.flows.map((flow) => flow.name).join(", ");
+	// Its frames, lines and boxes are painted as an architecture's, its shapes
+	// as their own, and its atlas holds only what a reader can pick: the flows
+	// and their steps.
+	const appearances = nodeAppearances(
+		[...drawing.cards, ...drawing.containers].map((card) => card.measured.node),
+		policy,
+		request.level,
+	);
+	return paintDocument({
+		picture: {
+			grammar: "architecture",
+			drawing,
+			appearances: Object.fromEntries(appearances),
+			lines: Object.fromEntries(
+				drawing.edges.map(({ edge }) => [edge.id, lineAppearance(edge.kind, policy, false)]),
+			),
+			steps: [],
+			groups: groupColours(policy),
+			farSize: farSizeFor(
+				drawing.cards.map((card) => ({ name: card.measured.node.name, box: card.box })),
+			),
+			flowchart: {
+				shapes: Object.fromEntries(
+					[...graph.shapes].map(([id, shape]) => [id, { shape, words: words.get(id) ?? [] }]),
+				),
+				subjects: [...graph.subjects],
+			},
+		},
+		page: pageRequest(request, plain),
+		document: documentRequest(request, `Flowchart: ${names}`, `Showing the logic of ${names}.`),
+		icons: iconsFor(appearances.values()),
 	});
-	return { svg, width: page.width, height: page.height, atlas: page.atlas, placed: page.placed };
 }
 
 export { renderFlowchart };

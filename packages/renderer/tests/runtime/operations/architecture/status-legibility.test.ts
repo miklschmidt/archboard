@@ -4,7 +4,7 @@ import type { DiagramTheme } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { type StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { drawnSpan, drawnTexts, registeredFaces } from "#tests/runtime/support/drawn-text.ts";
 import { bodyShift, distanceToRoute, routePoints } from "#tests/runtime/support/drawn-routes.ts";
