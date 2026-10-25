@@ -231,12 +231,7 @@ export default defineConfig({
 			},
 			"lint:all": {
 				dependsOn: ["contracts", "core"],
-				command: [
-					"vp run lint:tests",
-					"vp run lint:policy",
-					"vp run lint:css",
-					"vp run lint:core",
-				],
+				command: ["vp run lint:tests", "vp run lint:policy", "vp run lint:css", "vp run lint:core"],
 				cache: false,
 			},
 			"fix:all": {
