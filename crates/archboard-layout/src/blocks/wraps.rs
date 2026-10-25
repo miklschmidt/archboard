@@ -15,7 +15,7 @@ use crate::track::score::{
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
 use super::laying::{Laying, Make, lay_both, settled};
-use super::tree::{BlockId, BlockTree, Kind};
+use super::tree::{Block, BlockId, BlockTree, Kind};
 
 /// How much better a wrap must fit the page than the board whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -91,77 +91,104 @@ fn wrap_of(laying: Laying<'_>, lowered: Option<Plan>) -> Wrapped<'_> {
     }
 }
 
-/// The block's best wrap or grid, when it scores more than the block needs.
-fn wrap_scoring(
+/// The block's loose cards laid out as a grid, when it has enough of them.
+fn grid_wrap<'t>(
     gv: &mut Engine<'_>,
-    tree: &BlockTree,
+    tree: &'t BlockTree,
     block: BlockId,
-    laying: &Unwrapped<'_>,
-    needed: f64,
-) -> Result<Option<Rc<Laid>>, String> {
+    laying: &Unwrapped<'t>,
+) -> Result<Option<Wrapped<'t>>, String> {
     let Unwrapped {
         laid,
-        whole,
         stacked,
         insets,
+        ..
+    } = *laying;
+    let loose = CardLayout::new(tree, laid, block, insets, Arrangement::default()).loose_cards();
+    if !loose.iter().any(|cards| grids(cards.len())) {
+        return Ok(None);
+    }
+    let make: Make<'t> = Rc::new(move || {
+        CardLayout::new(
+            tree,
+            laid,
+            block,
+            insets,
+            Arrangement {
+                grid: true,
+                stacked,
+                ..Arrangement::default()
+            },
+        )
+    });
+    Ok(Some(wrap_of(lay_both(gv, make)?, None)))
+}
+
+/// The ways to lay one wrap of the block's widest rank out, one for each
+/// choice of its columns, that sink none of its cards.
+///
+/// A wrap that sinks a card stands it off on a late rank, away from its
+/// neighbours: it is no wrap. Where a card stands across the block is settled
+/// before its lines are routed, so a wrap lined up that sinks one is not
+/// routed at all.
+fn lowered_wraps<'t>(
+    gv: &mut Engine<'_>,
+    tree: &'t BlockTree,
+    block: BlockId,
+    laying: &Unwrapped<'t>,
+    lowered: &Plan,
+) -> Result<Vec<Wrapped<'t>>, String> {
+    let Unwrapped {
+        laid,
+        stacked,
+        insets,
+        ..
     } = *laying;
     let held = tree.get(block);
     let around = |card: &str| held.cluster_of.get(card).cloned();
-    let mut chosen: Vec<Wrapped<'_>> = Vec::new();
-    let loose = CardLayout::new(tree, laid, block, insets, Arrangement::default()).loose_cards();
-    if loose.iter().any(|cards| grids(cards.len())) {
-        let make: Make<'_> = Rc::new(move || {
+    let mut makes: Vec<Make<'t>> = Vec::new();
+    for columns in column_choices(lowered) {
+        let plan = lowered.clone();
+        let make: Make<'t> = Rc::new(move || {
             CardLayout::new(
                 tree,
                 laid,
                 block,
                 insets,
                 Arrangement {
-                    grid: true,
+                    lowered: plan.clone(),
                     stacked,
-                    ..Arrangement::default()
+                    columns,
+                    grid: false,
                 },
             )
         });
-        chosen.push(wrap_of(lay_both(gv, make)?, None));
-    }
-    // A wrap that sinks a card stands it off on a late rank, away from its
-    // neighbours: it is no wrap. Where a card stands across the block is
-    // settled before its lines are routed, so a wrap lined up that sinks one
-    // is not routed at all.
-    for lowered in wraps_of(whole, tree, block) {
-        let mut makes: Vec<Make<'_>> = Vec::new();
-        for columns in column_choices(&lowered) {
-            let plan = lowered.clone();
-            let make: Make<'_> = Rc::new(move || {
-                CardLayout::new(
-                    tree,
-                    laid,
-                    block,
-                    insets,
-                    Arrangement {
-                        lowered: plan.clone(),
-                        stacked,
-                        columns,
-                        grid: false,
-                    },
-                )
-            });
-            let mut layout = make();
-            layout.clusters.keep_ties = true;
-            let boxes = layout.lined(gv)?.boxes;
-            if !sinks(&lowered, &boxes, around) {
-                makes.push(make);
-            }
-        }
-        for make in makes {
-            let wrapped = wrap_of(lay_both(gv, make)?, Some(lowered.clone()));
-            if !sinks(&lowered, &wrapped.laying.tied.boxes, around) {
-                chosen.push(wrapped);
-            }
+        let mut layout = make();
+        layout.clusters.keep_ties = true;
+        let boxes = layout.lined(gv)?.boxes;
+        if !sinks(lowered, &boxes, around) {
+            makes.push(make);
         }
     }
-    // A wrap is chosen with its titles tied; only the chosen one is laid again with them pulled down.
+    let mut wraps = Vec::new();
+    for make in makes {
+        let wrapped = wrap_of(lay_both(gv, make)?, Some(lowered.clone()));
+        if !sinks(lowered, &wrapped.laying.tied.boxes, around) {
+            wraps.push(wrapped);
+        }
+    }
+    Ok(wraps)
+}
+
+/// The best of the wraps, settled, when it scores more than the block needs.
+/// A wrap is chosen with its titles tied; only the chosen one is laid again
+/// with them pulled down, and kept so unless that sinks a card.
+fn settled_best(
+    gv: &mut Engine<'_>,
+    held: &Block,
+    chosen: Vec<Wrapped<'_>>,
+    needed: f64,
+) -> Result<Option<Rc<Laid>>, String> {
     let mut best: Option<Wrapped<'_>> = None;
     for other in chosen {
         if best.as_ref().is_none_or(|one| wraps_better(&other, one)) {
@@ -175,12 +202,28 @@ fn wrap_scoring(
         return Ok(None);
     }
     let kept = settled(gv, &best.laying)?;
+    let around = |card: &str| held.cluster_of.get(card).cloned();
     let sunk = sinks(&best.lowered, &kept.boxes, around);
     Ok(Some(if sunk {
         Rc::clone(&best.laying.tied)
     } else {
         kept
     }))
+}
+
+/// The block's best wrap or grid, when it scores more than the block needs.
+fn wrap_scoring(
+    gv: &mut Engine<'_>,
+    tree: &BlockTree,
+    block: BlockId,
+    laying: &Unwrapped<'_>,
+    needed: f64,
+) -> Result<Option<Rc<Laid>>, String> {
+    let mut chosen: Vec<Wrapped<'_>> = grid_wrap(gv, tree, block, laying)?.into_iter().collect();
+    for lowered in wraps_of(laying.whole, tree, block) {
+        chosen.extend(lowered_wraps(gv, tree, block, laying, &lowered)?);
+    }
+    settled_best(gv, tree.get(block), chosen, needed)
 }
 
 /// Whether one wrap reads better than another: it scores higher, or, as well,

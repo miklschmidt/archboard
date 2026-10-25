@@ -455,47 +455,16 @@ fn chain_kind(line: &SceneLine<'_>, upward: bool) -> String {
     }
 }
 
-/// Route lines through a banded scene, each on tracks of its own, and space
-/// the bands for the tracks each channel holds. `margin` is how far every x
-/// moves, `top` where the first band starts, and `rim` the room the block
-/// keeps at its edge rows where no line turns. Answers each line's points,
-/// from its source to its target.
-pub(crate) fn route_scene(
-    scene: &mut Placement,
+/// Each line's nets: an inner line's on its chain, in the order given, then a
+/// wall line's one net from or to its wall.
+fn routed_of(
+    track: &mut Track<'_>,
     lines: &[SceneLine<'_>],
-    margin: f64,
-    top: f64,
-    rim: Option<Rim>,
-) -> Map<String, Vec<Point>> {
-    let mut track = Track::new(scene);
-    let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
-    let mut chains: Map<String, ChainId> = Map::default();
-    for line in &inner {
-        let chain = track.chain_of(line.placed);
-        chains.insert(line.id.clone(), chain);
-    }
-    track.hold_to_points(&inner, &chains);
-    // A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
-    let movable: Vec<ChainId> = inner
-        .iter()
-        .filter(|line| line.enters.is_none() && line.leaves.is_none())
-        .map(|line| chains[&line.id])
-        .collect();
-    let all: Vec<ChainId> = chains.values().copied().collect();
-    track.fit_title_rows(&all);
-    track.clear_headings(&all);
-    track.straighten_lanes(&all);
-    let kinds: Vec<(ChainId, Rc<str>)> = inner
-        .iter()
-        .map(|line| {
-            let chain = chains[&line.id];
-            (chain, chain_kind(line, track.chain(chain).upward).into())
-        })
-        .collect();
-    track.relay_laps(&kinds, &movable);
-    track.straighten_through_labels(&all);
+    inner: &[&SceneLine<'_>],
+    chains: &Map<String, ChainId>,
+) -> Map<String, Routed> {
     let mut routed: Map<String, Routed> = Map::default();
-    for line in &inner {
+    for line in inner {
         let chain = chains[&line.id];
         let nets = track.nets_of(line, chain);
         routed.insert(
@@ -516,6 +485,48 @@ pub(crate) fn route_scene(
             },
         );
     }
+    routed
+}
+
+/// Route lines through a banded scene, each on tracks of its own, and space
+/// the bands for the tracks each channel holds. `margin` is how far every x
+/// moves, `top` where the first band starts, and `rim` the room the block
+/// keeps at its edge rows where no line turns. Answers each line's points,
+/// from its source to its target.
+pub(crate) fn route_scene(
+    scene: &mut Placement,
+    lines: &[SceneLine<'_>],
+    margin: f64,
+    top: f64,
+    rim: Option<Rim>,
+) -> Map<String, Vec<Point>> {
+    let mut track = Track::new(scene);
+    let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
+    let chains: Map<String, ChainId> = inner
+        .iter()
+        .map(|line| (line.id.clone(), track.chain_of(line.placed)))
+        .collect();
+    track.hold_to_points(&inner, &chains);
+    // A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
+    let movable: Vec<ChainId> = inner
+        .iter()
+        .filter(|line| line.enters.is_none() && line.leaves.is_none())
+        .map(|line| chains[&line.id])
+        .collect();
+    let all: Vec<ChainId> = chains.values().copied().collect();
+    track.fit_title_rows(&all);
+    track.clear_headings(&all);
+    track.straighten_lanes(&all);
+    let kinds: Vec<(ChainId, Rc<str>)> = inner
+        .iter()
+        .map(|line| {
+            let chain = chains[&line.id];
+            (chain, chain_kind(line, track.chain(chain).upward).into())
+        })
+        .collect();
+    track.relay_laps(&kinds, &movable);
+    track.straighten_through_labels(&all);
+    let routed = routed_of(&mut track, lines, &inner, &chains);
     let nets: Vec<NetId> = routed
         .values()
         .flat_map(|route| route.nets.iter().copied())

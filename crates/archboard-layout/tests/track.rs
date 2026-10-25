@@ -90,27 +90,16 @@ fn every_card_stands_at_its_measured_size_inside_the_drawing() {
             .unwrap(),
     )
     .unwrap();
-    let boxes: Vec<&Value> = ["a", "b"]
-        .iter()
-        .map(|id| {
-            &placed["cards"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .find(|card| card["id"] == *id)
-                .unwrap()["box"]
-        })
-        .collect();
+    let cards = placed["cards"].as_array().unwrap();
+    let box_of = |id: &str| &cards.iter().find(|card| card["id"] == id).unwrap()["box"];
     let number = |value: &Value| value.as_f64().unwrap();
-    for (one, (width, height)) in boxes.iter().zip([(200.0, 80.0), (160.0, 60.0)]) {
-        assert_eq!(
-            (number(&one["width"]), number(&one["height"])),
-            (width, height)
-        );
-        assert!(number(&one["x"]) + width <= number(&answer["width"]));
-        assert!(number(&one["y"]) + height <= number(&answer["height"]));
-    }
-    let [one, other] = [boxes[0], boxes[1]];
+    let inside = |one: &Value, (width, height): (f64, f64)| {
+        (number(&one["width"]), number(&one["height"])) == (width, height)
+            && number(&one["x"]) + width <= number(&answer["width"])
+            && number(&one["y"]) + height <= number(&answer["height"])
+    };
+    let [one, other] = [box_of("a"), box_of("b")];
+    assert!(inside(one, (200.0, 80.0)) && inside(other, (160.0, 60.0)));
     let apart = number(&one["y"]) + number(&one["height"]) <= number(&other["y"])
         || number(&other["y"]) + number(&other["height"]) <= number(&one["y"]);
     assert!(apart);
