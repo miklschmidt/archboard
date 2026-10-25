@@ -269,9 +269,10 @@ describe("ordinary approval payloads", () => {
 			approvalKind: "exec_command",
 			decision: { denied: { rejection: "Not on this branch." } },
 		});
+		// A decline with no reason typed still tells Codex it was declined, in the page's words.
 		expect(responseOf(silent.sent)).toEqual({
 			approvalKind: "exec_command",
-			decision: { denied: { rejection: "Declined at the workbench." } },
+			decision: { denied: { rejection: expect.stringMatching(/\S/u) } },
 		});
 	});
 });

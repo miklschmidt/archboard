@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BrowserWorkbenchTransportError } from "#ui/state/transport/contract.ts";
 import { createWorkbenchComposerController } from "#ui/state/composer/controller.ts";
+import { LATE_RESULT_REASON, transportRefusalMessage } from "#ui/rules/composer/vocabulary.ts";
 import {
 	OTHER_THREAD,
 	OTHER_TURN,
@@ -300,7 +301,7 @@ describe("the draft policy for each settled outcome", () => {
 		expect(controller.getState().retained).toEqual({
 			text: "Rename the node.",
 			threadId: THREAD,
-			reason: "The server never answered, so the command's outcome is unknown.",
+			reason: transportRefusalMessage("response_lost"),
 		});
 	});
 
@@ -363,8 +364,7 @@ describe("refusals, disconnects, and late results", () => {
 		const result = await controller.submit({ text: "Rename the node." });
 		expect(result).toEqual({
 			outcome: "outcome_unknown",
-			reason:
-				"The pane moved to another thread link before the server answered, so this result is not applied here.",
+			reason: LATE_RESULT_REASON,
 		});
 		expect(controller.getState().retained?.threadId).toBe(THREAD);
 	});
@@ -466,9 +466,7 @@ describe("remediations from the fixed-range review", () => {
 		);
 		const controller = createWorkbenchComposerController({ transport });
 		expect((await controller.submit({ text: "Go." })).outcome).toBe("not_delivered");
-		expect(controller.getState().status.message).toBe(
-			"The server refused this command for the workhorse's current state. Read the timeline, then send again.",
-		);
+		expect(controller.getState().status.message).toBe(transportRefusalMessage("invalid_command"));
 	});
 
 	test("a retained copy stands through a later command and goes on a delivered resend", async () => {

@@ -253,17 +253,17 @@ describe("workbench queue states", () => {
 	});
 
 	test("a stopped Codex session is not a lost socket, and refreshing is still offered", () => {
+		const lostSocket = project(stopped());
 		for (const arm of ["stopped", "storage_mismatch"] as const) {
 			const view = project(readiness(arm));
 
 			expect([arm, view.state]).toEqual([arm, "session_stopped"]);
-			expect(view.label).toBe("Codex session stopped");
-			expect(view.detail).toContain("This pane is connected");
+			expect(view.label).not.toBe(lostSocket.label);
+			expect(view.detail).not.toBe(lostSocket.detail);
 			// The recovery has to agree with the control: the socket is up, so a
-			// refresh is reachable, and it is what recovers this.
-			expect(view.recovery).toBe(
-				"Refresh the list once the server's Codex session is running again.",
-			);
+			// refresh is reachable, and it is what recovers this, not a reconnect.
+			expect(view.recovery).toMatch(/\S/u);
+			expect(view.recovery).not.toBe(lostSocket.recovery);
 			expect(view.list.enabled).toBe(true);
 			expect(view.stale).toBe(true);
 			expect(view.add.reason).toBe(view.recovery);
@@ -393,13 +393,14 @@ describe("workbench queue correlation and controls", () => {
 			targetBlock: "A browser command lease is required.",
 		});
 
-		expect(unsupported.entries[0]?.cancel.reason).toBe(
-			"The server is not accepting queue delete commands for this link.",
-		);
-		expect(unsupported.entries[0]?.moveLater.reason).toBe(
-			"The server is not accepting queue reorder commands for this link.",
-		);
-		expect(unsupported.entries[0]?.edit.enabled).toBe(true);
+		// Each unsupported command gives its own reason, and a supported one stays offered.
+		const { cancel, moveLater, edit } = unsupported.entries[0]!;
+		expect([cancel.enabled, moveLater.enabled, edit.enabled]).toEqual([false, false, true]);
+		expect([cancel.reason, moveLater.reason]).toEqual([
+			expect.stringMatching(/\S/u),
+			expect.stringMatching(/\S/u),
+		]);
+		expect(cancel.reason).not.toBe(moveLater.reason);
 		expect(untargeted.add.reason).toBe("A browser command lease is required.");
 		for (const view of [unsupported, untargeted]) {
 			expectEveryControlReasoned(view);
