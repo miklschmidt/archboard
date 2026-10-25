@@ -14,8 +14,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { GIT_PROCESS_GROUP_CLEANUP_MS } from "@archboard/timing";
-import { readProcessObservation } from "@archboard/process/observation";
-import { git } from "#runtime/clients/git.ts";
+import { readProcessObservation } from "#runtime/processes/observation.ts";
+import { git } from "#runtime/processes/git-command.ts";
 
 /** Ceiling for the fake Git child to publish its startup marker; it normally does so at once. */
 const TEST_GIT_FIXTURE_START_MS = 5000;
