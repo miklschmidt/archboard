@@ -183,6 +183,19 @@ test("apply writes the checked subject identities and correction evidence", asyn
 	expect((await response.json()).board).toEqual(stored);
 });
 
+test("a write that lands during the code check refuses the checked candidate", async () => {
+	const concurrent = JSON.stringify({ ...family(), version: 2 });
+	check.mockImplementation(() => {
+		writeFileSync(file, concurrent);
+		return Promise.resolve({ ok: true, findings: [], skipped: [], timings: [] });
+	});
+	const response = await ask("apply", { doing: "Correcting the historical account" });
+	expect(check).toHaveBeenCalledTimes(1);
+	expect(response.status).toBe(409);
+	expect(await response.json()).toMatchObject({ code: "BOARD_VERSION_CONFLICT", version: 2 });
+	expect(readFileSync(file, "utf8")).toBe(concurrent);
+});
+
 test("stale versions and undescribed applies stop before checking or writing", async () => {
 	const before = readFileSync(file, "utf8");
 	const stale = await ask("apply", {
