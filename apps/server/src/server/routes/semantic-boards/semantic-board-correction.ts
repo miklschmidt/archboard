@@ -2,12 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { HistoricalCorrectionInputSchema } from "@archboard/board/commands";
 import { addressedVariant } from "@archboard/board/document";
 import { readSemanticBoard } from "@archboard/board/store-read";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import {
-	acceptedBoard,
-	correctHistoricalTransition,
-	writeSemanticBoard,
-} from "@archboard/board/store-write";
+import { prepareSemanticBoardWrite } from "@archboard/board/store-write";
 import { checkCandidateCode, suggestHistoricalCommits } from "@archboard/code-intel/code-check-run";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { queryString, vaultOfRequest } from "@archboard/workbench/host";
@@ -45,55 +40,53 @@ function statedCorrection(req: Request, res: Response, apply: boolean) {
 }
 
 /**
- * Read the configured vocabulary when it is valid.
- * @param vault The vault directory.
- * @returns Its policy, or null when configuration needs repair.
- */
-function correctionPolicy(vault: string) {
-	const policy = readSemanticBoardConfiguration(vault);
-	return policy.ok ? policy.configuration : null;
-}
-
-/**
- * Build and validate the candidate without writing it.
+ * Prepare the corrected board without writing it, and select the variant the
+ * evidence is read for.
  * @param res Its response.
  * @param stated The parsed correction.
- * @returns The candidate, or null after a refusal.
+ * @returns The prepared candidate and its corrected variant, or null after a refusal.
  */
 function prepareCorrection(
 	res: Response,
 	stated: NonNullable<ReturnType<typeof statedCorrection>>,
 ) {
-	const { vault } = stated;
-	const read = readSemanticBoard(vault, stated.envelope.board);
-	if (!read.ok) {
-		res.status(422).json({ success: false, code: read.code, error: read.problem });
+	const prepared = prepareSemanticBoardWrite({
+		vault: stated.vault,
+		board: stated.envelope.board,
+		expectedVersion: stated.expected,
+		correct: stated.input,
+	});
+	if (prepared.outcome === "rejected") {
+		answerPreparationRefusal(res, prepared);
 		return null;
 	}
-	if (read.board.version !== stated.expected) {
+	const selected = addressedVariant(prepared.board, stated.input.variant);
+	if (!selected.ok) throw new Error(selected.problem);
+	return { prepared, variant: selected.variant };
+}
+
+/**
+ * Answer a correction the store would not prepare, in this route's own codes.
+ * @param res Its response.
+ * @param refused Why the store would not write the correction.
+ */
+function answerPreparationRefusal(
+	res: Response,
+	refused: Extract<ReturnType<typeof prepareSemanticBoardWrite>, { outcome: "rejected" }>,
+): void {
+	if (refused.code === "BOARD_VERSION_CONFLICT") {
 		res.status(409).json({
 			success: false,
-			code: "BOARD_VERSION_CONFLICT",
+			code: refused.code,
 			error: "The board changed. Read it again before correcting it.",
-			version: read.board.version,
+			version: refused.version,
 		});
-		return null;
+		return;
 	}
-	const at = new Date().toISOString();
-	const transition = correctHistoricalTransition(stated.input);
-	const produced = transition.apply(read.board, at);
-	if (!produced.ok) {
-		res.status(422).json({ success: false, code: produced.code, error: produced.problem });
-		return null;
-	}
-	const candidate = acceptedBoard(read.board, produced.board, at, correctionPolicy(vault));
-	if ("problem" in candidate) {
-		res.status(422).json({ success: false, code: "INVALID_BOARD", error: candidate.problem });
-		return null;
-	}
-	const selected = addressedVariant(candidate.board, stated.input.variant);
-	if (!selected.ok) throw new Error(selected.problem);
-	return { read, transition, produced, candidate, selected };
+	// A candidate the board's coherence or vocabulary refuses is INVALID_BOARD
+	// on this route, where the store says INVALID_CONTENT.
+	const code = refused.code === "INVALID_CONTENT" ? "INVALID_BOARD" : refused.code;
+	res.status(422).json({ success: false, code, error: refused.problem });
 }
 
 /**
@@ -111,18 +104,18 @@ async function correct(
 ): Promise<void> {
 	const stated = statedCorrection(req, res, apply);
 	if (stated === null) return;
-	const prepared = prepareCorrection(res, stated);
-	if (prepared === null) return;
-	const { envelope, expected, input, doing, vault } = stated;
-	const { read, transition, produced, candidate, selected } = prepared;
+	const preparation = prepareCorrection(res, stated);
+	if (preparation === null) return;
+	const { envelope, input, doing, vault } = stated;
+	const { prepared, variant } = preparation;
 	// The code reading is checkout work, so a stopping server cancels it rather
-	// than waiting for it as it waits for the write.
+	// than waiting for it as it waits for the write. No lease is held while it runs.
 	const checked = await checkoutWork.track("Historical correction code check", signal, (reading) =>
 		checkCandidateCode({
 			vault,
-			board: candidate.board,
-			file: read.location.file,
-			variant: selected.variant,
+			board: prepared.board,
+			file: prepared.location.file,
+			variant,
 			revisions: input.revisions,
 			signal: reading,
 		}),
@@ -137,9 +130,9 @@ async function correct(
 	if (!apply) {
 		res.json({
 			success: true,
-			board: candidate.board,
-			previousVersion: read.board.version,
-			reconciliation: needsAttention(produced.descendants),
+			board: prepared.board,
+			previousVersion: prepared.previousVersion,
+			reconciliation: needsAttention(prepared.descendants),
 			codeCheck,
 		});
 		return;
@@ -155,23 +148,9 @@ async function correct(
 		return;
 	}
 	signal.throwIfAborted();
-	// Commit the exact candidate that passed the check. The write boundary reads
-	// the expected version again under the lease before it accepts this transition.
-	const result = await writeSemanticBoard({
-		vault,
-		board: envelope.board,
-		writer: writerOf(envelope),
-		expectedVersion: expected,
-		signal,
-		transition: {
-			...transition,
-			/**
-			 * Return the checked candidate without minting different subject identities.
-			 * @returns The candidate that the code pass read.
-			 */
-			apply: () => ({ ...produced, board: candidate.board }),
-		},
-	});
+	// Commit the exact candidate that passed the check. The commit reads the
+	// version again under the lease and refuses a board that moved meanwhile.
+	const result = await prepared.commit({ writer: writerOf(envelope), signal });
 	announceWork(vault, result, doing, envelope);
 	answerWrite(res, vault, result, envelope);
 }

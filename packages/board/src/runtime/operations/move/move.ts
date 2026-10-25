@@ -64,13 +64,11 @@ import {
 } from "#runtime/operations/move/drill-downs.ts";
 import type { SemanticRefusalCode } from "#runtime/operations/write/outcome.ts";
 import { writeBoardFile } from "#runtime/operations/rename/relocation.ts";
+import { boardBefore, rejected, type BoardReader } from "#runtime/operations/write/candidate.ts";
 import {
 	admit,
-	boardBefore,
 	leaseRequest,
-	rejected,
 	type BoardLeaseAsk,
-	type BoardReader,
 	type SemanticWriteCommand,
 	type SemanticWriteRejection,
 } from "#runtime/operations/write/write.ts";

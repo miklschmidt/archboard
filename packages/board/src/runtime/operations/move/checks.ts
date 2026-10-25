@@ -16,7 +16,8 @@ import {
 	type DrillRewrite,
 	type MoveIdentities,
 } from "#runtime/operations/move/drill-downs.ts";
-import { rejected, type SemanticWriteRejection } from "#runtime/operations/write/write.ts";
+import { rejected } from "#runtime/operations/write/candidate.ts";
+import type { SemanticWriteRejection } from "#runtime/operations/write/write.ts";
 
 /** The two vaults of a move. */
 interface MoveVaults {
