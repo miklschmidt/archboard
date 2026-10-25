@@ -148,6 +148,9 @@ const testCache = {
 		".agents/skills/*",
 		".claude/skills/*",
 		".claude/rules/**",
+		// A test loads the core, which refuses a build of other sources than these.
+		"crates/**",
+		"Cargo.lock",
 	],
 	env: [
 		...analysisCache.env,
@@ -222,7 +225,7 @@ export default defineConfig({
 			},
 			"lint:core": {
 				command:
-					"cargo clippy --locked --workspace --target wasm32-unknown-unknown -- --deny warnings",
+					"cargo clippy --locked --workspace --all-targets --target wasm32-unknown-unknown -- --deny warnings",
 				cache: coreCache,
 			},
 			"format:core": {
