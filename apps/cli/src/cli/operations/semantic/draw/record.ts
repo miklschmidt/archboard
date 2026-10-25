@@ -16,7 +16,6 @@ import type { SemanticBoard } from "@archboard/board/document";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
-	type RecordingState,
 } from "@archboard/walkthrough/recording";
 import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
@@ -28,11 +27,8 @@ import {
 } from "@archboard/server-lifecycle/semantic-board-client";
 import {
 	TalkFileError,
-	askedTalkPlace,
+	freshTalkPlace,
 	recordWalkthrough,
-	requireFreshPlace,
-	stateTalkPlace,
-	type TalkPlace,
 } from "@archboard/walkthrough/recorder";
 import {
 	CliUsageError,
@@ -57,6 +53,9 @@ import {
 import type { VariantContent } from "@archboard/board/content";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
+
+/** What the recording page says about its recording, as the recorder reports it. */
+type RecordingState = Parameters<Parameters<typeof recordWalkthrough>[0]["onProgress"]>[0];
 
 const THEMES = DiagramThemeSchema.options;
 /** A video cannot follow its viewer's theme, so it is drawn dark unless asked otherwise (TASK-483). */
@@ -149,15 +148,16 @@ function recordedRepository(vault: CommandContext["vault"]): string | null {
  * @returns The place, proven free.
  * @throws {CliUsageError} When the directory asked for exists or cannot be made.
  */
-function talkPlaceOf(asked: string | undefined, board: string): TalkPlace {
-	const place = asked === undefined ? stateTalkPlace(board, new Date()) : askedTalkPlace(asked);
+function talkPlaceOf(
+	asked: string | undefined,
+	board: string,
+): ReturnType<typeof freshTalkPlace> {
 	try {
-		requireFreshPlace(place);
+		return freshTalkPlace(asked, board, new Date());
 	} catch (error) {
 		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
 		throw error;
 	}
-	return place;
 }
 
 /**

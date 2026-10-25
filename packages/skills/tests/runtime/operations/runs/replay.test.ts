@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { SemanticBoardSchema } from "@archboard/board/document";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { framesOf } from "@archboard/walkthrough/talk";
-import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
+import { keepTalk } from "@archboard/walkthrough/recorder";
 import { evaluateOutcomes, type OutcomeCheck } from "#runtime/rules/outcomes/outcomes.ts";
 import { inspectVideo, talkOfFixture } from "#runtime/operations/runs/replay.ts";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
@@ -90,8 +90,7 @@ beforeEach(() => {
 		BOARD,
 		CHECKED,
 	);
-	writeTalk({ ...kept, place: askedTalkPlace(join(home, "talk")) });
-	frames = framesOf(kept.talk);
+	frames = framesOf(keepTalk({ ...kept, directory: join(home, "talk") }));
 	mkdirSync(join(home, "out"));
 });
 

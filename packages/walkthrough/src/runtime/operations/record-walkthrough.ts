@@ -34,15 +34,7 @@ import {
 	type RecordingContainer,
 	type RecordingState,
 } from "#shared/protocol/recording-page.ts";
-import {
-	TALK_FORMAT,
-	TALK_SAMPLE_RATE,
-	TALK_VERSION,
-	TALK_VOICE_FILE,
-	TalkSchema,
-	type Talk,
-	type TalkLog,
-} from "#shared/protocol/talk.ts";
+import { TALK_VOICE_FILE, talkFrom, type Talk, type TalkLog } from "#shared/protocol/talk.ts";
 import {
 	isJsonRecord,
 	type HeadlessChromium,
@@ -344,10 +336,8 @@ async function talkedWith(
  */
 function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: number): Talk {
 	const { board } = request;
-	const parsed = TalkSchema.safeParse({
-		format: TALK_FORMAT,
-		version: TALK_VERSION,
-		recordedAt: new Date().toISOString(),
+	const parsed = talkFrom({
+		recordedAt: new Date(),
 		language: request.language,
 		theme: request.theme,
 		layout: request.layout,
@@ -359,14 +349,7 @@ function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: numbe
 			walkthrough: request.walkthrough,
 			steps,
 		},
-		audio: {
-			file: TALK_VOICE_FILE,
-			sampleRate: TALK_SAMPLE_RATE,
-			channels: 1,
-			samples: log.samples,
-			baseLatencyMs: log.baseLatencyMs,
-		},
-		events: log.events,
+		log,
 		document: board,
 		policy: request.policy,
 	});
