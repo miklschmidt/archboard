@@ -28,7 +28,5 @@ export type { BrowserProjectionInput } from "#server/protocol/projection/project
 export { projectCodexBrowserState } from "#server/projections/browser-state/projection.ts";
 export { liveWorkhorseCheckouts } from "#server/projections/browser-state/workhorse-list.ts";
 
-export { closedTransport, requireCreated } from "#server/services/generation/owners.ts";
-
 export { createBrowserLeaseLedger } from "#server/services/lease/lease.ts";
 export { mountVoiceStartTraceRoute } from "#server/services/voice/start-trace.ts";
