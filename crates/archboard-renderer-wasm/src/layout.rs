@@ -36,14 +36,20 @@ pub(crate) fn said(error: &JsValue, what: &str) -> String {
 }
 
 /// The host's Graphviz, as the layout asks for it.
-struct Host<'a>(&'a GraphvizHost);
+struct Host<'a> {
+    graphviz: &'a GraphvizHost,
+    /// Keep the host's error intact across the core's text-only error port.
+    failure: Option<JsValue>,
+}
 
 impl archboard_layout::Graphviz for Host<'_> {
     fn render(&mut self, graph: &str) -> Result<String, String> {
         let graph = js_sys::JSON::parse(graph).map_err(|error| said(&error, "Reading a graph"))?;
-        self.0
-            .render(&graph)
-            .map_err(|error| said(&error, "Graphviz"))
+        self.graphviz.render(&graph).map_err(|error| {
+            let words = said(&error, "Graphviz");
+            self.failure = Some(error);
+            words
+        })
     }
 }
 
@@ -53,7 +59,14 @@ impl archboard_layout::Graphviz for Host<'_> {
 ///
 /// A graph or options the layout cannot read, and a block's graph Graphviz refused.
 #[wasm_bindgen(js_name = layOutBoard)]
-pub fn lay_out_board(graph: &str, graphviz: &GraphvizHost) -> Result<String, JsError> {
-    archboard_layout::lay_out_board(graph, &mut Host(graphviz))
-        .map_err(|error| JsError::new(&error))
+pub fn lay_out_board(graph: &str, graphviz: &GraphvizHost) -> Result<String, JsValue> {
+    let mut host = Host {
+        graphviz,
+        failure: None,
+    };
+    archboard_layout::lay_out_board(graph, &mut host).map_err(|error| {
+        // A WebAssembly trap must reach the worker as a RuntimeError, so the
+        // pool replaces the failed engine instead of sending it more work.
+        host.failure.unwrap_or_else(|| JsError::new(&error).into())
+    })
 }
