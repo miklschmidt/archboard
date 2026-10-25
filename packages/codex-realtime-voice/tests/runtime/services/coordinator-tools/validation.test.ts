@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
 import type {
@@ -105,7 +106,7 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 			{
 				label: "namespace catalogue mismatch",
 				reason: "invalid_call",
-				make: (h) => h.request("inspect_workhorse", { namespace: "archboard_voice" }),
+				make: (h) => h.request("inspect_workhorse", { namespace: TEST_TOOLS.voice.namespace.name }),
 			},
 			{
 				label: "tool catalogue mismatch",

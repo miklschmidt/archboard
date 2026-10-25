@@ -32,7 +32,16 @@ const ARCHBOARD_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
  * app tools.
  */
 const ARCHBOARD_AGENT = Object.freeze({
-	identity: Object.freeze({ serviceName: "archboard", threadSource: "archboard" }),
+	identity: Object.freeze({
+		serviceName: "archboard",
+		threadSource: "archboard",
+		productName: "Archboard",
+		toolNamespaces: Object.freeze({
+			workhorse: "archboard_workhorse",
+			voice: "archboard_voice",
+			coordinator: "archboard_coordinator",
+		}),
+	}),
 	instructions: Object.freeze({
 		coordinator: COORDINATOR_DOMAIN_INSTRUCTIONS,
 		workhorse: WORKHORSE_DOMAIN_INSTRUCTIONS,

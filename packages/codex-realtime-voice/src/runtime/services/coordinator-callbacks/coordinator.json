@@ -1,7 +1,7 @@
 {
 	"type": "namespace",
-	"name": "archboard_coordinator",
-	"description": "Reach the coordinator, which speaks for you to the user while they talk with Archboard by voice.",
+	"name": "{namespace}",
+	"description": "Reach the coordinator, which speaks for you to the user while they talk with {product} by voice.",
 	"tools": [
 		{
 			"type": "function",

@@ -1,7 +1,7 @@
 import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import { createHash } from "node:crypto";
 
-import { COORDINATOR_TOOL_MANIFEST_DIGESTS } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type {
 	CoordinatorReviewHashes,
 	CoordinatorSettings,
@@ -28,11 +28,12 @@ function reviewedCoordinatorHashes(
 	settingsHash: string,
 	profile: WorkbenchThreadProfile,
 ): CoordinatorReviewHashes {
+	const tools = createVoiceToolset(profile.identity);
 	return Object.freeze({
 		instructionHash: profile.instructions.sha256,
 		catalogueHash: profile.manifestHash,
-		workhorseCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse,
-		voiceCatalogueHash: COORDINATOR_TOOL_MANIFEST_DIGESTS.voice,
+		workhorseCatalogueHash: tools.workhorse.sha256,
+		voiceCatalogueHash: tools.voice.sha256,
 		settingsHash,
 	});
 }

@@ -1,11 +1,9 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
 import {
-	VOICE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
 	VOICE_TOOL_NAMES,
 	WORKHORSE_TOOL_NAMES,
-	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
@@ -20,7 +18,7 @@ import {
 	refusedResponse,
 } from "#runtime/rules/coordinator-tools/response.ts";
 import {
-	COORDINATOR_DYNAMIC_DISPATCHERS,
+	coordinatorDynamicDispatchers,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,
 } from "#runtime/protocol/coordinator-tools/contract.ts";
@@ -54,22 +52,18 @@ function validateResponse(response: DynamicToolResponse): void {
 
 describe("coordinator dynamic-tool dispatcher", () => {
 	test("publishes the two reviewed dispatcher registrations", () => {
-		expect(COORDINATOR_DYNAMIC_DISPATCHERS).toEqual([
+		expect(coordinatorDynamicDispatchers(TEST_TOOLS)).toEqual([
 			{
 				owner: "codex-coordinator-tools",
-				namespace: "archboard_workhorse",
-				manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
+				namespace: TEST_TOOLS.workhorse.namespace.name,
+				manifestHash: TEST_TOOLS.workhorse.sha256,
 			},
 			{
 				owner: "codex-coordinator-tools",
-				namespace: "archboard_voice",
-				manifestHash: VOICE_TOOLS_MANIFEST_SHA256,
+				namespace: TEST_TOOLS.voice.namespace.name,
+				manifestHash: TEST_TOOLS.voice.sha256,
 			},
 		]);
-		expect(COORDINATOR_TOOL_MANIFEST_DIGESTS).toEqual({
-			workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
-			voice: VOICE_TOOLS_MANIFEST_SHA256,
-		});
 		expect(WORKHORSE_TOOL_NAMES).toHaveLength(5);
 		expect(VOICE_TOOL_NAMES).toEqual(["resolve_spoken_approval"]);
 	});

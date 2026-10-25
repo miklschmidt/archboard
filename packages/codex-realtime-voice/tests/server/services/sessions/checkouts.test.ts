@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { expect, test } from "bun:test";
 import { readyDelegatedWorkhorse } from "#server/services/sessions/checkouts.ts";
 
@@ -6,7 +7,7 @@ function ended(): never {
 }
 
 function call(tool: string, args: unknown) {
-	return { params: { namespace: "archboard_workhorse", tool, arguments: args } } as never;
+	return { params: { namespace: TEST_TOOLS.workhorse.namespace.name, tool, arguments: args } } as never;
 }
 
 const checkoutNamedBy = (named: string) =>
@@ -28,6 +29,7 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 
 	await readyDelegatedWorkhorse(
 		call("delegate_to_workhorse", { checkout: linked }),
+		TEST_TOOLS,
 		workhorseOf,
 		checkoutNamedBy,
 	);
@@ -35,16 +37,18 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 
 	await readyDelegatedWorkhorse(
 		call("inspect_workhorse", { checkout: repository }),
+		TEST_TOOLS,
 		workhorseOf,
 		checkoutNamedBy,
 	);
 	await readyDelegatedWorkhorse(
 		call("delegate_to_workhorse", { checkout: root }),
+		TEST_TOOLS,
 		workhorseOf,
 		checkoutNamedBy,
 	);
-	await readyDelegatedWorkhorse(call("delegate_to_workhorse", {}), workhorseOf, checkoutNamedBy);
-	await readyDelegatedWorkhorse(call("stop_workhorses", {}), workhorseOf, checkoutNamedBy);
+	await readyDelegatedWorkhorse(call("delegate_to_workhorse", {}), TEST_TOOLS, workhorseOf, checkoutNamedBy);
+	await readyDelegatedWorkhorse(call("stop_workhorses", {}), TEST_TOOLS, workhorseOf, checkoutNamedBy);
 	expect(started).toEqual([repository]);
 
 	// A start that fails leaves the delegation itself to answer.
@@ -52,6 +56,7 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 	expect(
 		await readyDelegatedWorkhorse(
 			call("delegate_to_workhorse", { checkout: repository }),
+			TEST_TOOLS,
 			failing,
 			checkoutNamedBy,
 		),
@@ -60,6 +65,7 @@ test("a delegation starts the workhorse of the checkout it names, and nothing el
 	expect(
 		await readyDelegatedWorkhorse(
 			call("delegate_to_workhorse", { checkout: repository }),
+			TEST_TOOLS,
 			ended,
 			checkoutNamedBy,
 		),
@@ -80,11 +86,13 @@ test("the supplied host admits a checkout without a vault and refuses every othe
 	});
 	await readyDelegatedWorkhorse(
 		call("delegate_to_workhorse", { checkout: "allowed" }),
+		TEST_TOOLS,
 		workhorseOf,
 		admitIndependentCheckout,
 	);
 	await readyDelegatedWorkhorse(
 		call("delegate_to_workhorse", { checkout: "/not-admitted" }),
+		TEST_TOOLS,
 		workhorseOf,
 		admitIndependentCheckout,
 	);

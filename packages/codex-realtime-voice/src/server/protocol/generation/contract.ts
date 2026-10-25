@@ -1,3 +1,4 @@
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type { CodexApprovalBrokerOptions } from "#runtime/services/approvals/contract.ts";
 import type { CoordinatorCallbackOptions } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexCoordinatorToolsOptions } from "#runtime/protocol/coordinator-tools/contract.ts";
@@ -123,6 +124,8 @@ interface CodexWorkbenchSessionBindings {
 }
 
 interface ProductionCodexWorkbenchBindings {
+	/** The host's built-in tool namespaces, registered with every transport. */
+	readonly tools: VoiceToolset;
 	readonly dynamicRegistrations?: readonly {
 		readonly namespace: string;
 		readonly manifestHash: string;

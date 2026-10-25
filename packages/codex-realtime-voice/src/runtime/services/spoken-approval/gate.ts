@@ -230,6 +230,7 @@ export function createCodexSpokenApprovalGate(
 	const validationContext = {
 		approvalBroker: options.approvalBroker,
 		identity: options.identity,
+		tools: options.tools,
 		currentCoordinator,
 		currentRealtime,
 		currentTime,
@@ -245,6 +246,8 @@ export function createCodexSpokenApprovalGate(
 		approvalBroker: options.approvalBroker,
 		session: options.session,
 		identity: options.identity,
+		tools: options.tools,
+		productName: options.productName,
 		currentCoordinator,
 		currentRealtime,
 		currentTime,

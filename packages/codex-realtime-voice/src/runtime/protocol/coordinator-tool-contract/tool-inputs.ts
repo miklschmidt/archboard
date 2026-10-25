@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type {
-	NamespaceName,
+	CoordinatorNamespaceRole,
 	CoordinatorToolName,
 	WorkhorseToolName,
 	VoiceToolName,
@@ -151,24 +151,24 @@ function isVoiceToolName(toolName: CoordinatorToolName): toolName is VoiceToolNa
 /**
  * Validates tool arguments against the schema of the namespace the call arrived in, refusing
  * a tool name the namespace does not declare even when another namespace does.
- * @param namespace - The namespace the call was made through.
+ * @param role - The role of the namespace the call was made through.
  * @param toolName - The tool being called.
  * @param input - The raw tool arguments.
  * @returns The validated arguments.
  */
 function parseCoordinatorToolInput(
-	namespace: NamespaceName,
+	role: CoordinatorNamespaceRole,
 	toolName: CoordinatorToolName,
 	input: unknown,
 ): unknown {
-	if (namespace === "archboard_workhorse") {
+	if (role === "workhorse") {
 		if (!isWorkhorseToolName(toolName)) {
-			throw new TypeError(`${namespace} does not declare ${toolName}.`);
+			throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
 		}
 		return parseWorkhorseToolInput(toolName, input);
 	}
 	if (!isVoiceToolName(toolName)) {
-		throw new TypeError(`${namespace} does not declare ${toolName}.`);
+		throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
 	}
 	return parseVoiceToolInput(toolName, input);
 }

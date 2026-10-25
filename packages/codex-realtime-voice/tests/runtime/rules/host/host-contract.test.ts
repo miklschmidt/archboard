@@ -1,3 +1,4 @@
+import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
 import { CORE_ROLE_INSTRUCTIONS } from "#runtime/rules/host/authored.ts";
 import { expect, test } from "bun:test";
@@ -40,7 +41,7 @@ test("a host starts a Codex workhorse with its own identity and exact composed i
 			.update(params.developerInstructions ?? "")
 			.digest("hex"),
 	).toBe(profile.instructions.sha256);
-	expect(params.dynamicTools?.map((tool) => tool.name)).toEqual(["archboard_coordinator"]);
+	expect(params.dynamicTools?.map((tool) => tool.name)).toEqual([TEST_TOOLS.coordinator.namespace.name]);
 	expect(Object.isFrozen(profile.dynamicTools)).toBe(true);
 	expect(() =>
 		captureThreadProfile({

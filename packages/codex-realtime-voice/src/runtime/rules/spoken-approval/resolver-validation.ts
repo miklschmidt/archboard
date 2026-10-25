@@ -1,4 +1,4 @@
-import { VOICE_TOOLS_MANIFEST_SHA256 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type { ApprovalSnapshot } from "#runtime/services/approvals/contract.ts";
 import type { ActiveSlot } from "#runtime/state/spoken-approval/state.ts";
 import {
@@ -88,11 +88,13 @@ function resolverEpochFailure(
  * Why a resolver call is not the reviewed voice tool call on the gate's own coordinator thread.
  * The namespace, tool and manifest hash are all checked on both the logical call and the params:
  * a call that agrees only on one of them is not the reviewed contract.
+ * @param tools - The host's built-in namespaces.
  * @param slot - The armed gate.
  * @param request - The resolver call.
  * @returns The failure, or null.
  */
 function resolverContractFailure(
+	tools: VoiceToolset,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): CallValidationFailure | null {
@@ -100,11 +102,10 @@ function resolverContractFailure(
 		request.logicalCall.threadId === slot.coordinatorThreadId,
 		request.params.threadId === slot.coordinatorThreadId,
 		request.params.threadId === request.logicalCall.threadId,
-		request.logicalCall.namespace === "archboard_voice",
-		request.params.namespace === "archboard_voice",
+		toolRoleOf(tools, request.logicalCall) === "voice",
+		request.params.namespace === request.logicalCall.namespace,
 		request.logicalCall.tool === "resolve_spoken_approval",
 		request.params.tool === "resolve_spoken_approval",
-		request.logicalCall.manifestHash === VOICE_TOOLS_MANIFEST_SHA256,
 		request.params.turnId === request.logicalCall.turnId,
 		request.params.callId === request.logicalCall.callId,
 	];
@@ -322,7 +323,7 @@ function validateResolverCall(
 	return (
 		resolverOwnershipFailure(context, request) ??
 		resolverEpochFailure(context, slot, request) ??
-		resolverContractFailure(slot, request) ??
+		resolverContractFailure(context.tools, slot, request) ??
 		resolverConversationFailure(context, slot) ??
 		resolverApprovalFailure(context, slot) ??
 		resolverTurnFailure(slot, request, requireTurn)
