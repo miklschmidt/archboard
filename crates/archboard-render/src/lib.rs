@@ -39,7 +39,11 @@ use request::{Grammar, RenderRequest};
 /// path data of the icons a picture draws.
 pub trait Host: Solver {
     /// Each icon's path data, by export name, of the icons named that the host has.
-    fn icons(&self, names: &[&str]) -> BTreeMap<String, Vec<String>>;
+    ///
+    /// # Errors
+    ///
+    /// The host cannot read its icons. An absent icon is left out of the map.
+    fn icons(&self, names: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String>;
 }
 
 /// What a render answers when it drew a picture.
@@ -118,7 +122,7 @@ fn page_request(request: &RenderRequest) -> PageRequest {
 }
 
 /// The icons a picture can draw: those named, and the renderer's own.
-fn icons_of<H: Host>(host: &H, named: &[&str]) -> BTreeMap<String, Vec<String>> {
+fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String> {
     let names: BTreeSet<&str> = OWN_ICONS.into_iter().chain(named.iter().copied()).collect();
     host.icons(&names.into_iter().collect::<Vec<_>>())
 }
@@ -160,7 +164,7 @@ impl Renderer {
     /// # Errors
     ///
     /// A solve the host failed or answered unreadably, and a document the SVG
-    /// painter refuses.
+    /// painter refuses, or icons the host cannot read.
     pub async fn render<H: Host>(
         &self,
         request: &RenderRequest,
@@ -168,7 +172,7 @@ impl Renderer {
     ) -> Result<Rendered, String> {
         let outline = match request.grammar {
             Grammar::Architecture => architecture::picture(request, &self.layouts, host).await?,
-            Grammar::Sequence => flows::sequence(request, host),
+            Grammar::Sequence => flows::sequence(request, host)?,
             Grammar::Flowchart => flows::flowchart(request, host).await?,
         };
         Ok(match outline {

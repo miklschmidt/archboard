@@ -46,11 +46,16 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "RenderHost")]
     pub type RenderHost;
 
-    #[wasm_bindgen(method, js_name = solve)]
-    fn solve_on(this: &RenderHost, graph: String, signal: &AbortSignal) -> js_sys::Promise;
+    #[wasm_bindgen(method, catch, js_name = solve)]
+    fn solve_on(this: &RenderHost, graph: String, signal: &AbortSignal)
+    -> Result<JsValue, JsValue>;
 
-    #[wasm_bindgen(method, js_name = icons)]
-    fn icons_of(this: &RenderHost, names: Vec<String>) -> js_sys::Object;
+    #[wasm_bindgen(method, catch, js_name = icons)]
+    fn icons_of(this: &RenderHost, names: Vec<String>) -> Result<JsValue, JsValue>;
+
+    /// Read the host's map, including getters, within the exception boundary.
+    #[wasm_bindgen(catch, js_namespace = Object, js_name = entries)]
+    fn icon_entries(value: &JsValue) -> Result<js_sys::Array, JsValue>;
 
     /// What calls a solve off.
     #[derive(Clone)]
@@ -127,7 +132,11 @@ impl Solver for RenderHost {
     fn solve(&self, graph: String, called: &Calling) -> Solving {
         let calling = AbortController::new();
         let signal = calling.signal();
-        let answer = JsFuture::from(self.solve_on(graph, &signal));
+        let answer = self.solve_on(graph, &signal).map_or_else(
+            |error| js_sys::Promise::reject(&error),
+            |value| js_sys::Promise::resolve(&value),
+        );
+        let answer = JsFuture::from(answer);
         let aborting = calling.clone();
         called.on_call_off(move || aborting.abort());
         Solving {
@@ -140,18 +149,29 @@ impl Solver for RenderHost {
 }
 
 impl Host for RenderHost {
-    fn icons(&self, names: &[&str]) -> BTreeMap<String, Vec<String>> {
+    fn icons(&self, names: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String> {
         let named = names.iter().map(|name| (*name).to_owned()).collect();
-        js_sys::Object::entries(&self.icons_of(named))
+        let icons = self
+            .icons_of(named)
+            .map_err(|error| said(&error, "Reading icons"))?;
+        icon_entries(&icons)
+            .map_err(|error| said(&error, "Reading icons"))?
             .iter()
-            .filter_map(|entry| {
+            .map(|entry| {
                 let entry: js_sys::Array = entry.unchecked_into();
-                let name = entry.get(0).as_string()?;
-                let paths: js_sys::Array = entry.get(1).dyn_into().ok()?;
-                Some((
-                    name,
-                    paths.iter().filter_map(|path| path.as_string()).collect(),
-                ))
+                let name = entry.get(0).as_string().ok_or("An icon has no name")?;
+                let paths = entry.get(1);
+                let paths = paths
+                    .dyn_ref::<js_sys::Array>()
+                    .ok_or_else(|| format!("Icon {name} has no array of paths"))?;
+                let paths = paths
+                    .iter()
+                    .map(|path| {
+                        path.as_string()
+                            .ok_or_else(|| format!("Icon {name} has a path that is not a string"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok((name, paths))
             })
             .collect()
     }
@@ -168,7 +188,7 @@ thread_local! {
 /// # Errors
 ///
 /// A request that does not read as its type, a solve the host failed or
-/// answered unreadably, and a document the SVG painter refuses.
+/// answered unreadably, icons the host cannot read, and a document the SVG painter refuses.
 #[wasm_bindgen(unchecked_return_type = "Rendered")]
 pub async fn render(request: String, host: RenderHost) -> Result<JsValue, JsError> {
     let request: RenderRequest = serde_json::from_str(&request).map_err(|error| {
