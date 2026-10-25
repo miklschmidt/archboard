@@ -1,33 +1,29 @@
 // Reading a rendered document back the way a browser would.
 //
-// The point of this file is that it takes the SVG at its word. It resolves a
-// piece of text's face from the `@font-face` rules the *document itself*
-// registers, not from anything the renderer told it, so a document that names
-// a family it does not register, or measures at one weight and draws at
-// another, fails here rather than in somebody's browser.
+// The point of this file is that it takes the SVG at its word. A run's face is
+// the face its glyphs are drawn from, and its width is the advance its words
+// are stretched over, both as the document writes them, not anything the
+// renderer told the test (ADR 0057).
 
-import { diagramTextWidth } from "#runtime/operations/render.ts";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";
 
-/** One `<text>` element, as it was written into the document. */
+/** One run of words, as it was written into the document. */
 interface DrawnText {
 	/** The semantic subject whose group it sits in. */
 	readonly subject: { readonly kind: string; readonly id: string };
-	/** Its `x`. */
+	/** Its left edge: its `x`. */
 	readonly x: number;
 	/** Its baseline `y`, in drawing coordinates. */
 	readonly y: number;
 	/** Its `font-size`. */
 	readonly size: number;
-	/** The first family its `font-family` names, unquoted. */
-	readonly family: string;
-	/** Its `font-weight`. */
+	/** The face its glyphs are drawn from, as the glyph ids name it: `s4`, `s5`, `m4` or `m5`. */
+	readonly face: string | undefined;
+	/** The weight of that face. */
 	readonly weight: number;
-	/** Its `letter-spacing`, in ems. */
-	readonly tracking: number;
-	/** Whether it is centred on `x`. */
-	readonly centred: boolean;
+	/** How far its glyphs advance: the `textLength` its words are stretched over. */
+	readonly width: number;
 	/** What it says. */
 	readonly text: string;
 }
@@ -56,43 +52,16 @@ function attr(tag: string, name: string): string | undefined {
 	return found === null ? undefined : unescape(found[1] ?? "");
 }
 
-/**
- * Every face the document registers, by family and weight. Only a linked
- * document names files; an embedded one carries the bytes, and nothing here
- * needs to decode them.
- * @param svg The document.
- * @returns Each `family|weight` key's family name.
- */
-function registeredFaces(svg: string): Map<string, string> {
-	const faces = new Map<string, string>();
-	const rules = svg.matchAll(
-		/@font-face\{font-family:"([^"]+)";font-style:normal;font-weight:(\d+);src:url\("([^"]*)"\)/g,
-	);
-	for (const [, family, weight, source] of rules) {
-		if (family === undefined || source === undefined || source.startsWith("data:")) {
-			continue;
-		}
-		faces.set(`${family}|${weight}`, family);
-	}
-	return faces;
-}
+/** A run: the group of glyphs that draws it, when it draws any, then its words. */
+const RUN =
+	/(?:<g transform="[^"]*"[^>]*aria-hidden="true">((?:<use[^>]*\/>)*)<\/g>)?<text([^>]*)>([^<]*)<\/text>/g;
 
 /**
- * The first family a `font-family` stack names.
- * @param stack The stack.
- * @returns The family, unquoted.
- */
-function firstFamily(stack: string): string {
-	const quoted = /^"([^"]+)"/.exec(stack);
-	return quoted === null ? (stack.split(",")[0] ?? "").trim() : (quoted[1] ?? "");
-}
-
-/**
- * The `<text>` elements of one subject group.
+ * The runs of one subject group.
  * @param chunk The group's markup.
  * @param subject Which subject it draws.
  * @param shift How far the document moved its whole body onto the page.
- * @returns Its text elements, in page coordinates.
+ * @returns Its runs, in page coordinates.
  */
 function textsIn(
 	chunk: string,
@@ -100,17 +69,16 @@ function textsIn(
 	shift: ReturnType<typeof bodyShift>,
 ): DrawnText[] {
 	const drawn: DrawnText[] = [];
-	for (const [, tag, body] of chunk.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)) {
-		const spacing = attr(tag ?? "", "letter-spacing");
+	for (const [, glyphs, tag, body] of chunk.matchAll(RUN)) {
+		const face = /href="#g([sm][45])-/.exec(glyphs ?? "")?.[1];
 		drawn.push({
 			subject,
 			x: Number(attr(tag ?? "", "x")) + shift.x,
 			y: Number(attr(tag ?? "", "y")) + shift.y,
 			size: Number(attr(tag ?? "", "font-size")),
-			family: firstFamily(attr(tag ?? "", "font-family") ?? ""),
-			weight: Number(attr(tag ?? "", "font-weight")),
-			tracking: spacing === undefined ? 0 : Number(spacing.replace("em", "")),
-			centred: attr(tag ?? "", "text-anchor") === "middle",
+			face,
+			weight: face?.endsWith("5") === true ? 500 : 400,
+			width: Number(attr(tag ?? "", "textLength") ?? 0),
 			text: unescape(body ?? ""),
 		});
 	}
@@ -218,38 +186,13 @@ function labelPlates(svg: string, kind: string = "edge"): Map<string, DiagramBox
 }
 
 /**
- * How wide one drawn text really is, measured in the face the document says it
- * is drawn in.
- * @param drawn The text element.
- * @param faces The faces the document registers.
- * @returns Its width in diagram units.
- * @throws {Error} When the document draws in a face it never registered.
- */
-function drawnWidth(drawn: DrawnText, faces: ReadonlyMap<string, string>): number {
-	const family = faces.get(`${drawn.family}|${drawn.weight}`);
-	if (family === undefined) {
-		throw new Error(
-			`"${drawn.text}" is drawn in ${drawn.family} ${drawn.weight}, which the document does not register`,
-		);
-	}
-	const measured = diagramTextWidth(drawn.text, { family, weight: drawn.weight }, drawn.size);
-	return measured + Array.from(drawn.text).length * drawn.tracking * drawn.size;
-}
-
-/**
- * The horizontal run one drawn text occupies.
- * @param drawn The text element.
- * @param faces The faces the document registers.
+ * The horizontal run one drawn text occupies: from its left edge as far as its
+ * glyphs advance.
+ * @param drawn The run.
  * @returns Its left and right edges.
- * @throws {Error} When the document draws in a face it never registered.
  */
-function drawnSpan(
-	drawn: DrawnText,
-	faces: ReadonlyMap<string, string>,
-): { left: number; right: number } {
-	const width = drawnWidth(drawn, faces);
-	const left = drawn.centred ? drawn.x - width / 2 : drawn.x;
-	return { left, right: left + width };
+function drawnSpan(drawn: DrawnText): { left: number; right: number } {
+	return { left: drawn.x, right: drawn.x + drawn.width };
 }
 
 /**
@@ -263,12 +206,4 @@ function spanFits(span: { left: number; right: number }, box: DiagramBox): boole
 	return span.left >= box.x - slack && span.right <= box.x + box.width + slack;
 }
 
-export {
-	type DrawnText,
-	registeredFaces,
-	labelPlates,
-	drawnTexts,
-	drawnWidth,
-	drawnSpan,
-	spanFits,
-};
+export { type DrawnText, labelPlates, drawnTexts, drawnSpan, spanFits };

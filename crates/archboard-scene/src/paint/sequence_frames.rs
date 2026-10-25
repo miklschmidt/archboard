@@ -4,7 +4,6 @@
 
 use crate::geometry::{Rect, round_coord};
 use crate::names::word;
-use crate::paint::Ctx;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines, point, shape};
 use crate::paint::cards::{halo, header_anchor, paint_header};
@@ -24,7 +23,7 @@ use crate::paint::styles::{Styles, full_line_colour};
 use crate::paint::tray::tray;
 use crate::request::{SequenceFlow, SequenceFrame, Standing};
 use crate::scene::{
-    Colour, Geometry, Group, Item, PathStep, Purpose, Role, Setting, Shape, Stroke, SubjectKind,
+    Colour, Geometry, Group, Item, PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
 };
 
 const MARK_SPACING: f64 = 24.0;
@@ -34,7 +33,6 @@ const DIVIDER_DASH: [f64; 2] = [4.0, 3.0];
 
 /// The frame around one flow, with the flow's name and summary on it.
 pub(super) fn paint_frame(
-    ctx: &Ctx<'_>,
     layout: &SequenceFlow,
     palette: &Palette,
     standing: Option<Standing>,
@@ -60,13 +58,12 @@ pub(super) fn paint_frame(
             halo(frame, BAND_RADIUS, &styles, ghosted),
             tray(frame, &look, palette, ghosted),
             paint_heading_views(
-                ctx,
                 &flow.name,
                 flow.summary.as_deref(),
                 plate,
                 palette,
                 Words {
-                    items: paint_header(ctx, header, &flow.name, flow.summary.as_deref(), &styles),
+                    items: paint_header(header, &flow.name, flow.summary.as_deref(), &styles),
                     anchor: header_anchor(header),
                 },
             ),
@@ -107,11 +104,11 @@ fn tab_path(frame: &SequenceFrame, ink: &Colour, face: &Colour) -> Items {
 
 /// The words of one row of a frame, left aligned at a height.
 fn row_words(x: f64, top: f64, height: f64, words: &str, palette: &Palette) -> Items {
-    vec![Item::Text(Styles::of(palette).pill_text().set(
-        Setting::Row,
-        point(x, top + height * PILL_BASELINE),
-        words,
-    ))]
+    vec![Item::Text(
+        Styles::of(palette)
+            .pill_text()
+            .set(point(x, top + height * PILL_BASELINE), words),
+    )]
 }
 
 /// Each alternative's label at the start of its operand, and its dashed divider.

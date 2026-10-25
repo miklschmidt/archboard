@@ -21,6 +21,7 @@ use std::collections::HashMap;
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
+use archboard_scene::measure;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 
 use crate::board::{Decision, Flow, Loop, Message, Node};
@@ -40,7 +41,7 @@ use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
 use archboard_scene::paint::design::CARD_TITLE_FONT;
 
-use crate::text::{Text, fitted_size};
+use archboard_scene::measure::fitted_size;
 
 /// Which alternative of each decision that holds a message it runs on, by
 /// decision id. Two messages on different alternatives of one decision never
@@ -246,14 +247,13 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
 /// shrinks its title first; what still does not fit at the smallest title
 /// size widens every column together rather than being cut.
 fn measure_columns(
-    text: &impl Text,
     flows: &[Flow],
     by_id: &HashMap<&str, &Node>,
 ) -> (f64, HashMap<String, Vec<archboard_scene::drawing::TextRun>>) {
     let asked = flows.iter().flat_map(|flow| {
         flow.participants
             .iter()
-            .map(|participant| card_content_width(text, &participant_node(participant, by_id)))
+            .map(|participant| card_content_width(&participant_node(participant, by_id)))
     });
     // A whole unit: adding measured widths leaves floating-point dust, and a
     // card handed back exactly the width its name measured would cut it.
@@ -274,20 +274,20 @@ fn measure_columns(
         .collect();
     let notes: Vec<(String, Vec<_>)> = nodes
         .iter()
-        .map(|node| (node.id.clone(), card_notes(text, node, preferred)))
+        .map(|node| (node.id.clone(), card_notes(node, preferred)))
         .collect();
     let painted = notes
         .iter()
         .flat_map(|(_, runs)| runs.iter().map(|run| run.width));
     let names = nodes
         .iter()
-        .map(|node| text.width(&node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(node));
+        .map(|node| measure::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(node));
     let insets = preferred - card_text_width(preferred);
     let width = js::max([
         preferred,
         (largest(painted, 0.0) + insets).ceil(),
         (largest(names, 0.0) + insets).ceil(),
-        required_note_column_width(text, flows),
+        required_note_column_width(flows),
     ]);
     (width, notes.into_iter().collect())
 }
@@ -296,7 +296,6 @@ fn measure_columns(
 /// it is cut, against the run the painter will use; the responsibility's
 /// lines are whole and already measured.
 fn place_column_card(
-    text: &impl Text,
     node: Node,
     centre_x: f64,
     top: f64,
@@ -315,7 +314,6 @@ fn place_column_card(
         TITLE_SIZE_SMALL
     };
     let title_size = fitted_size(
-        text,
         &node.name,
         CARD_TITLE_FONT,
         earned,
@@ -334,7 +332,6 @@ fn place_column_card(
 /// The participants' cards, one on each column, and their height: the heads
 /// are one row of one height, so every lifeline starts level.
 fn head_cards(
-    text: &impl Text,
     nodes: Vec<Node>,
     centres: &[f64],
     top: f64,
@@ -348,7 +345,7 @@ fn head_cards(
         .enumerate()
         .map(|(index, node)| {
             let held = notes.get(&node.id).cloned().unwrap_or_default();
-            place_column_card(text, node, centres[index], top, column_width, held)
+            place_column_card(node, centres[index], top, column_width, held)
         })
         .collect();
     let tallest = largest(cards.iter().map(|card| card.bounds.height), 0.0);
@@ -361,7 +358,6 @@ fn head_cards(
 /// One flow, placed, its frame starting at a height and its messages at a
 /// turn of the drawing's clock.
 fn layout_flow<'a>(
-    text: &impl Text,
     flow: &'a Flow,
     by_id: &HashMap<&str, &Node>,
     (column_width, notes): &(f64, HashMap<String, Vec<archboard_scene::drawing::TextRun>>),
@@ -393,7 +389,7 @@ fn layout_flow<'a>(
     };
     let slab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
     let cards_top = slab_foot + NEST_INSET;
-    let (cards, tallest) = head_cards(text, nodes, &centres, cards_top, (column_width, notes));
+    let (cards, tallest) = head_cards(nodes, &centres, cards_top, (column_width, notes));
     let first_row = cards_top + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
     let centre_of: HashMap<&str, f64> = flow
@@ -403,7 +399,6 @@ fn layout_flow<'a>(
         .map(|(participant, centre)| (participant.as_str(), *centre))
         .collect();
     let (steps, rows) = place_steps(
-        text,
         &flow.steps,
         &centre_of,
         ColumnBounds {
@@ -432,7 +427,7 @@ fn layout_flow<'a>(
         })
         .collect();
     let active = ActiveAt::of(&columns);
-    let frames = place_frames(text, rows, &steps, &active, content_left, content_width);
+    let frames = place_frames(rows, &steps, &active, content_left, content_width);
 
     // The title row spans the frame, which a message's words, or a decision's
     // or loop's frame, may have widened.
@@ -473,20 +468,16 @@ fn layout_flow<'a>(
 }
 
 /// Every flow of one variant, stacked down one page.
-pub(super) fn lay_out<'a>(
-    text: &impl Text,
-    flows: &'a [Flow],
-    nodes: &[Node],
-) -> DataFlowLayout<'a> {
+pub(super) fn lay_out<'a>(flows: &'a [Flow], nodes: &[Node]) -> DataFlowLayout<'a> {
     let by_id: HashMap<&str, &Node> = nodes.iter().map(|node| (node.id.as_str(), node)).collect();
-    let measurement = measure_columns(text, flows, &by_id);
+    let measurement = measure_columns(flows, &by_id);
     let mut placed = Vec::new();
     let mut cursor = DIAGRAM_MARGIN;
     // The clock's cursor runs straight through the stack, which is what makes
     // the flows on one page take their turns in the order they are stated.
     let mut turn = 0;
     for flow in flows {
-        let laid = layout_flow(text, flow, &by_id, &measurement, cursor, turn);
+        let laid = layout_flow(flow, &by_id, &measurement, cursor, turn);
         cursor = laid.frame.y + laid.frame.height + FLOW_GAP;
         turn = laid
             .steps

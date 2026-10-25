@@ -188,7 +188,6 @@ const semanticViewsContract = defineCommand({
 		const draw = (variant: string | undefined, view: string | undefined) =>
 			renderSemanticBoardOnServer(input.name, {
 				...exportRenderRequest({ ...input, variant, view, against }),
-				fonts: "linked",
 			});
 		const overview = await draw(input.variant, undefined);
 		// The first answer names the variant by id, so a rename between two drawings cannot move them.

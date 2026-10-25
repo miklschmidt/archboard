@@ -361,14 +361,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name))
-					.filter(name => !name.includes('/assets/diagram-fonts/')),
-				// The faces the drawn board registers, which are the same files the
-				// server measured its text against. Served from here, never from a
-				// font CDN: a picture whose text was measured in one face and drawn
-				// in another has boxes that do not fit their words.
-				diagramFontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => name.includes('/assets/diagram-fonts/')),
+					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
 				sectionHeading: { ...metrics(sectionHeading), transform: getComputedStyle(sectionHeading).textTransform },

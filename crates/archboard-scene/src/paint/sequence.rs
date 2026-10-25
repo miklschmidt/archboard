@@ -311,7 +311,6 @@ fn paint_flow(
     let mark_of = |id: &str| marked_within(flow_standing, standings.of(id));
     let mut body = vec![
         paint_frame(
-            ctx,
             layout,
             palette,
             flow_standing,

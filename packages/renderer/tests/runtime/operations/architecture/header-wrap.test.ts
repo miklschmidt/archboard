@@ -11,12 +11,7 @@ import {
 } from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import {
-	drawnTexts,
-	drawnWidth,
-	registeredFaces,
-	type DrawnText,
-} from "#tests/runtime/support/drawn-text.ts";
+import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** The type chip a slab keeps left of its words, and the gap between them. */
@@ -40,32 +35,6 @@ const content = orderedFixture({
 	edges: [],
 });
 
-/**
- * How many lines words take, broken only between words, at a width.
- * @param line One drawn line, whose face and size the words are set in.
- * @param words The words.
- * @param width The width.
- * @param faces The faces the document registers.
- * @returns The count.
- */
-function linesAt(
-	line: DrawnText,
-	words: readonly string[],
-	width: number,
-	faces: ReadonlyMap<string, string>,
-): number {
-	let lines = 1;
-	let text = "";
-	for (const word of words) {
-		const longer = text === "" ? word : `${text} ${word}`;
-		if (text !== "" && drawnWidth({ ...line, text: longer }, faces) > width) {
-			lines += 1;
-			text = word;
-		} else text = longer;
-	}
-	return lines;
-}
-
 test.each(LayoutEngineSchema.options)(
 	"a wide container's header wraps at its slab and is as tall as its words (%s)",
 	async (layout) => {
@@ -82,9 +51,11 @@ test.each(LayoutEngineSchema.options)(
 		const first = notes[0]!;
 		// The words stand in from the slab's left by the chip, and from its right by the slab's padding.
 		const room = frame.x + frame.width - (first.x - frame.x) + CHIP_AND_GAP - first.x;
-		const needed = linesAt(first, RESPONSIBILITY.split(" "), room, registeredFaces(drawing.svg));
 		expect(frame.width).toBeGreaterThan(2 * 340);
-		expect(notes.length).toBe(needed);
+		expect(notes.map((line) => line.text).join(" ")).toBe(RESPONSIBILITY);
+		// Wrapped at the slab: every line fits its room, and one is wider than a card.
+		for (const line of notes) expect(line.width).toBeLessThanOrEqual(room + 0.01);
+		expect(Math.max(...notes.map((line) => line.width))).toBeGreaterThan(340);
 		// Under the last line: its descent, the slab's padding, and the inset above the cards.
 		const cards = ["load", "open", "renew", "serve"].map((id) => drawing.atlas.nodes[id]!.y);
 		const below = Math.min(...cards) - notes.at(-1)!.y;

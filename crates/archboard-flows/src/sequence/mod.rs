@@ -27,7 +27,6 @@ use archboard_scene::request::{
 use serde::Deserialize;
 
 use crate::board::{Flow, Node, every_step};
-use crate::text::Text;
 use card::title_room;
 use layout::{ActiveAt, Column, DataFlowLayout, FlowLayout, PlacedStep};
 use messages::drawn;
@@ -57,8 +56,8 @@ pub struct SequenceRequest {
 }
 
 /// A sequence laid out, as the painter's request.
-pub fn picture(request: SequenceRequest, text: &impl Text) -> PaintRequest {
-    let laid = layout::lay_out(text, &request.flows, &request.nodes);
+pub fn picture(request: SequenceRequest) -> PaintRequest {
+    let laid = layout::lay_out(&request.flows, &request.nodes);
     let shown = request
         .held
         .as_deref()

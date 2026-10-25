@@ -43,12 +43,12 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 	});
 	const decorated = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked" },
+		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	const plain = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked", comparison: false },
+		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!decorated.ok || !plain.ok || !("svg" in decorated.reply) || !("svg" in plain.reply)) {
@@ -100,12 +100,12 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	});
 	const compared = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked" },
+		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	const plain = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked", comparison: false },
+		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {

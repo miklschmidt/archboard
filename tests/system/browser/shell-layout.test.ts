@@ -269,13 +269,6 @@ test(
 				snapshot.fontResources.every((url) => new URL(url).origin === new URL(server.base).origin),
 			).toBe(true);
 			expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
-			// The drawn board's own faces, served from this server rather than a CDN.
-			expect(snapshot.diagramFontResources.length).toBeGreaterThan(0);
-			expect(
-				snapshot.diagramFontResources.every(
-					(url) => new URL(url).origin === new URL(server.base).origin,
-				),
-			).toBe(true);
 			expect(snapshot.humanLabels).toHaveLength(2);
 			expect(
 				snapshot.humanLabels.every(

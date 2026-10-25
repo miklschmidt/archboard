@@ -13,7 +13,7 @@ use std::collections::{BTreeMap, HashSet};
 use crate::drawing::DiagramFont;
 use crate::geometry::{Point, round_coord};
 use crate::js;
-use crate::paint::Ctx;
+use crate::measure;
 use crate::paint::build::{Items, grouped, lines, point, text};
 use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 use crate::paint::legend_entries::{Entry, entries_of, mark_counts};
@@ -21,7 +21,7 @@ use crate::paint::legend_symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
 use crate::request::{ExportFrame, LegendLayout, Standing};
-use crate::scene::{Atlas, Baseline, Colour, Group, Item, Role, Setting, Slot, Text, Transform};
+use crate::scene::{Atlas, Colour, Group, Item, Role, Slot, Text, Transform};
 
 const WORD_GAP: f64 = 8.0;
 const COUNT_GAP: f64 = 6.0;
@@ -32,36 +32,21 @@ const TITLE_SIZE: f64 = 18.0;
 const TITLE_LINE: f64 = 24.0;
 
 /// How wide an entry is: its symbol, its words and its count, rounded.
-fn width_of(ctx: &Ctx<'_>, entry: &Entry) -> f64 {
-    let words = ctx
-        .measurer
-        .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE);
+fn width_of(entry: &Entry) -> f64 {
+    let words = measure::width(&entry.words, CARD_NOTE_FONT, WORD_SIZE);
     let count = entry.count().map_or(0.0, |count| {
-        COUNT_GAP
-            + ctx
-                .measurer
-                .measure(&count.to_string(), CARD_NOTE_FONT, WORD_SIZE)
+        COUNT_GAP + measure::width(&count.to_string(), CARD_NOTE_FONT, WORD_SIZE)
     });
     round_coord(GLYPH + WORD_GAP + words + count)
 }
 
 /// Words of the page an export adds, centred on their row.
 fn caption(at: Point, font: DiagramFont, size: f64, fill: &Colour, words: &str) -> Items {
-    text(Text {
-        setting: Setting::Caption,
-        at,
-        font,
-        size,
-        fill: fill.clone(),
-        anchor: None,
-        baseline: Some(Baseline::Central),
-        keeps_spaces: false,
-        words: words.to_owned(),
-    })
+    text(Text::set(at, font, size, fill.clone(), words).central())
 }
 
 /// One entry drawn at a point: its symbol, its words and its count.
-fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) -> Items {
+fn drawn_entry(entry: &Entry, x: f64, y: f64, palette: &Palette) -> Items {
     let words_x = x + GLYPH + WORD_GAP;
     let at = |across: f64| point(across, y + ROW / 2.0);
     grouped(Group::new(
@@ -79,9 +64,7 @@ fn drawn_entry(ctx: &Ctx<'_>, entry: &Entry, x: f64, y: f64, palette: &Palette) 
                 None => Items::new(),
                 Some(count) => caption(
                     at(words_x
-                        + ctx
-                            .measurer
-                            .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE)
+                        + measure::width(&entry.words, CARD_NOTE_FONT, WORD_SIZE)
                         + COUNT_GAP),
                     CARD_NOTE_FONT,
                     WORD_SIZE,
@@ -103,14 +86,14 @@ struct Placed {
 
 /// The entries' places with the size they fill: as wide as the widest row
 /// reaches, down to `bottom`, with the margins.
-fn extent(ctx: &Ctx<'_>, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
+fn extent(lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
     let right = js::max(
         std::iter::once(DIAGRAM_MARGIN).chain(
             lists
                 .iter()
                 .flatten()
                 .zip(&at)
-                .map(|(entry, place)| place.x + width_of(ctx, entry)),
+                .map(|(entry, place)| place.x + width_of(entry)),
         ),
     );
     Placed {
@@ -121,7 +104,7 @@ fn extent(ctx: &Ctx<'_>, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> P
 }
 
 /// The entries stood one under another, a short gap between lists.
-fn column(ctx: &Ctx<'_>, lists: &[Vec<Entry>]) -> Placed {
+fn column(lists: &[Vec<Entry>]) -> Placed {
     let mut at = Vec::new();
     let mut y = DIAGRAM_MARGIN;
     for (index, list) in lists.iter().enumerate() {
@@ -136,17 +119,17 @@ fn column(ctx: &Ctx<'_>, lists: &[Vec<Entry>]) -> Placed {
             y += ROW;
         }
     }
-    extent(ctx, lists, at, y)
+    extent(lists, at, y)
 }
 
 /// The entries stood in a row that wraps before `wrap_at`, a wider gap between lists.
-fn row(ctx: &Ctx<'_>, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
+fn row(lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
     let mut at = Vec::new();
     let mut x = DIAGRAM_MARGIN;
     let mut y = DIAGRAM_MARGIN;
     for (index, list) in lists.iter().enumerate() {
         for (order, entry) in list.iter().enumerate() {
-            let width = width_of(ctx, entry);
+            let width = width_of(entry);
             let gap = if order > 0 {
                 ENTRY_GAP
             } else if index > 0 {
@@ -164,7 +147,7 @@ fn row(ctx: &Ctx<'_>, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
             x += width;
         }
     }
-    extent(ctx, lists, at, y + ROW)
+    extent(lists, at, y + ROW)
 }
 
 /// A legend laid out.
@@ -176,7 +159,7 @@ struct Legend {
 
 impl Legend {
     /// The legend drawn with its top left corner at a point.
-    fn draw(&self, ctx: &Ctx<'_>, x: f64, y: f64, palette: &Palette) -> Items {
+    fn draw(&self, x: f64, y: f64, palette: &Palette) -> Items {
         grouped(Group::new(
             Role::Slot(Slot::ExportLegend {
                 layout: self.layout,
@@ -186,9 +169,7 @@ impl Legend {
                     .iter()
                     .flatten()
                     .zip(&self.laid.at)
-                    .map(|(entry, place)| {
-                        drawn_entry(ctx, entry, x + place.x, y + place.y, palette)
-                    })
+                    .map(|(entry, place)| drawn_entry(entry, x + place.x, y + place.y, palette))
                     .collect(),
             ),
         ))
@@ -198,7 +179,6 @@ impl Legend {
 /// The legend of a picture laid out: a column for a vertical layout, else a row
 /// that wraps at the page's width.
 fn legend_of(
-    ctx: &Ctx<'_>,
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
     layout: LegendLayout,
@@ -206,9 +186,9 @@ fn legend_of(
 ) -> Legend {
     let lists = entries_of(body, marks);
     let laid = if layout == LegendLayout::Vertical {
-        column(ctx, &lists)
+        column(&lists)
     } else {
-        row(ctx, &lists, wrap_at)
+        row(&lists, wrap_at)
     };
     Legend {
         lists,
@@ -218,22 +198,17 @@ fn legend_of(
 }
 
 /// A page with its legend: beside it on the right for a vertical layout, else under it.
-fn with_legend(
-    ctx: &Ctx<'_>,
-    page: PaintedPage,
-    legend: &Legend,
-    palette: &Palette,
-) -> PaintedPage {
+fn with_legend(page: PaintedPage, legend: &Legend, palette: &Palette) -> PaintedPage {
     if legend.layout == LegendLayout::Vertical {
         return PaintedPage {
-            body: lines(vec![page.body, legend.draw(ctx, page.width, 0.0, palette)]),
+            body: lines(vec![page.body, legend.draw(page.width, 0.0, palette)]),
             width: round_coord(page.width + legend.laid.width),
             height: js::js_max(page.height, legend.laid.height),
             atlas: page.atlas,
         };
     }
     PaintedPage {
-        body: lines(vec![page.body, legend.draw(ctx, 0.0, page.height, palette)]),
+        body: lines(vec![page.body, legend.draw(0.0, page.height, palette)]),
         width: js::js_max(page.width, legend.laid.width),
         height: round_coord(page.height + legend.laid.height),
         atlas: page.atlas,
@@ -241,7 +216,7 @@ fn with_legend(
 }
 
 /// A page moved down under its title, made wide enough for the title.
-fn under_title(ctx: &Ctx<'_>, page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
+fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage {
     let words = caption(
         Point {
             x: DIAGRAM_MARGIN,
@@ -260,10 +235,7 @@ fn under_title(ctx: &Ctx<'_>, page: PaintedPage, title: &str, palette: &Palette)
         ]),
         width: js::js_max(
             page.width,
-            ctx.measurer
-                .measure(title, CARD_TITLE_FONT, TITLE_SIZE)
-                .ceil()
-                + 2.0 * DIAGRAM_MARGIN,
+            measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil() + 2.0 * DIAGRAM_MARGIN,
         ),
         height: band + page.height,
         atlas: moved_atlas(&page.atlas, 0.0, band),
@@ -306,7 +278,6 @@ pub(super) fn placed_on(atlas: &Atlas) -> Vec<String> {
 /// A page as an export carries it: with its legend under it or beside it, or
 /// its legend alone, under its title when it has one.
 pub(super) fn framed_for_export(
-    ctx: &Ctx<'_>,
     page: PaintedPage,
     frame: Option<&ExportFrame>,
     (standing, placed): (Option<&BTreeMap<String, Standing>>, &[String]),
@@ -324,7 +295,7 @@ pub(super) fn framed_for_export(
             } else {
                 mark_counts(standing, &placed.iter().map(String::as_str).collect())
             };
-            let legend = legend_of(ctx, &page.body, &marks, layout, page.width);
+            let legend = legend_of(&page.body, &marks, layout, page.width);
             let shown = if frame.legend_only == Some(true) {
                 PaintedPage {
                     body: Items::new(),
@@ -335,12 +306,12 @@ pub(super) fn framed_for_export(
             } else {
                 page
             };
-            with_legend(ctx, shown, &legend, palette)
+            with_legend(shown, &legend, palette)
         }
     };
     match &frame.title {
         None => keyed,
-        Some(title) => under_title(ctx, keyed, title, palette),
+        Some(title) => under_title(keyed, title, palette),
     }
 }
 

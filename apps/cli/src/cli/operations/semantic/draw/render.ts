@@ -241,7 +241,7 @@ const semanticRenderContract = defineCommand({
 				when: { key: "out", present: false },
 				mode: "raw",
 				description:
-					"The standalone SVG, with embedded fonts, its accessibility metadata and its render recipe",
+					"The standalone SVG, its words drawn as glyphs, with its accessibility metadata and its render recipe",
 			},
 			{
 				id: "file",

@@ -2899,13 +2899,11 @@
 			"agent": "fuchsia",
 			"checks": "pink",
 			"grading": "purple"
-		},
-		"farSize": 20.5
+		}
 	},
 	"page": { "plain": true, "unsettled": [], "unbuilt": false, "frame": {} },
 	"document": {
 		"name": "Architecture diagram: 13 nodes, 19 connections",
-		"fonts": "linked",
 		"farViewSwapMs": 280
 	},
 	"icons": {

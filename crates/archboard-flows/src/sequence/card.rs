@@ -4,6 +4,7 @@
 use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
+use archboard_scene::measure;
 
 use crate::board::Node;
 use crate::sequence::design::{
@@ -11,8 +12,6 @@ use crate::sequence::design::{
     ICON_CHIP_SIZE, NOTE_SIZE, TEXT_LINE_HEIGHT, TITLE_SIZE,
 };
 use archboard_scene::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT};
-
-use crate::text::Text;
 
 /// One participant's heading.
 #[derive(Clone, Debug)]
@@ -55,8 +54,8 @@ pub(super) fn card_height(notes: &[TextRun]) -> f64 {
 
 /// Every line of a participant's responsibility, measured before any card or
 /// lifeline is placed: whole, never cut.
-pub(super) fn card_notes(text: &impl Text, node: &Node, width: f64) -> Vec<TextRun> {
-    text.note_lines(
+pub(super) fn card_notes(node: &Node, width: f64) -> Vec<TextRun> {
+    measure::note_lines(
         node.responsibility.as_deref().unwrap_or(""),
         card_text_width(width),
         NOTE_SIZE,
@@ -66,7 +65,7 @@ pub(super) fn card_notes(text: &impl Text, node: &Node, width: f64) -> Vec<TextR
 
 /// The width one participant's card asks for: its chip, its name and its
 /// responsibility's longest authored line, with the card's insets.
-pub(super) fn card_content_width(text: &impl Text, node: &Node) -> f64 {
+pub(super) fn card_content_width(node: &Node) -> f64 {
     // Split at every line break, as `/\r\n?|\n/` splits it: the empty piece
     // between a `\r` and its `\n` measures nothing.
     let note_width = node
@@ -75,13 +74,13 @@ pub(super) fn card_content_width(text: &impl Text, node: &Node) -> f64 {
         .unwrap_or("")
         .split(['\r', '\n'])
         .fold(0.0, |width, line| {
-            js::js_max(width, text.width(line, CARD_NOTE_FONT, NOTE_SIZE))
+            js::js_max(width, measure::width(line, CARD_NOTE_FONT, NOTE_SIZE))
         });
     CARD_PADDING_X * 2.0
         + ICON_CHIP_SIZE
         + ICON_CHIP_GAP
         + js::js_max(
-            text.width(&node.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(node),
+            measure::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(node),
             note_width,
         )
 }

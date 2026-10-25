@@ -2,6 +2,7 @@
 //! either grammar, and the cards and frame headings of a message sequence.
 
 use crate::geometry::{Rect, round_coord};
+use crate::measure;
 use crate::paint::Ctx;
 use crate::paint::appearance::card_look;
 use crate::paint::build::{Items, grouped, lines, point, shape, text};
@@ -18,7 +19,7 @@ use crate::paint::standing::{
 };
 use crate::paint::styles::Styles;
 use crate::request::{NodeAppearance, SequenceCard, Standing};
-use crate::scene::{Group, Purpose, Role, Setting, Shape, SubjectKind};
+use crate::scene::{Group, Purpose, Role, Shape, SubjectKind};
 
 /// How far outside its subject a selection ring sits.
 pub(super) const HALO_INSET: f64 = 3.0;
@@ -80,9 +81,8 @@ pub(super) fn paint_card(
         rect.y + rect.height / 2.0 + title_size * OPTICAL_CENTRE
     };
     let title = text(styles.title(title_size).set(
-        Setting::Caption,
         point(text_x, title_y),
-        &ctx.measurer.truncate(
+        &measure::truncate(
             &placed.node.name,
             CARD_TITLE_FONT,
             title_size,
@@ -94,12 +94,10 @@ pub(super) fn paint_card(
             .notes
             .iter()
             .map(|run| {
-                let mut line = styles.note().set(
-                    Setting::Caption,
+                let line = styles.note().set(
                     point(text_x, rect.y + NOTE_BASELINE - NOTE_SIZE + run.y),
                     &run.text,
                 );
-                line.keeps_spaces = true;
                 text(line)
             })
             .collect(),
@@ -172,7 +170,6 @@ pub(super) fn paint_slab_card(
 
 /// A flow's title block, printed on its frame's header slab.
 pub(super) fn paint_header(
-    ctx: &Ctx<'_>,
     header: Rect,
     name: &str,
     responsibility: Option<&str>,
@@ -181,25 +178,15 @@ pub(super) fn paint_header(
     let name_baseline = header_anchor(header).y;
     let note_baseline = header.y + PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_SIZE;
     lines(vec![
-        text(
-            styles.header_name().set(
-                Setting::Caption,
-                point(header.x, name_baseline),
-                &ctx.measurer
-                    .truncate(name, CARD_TITLE_FONT, PART_TITLE_SIZE, header.width),
-            ),
-        ),
+        text(styles.header_name().set(
+            point(header.x, name_baseline),
+            &measure::truncate(name, CARD_TITLE_FONT, PART_TITLE_SIZE, header.width),
+        )),
         match responsibility {
             None => Items::new(),
             Some(responsibility) => text(styles.header_note().set(
-                Setting::Caption,
                 point(header.x, note_baseline),
-                &ctx.measurer.truncate(
-                    responsibility,
-                    CARD_NOTE_FONT,
-                    PART_NOTE_SIZE,
-                    header.width,
-                ),
+                &measure::truncate(responsibility, CARD_NOTE_FONT, PART_NOTE_SIZE, header.width),
             )),
         },
     ])

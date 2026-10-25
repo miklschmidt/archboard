@@ -19,8 +19,8 @@ use crate::paint::standing::{OUTLINE_WIDTH, standing_pin_at, subject, warning_on
 use crate::paint::styles::Styles;
 use crate::request::{FlowchartShape, ShapedCard, Standing};
 use crate::scene::{
-    Anchor, Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Setting,
-    Shape, Stop, SubjectKind, Text, Token,
+    Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Shape, Stop,
+    SubjectKind, Text, Token,
 };
 
 const SHAPE_TEXT_SIZE: f64 = 11.0;
@@ -147,20 +147,19 @@ fn centred_words(rect: Rect, words: &[String], fill: &Colour) -> Items {
             .iter()
             .enumerate()
             .map(|(index, line)| {
-                text(Text {
-                    setting: Setting::Centred,
-                    at: point(
-                        rect.x + rect.width / 2.0,
-                        top + (index as f64 + 0.78) * SHAPE_TEXT_LINE,
-                    ),
-                    font: PILL_FONT,
-                    size: SHAPE_TEXT_SIZE,
-                    fill: fill.clone(),
-                    anchor: Some(Anchor::Middle),
-                    baseline: None,
-                    keeps_spaces: false,
-                    words: line.clone(),
-                })
+                text(
+                    Text::set(
+                        point(
+                            rect.x + rect.width / 2.0,
+                            top + (index as f64 + 0.78) * SHAPE_TEXT_LINE,
+                        ),
+                        PILL_FONT,
+                        SHAPE_TEXT_SIZE,
+                        fill.clone(),
+                        line,
+                    )
+                    .centred(),
+                )
             })
             .collect(),
     )

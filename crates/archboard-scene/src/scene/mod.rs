@@ -32,7 +32,7 @@ pub use group::{
     EntryKind, Group, LineFacts, Role, ShadowOf, Slot, Subject, SubjectKind, Transform,
 };
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
-pub use text::{Anchor, Baseline, FACES, Face, Icon, Setting, Text, Viewport};
+pub use text::{GlyphPlace, Icon, Text, Viewport};
 pub use traffic::{Motion, PulseLook, TrafficMark};
 
 /// One thing in a scene's order.

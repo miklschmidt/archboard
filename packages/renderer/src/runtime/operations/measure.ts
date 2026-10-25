@@ -1,6 +1,6 @@
-// The renderer's text measurement, under the Bun host.
+// The renderer core's measure of a board's words, under the Bun host.
 import type { VariantContent } from "@archboard/board/content";
-import { measureArchitecture as measureArchitectureIn } from "#shared/rules/text/measurement.ts";
+import { measureArchitecture as measureArchitectureIn } from "#shared/rules/render/measure.ts";
 import { type MeasuredArchitecture } from "#shared/rules/render/drawing.ts";
 import { installBunHost } from "#runtime/services/bun-host.ts";
 

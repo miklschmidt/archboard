@@ -4,12 +4,7 @@ import type { DiagramBox } from "@archboard/board/render-reply";
 import type { DiagramGrammar } from "@archboard/board/views";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import {
-	drawnSpan,
-	drawnTexts,
-	registeredFaces,
-	spanFits,
-} from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const content = orderedFixture({
@@ -78,7 +73,6 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 			content,
 			theme: "light",
 		});
-		const faces = registeredFaces(rendered.svg);
 		const texts = drawnTexts(rendered.svg);
 		for (const id of ["api", "store"]) {
 			const node = content.nodes.find((candidate) => candidate.id === id)!;
@@ -98,7 +92,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 				expect(notes.length).toBeGreaterThan(3);
 			}
 			for (const [index, run] of runs.entries()) {
-				expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
+				expect(spanFits(drawnSpan(run), box)).toBe(true);
 				expect(run.y - run.size).toBeGreaterThanOrEqual(box.y);
 				expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
 				if (index > 0) {
@@ -138,10 +132,9 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 			(run) => run.subject.id === "api" && run.weight === 400,
 		);
 		const box = cardBox(rendered, "api");
-		const faces = registeredFaces(rendered.svg);
 		expect(notes.map((run) => run.text).join("")).toBe(responsibility);
 		for (const run of notes) {
-			expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
+			expect(spanFits(drawnSpan(run), box)).toBe(true);
 			expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
 		}
 	});
@@ -155,7 +148,6 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[])
 			content,
 			theme: "light",
 		});
-		const faces = registeredFaces(rendered.svg);
 		const near = drawnTexts(rendered.svg);
 		const far = drawnTexts(rendered.svg, "far");
 		for (const id of ["api", "store"]) {
@@ -175,7 +167,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[])
 			expect(node.responsibility!.replace(/\s+/gu, " ")).toStartWith(gist);
 			if (grammar === "architecture") expect(gist).not.toBe("");
 			for (const run of runs) {
-				expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
+				expect(spanFits(drawnSpan(run), box)).toBe(true);
 				expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
 			}
 		}

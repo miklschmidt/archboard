@@ -3,7 +3,8 @@
 // recreated. Ordinary engine failures must keep reaching the required turn.
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
-import { diagramTextWidth, renderArchitecture } from "#runtime/operations/render.ts";
+import { renderArchitecture } from "#runtime/operations/render.ts";
+import { installBunHost } from "#runtime/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
@@ -11,7 +12,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 test.each(["active", "queued", "cancelling", "failed"] as const)(
 	"a later join turn reuses an obsolete %s candidate according to its host outcome",
 	async (mode) => {
-		diagramTextWidth("Warm", { family: "Inter", weight: 400 }, 12);
+		installBunHost();
 		const host = rendererHost();
 		const sources = ["one", "two", "three"];
 		const content = orderedFixture({

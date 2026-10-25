@@ -22,8 +22,8 @@ use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
 use crate::scene::traffic::PULSE_LENGTH;
 use crate::scene::{
-    Anchor, Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Setting, Shape,
-    Stroke, SubjectKind, TrafficMark,
+    Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
+    SubjectKind, TrafficMark,
 };
 
 const STEP_WEIGHT: Emphasis = Emphasis::Normal;
@@ -284,16 +284,18 @@ fn paint_label(
             .stroked(styles.ring(Some(LIT_RULE_WIDTH)))
     });
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
-        let mut set = styles.pill_text().set(
-            Setting::Caption,
-            point(
-                rect.x + rect.width / 2.0,
-                rect.y + PILL_HEIGHT * PILL_BASELINE + index as f64 * MESSAGE_LINE_STEP,
-            ),
-            &line.text,
-        );
-        set.anchor = Some(Anchor::Middle);
-        text(set)
+        text(
+            styles
+                .pill_text()
+                .set(
+                    point(
+                        rect.x + rect.width / 2.0,
+                        rect.y + PILL_HEIGHT * PILL_BASELINE + index as f64 * MESSAGE_LINE_STEP,
+                    ),
+                    &line.text,
+                )
+                .centred(),
+        )
     });
     let mut parts = vec![plate, rule];
     parts.extend(lines_of_words);
@@ -311,16 +313,13 @@ fn paint_note(placed: &SequenceStep, palette: &Palette, mark: Option<Standing>) 
         row_tint(note.bounds, mark, palette),
     ])];
     parts.extend(note.lines.iter().map(|run| {
-        let mut set = styles.note().set(
-            Setting::Caption,
+        text(styles.note().set(
             point(
                 note.bounds.x + STEP_NOTE_PADDING_X + run.x,
                 note.bounds.y + STEP_NOTE_PADDING_Y + run.y,
             ),
             &run.text,
-        );
-        set.keeps_spaces = true;
-        text(set)
+        ))
     }));
     lines(parts)
 }

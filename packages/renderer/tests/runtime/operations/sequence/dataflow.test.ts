@@ -4,13 +4,7 @@ import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import { renderDataFlow, renderSemanticView } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import {
-	drawnSpan,
-	drawnTexts,
-	labelPlates,
-	registeredFaces,
-	spanFits,
-} from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -270,13 +264,12 @@ describe("renderDataFlow", () => {
 
 	test("a message's words belong to the message, in the markup and in the atlas", () => {
 		const rendered = render();
-		const faces = registeredFaces(rendered.svg);
 		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read the note");
 
 		expect(labelled).toHaveLength(1);
 		expect(labelled[0]!.subject).toEqual({ kind: "step", id: "s5" });
 
-		const span = drawnSpan(labelled[0]!, faces);
+		const span = drawnSpan(labelled[0]!);
 		expect(spanFits(span, rendered.atlas.edges["s5"]!)).toBe(true);
 		// And inside the plate it is printed on, which is sized independently of
 		// the atlas: a plate measured in the wrong face overflows this, not that.
@@ -287,10 +280,8 @@ describe("renderDataFlow", () => {
 		const long = drawnTexts(rendered.svg).filter((text) => text.subject.id === "s9");
 		expect(long.length).toBeGreaterThan(1);
 		for (const line of long) {
-			expect(spanFits(drawnSpan(line, faces), rendered.atlas.edges["s9"]!)).toBe(true);
-			expect(spanFits(drawnSpan(line, faces), labelPlates(rendered.svg, "step").get("s9")!)).toBe(
-				true,
-			);
+			expect(spanFits(drawnSpan(line), rendered.atlas.edges["s9"]!)).toBe(true);
+			expect(spanFits(drawnSpan(line), labelPlates(rendered.svg, "step").get("s9")!)).toBe(true);
 		}
 	});
 
@@ -298,14 +289,11 @@ describe("renderDataFlow", () => {
 		const rendered = render();
 		const drawn = drawnTexts(rendered.svg).filter((text) => text.subject.id === "s6");
 		expect(drawn.map((text) => text.text)).toEqual(["readFileSync ×2"]);
-		expect(
-			spanFits(drawnSpan(drawn[0]!, registeredFaces(rendered.svg)), rendered.atlas.edges["s6"]!),
-		).toBe(true);
+		expect(spanFits(drawnSpan(drawn[0]!), rendered.atlas.edges["s6"]!)).toBe(true);
 	});
 
 	test("every drawn word fits its subject, measured in the face it is drawn in", () => {
 		const rendered = render();
-		const faces = registeredFaces(rendered.svg);
 		const drawn = drawnTexts(rendered.svg);
 
 		expect(drawn.length).toBeGreaterThan(15);
@@ -318,8 +306,7 @@ describe("renderDataFlow", () => {
 						: rendered.atlas.regions[text.subject.id];
 			expect(box).toBeDefined();
 			expect([400, 500]).toContain(text.weight);
-			expect(faces.has(`${text.family}|${text.weight}`)).toBe(true);
-			expect(spanFits(drawnSpan(text, faces), box!)).toBe(true);
+			expect(spanFits(drawnSpan(text), box!)).toBe(true);
 		}
 	});
 
@@ -439,16 +426,6 @@ describe("renderDataFlow", () => {
 		}
 		expect(thrown).toBeInstanceOf(SemanticRenderError);
 		expect((thrown as SemanticRenderError).code).toBe("NOTHING_TO_RENDER");
-	});
-
-	test("an embedded render carries its faces instead of pointing at them", () => {
-		const linked = renderDataFlow({ policy, content: SAMPLE, theme: "light" });
-		const embedded = renderDataFlow({ policy, content: SAMPLE, theme: "light", fonts: "embedded" });
-
-		expect(linked.svg).toContain('url("/assets/diagram-fonts/');
-		expect(embedded.svg).not.toContain("/assets/diagram-fonts/");
-		expect(embedded.svg).toContain('url("data:font/ttf;base64,');
-		expect(embedded.atlas).toEqual(linked.atlas);
 	});
 
 	test("the two themes are different pictures of the same geometry", () => {

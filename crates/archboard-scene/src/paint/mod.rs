@@ -3,8 +3,8 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::drawing::ReadingDirection;
-use crate::measure::{Measure, Measurer};
+use crate::drawing::{Painted, ReadingDirection};
+use crate::measure::{FarSubject, far_size_for};
 use crate::request::{PaintRequest, Picture, Standing};
 use crate::scene::{Atlas, Boxes, Definition, Head, HeadInk, Item, MarkerId, Scene};
 
@@ -47,12 +47,9 @@ mod tray;
 
 pub use marks::{ViewerMarks, viewer_marks};
 
-/// What every part of one picture is painted with: the host's measure of text,
-/// and the icons the host has.
+/// What every part of one picture is painted with: the icons the host has.
 #[derive(Debug)]
 struct Ctx<'a> {
-    /// The host's measure of text in the diagram fonts.
-    measurer: Measurer<'a>,
     /// Each icon's path data, by its export name.
     icons: &'a BTreeMap<String, Vec<String>>,
 }
@@ -114,10 +111,25 @@ fn subject_atlas(atlas: Atlas, subjects: &HashSet<&str>) -> Atlas {
     }
 }
 
-/// One picture painted into a scene, its text measured by the host.
-pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
+/// The size group captions draw their names at from far away: the largest
+/// size at which every card the page holds, drawn or not, fits its name.
+fn far_size(page: &Painted) -> f64 {
+    far_size_for(
+        &page
+            .drawing
+            .cards
+            .iter()
+            .map(|card| FarSubject {
+                name: &card.measured.node.name,
+                bounds: card.bounds,
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
+/// One picture painted into a scene.
+pub fn paint(request: &PaintRequest) -> Scene {
     let ctx = Ctx {
-        measurer: Measurer::new(host),
         icons: &request.icons,
     };
     let palette = &palette::Palette::of_page();
@@ -139,15 +151,16 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
                         shapes: &parts.shapes,
                         palette,
                     });
+            let page_drawing = picture.whole.as_ref().unwrap_or(&picture.drawing);
             let vocabulary = architecture::Vocabulary {
                 appearances: &picture.appearances,
                 lines: &picture.lines,
                 groups: &picture.groups,
                 steps: picture.steps.iter().map(String::as_str).collect(),
-                far_size: picture.far_size,
+                far_size: far_size(page_drawing),
             };
             let held_page = architecture::HeldPage {
-                drawing: picture.whole.as_ref().unwrap_or(&picture.drawing),
+                drawing: page_drawing,
                 // A flowchart's page holds the marks it draws.
                 standings: if shapes.is_some() { &painted } else { &held },
                 shapes: shapes.as_ref(),
@@ -177,10 +190,9 @@ pub fn paint(request: &PaintRequest, host: &dyn Measure) -> Scene {
             false,
         ),
     };
-    let framed = page::page_for(&ctx, painting, palette, page.unbuilt);
+    let framed = page::page_for(painting, palette, page.unbuilt);
     let placed = export::placed_on(&framed.atlas);
     let framed = export::framed_for_export(
-        &ctx,
         framed,
         page.frame.as_ref(),
         (page.standing.as_ref(), &placed),
@@ -221,7 +233,6 @@ mod tests {
     //! it can, never an animation written into the scene.
 
     use super::paint;
-    use crate::measure::fixed::Monospace;
     use crate::request::{PaintRequest, Standing};
     use crate::scene::{Item, Motion, Role, Scene, Subject, SubjectKind};
 
@@ -251,10 +262,10 @@ mod tests {
                 "b": {"container": false, "icon": "RiServerLine", "typeName": "Service", "typeKind": "service", "drill": null}
             },
             "lines": {"ab": {"name": "Calls", "dash": "solid", "arrowhead": "filled"}},
-            "steps": [], "groups": {}, "farSize": 14
+            "steps": [], "groups": {}
         },
         "page": {"standing": {"a": "added"}, "plain": false, "unsettled": [], "unbuilt": false},
-        "document": {"name": "Two services", "fonts": "linked", "farViewSwapMs": 280},
+        "document": {"name": "Two services", "farViewSwapMs": 280},
         "icons": {}
     }"#;
 
@@ -279,7 +290,7 @@ mod tests {
     fn painted() -> Scene {
         let request: PaintRequest =
             serde_json::from_str(&REQUEST.replace("EDGE", EDGE)).expect("the request reads");
-        paint(&request, &Monospace)
+        paint(&request)
     }
 
     #[test]

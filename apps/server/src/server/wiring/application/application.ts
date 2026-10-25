@@ -7,7 +7,6 @@ import {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "@archboard/code-opener/opener";
-import { DIAGRAM_FONTS_DIRECTORY } from "@archboard/renderer/assets";
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/wiring/http/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts";
@@ -60,18 +59,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // `dist/`. `tests/system/process-contracts/local-bind.test.ts` plants a file in
 // `dist/` and checks it 404s.
 app.use(express.static(FRONTEND_DIRECTORY));
-
-// The faces the renderer measures and draws in. A rendered diagram registers
-// them itself, by these URLs, so the glyphs a browser draws come from the same
-// files the server measured — a picture whose text was measured in one face and
-// drawn in another has boxes that do not fit their words.
-app.use(
-	"/assets/diagram-fonts",
-	express.static(DIAGRAM_FONTS_DIRECTORY, {
-		immutable: true,
-		maxAge: "1y",
-	}),
-);
 
 // The icons a picture drawn in the browser names, one at a time (TASK-247). A
 // policy may name any of the icon set's three thousand, so the page asks for
