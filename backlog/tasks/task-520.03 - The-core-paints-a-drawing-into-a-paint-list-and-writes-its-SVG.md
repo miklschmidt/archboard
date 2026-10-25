@@ -1,11 +1,11 @@
 ---
 id: TASK-520.03
 title: The core paints a drawing into a scene and writes its SVG
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-24T16:59:00Z'
+updated_date: '2026-10-25T06:05:00Z'
 labels:
   - renderer
 dependencies:
@@ -26,11 +26,11 @@ The port starts at the output, so a native frontend can read a scene from the se
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The core turns the drawing of an architecture, a sequence and a flowchart into a scene, and writes SVG from the scene
-- [ ] #2 Every corpus picture is the same bytes as the picture that the TypeScript painter wrote before the change
-- [ ] #3 Each group of the scene names the subject it draws and its role, and traffic is data on the scene, not SMIL
-- [ ] #4 The TypeScript types of the scene are generated from its Rust types
-- [ ] #5 The TypeScript painter under shared/rules/svg is gone, and the browser lane passes unchanged
+- [x] #1 The core turns the drawing of an architecture, a sequence and a flowchart into a scene, and writes SVG from the scene
+- [x] #2 Every corpus picture is the same bytes as the picture that the TypeScript painter wrote before the change
+- [x] #3 Each group of the scene names the subject it draws and its role, and traffic is data on the scene, not SMIL
+- [x] #4 The TypeScript types of the scene are generated from its Rust types
+- [x] #5 The TypeScript painter under shared/rules/svg is gone, and the browser lane passes unchanged
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,4 +72,12 @@ Decisions and deviations:
 - Boards: `Semantic renderer@TASK-520.03` and `Renderer layout@TASK-520.03` were drawn, checked, and adopted. `archboard check --code --variant TASK-520.03` added no finding against the run without the variant and cleared the findings on the deleted paths. The footprint was read against base `162f6dba3^`. changedNotNamed is empty on both boards. namedNotChanged is Sequence layout and Subject code marks, named only by relationships. Both commits are large (over 30 files). `archboard check` reports no diagnostics.
 
 Gate: `bun run check` inside `nix develop` exits 0 on 2ab2c3b0c. test:modules 4874 pass, 1 skip, 0 fail. test:system 257 pass. test:repository 136 pass. test:serial-browser 19 of 19 files pass. The first run failed one test, `typescript-facts.test.ts`, because it read the deleted `svg/page/primitives.ts`. Commit 2ab2c3b0c fixes it.
+
+Closing (2026-10-25): three independent reviews covered the scene crate (its contract and the SVG writer, the architecture painters, and the paint primitives with the sequence painter and export) and committed fixes with 0 of 2,344 drawings changed. AC3 holds as written (each group names its subject and role; traffic is data). The review found that the scene still carries SVG element names, attribute strings and CSS paints, which a native frontend would have to parse; that is TASK-520.10.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The renderer core paints every architecture, sequence and flowchart drawing into a scene and writes its SVG (crates/archboard-scene, crates/archboard-svg), and the TypeScript painter under shared/rules/svg is gone. Every corpus picture is the same bytes as the TypeScript painter wrote. Each group names its subject and role, and traffic is data on the scene. The TypeScript types of the drawing and the scene are generated from the Rust types with ts-rs. The browser lane passes unchanged. Reviewed on 2026-10-25 with fixes committed; the scene's remaining SVG and CSS vocabulary is TASK-520.10.
+<!-- SECTION:FINAL_SUMMARY:END -->

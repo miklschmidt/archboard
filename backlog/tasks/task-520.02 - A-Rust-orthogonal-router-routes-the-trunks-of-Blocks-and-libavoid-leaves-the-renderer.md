@@ -3,11 +3,11 @@ id: TASK-520.02
 title: >-
   A Rust orthogonal router routes the trunks of Blocks, and libavoid leaves the
   renderer
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T00:37:00Z'
+updated_date: '2026-10-25T06:05:00Z'
 labels:
   - renderer
   - performance
@@ -29,11 +29,11 @@ libavoid takes most of the time of a Blocks render. Its unifying nudging prepass
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Blocks routes every trunk with the router of the core, and libavoid-js and its patch are gone from the repository
-- [ ] #2 No corpus picture is worse on the measures of ADR 0039 than with libavoid, and the task notes record each reviewed difference
-- [ ] #3 The corpus renders faster in total and no board renders slower, measured with the same harness before and after, with the numbers in the task notes
-- [ ] #4 A trunk that the router cannot route keeps the dogleg fallback of today, and an unsatisfiable constraint set never throws
-- [ ] #5 The router module cites the published algorithms it implements
+- [x] #1 Blocks routes every trunk with the router of the core, and libavoid-js and its patch are gone from the repository
+- [x] #2 No corpus picture is worse on the measures of ADR 0039 than with libavoid, and the task notes record each reviewed difference
+- [x] #3 The corpus renders faster in total and no board renders slower, measured with the same harness before and after, with the numbers in the task notes
+- [x] #4 A trunk that the router cannot route keeps the dogleg fallback of today, and an unsatisfiable constraint set never throws
+- [x] #5 The router module cites the published algorithms it implements
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -68,4 +68,12 @@ Router decisions: the turn-onto-line crossing penalty was tried again and reject
 Boards: Renderer layout@TASK-520.02 (libavoid replaced by the Orthogonal router part bound to crates/archboard-router/src/lib.rs; edge PYJsIDYm and steps 7IED3t0f, Pd3I6jNp anchored on routeTrunks) and Semantic renderer@TASK-520.02 (four descriptions no longer name libavoid) were drawn, checked and adopted. `archboard check --code --variant TASK-520.02` added no finding and cleared three ANCHOR_SYMBOL_MISSING findings on processTransaction. Footprint read against base 7f7870cc1: changedNotNamed parts of this task's commits are internal and the boards stay true: Block placement, Block packing, Block layout (the avoid parameter removed), View dispatcher and Flowchart (policy required), Engine pool (a comment), Renderer core (the router module added; the router is drawn on Renderer layout). Behind after adoption: Archboard (Workspace packages, timing, renderer: dependency and comment changes) and Board viewer (Page start no longer passes a WebAssembly address); both still describe the code.
 
 Gate on 2df6736f4 (2026-10-25, machine shared with two port agents, load average about 10): lint, fmt, type-check, build, test:system, test:repository and test:serial-browser pass; test:modules 4871 pass, 1 fail: Board viewer (track) took 3,160 ms against the 3 s local first-layout bound. Back to back under the same load, Agent workbench (track) takes 4,291 / 4,353 / 4,380 ms on the branch base cadcc9042 (libavoid, before this task) and 4,407 / 4,401 / 4,588 ms on 2df6736f4: Track never calls the router, and the bound fails on both. To be rerun on a quiet machine before closing.
+
+Closing (2026-10-25): bun run check passed with every lane on the rebased branch at 40e1b5360 and again after TASK-520.09, the Track first-layout bounds included, so the rerun the gate note asked for is done. AC3's one deviation (Workhorse operations responsibilities, 144 -> 235 ms, from the TypeScript layout of the different packing) is accepted under the user's ruling of 2026-10-25 that small render-time differences do not matter; the corpus total fell from 18.0 s to 14.4 s.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Blocks routes its trunks with a clean-room orthogonal router in the renderer core (crates/archboard-router): a Hanan grid and an A* search with bend and crossing penalties [W09], nudging with a VPSC solver one axis at a time [D05], and routes from one pin joined until they part [W12], kept apart in a parting order whose sureness ranks hold it acyclic. Where a pin's segment crowds a channel, only its stub is kept and the routes are nudged again. libavoid-js and its patch are gone. Every corpus difference was reviewed against the measures of ADR 0039 and none reads worse; the user judged the router's pictures better across the reviewed batch. The Blocks corpus renders in 14.4 s instead of 18.0 s; one view is slower (144 to 235 ms), from the TypeScript packing, accepted by the user's ruling. An unroutable trunk keeps the dogleg fallback, and no constraint set throws. The review of 2026-10-25 found the router's interface small and deep and left one seam open: routeTrunks hand-codes a flat number array where the rest of the core uses typed serde contracts.
+<!-- SECTION:FINAL_SUMMARY:END -->
