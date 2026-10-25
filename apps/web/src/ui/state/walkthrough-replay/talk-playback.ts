@@ -8,9 +8,12 @@
 // on nearly every frame, so it is not part of the moment: it is read where it is
 // drawn, as the shell reads the level of a live voice.
 
-import { SAMPLES_PER_FRAME, type Talk, type TalkEvent } from "@archboard/walkthrough/talk";
+import { SAMPLES_PER_FRAME, type Talk } from "@archboard/walkthrough/talk";
 import type { SubtitleSource, VoiceLevel } from "@archboard/workbench/voice";
 import { recordedStep, type RecordedStep } from "#ui/state/walkthrough-recording/recorder.ts";
+
+/** Something that happened during the talk, at a moment of it. */
+type TalkEvent = Talk["events"][number];
 
 /** Where a talk stands at one frame. */
 interface TalkMoment {

@@ -441,19 +441,28 @@ adopts the `api/` role for `server/` and `ui/` and exposes 4 subpaths with 13 na
   `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records a narrated walkthrough of a board to a video
-(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 38 names,
-where code outside imported 4 module paths. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of `shared/api/` are safe for the browser, with no Node import: the recording page and the replay
-page import them. The 2 files of `runtime/api/` run only in Bun.
+(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+operation or fact for each job a caller has. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of
+`shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
+files of `runtime/api/` run only in Bun.
 
-- `./recording` is the contract that the recording page and the command that drives it agree on: the address that opens
-  the page as a recording, the global it publishes its state on, the container and the language of a recording, and the
-  narration that the voice is told. `./talk` is the talk that the page keeps (the voice and a log stamped on its
-  samples), the frames drawn from it, the schema of a talk on disk and the address that opens the replay page. They are
-  `shared/protocol/recording-page.ts` and `shared/protocol/talk.ts`. The language schema is in `shared/schemas/`.
-- `./recorder` records a walkthrough, renders a kept talk again and reads and writes a talk in the state directory. It
-  is `runtime/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page client of
-  `runtime/clients/`, the talk files and the silent WAV of `runtime/store/`, and the choice of an encoder and a browser
-  in `runtime/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
+- `./recording` is the recording page's side of its contract: the address that opens the page as a recording
+  (`recordingAskedOf`), `publishRecordingPage`, which puts the page's side on the page and hides the global it is
+  published on, the language of a recording with its default, and the narration that the voice is told.
+  `./talk` is the talk: its type, the clock its log is stamped on (`TALK_SAMPLE_RATE`, `SAMPLES_PER_FRAME`), the
+  frames drawn from it, the address that opens the replay page and `publishReplayPage`, which reads what the command
+  gives the page as a talk and its options before the page sees it and answers with the talk's frames. A caller derives
+  the page, state, log and event types from these operations. They are `shared/protocol/recording-page.ts` and
+  `shared/protocol/talk.ts`. The language schema is in `shared/schemas/`.
+- `./recorder` is the command's side. `recordWalkthrough` records, `renderTalk` renders a kept talk again, and
+  `readTalk` reads one, refusing what cannot be rendered with `TalkFileError`. `freshTalkPlace` chooses where a
+  recording keeps its talk (the directory asked for, or a new one in the state directory, which keeps the newest ten)
+  and proves it free before anything starts. `keepTalk` makes a talk of its parts and writes it into a named directory,
+  so the talk's format and file names stay private. `recordingContainerOf` reads the container a file name asks for.
+  `recordingPageUrl` is the address a recording opens, which the browser's contract test reads back. It is
+  `runtime/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page client of
+  `runtime/clients/`, the talk files and the silent WAV of `runtime/store/`, and the container, encoder and browser of
+  `runtime/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
 - `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/processes/video-encoder.ts`, the ffmpeg
   child, and `runtime/services/ffmpeg.ts` finds and proves it: `ARCHBOARD_FFMPEG`, else `ffmpeg` on `PATH`, else
   `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
@@ -463,17 +472,22 @@ page import them. The 2 files of `runtime/api/` run only in Bun.
   `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
-role for `runtime/` and exposes 4 subpaths with 16 names, where code outside imported 2 module paths. It imports
-`board`, `timing`, `renderer`, `process` and `walkthrough`. Every file is Node-bound and runs
-only in Bun. The 4 files of `runtime/api/` are the interface.
+role for `runtime/` and exposes 3 subpaths with 3 names. It imports `board`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The 3 files of `runtime/api/` are the
+interface.
 
-- `./distribution` prepares the copy of the skill that the checkout, the installer and `generate:skill-artifacts`
-  ship: the JSON Schemas that Zod renders for the board document, the vault configuration and the two authoring payloads
-  (`runtime/projections/schemas.ts`), and the installation-local manual (`runtime/operations/distribution/prepare.ts`).
-- `./evaluation-run`, `./grading` and `./citations` are what `bun run eval:skill` calls. The evaluation is human-run and
-  never part of the gate: real Codex authors on real Flask checkouts, one blinded grader and a comparison report.
-  `./evaluation-run` loads the canonical inputs of `evals/`, pins the tool versions and runs a batch. `./grading` grades a
-  batch and writes the report. `./citations` reads the anchors of a document.
+- `./distribution` is `prepareSkillArtifacts`. It prepares the copy of the skill that the checkout, the installer and
+  `generate:skill-artifacts` ship: the JSON Schemas that Zod renders for the board document, the vault configuration and
+  the two authoring payloads (`runtime/projections/schemas.ts`), and the installation-local manual
+  (`runtime/operations/distribution/prepare.ts`). The CLI's `install-skill` keeps which skills it ships and how it
+  stages and copies them.
+- `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
+  (`runtime/operations/evaluation/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
+  passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
+  on real Flask checkouts, one blinded grader and a comparison report.
+- `./citations` is `anchorsOf`, the anchors of a markdown document. The grader's citations and
+  `tests/system/repository-policy/skill-links.test.ts` read them. That test stays in the repository lane, whose cache
+  follows every tracked file, so a changed skill always runs it.
 - `runtime/operations/runs/` holds an author run and a batch, `operations/grading/` the grading session and the blinding.
   `rules/audit/` classifies what an author ran and what it reached for, `rules/outcomes/` holds the deterministic
   checks and `rules/reports/` the comparison. `processes/` holds the child processes, the Archboard server and the Flask

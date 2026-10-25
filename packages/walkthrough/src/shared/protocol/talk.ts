@@ -379,6 +379,45 @@ function framesOf(talk: Pick<Talk, "audio">): number {
 	return Math.ceil(talk.audio.samples / SAMPLES_PER_FRAME);
 }
 
+/**
+ * What a page does to render a talk: `load` puts a talk on the page in the options given and
+ * resolves once its first frame could be drawn; `frame` draws the next frame, in order from nought,
+ * and resolves once it is fully drawn.
+ */
+interface ReplayRenderer {
+	readonly load: (talk: Talk, options: ReplayOptions) => Promise<void>;
+	readonly frame: (index: number) => Promise<void>;
+}
+
+/**
+ * Publish a page's side of the replay contract on the page, for the command that renders a talk:
+ * what it is given is read as a talk and its options before the page sees it, and the command is
+ * told how many frames the talk renders to.
+ * @param renderer What the page does.
+ */
+function publishReplayPage(renderer: ReplayRenderer): void {
+	const page: ReplayPage = Object.freeze({
+		/**
+		 * Read a talk and its options, and put the talk on the page.
+		 * @param value The talk, as `talk.json` holds it.
+		 * @param options The theme and layout engine, and how loud its voice is on each frame.
+		 * @returns How many frames it renders to.
+		 */
+		load: async (value: unknown, options: unknown) => {
+			const talk = TalkSchema.parse(value);
+			await renderer.load(talk, ReplayOptionsSchema.parse(options));
+			return { frames: framesOf(talk) };
+		},
+		/**
+		 * Draw the next frame.
+		 * @param index The frame, counted from nought, in order.
+		 * @returns Once it is fully drawn.
+		 */
+		frame: (index: number) => renderer.frame(index),
+	});
+	Reflect.set(globalThis, REPLAY_PAGE_GLOBAL, page);
+}
+
 export {
 	REPLAY_PAGE_GLOBAL,
 	REPLAY_SEARCH_PARAM,
@@ -393,12 +432,14 @@ export {
 	TalkLogSchema,
 	TalkSchema,
 	framesOf,
+	publishReplayPage,
 	replayAskedOf,
 	talkFrom,
 	voiceLevels,
 	type ReplayOptions,
 	type ReplayPage,
 	type Talk,
+	type TalkParts,
 	type TalkEvent,
 	type TalkLog,
 };

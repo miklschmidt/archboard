@@ -11,16 +11,13 @@ import { addressedVariant, type SemanticBoard } from "@archboard/board/document"
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
 import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
-import type { RecordingContainer } from "@archboard/walkthrough/recording";
 import {
 	SAMPLES_PER_FRAME,
 	TALK_SAMPLE_RATE,
 	framesOf,
-	talkFrom,
 	type Talk,
-	type TalkEvent,
 } from "@archboard/walkthrough/talk";
-import { readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
+import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
 	type Finding,
@@ -82,14 +79,14 @@ function spelledFromHome(home: string, absolute: string): string {
  * @param fixture What the fixture asks for.
  * @param board The board, as `semantic show` served it.
  * @param policy The vault check, as `archboard check` served it.
- * @returns The talk and its voice.
+ * @returns What the talk is made of, with its voice, for `keepTalk`.
  * @throws {Error} When the board has no such variant or walkthrough.
  */
 function talkOfFixture(
 	fixture: TalkFixture,
 	board: SemanticBoard,
 	policy: VaultCheck,
-): { readonly talk: Talk; readonly voice: Int16Array } {
+): Omit<Parameters<typeof keepTalk>[0], "directory"> {
 	const address = addressedVariant(board, fixture.variant);
 	if (!address.ok) throw new Error(`the fixture's talk: ${address.problem}`);
 	const walkthrough = address.variant.content.walkthroughs.find(
@@ -100,9 +97,9 @@ function talkOfFixture(
 	}
 	const step = (SKILL_EVAL_TALK_STEP_MS / 1000) * TALK_SAMPLE_RATE;
 	const samples = step * walkthrough.beats.length;
-	const events: TalkEvent[] = [
+	const events: Talk["events"] = [
 		{ kind: "drawn", at: 0, version: board.version },
-		...walkthrough.beats.flatMap((beat, index): TalkEvent[] => [
+		...walkthrough.beats.flatMap((beat, index): Talk["events"] => [
 			{ kind: "step", at: index * step, beat: index },
 			{
 				kind: "said",
@@ -114,7 +111,7 @@ function talkOfFixture(
 		]),
 		{ kind: "end", at: samples },
 	];
-	const talk = talkFrom({
+	return {
 		recordedAt: new Date(),
 		language: "en",
 		theme: fixture.theme,
@@ -128,9 +125,8 @@ function talkOfFixture(
 		log: { samples, baseLatencyMs: 0, events },
 		document: board,
 		policy,
-	});
-	if (!talk.success) throw talk.error;
-	return { talk: talk.data, voice: new Int16Array(samples) };
+		voice: new Int16Array(samples),
+	};
 }
 
 /**
@@ -201,7 +197,7 @@ function lastReceipt(
  * @param file The file.
  * @returns The container, or null for neither.
  */
-function containerOf(file: string): RecordingContainer | null {
+function containerOf(file: string): ReturnType<typeof recordingContainerOf> {
 	const head = Buffer.alloc(HEAD_BYTES);
 	const descriptor = fs.openSync(file, "r");
 	try {
