@@ -4,6 +4,7 @@ title: The first track layout of Board viewer keeps within its 3 s local bound
 status: To Do
 assignee: []
 created_date: '2026-10-25T17:35:00Z'
+updated_date: '2026-10-25T18:23:00Z'
 labels:
   - renderer
   - tooling
@@ -23,3 +24,9 @@ The gate fails `packages/renderer/tests/runtime/operations/blocks/wide-boards.te
 - [ ] #2 "Board viewer (track)" passes its 3 s first-layout bound locally, with the bound unchanged
 - [ ] #3 No other case of wide-boards.test.ts gets slower
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25: the owner said not to spend time on board rendering performance gates, because the renderer is being rewritten. The diagnosis agent was stopped with no result. The wide-boards track layout bound stays failing, and it is not repaired in this work.
+<!-- SECTION:NOTES:END -->
