@@ -61,8 +61,16 @@ pub fn scene(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
 /// `PaintRequest` in, the JSON of its `PaintedDocument` out.
 #[wasm_bindgen(js_name = paintDocument)]
 pub fn document(request: &str, measure: &TextMeasure) -> Result<String, JsError> {
-    let request = request_of(request)?;
-    let scene = paint_scene(&request, measure);
+    painted_document(&request_of(request)?, measure)
+}
+
+/// One picture painted and written as an SVG document: the JSON of its
+/// `PaintedDocument`.
+pub(crate) fn painted_document(
+    request: &PaintRequest,
+    measure: &dyn Measure,
+) -> Result<String, JsError> {
+    let scene = paint_scene(request, measure);
     let svg = archboard_svg::document(&scene, &request.document)
         .map_err(|error| JsError::new(&error.0))?;
     let painted = PaintedDocument {
