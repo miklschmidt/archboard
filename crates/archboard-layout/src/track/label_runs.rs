@@ -86,14 +86,9 @@ struct Step {
     from: usize,
 }
 
-/// Where boxes that share one stretch would stand: in their order, spaced, so
-/// that the fewest lines jog, then each as near its wanted centre as that
-/// allows; nothing when the boxes do not fit.
-fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Option<RunPlan> {
-    let widths: Vec<f64> = sliders
-        .iter()
-        .map(|slider| scene.item(slider.item).bx.width)
-        .collect();
+/// The gap each box keeps from the one before it, and each box's offset from
+/// the first: half of each width beside it and the clearance between labels.
+fn spacing_of(widths: &[f64]) -> (Vec<f64>, Vec<f64>) {
     let gaps: Vec<f64> = widths
         .iter()
         .enumerate()
@@ -108,11 +103,13 @@ fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Opt
     let offsets: Vec<f64> = (0..gaps.len())
         .map(|index| gaps[..=index].iter().fold(0.0, |sum, gap| sum + gap))
         .collect();
-    let first = low + widths[0] / 2.0;
-    let last = high - widths[widths.len() - 1] / 2.0 - offsets[offsets.len() - 1];
-    if last < first {
-        return None;
-    }
+    (gaps, offsets)
+}
+
+/// Where the first box's centre may stand that puts some box where it wants
+/// to be or a whole jog off its lines' reach: the run's two ends, then each
+/// box's wanted centre and its reaches, moved back by its offset.
+fn anchors_of(sliders: &[Slider], offsets: &[f64], first: f64, last: f64) -> Vec<f64> {
     let mut anchors = vec![first, last];
     for (index, slider) in sliders.iter().enumerate() {
         let mut own = vec![slider.wanted];
@@ -121,44 +118,54 @@ fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Opt
         }
         anchors.extend(own.into_iter().map(|x| x - offsets[index]));
     }
-    let mut steps: Vec<Vec<Step>> = Vec::with_capacity(sliders.len());
-    for (index, slider) in sliders.iter().enumerate() {
-        let centres = unique(
-            &anchors
-                .iter()
-                .map(|&x| js_min(last, js_max(first, x)) + offsets[index])
-                .collect::<Vec<_>>(),
-        );
-        let mut made = Vec::new();
-        for centre in centres {
-            let own = cost_at(slider, centre);
-            if index == 0 {
-                made.push(Step {
-                    centre,
-                    cost: own,
-                    from: usize::MAX,
-                });
-                continue;
-            }
-            let mut best: Option<(Step, usize)> = None;
-            for (at, step) in steps[index - 1].iter().enumerate() {
-                if step.centre > centre - gaps[index] + TOLERANCE {
-                    continue;
+    anchors
+}
+
+/// The cheapest step of the box before that stands at least a gap left of a
+/// centre, and where it stands among those steps.
+fn best_before(previous: &[Step], centre: f64, gap: f64) -> Option<(Step, usize)> {
+    let mut best: Option<(Step, usize)> = None;
+    for (at, step) in previous.iter().enumerate() {
+        if step.centre > centre - gap + TOLERANCE {
+            continue;
+        }
+        if best.is_none_or(|(chosen, _)| cheaper(&step.cost, &chosen.cost)) {
+            best = Some((*step, at));
+        }
+    }
+    best
+}
+
+/// One box's steps: each centre it may take, with its cost and that of the
+/// cheapest box before it that leaves the gap, the steps before and the gap
+/// given; a centre no box before leaves room for is left out.
+fn steps_at(slider: &Slider, centres: Vec<f64>, previous: Option<(&[Step], f64)>) -> Vec<Step> {
+    let mut made = Vec::new();
+    for centre in centres {
+        let own = cost_at(slider, centre);
+        match previous {
+            None => made.push(Step {
+                centre,
+                cost: own,
+                from: usize::MAX,
+            }),
+            Some((previous, gap)) => {
+                if let Some((best, from)) = best_before(previous, centre, gap) {
+                    made.push(Step {
+                        centre,
+                        cost: plus(&best.cost, &own),
+                        from,
+                    });
                 }
-                if best.is_none_or(|(chosen, _)| cheaper(&step.cost, &chosen.cost)) {
-                    best = Some((*step, at));
-                }
-            }
-            if let Some((best, from)) = best {
-                made.push(Step {
-                    centre,
-                    cost: plus(&best.cost, &own),
-                    from,
-                });
             }
         }
-        steps.push(made);
     }
+    made
+}
+
+/// The centres of the cheapest plan, read back from its last box's cheapest
+/// step, and what the plan costs.
+fn cheapest_plan(steps: &[Vec<Step>]) -> (Vec<f64>, Cost) {
     let finals = &steps[steps.len() - 1];
     let mut at = (0..finals.len()).fold(0, |best, index| {
         if cheaper(&finals[index].cost, &finals[best].cost) {
@@ -168,12 +175,45 @@ fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Opt
         }
     });
     let cost = finals[at].cost;
-    let mut centres = vec![0.0; sliders.len()];
-    for index in (0..sliders.len()).rev() {
+    let mut centres = vec![0.0; steps.len()];
+    for index in (0..steps.len()).rev() {
         let step = steps[index][at];
         centres[index] = step.centre;
         at = step.from;
     }
+    (centres, cost)
+}
+
+/// Where boxes that share one stretch would stand: in their order, spaced, so
+/// that the fewest lines jog, then each as near its wanted centre as that
+/// allows; nothing when the boxes do not fit.
+fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Option<RunPlan> {
+    let widths: Vec<f64> = sliders
+        .iter()
+        .map(|slider| scene.item(slider.item).bx.width)
+        .collect();
+    let (gaps, offsets) = spacing_of(&widths);
+    let first = low + widths[0] / 2.0;
+    let last = high - widths[widths.len() - 1] / 2.0 - offsets[offsets.len() - 1];
+    if last < first {
+        return None;
+    }
+    let anchors = anchors_of(&sliders, &offsets, first, last);
+    let mut steps: Vec<Vec<Step>> = Vec::with_capacity(sliders.len());
+    for (index, slider) in sliders.iter().enumerate() {
+        let centres = unique(
+            &anchors
+                .iter()
+                .map(|&x| js_min(last, js_max(first, x)) + offsets[index])
+                .collect::<Vec<_>>(),
+        );
+        let previous = index
+            .checked_sub(1)
+            .map(|before| (steps[before].as_slice(), gaps[index]));
+        let made = steps_at(slider, centres, previous);
+        steps.push(made);
+    }
+    let (centres, cost) = cheapest_plan(&steps);
     Some(RunPlan {
         sliders,
         centres,

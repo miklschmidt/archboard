@@ -263,8 +263,8 @@ impl Track<'_> {
         }
     }
 
-    /// A key for every card step among some nets, to tell a new one from an old one.
-    fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
+    /// The nets among some that end on a card below, by that card, in order.
+    fn cards_below(&self, nets: &[NetId]) -> Map<Option<usize>, Vec<NetId>> {
         let mut into: Map<Option<usize>, Vec<NetId>> = Map::default();
         for &net in nets {
             let one = self.net(net);
@@ -275,6 +275,12 @@ impl Track<'_> {
                     .push(net);
             }
         }
+        into
+    }
+
+    /// A key for every card step among some nets, to tell a new one from an old one.
+    fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
+        let into = self.cards_below(nets);
         let mut keys = Vec::new();
         for &net in nets {
             let one = self.net(net);

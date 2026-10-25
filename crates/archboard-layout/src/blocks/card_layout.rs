@@ -265,6 +265,33 @@ impl<'t> CardLayout<'t> {
             .map(|_| header_of(block))
             .into_iter()
             .collect();
+        self.rank_ends(&header);
+        // Ranked across clusters, an outermost title held by nothing shared the
+        // header's rank, and a region's caption stood over its containers' titles.
+        for cluster in block
+            .clusters
+            .values()
+            .filter(|cluster| cluster.parent.is_none())
+        {
+            for tail in &header {
+                self.edges.push(Edge::new(
+                    tail.clone(),
+                    title_of(&cluster.id),
+                    Attrs::of([("style", Value::from("invis"))]),
+                ));
+            }
+        }
+        self.add_stubs();
+        let ordered = self.clusters.board_order(|end| self.vendor_of(end));
+        for line in ordered {
+            self.connect(line);
+        }
+        self.arrange();
+    }
+
+    /// The header and top ports alone on the first rank, the header leftmost,
+    /// and the bottom ports alone on the last.
+    fn rank_ends(&mut self, header: &[String]) {
         let (tops, bottoms) = (self.ports_on(Side::Top), self.ports_on(Side::Bottom));
         let invisible = || Attrs::of([("style", Value::from("invis"))]);
         let first = Subgraph {
@@ -302,18 +329,12 @@ impl<'t> CardLayout<'t> {
                 self.subgraphs.push(Sub::Plain(subgraph));
             }
         }
-        // Ranked across clusters, an outermost title held by nothing shared the
-        // header's rank, and a region's caption stood over its containers' titles.
-        for cluster in block
-            .clusters
-            .values()
-            .filter(|cluster| cluster.parent.is_none())
-        {
-            for tail in &header {
-                self.edges
-                    .push(Edge::new(tail.clone(), title_of(&cluster.id), invisible()));
-            }
-        }
+    }
+
+    /// A stub node for each line that enters the block through a port or
+    /// leaves it by its label, at the end the block holds.
+    fn add_stubs(&mut self) {
+        let block = self.block;
         let mut stubs: Set<String> = Set::default();
         for line in block.lines.values() {
             if enters_by(block, line).is_some() {
@@ -325,11 +346,6 @@ impl<'t> CardLayout<'t> {
         }
         self.nodes
             .extend(stubs.iter().map(|stub| box_node(stub.as_str(), PORT, PORT)));
-        let ordered = self.clusters.board_order(|end| self.vendor_of(end));
-        for line in ordered {
-            self.connect(line);
-        }
-        self.arrange();
     }
 
     /// Hold the block's items where its clusters, a grid, a wrap or an
@@ -758,6 +774,15 @@ impl<'t> CardLayout<'t> {
         for edge in &self.edges {
             below.add(&edge.tail, &edge.head);
         }
+        let mut edges = Vec::new();
+        for members in self.parts_by_frame().values() {
+            self.hold_hidden_parts(members, &mut below, &mut edges);
+        }
+        edges
+    }
+
+    /// The parts of each container: its cards and frames, by the frame around them.
+    fn parts_by_frame(&self) -> Map<String, Vec<&'t str>> {
         let block = self.block;
         let is_part = |member: &str| {
             self.tree.cards.contains_key(member)
@@ -774,36 +799,39 @@ impl<'t> CardLayout<'t> {
                 parts.entry(frame).or_default().push(member);
             }
         }
-        let mut edges = Vec::new();
-        for members in parts.values() {
-            let first: Vec<String> = members
+        parts
+    }
+
+    /// Stand a container's hidden parts below its first entry points, where
+    /// nothing stands them so already.
+    fn hold_hidden_parts(&self, members: &[&str], below: &mut Below, edges: &mut Vec<Edge>) {
+        let entries = &self.tree.entries;
+        let first: Vec<String> = members
+            .iter()
+            .filter(|&&one| entries.get(one) == Some(&true))
+            .map(|one| self.clusters.vendor_of(one))
+            .collect();
+        let under: Set<String> = first.iter().flat_map(|entry| below.reach(entry)).collect();
+        let hidden: Vec<String> = members
+            .iter()
+            .filter(|&&one| !entries.contains_key(one))
+            .map(|one| self.clusters.vendor_of(one))
+            .collect();
+        for part in hidden.iter().filter(|part| !under.contains(*part)) {
+            let above = below.reach(part);
+            let held: Vec<&String> = first
                 .iter()
-                .filter(|&&one| entries.get(one) == Some(&true))
-                .map(|one| self.clusters.vendor_of(one))
+                .filter(|entry| !above.contains(*entry))
                 .collect();
-            let under: Set<String> = first.iter().flat_map(|entry| below.reach(entry)).collect();
-            let hidden: Vec<String> = members
-                .iter()
-                .filter(|&&one| !entries.contains_key(one))
-                .map(|one| self.clusters.vendor_of(one))
-                .collect();
-            for part in hidden.iter().filter(|part| !under.contains(*part)) {
-                let above = below.reach(part);
-                let held: Vec<&String> = first
-                    .iter()
-                    .filter(|entry| !above.contains(*entry))
-                    .collect();
-                for entry in held {
-                    below.add(entry, part);
-                    edges.push(Edge::new(
-                        entry.clone(),
-                        part.clone(),
-                        Attrs::of([("style", Value::from("invis")), ("weight", Value::Num(0.0))]),
-                    ));
-                }
+            for entry in held {
+                below.add(entry, part);
+                edges.push(Edge::new(
+                    entry.clone(),
+                    part.clone(),
+                    Attrs::of([("style", Value::from("invis")), ("weight", Value::Num(0.0))]),
+                ));
             }
         }
-        edges
     }
 
     /// Hold every item no line enters on a block's first rank of items, when

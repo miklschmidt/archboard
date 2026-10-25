@@ -17,7 +17,7 @@ use crate::ecma::{js_max, js_min, sort_by, sorted_by, unique};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, Occupancy, StationId, Track};
 use crate::track::labels::extent_of;
 use crate::track::readings::{Relaid, by_band, on_band};
-use crate::track::scene::{Item, ItemId, Map, Set};
+use crate::track::scene::{Item, ItemId, Map, Placement, Set};
 use crate::track::sweep::{
     CROSSING, EDGE, Span, backtrack, block, descend, from_reach, spanned, warp,
 };
@@ -161,6 +161,48 @@ impl Track<'_> {
             if left.len() == before {
                 break;
             }
+        }
+    }
+}
+
+/// Each column's cost once a station stands there: half the crossings of the
+/// traffic above and below it, and no way through a column its mask shuts.
+fn cross_at(cost: &mut [f64], mask: &[bool], (above, below): (&[f64], &[f64])) {
+    for j in 0..cost.len() {
+        cost[j] = if mask[j] {
+            cost[j] + (CROSSING * (above[j] + below[j])) / 2.0
+        } else {
+            f64::INFINITY
+        };
+    }
+}
+
+/// Add each column's cost to its total, and answer the column whose total is
+/// the least, the first of those that tie.
+fn cheapest_end(totals: &mut [f64], cost: &[f64]) -> usize {
+    let mut end = 0;
+    for j in 0..totals.len() {
+        totals[j] += cost[j];
+        if totals[j] < totals[end] {
+            end = j;
+        }
+    }
+    end
+}
+
+/// Where a label box's centre may not stand on a band for what stands beside
+/// it there and for the walls of the containers on it.
+fn walls_off(scene: &Placement, band: usize, half: f64, spans: &mut Vec<Span>) {
+    if let Some(besides) = scene.besides.get(&band) {
+        spans.extend(
+            besides
+                .iter()
+                .map(|&(low, high)| (low - LANE - half, high + LANE + half)),
+        );
+    }
+    for &(low, high) in scene.walled(band).values() {
+        for wall in [low, high] {
+            spans.push((wall - CONTAINER_INSET - half, wall + CONTAINER_INSET + half));
         }
     }
 }
@@ -426,6 +468,27 @@ impl Relay {
         spans
     }
 
+    /// Where a label box's centre may not stand on its band for the lanes of
+    /// the other chains there.
+    fn lanes_off(
+        &self,
+        track: &Track<'_>,
+        chain: ChainId,
+        band: usize,
+        half: f64,
+        spans: &mut Vec<Span>,
+    ) {
+        for &other in self.chains.iter().filter(|&&other| other != chain) {
+            for &station in &track.chain(other).stations {
+                let one = track.station(station);
+                if one.kind == Kind::Lane && one.band == band {
+                    let x = track.x(station);
+                    spans.push((x - LANE - half, x + LANE + half));
+                }
+            }
+        }
+    }
+
     /// Where a label box's centre may not stand on its band.
     fn label_walls(
         &self,
@@ -461,30 +524,8 @@ impl Relay {
             .filter(|(one, _)| one.band == band)
             .map(|(one, gap)| (one.bx.x - gap - half, one.bx.x + one.bx.width + gap + half));
         let mut spans: Vec<Span> = gapped.collect();
-        for &other in &self.chains {
-            if other == chain {
-                continue;
-            }
-            for &station in &track.chain(other).stations {
-                let one = track.station(station);
-                if one.kind == Kind::Lane && one.band == band {
-                    let x = track.x(station);
-                    spans.push((x - LANE - half, x + LANE + half));
-                }
-            }
-        }
-        if let Some(besides) = scene.besides.get(&band) {
-            spans.extend(
-                besides
-                    .iter()
-                    .map(|&(low, high)| (low - LANE - half, high + LANE + half)),
-            );
-        }
-        for &(low, high) in scene.walled(band).values() {
-            for wall in [low, high] {
-                spans.push((wall - CONTAINER_INSET - half, wall + CONTAINER_INSET + half));
-            }
-        }
+        self.lanes_off(track, chain, band, half, &mut spans);
+        walls_off(scene, band, half, &mut spans);
         let stations = &track.chain(chain).stations;
         let (from, to) = (
             track.spot(stations[0]),
@@ -605,28 +646,18 @@ impl Relay {
                 steps.push(step.came);
                 cost = step.cost;
             }
-            let (above, below) = (&traffic[&(band - 1)].across, &traffic[&band].across);
-            let mask = &masks[index];
-            for j in 0..cost.len() {
-                cost[j] = if mask[j] {
-                    cost[j] + (CROSSING * (above[j] + below[j])) / 2.0
-                } else {
-                    f64::INFINITY
-                };
-            }
+            let crossed = (
+                traffic[&(band - 1)].across.as_slice(),
+                traffic[&band].across.as_slice(),
+            );
+            cross_at(&mut cost, &masks[index], crossed);
         }
         let mut totals = from_reach(
             xs,
             &traffic[&(track.station(lower).band - 1)].warped,
             track.reach_of(lower),
         );
-        let mut end = 0;
-        for j in 0..totals.len() {
-            totals[j] += cost[j];
-            if totals[j] < totals[end] {
-                end = j;
-            }
-        }
+        let end = cheapest_end(&mut totals, &cost);
         totals[end]
             .is_finite()
             .then(|| backtrack(&steps, end).into_iter().map(|j| xs[j]).collect())

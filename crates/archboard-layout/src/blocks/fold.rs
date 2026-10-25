@@ -102,18 +102,14 @@ pub(crate) fn fold_plan(
     })
 }
 
-/// How many of a block's lines run from one run of bands to another: each is
-/// drawn from the bottom of one column round to the top of a later one.
-fn bus_lines(block: &Block, runs: &[Vec<&Band>]) -> f64 {
+/// The run of bands each item and each container drawn inline stands in: a
+/// container stands in the run that holds its cards.
+fn run_of<'b>(block: &'b Block, runs: &[Vec<&'b Band>]) -> Map<&'b str, usize> {
     let mut run_of: Map<&str, usize> = Map::default();
     for (index, run) in runs.iter().enumerate() {
-        for band in run {
-            for item in &band.items {
-                run_of.insert(item, index);
-            }
-        }
+        let items = run.iter().flat_map(|band| band.items.iter());
+        run_of.extend(items.map(|item| (item.as_str(), index)));
     }
-    // A container drawn inline stands in the run that holds its cards.
     let mut clusters: Map<&str, usize> = Map::default();
     for (item, &index) in &run_of {
         for cluster in block.clusters_from(block.cluster_of.get(*item).map(String::as_str)) {
@@ -123,6 +119,13 @@ fn bus_lines(block: &Block, runs: &[Vec<&Band>]) -> f64 {
     for (cluster, index) in clusters {
         run_of.insert(cluster, index);
     }
+    run_of
+}
+
+/// How many of a block's lines run from one run of bands to another: each is
+/// drawn from the bottom of one column round to the top of a later one.
+fn bus_lines(block: &Block, runs: &[Vec<&Band>]) -> f64 {
+    let run_of = run_of(block, runs);
     block
         .lines
         .values()
