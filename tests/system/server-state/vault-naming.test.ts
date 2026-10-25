@@ -37,6 +37,7 @@ const READ_ROUTES = [
 	"/api/vault/check",
 	"/api/vault/code-check",
 	"/api/vault/code-findings",
+	"/api/vault/code-findings/exposure?board=payments&variant=v1&container=n1",
 	"/api/panes/semantic-context",
 ];
 const WRITE_ROUTES = [

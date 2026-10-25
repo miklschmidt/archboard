@@ -92,14 +92,21 @@ import {
 	type LocalCodeTarget,
 } from "@archboard/code-binding/resolution";
 import type { ServerOf } from "#runtime/services/language-servers/session.ts";
-import type { CheckTiming, CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
+import type {
+	CheckTiming,
+	CodeCheckSkip,
+	CodeFinding,
+	ContainerExposure,
+} from "#shared/protocol/code-check.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 
-/** What one pass found and what it did not read. */
+/** What one pass found, what it did not read, and what each container it judged exposes. */
 interface CodeCheckOutcome {
 	readonly timings: CheckTiming[];
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
+	/** The answer never carries it (ADR 0046); the server remembers it for the panes (TASK-539.01). */
+	readonly exposures: ContainerExposure[];
 }
 
 /** The code facts of every pass, kept in the server's memory by file content. */
@@ -425,6 +432,7 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 	});
 	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
 	pass.outcome.skipped.push(...judged.skipped, ...interfaces.skipped);
+	pass.outcome.exposures.push(...interfaces.exposures);
 }
 
 /**
@@ -549,7 +557,7 @@ async function checkCode(
 		resolve: resolveOnDisk(resolution.resolve, refs, withoutServer),
 		readAsText: new Map(),
 		modules: new Map(),
-		outcome: { timings: [], findings: [], skipped: [] },
+		outcome: { timings: [], findings: [], skipped: [], exposures: [] },
 	};
 	try {
 		await judgeAll(claims, pass);

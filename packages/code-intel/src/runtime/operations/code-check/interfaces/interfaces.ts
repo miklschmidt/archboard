@@ -29,7 +29,8 @@
 //   where the board draws a caller of the container at all: a board that
 //   draws none says nothing about the interface (ADR 0044).
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
-//   outside it uses, as code or as a type.
+//   outside it uses, as code or as a type. The same rule, in exposed-names.ts,
+//   gives each judged container its exposure reading (TASK-539.01).
 //
 // What a module exposes and how the files outside it use it is read once a
 // pass (module-reading.ts). A Terraform module is reached only through its
@@ -45,10 +46,15 @@ import {
 	type Owners,
 } from "#runtime/operations/code-check/evidence/ownership.ts";
 import {
+	exposureOf,
+	reaches,
+	tallyNames,
+	topLevel,
+} from "#runtime/operations/code-check/interfaces/exposed-names.ts";
+import {
 	moduleReading,
 	type ModuleReading,
 	type ModuleReadings,
-	type OutsideUse,
 } from "#runtime/operations/code-check/interfaces/module-reading.ts";
 import type { PartCode, ReadPart, RepoCheckout } from "#runtime/operations/code-check/part-code.ts";
 import { siteOf } from "#runtime/operations/code-check/evidence/relationships.ts";
@@ -58,11 +64,15 @@ import {
 	within,
 	type ExposedName,
 } from "#runtime/operations/code-facts/modules/module-exposure.ts";
-import { type Definition } from "#runtime/operations/code-facts/facts.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import { nodeSubject } from "@archboard/board/vault-policy";
-import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { inspectContainer } from "@archboard/board/container-interface";
+import type {
+	CodeCheckSkip,
+	CodeEvidence,
+	CodeFinding,
+	ContainerExposure,
+} from "#shared/protocol/code-check.ts";
+import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";
 import type { interfaceMeasures } from "@archboard/board/container-interface";
@@ -85,6 +95,8 @@ interface InterfaceReading {
 interface InterfaceOutcome {
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
+	/** What each judged container exposes, for the server to remember (TASK-539.01). */
+	readonly exposures: ContainerExposure[];
 }
 
 /** One container bound to a module, and what judging it reads. */
@@ -94,47 +106,6 @@ interface Judged {
 	readonly module: ModuleReading;
 	readonly checkout: RepoCheckout;
 	readonly owners: Owners;
-}
-
-/**
- * Whether a C++ definition is a member of another by its name, as
- * `shop::Store::open` is of `shop::Store`: a method is often defined in
- * another file than its class.
- * @param member The definition.
- * @param holder The other definition.
- * @returns True when it is.
- */
-function memberOf(member: Definition, holder: Definition): boolean {
-	return member.symbol.startsWith(`${holder.symbol}::`);
-}
-
-/**
- * Whether a use reaches an exposed definition or one inside it, such as a member.
- * @param name The exposed name.
- * @param use The use.
- * @returns True when it does.
- */
-function reaches(name: ExposedName, use: OutsideUse): boolean {
-	const { path, definition } = use.site;
-	const inside =
-		path === name.path &&
-		name.definition.start <= definition.start &&
-		definition.end <= name.definition.end;
-	return inside || memberOf(definition, name.definition);
-}
-
-/**
- * Whether an exposed name is a declaration of its file, not a member of one,
- * as its language's rule says where its names say more than their dots: a C#
- * type is qualified by its namespace.
- * @param name The exposed name.
- * @param exposed Every name its module exposes.
- * @returns True for a top-level name.
- */
-function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
-	if (name.member !== undefined) return !name.member;
-	const member = exposed.some((holder) => memberOf(name.definition, holder.definition));
-	return !name.definition.symbol.includes(".") && !member;
 }
 
 /**
@@ -209,15 +180,11 @@ async function parsedAny(facts: FactsPass, code: ReadPart): Promise<boolean> {
  * @returns The finding, or undefined when every name has a use.
  */
 function unusedFinding(judged: Judged): CodeFinding | undefined {
-	const { exposure, uses } = judged.module;
-	const declared = exposure.exposed.filter((name) => topLevel(name, exposure.exposed));
-	// A name declared in several places, a C# partial type or an overload, is used where any is.
-	const used = new Set(
-		declared.filter((name) => uses.some((use) => reaches(name, use))).map((name) => name.name),
-	);
-	const names = [...new Set(declared.map((name) => name.name))].filter((name) => !used.has(name));
+	const { exposure } = judged.module;
+	const tally = tallyNames(judged.module);
+	const names = tally.filter(({ uses }) => uses.length === 0).map(({ name }) => name);
 	if (names.length === 0) return undefined;
-	const all = new Set(declared.map((name) => name.name)).size;
+	const all = tally.length;
 	const { container } = judged.inspection;
 	const subject = nodeSubject(container);
 	return {
@@ -394,8 +361,24 @@ async function judgeContainer(
 	outcome.findings.push(...testImportFindings(judged));
 	const unused = unusedFinding(judged);
 	if (unused !== undefined) outcome.findings.push(unused);
+	outcome.exposures.push(exposureReading(judged));
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	await judgeChildren(judged, outcome.findings);
+}
+
+/**
+ * What a judged container exposes, name by name, at its board and variant.
+ * @param judged The container.
+ * @returns The exposure reading.
+ */
+function exposureReading(judged: Judged): ContainerExposure {
+	const { container } = judged.inspection;
+	const { board, variant } = judged.reading.read;
+	return exposureOf(judged.module, judged.owners, {
+		board: board.name,
+		variant: variant.id,
+		container: container.id,
+	});
 }
 
 /**
@@ -513,7 +496,7 @@ function moduleDirectory(code: ReadPart): string | undefined {
  * @returns The findings and what was not judged.
  */
 async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutcome> {
-	const outcome: InterfaceOutcome = { findings: [], skipped: [] };
+	const outcome: InterfaceOutcome = { findings: [], skipped: [], exposures: [] };
 	for (const node of reading.read.variant.content.nodes) {
 		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in board order
 		await judgeContainer(reading, node, outcome);

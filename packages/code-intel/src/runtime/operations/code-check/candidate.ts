@@ -33,7 +33,7 @@ interface CandidateCodeRequest {
 }
 
 type CandidateCodeResult =
-	| ({ readonly ok: true } & CodeCheckOutcome)
+	| ({ readonly ok: true } & Omit<CodeCheckOutcome, "exposures">)
 	| { readonly ok: false; readonly problem: string };
 
 /**
@@ -170,7 +170,15 @@ async function checkCandidateCode(request: CandidateCodeRequest): Promise<Candid
 	);
 	const problem = checked.find((one) => one !== undefined);
 	if (problem !== undefined) return { ok: false, problem };
-	const outcome = await checkCode(vault, [read], signal, [], undefined, revisions);
+	// A candidate is no board a pane shows, so what its containers expose is nobody's news.
+	const { exposures: _exposures, ...outcome } = await checkCode(
+		vault,
+		[read],
+		signal,
+		[],
+		undefined,
+		revisions,
+	);
 	const unavailable = unreadableEvidence(outcome.skipped);
 	if (unavailable !== undefined) return { ok: false, problem: unavailable };
 
