@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:33:00Z'
+updated_date: '2026-10-25T19:46:00Z'
 labels:
   - design-questions
   - ui
@@ -46,3 +46,19 @@ Built on ADR 0057 while it is still proposed: the owner asked to see the light w
 
 Board proposal: Board viewer@TASK-537.03 (Light connections, List design questions and Viewer entry point descriptions; the two relationship labels into them).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built while ADR 0057 is still proposed: the owner asked to see the light before accepting it. Screenshots (dark, the Board viewer board, because no web shop board has an entry point that passes one call on): the Overview lights the three closed containers that hold the five entry points, and the row says the view hides all five.
+
+Escape with nothing picked lets the question go, as it lets a group go. With a pick, Escape lets the pick go and the answer's light comes back. The shell design doc and the Light entry of CONTEXT.md say so.
+
+The group selection moved onto use-placed-choice.ts, which the question shares: one place keeps a choice on the board and variant it was made on.
+
+Closing:
+- archboard check --code with and without --variant TASK-537.03: no difference (41 findings in both). The two Board viewer findings (EXPOSED_UNUSED on Walkthrough replay, and on the Board viewer node of Semantic renderer) are not about parts this task changed.
+- Footprint read against base 4acc6767f (the plan commit, parent of the first code commit 20441874c): namedAndChanged Render stage states, Viewer entry point, Light connections, List design questions; changedNotNamed and namedNotChanged empty. Unbound containers and drill-downs skipped.
+- Adopted Board viewer@TASK-537.03 at version 154 with the board's scope as its summary. archboard check: 0 diagnostics.
+- Behind: Browser application's Board stage (SemanticBoardStage.tsx) changed in 20441874c. Still right: the stage passes the chosen question to its view and sidebar, and composes the same stage.
+<!-- SECTION:NOTES:END -->

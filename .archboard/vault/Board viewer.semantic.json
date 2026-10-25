@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 152,
+	"version": 154,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-25T19:33:14.966Z",
+	"updatedAt": "2026-10-25T19:45:29.942Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -66590,7 +66590,7 @@
 		{
 			"id": "94Opxrki",
 			"name": "TASK-538.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "a9dJu38M",
 			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
@@ -71394,9 +71394,9 @@
 		{
 			"id": "87RvG4KF",
 			"name": "TASK-537.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "94Opxrki",
-			"summary": "A chosen design question lights its answer on the board on screen",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -76196,7 +76196,7 @@
 			}
 		}
 	],
-	"current": "94Opxrki",
+	"current": "87RvG4KF",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -76389,6 +76389,12 @@
 			"from": "a9dJu38M",
 			"at": "2026-10-25T19:21:38.144Z",
 			"reason": "A pane names the variant beside that holds a part it lacks, when the two panes are linked (TASK-538.02)"
+		},
+		{
+			"variant": "87RvG4KF",
+			"from": "94Opxrki",
+			"at": "2026-10-25T19:45:29.942Z",
+			"reason": "A chosen design question lights its answer: Light connections lights the answer while nothing is poked, List design questions offers the choice and counts what the view hides, and the Viewer entry point keeps the choice beside the group"
 		}
 	],
 	"shelvings": [
