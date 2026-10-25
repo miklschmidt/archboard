@@ -39,6 +39,11 @@ pub(crate) fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
     let width = max(cards.iter().map(|card| card.width)) + COLUMN_ROOM;
     let height = max(cards.iter().map(|card| card.height)) + EMPTY_CHANNEL;
     let fitting = round(((cards.len() as f64 * LAYOUT_ASPECT * height) / width).sqrt());
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a whole count from 1 to the number of cards: Math.round of a finite root, clamped"
+    )]
     let columns = js_max(1.0, js_min(cards.len() as f64, fitting)) as usize;
     cards[columns..]
         .iter()

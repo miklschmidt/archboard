@@ -171,6 +171,11 @@ impl Relay {
         let chains: Vec<ChainId> = kinds.iter().map(|(chain, _)| *chain).collect();
         let extent = extent_of(track.scene);
         let (left, right) = extent;
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "the whole number of steps across the scene, whose right edge is never left of its left"
+        )]
         let count = ((right - left) / STEP).floor() as usize + 1;
         let columns = (0..count).map(|index| left + index as f64 * STEP).collect();
         let bands = chains
@@ -592,7 +597,7 @@ impl Relay {
             &traffic[&track.station(upper).band].warped,
             track.reach_of(upper),
         );
-        let mut steps: Vec<Vec<i32>> = Vec::new();
+        let mut steps: Vec<Vec<usize>> = Vec::new();
         for (index, &station) in stations[1..stations.len() - 1].iter().enumerate() {
             let band = track.station(station).band;
             if index > 0 {

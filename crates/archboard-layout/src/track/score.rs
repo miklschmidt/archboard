@@ -246,6 +246,11 @@ pub(crate) fn wrap_plans(runs: &[(Vec<String>, f64)]) -> Vec<Plan> {
         let mut before = 0.0;
         for (ids, width) in runs {
             let share = (((before + width / 2.0) * rows as f64) / total).floor();
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "a whole row from 0 to the last: the floor of a share of a positive total, clamped"
+            )]
             let row = js_min((rows - 1) as f64, share) as usize;
             for id in ids {
                 cut.insert(id.clone(), row);

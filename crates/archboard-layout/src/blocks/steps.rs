@@ -386,15 +386,17 @@ struct Slide {
 /// Every slide that takes a step out of a line. A line's first and last runs
 /// meet cards and never vanish.
 fn slides_of(points: &[Point]) -> Vec<Slide> {
-    let last = points.len() as isize - 1;
+    let count = points.len();
     let mut out = Vec::new();
-    let mut at: isize = 1;
-    while at + 2 <= last {
+    let mut at = 1;
+    // The run from `at` to `at + 1` has a turn on either side, and the point
+    // it slides onto is neither end of the line.
+    while at + 3 <= count {
         for onto in [at - 1, at + 2] {
-            if onto > 0 && onto < last {
+            if onto > 0 && onto + 1 < count {
                 out.push(Slide {
-                    at: at as usize,
-                    onto: points[onto as usize],
+                    at,
+                    onto: points[onto],
                 });
             }
         }

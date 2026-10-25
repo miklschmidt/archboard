@@ -233,10 +233,12 @@ impl<'a> Containers<'a> {
 
     /// The lowest band a container holds anything on.
     pub(crate) fn last_band(&self, container: usize) -> usize {
-        max(self.all[container]
+        self.all[container]
             .items
             .iter()
-            .map(|&item| self.scene.item(item).band as f64)) as usize
+            .map(|&item| self.scene.item(item).band)
+            .max()
+            .unwrap_or(0)
     }
 
     /// How far below a band a container ending on it reaches.
