@@ -8,13 +8,8 @@ import {
 	parseRealtimeSessionId,
 } from "@archboard/codex-realtime-voice/realtime";
 import type { RealtimeCorrelation, RealtimeState } from "@archboard/codex-realtime-voice/realtime";
-import type {
-	RealtimeMediaSnapshot,
-	BrowserWorkbenchMediaState,
-	VoiceOutputLevelSource,
-	BrowserWorkbenchCapabilities,
-	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/controllers";
+import type { VoiceOutputLevelSource, BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { RealtimeMediaSnapshot, BrowserWorkbenchMediaState, BrowserWorkbenchCapabilities } from "#ui/state/surfaces/voice-parts.ts";
 
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";

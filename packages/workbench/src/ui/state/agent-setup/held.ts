@@ -1,7 +1,7 @@
 // The messages the person sent that the conversation does not show yet, and
 // how the timeline and a delivery's answer move them on. Pure.
 
-import type { WorkbenchComposerSubmissionResult } from "@archboard/codex-realtime-voice/controllers";
+import type { WorkbenchComposerSubmissionResult } from "#ui/state/surfaces/voice-parts.ts";
 import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 /** Where one held message stands. */
