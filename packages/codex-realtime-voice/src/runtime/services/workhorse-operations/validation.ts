@@ -1,8 +1,5 @@
+import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
-import {
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOL_NAMESPACE,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	CodexWorkhorseOperationsError,
 	type WorkhorseCoordinatorCall,
@@ -56,16 +53,17 @@ function parseCall(
 
 /**
  * Check that a parsed call targets the named workhorse tool in the current manifest.
+ * @param tools - The host's built-in namespaces.
  * @param parsed - The parsed coordinator call.
  * @param tool - The operation the call must name.
  * @returns Whether namespace, tool and manifest hash all agree.
  */
-function callNamesTool(parsed: WorkhorseCoordinatorCall, tool: WorkhorseOperationName): boolean {
-	return (
-		parsed.namespace === WORKHORSE_TOOL_NAMESPACE.name &&
-		parsed.tool === tool &&
-		parsed.manifestHash === WORKHORSE_TOOLS_MANIFEST_SHA256
-	);
+function callNamesTool(
+	tools: VoiceToolset,
+	parsed: WorkhorseCoordinatorCall,
+	tool: WorkhorseOperationName,
+): boolean {
+	return toolRoleOf(tools, parsed) === "workhorse" && parsed.tool === tool;
 }
 
 /**
@@ -162,7 +160,7 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		binding?: WorkhorseOperationBinding,
 	): void => {
 		const parsed = parseCall(options, call);
-		if (!callNamesTool(parsed, tool)) {
+		if (!callNamesTool(options.tools, parsed, tool)) {
 			throw operationError("invalid_call", `The coordinator call is not for ${tool}.`);
 		}
 		if (binding !== undefined && !callBelongsToBinding(parsed, binding)) {

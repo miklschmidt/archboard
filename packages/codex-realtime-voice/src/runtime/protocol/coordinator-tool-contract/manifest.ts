@@ -14,28 +14,19 @@ interface CanonicalTool {
 
 interface CanonicalNamespace {
 	readonly type: "namespace";
-	readonly name: NamespaceName;
+	readonly name: string;
 	readonly description: string;
 	readonly tools: readonly CanonicalTool[];
 }
 
-type NamespaceName = "archboard_workhorse" | "archboard_voice";
-type ManifestName = "workhorse" | "voice";
+/** The built-in coordinator namespaces, by the role they play; each host names them itself. */
+type CoordinatorNamespaceRole = "workhorse" | "voice";
 
-const WORKHORSE_TOOLS_MANIFEST_SHA256 =
-	"22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11" as const;
-const VOICE_TOOLS_MANIFEST_SHA256 =
-	"04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b" as const;
-
-const MANIFEST_FILES = Object.freeze({
-	archboard_workhorse: "archboard-workhorse.json",
-	archboard_voice: "archboard-voice.json",
-} satisfies Record<NamespaceName, string>);
-
-const MANIFEST_DIGESTS = Object.freeze({
-	archboard_workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
-	archboard_voice: VOICE_TOOLS_MANIFEST_SHA256,
-} satisfies Record<NamespaceName, string>);
+/** The reviewed bytes of each role's template, whose `{namespace}` the host's name fills. */
+const TEMPLATE_DIGESTS = Object.freeze({
+	workhorse: "2032ea1899ba0a0dc0fe5bd269075aa61dbc2496aba3d4ff290c07df2ad61767",
+	voice: "750c75db9abf2765427c5fa9335758cf3ece9c59be50c82fcff22b2fcf82c85e",
+} satisfies Record<CoordinatorNamespaceRole, string>);
 
 const WORKHORSE_TOOL_NAMES = Object.freeze([
 	"inspect_workhorse",
@@ -50,10 +41,11 @@ type WorkhorseToolName = (typeof WORKHORSE_TOOL_NAMES)[number];
 type VoiceToolName = (typeof VOICE_TOOL_NAMES)[number];
 type CoordinatorToolName = WorkhorseToolName | VoiceToolName;
 
-const EXPECTED_TOOL_NAMES: Readonly<Record<NamespaceName, readonly string[]>> = Object.freeze({
-	archboard_workhorse: WORKHORSE_TOOL_NAMES,
-	archboard_voice: VOICE_TOOL_NAMES,
-});
+const EXPECTED_TOOL_NAMES: Readonly<Record<CoordinatorNamespaceRole, readonly string[]>> =
+	Object.freeze({ workhorse: WORKHORSE_TOOL_NAMES, voice: VOICE_TOOL_NAMES });
+
+/** A namespace name Codex accepts and a JSON string holds verbatim. */
+const NAMESPACE_NAME = /^[a-z][a-z0-9_]{0,63}$/u;
 
 const JsonSchemaSchema = z.record(z.string(), z.json());
 const CanonicalToolSchema = z
@@ -68,7 +60,7 @@ const CanonicalToolSchema = z
 const CanonicalNamespaceSchema = z
 	.object({
 		type: z.literal("namespace"),
-		name: z.enum(["archboard_workhorse", "archboard_voice"]),
+		name: z.string().regex(NAMESPACE_NAME),
 		description: z.string().min(1),
 		tools: z.array(CanonicalToolSchema),
 	})
@@ -165,191 +157,150 @@ function deepFreeze<T>(value: T): T {
 }
 
 /**
- * Looks up the reviewed tool order for a namespace.
- * @param namespace - The namespace whose tools are expected.
- * @returns The tool names in their reviewed order.
- */
-function expectedToolNames(namespace: NamespaceName): readonly string[] {
-	return EXPECTED_TOOL_NAMES[namespace];
-}
-
-/**
  * Checks one manifest tool against its reviewed position: the expected name and a closed
  * input schema, because the coordinator may only call exactly what was reviewed.
- * @param namespace - The namespace the tool belongs to.
+ * @param role - The role of the namespace the tool belongs to.
  * @param tool - The parsed tool entry.
  * @param index - The tool's position in the manifest.
  * @param expectedToolName - The reviewed name for that position, if any.
  */
 function assertToolEntry(
-	namespace: NamespaceName,
+	role: CoordinatorNamespaceRole,
 	tool: CanonicalTool,
 	index: number,
 	expectedToolName: string | undefined,
 ): void {
 	if (tool.name !== expectedToolName) {
 		throw new TypeError(
-			`${namespace} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
+			`${role} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
 		);
 	}
 	if (tool.inputSchema["additionalProperties"] !== false) {
-		throw new TypeError(`${namespace}.${tool.name} must use a closed input schema.`);
+		throw new TypeError(`${role}.${tool.name} must use a closed input schema.`);
 	}
 }
 
 /**
- * Verifies a parsed manifest is the namespace it claims, with exactly the reviewed tools in
- * the reviewed order. Type and eager loading are already fixed by the closed schema.
+ * Verifies a parsed manifest holds exactly the reviewed tools of its role in the reviewed order.
+ * Type and eager loading are already fixed by the closed schema.
  * @param manifest - The parsed namespace.
- * @param expectedName - The namespace the caller asked for.
+ * @param role - The role the caller asked for.
  */
-function assertManifestShape(manifest: CanonicalNamespace, expectedName: NamespaceName): void {
-	if (manifest.name !== expectedName) {
-		throw new TypeError(`Expected ${expectedName}, received ${manifest.name}.`);
-	}
-	const expectedNames = expectedToolNames(expectedName);
+function assertManifestShape(manifest: CanonicalNamespace, role: CoordinatorNamespaceRole): void {
+	const expectedNames = EXPECTED_TOOL_NAMES[role];
 	if (manifest.tools.length !== expectedNames.length) {
 		throw new TypeError(
-			`${expectedName} must contain exactly ${expectedNames.length} tools; received ${manifest.tools.length}.`,
+			`${role} must contain exactly ${expectedNames.length} tools; received ${manifest.tools.length}.`,
 		);
 	}
 	for (const [index, tool] of manifest.tools.entries()) {
-		assertToolEntry(expectedName, tool, index, expectedNames[index]);
+		assertToolEntry(role, tool, index, expectedNames[index]);
 	}
 }
 
-interface LoadedManifest {
+/** One role's namespace as a host names it: its exact bytes, the parsed namespace and their digest. */
+interface ReviewedNamespace {
+	readonly role: CoordinatorNamespaceRole;
 	readonly text: string;
-	readonly manifest: CanonicalNamespace;
+	readonly namespace: CanonicalNamespace;
 	readonly sha256: string;
 }
 
 /**
- * Reads a reviewed manifest file beside this module and refuses it unless its bytes hash to
- * the fixed reviewed digest, so a silent edit cannot change what the coordinator may call.
- * @param namespace - The namespace whose manifest file to load.
- * @returns The canonical text, the frozen parsed namespace and the verified digest.
+ * Reads a reviewed template beside this module and refuses it unless its bytes hash to the fixed
+ * reviewed digest, so a silent edit cannot change what the coordinator may call.
+ * @param role - The role whose template to load.
+ * @returns The canonical template text.
  */
-function loadManifest(namespace: NamespaceName): LoadedManifest {
-	const label = `${namespace} manifest`;
+function loadTemplate(role: CoordinatorNamespaceRole): string {
+	const label = `${role} manifest template`;
 	const bytes = readFileSync(
-		new URL(
-			import.meta.resolve(
-				`#runtime/protocol/coordinator-tool-contract/${MANIFEST_FILES[namespace]}`,
-			),
-		),
+		new URL(import.meta.resolve(`#runtime/protocol/coordinator-tool-contract/${role}.json`)),
 	);
 	const text = decodeCanonicalBytes(bytes, label);
 	const actualSha256 = sha256(bytes);
-	const expectedSha256 = MANIFEST_DIGESTS[namespace];
-	if (actualSha256 !== expectedSha256) {
+	if (actualSha256 !== TEMPLATE_DIGESTS[role]) {
 		throw new TypeError(
-			`${label} hash drifted. Expected SHA-256 ${expectedSha256}, received ${actualSha256}. Human re-review is required before updating this digest.`,
+			`${label} hash drifted. Expected SHA-256 ${TEMPLATE_DIGESTS[role]}, received ${actualSha256}. Human re-review is required before updating this digest.`,
 		);
 	}
-	const manifest = parseManifestText(text, label);
-	assertManifestShape(manifest, namespace);
-	return { text, manifest: deepFreeze(manifest), sha256: actualSha256 };
+	return text;
 }
 
-const WORKHORSE = loadManifest("archboard_workhorse");
-const VOICE = loadManifest("archboard_voice");
-
-const WORKHORSE_TOOL_NAMESPACE = WORKHORSE.manifest;
-const VOICE_TOOL_NAMESPACE = VOICE.manifest;
-const WORKHORSE_TOOLS_MANIFEST_JSON = WORKHORSE.text;
-const VOICE_TOOLS_MANIFEST_JSON = VOICE.text;
-
-const COORDINATOR_TOOL_MANIFEST_DIGESTS = Object.freeze({
-	workhorse: WORKHORSE.sha256,
-	voice: VOICE.sha256,
-});
-
-interface CoordinatorManifestIntegrity {
-	readonly workhorseSha256: string;
-	readonly voiceSha256: string;
-}
+const TEMPLATES = Object.freeze({
+	workhorse: loadTemplate("workhorse"),
+	voice: loadTemplate("voice"),
+} satisfies Record<CoordinatorNamespaceRole, string>);
 
 /**
- * Selects the loaded namespace for a name.
- * @param namespace - The namespace name.
- * @returns The frozen reviewed namespace.
+ * Fill one role's reviewed template with the namespace name a host gives it, and hash the exact
+ * bytes Codex is given: the digest is how a call proves it came through this namespace.
+ * @param role - The role.
+ * @param name - The host's namespace name for it.
+ * @returns The namespace with its bytes and digest.
+ * @throws {TypeError} When the name is not a namespace name.
  */
-function manifestFor(namespace: NamespaceName): CanonicalNamespace {
-	return namespace === "archboard_workhorse" ? WORKHORSE_TOOL_NAMESPACE : VOICE_TOOL_NAMESPACE;
-}
-
-/**
- * Looks up the fixed reviewed digest for a namespace.
- * @param namespace - The namespace name.
- * @returns The reviewed SHA-256 digest.
- */
-function expectedDigest(namespace: NamespaceName): string {
-	return MANIFEST_DIGESTS[namespace];
-}
-
-/**
- * Validates caller-supplied manifest bytes or text the same way the file on disk is
- * validated: exact digest first, then canonical encoding, then shape.
- * @param namespace - The namespace the candidate claims to be.
- * @param candidate - The manifest as text or raw bytes.
- * @returns The parsed namespace.
- */
-function parseCandidate(
-	namespace: NamespaceName,
-	candidate: string | Uint8Array,
-): CanonicalNamespace {
-	const bytes =
-		typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
-	const actualSha256 = sha256(bytes);
-	if (actualSha256 !== expectedDigest(namespace)) {
-		throw new TypeError(
-			`${namespace} manifest hash drifted. Expected SHA-256 ${expectedDigest(namespace)}, received ${actualSha256}.`,
-		);
+function renderCoordinatorNamespace(
+	role: CoordinatorNamespaceRole,
+	name: string,
+): ReviewedNamespace {
+	if (!NAMESPACE_NAME.test(name)) {
+		throw new TypeError(`The ${role} namespace name must match ${NAMESPACE_NAME.source}.`);
 	}
-	const text = decodeCanonicalBytes(bytes, `${namespace} manifest`);
-	const manifest = parseManifestText(text, `${namespace} manifest`);
-	assertManifestShape(manifest, namespace);
-	return manifest;
+	const text = TEMPLATES[role].replace('"name": "{namespace}"', `"name": "${name}"`);
+	const namespace = parseManifestText(text, `${name} manifest`);
+	assertManifestShape(namespace, role);
+	return deepFreeze({ role, text, namespace, sha256: sha256(Buffer.from(text, "utf8")) });
 }
 
 /**
- * Validate a reviewed namespace from exact bytes or a closed object snapshot.
- * @param namespace - The namespace the candidate claims to be.
+ * Validate a candidate namespace from exact bytes or a closed object snapshot against the one a
+ * host named: exact digest first, then canonical encoding, then shape and content.
+ * @param reviewed - The rendered namespace the candidate claims to be.
  * @param candidate - Manifest text, raw bytes, or an already-parsed object.
+ * @throws {TypeError} When the candidate is not that namespace byte for byte or field for field.
  */
-function assertCanonicalManifest(namespace: NamespaceName, candidate: unknown): void {
-	const expected = manifestFor(namespace);
-	const received =
-		typeof candidate === "string" || candidate instanceof Uint8Array
-			? parseCandidate(namespace, candidate)
-			: CanonicalNamespaceSchema.parse(candidate);
-	assertManifestShape(received, namespace);
-	if (JSON.stringify(received) !== JSON.stringify(expected)) {
-		throw new TypeError(`${namespace} manifest does not match the reviewed snapshot.`);
+function assertCanonicalManifest(reviewed: ReviewedNamespace, candidate: unknown): void {
+	const label = `${reviewed.namespace.name} manifest`;
+	let received: CanonicalNamespace;
+	if (typeof candidate === "string" || candidate instanceof Uint8Array) {
+		const bytes =
+			typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
+		const actualSha256 = sha256(bytes);
+		if (actualSha256 !== reviewed.sha256) {
+			throw new TypeError(
+				`${label} hash drifted. Expected SHA-256 ${reviewed.sha256}, received ${actualSha256}.`,
+			);
+		}
+		received = parseManifestText(decodeCanonicalBytes(bytes, label), label);
+	} else {
+		received = CanonicalNamespaceSchema.parse(candidate);
+	}
+	assertManifestShape(received, reviewed.role);
+	if (JSON.stringify(received) !== JSON.stringify(reviewed.namespace)) {
+		throw new TypeError(`${label} does not match the reviewed snapshot.`);
 	}
 }
 
-/**
- * Re-read both canonical files and verify their fixed reviewed digests.
- * @returns The verified digest of each manifest.
- */
-function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
-	const workhorse = loadManifest("archboard_workhorse");
-	const voice = loadManifest("archboard_voice");
-	return Object.freeze({ workhorseSha256: workhorse.sha256, voiceSha256: voice.sha256 });
-}
+/** Each role's tools, which no host name changes. */
+const TEMPLATE_TOOLS = Object.freeze({
+	workhorse: renderCoordinatorNamespace("workhorse", "template").namespace.tools,
+	voice: renderCoordinatorNamespace("voice", "template").namespace.tools,
+});
 
 /**
  * Finds one reviewed tool declaration by name.
- * @param namespace - The namespace that declares the tool.
+ * @param role - The role of the namespace that declares the tool.
  * @param toolName - The tool to look up.
  * @returns The reviewed tool declaration.
  */
-function canonicalTool(namespace: NamespaceName, toolName: CoordinatorToolName): CanonicalTool {
-	const tool = manifestFor(namespace).tools.find((candidate) => candidate.name === toolName);
+function canonicalTool(
+	role: CoordinatorNamespaceRole,
+	toolName: CoordinatorToolName,
+): CanonicalTool {
+	const tool = TEMPLATE_TOOLS[role].find((candidate) => candidate.name === toolName);
 	if (!tool) {
-		throw new TypeError(`${namespace} does not declare ${toolName}.`);
+		throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
 	}
 	return tool;
 }
@@ -358,23 +309,15 @@ export {
 	type JsonSchema,
 	type CanonicalTool,
 	type CanonicalNamespace,
-	type NamespaceName,
-	type ManifestName,
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
-	VOICE_TOOLS_MANIFEST_SHA256,
+	type CoordinatorNamespaceRole,
+	type ReviewedNamespace,
 	WORKHORSE_TOOL_NAMES,
 	VOICE_TOOL_NAMES,
 	type WorkhorseToolName,
 	type VoiceToolName,
 	type CoordinatorToolName,
-	WORKHORSE_TOOL_NAMESPACE,
-	VOICE_TOOL_NAMESPACE,
-	WORKHORSE_TOOLS_MANIFEST_JSON,
-	VOICE_TOOLS_MANIFEST_JSON,
-	COORDINATOR_TOOL_MANIFEST_DIGESTS,
-	type CoordinatorManifestIntegrity,
+	renderCoordinatorNamespace,
 	assertCanonicalManifest,
-	verifyCoordinatorManifestIntegrity,
 	canonicalTool,
 	deepFreeze,
 };

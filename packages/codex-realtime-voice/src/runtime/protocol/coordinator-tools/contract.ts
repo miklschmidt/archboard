@@ -39,10 +39,7 @@ import type {
 	SteerWorkhorseResult,
 	StopWorkhorsesResult,
 } from "#runtime/protocol/coordinator-tool-contract/tool-results.ts";
-import {
-	VOICE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type {
 	UnknownDynamicToolResponseSchema,
 	ValidDynamicToolResponseSchema,
@@ -51,21 +48,29 @@ import type { z } from "zod";
 
 const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;
 
-/** The two registrations that may be installed on the owned app-server link. */
-const COORDINATOR_DYNAMIC_DISPATCHERS = Object.freeze([
-	Object.freeze({
-		owner: COORDINATOR_TOOLS_OWNER,
-		namespace: "archboard_workhorse",
-		manifestHash: WORKHORSE_TOOLS_MANIFEST_SHA256,
-	}),
-	Object.freeze({
-		owner: COORDINATOR_TOOLS_OWNER,
-		namespace: "archboard_voice",
-		manifestHash: VOICE_TOOLS_MANIFEST_SHA256,
-	}),
-] as const);
+/** One registration the coordinator tools are installed under on the owned app-server link. */
+interface CoordinatorDynamicDispatcher {
+	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
+	readonly namespace: string;
+	readonly manifestHash: string;
+}
 
-type CoordinatorDynamicDispatcher = (typeof COORDINATOR_DYNAMIC_DISPATCHERS)[number];
+/**
+ * The two registrations that may be installed on the owned app-server link, as the host names them.
+ * @param tools - The host's built-in namespaces.
+ * @returns The workhorse and voice registrations.
+ */
+function coordinatorDynamicDispatchers(
+	tools: VoiceToolset,
+): readonly CoordinatorDynamicDispatcher[] {
+	return [tools.workhorse, tools.voice].map((reviewed) =>
+		Object.freeze({
+			owner: COORDINATOR_TOOLS_OWNER,
+			namespace: reviewed.namespace.name,
+			manifestHash: reviewed.sha256,
+		}),
+	);
+}
 
 type CoordinatorToolCoordinatorAuthority = Pick<
 	CoordinatorSnapshot,
@@ -110,6 +115,8 @@ interface CoordinatorToolStop {
 
 interface CodexCoordinatorToolsOptions {
 	readonly identity: IdentityAuthority;
+	/** The host's built-in namespaces: a call is matched to its role by name and manifest digest. */
+	readonly tools: VoiceToolset;
 	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
 	readonly authority: CoordinatorToolAuthorityPort;
 	/**
@@ -234,7 +241,7 @@ class CodexCoordinatorToolsError extends Error {
 
 export {
 	COORDINATOR_TOOLS_OWNER,
-	COORDINATOR_DYNAMIC_DISPATCHERS,
+	coordinatorDynamicDispatchers,
 	type CoordinatorDynamicDispatcher,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolAuthorityPort,
