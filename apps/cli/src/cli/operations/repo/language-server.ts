@@ -40,9 +40,10 @@ const repoLanguageServerContract = defineCommand({
 	shared: [],
 	summary: "Set or remove the language server of one language for a registered checkout",
 	description:
-		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C# and Swift have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The Archboard server then runs exactly this command and its arguments, with the environment and PATH that the server started with. The language is python, csharp, swift or c (C, C++ and Objective-C). TypeScript needs no configuration. The checkout is the working directory's, unless --repo names a repository, which means its chosen checkout.",
+		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C#, Swift and Rust have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The Archboard server then runs exactly this command and its arguments, with the environment and PATH that the server started with. The language is python, csharp, swift, c (C, C++ and Objective-C) or rust. TypeScript needs no configuration. The checkout is the working directory's, unless --repo names a repository, which means its chosen checkout.",
 	examples: [
 		"archboard repo language-server c clangd",
+		"archboard repo language-server rust rust-analyzer",
 		"archboard repo language-server python pyright-langserver --arg=--stdio",
 		"archboard repo language-server swift --remove",
 	],

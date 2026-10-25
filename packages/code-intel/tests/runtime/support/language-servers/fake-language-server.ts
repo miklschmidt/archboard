@@ -32,6 +32,10 @@
 //   `window.workDoneProgress`, and ends it 200 ms later; until then it knows
 //   no definition.
 // - `indexes-never`: reports that progress and never ends it.
+// - `primes`: as rust-analyzer does, once initialized and before any file
+//   opened it reports the work-done progress `rustAnalyzer/cachePriming`, if
+//   the client declared `window.workDoneProgress`, and ends it 200 ms later;
+//   until then it knows no definition.
 // - `synchronizes`: builds its index during workspace/synchronize before answering.
 // - `wrapped`: only runs the stand-in as its child, in the other modes, and
 //   waits for it, as nixpkgs' `clangd` script runs `clangd-unwrapped`.
@@ -71,12 +75,14 @@ interface Message {
 	};
 }
 
-/** The token of the index progress, as clangd names it. */
-const INDEX = "backgroundIndexProgress";
+/** The token of the index progress, as rust-analyzer or clangd names it. */
+const INDEX = modes.has("primes") ? "rustAnalyzer/cachePriming" : "backgroundIndexProgress";
 /** Whether the client asked for work-done progress. */
 let reportsProgress = false;
 /** Whether the index is complete; a server that builds none knows every definition at once. */
-let indexed = !modes.has("indexes") && !modes.has("indexes-never") && !modes.has("synchronizes");
+let indexed = !["indexes", "indexes-never", "synchronizes", "primes"].some((each) =>
+	modes.has(each),
+);
 /** Whether the index has started. */
 let indexing = false;
 
@@ -182,6 +188,8 @@ function receive(message: Message): void {
 		else answer();
 		const items = [{ section: "python" }, { section: "csharp" }];
 		send({ id: "ask-1", method: "workspace/configuration", params: { items } });
+	} else if (message.method === "initialized") {
+		if (modes.has("primes")) startIndex();
 	} else if (message.id === "ask-1" && message.method === undefined) {
 		fs.appendFileSync(path.join(stateDir, "configuration"), `${JSON.stringify(message.result)}\n`);
 	} else if (message.method === "textDocument/didOpen") {
