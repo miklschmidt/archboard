@@ -23,20 +23,6 @@ pub(crate) struct Constraint {
     pub gap: f64,
 }
 
-impl Constraint {
-    /// The variable at the constraint's other end from one of its own, or
-    /// nothing when the variable is neither of its ends.
-    fn other_end(&self, var: usize) -> Option<usize> {
-        if self.left == var {
-            Some(self.right)
-        } else if self.right == var {
-            Some(self.left)
-        } else {
-            None
-        }
-    }
-}
-
 const EPS: f64 = 1e-7;
 
 /// Variables that move together: their indices, the constraints that hold them
@@ -185,9 +171,10 @@ impl<'a> Solver<'a> {
             if !block.live || block.active.is_empty() {
                 continue;
             }
+            let adjacent = self.adjacency(block_index);
             for &index in &block.active {
                 let c = self.constraints[index];
-                let side = self.component(block_index, c.right, index);
+                let side = component(&adjacent, c.right, index);
                 let multiplier: f64 = side
                     .iter()
                     .map(|&var| self.vars[var].weight * (self.at(var) - self.vars[var].desired))
@@ -200,32 +187,21 @@ impl<'a> Solver<'a> {
         best.map(|(_, block, index)| (block, index))
     }
 
-    /// The variables a block's active constraints connect to one variable,
-    /// with one constraint left out.
-    fn component(&self, block: usize, from: usize, without: usize) -> Vec<usize> {
-        let mut seen = vec![from];
-        let mut stack = vec![from];
-        while let Some(var) = stack.pop() {
-            let others = self.blocks[block]
-                .active
-                .iter()
-                .filter(|&&index| index != without)
-                .filter_map(|&index| self.constraints[index].other_end(var));
-            for other in others {
-                if !seen.contains(&other) {
-                    seen.push(other);
-                    stack.push(other);
-                }
-            }
+    /// Each variable's neighbors in one block's active constraint tree.
+    fn adjacency(&self, block: usize) -> Vec<Vec<(usize, usize)>> {
+        let mut adjacent = vec![Vec::new(); self.vars.len()];
+        for &index in &self.blocks[block].active {
+            let c = self.constraints[index];
+            adjacent[c.left].push((c.right, index));
+            adjacent[c.right].push((c.left, index));
         }
-        seen.sort_unstable();
-        seen
+        adjacent
     }
 
     /// Split a block at one active constraint into two blocks.
     fn split(&mut self, block: usize, index: usize) {
         let c = self.constraints[index];
-        let right = self.component(block, c.right, index);
+        let right = component(&self.adjacency(block), c.right, index);
         let fresh = self.blocks.len();
         self.blocks[block].active.retain(|&other| other != index);
         let (moved, kept): (Vec<usize>, Vec<usize>) = self.blocks[block]
@@ -276,4 +252,22 @@ pub(crate) fn solve(vars: &[Var], constraints: &[Constraint]) -> Vec<f64> {
     let mut solver = Solver::new(vars, constraints);
     solver.solve();
     (0..vars.len()).map(|var| solver.at(var)).collect()
+}
+
+/// The variables reached without one active constraint, in index order.
+fn component(adjacent: &[Vec<(usize, usize)>], from: usize, without: usize) -> Vec<usize> {
+    let mut seen = vec![false; adjacent.len()];
+    seen[from] = true;
+    let mut stack = vec![from];
+    let mut component = vec![from];
+    while let Some(var) = stack.pop() {
+        for &(other, _) in adjacent[var].iter().filter(|&&(_, index)| index != without) {
+            if !std::mem::replace(&mut seen[other], true) {
+                component.push(other);
+                stack.push(other);
+            }
+        }
+    }
+    component.sort_unstable();
+    component
 }
