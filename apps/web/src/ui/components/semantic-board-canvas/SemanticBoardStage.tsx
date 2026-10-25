@@ -15,8 +15,6 @@ import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { WalkthroughBeat } from "@archboard/board/content";
-import type { SemanticPanePart } from "@archboard/board/pane-context";
 import { usePaneChrome } from "@archboard/ui-kit/display";
 import type {
 	SemanticDrawing,
@@ -57,6 +55,12 @@ import {
 	semanticRenderQuery,
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import type { WalkthroughBeatSchema } from "@archboard/board/content";
+import type { z } from "zod";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+
+type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Inputs for a semantic pane. */
 interface SemanticBoardStageProps {

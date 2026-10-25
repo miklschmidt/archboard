@@ -16,9 +16,11 @@ import {
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
-	type VaultCheck,
 } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,

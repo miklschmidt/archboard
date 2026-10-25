@@ -13,7 +13,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import { acceptedBoardNames, listedBoard, type BoardListing } from "@archboard/board/board-listing";
+import { acceptedBoardNames, listedBoard } from "@archboard/board/board-listing";
 import {
 	LayoutEngineSchema,
 	type LayoutEngineName,
@@ -45,6 +45,9 @@ import {
 	resolveRoute,
 } from "#server/routes/semantic-boards/semantic-board-writes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import type { BoardListingSchema } from "@archboard/board/board-listing";
+
+type BoardListing = z.infer<typeof BoardListingSchema>;
 
 /**
  * The theme a render stands alone in. Absent asks for the page's picture, which

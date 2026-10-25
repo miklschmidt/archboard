@@ -9,7 +9,6 @@ import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
-import type { VaultCheck } from "@archboard/board/policy";
 import { SKILL_EVAL_TALK_STEP_MS } from "@archboard/timing";
 import {
 	RecordingContainerSchema,
@@ -35,6 +34,9 @@ import {
 } from "#runtime/rules/outcomes/reading.ts";
 import type { TalkFixture } from "#runtime/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** A video the harness must look for before the checks run. */
 interface VideoRequest {

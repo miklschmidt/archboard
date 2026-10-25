@@ -11,7 +11,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 
-import type { BoardListing } from "@archboard/board/board-listing";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { withFixtureOrders } from "#tests/ui/support/semantic-board-canvas/fixture-orders.ts";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
@@ -27,6 +26,10 @@ import {
 } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { takePicturesFrom } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
 import { type PictureStorage } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
+import type { BoardListingSchema } from "@archboard/board/board-listing";
+import type { z } from "zod";
+
+type BoardListing = z.infer<typeof BoardListingSchema>;
 
 /** One draw the page laid out. */
 interface Draw {

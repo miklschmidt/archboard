@@ -17,7 +17,6 @@ import {
 	VaultCheckSchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
-	type VaultDiagnostic,
 } from "@archboard/board/policy";
 import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
 import { archboard, archboardOk, type CliContext } from "#runtime/processes/archboard.ts";
@@ -32,6 +31,8 @@ import {
 	type RawFixtureStep,
 	type TalkFixture,
 } from "#runtime/schemas/fixture.ts";
+
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 const FIXTURE_DOING = "laying the evaluation fixture";
 const PLACEHOLDER = /^\$node\((.+)\)$/u;

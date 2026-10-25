@@ -17,14 +17,18 @@ import type {
 	SemanticBoard,
 	SemanticVariant,
 	Shelving,
-	VariantLifecycle,
 } from "@archboard/board/document";
 import { comparedWith, compareVariants, standingOf } from "@archboard/board/comparison";
-import type { ChangeKind, FieldChange, VariantComparison } from "@archboard/board/comparison";
+import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
 import type { FlowStep, SemanticFlow } from "@archboard/board/flow";
 import type { SemanticView } from "@archboard/board/views";
 import type { SemanticEdge, SemanticNode, SemanticWalkthrough } from "@archboard/board/content";
+import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { z } from "zod";
+
+type VariantComparison = ReturnType<typeof compareVariants>;
+type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
 /** One node, with the containment around it. */
 interface NodeSubject {

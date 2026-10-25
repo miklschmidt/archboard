@@ -19,8 +19,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticWalkthrough, WalkthroughBeat } from "@archboard/board/content";
+import type { SemanticWalkthrough } from "@archboard/board/content";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type { WalkthroughBeatSchema } from "@archboard/board/content";
+import type { z } from "zod";
+
+type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Which board and variant a pane is reading. */
 interface WalkthroughSource {
