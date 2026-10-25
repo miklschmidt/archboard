@@ -39,6 +39,24 @@ function svgOf(board: { id: string; name: string }): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg"><metadata><archboard:render-recipe>${JSON.stringify(recipe)}</archboard:render-recipe></metadata></svg>`;
 }
 
+/**
+ * A board as the board list answers it, with the embeds it tracks in the docs repository.
+ * @param board - The board's id and name.
+ * @param files - The tracked files.
+ * @returns The listed board.
+ */
+function listed(board: { id: string; name: string }, files: string[]) {
+	return {
+		...board,
+		key: board.name,
+		variants: [],
+		opens: null,
+		links: [],
+		description: null,
+		trackedEmbeds: files.map((file) => ({ repo: DOCS, path: file })),
+	};
+}
+
 let service = "";
 const rendered: string[] = [];
 const server = Bun.serve({
@@ -60,15 +78,6 @@ const server = Bun.serve({
 				{ status: 404 },
 			);
 		}
-		const listed = (board: { id: string; name: string }, files: string[]) => ({
-			...board,
-			key: board.name,
-			variants: [],
-			opens: null,
-			links: [],
-			description: null,
-			trackedEmbeds: files.map((file) => ({ repo: DOCS, path: file })),
-		});
 		return Response.json({
 			success: true,
 			levels: [],
