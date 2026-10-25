@@ -124,7 +124,7 @@ test("large fallback commits do not suppress coupling among precise ordinary com
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("missing current variant");
 	const locality = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, board, current, undefined),
+		await lens.createVariantLocality().read(scratch, board, current, undefined),
 	);
 	const footprint = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({ vault: scratch, board, against: current, base }),

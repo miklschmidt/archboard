@@ -325,7 +325,7 @@ beforeAll(async () => {
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	locality = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(scratch, board, current, new Date("2000-01-01")),
 	);
 	const request = { vault: scratch, board, against: current, base };
 	const answer = FootprintAnswerSchema.parse(await lens.readVariantFootprint(request));

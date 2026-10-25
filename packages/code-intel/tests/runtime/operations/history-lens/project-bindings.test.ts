@@ -141,7 +141,7 @@ test("hotspots and coupling use the project directory and omit overlapping bindi
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(vault, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(vault, board, current, new Date("2000-01-01")),
 	);
 	expect(answer.hotspots.find((part) => part.subject.id === "project")?.commits).toHaveLength(7);
 	const pairs = answer.coupling.map((pair) => pair.subjects.map((subject) => subject.id));
