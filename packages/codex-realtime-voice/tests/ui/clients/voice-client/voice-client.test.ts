@@ -251,15 +251,25 @@ test("connect opens the socket with the pane and tab identity and attaches voice
 	await client.dispose();
 });
 
+/**
+ * Dispose a client while a connect runs.
+ * @param reconnect Whether a socket is already open when the connect starts.
+ * @returns What the connect resolved and whether every socket it opened is closed.
+ */
+async function disposeDuringConnect(reconnect: boolean) {
+	const { client, sockets } = gateway();
+	if (reconnect) await client.connect();
+	const connecting = client.connect();
+	await client.dispose();
+	return {
+		connected: await connecting,
+		closed: sockets.every((socket) => socket.closeCalls > 0),
+	};
+}
+
 test("a dispose during connect or reconnect leaves no socket open", async () => {
-	for (const reconnect of [false, true]) {
-		const { client, sockets } = gateway();
-		if (reconnect) await client.connect();
-		const connecting = client.connect();
-		await client.dispose();
-		expect(await connecting).toBe(false);
-		expect(sockets.every((socket) => socket.closeCalls > 0)).toBe(true);
-	}
+	expect(await disposeDuringConnect(false)).toEqual({ connected: false, closed: true });
+	expect(await disposeDuringConnect(true)).toEqual({ connected: false, closed: true });
 });
 
 test("an uncertain delivery stays visible and is never sent again", async () => {
@@ -288,6 +298,15 @@ test("voice stops during another action and the workhorse keeps working", async 
 	await client.dispose();
 });
 
+/** One page load: a client that opens its socket and is disposed. */
+async function loadPage(): Promise<void> {
+	const client = createVoiceClient({ socketPath: "/api/voice" });
+	const connecting = client.connect();
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	await client.dispose();
+	await connecting;
+}
+
 /**
  * The tab session id that each of two page loads of one tab names, over replaced page globals.
  * @param storage The tab's `sessionStorage`.
@@ -310,13 +329,8 @@ async function tabSessionIds(storage: Pick<Storage, "getItem" | "setItem">): Pro
 	page["sessionStorage"] = storage;
 	page["location"] = { href: "https://host.test/page" };
 	try {
-		for (const _load of [1, 2]) {
-			const client = createVoiceClient({ socketPath: "/api/voice" });
-			const connecting = client.connect();
-			await new Promise((resolve) => setTimeout(resolve, 0));
-			await client.dispose();
-			await connecting;
-		}
+		await loadPage();
+		await loadPage();
 	} finally {
 		page["WebSocket"] = browserSocket;
 		delete page["sessionStorage"];
