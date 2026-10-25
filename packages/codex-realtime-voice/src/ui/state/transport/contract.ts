@@ -123,7 +123,7 @@ interface BrowserWorkbenchReconnectingState {
 	readonly reason: string;
 }
 
-/** The transport after its socket closed, waiting for the chat session to reattach. */
+/** The transport after its socket closed, waiting for its owner to attach a new socket. */
 interface BrowserWorkbenchBackoffState {
 	readonly kind: "connection";
 	readonly state: "backoff";

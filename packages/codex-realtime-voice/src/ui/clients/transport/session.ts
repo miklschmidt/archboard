@@ -1,6 +1,6 @@
 // The socket session: attaching, the subscribe handshake, recovery snapshots,
-// pushed events, close and disposal. One run at a time; the chat session remains
-// the only owner that opens or closes the actual socket.
+// pushed events, close and disposal. One run at a time; whoever attached the socket
+// remains the only owner that opens or closes it.
 
 import type {
 	BrowserWorkbenchGatewayMessage,

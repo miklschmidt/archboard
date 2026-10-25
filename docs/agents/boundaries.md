@@ -631,7 +631,7 @@ Its public entries separate browser code from Bun code.
 `./browser` holds `createVoiceClient`, the one client a host page uses, and its state and option types.
 `./react` holds `VoiceClientProvider`, `useVoiceClient` and `useVoiceState` over that client, and no styled components.
 `./controllers` serves a host that owns its sockets, as Archboard does for each pane.
-It holds the transport and media owners, `createConversationControllers` for one pane, and the timeline projection.
+It holds the transport and media owners, `createConversationControllers` for one chat, and the timeline projection.
 `./contract` holds only the snapshot types a conversation UI renders.
 `./schemas` holds the browser model's schemas and the dynamic approval wire rules, for a host server and its tests.
 `./realtime` holds the realtime contract, transcript events, and state transitions.
@@ -670,7 +670,7 @@ Application context and agent speech grant no user authority.
 `ui/clients/media/` binds that transport to the WebRTC session and its audio elements.
 `ui/clients/realtime/` owns microphone capture, negotiation, playback, and cleanup.
 `ui/clients/output-level/` measures playback volume.
-`ui/clients/voice-client/` opens the socket with the pane id and the tab session id from `sessionStorage`, attaches the transport and media owner, and publishes one frozen state.
+`ui/clients/voice-client/` opens the socket with the chat id and the tab session id from `sessionStorage`, attaches the transport and media owner, and publishes one frozen state.
 An uncertain delivery stays in that state as a failure, and nothing retries it.
 A host that owns its socket attaches the transport itself.
 `ui/state/` holds the thread-link, composer, queue, approval, and timeline controllers, with their rules in `ui/rules/`.

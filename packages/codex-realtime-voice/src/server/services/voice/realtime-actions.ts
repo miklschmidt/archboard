@@ -249,8 +249,8 @@ export function createServerRealtimeActions(
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
 	let voicedCoordinator: ThreadId | null = null;
-	// The chat the last session started from, whose narrative a later session replaces.
-	let voicedChat: string | null = null;
+	// The browser the last session started from, whose narrative a later session replaces.
+	let voicedBrowser: string | null = null;
 	let realtimeQueue = Promise.resolve();
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
@@ -434,8 +434,8 @@ export function createServerRealtimeActions(
 				// Before the offer, which reads the binding: voice is bound to this checkout's workhorse.
 				threads.state.voiceCheckout = pending.checkout;
 				voicedCoordinator = pending.coordinatorThreadId;
-				forgetNarrative(narrativeAdapter, voicedChat);
-				voicedChat = pending.browserId;
+				forgetNarrative(narrativeAdapter, voicedBrowser);
+				voicedBrowser = pending.browserId;
 				try {
 					const narrative = prepareNarrative(
 						narrativeAdapter,
