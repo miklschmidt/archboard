@@ -37,23 +37,6 @@ impl Header {
     }
 }
 
-/// A header the layout took: its size, and which of its sizes that is when it is a wider one.
-#[derive(Clone, Debug)]
-pub struct TakenHeader {
-    pub size: Size,
-    pub index: Option<usize>,
-}
-
-impl TakenHeader {
-    /// A header at its least size.
-    pub fn least(header: &Header) -> TakenHeader {
-        TakenHeader {
-            size: header.size(),
-            index: None,
-        }
-    }
-}
-
 /// The sizes a container's title row can take, as its measured node carries them.
 ///
 /// # Errors
@@ -88,7 +71,7 @@ pub struct Room<'a> {
 
 /// The shortest header a block has room for, as the box it keeps: its least
 /// when none of its wider sizes fits.
-pub fn header_within(header: &Header, room: &Room<'_>) -> TakenHeader {
+pub fn header_within(header: &Header, room: &Room<'_>) -> Size {
     let steps = header.steps.as_deref().unwrap_or(&[]);
     let box_of = |step: &Size| js_max(header.width, step.width - room.frame + room.content);
     let mut index = 0;
@@ -102,14 +85,11 @@ pub fn header_within(header: &Header, room: &Room<'_>) -> TakenHeader {
         index += 1;
     }
     if index == 0 {
-        return TakenHeader::least(header);
+        return header.size();
     }
-    TakenHeader {
-        size: Size {
-            width: box_of(&steps[index]),
-            height: steps[index].height,
-        },
-        index: Some(index),
+    Size {
+        width: box_of(&steps[index]),
+        height: steps[index].height,
     }
 }
 
@@ -148,9 +128,8 @@ mod tests {
                 beside: &[],
             },
         );
-        assert_eq!(taken.index, Some(1));
         assert_eq!(
-            taken.size,
+            taken,
             Size {
                 width: 140.0,
                 height: 28.0
@@ -168,9 +147,8 @@ mod tests {
                 beside: &[120.0],
             },
         );
-        assert_eq!(taken.index, None);
         assert_eq!(
-            taken.size,
+            taken,
             Size {
                 width: 100.0,
                 height: 40.0

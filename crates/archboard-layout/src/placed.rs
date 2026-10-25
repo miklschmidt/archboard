@@ -72,7 +72,6 @@ pub struct PlacedRegion {
 /// A placed block.
 #[derive(Clone, Debug)]
 pub struct PlacedBlock {
-    pub id: String,
     pub children: Vec<PlacedNode>,
     pub edges: Vec<PlacedEdge>,
     pub regions: Vec<PlacedRegion>,

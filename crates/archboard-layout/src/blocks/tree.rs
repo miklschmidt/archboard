@@ -120,8 +120,6 @@ pub struct Block {
     pub clusters: Map<String, Cluster>,
     /// The innermost inline cluster around each of its items and clusters.
     pub cluster_of: Map<String, String>,
-    /// The region round a container alone in it, which it is laid out as.
-    pub lone: Option<Lone>,
 }
 
 impl Block {
@@ -334,7 +332,6 @@ impl BlockTree {
             ports: Map::default(),
             clusters: Map::default(),
             cluster_of: Map::default(),
-            lone: None,
         });
         self.blocks.insert(id.clone(), made);
         if let Some(parent) = parent {

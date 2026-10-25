@@ -16,7 +16,7 @@ use crate::track::containers::FrameShape;
 use crate::track::scene::Map;
 
 use super::headers::{Header, steps_of};
-use super::laid::{CAPTION_INSET, Insets, Size};
+use super::laid::{CAPTION_INSET, Size};
 
 /// How far a line carried to a card's side keeps from the card's corners.
 const CORNER_ROOM: f64 = 8.0;
@@ -140,17 +140,6 @@ pub fn caption_width(lone: &Lone) -> f64 {
     lone.caption.width + 2.0 * CAPTION_INSET
 }
 
-/// A container a block lays out alone in its region, laid out once as that
-/// region, when its caption needs the region wider: the region then keeps
-/// the container as wide as it was laid out and stands it in the middle.
-pub fn widened(lone: &Lone, width: f64) -> Option<Lone> {
-    let short = caption_width(lone) - width;
-    (short > 0.0).then(|| Lone {
-        room: Some(REGION_INSET + short / 2.0),
-        ..lone.clone()
-    })
-}
-
 /// How much taller a region round one node stands than the node: its caption
 /// band above and its inset below.
 pub fn grown_by(lone: &Lone) -> f64 {
@@ -258,18 +247,6 @@ pub fn title_width(header: &Header, lone: Option<&Lone>, inset: f64) -> f64 {
     match lone {
         None => header.width,
         Some(lone) => js_max(header.width, caption_width(lone) - 2.0 * inset),
-    }
-}
-
-/// The room a container alone in its region keeps around what it holds.
-pub fn grown_insets(insets: Insets, lone: Option<&Lone>) -> Insets {
-    match lone {
-        None => insets,
-        Some(lone) => Insets {
-            side: insets.side + room_of(lone),
-            bottom: insets.bottom + REGION_INSET,
-            ..insets
-        },
     }
 }
 

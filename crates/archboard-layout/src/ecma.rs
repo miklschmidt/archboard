@@ -96,11 +96,6 @@ pub fn min_of(values: &[f64]) -> f64 {
     min(values.iter().copied())
 }
 
-/// `Math.max(...values)` over a slice.
-pub fn max_of(values: &[f64]) -> f64 {
-    max(values.iter().copied())
-}
-
 /// `Math.abs`.
 pub fn abs(value: f64) -> f64 {
     value.abs()

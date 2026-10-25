@@ -24,7 +24,6 @@ use crate::track::sides::fit_sides;
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node, nodes_in};
 
 use super::clusters::{Clusters, Holder, LinedUp, Link, is_title, title_of};
-use super::headers::TakenHeader;
 use super::laid::{Band, Insets, Laid, LaidMap, Size};
 use super::leaves::{
     PORT, corner_header, hold_resized_children, leaves_of, let_ports_slide, mark_regions,
@@ -113,8 +112,6 @@ pub struct CardLayout<'t> {
     nodes: Vec<Node>,
     edges: Vec<Edge>,
     subgraphs: Vec<Sub>,
-    /// The size its header took once Graphviz laid it out, if it has one.
-    taken: Option<TakenHeader>,
 }
 
 impl<'t> CardLayout<'t> {
@@ -162,7 +159,6 @@ impl<'t> CardLayout<'t> {
             nodes: Vec::new(),
             edges: Vec::new(),
             subgraphs,
-            taken: None,
         }
     }
 
@@ -564,18 +560,10 @@ impl<'t> CardLayout<'t> {
         let Lined {
             placed, centres, ..
         } = self.lined(gv)?;
-        let laid = routed(
-            self.tree,
-            self.id,
-            self.insets,
-            self.taken.as_ref(),
-            &placed,
-            0.0,
-        );
+        let laid = routed(self.tree, self.id, self.insets, &placed, 0.0);
         let reroute = Reroute {
             block: self.id,
             insets: self.insets,
-            taken: self.taken.clone(),
             held: laid.width,
             placed: RefCell::new(placed),
             centres,
@@ -687,7 +675,7 @@ impl<'t> CardLayout<'t> {
         for pin in self.pins() {
             leaves.push(pinned_leaf(self.tree, self.laid, &pin, centres));
         }
-        self.taken = corner_header(&mut leaves, self.block, self.insets.side);
+        corner_header(&mut leaves, self.block, self.insets.side);
         let edges = self
             .block
             .lines
@@ -696,7 +684,6 @@ impl<'t> CardLayout<'t> {
             .collect();
         let (children, regions) = self.clusters.nest(leaves, centres, clusters);
         PlacedBlock {
-            id: self.block.id.clone(),
             children,
             edges,
             regions,
@@ -904,7 +891,6 @@ impl<'t> CardLayout<'t> {
 pub struct Reroute {
     block: BlockId,
     insets: Insets,
-    taken: Option<TakenHeader>,
     held: f64,
     /// The placed block; its ports', pins' and blocks' leaves move in place.
     placed: RefCell<PlacedBlock>,
@@ -926,26 +912,12 @@ impl Reroute {
             }
         }
         hold_resized_children(&mut placed.children);
-        routed(
-            tree,
-            self.block,
-            self.insets,
-            self.taken.as_ref(),
-            &placed,
-            self.held,
-        )
+        routed(tree, self.block, self.insets, &placed, self.held)
     }
 }
 
 /// Route a placed block's lines on tracks and read it back.
-fn routed(
-    tree: &BlockTree,
-    id: BlockId,
-    insets: Insets,
-    taken: Option<&TakenHeader>,
-    placed: &PlacedBlock,
-    held: f64,
-) -> Laid {
+fn routed(tree: &BlockTree, id: BlockId, insets: Insets, placed: &PlacedBlock, held: f64) -> Laid {
     let block = tree.get(id);
     let mut scene = Placement::new(placed);
     scene.edges_page = block.kind == Kind::Root;
@@ -987,14 +959,13 @@ fn routed(
         .iter()
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
-    read(block, insets, taken, &scene, routes, &edges, held)
+    read(block, insets, &scene, routes, &edges, held)
 }
 
 /// Read the routed scene back into the laid-out block.
 fn read(
     block: &Block,
     insets: Insets,
-    taken: Option<&TakenHeader>,
     scene: &Placement,
     lines: Map<String, Vec<Point>>,
     edges: &Edges<'_>,
@@ -1073,7 +1044,6 @@ fn read(
                 })
                 .collect(),
         ),
-        header: taken.and_then(|taken| taken.index),
         regions: Some(regions),
         reroute: None,
     }
