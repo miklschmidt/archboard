@@ -6,16 +6,20 @@ import { expect, test } from "bun:test";
 import { instance } from "@viz-js/viz";
 import { createLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { loadCore } from "#runtime/services/core.ts";
-import type { ElkNode } from "@archboard/elk-rs";
+
+/** What these tests read of a solved graph: its root options. */
+interface Solved {
+	readonly layoutOptions?: Readonly<Record<string, string>>;
+}
 
 /**
  * The worker's layout engine, over graphs as objects.
  * @returns A solve of one graph.
  */
-async function layoutEngine(): Promise<(graph: ElkNode) => ElkNode> {
+async function layoutEngine(): Promise<(graph: object) => Solved> {
 	loadCore();
 	const solve = createLayoutEngine(await instance());
-	return (graph) => JSON.parse(solve(JSON.stringify(graph))) as ElkNode;
+	return (graph) => JSON.parse(solve(JSON.stringify(graph))) as Solved;
 }
 
 /**

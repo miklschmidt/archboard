@@ -5,7 +5,6 @@
     "": {
       "name": "archboard",
       "dependencies": {
-        "@archboard/elk-rs": "0.11.3",
         "@assistant-ui/react": "0.15.17",
         "@assistant-ui/react-markdown": "0.14.14",
         "@base-ui/react": "1.7.0",
@@ -185,20 +184,6 @@
     "@archboard/codex-realtime-voice": ["@archboard/codex-realtime-voice@workspace:packages/codex-realtime-voice"],
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
-
-    "@archboard/elk-rs": ["@archboard/elk-rs@0.11.3", "", { "optionalDependencies": { "@archboard/elk-rs-darwin-arm64": "0.11.3", "@archboard/elk-rs-darwin-x64": "0.11.3", "@archboard/elk-rs-linux-arm64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-gnu": "0.11.3", "@archboard/elk-rs-linux-x64-musl": "0.11.3", "@archboard/elk-rs-win32-x64-msvc": "0.11.3" } }, "sha512-XHLs7ryOb0qnVqSQdb0ktpPa8PXCx3ert0m1wldCie+XjMwWegTNVSbuaHCoPa16czNTXqZnqVQbMjGgtB6NtA=="],
-
-    "@archboard/elk-rs-darwin-arm64": ["@archboard/elk-rs-darwin-arm64@0.11.3", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bTGbGvJiP6W0Mh/eiVgpWJd6ai57BM7hMyPitzr/MFVigq+Aq9U0jH5Q7LtZz1w2dlNlWakaHGPIIY59JSs/mA=="],
-
-    "@archboard/elk-rs-darwin-x64": ["@archboard/elk-rs-darwin-x64@0.11.3", "", { "os": "darwin", "cpu": "x64" }, "sha512-bryBE5917AGwOYbCQTp3lJDN+0OPlBpdjCV00UMS2k7l2hZ1TpoYBjHgNH2Gc/9SOdcyj0q8aPC3vH4dtdCEgA=="],
-
-    "@archboard/elk-rs-linux-arm64-gnu": ["@archboard/elk-rs-linux-arm64-gnu@0.11.3", "", { "os": "linux", "cpu": "arm64" }, "sha512-8/+Dp55jlUIEPZ7/90vhIOb8rtugcBEMQrTovtsbTj1w/JzXmPRbwFlmzeO8kqcE/05NCE2YBZp4SzxbrlCnBA=="],
-
-    "@archboard/elk-rs-linux-x64-gnu": ["@archboard/elk-rs-linux-x64-gnu@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-qKi/ficv4PJNW+uYD2OM8LtNkkJOP6jKRj1VFILpBWbD7FoVA7CUjMvgRpnlalaXQsS8QxSFVUa9p+RWffgRmg=="],
-
-    "@archboard/elk-rs-linux-x64-musl": ["@archboard/elk-rs-linux-x64-musl@0.11.3", "", { "os": "linux", "cpu": "x64" }, "sha512-wD0aSayLK9IxmERuM57N2Lo8hlvC8WjslJ2xpm4TK0ObzdrZiPHAB3AYWCEXlx15E9sRfUDcuQ/Ok5oJ83OPQw=="],
-
-    "@archboard/elk-rs-win32-x64-msvc": ["@archboard/elk-rs-win32-x64-msvc@0.11.3", "", { "os": "win32", "cpu": "x64" }, "sha512-0gur0QMU4kIXeE2dPK4ZG095KOUhxuNGzJdGpHkJRb91NGbFAOtEoIgK/Gv5ihjbQVuD5dormpq5y5fkwGLa3w=="],
 
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 
