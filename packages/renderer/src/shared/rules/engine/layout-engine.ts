@@ -27,11 +27,16 @@ export function createLayoutEngine(viz: Viz) {
 		 * @returns What Graphviz answers of it as `json0`, y inverted.
 		 */
 		render: (graph) =>
-			viz.renderString(JSON.parse(graph) as Graph, { yInvert: true, format: "json0" }),
+			viz.renderString(
+				// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it writes the viz-js `Graph` it ranks
+				JSON.parse(graph) as Graph,
+				{ yInvert: true, format: "json0" },
+			),
 	};
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
 		if (stage === "track") {
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core's own output: it answers the root of an ELK node
 			return JSON.parse(layOutTrack(JSON.stringify(graph), graphviz)) as ElkNode;
 		}
 		if (stage === "blocks") return placeBlocks(viz, graph);
