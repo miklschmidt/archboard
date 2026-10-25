@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * The tab session a browser tab names on every chat socket: minted by the tab, kept
- * in its sessionStorage, shared by both of its chats. Opaque to the server beyond its bounds.
+ * in its sessionStorage, shared by every chat of the tab. Opaque to the server beyond its bounds.
  */
 const TabSessionIdSchema = z.string().min(1).max(128).brand<"TabSessionId">();
 
