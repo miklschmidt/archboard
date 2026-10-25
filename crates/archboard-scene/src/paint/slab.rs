@@ -80,19 +80,24 @@ const SHADOW_CLASS: &str = "ab-shadow";
 /// How much of a face a removed block's see-through ghost keeps.
 const GHOST_FACE: f64 = 0.5;
 
+/// Where a `rect` over a box stands and how big it is.
+pub fn boxed(rect: Rect) -> Attrs {
+    attrs! {
+        "x": coord(rect.x),
+        "y": coord(rect.y),
+        "width": coord(rect.width),
+        "height": coord(rect.height),
+    }
+}
+
 /// A rounded rect over a box, which takes no pointer unless it says so.
 pub fn plate(rect: Rect, radius: f64, paint: Attrs) -> Markup {
     tag(
         "rect",
-        attrs! {
-            "x": coord(rect.x),
-            "y": coord(rect.y),
-            "width": coord(rect.width),
-            "height": coord(rect.height),
-            "rx": coord(radius),
-            "pointer-events": "none",
-        }
-        .with(paint),
+        boxed(rect)
+            .set("rx", coord(radius))
+            .set("pointer-events", "none")
+            .with(paint),
     )
 }
 
