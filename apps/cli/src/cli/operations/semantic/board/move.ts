@@ -14,7 +14,7 @@ import {
 	MovedDrillDownSchema,
 	type MovedDrillDown,
 } from "@archboard/board/commands";
-import { moveSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { moveSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
 	boardHeldRefusal,

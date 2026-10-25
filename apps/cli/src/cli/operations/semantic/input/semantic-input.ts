@@ -11,14 +11,14 @@ import {
 // file that defines them.
 
 import { z } from "zod";
-import type { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import type { renderSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { CliUsageError, type CommandContext } from "#cli/protocol/contract/contract.ts";
-import { statedInvocation } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import {
 	ReconciliationReportSchema,
 	type ReconciliationReport,
 	type SemanticWriteAnswer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import {
 	addressedVariant,
 	SemanticBoardSchema,

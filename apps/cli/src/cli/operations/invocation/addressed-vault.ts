@@ -7,7 +7,7 @@
 
 import type { AnsweredVault, RegisteredVault } from "#cli/protocol/contract/schemas.ts";
 import { declareIfUnknown, type Declared } from "@archboard/workspace/checkouts";
-import { stateInvocation } from "@archboard/server-lifecycle/request-context";
+import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import {
 	findVault,

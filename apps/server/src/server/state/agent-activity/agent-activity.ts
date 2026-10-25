@@ -20,10 +20,10 @@
 import type { DoingEntry } from "@archboard/board/doing";
 import type { LockHolder } from "@archboard/board/lock";
 import { boardMemoryKey } from "@archboard/board/address";
-import type {
-	AgentActivity,
-	AgentActivityMessage,
-} from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/panes";
+
+/** What one board's agent is doing, as a pane is told it. */
+type AgentActivity = AgentActivityMessage["activity"][number];
 import { ACTIVITY_LINGER_MS } from "@archboard/timing";
 
 interface Entry {

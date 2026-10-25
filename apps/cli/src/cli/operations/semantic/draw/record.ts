@@ -19,14 +19,14 @@ import {
 	RecordingLanguageSchema,
 	type RecordingState,
 } from "@archboard/walkthrough/recording";
-import { statedInvocation } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { registeredRepositoryOfVault as repositoryOfVault } from "@archboard/workspace/checkouts";
 import {
 	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,
 	readSemanticBoardOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
+} from "#cli/clients/server/semantic-boards.ts";
 import {
 	TalkFileError,
 	askedTalkPlace,

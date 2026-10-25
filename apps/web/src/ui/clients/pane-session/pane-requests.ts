@@ -12,7 +12,7 @@ import {
 	type ShownConversationReply,
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
-import { boardQuery, cancellable, inVault, json, post } from "@archboard/server-requests";
+import { inVault, requestJson } from "@archboard/server-requests";
 import type {
 	BoardIdentity,
 	BrowserPaneListing,
@@ -69,7 +69,7 @@ interface PaneReply {
  * @returns Whether the pane is registered, and whether the tab is stale.
  */
 function reportPane(vault: string, pane: PaneReport): Promise<PaneReply> {
-	return post(inVault("/api/panes", vault), pane);
+	return requestJson(inVault("/api/panes", vault), { method: "POST", payload: pane });
 }
 
 /**
@@ -88,7 +88,7 @@ function loadedBundle(): string | undefined {
  * @returns The pane inventory.
  */
 function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
-	return json("/api/panes", cancellable(signal));
+	return requestJson("/api/panes", { signal });
 }
 
 /** What `showBoard` asks for: which board of which vault, in which pane. */
@@ -122,7 +122,7 @@ interface ShowBoardReply {
  */
 function showBoard(request: ShowBoardRequest): Promise<ShowBoardReply> {
 	const { vault, ...shown } = request;
-	return post(inVault("/api/panes/show", vault), shown);
+	return requestJson(inVault("/api/panes/show", vault), { method: "POST", payload: shown });
 }
 
 /** The answer to a take-back: whether a claim was released, and which. */
@@ -146,7 +146,11 @@ function takeBoardBack(
 	board: string | null,
 	clientId: string,
 ): Promise<TakeBackReply> {
-	return post(inVault(`/api/semantic-boards/take-back${boardQuery(board)}`, vault), { clientId });
+	const query = board === null || board === "" ? "" : `?board=${encodeURIComponent(board)}`;
+	return requestJson(inVault(`/api/semantic-boards/take-back${query}`, vault), {
+		method: "POST",
+		payload: { clientId },
+	});
 }
 
 /**
@@ -161,7 +165,7 @@ function showConversation(
 	vault: string,
 	request: ShownConversationRequest,
 ): Promise<ShownConversationReply> {
-	return post(inVault(SHOWN_CONVERSATION_ROUTE, vault), request);
+	return requestJson(inVault(SHOWN_CONVERSATION_ROUTE, vault), { method: "POST", payload: request });
 }
 
 export {

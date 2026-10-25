@@ -8,7 +8,7 @@ import {
 	foreignServiceError,
 	markServerIdentityVerified,
 	OtherSourceError,
-} from "#runtime/clients/server-client.ts";
+} from "#runtime/clients/server-client-transport.ts";
 import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
 import {
 	resolveProjectCodexExecutable,

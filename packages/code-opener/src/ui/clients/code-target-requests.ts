@@ -19,7 +19,7 @@ import {
 	type OpenerSettingsReply,
 	type OpenerTestReply,
 } from "@archboard/code-binding/opening";
-import { mutation, strictReply, type ReplySchema } from "@archboard/server-requests";
+import { strictReply, type ReplySchema } from "@archboard/server-requests";
 
 /**
  * The failure reported when the server's reply matches no schema.
@@ -44,7 +44,7 @@ function invalidReply(error?: unknown): CodeTargetOpenFailure {
  */
 function codeTargetReply<T>(
 	url: string,
-	init: RequestInit | undefined,
+	init: Parameters<typeof strictReply>[1],
 	successSchema: ReplySchema<T>,
 ): Promise<T | CodeTargetOpenFailure> {
 	return strictReply(url, init, successSchema, CodeTargetOpenFailureSchema, invalidReply);
@@ -63,7 +63,7 @@ function openCodeTarget(
 	// The route takes no query, so the vault rides in the body (ADR 0049).
 	return codeTargetReply(
 		"/api/code-targets/open",
-		mutation("POST", { ...request, vault }),
+		{ method: "POST", payload: { ...request, vault } },
 		CodeTargetOpenSuccessSchema,
 	);
 }
@@ -86,7 +86,7 @@ function saveOpenerSettings(
 ): Promise<OpenerSelectionReply | CodeTargetOpenFailure> {
 	return codeTargetReply(
 		"/api/settings/opener",
-		mutation("PUT", selection),
+		{ method: "PUT", payload: selection },
 		OpenerSelectionReplySchema,
 	);
 }
@@ -111,7 +111,7 @@ function testOpenerSettings(
 ): Promise<OpenerTestReply | CodeTargetOpenFailure> {
 	return codeTargetReply(
 		"/api/settings/opener/test",
-		mutation("POST", { selection, repository }),
+		{ method: "POST", payload: { selection, repository } },
 		OpenerTestReplySchema,
 	);
 }

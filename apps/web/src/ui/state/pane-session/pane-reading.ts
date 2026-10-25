@@ -21,7 +21,7 @@ import {
 } from "@archboard/board/pane-context";
 import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
-import { inVault, post } from "@archboard/server-requests";
+import { inVault, requestJson } from "@archboard/server-requests";
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -97,7 +97,10 @@ interface ReadingReply {
  * @returns The server's answer.
  */
 function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
-	return post<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), body);
+	return requestJson<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), {
+		method: "POST",
+		payload: body,
+	});
 }
 
 /**

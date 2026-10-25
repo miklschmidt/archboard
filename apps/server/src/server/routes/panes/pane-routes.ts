@@ -6,7 +6,7 @@ import {
 	addressablePanes,
 	MAX_PANES,
 	panesInOrder,
-	resolvePaneSpec,
+	resolvePane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { frontendState } from "@archboard/server-lifecycle/server-host";
@@ -305,7 +305,7 @@ function closeTarget(
 				".",
 		);
 	}
-	const target = resolvePaneSpec(registrations, spec);
+	const target = resolvePane(registrations, spec);
 	const place =
 		panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)?.place ??
 		spec;
