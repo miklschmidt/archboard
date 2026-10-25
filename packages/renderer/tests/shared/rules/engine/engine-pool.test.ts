@@ -376,6 +376,56 @@ test("a solve whose second worker fails too is refused with the engine's words",
 	expect(await next).toEqual("b!");
 });
 
+test("a worker constructor failure rejects its solve and leaves no work for the next worker", async () => {
+	const failure = new Error("Worker could not start");
+	const worker = new HeldWorker();
+	let unavailable = true;
+	const solve = createEnginePool(() => {
+		if (unavailable) throw failure;
+		return worker;
+	}, 1);
+	expect(await solve("failed").catch((error: unknown) => error)).toBe(failure);
+	unavailable = false;
+	const next = solve("next");
+	expect(sentTo(worker)).toEqual(["next"]);
+	worker.answer(0, { data: "next!" });
+	expect(await next).toBe("next!");
+});
+
+test("a failed replacement constructor rejects all waiting solves and releases their cancellation listeners", async () => {
+	const failure = new Error("Replacement could not start");
+	const worker = new HeldWorker();
+	const replacement = new HeldWorker();
+	let starting = 0;
+	const solve = createEnginePool(() => {
+		starting += 1;
+		if (starting === 2) throw failure;
+		return starting === 1 ? worker : replacement;
+	}, 1);
+	const controller = new AbortController();
+	let removals = 0;
+	const remove = controller.signal.removeEventListener.bind(controller.signal);
+	controller.signal.removeEventListener = (
+		...args: Parameters<AbortSignal["removeEventListener"]>
+	) => {
+		if (args[0] === "abort") removals += 1;
+		remove(...args);
+	};
+	const first = solve("first");
+	const queued = solve("queued", controller.signal);
+	const refused = Promise.all(
+		[first, queued].map((answer) => answer.catch((error: unknown) => error)),
+	);
+	worker.dispatchEvent(new Event("error"));
+	expect(await refused).toEqual([failure, failure]);
+	expect(removals).toBe(1);
+	expect(worker.terminated).toBe(true);
+	const next = solve("next");
+	expect(sentTo(replacement)).toEqual(["next"]);
+	replacement.answer(0, { data: "next!" });
+	expect(await next).toBe("next!");
+});
+
 test("an engine abort, never a layout refusal, marks a worker for replacement", () => {
 	expect(engineAborted(new WebAssembly.RuntimeError("unreachable"))).toBe(true);
 	expect(engineAborted(new Error("program has already aborted!"))).toBe(true);

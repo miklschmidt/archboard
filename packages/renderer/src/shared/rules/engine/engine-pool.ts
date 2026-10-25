@@ -255,9 +255,28 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	function dispatch(): void {
 		if (handoff !== undefined) return;
 		while (queued.length > 0) {
-			const engine = freeEngine();
+			let engine: PooledEngine | undefined;
+			try {
+				engine = freeEngine();
+			} catch (error) {
+				refuseQueued(error);
+				return;
+			}
 			if (engine === undefined) return;
 			send(engine, queued.shift()!);
+		}
+	}
+
+	/**
+	 * Refuse the waiting solves when no worker can be started. A later call
+	 * can try again without dispatching work whose caller already failed.
+	 * @param error Why the worker could not start.
+	 */
+	function refuseQueued(error: unknown): void {
+		const failure = error instanceof Error ? error : new Error(String(error));
+		for (const pending of queued.splice(0)) {
+			pending.signal?.removeEventListener("abort", pending.cancel);
+			pending.reject(failure);
 		}
 	}
 
