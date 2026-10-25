@@ -122,6 +122,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	let disposed = false;
 	// Whether a socket has ever opened here: what tells a reconnection apart.
 	let openedBefore = false;
+	let focusedBefore = ports.options().focused;
 
 	/**
 	 * Whether this pane is still mounted.
@@ -480,8 +481,15 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		void sockets.dispose().finally(connector.close);
 	}
 
-	/** The pane's facets the server hears about changed. */
+	/**
+	 * The pane's facets the server hears about changed. A focus change goes at once: every
+	 * redraw restarts the debounce, and `--pane focused` must not find two panes (TASK-544).
+	 */
 	function facetsChanged(): void {
+		if (focusedBefore !== isFocused()) {
+			focusedBefore = isFocused();
+			schedulePaneReport(true);
+		}
 		schedulePaneReport(false);
 	}
 

@@ -1,10 +1,11 @@
 ---
 id: TASK-544
 title: Two panes stay focused on the server after the person focuses each in turn
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-25T21:46:00Z'
-updated_date: '2026-10-25T21:46:00Z'
+updated_date: '2026-10-25T21:58:00Z'
 labels:
   - frontend
   - bug
@@ -26,3 +27,23 @@ After a person focuses one pane and then the other, the server still counts both
 - [ ] #3 The dock test in tests/system/browser/codex-text-workbench.test.ts passes, with every assertion and timeout unchanged
 - [ ] #4 The task notes name the observed cause and the commit that brought the failure back
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Report a change to which pane the person focused at once, beside the debounced report, in the pane core.
+2. Own the behaviour with a unit test in pane-connection.test.ts: a focus change reaches the server without the debounce.
+3. Run the dock browser test, lint, type-check and format the touched files.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Cause: a pane told the server about a focus change only through its 300 ms report debounce. Every redraw of a pane starts that debounce again, because the pane session calls facetsChanged whenever its options object changes. In the dock test, opening pane B took focus from pane A at 482 ms. Pane A was drawn again at 777 ms, when pane B moved to ledger and the link between the two panes ended (the views log said readings,links changed). That postponed pane A's report. The person's clicks came at 1049 ms and 1085 ms and postponed it again. So the server still held pane A as focused (from its report at 464 ms) beside pane B when the test ran browser show --pane focused, and the command was refused.
+
+Evidence: tagged server logging of every POST /api/panes showed one report from pane A, focused=true, and none after pane B opened, before the refusal. Browser counters showed pane A's options effect ran again at 777 ms after views:readings,links changed. With a 2 s wait added after the clicks, pane A's focused=false report reached the server at the end of the debounce and the test passed. All probes are removed.
+
+Which commit: e57e8945b (feat(web): a part picked in one pane is picked in the pane beside it, TASK-538.02) brought the failure. It made every pane draw again when the link between the panes changes. The dock test passes at 814c0eedf (e57e8945b^) and fails at e57e8945b, at 9a101c764 (c223a3023^) and at c223a3023. So c223a3023 never made the test pass. Its links derivation is fine, but a link that really changes still draws both panes again.
+
+Fix: the pane core sends a report at once when the focused flag changed since the last facet change, and then arms the debounce as before, so the pane's place on screen is still measured after a layout settles. A unit test in apps/web/tests/ui/state/pane-session/pane-connection.test.ts owns it: a pane that loses focus reports focused=false without the debounce.
+<!-- SECTION:NOTES:END -->
