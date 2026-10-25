@@ -180,13 +180,19 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		previous.close();
 	};
 
-	/** Open a socket and attach the owners to it. */
+	/**
+	 * Open a socket and attach the owners to it. A socket that closes before the
+	 * server's first snapshot fails with the reason the server closed it with.
+	 */
 	const open = async () => {
 		const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
 		socket = next;
+		const closeReason = closeReasonOf(next);
 		await opened(next);
 		if (disposed) return;
-		await transport.attach(next);
+		const attached = await transport.attach(next);
+		if (attached.kind === "connection" && !disposed)
+			throw new Error(closeReason() || attached.reason);
 		await media.attach(transport);
 		await transport.accountRead();
 	};
@@ -461,6 +467,23 @@ function failureOf(error: unknown): VoiceClientFailure {
 		message: error instanceof Error ? error.message : String(error),
 		uncertain: false,
 	});
+}
+
+/**
+ * Keep the reason a socket's close names, such as the server's words for a refusal.
+ * @param socket The socket.
+ * @returns The reason, empty until the socket closes with one.
+ */
+function closeReasonOf(socket: VoiceClientSocket): () => string {
+	let reason = "";
+	socket.addEventListener(
+		"close",
+		(event) => {
+			if ("reason" in event && typeof event.reason === "string") reason = event.reason;
+		},
+		{ once: true },
+	);
+	return () => reason;
 }
 
 /**

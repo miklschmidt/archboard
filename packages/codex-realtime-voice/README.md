@@ -395,22 +395,22 @@ agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
 
 Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
 
-| Action                                       | What it does                                                                                                                                                           |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `connect()`                                  | Opens the socket, or opens it again. After an open socket closes, the client opens a new one by itself. A first `connect()` that fails is not repeated: call it again. |
-| `refresh()`                                  | Reads the server state again without repeating a command.                                                                                                              |
-| `signIn(login?)`                             | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key.                                                           |
-| `cancelSignIn()`                             | Cancels the pending sign-in.                                                                                                                                           |
-| `signOut()`                                  | Signs the account out.                                                                                                                                                 |
-| `send(message)`                              | Sends a message to the workhorse, and creates the conversation on first use.                                                                                           |
-| `startVoice()`                               | Starts the coordinator's voice, and creates the conversation on first use.                                                                                             |
-| `stopVoice()`                                | Stops voice. The workhorse keeps working.                                                                                                                              |
-| `setMuted(muted)`                            | Mutes or unmutes the microphone of the running voice.                                                                                                                  |
-| `stopWork()`                                 | Interrupts the running workhorse turn. Voice keeps running.                                                                                                            |
-| `answerApproval(approval, response, intent)` | Answers one approval that the page showed, with the `intent` of the state that showed it.                                                                              |
-| `snapshot()`                                 | Returns the current state.                                                                                                                                             |
-| `subscribe(listener)`                        | Calls the listener after each change of the state. Returns the function that stops it.                                                                                 |
-| `dispose()`                                  | Stops voice, releases the socket and ends every subscription.                                                                                                          |
+| Action                                       | What it does                                                                                                                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `connect()`                                  | Opens the socket, or opens it again. After an open socket closes, the client opens a new one by itself. A first `connect()` whose socket never opens is not repeated: call it again. |
+| `refresh()`                                  | Reads the server state again without repeating a command.                                                                                                                            |
+| `signIn(login?)`                             | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key.                                                                         |
+| `cancelSignIn()`                             | Cancels the pending sign-in.                                                                                                                                                         |
+| `signOut()`                                  | Signs the account out.                                                                                                                                                               |
+| `send(message)`                              | Sends a message to the workhorse, and creates the conversation on first use.                                                                                                         |
+| `startVoice()`                               | Starts the coordinator's voice, and creates the conversation on first use.                                                                                                           |
+| `stopVoice()`                                | Stops voice. The workhorse keeps working.                                                                                                                                            |
+| `setMuted(muted)`                            | Mutes or unmutes the microphone of the running voice.                                                                                                                                |
+| `stopWork()`                                 | Interrupts the running workhorse turn. Voice keeps running.                                                                                                                          |
+| `answerApproval(approval, response, intent)` | Answers one approval that the page showed, with the `intent` of the state that showed it.                                                                                            |
+| `snapshot()`                                 | Returns the current state.                                                                                                                                                           |
+| `subscribe(listener)`                        | Calls the listener after each change of the state. Returns the function that stops it.                                                                                               |
+| `dispose()`                                  | Stops voice, releases the socket and ends every subscription.                                                                                                                        |
 
 The state has these fields:
 
@@ -547,7 +547,7 @@ The page shows "The voice connection failed. Reconnect to try again." and `conne
 1. Open the page at exactly the address in `origin`.
 2. Serve the page and the socket from the same server. A page from a development server on another port has another origin.
 
-A `400` answer means that the socket URL has no valid `tabSessionId` or `paneId`. `createVoiceClient` always sends both, so look at a custom `paneId`. A socket that closes at once with code `1011` and "The voice agent is unavailable. Restart the server." reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit.
+A `400` answer means that the socket URL has no valid `tabSessionId` or `paneId`. `createVoiceClient` always sends both, so look at a custom `paneId`. A socket that closes at once with code `1011` puts the reason the server closed it with in `failure`, such as "The voice agent is unavailable. Restart the server.". It reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit. The client opens a new socket by itself, as after any open socket that closes.
 
 ### The state directory is in use
 

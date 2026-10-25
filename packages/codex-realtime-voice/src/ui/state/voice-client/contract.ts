@@ -98,8 +98,10 @@ interface VoiceClient {
 	 * socket that was open closes, the client reconnects by itself: `connection`
 	 * reads `reconnecting`, the client opens a new socket after a short wait,
 	 * and it tries again after each attempt that fails, until one opens or the
-	 * client is disposed. A first `connect` that fails is not retried; the host
-	 * calls `connect` again.
+	 * client is disposed. A socket that the server closes before its first
+	 * snapshot also counts as open, and `failure` names the server's reason. A
+	 * first `connect` whose socket never opens is not retried; the host calls
+	 * `connect` again.
 	 */
 	readonly connect: () => Promise<boolean>;
 	/** Read the server's current state again without repeating a command. */

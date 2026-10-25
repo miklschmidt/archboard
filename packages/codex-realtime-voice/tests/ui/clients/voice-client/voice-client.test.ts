@@ -45,6 +45,21 @@ class RefusedSocket extends FakeSocket {
 	}
 }
 
+/** A pane socket that opens and that the server closes, with a reason, before its first answer. */
+class ClosedSocket extends FakeSocket {
+	/** Open the socket, then close it on its first request. */
+	constructor() {
+		super();
+		queueMicrotask(() => this.dispatchEvent(new Event("open")));
+		this.onRequest = () => {
+			this.readyState = 3;
+			this.dispatchEvent(new CloseEvent("close", { code: 1011, reason: SERVER_REASON }));
+		};
+	}
+}
+
+const SERVER_REASON = "server-reason";
+
 /** One delayed run the client asked for. */
 interface Timer {
 	readonly delayMs: number;
@@ -185,11 +200,13 @@ function recordingMedia(): { media: BrowserWorkbenchMediaOwner; calls: string[] 
  * A client over a gateway double that answers every command with one outcome.
  * @param outcome What each command result says about delivery.
  * @param refused Which socket opens, counted from 0, the server refuses.
+ * @param closed Which socket opens the server closes before its first answer.
  * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
 function gateway(
 	outcome: "delivered" | "outcome_unknown" = "delivered",
 	refused: readonly number[] = [],
+	closed: readonly number[] = [],
 ) {
 	const sockets: FakeSocket[] = [];
 	const urls: string[] = [];
@@ -237,8 +254,10 @@ function gateway(
 			 */
 			openSocket: (url) => {
 				urls.push(url);
-				if (refused.includes(sockets.length)) {
-					const socket = new RefusedSocket();
+				if (refused.includes(sockets.length) || closed.includes(sockets.length)) {
+					const socket = refused.includes(sockets.length)
+						? new RefusedSocket()
+						: new ClosedSocket();
 					sockets.push(socket);
 					return socket;
 				}
@@ -355,6 +374,19 @@ test("a dispose ends a reconnect that waits, and a first connect that fails is n
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	expect(first.timers).toHaveLength(0);
 	await first.client.dispose();
+});
+
+test("a socket the server closes before its first snapshot fails with the server's reason and opens again", async () => {
+	const { client, sockets, calls, timers } = gateway("delivered", [], [0]);
+	expect(await client.connect()).toBe(false);
+	expect(client.snapshot().failure?.message).toBe(SERVER_REASON);
+	expect(client.snapshot().connection).toBe("reconnecting");
+	expect(calls).toEqual([]);
+	await fire(timers);
+	expect(sockets).toHaveLength(2);
+	expect(client.snapshot().connection).toBe("connected");
+	expect(client.snapshot().failure).toBeNull();
+	await client.dispose();
 });
 
 test("an uncertain delivery stays visible and is never sent again", async () => {
