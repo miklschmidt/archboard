@@ -41,7 +41,7 @@ impl Writer<'_> {
             }
             Item::Shape(shape) => write_shape(shape, self.names, Spelling::Compact, out),
             Item::Text(text) => write_text(text, out),
-            Item::Icon(icon) => self.icon(icon, out),
+            Item::Icon(icon) => write_icon(icon, self.icons, out),
             Item::Viewport(viewport) => self.viewport(viewport, out),
             Item::Definitions { definitions } => {
                 out.push_str("<defs>");
@@ -51,33 +51,6 @@ impl Writer<'_> {
             Item::Traffic(mark) => write_traffic(mark, out),
             Item::Break => out.push('\n'),
         }
-    }
-
-    /// An icon, drawn from the host's icon set in its own 24-unit square.
-    fn icon(&self, icon: &Icon, out: &mut String) {
-        let side = icon.size;
-        let mut attributes = Attributes::new();
-        attributes
-            .set("viewBox", "0 0 24 24")
-            .set("xmlns", "http://www.w3.org/2000/svg")
-            .set("width", side)
-            .set("height", side)
-            .set("fill", css(&icon.ink))
-            .set("aria-hidden", "true")
-            .set("class", "remixicon ");
-        open("svg", &attributes, out);
-        for d in self
-            .icons
-            .get(&icon.name)
-            .map(Vec::as_slice)
-            .unwrap_or_default()
-        {
-            let mut path = Attributes::new();
-            path.set("d", d.as_str());
-            open("path", &path, out);
-            close("path", out);
-        }
-        close("svg", out);
     }
 
     /// What is drawn in a box of its own.
@@ -97,4 +70,26 @@ impl Writer<'_> {
         self.items(&viewport.items, out);
         close("svg", out);
     }
+}
+
+/// An icon, drawn from the host's icon set in its own 24-unit square.
+pub(crate) fn write_icon(icon: &Icon, icons: &BTreeMap<String, Vec<String>>, out: &mut String) {
+    let side = icon.size;
+    let mut attributes = Attributes::new();
+    attributes
+        .set("viewBox", "0 0 24 24")
+        .set("xmlns", "http://www.w3.org/2000/svg")
+        .set("width", side)
+        .set("height", side)
+        .set("fill", css(&icon.ink))
+        .set("aria-hidden", "true")
+        .set("class", "remixicon ");
+    open("svg", &attributes, out);
+    for d in icons.get(&icon.name).map(Vec::as_slice).unwrap_or_default() {
+        let mut path = Attributes::new();
+        path.set("d", d.as_str());
+        open("path", &path, out);
+        close("path", out);
+    }
+    close("svg", out);
 }

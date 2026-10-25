@@ -1,11 +1,12 @@
 //! The renderer core as WebAssembly. Bun and the browser load this one build
-//! (ADR 0057), and `scripts/build-core.ts` makes it.
+//! (ADR 0057), and `scripts/build-core.ts` makes it: a render in, the picture
+//! and its key out (`render`), and the one solve a host's layout engine runs
+//! for it (`layOutBoard`).
 
 use wasm_bindgen::prelude::*;
 
-pub mod flows;
 pub mod layout;
-pub mod scene;
+pub mod render;
 
 /// The hash of the core sources this build was made from, as
 /// `scripts/build-core.ts` recorded it. A host compares it with the sources in

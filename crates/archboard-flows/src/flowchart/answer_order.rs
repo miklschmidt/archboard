@@ -3,13 +3,13 @@
 //! stood the answers left to right, and for the board's order instead when
 //! that crosses fewer lines.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
+use archboard_layout::{
+    Content, Edge as GraphEdge, Engine, Measured, Solver, draw, pair_crossings,
+};
 use archboard_scene::drawing::{MeasuredNode, Painted};
 use archboard_scene::geometry::{Point, Rect, Segment};
-
-use super::{Content, FlowchartHost, GraphEdge, Measured};
-use archboard_layout::pair_crossings;
 
 /// Where an answer first stops below its decision in a drawing: the middle of
 /// its words, or else of the card it reaches. By answer id.
@@ -49,11 +49,11 @@ fn ordering(difference: f64) -> std::cmp::Ordering {
 /// order differs from the board's. Asked for its points in the board's order
 /// instead, Graphviz keeps that order even where it costs a crossing, as when
 /// a loop runs back up past one answer.
-async fn in_free_order<H: FlowchartHost>(
+async fn in_free_order<S: Solver>(
     content: &Content,
     measure: &Measured,
-    host: &H,
-) -> Result<Option<Content>, H::Error> {
+    solver: &S,
+) -> Result<Option<Content>, String> {
     let unpointed = Measured {
         nodes: measure
             .nodes
@@ -68,7 +68,7 @@ async fn in_free_order<H: FlowchartHost>(
             .collect(),
         ..measure.clone()
     };
-    let free = host.track(content, &unpointed).await?;
+    let free = track(content, &unpointed, solver).await?;
     let stops = first_stops(&free);
     let stop = |id: &str| stops.get(id).copied().unwrap_or(f64::NAN);
     let mut reordered: HashMap<&str, f64> = HashMap::new();
@@ -140,23 +140,38 @@ fn crossings_of(drawing: &Painted) -> usize {
 /// that crosses fewer lines: asked for its points, Graphviz can still stand
 /// answers' steps against the first layout's order. The first layout's order
 /// wins a tie.
-pub(super) async fn laid_out<H: FlowchartHost>(
+pub(super) async fn laid_out<S: Solver>(
     content: &Content,
     measure: &Measured,
-    host: &H,
-) -> Result<Painted, H::Error> {
-    let free = in_free_order(content, measure, host).await?;
-    let first = host
-        .track(free.as_ref().unwrap_or(content), measure)
-        .await?;
+    solver: &S,
+) -> Result<Painted, String> {
+    let free = in_free_order(content, measure, solver).await?;
+    let first = track(free.as_ref().unwrap_or(content), measure, solver).await?;
     let crossed = crossings_of(&first);
     if free.is_none() || crossed == 0 {
         return Ok(first);
     }
-    let board = host.track(content, measure).await?;
+    let board = track(content, measure, solver).await?;
     Ok(if crossings_of(&board) < crossed {
         board
     } else {
         first
     })
+}
+
+/// The graph laid out by the track engine, as an architecture is.
+async fn track<S: Solver>(
+    content: &Content,
+    measure: &Measured,
+    solver: &S,
+) -> Result<Painted, String> {
+    draw(
+        content,
+        measure,
+        None,
+        &BTreeMap::new(),
+        Engine::Track,
+        solver,
+    )
+    .await
 }

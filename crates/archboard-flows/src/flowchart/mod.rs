@@ -15,15 +15,15 @@
 //! bottom for a third. The layout is asked for that: a decision is measured
 //! wider than its diamond on either side by an answer's sideways run and half
 //! the widest answer's words, and marked so that the track engine holds each
-//! answer to its own point of the box (`shared/rules/track/routes/points.ts`).
+//! answer to its own point of the box (`archboard-layout`, `track/points.rs`).
 //! Once laid out, the box is cut back to the diamond (`to_diamonds`), and each
 //! answer is drawn out of its point. Which answer goes to which point follows
 //! a first layout that holds no answer to a point (`in_free_order`): Graphviz
 //! orders the answers there so that the fewest lines cross, a loop's line back
 //! up included, and the second layout asks for the points in that order.
 //!
-//! The track engine and the text are the host's until the core holds them
-//! ([`FlowchartHost`], TASK-520.04 and TASK-520.07).
+//! The graph is laid out as an architecture is ([`archboard_layout::draw`]),
+//! in solves the host runs ([`Solver`]).
 
 mod answer_order;
 mod graph;
@@ -31,19 +31,17 @@ mod outlines;
 mod ports;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::future::Future;
 
+use archboard_layout::{LineLook, Measured, Node as GraphNode, Solver};
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
 use archboard_scene::js;
 use archboard_scene::measure::{self, CardWords};
-use archboard_scene::paint::design::FALLBACK_ICON;
+use archboard_scene::paint::design::{FALLBACK_ICON, FLOW_ICON};
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
 };
-use serde::{Deserialize, Serialize};
-
-pub use graph::{Content, GraphEdge, GraphNode};
+use serde::Deserialize;
 
 use crate::board::{Flow, Node};
 use answer_order::laid_out;
@@ -64,9 +62,6 @@ const TERMINAL: (f64, f64) = (96.0, 34.0);
 /// How far an answer runs sideways out of a decision's left or right point
 /// before it turns down: a bend and as long a straight again.
 const SIDE_RUN: f64 = 2.0 * archboard_scene::geometry::BEND_RADIUS;
-/// The icon a flow's frame is drawn with: one of the renderer's own icons
-/// (`shared/rules/render/icons.ts`), which every host carries.
-const FLOW_ICON: &str = "RiFlowChart";
 
 /// What a vault's policy says one node kind looks like.
 #[derive(Clone, Debug, Deserialize)]
@@ -100,40 +95,6 @@ pub struct FlowchartRequest {
     pub document: DocumentRequest,
     /// Each icon's path data, by its export name.
     pub icons: BTreeMap<String, Vec<String>>,
-}
-
-/// How a line is drawn: its dash and its head.
-#[derive(Clone, Copy, Debug, Serialize)]
-pub struct LineLook {
-    /// How the line is dashed.
-    pub dash: Dash,
-    /// Which arrowhead the line ends in.
-    pub arrowhead: Arrowhead,
-}
-
-/// The graph measured, as the track engine reads it: each node's box and
-/// words, each line's words and look, each by id in the graph's order.
-#[derive(Clone, Debug, Serialize)]
-pub struct Measured {
-    /// Each node's box and words, by node id.
-    pub nodes: Vec<(String, MeasuredNode<GraphNode>)>,
-    /// The measured words of each line that has any, by line id.
-    pub labels: Vec<(String, MeasuredLabel)>,
-    /// Each line's look, by line id.
-    pub lines: Vec<(String, LineLook)>,
-}
-
-/// What the host gives a flowchart's layout: the track engine.
-pub trait FlowchartHost {
-    /// Why the track engine could not lay the graph out.
-    type Error;
-
-    /// The graph laid out by the track engine.
-    fn track(
-        &self,
-        content: &Content,
-        measured: &Measured,
-    ) -> impl Future<Output = Result<Painted, Self::Error>>;
 }
 
 /// One shape's words, wrapped, and the width and height its box takes to hold them.
@@ -194,7 +155,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
         .iter()
         .filter_map(|node| node.parent.as_deref())
         .collect();
-    let labels: Vec<(String, MeasuredLabel)> = graph
+    let labels: indexmap::IndexMap<String, MeasuredLabel> = graph
         .content
         .edges
         .iter()
@@ -221,7 +182,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                     responsibility: node.responsibility.as_deref(),
                     drills: false,
                 };
-                let measured = measure::measure_node(node.clone(), &words, container);
+                let measured = measure::measure_node(node.facts(), &words, container);
                 return (node.id.clone(), measured);
             };
             let (lines, width, height) = shape_size(shape, &node.name);
@@ -229,7 +190,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
             let room = rooms.get(&node.id).copied().unwrap_or(0.0);
             let decision = shape == FlowchartShape::Decision;
             let measured = MeasuredNode {
-                node: node.clone(),
+                node: node.facts(),
                 width: if decision {
                     width + 2.0 * (SIDE_RUN + room)
                 } else {
@@ -261,6 +222,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
             nodes,
             labels,
             lines,
+            groups: None,
         },
         words,
     )
@@ -333,14 +295,14 @@ fn node_appearances(
 ///
 /// # Errors
 ///
-/// What the host's track engine failed with ([`FlowchartHost::track`]).
-pub async fn picture<H: FlowchartHost>(
+/// A solve the solver failed or answered unreadably.
+pub async fn picture<S: Solver>(
     request: FlowchartRequest,
-    host: &H,
-) -> Result<PaintRequest, H::Error> {
+    solver: &S,
+) -> Result<PaintRequest, String> {
     let graph = flowchart_of(&request.flows, &request.parts);
     let (measure, words) = measured(&graph);
-    let laid = laid_out(&graph.content, &measure, host).await?;
+    let laid = laid_out(&graph.content, &measure, solver).await?;
     let drawing = with_outlines(to_diamonds(laid, &graph), &graph);
     let next = LineAppearance {
         name: "Next".to_owned(),

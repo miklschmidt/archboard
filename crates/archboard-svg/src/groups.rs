@@ -61,7 +61,7 @@ fn subject(subject: &Subject, out: &mut Attributes) {
 }
 
 /// A palette colour's word, or the neutral one's.
-fn colour_word(color: Option<PaletteColor>) -> &'static str {
+pub(crate) fn colour_word(color: Option<PaletteColor>) -> &'static str {
     color.map_or("neutral", |color| word(&color))
 }
 

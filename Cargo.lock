@@ -8,6 +8,7 @@ version = "0.0.0"
 dependencies = [
  "archboard-layout",
  "archboard-scene",
+ "indexmap",
  "serde",
  "serde_json",
 ]
@@ -25,15 +26,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "archboard-renderer-wasm"
+name = "archboard-render"
 version = "0.0.0"
 dependencies = [
  "archboard-flows",
  "archboard-layout",
  "archboard-scene",
  "archboard-svg",
- "js-sys",
+ "indexmap",
  "serde",
+ "serde_json",
+ "ts-rs",
+]
+
+[[package]]
+name = "archboard-renderer-wasm"
+version = "0.0.0"
+dependencies = [
+ "archboard-layout",
+ "archboard-render",
+ "js-sys",
  "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -62,6 +74,8 @@ dependencies = [
  "archboard-scene",
  "archboard-text",
  "libm",
+ "serde",
+ "ts-rs",
 ]
 
 [[package]]

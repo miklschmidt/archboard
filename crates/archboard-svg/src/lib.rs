@@ -10,6 +10,7 @@ mod colour;
 mod definitions;
 mod glyphs;
 mod groups;
+mod key;
 mod legs;
 mod path;
 mod pulse;
@@ -18,6 +19,8 @@ mod write;
 mod xml;
 
 use std::collections::{BTreeMap, BTreeSet};
+
+pub use key::{AppliedAppearance, PictureKey, appearances};
 
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};

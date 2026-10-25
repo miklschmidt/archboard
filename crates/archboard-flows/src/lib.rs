@@ -5,9 +5,8 @@
 //!
 //! Every width and line break is the core's own
 //! (`archboard_scene::measure`). A flowchart is laid out by the track engine,
-//! which is the host's until the core holds it (TASK-520.04).
+//! as an architecture is (`archboard_layout::draw`).
 
 pub mod board;
 pub mod flowchart;
-mod routes;
 pub mod sequence;

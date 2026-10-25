@@ -18,9 +18,9 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+use archboard_layout::{Content, Edge, Node as GraphNode};
 use archboard_scene::drawing::Emphasis;
 use archboard_scene::request::FlowchartShape;
-use serde::{Deserialize, Serialize};
 
 use crate::board::{Flow, Message, Node, Step};
 
@@ -35,60 +35,6 @@ pub(super) const NEXT_KIND: &str = "next";
 const REPEAT: &str = "repeat";
 /// The line out of a loop once it is done.
 const DONE: &str = "done";
-
-/// One node of the graph, as the track engine reads a board's node.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphNode {
-    /// The node's id: a step's own id, or one of the picture's own for a
-    /// frame's terminal.
-    pub id: String,
-    /// Where it stands among the graph's nodes, in the order they were built.
-    pub order: f64,
-    /// The words the node shows.
-    pub name: String,
-    /// What it is drawn as: a flow's frame, a shape, or, for a message box, the kind of the
-    /// part that receives the message.
-    pub kind: String,
-    /// The id of the frame that holds it; absent for a frame.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub parent: Option<String>,
-    /// The line under its name, when it has one.
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub responsibility: Option<String>,
-}
-
-/// One line of the graph, as the track engine reads a board's relationship.
-#[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct GraphEdge {
-    /// The line's id, one of the picture's own.
-    pub id: String,
-    /// Where it stands among the graph's lines, in the order they were built.
-    pub order: f64,
-    /// The id of the node it leaves.
-    pub from: String,
-    /// The id of the node it enters.
-    pub to: String,
-    /// Its kind, which is always one step leading to the next.
-    pub kind: &'static str,
-    /// How loudly it is drawn.
-    pub emphasis: Emphasis,
-    /// What it says: an alternative's answer, or a loop's "repeat" or "done".
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-}
-
-/// The graph as a board's content, which the track engine lays out.
-#[derive(Clone, Debug, Serialize)]
-pub struct Content {
-    /// The frames, steps and terminals.
-    pub nodes: Vec<GraphNode>,
-    /// The lines between them.
-    pub edges: Vec<GraphEdge>,
-    /// No flows: a board's content carries the list, and the graph has none.
-    pub flows: [(); 0],
-    /// No walkthroughs, for the same reason.
-    pub walkthroughs: [(); 0],
-}
 
 /// Every flow of a reading as one flowchart graph.
 #[derive(Clone, Debug)]
@@ -117,7 +63,7 @@ struct Exit<'a> {
 /// The graph as it is built, and the frame the steps being built stand in.
 struct Building<'a> {
     nodes: Vec<GraphNode>,
-    edges: Vec<GraphEdge>,
+    edges: Vec<Edge>,
     shapes: BTreeMap<String, FlowchartShape>,
     subjects: Vec<String>,
     /// The variant's nodes, by id, for the parts a message runs between.
@@ -135,6 +81,8 @@ impl<'a> Building<'a> {
             kind,
             parent: Some(self.flow.clone()),
             responsibility,
+            groups: Vec::new(),
+            drills: false,
         });
     }
 
@@ -142,14 +90,15 @@ impl<'a> Building<'a> {
     fn link(&mut self, exits: &[Exit<'_>], to: &str) {
         for exit in exits {
             let order = self.edges.len();
-            self.edges.push(GraphEdge {
+            self.edges.push(Edge {
                 id: format!("{}>{to}#{order}", exit.from),
                 order: order as f64,
                 from: exit.from.clone(),
                 to: to.to_owned(),
-                kind: NEXT_KIND,
+                kind: NEXT_KIND.to_owned(),
                 emphasis: Emphasis::Normal,
                 label: exit.label.map(str::to_owned),
+                traffic: None,
             });
         }
     }
@@ -262,6 +211,8 @@ impl<'a> Building<'a> {
             kind: FLOW_KIND.to_owned(),
             parent: None,
             responsibility: flow.summary.clone(),
+            groups: Vec::new(),
+            drills: false,
         });
         self.subject(&flow.id);
         self.flow.clone_from(&flow.id);
@@ -304,8 +255,6 @@ pub(super) fn flowchart_of(flows: &[Flow], parts: &[Node]) -> Graph {
         content: Content {
             nodes: building.nodes,
             edges: building.edges,
-            flows: [],
-            walkthroughs: [],
         },
         shapes: building.shapes,
         subjects: building.subjects,

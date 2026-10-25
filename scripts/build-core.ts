@@ -86,7 +86,7 @@ try {
 		ARCHBOARD_CORE_SOURCE_HASH: hash,
 	});
 	const types = run(
-		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-scene"],
+		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-render"],
 		{},
 		"pipe",
 	);
