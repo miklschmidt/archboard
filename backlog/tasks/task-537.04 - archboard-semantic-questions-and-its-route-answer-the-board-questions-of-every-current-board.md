@@ -3,11 +3,11 @@ id: TASK-537.04
 title: >-
   archboard semantic questions and its route answer the board questions of every
   current board
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:24:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - design-questions
   - cli
@@ -26,11 +26,11 @@ The CLI is the default surface (ADR 0008). An agent that runs the survey step of
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard semantic questions answers the three board questions over every current board of the vault, with the boards, containers and parts behind each count
-- [ ] #2 A repeatable --board option narrows the boards
-- [ ] #3 The answer names the boards it read and the boards it skipped, with the reason
-- [ ] #4 A route answers the same reading, requires a vault, and the CLI and the pane parse one schema derived by one function
-- [ ] #5 The consumer skill teaches the command, and the evaluation inputs cover it
+- [x] #1 archboard semantic questions answers the three board questions over every current board of the vault, with the boards, containers and parts behind each count
+- [x] #2 A repeatable --board option narrows the boards
+- [x] #3 The answer names the boards it read and the boards it skipped, with the reason
+- [x] #4 A route answers the same reading, requires a vault, and the CLI and the pane parse one schema derived by one function
+- [x] #5 The consumer skill teaches the command, and the evaluation inputs cover it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,9 @@ Gate: bun run check fails only in the first module lane on Board viewer (track) 
 
 Adopted: Board persistence, Command dispatch and Command interface at TASK-537.04. On Archboard server routes it was restated as 'TASK-537.04 after TASK-539.01' (TASK-539.01 was adopted first); the code check diff for that name is empty, and its footprint against base 50244d6d9 names Design questions route as added and changed. The old TASK-537.04 there is shelved with that reason. Behind: Archboard (packages/board in 492900562), Live panes (application.ts mounts the design questions route, which that board does not draw) and Skill evaluation (scenario S20 in evals) stay true: the branch adds no import between packages, so the undrawn findings on Archboard predate it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic questions answers the three board questions over every current board, with the boards, containers and parts behind each count, narrowed by a repeatable --board, naming boards read and skipped with the reason. GET /api/vault/design-questions answers the same reading and requires a vault, and the CLI and the pane share one strict schema from one derivation. Routing now passes every --board to a command that reads it. On this vault: 36 pass-through entry points in 17 containers, 29 containers with no hidden part, 23 with no entry point. Verified by the board, CLI and route tests and the full gate. Adopted on four boards, the routes board restated after TASK-539.01. The installed skill copies need archboard install-skill.
+<!-- SECTION:FINAL_SUMMARY:END -->

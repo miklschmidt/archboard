@@ -3,11 +3,11 @@ id: TASK-538.01
 title: >-
   A proposal's Board tab says first what it changes about each container's
   interface
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:05:00Z'
-updated_date: '2026-10-25T19:18:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - compare
   - ui
@@ -25,11 +25,11 @@ The first slice of TASK-538. An interface change costs every caller, so ADR 0044
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On a variant read against another, the Board tab lists each container whose interface changed: entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost
-- [ ] #2 The list holds exactly the containers and parts that semantic compare lists as interface changes for the same two variants
-- [ ] #3 The list stands after the summary and before the counts of the comparison
-- [ ] #4 If no interface changed, the region says so, and the current variant shows no region
-- [ ] #5 Choosing a row picks the part, pointing at a row lights it, and no comparison status changes
+- [x] #1 On a variant read against another, the Board tab lists each container whose interface changed: entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost
+- [x] #2 The list holds exactly the containers and parts that semantic compare lists as interface changes for the same two variants
+- [x] #3 The list stands after the summary and before the counts of the comparison
+- [x] #4 If no interface changed, the region says so, and the current variant shows no region
+- [x] #5 Choosing a row picks the part, pointing at a row lights it, and no comparison status changes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,3 +54,9 @@ Built as planned, with these deviations:
 
 Footprint read against base 27103d10e (the parent of ae9b9d080) once TASK-537.01 was adopted, so its current is the proposal's parent. Named and changed: Render stage states, List interface changes. Changed but not named by this task: Resolve board meaning (board-document.ts in ae9b9d080), whose reading now holds every variant's content by id; that is how it works inside, and no relationship it draws changed. The other parts in that list were changed by TASK-539.02 (242261a9b) and TASK-538.02 (e57e8945b) and are read in their closings.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A proposal's Board tab lists first each container whose interface changed, with each part and how it moved, from the same compareInterfaces that semantic compare uses, after the summary and before the counts. A proposal that changed no interface says so, and the current variant shows no list. Rows pick and light their part and change no comparison status. Verified by semantic-board-interface-changes.test.tsx and the full gate. Adopted on Board viewer.
+<!-- SECTION:FINAL_SUMMARY:END -->

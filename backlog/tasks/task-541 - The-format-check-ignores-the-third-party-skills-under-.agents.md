@@ -1,10 +1,11 @@
 ---
 id: TASK-541
 title: The format check ignores the third-party skills under .agents
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:29:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - tooling
 dependencies: []
@@ -19,8 +20,8 @@ Commit 96e6d3ebb tracked third-party agent skills under `.agents/skills/` beside
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `bun run check` passes `format:check` without reformatting any third-party skill file
-- [ ] #2 The repository skills in `skills/` are still format-checked
+- [x] #1 `bun run check` passes `format:check` without reformatting any third-party skill file
+- [x] #2 The repository skills in `skills/` are still format-checked
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -28,3 +29,9 @@ Commit 96e6d3ebb tracked third-party agent skills under `.agents/skills/` beside
 <!-- SECTION:PLAN:BEGIN -->
 1. Add `.agents/**` to `fmt.ignorePatterns` in vite.config.ts beside `.claude/**`. 2. Run `bunx vp run format:check` and `bun run check`.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The format check ignores .agents/**, so third-party skills are not reformatted, and skills/ is still checked. Verified by format:check passing in the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-538.02
 title: A part picked in one pane is picked in the pane beside it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:06:00Z'
-updated_date: '2026-10-25T19:21:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - compare
   - ui
@@ -23,10 +23,10 @@ To compare two designs part by part, a person picks a part on one side and must 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 When both panes show the same board of the same vault, a pick in either pane picks the same part in the other, and letting go clears both
-- [ ] #2 Only the pane where the person picked reports the pick as made by hand
-- [ ] #3 A pane whose variant lacks the part names the variant that has it, and does not say that the part left the board
-- [ ] #4 A drill-down, another board or a presented walkthrough ends the link
+- [x] #1 When both panes show the same board of the same vault, a pick in either pane picks the same part in the other, and letting go clears both
+- [x] #2 Only the pane where the person picked reports the pick as made by hand
+- [x] #3 A pane whose variant lacks the part names the variant that has it, and does not say that the part left the board
+- [x] #4 A drill-down, another board or a presented walkthrough ends the link
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,3 +63,9 @@ Closing:
 
 After the gate found the dock test failing, c223a3023 moved the link derivation into the records state of usePanes (rules/application/pane-link.ts relinked), and use-pane-links.ts is gone. Footprint read again against base 814c0eedf: Application composition now reads as changed but not named, because e57e8945b gave the empty readings in workspace-port.ts their leave; inside only. The Linked panes description says where the links are derived. Code check diff for TASK-538.02 is still empty. Adopted on Board viewer and Browser application.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Two panes on one board of one vault are linked while neither presents a walkthrough. A pick in either is made in both, letting go clears both, and only the picking pane marks it as the person's. A drill-down or a move back lets the pick go in that pane only. A pane whose variant lacks the part names the variant beside that holds it. The links are derived in the records state of usePanes; deriving them during render broke the focus reports, which the dock browser test caught, and c223a3023 fixed it. Verified by linked-panes.test.tsx, pane-link.test.ts, the browser lanes and the full gate. Adopted on Board viewer and Browser application. Follow-up: TASK-538.03 links the view.
+<!-- SECTION:FINAL_SUMMARY:END -->

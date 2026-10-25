@@ -1,11 +1,11 @@
 ---
 id: TASK-539.06
 title: archboard check --code --exposed gives agents the exposed names
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:05:00Z'
-updated_date: '2026-10-25T19:24:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - code-check
   - cli
@@ -24,10 +24,10 @@ The CLI is the default surface (ADR 0008), so an agent in the survey or grilling
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 --exposed requires --code
-- [ ] #2 With --exposed, the JSON answer carries the exposed names of each judged container with the same caps as the pane, and the text output gives one line per container
-- [ ] #3 Without --exposed, the answer is unchanged
-- [ ] #4 The consumer skill teaches the flag, and the evaluation inputs cover it
+- [x] #1 --exposed requires --code
+- [x] #2 With --exposed, the JSON answer carries the exposed names of each judged container with the same caps as the pane, and the text output gives one line per container
+- [x] #3 Without --exposed, the answer is unchanged
+- [x] #4 The consumer skill teaches the flag, and the evaluation inputs cover it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,3 +48,9 @@ Built in 62b4073c6 (+ style 'format the code check route'). Wire: CLI appends ex
 
 Behind: Archboard (packages/code-intel in 42e6a1fed) and Skill evaluation (evals coverage) stay true; no board draws the --exposed option.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check --code --exposed asks the route for the exposed names and prints one line per container. --exposed needs --code, and without it the answer is unchanged. The consumer skill teaches it and the evaluation inputs cover it. Verified by check-code.test.ts and the full gate. No board draws the option.
+<!-- SECTION:FINAL_SUMMARY:END -->

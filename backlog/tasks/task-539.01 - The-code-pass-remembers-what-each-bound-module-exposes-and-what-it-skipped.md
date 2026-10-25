@@ -1,11 +1,11 @@
 ---
 id: TASK-539.01
 title: The code pass remembers what each bound module exposes, and what it skipped
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:24:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - code-check
 dependencies: []
@@ -22,13 +22,13 @@ A code pass reads each bound module (`module-reading.ts`) and drops the reading 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For each judged container, the remembered pass holds its module, root files, the exact count of exposed names and of names used outside, and each name with its file, its line, the files that pass it on, and its outside users with the part that holds each user
-- [ ] #2 The number of exposed names minus the names used outside equals the number of names that EXPOSED_UNUSED lists for the same container
-- [ ] #3 Long lists are capped with exact counts beside them
-- [ ] #4 Each remembered board reading carries the skips of that board and the skips that name no board
-- [ ] #5 A route answers one container from memory only and never starts a pass
-- [ ] #6 Without an opt-in, the answer of archboard check --code is unchanged
-- [ ] #7 A reading quotes symbols, paths and lines only, never other text of a file (ADR 0046)
+- [x] #1 For each judged container, the remembered pass holds its module, root files, the exact count of exposed names and of names used outside, and each name with its file, its line, the files that pass it on, and its outside users with the part that holds each user
+- [x] #2 The number of exposed names minus the names used outside equals the number of names that EXPOSED_UNUSED lists for the same container
+- [x] #3 Long lists are capped with exact counts beside them
+- [x] #4 Each remembered board reading carries the skips of that board and the skips that name no board
+- [x] #5 A route answers one container from memory only and never starts a pass
+- [x] #6 Without an opt-in, the answer of archboard check --code is unchanged
+- [x] #7 A reading quotes symbols, paths and lines only, never other text of a file (ADR 0046)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,3 +50,9 @@ Decisions: (1) A separate 'Exposure route' part bound to answerExposure was draw
 
 Adopted on Archboard server routes and Archboard server. Behind: Archboard (packages/code-intel in 31498e388 and 40ffe6b5b) stays true: no import between packages was added.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code pass remembers, for each judged container, its module, root files, exact counts of exposed and used names, and each name with file, line, via files and outside users with the parts that hold them, capped with exact counts. Exposed minus used equals what EXPOSED_UNUSED lists. Readings carry their skips, an exposure route answers one container from memory and never starts a pass, and without the opt-in the check answer is unchanged. Verified by interfaces.test.ts, code-findings-route.test.ts, check-code.test.ts and the full gate. Adopted on Archboard server and Archboard server routes.
+<!-- SECTION:FINAL_SUMMARY:END -->

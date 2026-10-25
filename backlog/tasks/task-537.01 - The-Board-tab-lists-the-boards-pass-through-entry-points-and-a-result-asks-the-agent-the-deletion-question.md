@@ -3,11 +3,11 @@ id: TASK-537.01
 title: >-
   The Board tab lists the board's pass-through entry points, and a result asks
   the agent the deletion question
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:03:00Z'
-updated_date: '2026-10-25T19:24:00Z'
+updated_date: '2026-10-25T19:25:00Z'
 labels:
   - design-questions
   - ui
@@ -27,12 +27,12 @@ It also adds the way a pane asks the agent a question. Today only the diagnostic
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On a board whose containers have pass-through entry points, the Board tab shows a Design questions region with the question, its count, and each result named by its container and part
-- [ ] #2 Choosing a result picks the part on the picture
-- [ ] #3 Ask the agent makes the pane's checkout active and sends one message that names the vault, the board, the variant and the part, and tells the agent to change nothing
-- [ ] #4 The ask control is absent on a page that has no agent, such as a recording page
-- [ ] #5 The answer type holds counts and lists only, so nothing in it can hold a score
-- [ ] #6 On Command interface, the region lists the 13 pass-through entry points of Commands
+- [x] #1 On a board whose containers have pass-through entry points, the Board tab shows a Design questions region with the question, its count, and each result named by its container and part
+- [x] #2 Choosing a result picks the part on the picture
+- [x] #3 Ask the agent makes the pane's checkout active and sends one message that names the vault, the board, the variant and the part, and tells the agent to change nothing
+- [x] #4 The ask control is absent on a page that has no agent, such as a recording page
+- [x] #5 The answer type holds counts and lists only, so nothing in it can hold a score
+- [x] #6 On Command interface, the region lists the 13 pass-through entry points of Commands
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,9 @@ Built as planned, with these deviations:
 
 Adopted on Board viewer and Browser application. Behind: Archboard (packages/board in f50c64dc3) stays true: no import between packages was added.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Board tab lists the entry points that only pass one call on, each named by its container and part. Choosing one picks it, and Ask the agent activates the pane's checkout and sends one question that names the vault, board, variant and part and says to change nothing. A page with no agent shows no ask control. The answer holds counts and lists only. Verified by semantic-board-design-questions.test.tsx, ask-from-pane.test.tsx and the full gate. Command interface had 13 in Commands at the time; it has 14 since TASK-537.04 added the Questions command, which also passes one call on. Adopted on Board viewer and Browser application.
+<!-- SECTION:FINAL_SUMMARY:END -->
