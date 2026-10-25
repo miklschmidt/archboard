@@ -223,12 +223,12 @@
 			{
 				"name": "presentation-box-in",
 				"value": "220ms",
-				"purpose": "A presented walkthrough's box arrives once, rising 10px as it fades in (PRESENTATION_BOX_IN_MS)."
+				"purpose": "A presented walkthrough's box arrives once, rising 10px as it fades in (PRESENTATION_MS.boxIn)."
 			},
 			{
 				"name": "presentation-box-step",
 				"value": "520ms",
-				"purpose": "A presented walkthrough's box hands one step to the next, with transform and opacity only (PRESENTATION_BOX_STEP_MS). The rail's paler wake settles last, at 1.3 times this pace."
+				"purpose": "A presented walkthrough's box hands one step to the next, with transform and opacity only (PRESENTATION_MS.boxStep). The rail's paler wake settles last, at 1.3 times this pace."
 			}
 		],
 		"breakpoints": [
