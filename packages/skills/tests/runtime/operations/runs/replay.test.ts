@@ -90,8 +90,7 @@ beforeEach(() => {
 		BOARD,
 		CHECKED,
 	);
-	keepTalk({ ...kept, directory: join(home, "talk") });
-	frames = framesOf(kept.talk);
+	frames = framesOf(keepTalk({ ...kept, directory: join(home, "talk") }));
 	mkdirSync(join(home, "out"));
 });
 

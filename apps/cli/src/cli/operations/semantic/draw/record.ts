@@ -17,7 +17,6 @@ import type { SemanticWalkthrough } from "@archboard/board/content";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
-	type RecordingState,
 } from "@archboard/walkthrough/recording";
 import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
@@ -52,6 +51,9 @@ import {
 	UNNAMED_VARIANT,
 	askedVariant,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+
+/** What the recording page says about its recording, as the recorder reports it. */
+type RecordingState = Parameters<Parameters<typeof recordWalkthrough>[0]["onProgress"]>[0];
 
 const THEMES = DiagramThemeSchema.options;
 /** A video cannot follow its viewer's theme, so it is drawn dark unless asked otherwise (TASK-483). */

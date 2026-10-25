@@ -4,7 +4,6 @@
 import { accessSync, constants, statSync } from "node:fs";
 import { dirname } from "node:path";
 
-import type { RecordingContainer } from "@archboard/walkthrough/recording";
 import { recordingContainerOf } from "@archboard/walkthrough/recorder";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
@@ -36,7 +35,7 @@ const renderFailedRefusal = {
  * @returns The container.
  * @throws {CliUsageError} When the name ends in neither .mp4 nor .webm.
  */
-function containerOf(out: string): RecordingContainer {
+function containerOf(out: string): NonNullable<ReturnType<typeof recordingContainerOf>> {
 	const container = recordingContainerOf(out);
 	if (container === null) {
 		throw new CliUsageError(`--out ${out} must name a .mp4 or .webm file.`);

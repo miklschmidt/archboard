@@ -21,7 +21,6 @@ import { join, resolve } from "node:path";
 import { keepTalk, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { parseSemanticBoard } from "@archboard/board/document";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
-import { TalkSchema, type Talk } from "@archboard/walkthrough/talk";
 
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -37,6 +36,9 @@ const STEP_TWO_FRAME = 12;
 const FRAMES = 60;
 /** The Blocks talk ends after it shows step two. */
 const BLOCKS_FRAMES = STEP_TWO_FRAME + 1;
+
+/** A talk of the board, as keepTalk takes it. */
+type KeptTalk = Omit<Parameters<typeof keepTalk>[0], "voice" | "directory">;
 
 /**
  * A voice that speaks and falls silent by turns, a third of a second each: a tone at a quarter of
@@ -79,17 +81,15 @@ function talkOf(
 	policy: unknown,
 	layout: LayoutEngineName,
 	frames = FRAMES,
-): Talk {
+): KeptTalk {
 	const parsed = parseSemanticBoard(document);
 	if (!parsed.ok) throw new Error(parsed.problem);
 	const { board } = parsed;
 	const variant = board.variants.find((entry) => entry.id === board.current)!;
 	recordedVariant = variant.id;
 	const walkthrough = variant.content.walkthroughs![0]!;
-	return TalkSchema.parse({
-		format: "archboard-talk",
-		version: 1,
-		recordedAt: "2026-09-30T10:00:00.000Z",
+	return {
+		recordedAt: new Date("2026-09-30T10:00:00.000Z"),
 		language: "en",
 		theme: "light",
 		layout,
@@ -100,24 +100,21 @@ function talkOf(
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			steps: 2,
 		},
-		audio: {
-			file: "voice.wav",
-			sampleRate: 48_000,
-			channels: 1,
+		log: {
 			samples: frames * 1600,
 			baseLatencyMs: 0,
+			events: [
+				{ kind: "drawn", at: 0, version: board.version },
+				{ kind: "step", at: 3200, beat: 0 },
+				{ kind: "said", at: 4800, itemId: "a1", text: "Every request enters", final: false },
+				{ kind: "said", at: 8000, itemId: "a1", text: "Every request enters here.", final: true },
+				{ kind: "step", at: STEP_TWO_FRAME * 1600, beat: 1 },
+				{ kind: "end", at: frames * 1600 },
+			],
 		},
-		events: [
-			{ kind: "drawn", at: 0, version: board.version },
-			{ kind: "step", at: 3200, beat: 0 },
-			{ kind: "said", at: 4800, itemId: "a1", text: "Every request enters", final: false },
-			{ kind: "said", at: 8000, itemId: "a1", text: "Every request enters here.", final: true },
-			{ kind: "step", at: STEP_TWO_FRAME * 1600, beat: 1 },
-			{ kind: "end", at: frames * 1600 },
-		],
 		document,
-		policy,
-	});
+		policy: policy as KeptTalk["policy"],
+	};
 }
 
 /**
@@ -128,17 +125,15 @@ function talkOf(
  * @param against Whether the talk is read against the variant below the proposal.
  * @returns The talk.
  */
-function proposalTalk(served: { document: unknown; policy: unknown }, against: boolean): Talk {
+function proposalTalk(served: { document: unknown; policy: unknown }, against: boolean): KeptTalk {
 	const parsed = parseSemanticBoard(served.document);
 	if (!parsed.ok) throw new Error(parsed.problem);
 	const { board } = parsed;
 	const proposal = board.variants.find((entry) => entry.name === "one")!;
 	againstVariant = board.variants.find((entry) => entry.name === "base")!.id;
 	const walkthrough = proposal.content.walkthroughs![0]!;
-	return TalkSchema.parse({
-		format: "archboard-talk",
-		version: 1,
-		recordedAt: "2026-09-30T10:00:00.000Z",
+	return {
+		recordedAt: new Date("2026-09-30T10:00:00.000Z"),
 		language: "en",
 		theme: "light",
 		board: {
@@ -149,21 +144,18 @@ function proposalTalk(served: { document: unknown; policy: unknown }, against: b
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			steps: 1,
 		},
-		audio: {
-			file: "voice.wav",
-			sampleRate: 48_000,
-			channels: 1,
+		log: {
 			samples: 12 * 1600,
 			baseLatencyMs: 0,
+			events: [
+				{ kind: "drawn", at: 0, version: board.version },
+				{ kind: "step", at: 3200, beat: 0 },
+				{ kind: "end", at: 12 * 1600 },
+			],
 		},
-		events: [
-			{ kind: "drawn", at: 0, version: board.version },
-			{ kind: "step", at: 3200, beat: 0 },
-			{ kind: "end", at: 12 * 1600 },
-		],
 		document: served.document,
-		policy: served.policy,
-	});
+		policy: served.policy as KeptTalk["policy"],
+	};
 }
 
 beforeAll(async () => {
@@ -228,16 +220,14 @@ beforeAll(async () => {
 		body: { board: BOARD, session: "replay" },
 	});
 	expect(discarded.status).toBe(200);
-	talkDirectory = keepTalk({
-		talk,
-		voice: voiceOf(talk.audio.samples),
-		directory: join(root, "talk"),
-	});
+	talkDirectory = join(root, "talk");
+	keepTalk({ ...talk, voice: voiceOf(talk.log.samples), directory: talkDirectory });
 	const blocksTalk = talkOf(served.body!.board, policy.body, "blocks", BLOCKS_FRAMES);
-	blocksTalkDirectory = keepTalk({
-		talk: blocksTalk,
-		voice: voiceOf(blocksTalk.audio.samples),
-		directory: join(root, "blocks-talk"),
+	blocksTalkDirectory = join(root, "blocks-talk");
+	keepTalk({
+		...blocksTalk,
+		voice: voiceOf(blocksTalk.log.samples),
+		directory: blocksTalkDirectory,
 	});
 	await keepStackedTalks(request);
 	ffmpeg = prepareFakeFfmpeg(root).executablePath;
@@ -288,16 +278,10 @@ async function keepStackedTalks(request: ReturnType<typeof createRequester>): Pr
 	const policy = (await request("/api/vault/check")).body;
 	const from = { document: served.body!.board, policy };
 	const voice = voiceOf(12 * 1600);
-	againstTalkDirectory = keepTalk({
-		talk: proposalTalk(from, true),
-		voice,
-		directory: join(root, "against-talk"),
-	});
-	plainTalkDirectory = keepTalk({
-		talk: proposalTalk(from, false),
-		voice,
-		directory: join(root, "plain-talk"),
-	});
+	againstTalkDirectory = join(root, "against-talk");
+	keepTalk({ ...proposalTalk(from, true), voice, directory: againstTalkDirectory });
+	plainTalkDirectory = join(root, "plain-talk");
+	keepTalk({ ...proposalTalk(from, false), voice, directory: plainTalkDirectory });
 	const discarded = await request("/api/semantic-boards/discard", {
 		method: "POST",
 		doing: "discarding the replayed stack",

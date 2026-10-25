@@ -23,7 +23,9 @@ import {
 	TALK_VERSION,
 	TALK_VOICE_FILE,
 	TalkSchema,
+	talkFrom,
 	type Talk,
+	type TalkParts,
 } from "#shared/protocol/talk.ts";
 
 /** The file that holds a talk's events, board and policy. */
@@ -389,24 +391,22 @@ function writeTalk(options: {
 }
 
 /**
- * Keep a talk in a directory somebody named: written whole, and never pruned.
- * @param options The talk, its voice and its directory.
- * @param options.talk The talk; its `audio.samples` is how long the voice is.
- * @param options.voice The voice's samples: 16-bit mono at the talk's sample rate.
+ * Keep a talk of its parts in a directory somebody named: written whole, and never pruned.
+ * @param options What the talk is made of, its voice and its directory.
+ * @param options.voice The voice's samples: 16-bit mono at the talk's sample rate, as many as the log says.
  * @param options.directory The directory, which does not exist yet.
- * @returns The directory it was written to.
+ * @returns The talk that was kept.
+ * @throws {Error} When the parts are not a talk that can be rendered.
  * @throws {TalkFileError} When the voice is not the length the talk says, or the directory is taken.
  */
-function keepTalk(options: {
-	readonly talk: Talk;
-	readonly voice: Int16Array;
-	readonly directory: string;
-}): string {
-	return writeTalk({
-		talk: options.talk,
-		voice: options.voice,
-		place: askedTalkPlace(options.directory),
-	});
+function keepTalk(
+	options: TalkParts & { readonly voice: Int16Array; readonly directory: string },
+): Talk {
+	const { voice, directory, ...parts } = options;
+	const made = talkFrom(parts);
+	if (!made.success) throw made.error;
+	writeTalk({ talk: made.data, voice, place: askedTalkPlace(directory) });
+	return made.data;
 }
 
 export {
