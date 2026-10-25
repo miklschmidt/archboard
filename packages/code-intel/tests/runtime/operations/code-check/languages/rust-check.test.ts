@@ -172,16 +172,16 @@ test("a call reaches a module of another crate through a path from the crate's n
 				piece.symbol,
 			]);
 	expect(evidenceOf("pMoney")).toEqual([
-		["pCart", "call", "resolved", CHECKOUT, "ledger.money.Money.from_cents"],
+		["pCart", "call", "resolved", CHECKOUT, "ledger.money.Money"],
 	]);
 	expect(evidenceOf("pLed")).toEqual([
 		["pShop", "build-dependency", "resolved", "crates/shop/Cargo.toml", "ledger"],
-		// `ledger::cents!` is the macro the library exports from its root.
-		["pCart", "call", "resolved", CHECKOUT, "ledger.cents"],
+		// A path from the crate's name reaches the crate's root.
+		["pCart", "call", "resolved", CHECKOUT, "ledger"],
 	]);
 	const turned = outcome.findings.find((each) => each.subject?.id === "e3");
 	expect(turned?.evidence?.map((piece) => [piece.from, piece.to, piece.symbol])).toEqual([
-		["pEntry", "pMoney", "Money.from_cents"],
+		["pEntry", "pMoney", "Money"],
 	]);
 });
 

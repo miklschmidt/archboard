@@ -1,9 +1,11 @@
 // The Rust adapter (ADR 0046, TASK-540): the code facts of one file from the
 // captures of `rust.scm`.
 //
-// A use of a path is one reference for the whole path, spelled through `.`
-// from its first name: `crate::ledger::post` is `crate.ledger.post`,
-// `Ledger::new` is `Ledger.new` and `Vec::<u8>::new` is `Vec.new`. A path
+// A use of a path is spelled through `.` from its first name:
+// `crate::ledger::post` is `crate.ledger.post`, `Ledger::new` is `Ledger.new`
+// and `Vec::<u8>::new` is `Vec.new`. It is also a use of each leading part of
+// the path that names something, as TypeScript reads `a.b.c`: `Ledger::new`
+// uses `Ledger`, and `crate::ledger::post` uses `crate.ledger`. A path
 // starts with `crate`, with `super` where it leads above the file's module, or
 // with a name; `self::` and the `super::` of an inline module are read from
 // the file's module, as an import is (rust-imports.ts), and `Self` is the type
@@ -287,20 +289,32 @@ function use(symbol: string, node: Node, typeOnly: boolean): Reference {
 }
 
 /**
- * The use a captured name makes, read once for its whole path.
+ * The uses a captured name makes, read once for its whole path: one for each
+ * of the path's names, spelled from its first, as TypeScript reads `a.b.c` as
+ * `a`, `a.b` and `a.b.c`. `Item::Definitions { .. }` uses `Item`, and
+ * `Paragraph::new(..)` calls through `Paragraph`.
  * @param node The name.
  * @param context The file's bound names and spans.
  * @param seen The paths already read, which this adds to.
- * @returns The use, or undefined where the name is no use.
+ * @returns The uses, none where the name is no use.
  */
-function pathReference(node: Node, context: UseContext, seen: Set<number>): Reference | undefined {
+function pathReferences(node: Node, context: UseContext, seen: Set<number>): Reference[] {
 	const whole = wholePath(node);
-	if (seen.has(whole.id)) return undefined;
+	if (seen.has(whole.id)) return [];
 	seen.add(whole.id);
 	const bound = context.bound.has(node.id) && whole.id === node.id;
-	if (bound || hidden(whole, context)) return undefined;
-	const symbol = pathSymbol(whole, node);
-	return isUse(symbol) ? use(symbol, whole, context.types.holds(whole.startIndex)) : undefined;
+	if (bound || hidden(whole, context)) return [];
+	const typeOnly = context.types.holds(whole.startIndex);
+	return pathSymbols(whole, node).map((symbol) => use(symbol, whole, typeOnly));
+}
+
+/**
+ * The spelling of each leading part of a path that names something: `a`, `a.b` and `a.b.c`.
+ * @param names The path's names, as the file's module reads them.
+ * @returns The spellings, shortest first.
+ */
+function prefixes(names: readonly string[]): string[] {
+	return names.map((_, index) => names.slice(0, index + 1).join(".")).filter(isUse);
 }
 
 /**
@@ -316,16 +330,17 @@ function hidden(node: Node, context: UseContext): boolean {
 }
 
 /**
- * How a path is spelled: its names as the file's module reads them, or its
- * last name after a `.` where it starts at something with no name.
+ * How a path and each leading part of it are spelled: its names as the file's
+ * module reads them, or its last name after a `.` where it starts at
+ * something with no name.
  * @param whole The path.
  * @param node The captured name.
- * @returns The spelling.
+ * @returns The spellings, shortest first.
  */
-function pathSymbol(whole: Node, node: Node): string {
+function pathSymbols(whole: Node, node: Node): string[] {
 	const names = pathNames(whole);
-	if (names !== undefined) return readPath(names, whole).join(".");
-	return `.${whole.childForFieldName("name")?.text ?? node.text}`;
+	if (names !== undefined) return prefixes(readPath(names, whole));
+	return [`.${whole.childForFieldName("name")?.text ?? node.text}`];
 }
 
 /**
@@ -359,11 +374,17 @@ function tokenReferences(tree: Node, context: UseContext): Reference[] {
 	if (context.skip.holds(tree.startIndex) || context.unparsed.holds(tree.startIndex)) return [];
 	return tokenUses(tree).flatMap((found): Reference[] => {
 		const last = found.path.at(-1) ?? "";
-		const symbol = found.member ? `.${last}` : readPath(found.path, found.node).join(".");
-		if (!isUse(symbol)) return [];
+		const symbols = found.member ? [`.${last}`] : prefixes(readPath(found.path, found.node));
 		const line = found.node.startPosition.row + 1;
 		const way = found.called ? {} : { asValue: true as const };
-		return [{ symbol, line, via: "code", kind: "call", typeOnly: false, ...way }];
+		return symbols.map((symbol) => ({
+			symbol,
+			line,
+			via: "code",
+			kind: "call",
+			typeOnly: false,
+			...way,
+		}));
 	});
 }
 
@@ -496,7 +517,7 @@ function rustFacts(tree: Tree, grammar: Grammar): RustFacts {
 				],
 	);
 	const written = [
-		...captured.reference.flatMap((node) => pathReference(node, context, seen) ?? []),
+		...captured.reference.flatMap((node) => pathReferences(node, context, seen)),
 		...captured.member.flatMap((node) => memberReference(node, context) ?? []),
 		...captured.tokens.flatMap((node) => tokenReferences(node, context)),
 		...environment,
