@@ -10,7 +10,7 @@ use crate::geometry::{Point, Rect};
 use crate::js;
 use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
-use crate::paint::design::{CARD_THICKNESS, PILL_FONT};
+use crate::paint::design::{CARD_THICKNESS, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, polygon_path};
 use crate::paint::shadow::{SHADOW_REACH, polygon_shadow};
@@ -23,8 +23,6 @@ use crate::scene::{
     SubjectKind, Text, Token,
 };
 
-const SHAPE_TEXT_SIZE: f64 = 11.0;
-const SHAPE_TEXT_LINE: f64 = 14.0;
 const CORNER: f64 = 5.0;
 const END_SIDES: u32 = 16;
 
