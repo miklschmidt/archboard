@@ -3,8 +3,8 @@ import { describe, expect, test } from "bun:test";
 
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
 import {
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMESPACE,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
 	COORDINATOR_EFFORT,
@@ -152,7 +152,7 @@ describe("coordinator model and literal profile", () => {
 				historyMode: "paginated",
 				sessionStartSource: "startup",
 				threadSource: "test-host",
-				dynamicTools: [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE],
+				dynamicTools: [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE],
 				experimentalRawEvents: false,
 			}),
 		);

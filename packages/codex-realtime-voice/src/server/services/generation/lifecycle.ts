@@ -27,7 +27,7 @@ import {
 } from "#server/services/dynamic-tools/routing.ts";
 
 /** The one owner name every Codex workbench snapshot reports itself under. */
-const CODEX_WORKBENCH_OWNER = "archboard-server-codex-workbench" as const;
+const CODEX_WORKBENCH_OWNER = "codex-realtime-voice-workbench" as const;
 
 /** Where the workbench owner is in its life. */
 type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";

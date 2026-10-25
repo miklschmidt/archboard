@@ -23,7 +23,7 @@ import {
 } from "#runtime/services/thread-context/delivery-guards.ts";
 import type { DeliveryState } from "#runtime/services/thread-context/delivery-state.ts";
 import {
-	canonicalSemanticCursorToken,
+	canonicalContextCursorToken,
 	eventId,
 	eventKey,
 } from "#runtime/services/thread-context/event-identity.ts";
@@ -536,7 +536,7 @@ function createUnsubscribedCodexThreadContextDelivery(
 }
 
 export {
-	canonicalSemanticCursorToken,
+	canonicalContextCursorToken,
 	createCodexThreadContextDelivery,
 	createUnsubscribedCodexThreadContextDelivery,
 };

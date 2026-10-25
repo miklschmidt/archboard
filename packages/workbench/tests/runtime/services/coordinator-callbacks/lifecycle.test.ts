@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { archboardContextOf } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import {
 	CALLBACK_BUFFER_LIMIT,
 	createCodexCoordinatorCallbacks,
@@ -71,11 +72,10 @@ describe("coordinator callback lifecycle", () => {
 			pane: { ...base.pane, agentSwitch: { from: "Payments", by: null } },
 		});
 		deliveries.push(await h.callbacks.enqueue(moved));
-		const sentences = deliveries.flatMap(({ callback }) =>
-			callback?.kind === "semantic" && callback.semantic.news !== null
-				? [callback.semantic.news.sentence]
-				: [],
-		);
+		const sentences = deliveries.flatMap(({ callback }) => {
+			const news = callback?.kind === "host_context" ? archboardContextOf(callback)?.news : null;
+			return news === null || news === undefined ? [] : [news.sentence];
+		});
 
 		expect(new Set(h.realtimeRequests.map((request) => request.channel))).toEqual(
 			new Set(["speech"]),
