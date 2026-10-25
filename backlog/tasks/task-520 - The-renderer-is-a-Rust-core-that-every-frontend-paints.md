@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T19:53:00Z'
+updated_date: '2026-10-25T20:07:00Z'
 labels:
   - renderer
   - performance
@@ -53,4 +53,6 @@ Left on purpose:
 - Scene RELATIONSHIP_UNDRAWN: every painter helper builds scene values; the board keeps Scene as the product of the two grammar painters, and eleven lines from helpers would say nothing new.
 - Crossing pass CALLER_UNDRAWN: the flowchart is the layout's second caller, drawn on Semantic renderer (Flowchart -> Layout engines); Renderer layout follows the architecture render.
 - Board layout EXPOSED_UNUSED: archboard-layout's lib.rs re-exports InProcess (used only by tests) and Laying, and nothing outside the crate uses either. A code matter, not a board one.
+
+Pre-push review (2026-10-25): twelve Codex gpt-6-astra reviewers at xhigh, eight scopes (router and text, Blocks, Track, layout core, scene and SVG, flows and render, TypeScript host, tooling) and four boundaries (WASM host contract, scene to painters, crate interfaces, core build and staleness), then a second round for the SVG path left in the scene and for WASM panics. Their fixes are merged with every drawing byte-equal: among them exponential container bounds in Track, quadratic route separation and long-word wrapping, paired solves that hid an error, renders left pending by a host that throws or by a Rust panic (one CoreGuard in the generated glue now rejects them with CORE_PANIC and refuses reuse), the browser refusing a stale core, CI building the core for macOS, and the scene no longer spelling SVG paths. Two Track faults that the TASK-520.08 adoption exposed (a cycle closed through a frame, a gutter between containers) are fixed and recorded as layout-rules section 56; 8 of 2,344 current drawings changed, both views better on the ADR 0039 measures except that Renderer layout's Responsibilities page grew. Full gate on the merged branch: exit 0 in every lane.
 <!-- SECTION:NOTES:END -->
