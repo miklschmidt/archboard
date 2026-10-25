@@ -4,7 +4,7 @@ import { createDynamicAuthorityTokenIssuer } from "#runtime/rules/dynamic-tools/
 import { type DynamicToolApprovalRequest } from "#runtime/protocol/dynamic-tools/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/codex-realtime-voice/runtime";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@archboard/timing";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import {
 	createIdentityAuthorities,
 	IdentityValidationError,

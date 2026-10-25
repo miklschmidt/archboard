@@ -5,7 +5,7 @@ import {
 	type SpokenApprovalSnapshot,
 } from "@archboard/codex-realtime-voice/runtime";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "@archboard/codex-realtime-voice/realtime";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
