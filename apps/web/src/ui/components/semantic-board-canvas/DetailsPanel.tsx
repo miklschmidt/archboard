@@ -2,7 +2,8 @@
 // reader asks: what it is (its title, the line it is responsible for and the
 // longer account), where it stands against the variant it is read against (only
 // in a comparison), for a part that holds parts what it offers the parts outside
-// it (`ContainerInterface`), what it is wired to, and how it has changed in code
+// it (`ContainerInterface`) and what its code exposes (`ExposedNames`), what it
+// is wired to, and how it has changed in code
 // (`PartHistory`). At the foot are the ways to go deeper (`GoDeeper`).
 //
 // It is the selection tab of the pane's sidebar, so it has the sidebar's one
@@ -16,6 +17,7 @@ import type { SemanticVariant } from "@archboard/board/document";
 import type { VariantContent } from "@archboard/board/content";
 import { KindIcon, RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
+import { ExposedNames } from "#ui/components/semantic-board-canvas/ExposedNames.tsx";
 import { GoDeeper } from "#ui/components/semantic-board-canvas/GoDeeper.tsx";
 import { PartHistory } from "#ui/components/semantic-board-canvas/PartHistory.tsx";
 import {
@@ -316,6 +318,9 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 					look={props.look}
 					onPick={props.onPick}
 				/>
+				{props.on !== null && (
+					<ExposedNames node={node} content={props.held.content} on={props.on} />
+				)}
 				<SidebarRegion slot="semantic-inspector-wiring">
 					<Relationships
 						content={props.held.content}

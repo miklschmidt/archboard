@@ -9,6 +9,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { BOARD_CACHE_MS } from "@archboard/timing";
 import {
 	fetchSemanticBoards,
+	type ExposureSite,
+	type SemanticBoardEntry,
 	type SemanticRenderRequest,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
@@ -20,6 +22,171 @@ import {
 import { boardsListed } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
 import { boardReads } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
 import { pictureSource } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
+import { readAgain } from "#ui/clients/semantic-board-canvas/reads/read-again.ts";
+
+/** The one root every semantic resource hangs under, so a sweep can find it. */
+const SEMANTIC_KEY = "semantic-board";
+
+/** The cache keys, spelled once. */
+const semanticBoardKeys = {
+	/** Everything this module caches. */
+	all: [SEMANTIC_KEY] as const,
+	/**
+	 * A vault's checked policy and diagnostics, which every picture of it is drawn under.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	vaultCheck: (vault: string) => ["vault-check", vault] as const,
+	/**
+	 * What the last code pass found on each board of a vault it read, as the server remembers it.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	codeFindings: (vault: string) => ["code-findings", vault] as const,
+	/**
+	 * What one container exposed in the pass that ran at one time: a new pass
+	 * is a new key, so its names are read again and nothing is read on a timer.
+	 * @param vault The vault.
+	 * @param at The board, variant and container.
+	 * @param checkedAt When the pass ran.
+	 * @returns Its cache key.
+	 */
+	exposure: (vault: string, at: ExposureSite, checkedAt: string) =>
+		["code-findings", vault, "exposure", at.board, at.variant, at.container, checkedAt] as const,
+	/**
+	 * Where one variant of one board changes in code, at one version of the
+	 * board. Under a root of its own, so no sweep of the board's pictures or
+	 * documents asks Git again.
+	 * @param on The board, the variant by id and the version on screen.
+	 * @returns Its cache key.
+	 */
+	locality: (on: ReadingOnScreen) =>
+		["locality", on.vault, on.board, on.variant, on.version] as const,
+	/** Every vault's semantic boards. */
+	allBoards: [SEMANTIC_KEY, "boards"] as const,
+	/**
+	 * One vault's semantic boards.
+	 * @param vault The vault.
+	 * @returns Its cache key.
+	 */
+	boards: (vault: string) => [SEMANTIC_KEY, "boards", vault] as const,
+	/** Every drawing of every board of every vault. */
+	renders: [SEMANTIC_KEY, "render"] as const,
+	/**
+	 * Every drawing of one vault: what its policy changing makes stale.
+	 * @param vault The vault.
+	 * @returns Its render prefix.
+	 */
+	rendersIn: (vault: string) => [SEMANTIC_KEY, "render", vault] as const,
+	/** Every board's own document, in every vault. */
+	documents: [SEMANTIC_KEY, "document"] as const,
+	/**
+	 * Every drawing of one board, whichever variant and view it was asked in.
+	 * This is the prefix a board's own change invalidates: the version moved for
+	 * the whole board, so no picture of it is current any more.
+	 * @param vault The vault the board is in.
+	 * @param board The board name.
+	 * @returns Its render prefix.
+	 */
+	boardRenders: (vault: string, board: string) => [SEMANTIC_KEY, "render", vault, board] as const,
+	/**
+	 * One board's own document, which inspection reads for what a picture does
+	 * not carry. It is the same versioned board the drawing is of, so a change
+	 * announcement makes both stale and has to invalidate both.
+	 * @param vault The vault the board is in.
+	 * @param board The board name.
+	 * @returns Its cache key.
+	 */
+	document: (vault: string, board: string) => [SEMANTIC_KEY, "document", vault, board] as const,
+	/**
+	 * One drawing: a vault, a board, a variant and a view. Not a theme: a picture
+	 * paints with the page's colour tokens, so one picture serves both themes and
+	 * a theme switch asks for nothing.
+	 * @param request What was asked for.
+	 * @returns Its cache key.
+	 */
+	render: (request: SemanticRenderRequest) =>
+		[
+			SEMANTIC_KEY,
+			"render",
+			request.vault,
+			request.board,
+			request.variant ?? "",
+			request.view ?? "",
+			comparisonKey(request),
+			request.layout ?? DEFAULT_LAYOUT_ENGINE,
+		] as const,
+};
+
+/**
+ * The version a cached document or picture is of, when it says.
+ * @param data What the cache holds.
+ * @returns The version, or nothing.
+ */
+function versionOf(data: unknown): number | undefined {
+	if (typeof data !== "object" || data === null || !("version" in data)) return undefined;
+	return typeof data.version === "number" ? data.version : undefined;
+}
+
+/**
+ * Whether one cached reading is of another version than the listing says its board is at.
+ * @param asked The board name the reading was asked by.
+ * @param data What the cache holds for it.
+ * @param boards The boards the server lists, with their versions.
+ * @returns True when both say a version and the two differ.
+ */
+function readingMoved(
+	asked: string,
+	data: unknown,
+	boards: readonly SemanticBoardEntry[],
+): boolean {
+	const held = versionOf(data);
+	const listed = boards.find(
+		(entry) => sameBoardName(asked, entry.key) || sameBoardName(asked, entry.name),
+	)?.version;
+	return held !== undefined && listed !== undefined && listed !== held;
+}
+
+/**
+ * Read again every board of one vault whose cached document or picture is of
+ * another version than the one the server lists.
+ *
+ * A pane hears of a write only to a board of the vault it is in, so nothing
+ * tells this tab about a vault none of its panes is in: a board drawn ahead from
+ * the navigator's listing, or left behind when a pane moved to another checkout.
+ * Without this its old picture would be shown when somebody opens it.
+ *
+ * The readings are marked stale at once, so that the drawing ahead that follows
+ * this listing draws them again rather than keeping them.
+ * @param client The tab's cache.
+ * @param vault The vault.
+ * @param boards The boards the server lists there, with their versions.
+ */
+function readMovedBoardsAgain(
+	client: QueryClient,
+	vault: string,
+	boards: readonly SemanticBoardEntry[],
+): void {
+	const cached = client.getQueryCache();
+	const moved = new Set(
+		[
+			...cached.findAll({ queryKey: [...semanticBoardKeys.documents, vault] }),
+			...cached.findAll({ queryKey: semanticBoardKeys.rendersIn(vault) }),
+		].flatMap(({ queryKey: [, , , asked], state }) =>
+			typeof asked === "string" && readingMoved(asked, state.data, boards) ? [asked] : [],
+		),
+	);
+	for (const board of moved) {
+		const queryKeys = [
+			semanticBoardKeys.document(vault, board),
+			semanticBoardKeys.boardRenders(vault, board),
+		];
+		for (const queryKey of queryKeys) {
+			void client.invalidateQueries({ queryKey, refetchType: "none" });
+		}
+		void readAgain(client, queryKeys);
+	}
+}
 
 /**
  * One vault's semantic boards.
@@ -202,6 +369,31 @@ function codeFindingsQuery(vault: string) {
 }
 
 /**
+ * What one container exposed in the last pass that judged it (TASK-539.01):
+ * asked when a person picks the container out, from the server's memory. The
+ * pass time is in the key, so a newer pass reads again; nothing else does.
+ * @param vault The vault.
+ * @param at The board, variant and container.
+ * @param checkedAt When the pass that the polled findings name ran.
+ * @returns The query's options.
+ */
+function exposureQuery(vault: string, at: ExposureSite, checkedAt: string) {
+	return queryOptions({
+		queryKey: semanticBoardKeys.exposure(vault, at, checkedAt),
+		/**
+		 * Read the remembered exposure.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The reading, or null.
+		 */
+		queryFn: (context) => boardReads().exposure(vault, at, context.signal),
+		staleTime: Number.POSITIVE_INFINITY,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+		retry: false,
+	});
+}
+
+/**
  * Where change concentrates in one variant of one board (ADR 0045): asked when
  * somebody picks a part out, and never on a timer.
  *
@@ -254,6 +446,7 @@ function localityQuery(on: ReadingOnScreen) {
 
 export {
 	codeFindingsQuery,
+	exposureQuery,
 	localityQuery,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,

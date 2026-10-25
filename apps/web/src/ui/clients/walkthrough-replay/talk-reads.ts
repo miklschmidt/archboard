@@ -41,6 +41,11 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 		 */
 		codeFindings: async () => ({ readings: [] }),
 		/**
+		 * No exposed names, for the reason there are no findings.
+		 * @returns No reading.
+		 */
+		exposure: async () => null,
+		/**
 		 * No history: a recording reads the board the voice spoke over, never Git.
 		 * @throws {Error} Always.
 		 */

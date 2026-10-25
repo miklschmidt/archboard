@@ -68,6 +68,8 @@ const server: {
 	vault: unknown;
 	/** What the last code pass left in the server's memory, as its route answers it. */
 	findings: unknown;
+	/** What the exposure route answers about any container, or undefined for none remembered. */
+	exposure: unknown;
 	/** The locality route's answer (none: a walk that never ends), and every request to it. */
 	locality: { reply: StubReply | undefined; calls: string[] };
 } = {
@@ -77,6 +79,7 @@ const server: {
 	held: {},
 	vault: undefined,
 	findings: NO_FINDINGS,
+	exposure: undefined,
 	locality: { reply: undefined, calls: [] },
 };
 
@@ -92,6 +95,7 @@ afterEach(() => {
 	server.held = {};
 	server.vault = undefined;
 	server.findings = NO_FINDINGS;
+	server.exposure = undefined;
 	server.locality = { reply: undefined, calls: [] };
 });
 
@@ -151,11 +155,22 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const url = urlOf(input);
 	// The findings are read on a timer, and the history when a part is picked:
 	// both are kept apart from the requests that tests count.
+	if (url.startsWith(`${FINDINGS_ROUTE}/exposure`)) return exposureReply();
 	if (url.startsWith(FINDINGS_ROUTE)) return answered({ status: 200, body: server.findings });
 	if (!url.startsWith("/api/semantic-boards/locality")) return serverReply(url);
 	server.locality.calls.push(url);
 	const { reply } = server.locality;
 	return reply === undefined ? new Promise(() => undefined) : answered(reply);
+}
+
+/**
+ * What the exposure route answers: the remembered exposure, or that none is.
+ * @returns The reply.
+ */
+function exposureReply(): Promise<Response> {
+	return server.exposure === undefined
+		? answered({ status: 404, body: { success: false, code: "EXPOSURE_NOT_REMEMBERED" } })
+		: answered({ status: 200, body: server.exposure });
 }
 
 /**

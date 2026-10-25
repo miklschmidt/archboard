@@ -16,13 +16,8 @@ import {
 	SidebarGlyph,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import { cn } from "@archboard/ui-kit/components";
-
-/** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
-
-/** One piece of evidence behind a finding. */
-type CodeEvidence = NonNullable<CodeFinding["evidence"]>[number];
+import { cn } from "@archboard/ui-kit/class-names";
+import { whenChecked } from "#ui/rules/semantic-board-canvas/code/when-checked.ts";
 
 /** What the code check said about one subject, and when. */
 interface CodeStanding {
@@ -107,20 +102,6 @@ function Finding(props: { readonly finding: CodeFinding }): JSX.Element {
 			</div>
 		</li>
 	);
-}
-
-/**
- * When a pass ran, as a reader says it: the time alone today, the day and the
- * time before today.
- * @param checkedAt When, as the server wrote it.
- * @returns The words.
- */
-function whenChecked(checkedAt: string): string {
-	const at = new Date(checkedAt);
-	const time = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-	return at.toDateString() === new Date().toDateString()
-		? time
-		: `${at.toLocaleDateString([], { day: "numeric", month: "short" })} ${time}`;
 }
 
 /**

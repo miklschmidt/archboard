@@ -1,18 +1,21 @@
 // Where a pane reads a board's document, the vault's policy, the findings of
-// the last code check and the locality of a board's code from.
+// the last code check, what a container exposed in it, and the locality of a
+// board's code from.
 //
 // A page reads them from the Archboard server. A page rendering a recording
 // frame by frame reads them from the talk it recorded instead, so the picture
 // is the one the voice spoke over, whatever the board says now (TASK-381). The
 // page chooses once, at start, before anything is read.
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedExposure, RememberedFindings } from "@archboard/code-intel/code-check";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import {
 	fetchCodeFindings,
+	fetchExposure,
 	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchVaultCheck,
+	type ExposureSite,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VaultCheckSchema } from "@archboard/board/policy";
 import type { z } from "zod";
@@ -44,6 +47,18 @@ interface BoardReads {
 	 */
 	readonly codeFindings: (vault: string, signal?: AbortSignal) => Promise<RememberedFindings>;
 	/**
+	 * What one container exposed in the last pass that judged it. Never a pass.
+	 * @param vault The vault.
+	 * @param at The board, variant and container.
+	 * @param signal Cancels the read.
+	 * @returns The reading, or null when no pass judged that container.
+	 */
+	readonly exposure: (
+		vault: string,
+		at: ExposureSite,
+		signal?: AbortSignal,
+	) => Promise<RememberedExposure | null>;
+	/**
 	 * Where change concentrates in one variant of one board, read from Git. It
 	 * takes no cancellation: a pick made while it runs waits for it.
 	 * @param vault The vault the board is in.
@@ -58,6 +73,7 @@ const fromServer: BoardReads = {
 	document: fetchSemanticBoardDocument,
 	vaultCheck: fetchVaultCheck,
 	codeFindings: fetchCodeFindings,
+	exposure: fetchExposure,
 	locality: fetchLocality,
 };
 

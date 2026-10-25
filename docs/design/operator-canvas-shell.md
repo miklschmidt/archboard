@@ -169,13 +169,27 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      pointing at it lights the part. An entry point that passes one call on
      says so under its name, and a caller says which entry points it reaches.
      If nothing outside reaches the part, Callers says so in words.
-  4. **What is it wired to?** For a part, Sends to and Receives from, each with
+  4. **What does its code expose?** Only for a bound part that holds parts,
+     read from the server's memory of the last code pass (TASK-539.02). A pane
+     never starts a pass. Exposed names gives how many names the module
+     exposes and how many a file outside it uses, both exact, and the module's
+     directory. The names follow, most used first, each with its number of
+     users. The names that no file outside uses fold into one row with their
+     count, and choosing it opens them. Choosing a name lists its users, each a
+     path and the first line of its use, with the part that holds it, or Not
+     drawn. Under them are the files that pass the name on. Pointing at a user
+     lights its part. The region gives the time of the pass. If there is no
+     reading, it says why: no pass has run, the last pass did not read this
+     variant, the board changed after the pass, or the pass skipped the
+     container. A container whose binding names no module has no region. The
+     picture does not change.
+  5. **What is it wired to?** For a part, Sends to and Receives from, each with
      its number of parts and the control that traces how far it reaches. A row
      names the other part and what the relationship carries under the name,
      with the relationship's kind at the end of the name's line so the words
      keep the whole width. For a relationship, the parts at its two ends. For an
      exchange, who takes part. For a message, where it comes in its exchange.
-  5. **How has it changed in code?** Only for a part, read from Git through
+  6. **How has it changed in code?** Only for a part, read from Git through
      its binding (ADR 0045). Recent commits has its count. The day the period
      starts is at the end of its line. Under it are the newest five commits,
      each with its subject, its short hash and its day. A control under them
