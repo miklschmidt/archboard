@@ -15,7 +15,7 @@ use serde::Deserialize;
 
 use super::graph::Graph;
 use super::joins::{Apart, Lay, lay_joined};
-use super::solving::{Boxed, Solver, both};
+use super::solving::{Boxed, Calling, Solver, Unsolved, both};
 use crate::blocks::choosing::{
     draws_better, has_regions, joining_of, reads_better_packed, stacks_of,
 };
@@ -181,9 +181,10 @@ async fn answered<S: Solver>(
     graph: &Graph,
     nesting: Nesting,
     way: &Way,
-) -> Result<Answer, String> {
+    calling: &Calling,
+) -> Result<Answer, Unsolved> {
     let told = solver
-        .solve(graph.with_options(&options_of(nesting, way)))
+        .solve(graph.with_options(&options_of(nesting, way)), calling)
         .await?;
     let Told { mut options } = serde_json::from_str(&told)
         .map_err(|error| format!("A solve's answer is unreadable: {error}"))?;
@@ -217,8 +218,11 @@ async fn solved<S: Solver>(
     graph: &Graph,
     nesting: Nesting,
     way: Way,
-) -> Result<Rc<Drawing>, String> {
-    drawing_of(answered(solver, graph, nesting, &way).await?)
+    calling: &Calling,
+) -> Result<Rc<Drawing>, Unsolved> {
+    Ok(drawing_of(
+        answered(solver, graph, nesting, &way, calling).await?,
+    )?)
 }
 
 /// Choose whether the first block that can stack is stacked, then lay the
@@ -230,20 +234,21 @@ async fn stacked_solved<S: Solver>(
     graph: &Graph,
     nesting: Nesting,
     way: Way,
-) -> Result<Rc<Drawing>, String> {
+    calling: &Calling,
+) -> Result<Rc<Drawing>, Unsolved> {
     let partly = |stacking| Way {
         stacking: Some(stacking),
         until: true,
         ..way.clone()
     };
     let (stacked, plain) = both(
-        answered(solver, graph, nesting, &partly(true)),
-        answered(solver, graph, nesting, &partly(false)),
+        answered(solver, graph, nesting, &partly(true), calling),
+        answered(solver, graph, nesting, &partly(false), calling),
     )
     .await;
     let (stacked, plain) = (stacked?, plain?);
     let (Some(high), Some(low)) = (&stacked.stood, &plain.stood) else {
-        return drawing_of(plain);
+        return Ok(drawing_of(plain)?);
     };
     let stacking = stacks_of(high, low)?;
     solved(
@@ -254,6 +259,7 @@ async fn stacked_solved<S: Solver>(
             stacking: Some(stacking),
             ..way
         },
+        calling,
     )
     .await
 }
@@ -278,18 +284,23 @@ async fn joined_out<S: Solver>(
         ..Way::default()
     };
     let lay: Lay<'_> = Box::new(
-        move |apart: Apart| -> Boxed<'_, Result<Rc<Drawing>, String>> {
-            if nesting != Nesting::Blocks && apart.is_empty() {
-                Box::pin(stacked_solved(solver, graph, nesting, way(apart, false)))
-            } else {
-                Box::pin(solved(solver, graph, nesting, way(apart, false)))
-            }
+        move |apart: Apart, calling: Calling| -> Boxed<'_, Result<Rc<Drawing>, Unsolved>> {
+            Box::pin(async move {
+                let way = way(apart, false);
+                if nesting != Nesting::Blocks && way.apart.is_empty() {
+                    stacked_solved(solver, graph, nesting, way, &calling).await
+                } else {
+                    solved(solver, graph, nesting, way, &calling).await
+                }
+            })
         },
     );
     let face: Option<Lay<'_>> = (nesting == Nesting::Blocks).then(|| -> Lay<'_> {
         Box::new(
-            move |apart: Apart| -> Boxed<'_, Result<Rc<Drawing>, String>> {
-                Box::pin(solved(solver, graph, nesting, way(apart, true)))
+            move |apart: Apart, calling: Calling| -> Boxed<'_, Result<Rc<Drawing>, Unsolved>> {
+                Box::pin(
+                    async move { solved(solver, graph, nesting, way(apart, true), &calling).await },
+                )
             },
         )
     });

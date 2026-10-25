@@ -2,8 +2,9 @@
 //! request, and the picture with its key out (`archboard_render::Rendered`).
 //!
 //! The host runs each solve the render asks for on its layout engine, side by
-//! side on as many workers as it has, and calls one off when the render drops
-//! it (`RenderHost`); it gives the path data of the icons a picture draws.
+//! side on as many workers as it has, and calls one off when the render calls
+//! it off or drops it (`RenderHost`); it gives the path data of the icons a
+//! picture draws.
 
 use std::collections::BTreeMap;
 use std::future::Future;
@@ -11,7 +12,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-use archboard_layout::Solver;
+use archboard_layout::{Calling, Solver, Unsolved};
 use archboard_render::request::RenderRequest;
 use archboard_render::{Host, Renderer};
 use wasm_bindgen::prelude::*;
@@ -28,7 +29,8 @@ export interface RenderHost {
     /**
      * One measured graph laid out the way its root options name, answered as
      * `layOutBoard` answers it. The signal calls off a solve that still waits
-     * for an engine: it is refused with the signal's reason.
+     * for an engine: it is refused with the signal's reason. One an engine
+     * already lays out answers all the same, and the render may still read it.
      */
     solve(graph: string, signal: AbortSignal): Promise<string>;
     /** Each icon's path data, by export name, of the icons named that the host has. */
@@ -51,6 +53,7 @@ extern "C" {
     fn icons_of(this: &RenderHost, names: Vec<String>) -> js_sys::Object;
 
     /// What calls a solve off.
+    #[derive(Clone)]
     type AbortController;
 
     #[wasm_bindgen(constructor)]
@@ -64,12 +67,19 @@ extern "C" {
 
     /// The signal a solve is called off by.
     type AbortSignal;
+
+    #[wasm_bindgen(method, getter)]
+    fn aborted(this: &AbortSignal) -> bool;
+
+    #[wasm_bindgen(method, getter)]
+    fn reason(this: &AbortSignal) -> JsValue;
 }
 
 /// One solve the host runs. Dropping it before it answers calls it off.
 pub struct Solving {
     answer: JsFuture,
     calling: AbortController,
+    signal: AbortSignal,
     answered: bool,
 }
 
@@ -83,16 +93,22 @@ impl std::fmt::Debug for Solving {
 }
 
 impl Future for Solving {
-    type Output = Result<String, String>;
+    type Output = Result<String, Unsolved>;
 
     fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
         let answer = Pin::new(&mut self.answer).poll(context);
         answer.map(|answer| {
             self.answered = true;
-            let answer = answer.map_err(|error| said(&error, "A solve"))?;
+            let answer = answer.map_err(|error| {
+                if self.signal.aborted() && js_sys::Object::is(&error, &self.signal.reason()) {
+                    Unsolved::CalledOff
+                } else {
+                    Unsolved::Failed(said(&error, "A solve"))
+                }
+            })?;
             answer
                 .as_string()
-                .ok_or_else(|| "A solve answered no JSON".to_owned())
+                .ok_or_else(|| Unsolved::Failed("A solve answered no JSON".to_owned()))
         })
     }
 }
@@ -108,12 +124,16 @@ impl Drop for Solving {
 impl Solver for RenderHost {
     type Solve<'s> = Solving;
 
-    fn solve(&self, graph: String) -> Solving {
+    fn solve(&self, graph: String, called: &Calling) -> Solving {
         let calling = AbortController::new();
-        let answer = JsFuture::from(self.solve_on(graph, &calling.signal()));
+        let signal = calling.signal();
+        let answer = JsFuture::from(self.solve_on(graph, &signal));
+        let aborting = calling.clone();
+        called.on_call_off(move || aborting.abort());
         Solving {
             answer,
             calling,
+            signal,
             answered: false,
         }
     }
