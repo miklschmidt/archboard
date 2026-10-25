@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { headLength } from "@archboard/renderer/picture";
+import { HEAD_LENGTH } from "@archboard/renderer/picture";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import { pressKey } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import { sidebarSettled } from "#tests/ui/support/semantic-board-canvas/sidebar-probes.ts";
@@ -172,7 +172,7 @@ test("the legend draws each arrowhead as large as the picture draws the head of 
 	const heads = [...part("semantic-legend").querySelectorAll("svg > svg")];
 	expect(heads).toHaveLength(2);
 	for (const head of heads) {
-		expect(Number(head.getAttribute("width"))).toBe(headLength("normal"));
-		expect(Number(head.getAttribute("height"))).toBe(headLength("normal"));
+		expect(Number(head.getAttribute("width"))).toBe(HEAD_LENGTH);
+		expect(Number(head.getAttribute("height"))).toBe(HEAD_LENGTH);
 	}
 });

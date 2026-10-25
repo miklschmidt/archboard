@@ -1,7 +1,8 @@
 // Build the renderer core to WebAssembly (ADR 0057): cargo for wasm32, then
 // wasm-bindgen into the renderer package, recording the hash of the sources
 // the build was made from, and beside it the TypeScript types of the core's
-// contract, generated from its Rust types. A build that already records the hash of the
+// contract, generated from its Rust types, and the marks a pane draws beside a
+// picture, generated from its painter. A build that already records the hash of the
 // sources in this checkout is kept, so a run without a change needs no Rust
 // tools.
 //
@@ -25,6 +26,8 @@ const BUILT = join(CHECKOUT, "target", TARGET, "release", "archboard_renderer_wa
 
 /** The file the contract's TypeScript types are written to, beside the build. */
 const TYPES = join(CORE_BUILD_DIRECTORY, "types.ts");
+/** The file the marks a pane draws beside a picture are written to, beside the build. */
+const MARKS = join(CORE_BUILD_DIRECTORY, "marks.ts");
 
 /**
  * Run one tool in the checkout, with its errors shown.
@@ -87,11 +90,17 @@ try {
 		{},
 		"pipe",
 	);
+	const marks = run(
+		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-svg"],
+		{},
+		"pipe",
+	);
 	// The WebAssembly, whose recorded hash says the build is whole, lands last:
 	// a build stopped before it is refused as missing and made again.
 	rmSync(CORE_BUILD_DIRECTORY, { recursive: true, force: true });
 	mkdirSync(CORE_BUILD_DIRECTORY, { recursive: true });
 	writeFileSync(TYPES, types);
+	writeFileSync(MARKS, marks);
 	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
 	console.log(`Built the renderer core from these sources (${hash}).`);
 }
