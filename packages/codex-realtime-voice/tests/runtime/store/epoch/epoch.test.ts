@@ -14,7 +14,10 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import {
+	createIdentityAuthority,
+	restoreIdentityAuthority,
+} from "@archboard/codex-app-server/identity";
 import { createCodexEpochStore } from "#runtime/store/epoch/epoch.ts";
 import {
 	defaultCodexEpochFileSystem,
@@ -323,7 +326,15 @@ describe("codex epoch ownership", () => {
 		withState((state) => {
 			const authority = createIdentityAuthority();
 			const input = epochInput(authority, "epoch-start", "epoch_start");
-			const foreign = { ...input, epoch: input.epoch.replace(/^[^:]+:/u, "other:") };
+			// The same child and epoch tokens, minted under another host's record prefix.
+			const other = (value: string): string => value.replace(/^[^:]+:/u, "other:");
+			const foreign = {
+				...input,
+				epoch: restoreIdentityAuthority({
+					childId: other(input.childId),
+					epoch: other(input.epoch),
+				}).validator.epoch,
+			};
 
 			expect(() => makeStore(state).stageEpoch(foreign)).toThrowError(
 				expect.objectContaining({ code: "invalid_input" }),
