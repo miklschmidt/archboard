@@ -3,10 +3,8 @@
 // and voice projections.
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type {
-	BrowserWorkbenchMediaState,
-	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchMediaState } from "#ui/state/surfaces/voice-parts.ts";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

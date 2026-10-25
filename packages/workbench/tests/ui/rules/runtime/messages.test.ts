@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
-import type { ConversationTurn } from "#ui/state/timeline/contract.ts";
+import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
 const { decoder } = createIdentityAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-messages");

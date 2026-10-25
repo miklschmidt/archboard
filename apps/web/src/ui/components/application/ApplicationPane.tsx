@@ -47,7 +47,7 @@ import { type WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkt
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/browser";
+} from "@archboard/codex-realtime-voice/controllers";
 import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";

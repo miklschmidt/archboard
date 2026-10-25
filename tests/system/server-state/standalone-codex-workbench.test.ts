@@ -3,10 +3,7 @@ import { z } from "zod";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import { createVoiceAgent, parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import type {
-	BrowserCommandLease,
-	BrowserSnapshot,
-} from "@archboard/codex-realtime-voice/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { prepareProductionFixture, productionRecords } from "./support/codex-production.ts";
 
 const instructions = {
@@ -119,7 +116,7 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		const physical = {};
 		const registration = { paneId: "main", tabSessionId: tab, checkout };
 		workbench.browser.accept(physical, "browser", registration);
-		type Lease = BrowserCommandLease;
+		type Lease = NonNullable<BrowserSnapshot["lease"]>;
 		interface Snapshot {
 			readonly snapshot: BrowserSnapshot;
 		}

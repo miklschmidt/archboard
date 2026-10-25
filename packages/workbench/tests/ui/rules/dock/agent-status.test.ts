@@ -6,7 +6,7 @@ import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";
 import type { HeldMessage } from "#ui/state/agent-setup/held.ts";
 import { agentStatus } from "#ui/rules/dock/agent-status.ts";
 import type { AgentView } from "#ui/state/surfaces/contracts.ts";
-import type { ConversationTurn } from "#ui/state/timeline/contract.ts";
+import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
 const { decoder } = createIdentityAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-status");

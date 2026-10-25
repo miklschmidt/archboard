@@ -1,9 +1,5 @@
 import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
-import {
-	canonicalDynamicApprovalJson,
-	dynamicApprovalHashForCanonicalJson,
-	type DynamicApprovalCanonicalEffect,
-} from "@archboard/codex-realtime-voice/contract";
+import { canonicalDynamicApprovalJson, dynamicApprovalHashForCanonicalJson, type DynamicApprovalCanonicalEffect } from "@archboard/codex-realtime-voice/schemas";
 import {
 	CodexDynamicToolsError,
 	type DynamicApprovalIdentity,

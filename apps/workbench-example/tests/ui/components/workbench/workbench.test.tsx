@@ -1,7 +1,12 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 let dom: typeof import("@testing-library/react/pure");
 import { afterAll, afterEach, beforeAll, expect, mock, test } from "bun:test";
-import { createExampleClient, type ExampleClientSnapshot } from "#ui/clients/workbench/client.ts";
+import {
+	createVoiceClient,
+	type VoiceClient,
+	type VoiceClientSnapshot,
+} from "@archboard/codex-realtime-voice/browser";
+import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
 import { Workbench } from "#ui/components/workbench/Workbench.tsx";
 import { ApprovalCard } from "#ui/components/workbench/ApprovalCard.tsx";
 import { exampleSnapshot, commandApproval, settledApproval } from "#tests/ui/support/snapshot.ts";
@@ -16,45 +21,58 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
+/** The page client with its actions observed at their public boundary. */
+type PageClient = VoiceClient & {
+	readonly send: ReturnType<typeof mock<(message: string) => Promise<boolean>>>;
+	readonly stopVoice: ReturnType<typeof mock<() => Promise<boolean>>>;
+	readonly stopWork: ReturnType<typeof mock<() => Promise<boolean>>>;
+};
+
 /**
  * Present a real client shape with page actions observed at their public boundary.
  * @param running Whether work is active.
- * @returns The page client and its independent action recorders.
+ * @param busy Whether another action is pending.
+ * @returns The page client.
  */
-function pageClient(running = false) {
-	const original = createExampleClient();
-	const snapshot = exampleSnapshot(running);
-	const state: ExampleClientSnapshot = {
+function pageClient(running = false, busy = false): PageClient {
+	const original = createVoiceClient({ socketPath: "/api/workbench" });
+	const state: VoiceClientSnapshot = {
 		...original.snapshot(),
-		configuration: {
-			checkout: { label: "checkout", path: "/checkout" },
-			socketPath: "/api/workbench",
-		},
-		transport: {
-			kind: "readiness",
-			state: "thread_capable",
-			connection: "connected",
-			snapshot,
-			sequence: 1,
-		},
-		media: { correlation: null, state: { phase: "listening", reason: "negotiation_succeeded" } },
-		mediaState: { state: "ready" },
+		connection: "connected",
+		server: exampleSnapshot(running),
+		voice: { phase: "listening", available: true, problem: null },
+		busy,
 	};
-	const client = {
+	return {
 		...original,
-		snapshot: mock(() => state),
-		send: mock(async (_prompt: string) => false),
+		/**
+		 * The fixed page state.
+		 * @returns The state.
+		 */
+		snapshot: () => state,
+		send: mock(async (_message: string) => false),
 		stopVoice: mock(async () => true),
 		stopWork: mock(async () => true),
 	};
-	return { client, state };
+}
+
+/**
+ * Draw the page over a client.
+ * @param client The client.
+ * @returns The rendered page.
+ */
+function renderPage(client: VoiceClient) {
+	return dom.render(
+		<VoiceClientProvider client={client}>
+			<Workbench checkout="/checkout" />
+		</VoiceClientProvider>,
+	);
 }
 
 test("voice and work stops remain separate while another action is pending", async () => {
-	const { client, state } = pageClient(true);
-	state.busy = true;
+	const client = pageClient(true, true);
 	try {
-		const view = dom.render(<Workbench client={client} />);
+		const view = renderPage(client);
 		await dom.act(async () => {
 			dom.fireEvent.click(view.getByRole("button", { name: "Stop voice" }));
 		});
@@ -71,9 +89,9 @@ test("voice and work stops remain separate while another action is pending", asy
 });
 
 test("a failed send retains the draft and a delivered send clears it", async () => {
-	const { client } = pageClient();
+	const client = pageClient();
 	try {
-		const view = dom.render(<Workbench client={client} />);
+		const view = renderPage(client);
 		const input = view.getByRole("textbox");
 		dom.fireEvent.change(input, { target: { value: "Investigate the checkout" } });
 		await dom.act(async () => {

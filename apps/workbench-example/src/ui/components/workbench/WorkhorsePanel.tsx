@@ -1,27 +1,23 @@
 import { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
-import type { ExampleClient, ExampleClientSnapshot } from "#ui/clients/workbench/client.ts";
-import type { ExampleApproval, ApprovalResponse } from "#ui/rules/workbench/approval-responses.ts";
+import type {
+	VoiceApproval,
+	VoiceApprovalResponse,
+	VoiceClientSnapshot,
+} from "@archboard/codex-realtime-voice/browser";
+import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
 import { Conversation } from "#ui/components/workbench/Conversation.tsx";
 import { ApprovalCard } from "#ui/components/workbench/ApprovalCard.tsx";
 
 /**
  * Keep composer state with the workhorse that receives it.
- * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
- * @param props.state The current page projection.
  * @returns The rendered controls or content.
  */
-function WorkhorsePanel({
-	client,
-	state,
-}: {
-	readonly client: ExampleClient;
-	readonly state: ExampleClientSnapshot;
-}) {
+function WorkhorsePanel() {
+	const client = useVoiceClient();
+	const state = useVoiceState();
 	const [draft, setDraft] = useState("");
-	const snapshot = state.transport.snapshot;
 	const running = workIsRunning(state);
-	const ready = snapshot?.account.state === "ready";
+	const ready = state.server?.account.state === "ready";
 	const stop = useCallback(() => {
 		void client.stopWork();
 	}, [client]);
@@ -50,8 +46,8 @@ function WorkhorsePanel({
 					Stop work
 				</button>
 			</div>
-			<Conversation timeline={snapshot?.timeline} />
-			<ApprovalList client={client} state={state} />
+			<Conversation timeline={state.server?.timeline} />
+			<ApprovalList state={state} />
 			<form className="composer" onSubmit={submit}>
 				<label htmlFor="prompt">Message the workhorse</label>
 				<textarea
@@ -71,73 +67,48 @@ function WorkhorsePanel({
 
 /**
  * Decide whether the composer can deliver a new turn.
- * @param state The current page projection.
- * @param running The running value.
- * @param draft The command composed by the user.
- * @returns The rendered controls or content.
+ * @param state The client state.
+ * @param running Whether a workhorse turn runs.
+ * @param draft The message composed by the user.
+ * @returns Whether Send is offered.
  */
-function canSend(state: ExampleClientSnapshot, running: boolean, draft: string): boolean {
+function canSend(state: VoiceClientSnapshot, running: boolean, draft: string): boolean {
 	if (state.busy || running || draft.trim().length === 0) return false;
-	return (
-		state.transport.connection === "connected" &&
-		state.transport.snapshot?.account.state === "ready"
-	);
+	return state.connection === "connected" && state.server?.account.state === "ready";
 }
 
 /**
- * Preserve the exact action intent that accompanied the displayed requests.
- * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
- * @param props.state The current page projection.
+ * Show each approval with the intent of the state that rendered it.
+ * @param props The rendered state.
+ * @param props.state The client state.
  * @returns The rendered controls or content.
  */
-function ApprovalList({
-	client,
-	state,
-}: {
-	readonly client: ExampleClient;
-	readonly state: ExampleClientSnapshot;
-}) {
-	const approvals = state.transport.snapshot === null ? [] : state.transport.snapshot.approvals;
+function ApprovalList({ state }: { readonly state: VoiceClientSnapshot }) {
+	const approvals = state.server === null ? [] : state.server.approvals;
 	return approvals.map((approval) => (
-		<ApprovalEntry
-			key={String(approval.requestId)}
-			client={client}
-			state={state}
-			approval={approval}
-		/>
+		<ApprovalEntry key={String(approval.requestId)} state={state} approval={approval} />
 	));
 }
 
 /**
- * Bind a response to its rendered request and captured connection intent.
- * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
- * @param props.state The current page projection.
+ * Bind a response to its rendered request and captured intent.
+ * @param props The rendered state.
+ * @param props.state The client state that rendered the request.
  * @param props.approval The request that the user sees.
  * @returns The rendered controls or content.
  */
 function ApprovalEntry({
-	client,
 	state,
 	approval,
 }: {
-	readonly client: ExampleClient;
-	readonly state: ExampleClientSnapshot;
-	readonly approval: ExampleApproval;
+	readonly state: VoiceClientSnapshot;
+	readonly approval: VoiceApproval;
 }) {
+	const client = useVoiceClient();
 	const respond = useCallback(
-		(response: ApprovalResponse) => {
+		(response: VoiceApprovalResponse) => {
 			if (state.intent === null) return Promise.resolve(false);
-			return client.respond(
-				{
-					command: "approvalRespond",
-					requestId: approval.requestId,
-					approvalId: approval.approvalId,
-					response,
-				},
-				state.intent,
-			);
+			return client.answerApproval(approval, response, state.intent);
 		},
 		[client, state.intent, approval],
 	);
@@ -152,13 +123,11 @@ function ApprovalEntry({
 
 /**
  * Read whether a workhorse turn still runs.
- * @param state The current page projection.
- * @returns The rendered controls or content.
+ * @param state The client state.
+ * @returns Whether a turn is in progress.
  */
-function workIsRunning(state: ExampleClientSnapshot): boolean {
-	return (
-		state.transport.snapshot?.timeline?.turns.some((turn) => turn.status === "inProgress") ?? false
-	);
+function workIsRunning(state: VoiceClientSnapshot): boolean {
+	return state.server?.timeline?.turns.some((turn) => turn.status === "inProgress") ?? false;
 }
 
 export { WorkhorsePanel };

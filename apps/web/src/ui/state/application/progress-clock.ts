@@ -4,7 +4,7 @@
 
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type { SnapshotStore } from "#ui/state/application/snapshot-cache.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 /** One item of a published turn. */
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];

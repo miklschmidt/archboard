@@ -1,9 +1,6 @@
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-	type BrowserSnapshot,
-} from "@archboard/codex-realtime-voice/contract";
+import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import { BROWSER_IDLE_SPOKEN_APPROVAL, createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 const authorities = createIdentityAuthorities();
 const model = createCodexBrowserModel(authorities);

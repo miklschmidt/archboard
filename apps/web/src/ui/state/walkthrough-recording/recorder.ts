@@ -13,7 +13,7 @@
 import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
-import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
 import {
 	sameBoardName,
 	type SemanticPaneReading,

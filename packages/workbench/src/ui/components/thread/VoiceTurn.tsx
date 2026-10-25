@@ -5,7 +5,7 @@
 import { RiMicLine } from "@remixicon/react";
 import { useCallback, type JSX, type MouseEvent } from "react";
 
-import type { ConversationTurn } from "#ui/state/timeline/contract.ts";
+import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
 /**
  * What sets a turn of the voice coordinator apart: the rule at its left, the rule the

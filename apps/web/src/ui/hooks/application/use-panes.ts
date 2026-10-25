@@ -6,14 +6,15 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import type {
-	BrowserWorkbenchMediaOwnerOptions,
-	BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
 import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
-import { PaneHandles, type PaneSession } from "#ui/state/application/pane-handles.ts";
+import {
+	PaneHandles,
+	type BrowserWorkbenchMediaOwnerOptions,
+	type PaneSession,
+} from "#ui/state/application/pane-handles.ts";
 import {
 	dropRecord,
 	patchRecord,

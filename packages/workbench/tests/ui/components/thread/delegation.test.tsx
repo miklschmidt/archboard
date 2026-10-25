@@ -6,8 +6,8 @@ import { createRoot, type Root } from "react-dom/client";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { toThreadMessageLike } from "#ui/rules/runtime/messages.ts";
-import { mergeConversation } from "#ui/rules/timeline/projection.ts";
-import { type ConversationTurn } from "#ui/state/timeline/contract.ts";
+import { mergeConversation } from "@archboard/codex-realtime-voice/controllers";
+import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 import { Conversation } from "#ui/components/thread/Conversation.tsx";
 
 const { decoder } = createIdentityAuthorities().identity;
