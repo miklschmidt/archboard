@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 53,
+	"version": 54,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-25T17:55:11.408Z",
+	"updatedAt": "2026-10-25T18:26:00.216Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -6581,7 +6581,7 @@
 			"name": "TASK-537.04",
 			"lifecycle": "draft",
 			"parent": "LES6yFR6",
-			"summary": "TASK-480 restated after TASK-482.07",
+			"summary": "Dispatch and invocation lifetime",
 			"content": {
 				"nodes": [
 					{
