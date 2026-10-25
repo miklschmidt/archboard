@@ -401,7 +401,7 @@ function installCodexWorkbenchOwnerLifecycle(
 		gateway: () => {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
-				"The voice agent is not ready for browser sockets until it has started.",
+				"The voice agent is not ready for browser sockets. Retry once its status reads ready.",
 			);
 		},
 	};

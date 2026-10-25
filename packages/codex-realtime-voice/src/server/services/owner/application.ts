@@ -91,7 +91,9 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 		}
 		if (installed || owner !== null) {
 			return Promise.reject(
-				new Error("The voice agent is already started. Shut it down before starting it again."),
+				new Error(
+					"The voice agent is started, or a failed start still holds its Codex process. Shut it down before starting it again.",
+				),
 			);
 		}
 		shutdownRequested = false;
@@ -101,7 +103,7 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 				const snapshot = await owner.start();
 				// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the start above is awaited; the narrowing from the declaration does not survive that
 				if (shutdownRequested) {
-					throw new Error("The Codex workbench was stopped during startup.");
+					throw new Error("The voice agent was shut down before its start finished.");
 				}
 				installed = true;
 				return snapshot;
@@ -139,7 +141,7 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 		if (cleanupFailure !== null) {
 			return new AggregateError(
 				[error, cleanupFailure],
-				"Codex workbench startup and terminal cleanup both failed.",
+				"The voice agent's start failed, and so did its cleanup. Shut it down before starting it again.",
 				{ cause: error },
 			);
 		}

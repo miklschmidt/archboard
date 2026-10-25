@@ -357,7 +357,7 @@ function publishReadySlots(
 			if (!isCurrentRuntime(published, runtime) || published.state !== "ready") {
 				throw new CodexWorkbenchCompositionError(
 					"not_started",
-					"The voice agent is not ready for browser sockets until it has started.",
+					"The voice agent is not ready for browser sockets. Retry once its status reads ready.",
 				);
 			}
 			return generation.gateway;
