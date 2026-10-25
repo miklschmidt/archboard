@@ -172,7 +172,7 @@ function snapshotIn(target: FixtureWorld, overrides: SnapshotOverrides): Browser
 		settings: [],
 		approvals: [],
 		dynamicApprovals: [],
-		semantic: null,
+		contextDelivery: null,
 		coordinator: overrides.coordinator ?? coordinatorIn(target),
 		voice: overrides.voice ?? voice(),
 		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,

@@ -272,7 +272,7 @@ describe("semantic context publisher", () => {
 
 	test("marks stale timestamps and board disagreement instead of hiding ambiguity", () => {
 		const h = harness();
-		h.state.now += CODEX_REALTIME_MS.semanticFreshness + 1;
+		h.state.now += CODEX_REALTIME_MS.contextFreshness + 1;
 		const stale: Array<{
 			freshness: string;
 			reasons: readonly string[];
@@ -285,7 +285,7 @@ describe("semantic context publisher", () => {
 				ambiguity: event.ambiguity,
 			}),
 		);
-		h.emitFeed(change(h.state.now - CODEX_REALTIME_MS.semanticFreshness - 1));
+		h.emitFeed(change(h.state.now - CODEX_REALTIME_MS.contextFreshness - 1));
 		h.emitFeed(change(h.state.now, { board: "other-board", at: "not-a-date" }));
 
 		expect(stale[0]?.freshness).toBe("stale");

@@ -114,7 +114,7 @@ function snapshot(options: SnapshotOptions = {}): WireRecord {
 		settings: [],
 		approvals: [],
 		dynamicApprovals: options.dynamicApprovals ?? [],
-		semantic: null,
+		contextDelivery: null,
 		coordinator: {
 			kind: "coordinator",
 			state: "unbound",

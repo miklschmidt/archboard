@@ -174,7 +174,7 @@ describe("Archboard realtime startup context", () => {
 			// The brief is captured for this start's callbacks, and reaches neither model's start.
 			expect(start.initialItems).toEqual([]);
 			expect(start.realtimeStartInstructions).not.toContain("semantic_context");
-			const exactBrief = adapter.generation()?.semanticBrief;
+			const exactBrief = adapter.generation()?.startBrief;
 			if (exactBrief === undefined) {
 				throw new Error("The generation has no semantic brief.");
 			}

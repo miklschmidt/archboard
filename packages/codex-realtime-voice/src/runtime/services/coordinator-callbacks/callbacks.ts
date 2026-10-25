@@ -233,9 +233,7 @@ export function createCodexCoordinatorCallbacks(
 			sourceOrder: nextSourceOrder++,
 			capturedAtMs,
 			freshUntilMs:
-				context === null
-					? capturedAtMs + CODEX_REALTIME_MS.semanticFreshness
-					: context.freshUntilMs,
+				context === null ? capturedAtMs + CODEX_REALTIME_MS.contextFreshness : context.freshUntilMs,
 		});
 	};
 

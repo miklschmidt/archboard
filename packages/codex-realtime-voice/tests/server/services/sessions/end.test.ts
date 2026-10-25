@@ -44,7 +44,7 @@ function recordingWorkhorse(events: string[]): CodexWorkbenchWorkhorseComponents
 	return {
 		workhorse: { snapshot: () => ({ threadId: null }) },
 		operations: { onNotification: () => undefined, subscribe: () => () => undefined },
-		semanticDelivery: { dispose: note("delivery:dispose") },
+		contextDelivery: { dispose: note("delivery:dispose") },
 		semanticPublisher: { dispose: note("workhorse-publisher:dispose") },
 		queue: { shutdown: async () => void events.push("queue:shutdown") },
 	} as unknown as CodexWorkbenchWorkhorseComponents;

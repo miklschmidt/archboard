@@ -106,7 +106,7 @@ function capArchitecture(architecture: SemanticArchitecture): {
  * @returns The frozen freshness.
  */
 function freshnessAt(capturedAtMs: number, observedAtMs: number): SemanticFreshness {
-	const freshUntilMs = capturedAtMs + CODEX_REALTIME_MS.semanticFreshness;
+	const freshUntilMs = capturedAtMs + CODEX_REALTIME_MS.contextFreshness;
 	return deepFreeze({
 		capturedAtMs,
 		freshUntilMs,

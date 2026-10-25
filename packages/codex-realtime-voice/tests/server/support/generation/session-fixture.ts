@@ -164,16 +164,16 @@ export function createWorkhorseComponentsFixture(
 		freshBriefForRealtime: () => "Test task context.",
 		dispose: () => void events.push("workhorse-publisher:dispose"),
 	} satisfies CodexWorkbenchWorkhorseComponents["semanticPublisher"];
-	const semanticDelivery = {
+	const contextDelivery = {
 		snapshot: () => ({ token: { revision: 0 }, binding: null }),
-		compareAndSwap: () => unavailable("semanticDelivery.compareAndSwap"),
-		deliver: async () => unavailable("semanticDelivery.deliver"),
+		compareAndSwap: () => unavailable("contextDelivery.compareAndSwap"),
+		deliver: async () => unavailable("contextDelivery.deliver"),
 		inspect: () => [],
 		get: () => undefined,
-		replaceHooks: () => void events.push("semantic:hooks"),
-		childExit: async () => void events.push("semantic:child-exit"),
-		dispose: () => void events.push("semantic:dispose"),
-	} satisfies CodexWorkbenchWorkhorseComponents["semanticDelivery"];
+		replaceHooks: () => void events.push("context:hooks"),
+		childExit: async () => void events.push("context:child-exit"),
+		dispose: () => void events.push("context:dispose"),
+	} satisfies CodexWorkbenchWorkhorseComponents["contextDelivery"];
 	const queue = {
 		list: async () => unavailable("queue.list"),
 		add: async () => unavailable("queue.add"),
@@ -191,5 +191,5 @@ export function createWorkhorseComponentsFixture(
 		onNotification: () => undefined,
 		subscribe: () => () => undefined,
 	} satisfies CodexWorkbenchWorkhorseComponents["operations"];
-	return { workhorse, semanticPublisher, semanticDelivery, queue, operations };
+	return { workhorse, semanticPublisher, contextDelivery, queue, operations };
 }

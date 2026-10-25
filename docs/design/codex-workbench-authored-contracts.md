@@ -331,10 +331,10 @@ All values are milliseconds:
 | `CODEX_APPROVAL_MS.browserCommandLease` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
 | `CODEX_APPROVAL_MS.expiry`              |  90,000 | shorter than browser lease                                 |
 | `CODEX_APPROVAL_MS.spokenGate`          |  60,000 | no longer than approval expiry                             |
-| `CODEX_REALTIME_MS.semanticFreshness`   |  30,000 | shorter than realtime recovery                             |
+| `CODEX_REALTIME_MS.contextFreshness`    |  30,000 | shorter than realtime recovery                             |
 | `CODEX_REALTIME_MS.start`               |  15,000 | bounds permission-independent SDP/start readiness          |
 | `CODEX_REALTIME_MS.stop`                |   3,000 | completes before TERM grace                                |
-| `CODEX_REALTIME_MS.recovery`            |  45,000 | longer than semantic freshness                             |
+| `CODEX_REALTIME_MS.recovery`            |  45,000 | longer than context freshness                              |
 | `CODEX_PROCESS_MS.termGrace`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
 | `CODEX_PROCESS_MS.composedShutdown`     |  10,000 | greater than realtime stop plus TERM grace                 |
 
@@ -651,7 +651,7 @@ operation producers, tuple states, lifecycle, and exclusions:
 		"excludedBoundaries": [
 			"interrupt",
 			"queue",
-			"semantic_injection",
+			"context_injection",
 			"callback_injection",
 			"realtime_transport"
 		],

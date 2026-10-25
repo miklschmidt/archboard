@@ -84,7 +84,7 @@ interface CodexWorkbenchWorkhorseBindings {
 		Omit<CodexWorkhorseStartOptions, "session" | "threadLink" | "epoch" | "identity" | "operation">
 	>;
 	readonly semanticPublisher: WorkhorseComponentBuilder<WorkbenchContextPublisher>;
-	readonly semanticDelivery: WorkhorseComponentBuilder<
+	readonly contextDelivery: WorkhorseComponentBuilder<
 		Omit<CodexThreadContextControllerOptions, "session" | "threadLink" | "identity" | "epoch">
 	>;
 	readonly queue: WorkhorseComponentBuilder<

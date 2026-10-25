@@ -374,7 +374,7 @@ const handle = (frame: WireFrame): void => {
 			return;
 		}
 		case "thread/inject_items":
-			record({ kind: "semantic_injection", params });
+			record({ kind: "context_injection", params });
 			respond(frame as never, {});
 			return;
 		case "turn/interrupt": {

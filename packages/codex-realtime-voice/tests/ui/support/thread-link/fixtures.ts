@@ -111,7 +111,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 		settings: [],
 		approvals: [],
 		dynamicApprovals: [],
-		semantic: null,
+		contextDelivery: null,
 		coordinator: {
 			kind: "coordinator",
 			state: "ready",

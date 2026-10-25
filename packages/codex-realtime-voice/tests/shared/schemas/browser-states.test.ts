@@ -60,7 +60,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 		},
 		{ kind: "queue", status: "reconnecting", entries: [] },
 		{
-			kind: "semantic_delivery",
+			kind: "context_delivery",
 			threadId: ids.snapshot.threadLink.threadId,
 			delivery: "not_delivered",
 			capturedAtMs: 1,

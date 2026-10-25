@@ -75,7 +75,7 @@ const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"settings",
 	"approvals",
 	"dynamicApprovals",
-	"semantic",
+	"contextDelivery",
 	"coordinator",
 	"voice",
 	"spokenApproval",

@@ -220,7 +220,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 				settings: [],
 				approvals: activeApprovals.inspectViews(),
 				dynamicApprovals: [],
-				semantic: { kind: "codex_semantic", outcome: null, freshness: null },
+				contextDelivery: { kind: "codex_context_delivery", outcome: null, freshness: null },
 				coordinator: {
 					kind: "codex_coordinator",
 					state: "ready",

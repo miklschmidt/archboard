@@ -29,7 +29,7 @@ interface ActiveRealtimeSession {
 	readonly browserSessionId: BrowserRealtimeSessionId;
 	readonly correlationId: RealtimeCorrelationId;
 	readonly wireSessionId: WireRealtimeSessionId;
-	readonly semanticBrief: string;
+	readonly startBrief: string;
 	/** The walkthrough this session was started to present, or null for an ordinary session. */
 	readonly presentation: BrowserVoicePresentation | null;
 	readonly answer: Promise<AnswerSdp>;
@@ -57,7 +57,7 @@ function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGenera
 		browserSessionId: session.browserSessionId,
 		browserCorrelationId: session.correlationId,
 		wireSessionId: session.wireSessionId,
-		semanticBrief: session.semanticBrief,
+		startBrief: session.startBrief,
 	});
 }
 

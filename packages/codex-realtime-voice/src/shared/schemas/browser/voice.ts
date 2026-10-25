@@ -1,6 +1,6 @@
 // The voice-side DTOs: the coordinator that voice talks to, the realtime
 // session and its transcript, the context ledger voice was given, and the
-// semantic delivery receipt that ties a pane's meaning to a thread.
+// context delivery receipt that says whether a context change reached a workhorse thread.
 
 import { z } from "zod";
 
@@ -20,7 +20,7 @@ import {
 import type { IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
 
 /**
- * Builds the semantic delivery, coordinator, voice and voice context schemas.
+ * Builds the context delivery, coordinator, voice and voice context schemas.
  * @param identity - The session's identity schemas.
  * @returns The four schemas and the realtime session id schema they share.
  */
@@ -33,9 +33,9 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 		.refine((value) => !value.includes("\0"), "NUL is not allowed")
 		.transform(parseBrowserRealtimeSessionId);
 
-	const BrowserSemanticDeliverySchema = z
+	const BrowserContextDeliverySchema = z
 		.object({
-			kind: z.literal("semantic_delivery"),
+			kind: z.literal("context_delivery"),
 			threadId: ThreadIdSchema,
 			delivery: DeliveryOutcomeSchema,
 			capturedAtMs: TimestampSchema,
@@ -168,7 +168,7 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 		});
 
 	return {
-		BrowserSemanticDeliverySchema,
+		BrowserContextDeliverySchema,
 		BrowserCoordinatorSchema,
 		BrowserVoiceSchema,
 		BrowserVoiceContextSchema,

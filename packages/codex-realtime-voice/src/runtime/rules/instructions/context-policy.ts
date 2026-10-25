@@ -195,7 +195,7 @@ const policy = {
 		excludedBoundaries: [
 			"interrupt",
 			"queue",
-			"semantic_injection",
+			"context_injection",
 			"callback_injection",
 			"realtime_transport",
 		],

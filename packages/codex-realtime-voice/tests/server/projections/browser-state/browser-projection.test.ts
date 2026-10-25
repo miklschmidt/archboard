@@ -277,7 +277,7 @@ test("the production browser projection publishes immutable voice start and orde
 				browserSessionId: parseRealtimeSessionId("browser-voice-session"),
 				browserCorrelationId: parseRealtimeCorrelationId("browser-voice-correlation"),
 				wireSessionId: voiceIdentity.issuer.mintRealtimeSessionId(),
-				semanticBrief: canonicalBrief,
+				startBrief: canonicalBrief,
 			};
 			const realtimeGeneration = {
 				childId: generation.child,

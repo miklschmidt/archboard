@@ -98,7 +98,7 @@ function endTabSession(session: CodexWorkbenchTabSession, ending: TabSessionEndi
 			...workhorses.map(
 				({ components: owned }) =>
 					() =>
-						owned.semanticDelivery.dispose(),
+						owned.contextDelivery.dispose(),
 			),
 			() => components.callbacks.dispose(),
 			() => components.semanticPublisher.dispose(),

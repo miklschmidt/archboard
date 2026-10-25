@@ -87,7 +87,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	});
 	let current = { token: { revision: 0 }, binding: null as unknown };
 	const replacements: unknown[] = [];
-	const semanticDelivery = {
+	const contextDelivery = {
 		snapshot: () => current,
 		compareAndSwap: (transition: { expected: { revision: number }; next: unknown }) => {
 			expect(transition.expected).toEqual(current.token);
@@ -109,7 +109,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 		threadLink: {
 			read: () => link(1),
 		} as never,
-		semanticDelivery: semanticDelivery as never,
+		contextDelivery: contextDelivery as never,
 	});
 	const context = {
 		browserId: "browser-1",
@@ -232,7 +232,7 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 						}
 					: created(paneId),
 		} as never,
-		semanticDelivery: {
+		contextDelivery: {
 			snapshot: () => ({ token: { revision: binding === null ? 0 : 1 }, binding }),
 			compareAndSwap: (transition: { readonly next: unknown }) => {
 				binding = transition.next;
@@ -325,7 +325,7 @@ test("a create whose coordinator cannot start is refused with its reason and sta
 		threadLink: {
 			read: () => ({ cas: { revision: 0, childId: null, epoch: null, threadId: null } }),
 		} as never,
-		semanticDelivery: undefined as never,
+		contextDelivery: undefined as never,
 	});
 	await expect(
 		actions.threadLinks.create(
@@ -357,7 +357,7 @@ test("a new conversation keeps the tab's coordinator and readies it before its w
 		threadLink: {
 			read: () => ({ cas: { revision: 0, childId, epoch, threadId } }),
 		} as never,
-		semanticDelivery: undefined as never,
+		contextDelivery: undefined as never,
 	});
 	await actions.threadLinks
 		.create({ command: "threadLinkCreate" } as never, createContext(authorities, threadId))
@@ -395,7 +395,7 @@ test("a new conversation gives up the workhorse thread the old one ran on once t
 			}),
 		} as never,
 		threadLink: { read: () => ({ cas: { revision: 0, childId, epoch, threadId: left } }) } as never,
-		semanticDelivery: {
+		contextDelivery: {
 			snapshot: () => ({ token: { revision: 0 }, binding: null }),
 			compareAndSwap: () => ({ token: { revision: 1 } }),
 		} as never,
@@ -443,7 +443,7 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 			},
 		} as never,
 		threadLink: { read: () => current } as never,
-		semanticDelivery: {
+		contextDelivery: {
 			snapshot: () => ({ token: { revision: 0 }, binding: null }),
 			compareAndSwap: () => ({ token: { revision: 1 } }),
 		} as never,

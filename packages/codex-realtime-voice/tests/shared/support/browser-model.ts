@@ -148,8 +148,8 @@ const approval = {
 	command: "bun test",
 	availableDecisions: ["accept", "decline"] as const,
 };
-const semantic = {
-	kind: "semantic_delivery" as const,
+const contextDelivery = {
+	kind: "context_delivery" as const,
 	threadId,
 	delivery: "outcome_unknown" as const,
 	capturedAtMs: 1_787_682_840_000,
@@ -213,7 +213,7 @@ export function createFixtureIds(): {
 		settings: [settings],
 		approvals: [approval],
 		dynamicApprovals: [],
-		semantic,
+		contextDelivery,
 		coordinator,
 		voice,
 		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
