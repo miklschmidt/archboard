@@ -4,6 +4,7 @@
 use wasm_bindgen::prelude::*;
 
 mod flows;
+mod layout;
 mod router;
 mod scene;
 
