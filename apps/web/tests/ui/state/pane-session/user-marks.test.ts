@@ -6,7 +6,7 @@ import {
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 
 // Which parts of a report are said to be the user's own doing (ADR 0034). What these catch is
 // the feedback loop of 2026-09-20 coming back: a change nobody's hand made being told to the
@@ -22,7 +22,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(SELECTION_DEBOUNCE_MS);
+	jest.advanceTimersByTime(PANE_MS.selectionDebounce);
 	await Promise.resolve();
 	await Promise.resolve();
 }

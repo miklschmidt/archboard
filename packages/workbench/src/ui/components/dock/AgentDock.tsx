@@ -25,8 +25,7 @@
 import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
-import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@archboard/timing";
-import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@archboard/timing/voice";
+import { SHELL_CLOCK_MS, VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/class-names";
 import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/hooks/orb/use-orb-stage.ts";
@@ -53,9 +52,9 @@ const VOICE_PROBLEM_ID = "voice-problem";
  * while the agent works, for the stylesheet that eases them.
  */
 const DOCK_STYLE: CSSProperties = {
-	"--voice-morph-ms": `${VOICE_MORPH_MS}ms`,
-	"--voice-seat-out-ms": `${VOICE_SEAT_OUT_MS}ms`,
-	"--dock-wash-ms": `${DOCK_WASH_MS}ms`,
+	"--voice-morph-ms": `${VOICE_MS.morph}ms`,
+	"--voice-seat-out-ms": `${VOICE_MS.seatOut}ms`,
+	"--dock-wash-ms": `${VOICE_MS.dockWash}ms`,
 };
 
 /** Inputs for the dock. */
@@ -88,7 +87,7 @@ function dockSteps(view: AgentView): readonly CardStep[] {
  */
 function useDockClock(view: AgentView): number {
 	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	return useClock(running ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
+	return useClock(running ? SHELL_CLOCK_MS.elapsedTick : SHELL_CLOCK_MS.ageTick, true);
 }
 
 /**

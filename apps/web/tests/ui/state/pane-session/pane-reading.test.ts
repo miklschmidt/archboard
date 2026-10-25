@@ -6,7 +6,7 @@ import {
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
 import type { SemanticPaneContext } from "@archboard/board/pane-context";
-import { SELECTION_DEBOUNCE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/timing";
 
 beforeEach(() => {
 	jest.useFakeTimers();
@@ -18,7 +18,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(SELECTION_DEBOUNCE_MS);
+	jest.advanceTimersByTime(PANE_MS.selectionDebounce);
 	await Promise.resolve();
 	await Promise.resolve();
 }

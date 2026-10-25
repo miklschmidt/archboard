@@ -13,7 +13,7 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
+import { VOICE_MS } from "@archboard/timing";
 import { TooltipProvider } from "@archboard/ui-kit/overlays";
 import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
@@ -197,11 +197,11 @@ test("the box stays on the page for as long as it takes to leave, and is gone wh
 		// It takes no input while it leaves: its controls are not for pressing, nor to be tabbed to.
 		expect(theBox()?.hasAttribute("inert")).toBe(true);
 		act(() => {
-			clock.advanceTo(VOICE_BOX_OUT_MS - 1);
+			clock.advanceTo(VOICE_MS.boxOut - 1);
 		});
 		expect(theBox()).not.toBeNull();
 		act(() => {
-			clock.advanceTo(VOICE_BOX_OUT_MS);
+			clock.advanceTo(VOICE_MS.boxOut);
 		});
 		expect(theBox()).toBeNull();
 
@@ -221,7 +221,7 @@ test("a box that is wanted again while it leaves is the same box, turned round, 
 		view.rerender(box({ shown: false, reducedMotion: false }));
 		const leaving = theBox();
 		act(() => {
-			clock.advanceTo(VOICE_BOX_OUT_MS / 2);
+			clock.advanceTo(VOICE_MS.boxOut / 2);
 		});
 		view.rerender(box({ shown: true, reducedMotion: false }));
 		expect(theBox()).toBe(leaving);
@@ -229,7 +229,7 @@ test("a box that is wanted again while it leaves is the same box, turned round, 
 		expect(theBox()?.hasAttribute("inert")).toBe(false);
 
 		act(() => {
-			clock.advanceTo(VOICE_BOX_OUT_MS * 2);
+			clock.advanceTo(VOICE_MS.boxOut * 2);
 		});
 		expect(theBox()).toBe(leaving);
 	} finally {

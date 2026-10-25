@@ -4,7 +4,7 @@ import {
 	createSettledLedger,
 	type RealtimeGeneration,
 } from "#runtime/services/coordinator-callbacks/settled-ledger.ts";
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { createWorkhorseNewsObserver } from "#runtime/rules/coordinator-callbacks/workhorse-news.ts";
 import { createTellCoordinator } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import {
@@ -234,7 +234,9 @@ export function createCodexCoordinatorCallbacks(
 			sourceOrder: nextSourceOrder++,
 			capturedAtMs,
 			freshUntilMs:
-				semantic === null ? capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS : semantic.freshUntilMs,
+				semantic === null
+					? capturedAtMs + CODEX_REALTIME_MS.semanticFreshness
+					: semantic.freshUntilMs,
 		});
 	};
 

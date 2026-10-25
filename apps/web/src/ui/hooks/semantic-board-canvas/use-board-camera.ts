@@ -22,7 +22,7 @@ import {
 	useSyncExternalStore,
 } from "react";
 
-import { BOARD_RESIZE_SETTLE_MS, EXPLORING_MS } from "@archboard/timing";
+import { COLUMN_MS, EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { useCameraGlide } from "#ui/hooks/semantic-board-canvas/use-camera-glide.ts";
 import {
@@ -359,7 +359,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 		};
 		const observer = new ResizeObserver(() => {
 			stopWaiting();
-			settling = frameClock().after(BOARD_RESIZE_SETTLE_MS, measure);
+			settling = frameClock().after(COLUMN_MS.boardResizeSettle, measure);
 		});
 		observer.observe(element);
 		return (): void => {

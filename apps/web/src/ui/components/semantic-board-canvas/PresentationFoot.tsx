@@ -14,15 +14,15 @@
 import { RiMicLine } from "@remixicon/react";
 import { useCallback, useRef, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { VOICE_BOX_IN_MS, VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
+import { VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/class-names";
 import { OverlayPlaceContext } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
 /** The paces the stylesheet crossfades the key and the voice box by (app.css, `semantic-presentation-narrate`). */
 const FOOT_STYLE: CSSProperties = {
-	"--voice-box-in-ms": `${VOICE_BOX_IN_MS}ms`,
-	"--voice-box-out-ms": `${VOICE_BOX_OUT_MS}ms`,
+	"--voice-box-in-ms": `${VOICE_MS.boxIn}ms`,
+	"--voice-box-out-ms": `${VOICE_MS.boxOut}ms`,
 };
 
 /** What the key says while a narration can start. */
