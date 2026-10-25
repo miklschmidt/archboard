@@ -342,7 +342,8 @@ no use: anchor the name the code calls. A `Cargo.toml` names each local
 package that it depends on, by `path` or `workspace = true`, as
 build-dependency evidence. A trait that a file brings in only to call its
 methods is a use as a type. `#[path]` attributes and code that a macro writes
-are not read.
+are not read. Items under `#[cfg(test)]` keep their definitions for anchors.
+Their imports and calls do not count as production dependencies.
 
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
