@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-25T00:17:00Z'
-updated_date: '2026-10-25T00:18:00Z'
+updated_date: '2026-10-25T00:25:00Z'
 labels: []
 dependencies: []
 references:
@@ -36,4 +36,6 @@ PR #2 fails the complete validation gate. The Voice coordinator track drawing pl
 
 <!-- SECTION:NOTES:BEGIN -->
 The existing corpus reproduces the hosted failure. Parting tries only the colliding pair boundaries. Moving the target port to 3646 clears qU9USAdL at 3662 but crowds X6q6P132 at 3642, so the guard rejects it. Candidate boundaries from every net in the channel let the same guarded move clear both neighbors. The focused Voice coordinator track test now passes.
+
+The first complete gate passed lint, formatting, types, and both builds, then failed the Board viewer track local render bound. The unchanged parent implementation also exceeded that bound under current load. Restricting extra candidates to the connected occupied stretch keeps nearby alternatives and avoids distant searches. Both focused board tests now pass with the existing limits. The remaining normal lanes run before the final complete gate.
 <!-- SECTION:NOTES:END -->
