@@ -105,8 +105,52 @@ const RENDER_CASE_TIMEOUT_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIME
  * once it drew the pane vault (TASK-472.05), 18.5 s before.
  */
 const TEST_HEAVY_BLOCKS_CASE_MS = 120_000;
-/** The cases that get it, by name: every other case keeps the bounds above. */
-const HEAVY_BLOCKS = new Set(["Browser application (blocks)", "Board viewer (blocks)"]);
+/**
+ * The outer bound of Codex realtime voice's Blocks layout, about three and a half
+ * times Browser application's in the same local run, so about 165 s where Browser
+ * application takes 47.85 s on a hosted runner, and half as much again for a slower one.
+ */
+const TEST_HEAVIEST_BLOCKS_CASE_MS = 240_000;
+/** Why each heavy Blocks case takes long: its work is the layout's, and one hosted CI worker does it alone. */
+const LIBAVOID_PACKINGS =
+	"Its Blocks layout routes the trunks of a six-block cluster with libavoid fifteen times a solve, once for each packing it weighs, over seven solves, and libavoid's nudging solves a region again for every pair of its free segments: the work is the layout's, and one hosted CI worker does it alone";
+/** What the two TASK-451 cases measured. */
+const TASK_451_EVIDENCE =
+	"Browser application 47.85 s and Board viewer 26.6 s on GitHub Actions run 37921029421 (commit 4dcd39b54), Browser application past 60 s on the run of 68e7f0e13; 46.8 s locally with one layout worker, 17.6 s with all; Browser application 52.9 s locally at load 6 after b032fd31b, against 18.5 s before it";
+/** The cases that get a budget of their own, by name: every other case keeps the bounds above. */
+const HEAVY_BLOCKS = new Map<
+	string,
+	{ outerBoundMs: number; reason: string; task: `TASK-${string}`; evidence: string }
+>([
+	[
+		"Browser application (blocks)",
+		{
+			outerBoundMs: TEST_HEAVY_BLOCKS_CASE_MS,
+			reason: LIBAVOID_PACKINGS,
+			task: "TASK-451",
+			evidence: TASK_451_EVIDENCE,
+		},
+	],
+	[
+		"Board viewer (blocks)",
+		{
+			outerBoundMs: TEST_HEAVY_BLOCKS_CASE_MS,
+			reason: LIBAVOID_PACKINGS,
+			task: "TASK-451",
+			evidence: TASK_451_EVIDENCE,
+		},
+	],
+	[
+		"Codex realtime voice (blocks)",
+		{
+			outerBoundMs: TEST_HEAVIEST_BLOCKS_CASE_MS,
+			reason: `${LIBAVOID_PACKINGS}. Its board holds 51 parts and 92 relationships in 10 containers`,
+			task: "TASK-536",
+			evidence:
+				"Past 60 s on GitHub Actions run 40201286232 (commit 24d228731); 75.7 s locally at load 8 before TASK-530.05, then 67.6 s at load 5 after it, where Browser application took 19.6 s in the same run",
+		},
+	],
+]);
 
 // Every board on both engines gets the rendering deadline, inside the preload's
 // 60 s wall-clock ceiling, but the heavy Blocks cases, which declare their own
@@ -123,20 +167,11 @@ const cases: {
 for (const board of cases) {
 	for (const layout of LayoutEngineSchema.options) {
 		const name = `${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`;
-		const heavy = HEAVY_BLOCKS.has(`${board.name} (${layout})`);
+		const budget = HEAVY_BLOCKS.get(`${board.name} (${layout})`);
 		test(
 			name,
 			async () => {
-				if (heavy)
-					declareTestWallClockBudget({
-						test: name,
-						reason:
-							"Its Blocks layout routes the trunks of a six-block cluster with libavoid fifteen times a solve, once for each packing it weighs, over seven solves, and libavoid's nudging solves a region again for every pair of its free segments: the work is the layout's, and one hosted CI worker does it alone",
-						outerBoundMs: TEST_HEAVY_BLOCKS_CASE_MS,
-						task: "TASK-451",
-						evidence:
-							"Browser application 47.85 s and Board viewer 26.6 s on GitHub Actions run 37921029421 (commit 4dcd39b54), Browser application past 60 s on the run of 68e7f0e13; 46.8 s locally with one layout worker, 17.6 s with all; Browser application 52.9 s locally at load 6 after b032fd31b, against 18.5 s before it",
-					});
+				if (budget !== undefined) declareTestWallClockBudget({ test: name, ...budget });
 				const content = orderedFixture(board.content);
 				// Each case draws content nothing drew before, so this is a first layout.
 				const began = performance.now();
@@ -157,7 +192,7 @@ for (const board of cases) {
 					expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
 				}
 			},
-			heavy ? TEST_HEAVY_BLOCKS_CASE_MS : RENDER_CASE_TIMEOUT_MS,
+			budget?.outerBoundMs ?? RENDER_CASE_TIMEOUT_MS,
 		);
 	}
 }
