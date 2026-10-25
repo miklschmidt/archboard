@@ -7,8 +7,8 @@ import type {
 	CoordinatorToolName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import {
-	ARCHBOARD_VOICE_NAMESPACE,
-	ARCHBOARD_WORKHORSE_NAMESPACE,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMESPACE,
 	canonicalTool,
 	deepFreeze,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
@@ -262,7 +262,7 @@ function contract(
 	});
 }
 
-const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = deepFreeze([
+const WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 	contract("archboard_workhorse", "inspect_workhorse", {
 		authorityTarget: "server_bound_workhorse",
 		requiredLinks: [...WORKHORSE_LINKS],
@@ -295,7 +295,7 @@ const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = deepFreeze([
 	}),
 ] satisfies readonly CoordinatorToolContract[]);
 
-const ARCHBOARD_VOICE_TOOL_CONTRACTS = deepFreeze([
+const VOICE_TOOL_CONTRACTS = deepFreeze([
 	contract("archboard_voice", "resolve_spoken_approval", {
 		authorityTarget: "server_validated_spoken_approval",
 		requiredLinks: [...VOICE_LINKS],
@@ -305,21 +305,21 @@ const ARCHBOARD_VOICE_TOOL_CONTRACTS = deepFreeze([
 ] satisfies readonly CoordinatorToolContract[]);
 
 const COORDINATOR_TOOL_CONTRACTS = deepFreeze([
-	...ARCHBOARD_WORKHORSE_TOOL_CONTRACTS,
-	...ARCHBOARD_VOICE_TOOL_CONTRACTS,
+	...WORKHORSE_TOOL_CONTRACTS,
+	...VOICE_TOOL_CONTRACTS,
 ]);
 
-const ARCHBOARD_WORKHORSE_CATALOGUE = deepFreeze({
-	namespace: ARCHBOARD_WORKHORSE_NAMESPACE,
-	tools: ARCHBOARD_WORKHORSE_TOOL_CONTRACTS,
+const WORKHORSE_TOOL_CATALOGUE = deepFreeze({
+	namespace: WORKHORSE_TOOL_NAMESPACE,
+	tools: WORKHORSE_TOOL_CONTRACTS,
 });
-const ARCHBOARD_VOICE_CATALOGUE = deepFreeze({
-	namespace: ARCHBOARD_VOICE_NAMESPACE,
-	tools: ARCHBOARD_VOICE_TOOL_CONTRACTS,
+const VOICE_TOOL_CATALOGUE = deepFreeze({
+	namespace: VOICE_TOOL_NAMESPACE,
+	tools: VOICE_TOOL_CONTRACTS,
 });
 const COORDINATOR_TOOL_CATALOGUE = deepFreeze({
 	identity: COORDINATOR_IDENTITY,
-	namespaces: [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE],
+	namespaces: [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE],
 	tools: COORDINATOR_TOOL_CONTRACTS,
 });
 
@@ -337,10 +337,10 @@ export {
 	CoordinatorToolContractSchema,
 	type SuccessResultContract,
 	type CoordinatorToolContract,
-	ARCHBOARD_WORKHORSE_TOOL_CONTRACTS,
-	ARCHBOARD_VOICE_TOOL_CONTRACTS,
+	WORKHORSE_TOOL_CONTRACTS,
+	VOICE_TOOL_CONTRACTS,
 	COORDINATOR_TOOL_CONTRACTS,
-	ARCHBOARD_WORKHORSE_CATALOGUE,
-	ARCHBOARD_VOICE_CATALOGUE,
+	WORKHORSE_TOOL_CATALOGUE,
+	VOICE_TOOL_CATALOGUE,
 	COORDINATOR_TOOL_CATALOGUE,
 };

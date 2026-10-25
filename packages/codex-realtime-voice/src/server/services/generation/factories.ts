@@ -1,7 +1,7 @@
 import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
 import {
-	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
-	ARCHBOARD_COORDINATOR_NAMESPACE,
+	COORDINATOR_CALLBACK_MANIFEST_SHA256,
+	COORDINATOR_CALLBACK_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
 } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
 import { COORDINATOR_DYNAMIC_DISPATCHERS } from "#runtime/protocol/coordinator-tools/contract.ts";
@@ -44,7 +44,7 @@ function installDynamicRegistrations(
 	domains: readonly { readonly namespace: string; readonly manifestHash: string }[] = [],
 ): void {
 	const reserved = new Set<string>([
-		ARCHBOARD_COORDINATOR_NAMESPACE.name,
+		COORDINATOR_CALLBACK_NAMESPACE.name,
 		...COORDINATOR_DYNAMIC_DISPATCHERS.map(({ namespace }) => namespace),
 	]);
 	const installed = new Set<string>();
@@ -58,8 +58,8 @@ function installDynamicRegistrations(
 		transport.registerDynamicDispatcher(registration);
 	transport.registerDynamicDispatcher({
 		owner: TELL_COORDINATOR_OWNER,
-		namespace: ARCHBOARD_COORDINATOR_NAMESPACE.name,
-		manifestHash: ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
+		namespace: COORDINATOR_CALLBACK_NAMESPACE.name,
+		manifestHash: COORDINATOR_CALLBACK_MANIFEST_SHA256,
 	});
 }
 

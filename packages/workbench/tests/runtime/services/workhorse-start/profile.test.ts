@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/rules/instructions/authored.ts";
 import { createWorkhorseThreadStartParams } from "@archboard/codex-realtime-voice/runtime";
 import { ARCHBOARD_APP_NAMESPACE } from "#runtime/protocol/thread-tools/manifest.ts";
-import { ARCHBOARD_COORDINATOR_NAMESPACE } from "@archboard/codex-realtime-voice/runtime";
+import { COORDINATOR_CALLBACK_NAMESPACE } from "@archboard/codex-realtime-voice/runtime";
 
 const CHECKOUT_ROOT = "/workspace/archboard";
 
@@ -40,7 +40,7 @@ describe("codex workhorse start profile", () => {
 			historyMode: "paginated",
 			sessionStartSource: "startup",
 			threadSource: "archboard",
-			dynamicTools: [ARCHBOARD_APP_NAMESPACE, ARCHBOARD_COORDINATOR_NAMESPACE],
+			dynamicTools: [ARCHBOARD_APP_NAMESPACE, COORDINATOR_CALLBACK_NAMESPACE],
 			experimentalRawEvents: false,
 		});
 		expect(params.dynamicTools?.[0]).toEqual(ARCHBOARD_APP_NAMESPACE);

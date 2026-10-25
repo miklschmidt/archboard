@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
 import {
-	ARCHBOARD_VOICE_TOOL_NAMES,
-	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	VOICE_TOOL_NAMES,
+	WORKHORSE_TOOL_NAMES,
 	type CoordinatorToolName,
 	type NamespaceName,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
@@ -65,11 +65,11 @@ type CoordinatorToolInput =
 const DeclaredToolSchema = z.union([
 	z.object({
 		namespace: z.literal("archboard_workhorse"),
-		tool: z.enum(ARCHBOARD_WORKHORSE_TOOL_NAMES),
+		tool: z.enum(WORKHORSE_TOOL_NAMES),
 	}),
 	z.object({
 		namespace: z.literal("archboard_voice"),
-		tool: z.enum(ARCHBOARD_VOICE_TOOL_NAMES),
+		tool: z.enum(VOICE_TOOL_NAMES),
 	}),
 ]);
 
