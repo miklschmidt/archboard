@@ -25,10 +25,9 @@ export {
 	chooseKnownCheckout,
 	chosenCheckouts,
 	declareDirectory,
-	declareIfUnknown,
 	forgetDirectory,
 	listRegistry,
 	repositoryOfVault as registeredRepositoryOfVault,
 	setLanguageServer,
 } from "#runtime/store/repo-registry.ts";
-export type { Declared, RegistryListing } from "#runtime/store/repo-registry.ts";
+export type { RegistryListing } from "#runtime/store/repo-registry.ts";
