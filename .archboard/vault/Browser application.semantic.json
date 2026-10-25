@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 132,
+	"version": 135,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-25T17:10:57.936Z",
+	"updatedAt": "2026-10-25T17:29:56.460Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -22693,7 +22693,7 @@
 			"name": "TASK-537.01",
 			"lifecycle": "draft",
 			"parent": "6C82GLIe",
-			"summary": "The Board tab lists the board's pass-through entry points, and a result asks the agent the deletion question",
+			"summary": "The browser application: the shell, panes and workspace, board drawing, the agent and voice, and recordings",
 			"content": {
 				"nodes": [
 					{
@@ -24248,7 +24248,12 @@
 						"to": "cLeaiTWy",
 						"kind": "call",
 						"label": "a pane focused, a board opened, a fix or question asked",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/Application.tsx",
+							"symbol": "conversationActivation"
+						}
 					},
 					{
 						"id": "zd3E41io",
@@ -24309,7 +24314,7 @@
 					{
 						"id": "VflDZRYG",
 						"order": 67000,
-						"from": "HggZR41l",
+						"from": "zkDth8gp",
 						"to": "YpBc2auu",
 						"kind": "render",
 						"label": "gives the stage the ask of its pane's checkout",

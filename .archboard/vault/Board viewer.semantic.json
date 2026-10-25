@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 131,
+	"version": 134,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-25T17:10:50.461Z",
+	"updatedAt": "2026-10-25T17:24:25.860Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -52398,7 +52398,7 @@
 			"name": "TASK-537.01",
 			"lifecycle": "draft",
 			"parent": "XhomNCU5",
-			"summary": "The Board tab lists the board's pass-through entry points, and a result asks the agent the deletion question",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -53149,8 +53149,7 @@
 						"parent": "kr46TVLf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
-							"symbol": "DesignQuestions"
+							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx"
 						}
 					},
 					{
@@ -54830,20 +54829,6 @@
 						}
 					},
 					{
-						"id": "GKHPCh1f",
-						"order": 123000,
-						"from": "yTXmrBkt",
-						"to": "bofpU6mt",
-						"kind": "call",
-						"label": "light a result",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
-							"symbol": "usePeekControl"
-						}
-					},
-					{
 						"id": "YtfTCwJR",
 						"order": 124000,
 						"from": "yTXmrBkt",
@@ -54858,17 +54843,17 @@
 						}
 					},
 					{
-						"id": "jNZR44Ra",
+						"id": "Lujlr5Ll",
 						"order": 125000,
-						"from": "xJIh6Jdp",
-						"to": "AXAHSL3d",
+						"from": "yTXmrBkt",
+						"to": "51hijVQY",
 						"kind": "call",
-						"label": "provides the ask of the pane's checkout",
+						"label": "names the pane's vault in a question",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-							"symbol": "PaneAskContext"
+							"path": "apps/web/src/ui/components/semantic-board-canvas/DesignQuestions.tsx",
+							"symbol": "usePaneVault"
 						}
 					}
 				],
