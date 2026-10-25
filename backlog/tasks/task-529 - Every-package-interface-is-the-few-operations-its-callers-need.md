@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
+updated_date: '2026-10-25T05:38:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -25,3 +26,28 @@ TASK-500 moved code into packages but kept every name the old shallow callers im
 - [ ] #3 The renderer is out of scope because it is being rewritten
 - [ ] #4 bun run check passes, except the waived renderer timing owners
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Vault closing (branch vault/close-529-530-532, from f667552b2):
+
+- Proposals that hold TASK-529 changes:
+  - TASK-529 on Skill evaluation (bf1b98e49) and on Command dispatch (99dc8bf63). Footprint base 11340202f.
+  - TASK-532 on Command interface, Board viewer, Board persistence, Archboard server routes, Live panes and Archboard server. TASK-530 on Archboard.
+- Skill evaluation: the evaluation command line moved into the skills package (runEvaluationCommand). Eval CLI binds its command.ts, and scripts/evaluate-skill.ts is a new Eval script part that only hands over the arguments and the checkout.
+- Command dispatch: a new Vault address part (findAndRegisterVault) replaces the two calls the CLI made to the vault finder and the registry.
+- Command interface: the board, claim and pane clients are drawn in the CLI. Server client keeps health, sync status and refusal formatting.
+- Board viewer: Pane chrome moved from ui-kit into apps/web, and the shell provides it.
+- Browser application: server requests narrowed to requestJson and strictReply. The opener settings dialog moved into the code opener. The walkthrough package publishes the recording and replay pages.
+- Archboard server: the code check route makes one call to createCodeCheck().run. The code opener reads variants through readBoardVariant and finds a line through symbolLine. Rename and take-back are board operations (renameSemanticBoard, takeBackBoard).
+- Archboard: the narrowed interfaces moved anchors, and each is re-anchored: paneBoardAddress, resolveCodexExecutable, git, symbolLine, strictReply, readBoardVariant, errnoCode, CODEX_PROCESS_MS, keepTalk, recordingPageUrl and resolvePane.
+- Footprint parts left undrawn: they changed only by the timing sweep (bf475e4da), type derivation (8a5b268d5, 93d679053), the Git-runner sweep (1c8980a9c) or moved imports (2b3efc8a6). On Archboard, Recorded talks (keepTalk and place, 245bdcb38 and db387d815) and the narrowed server-requests, workspace, code-binding, code-intel and code-opener keep responsibilities that are still true. namedNotChanged was empty on every board.
+- Explained, not drawn: on Archboard, these RELATIONSHIP_UNDRAWN findings were in the base run, and no task changed them:
+  - Skill evaluation to walkthrough, process, board and renderer.
+  - code-intel to timing and workspace.
+  - Recorded talks to workspace.
+- Code findings (no source changed): these modules expose names that no file outside them uses. All were in the base run.
+  - Command routing (apps/cli/src/cli/protocol/routing) and Command contract (apps/cli/src/cli/protocol/contract).
+  - The apps/web modules Voice session, Pane session, Application composition, Workspace routing, Board catalog, Walkthrough replay and Walkthrough recording.
+<!-- SECTION:NOTES:END -->
