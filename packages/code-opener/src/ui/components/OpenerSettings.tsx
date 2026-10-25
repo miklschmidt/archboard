@@ -8,11 +8,9 @@ import type {
 	OpenerSelection,
 	OpenerSettingsTestRequest,
 } from "@archboard/code-binding/opening";
-import { OpenerSettingsDialog } from "@archboard/code-opener/opener-settings";
-import {
-	useOpenerSettingsFlow,
-	type OpenerSettingsFlowListener,
-} from "@archboard/code-opener/opener-settings";
+import { OpenerSettingsDialog } from "#ui/components/OpenerSettingsDialog.tsx";
+import { useOpenerSettingsFlow } from "#ui/hooks/use-opener-settings-flow.ts";
+import type { OpenerSettingsFlowListener } from "#ui/state/opener-settings-flow.ts";
 
 /** Inputs for the opener settings dialog. */
 interface OpenerSettingsProps {

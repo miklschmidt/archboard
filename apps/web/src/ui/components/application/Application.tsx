@@ -14,7 +14,7 @@ import {
 	infoNotice,
 	presentationNotice,
 } from "#ui/rules/application/notices.ts";
-import { OpenerSettings } from "#ui/components/application/OpenerSettings.tsx";
+import { OpenerSettings } from "@archboard/code-opener/opener-settings";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
 import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
