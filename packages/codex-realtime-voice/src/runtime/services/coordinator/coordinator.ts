@@ -56,9 +56,9 @@ interface StagedCoordinator {
  * either proves the coordinator it already has is still the reviewed one and reuses it, leaves a
  * thread it cannot prove as inspect-only, or starts a fresh one. Each `replace` starts a fresh
  * one in place of the current one, which a voice start asks for once the current coordinator has
- * carried a voice session (TASK-301). Calls are serialised, so two of them can never start two
- * coordinators at once. Other conversations keep coordinators of their own in the same epoch
- * (TASK-373), so only the starts this module made are its evidence.
+ * carried a voice session. Calls are serialised, so two of them can never start two
+ * coordinators at once. Other conversations keep coordinators of their own in the same epoch,
+ * so only the starts this module made are its evidence.
  * @param starterOptions - The session, epoch store, identity authority and durable state.
  * @returns The coordinator module.
  */

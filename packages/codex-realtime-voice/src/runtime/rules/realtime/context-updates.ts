@@ -7,7 +7,7 @@ import type { ActiveRealtimeSession } from "#runtime/services/realtime/state.ts"
  *
  * The context is data for the coordinator alone: a developer item on its own thread when the
  * session starts and whenever the host source changes, each replacing the last. The voice model is
- * never sent it; it hears the coordinator's answers (TASK-297).
+ * never sent it; it hears the coordinator's answers.
  * @param options The host source and session transport.
  * @param session The voice session that owns the watcher.
  * @param isCurrent Whether the session still owns its binding.

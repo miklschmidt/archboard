@@ -26,8 +26,8 @@ const COORDINATOR_NAMESPACE_ROLES = Object.freeze(["workhorse", "voice"] as cons
  * `project_doc_max_bytes: 0` stops Codex loading the checkout's `AGENTS.md` into the coordinator.
  * That file is written for an agent doing work in the repository: it tells every request to
  * begin with project procedure. The coordinator is a voice front desk whose whole brief is the
- * instructions the host gives it, and in its first narrated walkthrough (TASK-251) that
- * procedure cost eight seconds of silence before it presented a step. The workhorse, which does
+ * instructions the host gives it, and in a first narrative that procedure cost eight seconds of
+ * silence before it presented a step. The workhorse, which does
  * work in the repository, still reads the file.
  */
 const COORDINATOR_THREAD_CONFIG = deepFreeze({

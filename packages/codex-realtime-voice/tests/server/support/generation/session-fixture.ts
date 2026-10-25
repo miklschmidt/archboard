@@ -45,7 +45,6 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 				shell: true,
 				repository: true,
 				approvals: true,
-				boundedBoardAction: true,
 				sustainedWork: "instruction_policy",
 			},
 			persistence: null,

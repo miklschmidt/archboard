@@ -220,7 +220,7 @@ function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationB
 /**
  * Compare two bindings by their epoch and workhorse alone. An accepted operation belongs to its
  * workhorse turn, and it follows that turn to the end even after a voice start replaces the
- * coordinator that asked for it (TASK-301); what it reports then reaches no coordinator.
+ * coordinator that asked for it; what it reports then reaches no coordinator.
  * @param left - One binding.
  * @param right - The other binding.
  * @returns Whether both bindings name the same workhorse under the same epoch.

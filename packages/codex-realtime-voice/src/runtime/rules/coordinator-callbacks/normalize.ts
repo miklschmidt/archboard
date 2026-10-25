@@ -234,7 +234,7 @@ function normalizeContextCallback(
 }
 
 /**
- * Normalize one piece of workhorse news into the callback the coordinator is given (TASK-321).
+ * Normalize one piece of workhorse news into the callback the coordinator is given.
  * @param event - The workhorse thread's own event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.

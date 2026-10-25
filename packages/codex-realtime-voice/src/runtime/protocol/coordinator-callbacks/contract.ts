@@ -58,7 +58,7 @@ interface ContextAnnouncementSource {
 }
 
 /**
- * One event of the linked workhorse thread itself, whoever started the turn (TASK-321): a turn
+ * One event of the linked workhorse thread itself, whoever started the turn: a turn
  * that ended, one that began waiting on the user, or a message the workhorse sent the coordinator.
  */
 interface WorkhorseNewsSource {
@@ -83,7 +83,7 @@ type CoordinatorCallbackSource =
 interface CoordinatorCallbackLinkCorrelation {
 	readonly binding: ThreadLinkBindingSnapshot;
 	readonly target: ThreadLinkTarget;
-	/** The checkout the workhorse works in, which news of it names (ADR 0050). */
+	/** The checkout the workhorse works in, which news of it names. */
 	readonly checkout: string;
 }
 
@@ -170,7 +170,7 @@ interface CoordinatorContextCallback {
 	readonly threadLinkReason: string | null;
 	readonly context: AnnouncedContext;
 }
-/** Workhorse news about the linked workhorse thread, as the coordinator is given it (TASK-321). */
+/** Workhorse news about the linked workhorse thread, as the coordinator is given it. */
 interface CoordinatorWorkhorseNewsCallback {
 	readonly kind: "workhorse_news";
 	readonly type: WorkhorseNewsSource["type"];
@@ -196,7 +196,7 @@ interface CoordinatorCallbackRealtimeGeneration {
 /**
  * One append to the live voice session: quiet context the voice model may use, or speech it
  * answers now. In a full-duplex session appended text is quiet whatever role it carries; only
- * speakable text is something the voice model says (TASK-251).
+ * speakable text is something the voice model says.
  */
 type CoordinatorCallbackRealtimeRequest =
 	| {
@@ -246,7 +246,7 @@ type WorkhorseNewsSituation = "ended" | "waiting" | "message";
 type CoordinatorCallbackTurnResult = CoordinatorCallbackMutationResult | "unattended";
 
 /**
- * Gives the coordinator one workhorse outcome while voice is live (TASK-291, TASK-321).
+ * Gives the coordinator one workhorse outcome while voice is live.
  *
  * In a full-duplex voice session text appended to the voice model is quiet context and nothing
  * answers it, so work that ended would sit unheard until the user asked again. The coordinator
@@ -346,7 +346,7 @@ interface CoordinatorCallbackOptions {
 	readonly realtime: CoordinatorCallbackRealtimePort;
 	/** Absent where nothing can reach the coordinator; workhorse outcomes then stay quiet. */
 	readonly coordinatorTurn?: CoordinatorCallbackTurnPort;
-	/** Gives the coordinator thread one quiet sentence without starting a turn (TASK-293.06). */
+	/** Gives the coordinator thread one quiet sentence without starting a turn. */
 	readonly coordinatorContext: CoordinatorCallbackContextPort;
 	/** Answers the workhorse's tell_coordinator calls. */
 	readonly transport: Pick<CodexTransport, "respond">;
@@ -354,7 +354,7 @@ interface CoordinatorCallbackOptions {
 	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	/**
-	 * The link of every ready workhorse of the tab session, one for each checkout (ADR 0050). A
+	 * The link of every ready workhorse of the tab session, one for each checkout. A
 	 * callback is correlated with the workhorse its thread names, and an announced change with
 	 * the one voice is bound to.
 	 */

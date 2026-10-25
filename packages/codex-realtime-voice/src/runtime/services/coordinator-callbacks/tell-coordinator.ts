@@ -1,4 +1,4 @@
-// The workhorse's one way to reach the coordinator while it works (TASK-321).
+// The workhorse's one way to reach the coordinator while it works.
 //
 // The coordinator hears on its own when a workhorse turn ends or waits on the user. Between those,
 // only the workhorse knows it has a question for the user, a milestone they asked about, or

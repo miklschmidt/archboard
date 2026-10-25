@@ -120,12 +120,12 @@ interface CodexCoordinatorToolsOptions {
 	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
 	readonly authority: CoordinatorToolAuthorityPort;
 	/**
-	 * The workhorse of the checkout a workhorse tool names (ADR 0050), or null when the tab session
+	 * The workhorse of the checkout a workhorse tool names, or null when the tab session
 	 * has none there. The checkout is the one argument that chooses; the binding is the server's.
 	 */
 	readonly workhorseFor: (checkout: string) => CoordinatorToolWorkhorse | null;
 	/**
-	 * Stop every running workhorse of the calling tab session (ADR 0048, ADR 0050), whichever
+	 * Stop every running workhorse of the calling tab session, whichever
 	 * checkout it works in, and say what each one did, in the order the tab session keeps them. It
 	 * names no checkout and no turn. A rejection with no refusal code leaves the outcome unknown.
 	 */

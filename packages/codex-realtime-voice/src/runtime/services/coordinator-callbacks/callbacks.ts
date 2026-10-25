@@ -82,7 +82,7 @@ function settledLedgerLimitOf(options: CoordinatorCallbackOptions): number {
  * Whether one announced change is this session's own work.
  *
  * The session is the coordinator and every workhorse it drives, one for each
- * checkout (ADR 0050). Both identities are read at the moment the change
+ * checkout. Both identities are read at the moment the change
  * arrives, because a coordinator is created, restarted and retired inside one
  * workhorse's life and New conversation replaces the workhorse under it — a value
  * sampled once would stop recognising the pair it was meant to.
@@ -402,7 +402,7 @@ export function createCodexCoordinatorCallbacks(
 	return freeze({
 		enqueue,
 		/**
-		 * Queue the workhorse news a Codex notification carries, if any (TASK-321).
+		 * Queue the workhorse news a Codex notification carries, if any.
 		 * @param event - Any Codex notification.
 		 */
 		onNotification: (event) => {
@@ -415,7 +415,7 @@ export function createCodexCoordinatorCallbacks(
 			}
 		},
 		/**
-		 * Answer the workhorse's tell_coordinator call: its message is workhorse news (TASK-321).
+		 * Answer the workhorse's tell_coordinator call: its message is workhorse news.
 		 * @param request - The call.
 		 */
 		onServerRequest: (request) => {

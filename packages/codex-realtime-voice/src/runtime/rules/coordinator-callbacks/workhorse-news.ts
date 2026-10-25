@@ -1,11 +1,11 @@
-// Workhorse news: what the coordinator is told about the workhorse threads themselves (TASK-321).
+// Workhorse news: what the coordinator is told about the workhorse threads themselves.
 //
 // The coordinator decides what the voice model says, so it hears when a workhorse turn ends or
 // starts waiting on the user, whoever started the turn: work the coordinator gave it, and a turn
 // the user started from the conversation alike. That comes from each workhorse thread's own
 // notifications, one source for every turn, so the coordinator's delegations are not reported
 // twice. It also hears what a workhorse tells it through tell_coordinator. A tab session has one
-// workhorse for each checkout (ADR 0050), so each piece of news names the checkout of the
+// workhorse for each checkout, so each piece of news names the checkout of the
 // workhorse it is about. What reaches the coordinator is one plain sentence; it reads the rest
 // through inspect_workhorse.
 
