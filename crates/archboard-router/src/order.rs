@@ -19,10 +19,12 @@ struct View<'a> {
 }
 
 impl View<'_> {
+    /// How many points the route has.
     fn len(&self) -> usize {
         self.points.len()
     }
 
+    /// The route's point at an index, counted from the end it is read from.
     fn at(&self, index: usize) -> Point {
         if self.reversed {
             self.points[self.points.len() - 1 - index]

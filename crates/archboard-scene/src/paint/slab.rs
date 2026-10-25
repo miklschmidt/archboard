@@ -69,6 +69,7 @@ pub enum Lift {
 }
 
 impl Lift {
+    /// How far the block's shadow reaches below it.
     fn reach(self) -> f64 {
         match self {
             Lift::Card => SHADOW_REACH,

@@ -39,6 +39,8 @@ impl Constraint {
 
 const EPS: f64 = 1e-7;
 
+/// Variables that move together: their indices, the constraints that hold them
+/// together, where the block stands, and whether it is still in use or merged away.
 struct Block {
     vars: Vec<usize>,
     active: Vec<usize>,
@@ -46,6 +48,7 @@ struct Block {
     live: bool,
 }
 
+/// One solve: each variable's block and its offset in that block, and the blocks.
 struct Solver<'a> {
     vars: &'a [Var],
     constraints: &'a [Constraint],
@@ -55,6 +58,7 @@ struct Solver<'a> {
 }
 
 impl<'a> Solver<'a> {
+    /// Start with each variable in a block of its own, where it wants to be.
     fn new(vars: &'a [Var], constraints: &'a [Constraint]) -> Solver<'a> {
         Solver {
             vars,
@@ -74,10 +78,12 @@ impl<'a> Solver<'a> {
         }
     }
 
+    /// Where a variable stands: its block's position plus its offset in the block.
     fn at(&self, var: usize) -> f64 {
         self.blocks[self.block_of[var]].position + self.offset[var]
     }
 
+    /// How far a constraint is from holding: above zero where it is broken.
     fn violation(&self, c: &Constraint) -> f64 {
         self.at(c.left) + c.gap - self.at(c.right)
     }

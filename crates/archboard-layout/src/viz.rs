@@ -133,6 +133,7 @@ impl Edge {
         }
     }
 
+    /// The edge as viz-js reads it.
     fn json(&self) -> J {
         J::obj([
             ("tail", J::str(&self.tail)),
@@ -143,6 +144,7 @@ impl Edge {
 }
 
 impl Node {
+    /// The node as viz-js reads it.
     fn json(&self) -> J {
         J::obj([
             ("name", J::str(&self.name)),
@@ -162,6 +164,7 @@ pub(crate) struct Subgraph {
 }
 
 impl Subgraph {
+    /// The subgraph as viz-js reads it, with only the members it has.
     fn json(&self) -> J {
         let mut members = Vec::new();
         if let Some(name) = &self.name {
