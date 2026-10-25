@@ -1,7 +1,7 @@
 //! A fan whose lanes stand in the wrong order: two lines leave one port along
 //! one row, and the outer lane turns back across the inner one. Dropping it a
 //! lane before its sibling's puts the fan in order, before folded lanes are
-//! exchanged (`orderFans` of `folded-crossings.ts`).
+//! exchanged (`folded`).
 
 use std::collections::BTreeSet;
 

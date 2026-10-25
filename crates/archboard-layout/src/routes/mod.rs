@@ -33,7 +33,7 @@ pub struct LineLook {
     pub arrowhead: Arrowhead,
 }
 
-// The distances of `shared/constants/spacing.ts` that only this pass keeps.
+// The distances that only this pass keeps.
 
 /// How far a hop reaches along its line from the crossing to either foot.
 const BRIDGE_RADIUS: f64 = 7.0;

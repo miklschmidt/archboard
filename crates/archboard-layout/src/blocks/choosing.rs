@@ -1,7 +1,6 @@
-//! What the renderer weighs where it chooses between the solves of one board
-//! (`solves.ts`). Each solve tells, with its drawing, the drawing's reading:
-//! what every choice between two drawings reads of it. The renderer hands two
-//! readings back to choose between them, and never reads one itself.
+//! What the core weighs where it chooses between the solves of one board
+//! (`architecture::choosing`). Each solve tells, with its drawing, the
+//! drawing's reading: what every choice between two drawings reads of it.
 //!
 //! Lines that join on the way to one card stay one line into it: each such
 //! join is kept whole by its labels before the join, or by its lines keeping

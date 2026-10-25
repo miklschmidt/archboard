@@ -1,7 +1,7 @@
 //! Two routes that end on one row, each turning toward the other's side,
 //! cross inside their rounded corners, where no hop fits and neither can be
 //! followed. Exchanging their lanes moves that crossing onto straight runs,
-//! where the crossing pass hops it like any other (`folded-crossings.ts`).
+//! where the crossing pass hops it like any other.
 //! A fan whose lanes stand in the wrong order is put in order first.
 
 use std::collections::BTreeSet;
