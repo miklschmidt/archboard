@@ -1,3 +1,4 @@
+import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type {
 	ApprovalSnapshot,
 	CodexApprovalBroker,
@@ -45,6 +46,7 @@ interface ValidationContext {
 		"get" | "spokenEligibility" | "spokenEffectPresentation"
 	>;
 	readonly identity: IdentityAuthority;
+	readonly tools: VoiceToolset;
 	readonly currentCoordinator: () => CoordinatorIdentity | null;
 	readonly currentRealtime: () => RealtimeCorrelation | null;
 	readonly currentTime: () => number | null;

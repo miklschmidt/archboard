@@ -1,9 +1,4 @@
-import {
-	VOICE_TOOLS_MANIFEST_SHA256,
-	WORKHORSE_TOOLS_MANIFEST_SHA256,
-	type NamespaceName,
-} from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
-import { COORDINATOR_NAMESPACE_NAMES } from "#runtime/protocol/coordinator-tool-contract/contracts.ts";
+import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	type CodexCoordinatorToolsOptions,
@@ -13,7 +8,6 @@ import {
 	type LogicalToolCallCorrelation,
 	IdentityValidationError,
 } from "@archboard/codex-app-server/identity";
-import { z } from "zod";
 
 class CoordinatorToolValidationError extends Error {
 	override readonly name = "CoordinatorToolValidationError";
@@ -217,21 +211,14 @@ function assertCallIdentitiesMatchParams(
 	}
 }
 
-const MANIFEST_HASHES: Readonly<Record<NamespaceName, string>> = Object.freeze({
-	archboard_workhorse: WORKHORSE_TOOLS_MANIFEST_SHA256,
-	archboard_voice: VOICE_TOOLS_MANIFEST_SHA256,
-});
-
-const NamespaceNameSchema = z.enum(COORDINATOR_NAMESPACE_NAMES);
-
 /**
- * Check that the call names a reviewed namespace with that namespace's reviewed manifest hash.
+ * Check that the call names one of the coordinator's namespaces with that namespace's manifest hash.
+ * @param tools - The host's built-in namespaces.
  * @param call - The decoded logical call.
  */
-function assertReviewedManifest(call: LogicalToolCallCorrelation): void {
-	const namespace = NamespaceNameSchema.safeParse(call.namespace);
-	const expectedHash = namespace.success ? MANIFEST_HASHES[namespace.data] : null;
-	if (expectedHash === null || call.manifestHash !== expectedHash) {
+function assertReviewedManifest(tools: VoiceToolset, call: LogicalToolCallCorrelation): void {
+	const role = toolRoleOf(tools, call);
+	if (role !== "workhorse" && role !== "voice") {
 		fail("invalid_call", "The dynamic call does not carry the reviewed namespace manifest hash.");
 	}
 }
@@ -288,7 +275,7 @@ function assertLogicalCall(
 	const call = parseLogicalCall(options, request);
 	assertCallMatchesRequest(call, request);
 	assertCallIdentitiesMatchParams(options, call, request);
-	assertReviewedManifest(call);
+	assertReviewedManifest(options.tools, call);
 	const current = options.authority.currentCall();
 	if (current === null || !sameCall(current, call)) {
 		fail("invalid_call", "The coordinator call is no longer the current executing call.");

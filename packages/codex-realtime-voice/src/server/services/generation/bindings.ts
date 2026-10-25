@@ -1,3 +1,4 @@
+import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
 import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
 import type { ApprovalSnapshot } from "#runtime/services/approvals/contract.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
@@ -216,6 +217,7 @@ function approvalBindings(
  */
 function createProductionBindings(context: BindingContext): ProductionCodexWorkbenchBindings {
 	return {
+		tools: createVoiceToolset(context.server.host.instructions.coordinator.identity),
 		dynamicRegistrations: context.server.host.domainTools?.registrations ?? [],
 		...storageBindings(context),
 		...approvalBindings(context),
