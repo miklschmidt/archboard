@@ -1,17 +1,18 @@
 // What a pane has picked out: one subject, or one group's members, never both;
-// and the design question whose answer the picture lights while nothing is
-// picked (ADR 0057).
+// and the step through a design question's answer that the picture lights
+// while nothing is picked (ADR 0057).
 //
-// Which group is selected, and which question is chosen, is this pane's, kept
-// on the board and the resolved variant it was chosen on (use-placed-choice.ts):
-// a walk into another board, or to another state of this one, drops it, while a
-// change of view keeps it. Selecting a group replaces what was picked out and
-// leaves any guided reading; picking anything out lets the group go, and so does
-// an explanation opening, whoever opens it, and a part the linked pane picks
-// (TASK-538.02). Choosing a question lets the pick, the group and any guided
-// reading go, and a group or an explanation lets the question go. A pick leaves
-// it chosen: the pick shows its own light, and letting go brings the answer's
-// back. Letting go with nothing picked lets the question go.
+// Which group is selected, and where the person is in which question, is this
+// pane's, kept on the board and the resolved variant it was chosen on
+// (use-placed-choice.ts): a walk into another board, or to another state of
+// this one, drops it, while a change of view keeps it. Selecting a group
+// replaces what was picked out and leaves any guided reading; picking anything
+// out lets the group go, and so does an explanation opening, whoever opens it,
+// and a part the linked pane picks (TASK-538.02). Stepping to a subject of a
+// question's answer lets the pick, the group and any guided reading go, and a
+// group or an explanation lets the question go. A pick leaves it chosen: the
+// pick shows its own light, and letting go brings the step's back. Letting go
+// with nothing picked lets the question go.
 //
 // What was picked out is reported as what it is, not only as an id. The pane is
 // the one place that knows: it has the board open and has just drawn the thing.
@@ -31,7 +32,7 @@ import type {
 import {
 	answerOf,
 	type ChosenQuestion,
-	type DesignQuestion,
+	type QuestionStep,
 } from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { GroupChoice, GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { SemanticVariant } from "@archboard/board/document";
@@ -78,23 +79,24 @@ interface Picking {
 	readonly groups: readonly GroupChoice[];
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
-	/** The design question chosen and the subjects its answer names, or null. */
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
 	readonly question: ChosenQuestion | null;
 	/**
-	 * Choose a design question in place of the pick, the group and any guided reading.
-	 * @param question The question, or null to let go.
+	 * Step to a subject of a design question's answer, in place of the pick, the
+	 * group and any guided reading.
+	 * @param step The question and the subject, or null to let the question go.
 	 */
-	readonly onChooseQuestion: (question: DesignQuestion | null) => void;
+	readonly onChooseQuestion: (step: QuestionStep | null) => void;
 }
 
 /**
- * Whether a variant still asks a question.
+ * Whether a variant still holds a step: its question's answer still names the subject.
  * @param variant The variant on screen.
- * @param question The question.
- * @returns True while its answer names a part.
+ * @param step The question and the subject the person is at.
+ * @returns True while it does.
  */
-function stillAsks(variant: SemanticVariant, question: DesignQuestion): boolean {
-	return answerOf(variant.content, question).length > 0;
+function stillAsks(variant: SemanticVariant, step: QuestionStep): boolean {
+	return answerOf(variant.content, step.question).includes(step.at);
 }
 
 /**
@@ -130,13 +132,13 @@ function usePicking(inputs: PickingInputs): Picking {
 		[choose, chooseGroup, onSelect],
 	);
 	const onChooseQuestion = useCallback(
-		(question: DesignQuestion | null): void => {
-			if (question !== null) {
+		(step: QuestionStep | null): void => {
+			if (step !== null) {
 				choose(null);
 				onSelect(null);
 				chooseGroup(null);
 			}
-			chooseQuestion(question);
+			chooseQuestion(step);
 		},
 		[choose, chooseGroup, chooseQuestion, onSelect],
 	);
@@ -144,7 +146,7 @@ function usePicking(inputs: PickingInputs): Picking {
 		() =>
 			asked.chosen === null || variant === null
 				? null
-				: { question: asked.chosen, subjects: answerOf(variant.content, asked.chosen) },
+				: { ...asked.chosen, subjects: answerOf(variant.content, asked.chosen.question) },
 		[asked.chosen, variant],
 	);
 	const groupControls = useMemo(

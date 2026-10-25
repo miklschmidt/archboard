@@ -56,6 +56,7 @@ import {
 } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { NO_FOCUS, type BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
+import type { AnswerStep } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
 
@@ -201,8 +202,8 @@ interface SemanticDiagramProps {
 	focus?: BeatFocus | undefined;
 	/** The selected group and its members, each marked as attended; null for none. */
 	group: GroupSelection | null;
-	/** The subjects of the chosen design question's answer, lit while nothing is poked; null for none. */
-	answer: readonly string[] | null;
+	/** Where the person is in the chosen design question's answer, lit while nothing is poked; null for none. */
+	answer: AnswerStep | null;
 	/** What a presented step's veil leaves standing; null for no veil. */
 	veil: ReadonlySet<string> | null;
 	/**

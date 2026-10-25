@@ -42,7 +42,7 @@ import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type {
 	ChosenQuestion,
-	DesignQuestion,
+	QuestionStep,
 } from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { GroupChoice, GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
@@ -119,10 +119,10 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly group: GroupSelection | null;
 	/** Select a group's members in place of the selection and any guided reading; null to let go. */
 	readonly onChooseGroup: (group: string | null) => void;
-	/** The design question chosen and the subjects its answer names, or null. */
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
 	readonly question: ChosenQuestion | null;
-	/** Choose a design question in place of the pick, the group and any guided reading; null to let go. */
-	readonly onChooseQuestion: (question: DesignQuestion | null) => void;
+	/** Step to a subject of a design question's answer in place of the pick, the group and any guided reading; null to let go. */
+	readonly onChooseQuestion: (step: QuestionStep | null) => void;
 	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
 	/** What the picture on screen draws each kind with, for the key and the inspector. */

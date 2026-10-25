@@ -1,21 +1,26 @@
 // The design questions the Board tab asks of the variant on screen (TASK-537),
-// and the subjects each one's answer names, which a chosen question lights on
-// the picture (ADR 0057).
+// the subjects each one's answer names, and what a person reads on the picture
+// while they go through that answer one subject at a time (ADR 0057).
 //
 // A question gives counts and names, never a score or a verdict (ADR 0044).
 
 import { passThroughEntryPoints } from "@archboard/board/container-interface";
 import type { VariantContent } from "@archboard/board/content";
-import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { subjectBox } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import { connectionsOf } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 
 /** A design question: for now the deletion test's, the entry points that only pass one call on. */
 type DesignQuestion = "pass-through";
 
-/** The design question a person chose, and the subjects its answer names. */
-interface ChosenQuestion {
+/** Where a person is in a design question's answer. */
+interface QuestionStep {
 	readonly question: DesignQuestion;
-	/** The ids of the parts its answer names, never empty. */
+	/** The subject of the answer the person is at. */
+	readonly at: string;
+}
+
+/** The design question a person chose, the subjects its answer names, and the one they are at. */
+interface ChosenQuestion extends QuestionStep {
+	/** The ids of the parts its answer names, never empty, `at` among them. */
 	readonly subjects: readonly string[];
 }
 
@@ -44,13 +49,18 @@ function answerOf(content: VariantContent, question: DesignQuestion): readonly s
 }
 
 /**
- * How many of an answer's subjects the picture on screen does not draw.
- * @param atlas Where every subject of the picture ended up.
- * @param subjects The subjects the answer names.
- * @returns The count.
+ * The parts a step shows with the subject it is at: the other end of every
+ * relationship that crosses the subject's edge, so the reader sees what calls
+ * it and what it calls.
+ * @param content What the variant holds.
+ * @param at The subject.
+ * @returns Their ids.
  */
-function hiddenBy(atlas: SemanticAtlas, subjects: readonly string[]): number {
-	return subjects.filter((id) => subjectBox(atlas, id) === null).length;
+function aroundStep(content: VariantContent, at: string): readonly string[] {
+	const { sends, receives } = connectionsOf(content, at);
+	return [...sends, ...receives].flatMap((link) =>
+		link.other === undefined ? [] : [link.other.id],
+	);
 }
 
-export { answerOf, hiddenBy, type ChosenQuestion, type DesignQuestion };
+export { answerOf, aroundStep, type ChosenQuestion, type DesignQuestion, type QuestionStep };

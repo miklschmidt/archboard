@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:04:00Z'
-updated_date: '2026-10-25T19:46:00Z'
+updated_date: '2026-10-25T21:51:00Z'
 labels:
   - design-questions
   - ui
@@ -25,10 +25,11 @@ ADR 0057 (TASK-537.02) lets a chosen design question light its answer. Without t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Choosing a question leaves its subjects and the containers that hold them lit, and recedes the rest. Nothing is written
-- [ ] #2 A subject that the view does not draw is lit through the nearest drawn container, and the region says how many subjects the view hides
-- [ ] #3 A pick shows its own Light, and letting go of the pick brings the light of the chosen question back
-- [ ] #4 Choosing a group or a walkthrough step lets the question go, and choosing a question lets the pick and the group go
+- [ ] #1 Choosing a result of a question lights every subject of its answer and the containers that hold them, with the chosen result's relationships and the parts at their other ends, and recedes the rest. Nothing is written
+- [ ] #2 The camera frames the chosen result with the parts at the other ends of its relationships, at a size a person can read. When the view does not draw it, the pane opens the whole board first
+- [ ] #3 The Board tab stays open while the person goes from one result to the next, the current result's row is pressed, and choosing that row again lets the question go
+- [ ] #4 A pick shows its own Light, and letting go of the pick brings the light of the chosen question back
+- [ ] #5 Choosing a group or a walkthrough step lets the question go, and choosing a question lets the pick and the group go
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,6 +46,16 @@ Built on ADR 0057 while it is still proposed: the owner asked to see the light w
 7. A dark screenshot of the light on a board for the owner.
 
 Board proposal: Board viewer@TASK-537.03 (Light connections, List design questions and Viewer entry point descriptions; the two relationship labels into them).
+
+Revision after the owner saw the first build (2026-10-25). In the Overview the light stood on three closed containers while the region named five entry points nobody could see, and in Everything the five lit cards were too small to read. The owner chose a step-through: the camera goes to one result at a time while the others stay lit, using the result rows.
+
+8. A result row is a step of the chosen question, not a pick: the Board tab stays open, so the next row is one click away. The row of the current step is pressed. Choosing it again lets the question go. This replaces criterion 2 of TASK-537.01 (a result picked its part). The light row and its count of hidden subjects go.
+
+9. The step lights the whole answer with the containers, plus what a pick of the current result lights: its relationships and the parts at their other ends. That shows the callers and the one call it passes on, which is what the question asks about.
+
+10. The camera frames the current result with the parts at the other ends of its relationships (useSubjectFocus takes the parts around the subject). A result the view does not draw opens the whole board first, as showing a part already does.
+
+11. ADR 0057, CONTEXT.md, the shell design doc and the stage tests follow. QA in a dark browser at 1920x1080 on the Board viewer board: every step readable, with every screenshot shown to the owner.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

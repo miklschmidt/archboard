@@ -6,8 +6,9 @@
 //
 // The same reading says what the picture lights when a part is poked (`litBy`):
 // the part and all it holds, every relationship that touches any of it, and the
-// parts at their other ends. A chosen design question lights the subjects of its
-// answer and the containers that hold them (`litByAnswer`, ADR 0057).
+// parts at their other ends. A step through a chosen design question's answer
+// lights every subject of the answer, and what a pick of the one the person is
+// at lights (`litByAnswer`, ADR 0057).
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -172,24 +173,33 @@ function litInPicture(
 	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
 }
 
+/** A step through a chosen design question's answer, as far as the light is concerned. */
+interface AnswerStep {
+	/** Every subject the answer names. */
+	readonly subjects: readonly string[];
+	/** The subject the person is at. */
+	readonly at: string;
+}
+
 /**
- * What the picture lights for the answer of a chosen design question: its
- * subjects and every container that holds them, so a subject the view does not
- * draw stands through the nearest container it draws.
+ * What the picture lights for a step through a chosen design question's
+ * answer: every subject of the answer, what a pick of the subject the person
+ * is at lights, and every container that holds any of them. A subject the view
+ * does not draw stands through the nearest container it draws.
  * @param wiring What the variant says, or null while that is not known.
  * @param atlas Where every subject of the picture ended up.
- * @param subjects The subjects the answer names, or null while no question is chosen.
+ * @param answer The step, or null while no question is chosen.
  * @returns The ids to leave standing, or null when the picture draws none of them.
  */
 function litByAnswer(
 	wiring: Wiring | null,
 	atlas: SemanticAtlas,
-	subjects: readonly string[] | null,
+	answer: AnswerStep | null,
 ): ReadonlySet<string> | null {
-	if (wiring === null || subjects === null) {
+	if (wiring === null || answer === null) {
 		return null;
 	}
-	const lit = new Set(subjects);
+	const lit = new Set([...answer.subjects, ...(litBy(wiring, answer.at) ?? [])]);
 	withContainers(wiring.nodes, lit);
 	return [...lit].some((one) => subjectBox(atlas, one) !== null) ? lit : null;
 }
@@ -201,6 +211,7 @@ export {
 	litInPicture,
 	subtreeOf,
 	withReach,
+	type AnswerStep,
 	type Connections,
 	type Link,
 	type Wiring,

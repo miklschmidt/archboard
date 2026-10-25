@@ -27,10 +27,7 @@
 import type { JSX, ReactNode } from "react";
 
 import { passThroughEntryPoints } from "@archboard/board/container-interface";
-import type {
-	SemanticAtlas,
-	SemanticRender,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { DesignQuestions } from "#ui/components/semantic-board-canvas/DesignQuestions.tsx";
 import { InterfaceChanges } from "#ui/components/semantic-board-canvas/InterfaceChanges.tsx";
 import { SemanticChanges } from "#ui/components/semantic-board-canvas/SemanticChanges.tsx";
@@ -48,7 +45,7 @@ import { keyOf, type AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type {
 	ChosenQuestion,
-	DesignQuestion,
+	QuestionStep,
 } from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import { interfaceChangesOf } from "#ui/rules/semantic-board-canvas/board/interface-changes.ts";
@@ -93,13 +90,13 @@ interface SemanticBoardPanelProps {
 	 * @param id The part.
 	 */
 	onShow: (id: string) => void;
-	/** The design question chosen and the subjects its answer names, or null. */
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
 	question: ChosenQuestion | null;
 	/**
-	 * Choose a design question, whose answer the picture lights, or let it go.
-	 * @param question The question, or null to let go.
+	 * Step to a subject of a design question's answer, which the picture lights and the camera brings in, or let the question go.
+	 * @param step The question and the subject, or null to let go.
 	 */
-	onChooseQuestion: (question: DesignQuestion | null) => void;
+	onChooseQuestion: (step: QuestionStep | null) => void;
 	/** Whether this pane draws comparison treatment. */
 	comparison: boolean;
 	/** Change the canvas comparison treatment. */
@@ -225,15 +222,6 @@ function groupSection(props: SemanticBoardPanelProps): ReactNode {
 }
 
 /**
- * Where the picture on screen drew each subject.
- * @param answer The render the server gave.
- * @returns The atlas, or null when nothing is drawn.
- */
-function atlasOf(answer: SemanticRender): SemanticAtlas | null {
-	return answer.kind === "drawn" ? answer.atlas : null;
-}
-
-/**
  * The design questions of the variant on screen.
  * @param props What the tab is assembled from.
  * @returns The section, or null before the variant has arrived or when it asks nothing.
@@ -254,9 +242,7 @@ function questions(props: SemanticBoardPanelProps): ReactNode {
 			variant={variant.id}
 			passing={passing}
 			look={props.look}
-			onShow={props.onShow}
 			question={props.question}
-			atlas={atlasOf(answer)}
 			onChooseQuestion={props.onChooseQuestion}
 		/>
 	);

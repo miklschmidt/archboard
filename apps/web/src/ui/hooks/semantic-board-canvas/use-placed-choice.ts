@@ -1,5 +1,5 @@
-// A choice one pane made about the picture on screen: a group, or a design
-// question (ADR 0057).
+// A choice one pane made about the picture on screen: a group, or a step
+// through a design question's answer (ADR 0057).
 //
 // Session state, in the same class as the camera, the selection and the place
 // in a walkthrough: choosing is reading, not editing. Nothing is written, no
@@ -20,7 +20,7 @@ import { useCallback, useState } from "react";
 import type { SemanticVariant } from "@archboard/board/document";
 
 /** Where a choice was made: which board, and which state of it. */
-interface ChoicePlace<T extends string> {
+interface ChoicePlace<T extends object | string> {
 	/** The board on screen. */
 	readonly board: string;
 	/** The resolved variant on screen. */
@@ -29,7 +29,7 @@ interface ChoicePlace<T extends string> {
 }
 
 /** What the pane chose on the picture on screen, and how to change that. */
-interface PlacedChoice<T extends string> {
+interface PlacedChoice<T extends object | string> {
 	/** The choice, or null for none. */
 	readonly chosen: T | null;
 	/**
@@ -49,7 +49,7 @@ interface PlacedChoice<T extends string> {
  * @param keeps Whether the variant still offers the choice.
  * @returns Whether to forget the choice for good.
  */
-function choiceOver<T extends string>(
+function choiceOver<T extends object | string>(
 	place: ChoicePlace<T>,
 	board: string,
 	variant: SemanticVariant | null,
@@ -66,7 +66,7 @@ function choiceOver<T extends string>(
  * @param variant The resolved variant on screen, or null while it is unknown.
  * @returns The choice, or null when it belongs to something else.
  */
-function chosenHere<T extends string>(
+function chosenHere<T extends object | string>(
 	place: ChoicePlace<T> | null,
 	board: string,
 	variant: string | null,
@@ -85,7 +85,7 @@ function chosenHere<T extends string>(
  * @param displaced Whether something else now says what the picture is about.
  * @returns The choice and the one way to change it.
  */
-function usePlacedChoice<T extends string>(
+function usePlacedChoice<T extends object | string>(
 	board: string,
 	variant: SemanticVariant | null,
 	keeps: (variant: SemanticVariant, chosen: T) => boolean,

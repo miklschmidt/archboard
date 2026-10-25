@@ -1,27 +1,29 @@
 // What the Board tab asks of the variant on screen (TASK-537): the entry points
-// that only pass one call on, by their container, each one shown on the picture
-// when chosen, and the deletion question put to the agent of the pane's
-// checkout. The question names the subjects by id, so that the agent reads the
-// part the person chose.
+// that only pass one call on, by their container, and the deletion question put
+// to the agent of the pane's checkout. The question names the subjects by id, so
+// that the agent reads the part the person chose.
 //
-// Choosing the question lights its answer on the picture (ADR 0057): the
-// entry points and the containers that hold them, with an entry point the view
-// does not draw standing through its container.
+// Each result is a step through the answer (ADR 0057): it lights every entry
+// point and the containers that hold them, with what the result calls and what
+// calls it, and the camera brings that in. The Board tab stays open for the next
+// step.
 //
 // What these catch: a region that counts or lists a part that passes nothing on,
-// a result that picks the wrong part, a question that names another board,
-// variant or part, a control that sends where the page has no agent, a region
-// drawn on a board with nothing to ask, an answer lit without its containers or
-// through no container, a count of hidden subjects that disagrees with the
-// picture, a pick that does not take the light or does not give it back, and a
-// question that outlives a group or a walkthrough, or a pick or group that
-// outlives the question.
+// a question that names another board, variant or part, a control that sends
+// where the page has no agent, a region drawn on a board with nothing to ask, a
+// step that picks or leaves the Board tab, a step lit without the rest of the
+// answer, its containers or its own connections, a camera that frames the entry
+// point without what is around it, a pick that does not take the light or does
+// not give it back, and a question that outlives a group or a walkthrough, or a
+// pick or group that outlives the question.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
+import { cameraNow } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import {
 	PANE_VAULT,
+	VIEWPORT,
 	type Mounted,
 	mountStage,
 	openSidebarTab,
@@ -114,15 +116,34 @@ const PICTURE = pickablePicture(
 	DRAWN_VARIANT,
 );
 
-/** A view that draws Shipping closed, so Track parcel is not drawn. */
-const SHIPPING_CLOSED = pickablePicture(
-	{
-		regions: [CHECKOUT],
-		nodes: NODES.map((node) => node.id).filter((id) => id !== CHECKOUT && id !== TRACK),
-		edges: EDGES.map((edge) => edge.id),
+/**
+ * A box of the picture, 40 by 20, at a corner.
+ * @param x Its left edge.
+ * @param y Its top edge.
+ * @returns The box.
+ */
+function boxAt(x: number, y: number): Record<string, number> {
+	return { x, y, width: 40, height: 20 };
+}
+
+/**
+ * The picture with its subjects spread out along the top edge: the Storefront
+ * that calls Track parcel at the left, Track parcel beside it, and the Carrier
+ * it calls at the right. Everything else is at the bottom right.
+ */
+const SPREAD = {
+	...PICTURE,
+	atlas: {
+		nodes: {
+			...Object.fromEntries(NODES.map((node) => [node.id, boxAt(340, 260)])),
+			sf: boxAt(0, 0),
+			[TRACK]: boxAt(60, 0),
+			car: boxAt(360, 0),
+		},
+		edges: Object.fromEntries(EDGES.map((edge) => [edge.id, boxAt(340, 260)])),
+		regions: {},
 	},
-	DRAWN_VARIANT,
-);
+};
 
 /**
  * Put the board in front of a pane whose selection is held above it, and open its Board tab.
@@ -138,7 +159,7 @@ async function served(
 ): Promise<Mounted> {
 	server.documents["pipeline"] = boardOf(edges);
 	server.reply = { status: 200, body: picture };
-	const mounted = mountStage(null, { live: true, ask });
+	const mounted = mountStage(null, { live: true, ask, reducedMotion: true });
 	await settle();
 	await settle();
 	openSidebarTab("board");
@@ -176,7 +197,7 @@ function result(part: string): HTMLElement {
 	return row;
 }
 
-test("the Board tab lists each entry point that passes one call on by its container, and a chosen one is picked on the picture", async () => {
+test("the Board tab lists each entry point that passes one call on by its container", async () => {
 	await served();
 	expect(results()).toEqual({
 		count: 2,
@@ -187,13 +208,6 @@ test("the Board tab lists each entry point that passes one call on by its contai
 	});
 	// A page with no agent offers no question to send.
 	expect(document.querySelector("[data-slot='semantic-board-question-ask']")).toBeNull();
-
-	await act(async () => {
-		fireEvent.click(result(TRACK));
-	});
-	await settle();
-	const selected = [...surface().querySelectorAll(".is-selected")];
-	expect(selected.map((group) => group.getAttribute("data-semantic-id"))).toEqual([TRACK]);
 });
 
 test("asking the agent about a result sends one question that names the vault, the board, the variant and the part", async () => {
@@ -224,24 +238,27 @@ test("a board whose entry points pass nothing on draws no design questions", asy
 });
 
 /**
- * The choice that lights the question's answer.
- * @returns The choice.
- */
-function lightChoice(): HTMLElement {
-	const choice = document.querySelector<HTMLElement>(
-		"[data-slot='semantic-board-question-choice']",
-	);
-	if (choice === null) throw new Error("The question offers no light.");
-	return choice;
-}
-
-/**
  * Click a control the way a person does, and let the stage settle.
  * @param control The control.
  */
 async function click(control: HTMLElement): Promise<void> {
 	await act(async () => {
 		fireEvent.click(control);
+	});
+	await settle();
+}
+
+/**
+ * Pick a subject out on the picture, the way a person does, and let the stage settle.
+ * @param id The subject.
+ */
+async function pickOn(id: string): Promise<void> {
+	const drawn = surface().querySelector(`[data-semantic-id='${id}']`)!;
+	const at = { pointerId: 1, button: 0, clientX: 5, clientY: 5 };
+	await act(async () => {
+		fireEvent.pointerDown(drawn, at);
+		fireEvent.pointerUp(drawn, at);
+		fireEvent.click(drawn, at);
 	});
 	await settle();
 }
@@ -285,66 +302,106 @@ function stage(): HTMLElement {
 	return document.querySelector<HTMLElement>("[data-slot='semantic-board-stage']")!;
 }
 
-/** What the answer lights on the full picture: both entry points, and their containers. */
-const ANSWER_LIT = [CHECKOUT, PLACE_ORDER, SHIPPING, TRACK].toSorted();
+/**
+ * The results whose rows are pressed: the step the person is at.
+ * @returns Their parts.
+ */
+function pressed(): string[] {
+	return [...document.querySelectorAll("[data-slot='semantic-board-question-result']")]
+		.filter((row) => row.getAttribute("aria-pressed") === "true")
+		.map((row) => row.getAttribute("data-part") ?? "");
+}
 
-test("choosing the question lights its entry points and their containers, and choosing it again lets it go", async () => {
-	await served();
-	expect(lit()).toEqual([]);
-	await click(lightChoice());
-	expect(lightChoice().getAttribute("aria-pressed")).toBe("true");
-	expect(lit()).toEqual(ANSWER_LIT);
-	expect(lightChoice().getAttribute("data-hidden")).toBe("0");
-	await click(lightChoice());
-	expect(lightChoice().getAttribute("aria-pressed")).toBe("false");
-	expect(lit()).toEqual([]);
-});
+/**
+ * Whether the sidebar's Board tab is the open one.
+ * @returns True when it is.
+ */
+function boardTabOpen(): boolean {
+	return (
+		document
+			.querySelector("[data-slot='semantic-sidebar-tab'][data-tab='board']")
+			?.getAttribute("aria-selected") === "true"
+	);
+}
 
-test("an entry point the view does not draw stands through the container drawn closed, and the region counts it", async () => {
-	await served(undefined, EDGES, SHIPPING_CLOSED);
-	await click(lightChoice());
-	expect(lit()).toEqual([CHECKOUT, PLACE_ORDER, SHIPPING].toSorted());
-	expect(lightChoice().getAttribute("data-hidden")).toBe("1");
-});
+/** Every entry point of the answer, and their containers. */
+const ANSWER = [CHECKOUT, PLACE_ORDER, SHIPPING, TRACK];
 
-test("a pick shows its own light, letting go brings the answer's back, and letting go again lets the question go", async () => {
+/** What a step to Track parcel lights: the answer, and Track parcel's relationships with their other ends. */
+const AT_TRACK = [...ANSWER, "e6", "e7", "sf", "car"].toSorted();
+
+/** What a step to Place order lights: the answer, and Place order's relationships with their other ends. */
+const AT_PLACE_ORDER = [...ANSWER, "e1", "e2", "sf", "pay"].toSorted();
+
+test("a result is a step: it lights the answer with its own connections, picks nothing, keeps the Board tab open, and lets go when chosen again", async () => {
 	const { picks } = await served();
-	await click(lightChoice());
+	expect(lit()).toEqual([]);
 	await click(result(TRACK));
-	expect(picks.at(-1)).toBe(TRACK);
-	// Track parcel's own light: its relationships and what is at their other ends.
-	expect(lit()).toEqual(["car", "e6", "e7", "sf", SHIPPING, TRACK].toSorted());
+	expect(pressed()).toEqual([TRACK]);
+	expect(lit()).toEqual(AT_TRACK);
+	expect(picks.at(-1) ?? null).toBeNull();
+	expect(surface().querySelectorAll(".is-selected")).toHaveLength(0);
+	expect(boardTabOpen()).toBe(true);
+
+	await click(result(PLACE_ORDER));
+	expect(pressed()).toEqual([PLACE_ORDER]);
+	expect(lit()).toEqual(AT_PLACE_ORDER);
+
+	await click(result(PLACE_ORDER));
+	expect(pressed()).toEqual([]);
+	expect(lit()).toEqual([]);
+});
+
+test("a step brings its entry point in with what calls it and what it calls", async () => {
+	await served(undefined, EDGES, SPREAD);
+	await click(result(TRACK));
+	// Storefront, Track parcel and Carrier span the top edge, 0 to 400 across and
+	// 0 to 20 down, so the camera centres that strip, and not Track parcel alone at 80.
+	const { x, y, scale } = cameraNow();
+	const middle = { x: (VIEWPORT.width / 2 - x) / scale, y: (VIEWPORT.height / 2 - y) / scale };
+	expect(middle.x).toBeCloseTo(200, 0);
+	expect(middle.y).toBeCloseTo(10, 0);
+	expect(400 * scale).toBeLessThanOrEqual(VIEWPORT.width);
+});
+
+test("a pick shows its own light, letting go brings the step's back, and letting go again lets the question go", async () => {
+	const { picks } = await served();
+	await click(result(TRACK));
+	await pickOn("pay");
+	expect(picks.at(-1)).toBe("pay");
+	// Payments' own light: its relationships and what is at their other ends.
+	expect(lit()).toEqual(["bsk", "e2", "e5", "pay", CHECKOUT, PLACE_ORDER].toSorted());
 
 	await escape();
 	expect(picks.at(-1)).toBeNull();
-	expect(lit()).toEqual(ANSWER_LIT);
+	expect(lit()).toEqual(AT_TRACK);
 
 	await escape();
 	expect(lit()).toEqual([]);
 	openSidebarTab("board");
-	expect(lightChoice().getAttribute("aria-pressed")).toBe("false");
+	expect(pressed()).toEqual([]);
 });
 
 test("a group or a walkthrough lets the question go, and the question lets the pick and the group go", async () => {
 	const { picks } = await served();
-	await click(result(PLACE_ORDER));
+	await pickOn("pay");
 	openSidebarTab("board");
-	await click(lightChoice());
+	await click(result(TRACK));
 	expect(picks.at(-1)).toBeNull();
-	expect(lit()).toEqual(ANSWER_LIT);
+	expect(lit()).toEqual(AT_TRACK);
 
 	await click(money());
 	expect(stage().getAttribute("data-group")).toBe("money");
-	expect(lightChoice().getAttribute("aria-pressed")).toBe("false");
+	expect(pressed()).toEqual([]);
 	expect(lit()).toEqual([]);
 
-	await click(lightChoice());
+	await click(result(TRACK));
 	expect(stage().hasAttribute("data-group")).toBe(false);
-	expect(lit()).toEqual(ANSWER_LIT);
+	expect(lit()).toEqual(AT_TRACK);
 
 	await click(document.querySelector<HTMLElement>("[data-slot='semantic-walkthrough-choice']")!);
 	await click(document.querySelector<HTMLElement>("[data-slot='semantic-walkthrough-choice']")!);
 	openSidebarTab("board");
-	expect(lightChoice().getAttribute("aria-pressed")).toBe("false");
+	expect(pressed()).toEqual([]);
 	expect(lit()).toEqual([]);
 });

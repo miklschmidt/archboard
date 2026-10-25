@@ -39,7 +39,7 @@ interface PresentationView {
 	readonly sidebar: Pick<Sidebar, "floating">;
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
-	/** The design question chosen and the subjects its answer names, or null. */
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
 	readonly question: ChosenQuestion | null;
 }
 
@@ -79,21 +79,21 @@ function presentationOver(view: PresentationView): ReactNode {
 
 /**
  * What the picture is told to mark beyond the single selection: the selected
- * group's members, the answer of the chosen design question, and the veil over
- * what a presented step is not about.
+ * group's members, the step through the chosen design question's answer, and
+ * the veil over what a presented step is not about.
  * @param view What the stage knows.
- * @returns The selected group, the answer's subjects, and what the veil leaves standing.
+ * @returns The selected group, the step, and what the veil leaves standing.
  */
 function pictureMarks(view: PresentationView): {
 	readonly group: GroupSelection | null;
-	readonly answer: readonly string[] | null;
+	readonly answer: ChosenQuestion | null;
 	readonly veil: ReadonlySet<string> | null;
 } {
 	const { group, question, narrative, focus } = view;
 	const veiled = narrative.open !== null && focus.drawn.length > 0;
 	return {
 		group,
-		answer: question === null ? null : question.subjects,
+		answer: question,
 		veil: veiled ? new Set(focus.drawn) : null,
 	};
 }

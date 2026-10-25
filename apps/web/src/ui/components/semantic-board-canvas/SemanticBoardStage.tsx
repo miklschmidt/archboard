@@ -15,7 +15,9 @@ import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import type { VariantContent, WalkthroughBeat } from "@archboard/board/content";
+import type { SemanticPanePart } from "@archboard/board/pane-context";
+import { usePaneChrome } from "@archboard/ui-kit/display";
 import type {
 	SemanticDrawing,
 	SemanticRender,
@@ -48,7 +50,14 @@ import {
 	type DrivenPlace,
 } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import type { SelectedSubject } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type {
+	SelectedSubject,
+	VariantReading,
+} from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import {
+	aroundStep,
+	type QuestionStep,
+} from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 import {
 	semanticBoardListQuery,
@@ -191,6 +200,15 @@ interface SemanticBoardStageProps {
  */
 function viewToRead(beat: WalkthroughBeat | null, asked: string | undefined): string | undefined {
 	return beat?.view ?? asked;
+}
+
+/**
+ * What the variant on screen holds, whole.
+ * @param reading What the board says about itself, or null while it has not arrived.
+ * @returns The variant's content, or null while it is not known.
+ */
+function contentOf(reading: VariantReading | null): VariantContent | null {
+	return reading?.variant?.content ?? null;
 }
 
 /**
@@ -391,6 +409,18 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		},
 		[onPick, onTab, fitSubject],
 	);
+	// A step through a design question's answer brings its subject in with what
+	// calls it and what it calls, as showing a part brings the part in.
+	const content = contentOf(reading);
+	const onStep = useCallback(
+		(step: QuestionStep | null): void => {
+			onChooseQuestion(step);
+			if (step === null || content === null) return;
+			onTab("diagram");
+			fitSubject(step.at, aroundStep(content, step.at));
+		},
+		[onChooseQuestion, content, onTab, fitSubject],
+	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
 		flier: dive,
@@ -442,7 +472,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			group={group}
 			onChooseGroup={onChooseGroup}
 			question={question}
-			onChooseQuestion={onChooseQuestion}
+			onChooseQuestion={onStep}
 		/>
 	);
 });
