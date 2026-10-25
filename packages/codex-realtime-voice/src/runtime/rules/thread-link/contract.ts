@@ -38,7 +38,7 @@ type ThreadLinkEpochAuthority = Pick<CodexEpochStore, "assertCurrent" | "snapsho
 /** A committed epoch record or a proof returned by `assertCurrent`. */
 type ThreadLinkEpochProof = EpochOperationRecord | EpochExecutionProof;
 
-/** The identity and durable ownership evidence captured by a pane link. */
+/** The identity and durable ownership evidence captured by a thread link. */
 interface ThreadLinkTarget {
 	readonly threadId: ThreadId;
 	readonly childId: ChildId | null;
@@ -160,14 +160,14 @@ class CodexThreadLinkConflictError extends CodexThreadLinkError {
 
 interface ThreadLinkCasToken {
 	readonly revision: number;
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly childId: ChildId | null;
 	readonly epoch: ChildEpoch | null;
 	readonly threadId: ThreadId | null;
 }
 
 interface ThreadLinkBindingSnapshot {
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly revision: number;
 	readonly link: ThreadLinkSnapshot;
 	readonly cas: ThreadLinkCasToken;
@@ -177,17 +177,17 @@ interface ThreadLinkBindingSnapshot {
 type ThreadLinkNonExecutableSnapshot = InspectOnlyThreadLink | UnboundThreadLink;
 
 interface ThreadLinkCompareAndSwapInput {
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly expected: ThreadLinkCasToken | null;
 	readonly next: ThreadLinkNonExecutableSnapshot;
 }
 
 interface ThreadLinkBindingStore {
-	readonly snapshot: (paneId: string) => ThreadLinkBindingSnapshot;
-	readonly read: (paneId: string) => ThreadLinkBindingSnapshot;
+	readonly snapshot: (linkKey: string) => ThreadLinkBindingSnapshot;
+	readonly read: (linkKey: string) => ThreadLinkBindingSnapshot;
 	readonly compareAndSwap: (input: ThreadLinkCompareAndSwapInput) => ThreadLinkBindingSnapshot;
 	readonly clear: (
-		paneId: string,
+		linkKey: string,
 		expected: ThreadLinkCasToken | null,
 	) => ThreadLinkBindingSnapshot;
 }
@@ -199,7 +199,7 @@ interface CodexThreadLinkClassifier {
 interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {
 	/** Classify twice through the live authorities, then adopt the fresh result by CAS. */
 	readonly classifyAndBind: (
-		paneId: string,
+		linkKey: string,
 		expected: ThreadLinkCasToken | null,
 		target: ThreadLinkTarget,
 	) => Promise<ThreadLinkBindingSnapshot>;

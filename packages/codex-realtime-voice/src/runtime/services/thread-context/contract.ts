@@ -98,14 +98,14 @@ interface CodexThreadContextDeliveryOutcomeBase {
 /** The immutable record for one change identity. */
 type CodexThreadContextDeliveryOutcome =
 	| (CodexThreadContextDeliveryOutcomeBase & {
-			readonly paneId: string;
+			readonly linkKey: string;
 			readonly targetThreadId: ThreadId;
 			readonly targetChildId: ChildId;
 			readonly targetEpoch: ChildEpoch;
 			readonly targetOperationId: string;
 	  })
 	| (CodexThreadContextDeliveryOutcomeBase & {
-			readonly paneId: null;
+			readonly linkKey: null;
 			readonly targetThreadId: null;
 			readonly targetChildId: null;
 			readonly targetEpoch: null;
@@ -117,7 +117,7 @@ type CodexThreadContextDeliveryOutcome =
 	  });
 
 interface CodexThreadContextDeliveryOptions {
-	readonly paneId: string;
+	readonly linkKey: string;
 	/**
 	 * The threads whose writes are this session's own: the workhorse this port
 	 * serves, and the coordinator paired with it.
@@ -159,9 +159,9 @@ interface CodexThreadContextDelivery {
 }
 
 interface CodexThreadContextBinding {
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly target: CodexThreadContextTarget;
-	/** Exact pane/link CAS evidence captured by the target-selection action. */
+	/** Exact link CAS evidence captured by the target-selection action. */
 	readonly link: ThreadLinkBindingSnapshot;
 }
 
@@ -205,7 +205,7 @@ class CodexThreadContextControllerError extends Error {
 
 interface CodexThreadContextControllerOptions extends Omit<
 	CodexThreadContextDeliveryOptions,
-	"paneId" | "target" | "sessionAuthors"
+	"linkKey" | "target" | "sessionAuthors"
 > {
 	/**
 	 * The thread paired with the workhorse this controller serves, when the server

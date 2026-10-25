@@ -16,7 +16,7 @@ function readyWorkhorse(
 	return {
 		kind: "codex_workhorse" as const,
 		state: "ready" as const,
-		paneId: "pane-readiness",
+		linkKey: "link-readiness",
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,
 		threadId,
@@ -52,7 +52,7 @@ test("a snapshot refresh re-reads the authoritative queue and replaces a stale c
 			snapshot: () => ({
 				kind: "codex_workhorse",
 				state: "ready",
-				paneId: "pane-readiness",
+				linkKey: "link-readiness",
 				childId: authorities.identity.validator.childId,
 				epoch: authorities.identity.validator.epoch,
 				threadId,
@@ -105,7 +105,7 @@ test("a failed re-read presents the queue as unavailable rather than an unproven
 			snapshot: () => ({
 				kind: "codex_workhorse",
 				state: "ready",
-				paneId: "pane-readiness",
+				linkKey: "link-readiness",
 				childId: authorities.identity.validator.childId,
 				epoch: authorities.identity.validator.epoch,
 				threadId: authorities.identity.decoder.adoptThreadId("readiness-thread"),
@@ -150,7 +150,7 @@ test("a submission's coordinator operation is recovered from its client user mes
 			snapshot: () => ({
 				kind: "codex_workhorse",
 				state: "ready",
-				paneId: "pane-readiness",
+				linkKey: "link-readiness",
 				childId: authorities.identity.validator.childId,
 				epoch: authorities.identity.validator.epoch,
 				threadId,

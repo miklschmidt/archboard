@@ -39,7 +39,7 @@ function requestFor(target: DeliveryTarget): EpochExecutionRequest {
 }
 
 /**
- * Re-reads the pane binding and checks it is still the binding captured at the
+ * Re-reads the link binding and checks it is still the binding captured at the
  * start of the delivery.
  * @param options - The delivery options carrying the thread-link reader.
  * @param state - The delivery state holding the initial binding.
@@ -51,7 +51,7 @@ function currentBinding(
 ): ThreadLinkBindingSnapshot | "link_changed" {
 	let binding: ThreadLinkBindingSnapshot;
 	try {
-		binding = options.threadLink.read(options.paneId);
+		binding = options.threadLink.read(options.linkKey);
 	} catch {
 		return "link_changed";
 	}
@@ -59,7 +59,7 @@ function currentBinding(
 }
 
 /**
- * Checks the live pane binding against the captured one and the classification.
+ * Checks the live link binding against the captured one and the classification.
  * The classification must name the same link — thread, child and epoch — but
  * may observe it differently: a running turn makes a bound idle thread active.
  * @param options - The delivery options.

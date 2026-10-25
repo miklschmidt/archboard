@@ -133,7 +133,7 @@ export function createWorkhorseComponentsFixture(
 		snapshot: () => ({
 			kind: "codex_workhorse",
 			state: "unbound",
-			paneId: null,
+			linkKey: null,
 			childId: null,
 			epoch: null,
 			threadId: null,

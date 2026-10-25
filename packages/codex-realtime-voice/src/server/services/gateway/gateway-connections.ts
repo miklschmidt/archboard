@@ -461,7 +461,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 
 /**
  * The thread link of one workhorse of a tab, refusing a binding that does not describe that
- * workhorse. The link port keys a link by the workhorse (its `paneId`).
+ * workhorse. The link port keys a link by the workhorse (its `linkKey`).
  * @param options The gateway's owners.
  * @param tabSessionId The tab.
  * @param checkoutOf The checkout of the workhorse; what it throws is an invalid projection too.
@@ -475,14 +475,14 @@ function readWorkhorseBinding(
 	try {
 		const key = workhorseLinkKey(tabSessionId, checkoutOf());
 		const binding = options.threadLink.read(key);
-		if (binding.paneId !== key || !Number.isSafeInteger(binding.revision) || binding.revision < 0)
-			throw new Error("the thread-link owner returned an invalid pane binding");
+		if (binding.linkKey !== key || !Number.isSafeInteger(binding.revision) || binding.revision < 0)
+			throw new Error("the thread-link owner returned an invalid link binding");
 		return binding;
 	} catch (error) {
 		if (error instanceof CodexWorkbenchGatewayError) throw error;
 		throw new CodexWorkbenchGatewayError(
 			"invalid_projection",
-			"The thread-link owner returned an invalid pane binding.",
+			"The thread-link owner returned an invalid link binding.",
 			{ cause: error },
 		);
 	}

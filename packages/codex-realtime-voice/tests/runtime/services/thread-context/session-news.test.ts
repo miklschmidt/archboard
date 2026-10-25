@@ -1,11 +1,11 @@
-// Who is told about a board change, now that a pane has stopped deciding.
+// Who is told about a board change, now that a chat has stopped deciding.
 //
 // The rule a reader settled: an active agent session receives every board
 // update except the ones it makes itself. What it replaced was a surface
-// deciding recipients — a write stated the pane it was running for, a delivery
-// port dropped changes whose pane matched its own, and the context check
-// required that pane to be showing the board that changed. So a person closing
-// a pane, or looking at another board, silenced the session bound to it; and two
+// deciding recipients — a write stated the chat it was running for, a delivery
+// port dropped changes whose chat matched its own, and the context check
+// required that chat to be showing the board that changed. So a person closing
+// a chat, or looking at another board, silenced the session bound to it; and two
 // threads on one claimed board suppressed each other.
 //
 // These are the five cases that rule turns on.

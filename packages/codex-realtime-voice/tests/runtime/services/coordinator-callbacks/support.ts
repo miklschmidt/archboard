@@ -116,12 +116,12 @@ function link(ids: Identities): CoordinatorCallbackLinkCorrelation {
 	} satisfies CoordinatorCallbackLinkCorrelation["binding"]["link"];
 	return {
 		binding: {
-			paneId: "pane-a",
+			linkKey: "link-a",
 			revision: 4,
 			link: executable,
 			cas: {
 				revision: 4,
-				paneId: "pane-a",
+				linkKey: "link-a",
 				childId: ids.child,
 				epoch: ids.epoch,
 				threadId: ids.workhorse,
@@ -215,7 +215,7 @@ interface HarnessState {
 	others: CoordinatorCallbackLinkCorrelation[];
 	generation: CoordinatorCallbackRealtimeGeneration | null;
 	classification: ThreadLinkClassification;
-	/** The boards the tab's panes show. */
+	/** The boards the tab's chats show. */
 	boards: readonly string[];
 	/** The board a narration in the tab is on, or null. */
 	narrated: string | null;

@@ -49,7 +49,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	const operationId = authorities.operation.issuer.mintOperationId();
 	const link = (revision: number) =>
 		({
-			paneId: "pane-1",
+			linkKey: "link-1",
 			revision,
 			link: {
 				kind: "thread_link",
@@ -65,7 +65,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 			},
 			cas: {
 				revision,
-				paneId: "pane-1",
+				linkKey: "link-1",
 				childId: authorities.identity.validator.childId,
 				epoch: authorities.identity.validator.epoch,
 				threadId,
@@ -74,7 +74,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	const workhorseSnapshot = (binding: ReturnType<typeof link>) => ({
 		kind: "codex_workhorse",
 		state: "ready",
-		paneId: "pane-1",
+		linkKey: "link-1",
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,
 		threadId,
@@ -125,14 +125,14 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	} as const;
 	await actions.threadLinks.create({ command: "threadLinkCreate" } as never, context);
 
-	expect(replacements).toEqual([expect.objectContaining({ paneId: "pane-1", link: link(1) })]);
+	expect(replacements).toEqual([expect.objectContaining({ linkKey: "link-1", link: link(1) })]);
 });
 
 test("a stale browser disconnect token cannot clear a newer controller binding", () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-current");
 	const binding = {
-		paneId: "pane-1",
+		linkKey: "link-1",
 		target: {
 			threadId,
 			childId: authorities.identity.validator.childId,
@@ -173,9 +173,9 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 		canAcceptDirectInput: false,
 		reason: null,
 	} as const;
-	const created = (paneId: string) =>
+	const created = (linkKey: string) =>
 		({
-			paneId,
+			linkKey,
 			revision: 1,
 			link: {
 				kind: "thread_link",
@@ -189,7 +189,7 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 				canAcceptDirectInput: true,
 				reason: null,
 			},
-			cas: { revision: 1, paneId, childId, epoch, threadId },
+			cas: { revision: 1, linkKey, childId, epoch, threadId },
 		}) as const;
 	let serverRevision = 0;
 	let releaseStart!: () => void;
@@ -206,31 +206,31 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 		coordinator: readyCoordinator(),
 		identity: authorities,
 		workhorse: {
-			start: async ({ paneId }: { readonly paneId: string }) => {
-				starts.push(paneId);
+			start: async ({ linkKey }: { readonly linkKey: string }) => {
+				starts.push(linkKey);
 				await startGate;
 				serverRevision = 1;
 				return {
 					state: "ready",
-					paneId,
+					linkKey,
 					childId,
 					epoch,
 					threadId,
 					operationId,
-					binding: created(paneId),
+					binding: created(linkKey),
 				};
 			},
 		} as never,
 		threadLink: {
-			read: (paneId: string) =>
+			read: (linkKey: string) =>
 				serverRevision === 0
 					? {
-							paneId,
+							linkKey,
 							revision: 0,
 							link: unbound,
-							cas: { revision: 0, paneId, childId: null, epoch: null, threadId: null },
+							cas: { revision: 0, linkKey, childId: null, epoch: null, threadId: null },
 						}
-					: created(paneId),
+					: created(linkKey),
 		} as never,
 		contextDelivery: {
 			snapshot: () => ({ token: { revision: binding === null ? 0 : 1 }, binding }),
@@ -372,7 +372,7 @@ test("a new conversation gives up the workhorse thread the old one ran on once t
 	const { childId, epoch } = authorities.identity.validator;
 	const adopt = (raw: string) => authorities.identity.decoder.adoptThreadId(raw);
 	const [left, fresh] = [adopt("thread-left"), adopt("thread-fresh")];
-	const cas = { revision: 1, paneId: "tab-one", childId, epoch, threadId: fresh };
+	const cas = { revision: 1, linkKey: "tab-one", childId, epoch, threadId: fresh };
 	const link = { ...cas, state: "executable", kind: "thread_link", source: "appServer" };
 	const retired: ThreadId[] = [];
 	const ready = { state: "ready", reason: null } as const;
@@ -391,7 +391,7 @@ test("a new conversation gives up the workhorse thread the old one ran on once t
 				...cas,
 				state: "ready",
 				operationId: authorities.operation.issuer.mintOperationId(),
-				binding: { paneId: "tab-one", revision: 1, link, cas },
+				binding: { linkKey: "tab-one", revision: 1, link, cas },
 			}),
 		} as never,
 		threadLink: { read: () => ({ cas: { revision: 0, childId, epoch, threadId: left } }) } as never,
@@ -414,9 +414,9 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 	const authorities = createIdentityAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-started");
-	const cas = { revision: 1, paneId: KEY, childId, epoch, threadId };
+	const cas = { revision: 1, linkKey: KEY, childId, epoch, threadId };
 	const link = { ...cas, state: "executable", kind: "thread_link", source: "appServer" };
-	const unbound = { revision: 0, paneId: KEY, childId: null, epoch: null, threadId: null };
+	const unbound = { revision: 0, linkKey: KEY, childId: null, epoch: null, threadId: null };
 	let current: { readonly link: { readonly state: string }; readonly cas: unknown } = {
 		link: { state: "unbound" },
 		cas: unbound,
@@ -438,7 +438,7 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 					...cas,
 					state: "ready",
 					operationId: authorities.operation.issuer.mintOperationId(),
-					binding: { paneId: KEY, revision: 1, link, cas },
+					binding: { linkKey: KEY, revision: 1, link, cas },
 				};
 			},
 		} as never,
@@ -451,7 +451,7 @@ test("work given to a checkout starts its workhorse when its link cannot run tur
 
 	await actions.ensureStarted();
 	await actions.ensureStarted();
-	expect(starts).toEqual([{ paneId: KEY, expected: unbound }]);
+	expect(starts).toEqual([{ linkKey: KEY, expected: unbound }]);
 	// The coordinator is running the turn that gives the work. Readying it again would show it
 	// unready to that turn's other calls while it re-proved itself.
 	expect(coordinatorStarts).toEqual([]);

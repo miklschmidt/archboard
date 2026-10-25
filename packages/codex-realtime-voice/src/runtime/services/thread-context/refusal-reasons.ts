@@ -86,7 +86,7 @@ function classificationErrorReason(error: unknown): Reason {
 
 /**
  * The reason a non-executable link snapshot refuses delivery.
- * @param link - A pane's current link.
+ * @param link - A current link.
  * @returns `unbound` for an empty link, otherwise the link's own reason.
  */
 function linkReason(link: ThreadLinkSnapshot): Reason {
@@ -144,7 +144,7 @@ function executionReason(
 
 /**
  * Checks that a link snapshot still names the exact delivery target.
- * @param link - The pane's link, freshly read or classified.
+ * @param link - The link, freshly read or classified.
  * @param target - The exact delivery target.
  * @returns The refusal reason, or null when the link is executable for the target.
  */

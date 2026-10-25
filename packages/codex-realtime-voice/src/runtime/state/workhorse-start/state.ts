@@ -14,14 +14,14 @@ import type {
 } from "#runtime/protocol/workhorse-start/contract.ts";
 
 /**
- * The snapshot of a pane with no workhorse: every fact absent, which is what every other snapshot is built from.
+ * The snapshot of a link with no workhorse: every fact absent, which is what every other snapshot is built from.
  * @returns The frozen unbound snapshot.
  */
 function emptySnapshot(): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "unbound" as const,
-		paneId: null,
+		linkKey: null,
 		childId: null,
 		epoch: null,
 		threadId: null,
@@ -36,14 +36,14 @@ function emptySnapshot(): WorkhorseSnapshot {
 
 /**
  * The snapshot while a workhorse is being started: the operation is issued and its outcome is still pending, so a reader can tell a start in flight from one that never began.
- * @param paneId - The pane the workhorse belongs to.
+ * @param linkKey - The key of the workhorse's link.
  * @param childId - The Codex child the start runs against.
  * @param epoch - That child's epoch.
  * @param operationId - The issued operation identity.
  * @returns The frozen starting snapshot.
  */
 function startingSnapshot(
-	paneId: string,
+	linkKey: string,
 	childId: ChildId,
 	epoch: ChildEpoch,
 	operationId: OperationId,
@@ -51,7 +51,7 @@ function startingSnapshot(
 	return cloneAndFreeze({
 		...emptySnapshot(),
 		state: "starting" as const,
-		paneId,
+		linkKey,
 		childId,
 		epoch,
 		operationId,
@@ -60,21 +60,21 @@ function startingSnapshot(
 }
 
 /**
- * The snapshot for a start that provably never reached Codex, so the pane may start another.
- * @param paneId - The pane the workhorse belongs to.
+ * The snapshot for a start that provably never reached Codex, so the link may start another.
+ * @param linkKey - The key of the workhorse's link.
  * @param operationId - The issued operation identity.
  * @param reason - Why the start failed.
  * @returns The frozen failed snapshot.
  */
 function failedSnapshot(
-	paneId: string,
+	linkKey: string,
 	operationId: OperationId,
 	reason: string,
 ): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		...emptySnapshot(),
 		state: "failed" as const,
-		paneId,
+		linkKey,
 		operationId,
 		outcome: "not_delivered" as const,
 		reason,
@@ -82,7 +82,7 @@ function failedSnapshot(
 }
 
 interface InspectSnapshotInput {
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId | null;
@@ -96,14 +96,14 @@ interface InspectSnapshotInput {
 
 /**
  * The snapshot for a workhorse that exists but must not be driven: a thread whose start could not be settled, or one left by a prior child. It keeps every fact so a person can inspect what happened.
- * @param input - The pane, child, thread, operation, outcome, start facts, binding, cleanup facts and reason.
+ * @param input - The link key, child, thread, operation, outcome, start facts, binding, cleanup facts and reason.
  * @returns The frozen inspect-only snapshot.
  */
 function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "inspect_only" as const,
-		paneId: input.paneId,
+		linkKey: input.linkKey,
 		childId: input.childId,
 		epoch: input.epoch,
 		threadId: input.threadId,
@@ -117,17 +117,17 @@ function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
 }
 
 /**
- * The snapshot for a workhorse that started, settled as delivered and is bound to its pane.
- * @param paneId - The pane the workhorse belongs to.
+ * The snapshot for a workhorse that started, settled as delivered and is bound to its link.
+ * @param linkKey - The key of the workhorse's link.
  * @param childId - The Codex child it runs on.
  * @param epoch - That child's epoch.
  * @param operationId - The issued operation identity.
  * @param start - What the start proved about the thread.
- * @param binding - The thread-link binding the pane holds.
+ * @param binding - The thread-link binding the link holds.
  * @returns The frozen ready snapshot.
  */
 function readySnapshot(
-	paneId: string,
+	linkKey: string,
 	childId: ChildId,
 	epoch: ChildEpoch,
 	operationId: OperationId,
@@ -137,7 +137,7 @@ function readySnapshot(
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "ready" as const,
-		paneId,
+		linkKey,
 		childId,
 		epoch,
 		threadId: start.threadId,

@@ -61,10 +61,10 @@ export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOp
 }
 
 /**
- * Combines deterministic classification with a proof-checked pane binding boundary, so a pane
+ * Combines deterministic classification with a proof-checked binding boundary, so a link
  * only ever adopts a link that was classified against the live authorities a moment earlier.
  * @param options The session, the durable epoch authority, and any live epoch source.
- * @returns The port panes bind and classify through.
+ * @returns The port links bind and classify through.
  */
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
 	const classifier = createCodexThreadLinkClassifier(options);
@@ -72,13 +72,13 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 
 	/**
 	 * Classifies twice through the live authorities, then adopts the second result by CAS.
-	 * @param paneId The pane.
-	 * @param expected The pane's CAS token, or null for a first binding.
+	 * @param linkKey The link key.
+	 * @param expected The link's CAS token, or null for a first binding.
 	 * @param target The thread to classify.
 	 * @returns The new binding snapshot.
 	 */
 	const classifyAndBind: CodexThreadLinkPort["classifyAndBind"] = async (
-		paneId,
+		linkKey,
 		expected,
 		target,
 	) => {
@@ -86,7 +86,7 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 		// the only result handed to the synchronous CAS boundary.
 		await classifier.classify(target);
 		const fresh = await classifier.classify(target);
-		return binding.commitClassified(paneId, expected, fresh);
+		return binding.commitClassified(linkKey, expected, fresh);
 	};
 	return Object.freeze({
 		classify: classifier.classify,

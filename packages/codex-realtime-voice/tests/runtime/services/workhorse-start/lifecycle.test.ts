@@ -29,7 +29,7 @@ describe("codex workhorse start transaction", () => {
 				if (field === "cwd") {
 					Object.assign(response, { cwd: "/other-checkout" });
 				}
-				const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+				const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 				expect(result.state).toBe("inspect_only");
 				expect(result.reason).toContain(`authored profile: ${field}.`);
 				expect(fixture.link.targets).toHaveLength(0);
@@ -43,7 +43,7 @@ describe("codex workhorse start transaction", () => {
 	test("stages, confirms, and binds with one canonical operation correlation", async () => {
 		const fixture = makeFixture();
 		try {
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("ready");
 			expect(result.outcome).toBe("delivered");
@@ -105,9 +105,9 @@ describe("codex workhorse start transaction", () => {
 			fixture.session.startGate = new Promise<void>((resolve) => {
 				release = resolve;
 			});
-			const first = fixture.starter.start({ paneId: "pane-1", expected: null });
+			const first = fixture.starter.start({ linkKey: "link-1", expected: null });
 			await Promise.resolve();
-			const second = fixture.starter.start({ paneId: "pane-1", expected: null });
+			const second = fixture.starter.start({ linkKey: "link-1", expected: null });
 			await Promise.resolve();
 			expect(fixture.session.startParams).toHaveLength(1);
 			expect(fixture.session.activeStarts).toBe(1);
@@ -129,7 +129,7 @@ describe("codex workhorse start transaction", () => {
 				"not_delivered",
 				"transport rejected the request before delivery",
 			);
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("failed");
 			expect(result.outcome).toBe("not_delivered");
@@ -153,7 +153,7 @@ describe("codex workhorse start transaction", () => {
 				"outcome_unknown",
 				"the start response was lost",
 			);
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.outcome).toBe("outcome_unknown");
@@ -179,7 +179,7 @@ describe("codex workhorse start transaction", () => {
 				...fixture.response,
 				cwd: "/foreign/root",
 			};
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.outcome).toBe("outcome_unknown");
@@ -198,8 +198,8 @@ describe("codex workhorse start transaction", () => {
 	test("cleans up only after a failed bind rereads the exact new idle root", async () => {
 		const fixture = makeFixture();
 		try {
-			fixture.link.outcome = inspectOnlyBinding("pane-1", 2, fixture.thread.id);
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			fixture.link.outcome = inspectOnlyBinding("link-1", 2, fixture.thread.id);
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.binding?.link.state).toBe("inspect_only");
@@ -234,7 +234,7 @@ describe("codex workhorse start transaction", () => {
 			fixture.session.readResult = {
 				thread: { ...fixture.thread, turns: [turnFixture(fixture.authorities)] },
 			};
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.cleanup).toBeNull();
@@ -259,7 +259,7 @@ describe("codex workhorse start transaction", () => {
 		try {
 			fixture.link.outcome = new Error("bind failed");
 			fixture.session.readResult = { thread: { ...fixture.thread, cwd: "/other/root" } };
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.cleanup).toBeNull();
@@ -286,7 +286,7 @@ describe("codex workhorse start transaction", () => {
 				"outcome_unknown",
 				"delete response was lost",
 			);
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.cleanup?.outcome).toBe("outcome_unknown");
@@ -310,7 +310,7 @@ describe("codex workhorse start transaction", () => {
 				"not_delivered",
 				"delete rejected before delivery",
 			);
-			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
 			expect(result.cleanup?.outcome).toBe("not_delivered");

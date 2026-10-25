@@ -98,7 +98,7 @@ function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
 }
 
 /**
- * Whether a source is one a pane may execute against.
+ * Whether a source is one a link may execute against.
  * @param value The source.
  * @returns True for the allowed top-level sources.
  */
@@ -107,7 +107,7 @@ function isAllowedThreadLinkSource(value: unknown): value is ThreadLinkAllowedSo
 }
 
 /**
- * The sources a pane may execute against, in listing order.
+ * The sources a link may execute against, in listing order.
  * @returns The allowed sources.
  */
 function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {

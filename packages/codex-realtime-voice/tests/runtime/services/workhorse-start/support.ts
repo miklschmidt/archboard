@@ -102,7 +102,7 @@ class FakeSession implements WorkhorseSessionPort {
 
 class FakeThreadLink implements WorkhorseThreadLinkPort {
 	readonly targets: Array<{
-		paneId: string;
+		linkKey: string;
 		target: Parameters<NonNullable<CodexWorkhorseStartOptions["threadLink"]["classifyAndBind"]>>[2];
 	}> = [];
 	outcome: ThreadLinkBindingSnapshot | Error;
@@ -112,13 +112,13 @@ class FakeThreadLink implements WorkhorseThreadLinkPort {
 	}
 
 	async classifyAndBind(
-		paneId: string,
+		linkKey: string,
 		_expected: Parameters<
 			NonNullable<CodexWorkhorseStartOptions["threadLink"]["classifyAndBind"]>
 		>[1],
 		target: Parameters<NonNullable<CodexWorkhorseStartOptions["threadLink"]["classifyAndBind"]>>[2],
 	): Promise<ThreadLinkBindingSnapshot> {
-		this.targets.push({ paneId, target });
+		this.targets.push({ linkKey, target });
 		if (this.outcome instanceof Error) {
 			throw this.outcome;
 		}
@@ -157,7 +157,7 @@ function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture 
 	const link = new FakeThreadLink(
 		linkOutcome ??
 			executableBinding(
-				"pane-1",
+				"link-1",
 				1,
 				authorities.identity.validator.childId,
 				authorities.identity.validator.epoch,
@@ -271,7 +271,7 @@ function turnFixture(authorities: IdentityAuthorities): SessionTurn {
 }
 
 function executableBinding(
-	paneId: string,
+	linkKey: string,
 	revision: number,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -290,12 +290,12 @@ function executableBinding(
 		reason: null,
 	};
 	return {
-		paneId,
+		linkKey,
 		revision,
 		link,
 		cas: {
 			revision,
-			paneId,
+			linkKey,
 			childId: link.childId,
 			epoch: link.epoch,
 			threadId: link.threadId,
@@ -304,7 +304,7 @@ function executableBinding(
 }
 
 function inspectOnlyBinding(
-	paneId: string,
+	linkKey: string,
 	revision: number,
 	threadId: ThreadId,
 ): ThreadLinkBindingSnapshot {
@@ -321,12 +321,12 @@ function inspectOnlyBinding(
 		reason: "direct_input_false",
 	};
 	return {
-		paneId,
+		linkKey,
 		revision,
 		link,
 		cas: {
 			revision,
-			paneId,
+			linkKey,
 			childId: null,
 			epoch: null,
 			threadId,

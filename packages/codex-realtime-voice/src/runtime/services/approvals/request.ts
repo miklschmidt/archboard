@@ -86,7 +86,7 @@ function bindingText(value: unknown, field: string): string {
  * one explicitly (null included), otherwise the request's own.
  * @param request - The request whose binding is completed.
  * @param input - The caller's partial binding, if any.
- * @returns The link, or null for an unlinked pane.
+ * @returns The link, or null for an unlinked chat.
  */
 function bindingLink(
 	request: BindingSource,

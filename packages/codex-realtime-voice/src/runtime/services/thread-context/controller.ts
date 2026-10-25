@@ -27,7 +27,7 @@ interface ActiveBinding {
 }
 
 /**
- * Whether two CAS tokens prove the same pane, thread and child generation.
+ * Whether two CAS tokens prove the same link key, thread and child generation.
  * @param left - One CAS token.
  * @param right - The other CAS token.
  * @returns True when every proven field agrees.
@@ -38,7 +38,7 @@ function sameCas(
 ): boolean {
 	return (
 		left.revision === right.revision &&
-		left.paneId === right.paneId &&
+		left.linkKey === right.linkKey &&
 		left.threadId === right.threadId &&
 		left.childId === right.childId &&
 		left.epoch === right.epoch
@@ -46,15 +46,15 @@ function sameCas(
 }
 
 /**
- * Whether two pane bindings are the same revision with the same CAS proof and
+ * Whether two link bindings are the same revision with the same CAS proof and
  * link identity, which is what makes captured CAS evidence still current.
- * @param left - One pane binding.
- * @param right - The other pane binding.
+ * @param left - One link binding.
+ * @param right - The other link binding.
  * @returns True when the bindings are interchangeable as authority.
  */
 function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
 	return (
-		left.paneId === right.paneId &&
+		left.linkKey === right.linkKey &&
 		left.revision === right.revision &&
 		sameCas(left.cas, right.cas) &&
 		sameThreadLinkIdentity(left.link, right.link)
@@ -68,7 +68,7 @@ function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnaps
  */
 function freezeBinding(binding: CodexThreadContextBinding): CodexThreadContextBinding {
 	return Object.freeze({
-		paneId: binding.paneId,
+		linkKey: binding.linkKey,
 		target: Object.freeze({ ...binding.target }),
 		link: Object.freeze({
 			...binding.link,
@@ -108,7 +108,7 @@ function sameBinding(
 		return left === right;
 	}
 	return (
-		left.paneId === right.paneId &&
+		left.linkKey === right.linkKey &&
 		sameTarget(left.target, right.target) &&
 		sameLink(left.link, right.link)
 	);
@@ -127,7 +127,7 @@ function unboundOutcome(
 	return Object.freeze({
 		kind: "thread_context_delivery",
 		event: eventId(event),
-		paneId: null,
+		linkKey: null,
 		targetThreadId: null,
 		targetChildId: null,
 		targetEpoch: null,
@@ -159,19 +159,19 @@ function linkNamesTarget(link: ThreadLinkSnapshot, target: CodexThreadContextTar
 }
 
 /**
- * Whether a captured CAS token proves the given pane and target.
+ * Whether a captured CAS token proves the given link key and target.
  * @param cas - The captured CAS token.
- * @param paneId - The pane the binding names.
+ * @param linkKey - The link key the binding names.
  * @param target - The delivery target.
- * @returns True when the token names the pane, thread and generation.
+ * @returns True when the token names the link key, thread and generation.
  */
 function casNamesTarget(
 	cas: ThreadLinkBindingSnapshot["cas"],
-	paneId: string,
+	linkKey: string,
 	target: CodexThreadContextTarget,
 ): boolean {
 	return (
-		cas.paneId === paneId &&
+		cas.linkKey === linkKey &&
 		cas.threadId === target.threadId &&
 		cas.childId === target.childId &&
 		cas.epoch === target.epoch
@@ -179,19 +179,19 @@ function casNamesTarget(
 }
 
 /**
- * Refuses a binding whose captured pane, link and CAS proof do not all name
+ * Refuses a binding whose captured link key, link and CAS proof do not all name
  * the exact delivery target with durable operation authority.
  * @param binding - The proposed binding.
  */
 function validateCapturedLink(binding: CodexThreadContextBinding): void {
-	const { link, paneId, target } = binding;
-	if (paneId.length === 0 || link.paneId !== paneId) {
+	const { link, linkKey, target } = binding;
+	if (linkKey.length === 0 || link.linkKey !== linkKey) {
 		throw new CodexThreadContextControllerError(
 			"invalid_binding",
-			"The thread-context binding does not name its captured pane.",
+			"The thread-context binding does not name its captured link key.",
 		);
 	}
-	if (!linkNamesTarget(link.link, target) || !casNamesTarget(link.cas, paneId, target)) {
+	if (!linkNamesTarget(link.link, target) || !casNamesTarget(link.cas, linkKey, target)) {
 		throw new CodexThreadContextControllerError(
 			"invalid_binding",
 			"The captured thread-link CAS proof does not match the exact delivery target.",
@@ -217,7 +217,7 @@ function hasOperationAuthority(target: CodexThreadContextTarget): boolean {
 
 /**
  * Checks a proposed binding against live authority: the identity validator,
- * the durable epoch store and the pane's current link.
+ * the durable epoch store and the current link.
  * @param options - The controller options carrying those authorities.
  * @param next - The proposed binding.
  */
@@ -234,7 +234,7 @@ function assertCurrentAuthority(
 			operationId: next.target.operationId,
 			threadId: next.target.threadId,
 		});
-		const currentLink = options.threadLink.read(next.paneId);
+		const currentLink = options.threadLink.read(next.linkKey);
 		if (!sameLink(currentLink, next.link)) {
 			throw new Error("The captured thread-link CAS proof is stale.");
 		}
@@ -377,7 +377,7 @@ export function createCodexThreadContextController(
 			epoch: options.epoch,
 			now: options.now,
 			contextCodec: options.contextCodec,
-			paneId: binding.paneId,
+			linkKey: binding.linkKey,
 			target: binding.target,
 			// The threads whose changes are this session's own: the workhorse
 			// this binding names, and the coordinator paired with it when there is

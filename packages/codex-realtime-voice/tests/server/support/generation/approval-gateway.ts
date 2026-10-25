@@ -116,12 +116,12 @@ export function createApprovalGateway(
 		projection,
 		threadLink: {
 			read: (key: string) => ({
-				paneId: key,
+				linkKey: key,
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId: key,
+					linkKey: key,
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,
