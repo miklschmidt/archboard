@@ -1,6 +1,8 @@
-//! The sizes the painter draws with. Layout reads the same sizes from
-//! `packages/renderer/src/shared/constants`, where each is explained; the two
-//! are one design until layout moves into the core.
+//! The sizes the painter draws with. The core's sequence and flowchart layout
+//! (`archboard-flows`) reads them from here. The TypeScript layout of Track
+//! and Blocks reads the same sizes from `packages/renderer/src/shared/constants`,
+//! where each is explained; the two are one design until that layout moves
+//! into the core.
 
 pub const BAND_RADIUS: f64 = 10.0;
 pub const PART_TITLE_SIZE: f64 = 14.0;
@@ -41,3 +43,24 @@ pub const ARCHITECTURE_NOTE_GAP: f64 = 2.0;
 pub const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
 pub const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;
 pub const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
+
+/// Half the width of a sequence's activation bar, and how far it holds arrows
+/// off the lifeline.
+pub const ACTIVATION_HALF_WIDTH: f64 = 6.0;
+/// How far right a self-message reaches, how far it drops before turning
+/// back, and the radius of its two bends.
+pub const SELF_LOOP_REACH: f64 = 52.0;
+pub const SELF_LOOP_DROP: f64 = 8.0;
+pub const SELF_LOOP_CORNER: f64 = 8.0;
+/// The step from one line of a wrapped message label to the next.
+pub const MESSAGE_LINE_STEP: f64 = 12.0;
+/// How far a step's note holds its words in from its plate's edges.
+pub const STEP_NOTE_PADDING_X: f64 = 4.0;
+pub const STEP_NOTE_PADDING_Y: f64 = 2.0;
+/// A decision's or loop's frame: the row its operator tab and words stand
+/// on, the row an alternative's label stands on, the room between its sides
+/// and the ink it holds, and the padding of the tab around its operator.
+pub const FRAME_HEAD_HEIGHT: f64 = 18.0;
+pub const FRAME_GUARD_HEIGHT: f64 = 16.0;
+pub const FRAME_PAD: f64 = 10.0;
+pub const FRAME_TAB_PADDING: f64 = 6.0;
