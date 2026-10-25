@@ -22,7 +22,7 @@ import {
 	type EngineWorker,
 } from "#shared/rules/engine/engine-pool.ts";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
-import { coreBuild, type Core } from "#runtime/services/core.ts";
+import { loadCore, type Core } from "#runtime/services/core.ts";
 
 let installed = false;
 
@@ -35,7 +35,7 @@ let core: Core | undefined;
  * @throws {CoreBuildError} When there is no build, or it was made from other sources.
  */
 function loadedCore(): Core {
-	core ??= coreBuild();
+	core ??= loadCore();
 	return core;
 }
 
