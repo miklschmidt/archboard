@@ -75,13 +75,13 @@ type RenderOptions = NonNullable<Parameters<typeof renderSemanticBoardOnServer>[
 /**
  * Select the same self-contained picture for SVG, PNG and clipboard output.
  * @param input The requested variant, view, theme, layout, comparison treatment, title and legend.
- * @returns The request with embedded fonts, so the picture outlives its server.
+ * @returns The request, whose picture draws its words as glyphs, so it outlives its server.
  */
 function exportRenderRequest(
 	input: {
-		[
-			Key in keyof Omit<RenderOptions, "fonts" | "comparison" | "title" | "titled" | "legendOnly">
-		]?: RenderOptions[Key] | undefined;
+		[Key in keyof Omit<RenderOptions, "comparison" | "title" | "titled" | "legendOnly">]?:
+			| RenderOptions[Key]
+			| undefined;
 	} & {
 		noComparison: boolean;
 		title?: string | true | undefined;
@@ -94,7 +94,6 @@ function exportRenderRequest(
 		...(input.layout === undefined ? {} : { layout: input.layout }),
 		...(input.noComparison ? { comparison: "off" } : {}),
 		...framingRequest(input),
-		fonts: "embedded",
 	};
 }
 

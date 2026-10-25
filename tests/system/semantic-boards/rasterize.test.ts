@@ -126,11 +126,10 @@ describe("semantic rasterize", () => {
 				theme: "dark",
 				file: out,
 				scale: 1,
-				source: { renderer: "semantic-renderer", fonts: "embedded", motion: "paused-at-start" },
+				source: { renderer: "semantic-renderer", motion: "paused-at-start" },
 			});
 			expect(receipt.variant.lifecycle).toBe("current");
 			expect(receipt.source.svgSha256).toMatch(/^[0-9a-f]{64}$/u);
-			expect(receipt.source.facesLoaded).toBeGreaterThan(0);
 			// Native scale: the bitmap is the diagram's own page, pixel for pixel.
 			expect(pngSize(fs.readFileSync(out))).toEqual({
 				width: receipt.width,

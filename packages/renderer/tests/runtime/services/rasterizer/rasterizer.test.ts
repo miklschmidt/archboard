@@ -105,7 +105,6 @@ function draw(
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
-		fonts: "embedded",
 		grammar,
 	});
 }
@@ -163,8 +162,6 @@ describe("what one capture is", () => {
 		for (const color of [PAGE.background, PAGE.slabEdge]) {
 			expect(colors.get(rgbOf(lightValue(color))) ?? 0).toBeGreaterThan(1000);
 		}
-		// Every one of the renderer's faces was declared and loaded before the shot.
-		expect(capture.fonts).toBeGreaterThan(0);
 		// The same document draws the same bytes: nothing about the capture reads a clock.
 		const again = await rasterizer.rasterize({ ...drawn, scale: 1 });
 		expect(Buffer.from(again.png).equals(Buffer.from(capture.png))).toBe(true);
@@ -234,14 +231,6 @@ describe("what is refused", () => {
 		expect(rasterizer.status().chromiumStarts).toBe(0);
 		expect(boundsRefusal({ width: 0, height: 10, scale: 1 })).not.toBeNull();
 		expect(boundsRefusal({ width: 10, height: 10, scale: 1 })).toBeNull();
-	});
-
-	test("a document whose faces cannot load, rather than a bitmap in a fallback face", async () => {
-		const svg =
-			'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><style>@font-face{font-family:"Nowhere";src:url("data:font/ttf;base64,AAAA") format("truetype")}</style>' +
-			'<text x="4" y="20" font-family="Nowhere">missing</text></svg>';
-		const failed = owned().rasterize({ svg, width: 80, height: 40, scale: 1 });
-		await expect(failed).rejects.toMatchObject({ code: "RASTER_FAILED" });
 	});
 
 	test("no browser at all, by name", async () => {

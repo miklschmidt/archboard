@@ -96,7 +96,7 @@ const EXPORT_BOARD: SemanticBoard = SemanticBoardSchema.parse({
 async function exported(choices: Omit<BoardRenderChoices, "fonts">): Promise<DrawnBoard> {
 	const outcome = await renderBoard(
 		EXPORT_BOARD,
-		{ theme: "light", ...choices, fonts: "embedded" },
+		{ theme: "light", ...choices },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");

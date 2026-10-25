@@ -207,8 +207,6 @@ pub struct ArchitecturePicture {
     pub steps: Vec<String>,
     /// Each group's colour, by group id, for a group that has one.
     pub groups: BTreeMap<String, PaletteColor>,
-    /// The size every card's name is set at from far away, measured by the host.
-    pub far_size: f64,
     /// The shapes of a flowchart; absent on an architecture.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -272,16 +270,6 @@ pub struct PageRequest {
     pub frame: Option<ExportFrame>,
 }
 
-/// Where a document's faces come from.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(rename_all = "lowercase")]
-pub enum FontSource {
-    /// The document names its faces by the URL the host serves them at.
-    Linked,
-    /// The document carries its faces as base64 data (`font_data`).
-    Embedded,
-}
-
 /// The theme a document that stands alone is drawn in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
@@ -313,14 +301,8 @@ pub struct DocumentRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub description: Option<String>,
-    /// Where the document's faces come from.
-    pub fonts: FontSource,
     /// How long a picture takes to swap its cards' near and far views.
     pub far_view_swap_ms: f64,
-    /// Each diagram font file as base64, by name, for a document that embeds its faces.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub font_data: Option<BTreeMap<String, String>>,
     /// The theme a document that stands alone is drawn in; absent, it takes the
     /// theme of the page it is shown in.
     #[serde(skip_serializing_if = "Option::is_none")]

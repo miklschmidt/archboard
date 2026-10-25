@@ -28,9 +28,7 @@ const CAPTURE_RECEIPT = {
 	marks: null,
 	source: {
 		renderer: "semantic-renderer",
-		fonts: "embedded",
 		svgSha256: "ab".repeat(32),
-		facesLoaded: 4,
 		motion: "paused-at-start",
 	},
 } satisfies Omit<z.infer<typeof SemanticRasterReceiptSchema>, "board" | "file">;

@@ -87,11 +87,7 @@ async function atlasOf(
 	board: ReturnType<typeof boardOf>,
 	choices: { variant: string; view?: string },
 ): Promise<DiagramAtlas> {
-	const outcome = await renderBoard(
-		board,
-		{ ...choices, theme: "light", fonts: "linked" },
-		DEFAULT_SEMANTIC_POLICY,
-	);
+	const outcome = await renderBoard(board, { ...choices, theme: "light" }, DEFAULT_SEMANTIC_POLICY);
 	if (!outcome.ok || !("atlas" in outcome.reply)) throw new Error("Expected a drawn picture");
 	return outcome.reply.atlas;
 }

@@ -22,11 +22,9 @@ use crate::sequence::design::{
 };
 use crate::sequence::layout::{Branch, FrameRows, FrameStep, PlacedStep};
 use crate::sequence::rows::{ColumnBounds, MessageEnds, pitch_of, place_note, words_for};
-use crate::text::Text;
 
 /// What the walk down one flow has placed so far, and where it has got to.
-struct Placing<'a, 'b, T: Text> {
-    text: &'b T,
+struct Placing<'a, 'b> {
     /// Where each participant's lifeline runs.
     centre_of: &'b HashMap<&'b str, f64>,
     /// The flow's columns, which a note stays inside.
@@ -46,7 +44,7 @@ fn row_top(y: f64) -> f64 {
     y - MESSAGE_PITCH / 2.0
 }
 
-impl<'a, T: Text> Placing<'a, '_, T> {
+impl<'a> Placing<'a, '_> {
     /// Place one message on its row and move the walk below it.
     fn place_message(&mut self, step: &'a Message, branch: &Branch) {
         let count = step.repeat.unwrap_or(1).min(MAX_PULSES_PER_STEP);
@@ -57,7 +55,6 @@ impl<'a, T: Text> Placing<'a, '_, T> {
             .unwrap_or(0.0);
         let to_x = self.centre_of.get(step.to.as_str()).copied().unwrap_or(0.0);
         let words = words_for(
-            self.text,
             step,
             MessageEnds {
                 from_x,
@@ -68,12 +65,7 @@ impl<'a, T: Text> Placing<'a, '_, T> {
         );
         // A label stands above its arrow, so every line past the first lowers the row.
         let y = self.y + (words.lines.len() as f64 - 1.0) * MESSAGE_LINE_STEP;
-        let note = place_note(
-            self.text,
-            step,
-            MessageEnds { from_x, to_x, y },
-            self.bounds,
-        );
+        let note = place_note(step, MessageEnds { from_x, to_x, y }, self.bounds);
         // The row grows by the note it holds, so the next message's words sit
         // where they would have without it, only lower.
         let grown = note
@@ -173,7 +165,6 @@ impl<'a, T: Text> Placing<'a, '_, T> {
 /// Every step of one flow, stacked down the page in the order it is stated:
 /// the placed messages, and the frames closed, inner before outer.
 pub(super) fn place_steps<'a>(
-    text: &impl Text,
     steps: &'a [Step],
     centre_of: &HashMap<&str, f64>,
     bounds: ColumnBounds,
@@ -181,7 +172,6 @@ pub(super) fn place_steps<'a>(
     turn: u32,
 ) -> (Vec<PlacedStep<'a>>, Vec<FrameRows<'a>>) {
     let mut placing = Placing {
-        text,
         centre_of,
         bounds,
         steps: Vec::new(),

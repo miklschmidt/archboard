@@ -12,7 +12,9 @@ import { exported, paintedBody } from "#tests/runtime/support/export-board.ts";
  */
 function titleOf(svg: string): { words: string; y: number } | undefined {
 	const found =
-		/<g data-slot="export-title"><text [^>]*?y="([\d.]+)"[^>]*>([^<]*)<\/text><\/g>/u.exec(svg);
+		/<g data-slot="export-title">(?:<g [^>]*aria-hidden="true">[^]*?<\/g>)?<text [^>]*?y="([\d.]+)"[^>]*>([^<]*)<\/text><\/g>/u.exec(
+			svg,
+		);
 	return found === null ? undefined : { y: Number(found[1]), words: found[2]! };
 }
 

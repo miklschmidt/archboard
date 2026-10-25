@@ -33,7 +33,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		[`/api/semantic-boards?${named}`, "GET"],
 		[create, "POST"],
 		[`/api/vault/code-check?${named}`, "GET"],
-		["/assets/diagram-fonts/Onest-wght-v1.000.ttf", "GET"],
+		["/assets/diagram-icons/RiServerLine.json", "GET"],
 		["/health", "OPTIONS"],
 		["/missing-route", "GET"],
 	] as const) {
@@ -80,7 +80,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 	}
 	expect(
 		(
-			await fetch(`${server.base}/assets/diagram-fonts/Onest-wght-v1.000.ttf`, {
+			await fetch(`${server.base}/assets/diagram-icons/RiServerLine.json`, {
 				headers: { Referer: `${server.base}/`, "Sec-Fetch-Site": "same-origin" },
 			})
 		).status,

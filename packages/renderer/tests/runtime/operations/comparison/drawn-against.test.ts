@@ -73,11 +73,7 @@ function stack(built: boolean) {
  * @returns The outcome of the render.
  */
 function drawn(built: boolean, choices: { variant: string; against?: string }) {
-	return renderBoard(
-		stack(built),
-		{ theme: "light", fonts: "linked", ...choices },
-		DEFAULT_SEMANTIC_POLICY,
-	);
+	return renderBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
 }
 
 /**

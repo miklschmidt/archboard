@@ -30,7 +30,7 @@ interface Listed {
 function listed(svg: string): (Listed & { x: number; y: number })[] {
 	return [
 		...svg.matchAll(
-			/<g data-legend-entry="([^"]+)">[\s\S]*?<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>(?:\n<text [^>]*>(\d+)<\/text>)?\n?<\/g>/gu,
+			/<g data-legend-entry="([^"]+)">[\s\S]*?<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>(?:\n(?:<g [^>]*aria-hidden="true">[^]*?<\/g>)?<text [^>]*>(\d+)<\/text>)?\n?<\/g>/gu,
 		),
 	].map((found) => ({
 		keys: found[1]!,

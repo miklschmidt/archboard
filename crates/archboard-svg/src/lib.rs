@@ -1,13 +1,14 @@
 //! The SVG painter (ADR 0057): a scene written as one standalone SVG document,
-//! with the stylesheet that registers the faces the picture was measured in and
-//! carries what a viewer toggles, and with every train of pulses drawn as a
-//! beam of light.
+//! its words drawn as the glyphs the core shaped, so it needs no font, with
+//! the stylesheet that carries what a viewer toggles, and with every train of
+//! pulses drawn as a beam of light.
 //!
 //! Its colours are the page's tokens. A document that stands alone carries the
 //! value of every token it names on its root, for one theme or for both.
 
 mod colour;
 mod definitions;
+mod glyphs;
 mod groups;
 mod legs;
 mod path;
@@ -18,19 +19,18 @@ mod xml;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use archboard_scene::drawing::FontFamily;
-use archboard_scene::scene::{Colour, FACES, Item, Scene, Token};
-
-use archboard_scene::request::{DocumentRequest, FontSource, StandaloneTheme};
+use archboard_scene::request::{DocumentRequest, StandaloneTheme};
+use archboard_scene::scene::{Colour, Item, Scene, Token};
 use colour::css;
 use definitions::{Names, write_definitions};
+use glyphs::Glyphs;
 use groups::{
     AWAY_PLACE, CHIP_CLASS, FAR_CLASS, FAR_PLACE, HEAD_SHADE_CLASS, MEMBERS_ATTRIBUTE, NEAR_CLASS,
     NEAR_PLACE, TRAFFIC_ATTRIBUTE, WORDS_CLASS,
 };
 use pulse::PULSE_CLASS;
 use shapes::HALO_CLASS;
-use write::{SANS_STACK, Writer};
+use write::Writer;
 use xml::{Attributes, coord, empty, escape_xml};
 
 /// Why a document could not be written.
@@ -46,49 +46,6 @@ impl std::fmt::Display for DocumentError {
 const FAR_VIEW_CLASS: &str = "is-far";
 /// How every part of a swap between the near and the far view moves.
 const SWAP_EASE: &str = "cubic-bezier(.4,0,.2,1)";
-/// Where the Archboard server serves the face files from.
-const FONT_URL_PREFIX: &str = "/assets/diagram-fonts";
-
-/// Where one face's bytes come from.
-fn face_source(file: &str, document: &DocumentRequest) -> Result<String, DocumentError> {
-    if document.fonts == FontSource::Embedded {
-        let data = document
-            .font_data
-            .as_ref()
-            .and_then(|data| data.get(file))
-            .ok_or_else(|| {
-                DocumentError(format!(
-                    "The host gave no bytes for the diagram font {file}."
-                ))
-            })?;
-        return Ok(format!(
-            "url(\"data:font/ttf;base64,{data}\") format(\"truetype\")"
-        ));
-    }
-    Ok(format!(
-        "url(\"{FONT_URL_PREFIX}/{file}\") format(\"truetype\")"
-    ))
-}
-
-/// The `@font-face` rules the document registers its own type with.
-fn face_rules(document: &DocumentRequest) -> Result<String, DocumentError> {
-    FACES
-        .iter()
-        .map(|face| {
-            face_source(face.file, document).map(|source| {
-                let family = match face.font.family {
-                    FontFamily::Sans => "Archboard Diagram Sans",
-                    FontFamily::Mono => "Archboard Diagram Mono",
-                };
-                format!(
-                    "@font-face{{font-family:\"{family}\";font-style:normal;font-weight:{};src:{source}}}",
-                    face.font.weight
-                )
-            })
-        })
-        .collect()
-}
-
 /// How a picture swaps its cards' near and far views (TASK-428).
 fn far_view_rules(swap_ms: f64) -> Vec<String> {
     let ms = archboard_scene::js::number(swap_ms);
@@ -116,12 +73,10 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
     ]
 }
 
-/// The document's stylesheet: the faces, the cursor, the selection ring, the
-/// far view, the veil, and less motion for a reader who asked for it.
-fn stylesheet(document: &DocumentRequest) -> Result<String, DocumentError> {
+/// The document's stylesheet: the cursor, the selection ring, the far view,
+/// the veil, and less motion for a reader who asked for it.
+fn stylesheet(document: &DocumentRequest) -> String {
     let mut rules = vec![
-        face_rules(document)?,
-        "svg,text{font-synthesis:none}".to_owned(),
         "[data-semantic-kind]{cursor:pointer}".to_owned(),
         format!(".{HALO_CLASS}{{opacity:0}}"),
         format!(
@@ -139,7 +94,7 @@ fn stylesheet(document: &DocumentRequest) -> Result<String, DocumentError> {
     rules.push(format!(
         "@media(prefers-reduced-motion:reduce){{.{PULSE_CLASS}{{display:none}}}}"
     ));
-    Ok(format!("<style>{}</style>", rules.concat()))
+    format!("<style>{}</style>", rules.concat())
 }
 
 /// Whether a character may stand in a custom property's name: `[\w-]`.
@@ -247,8 +202,7 @@ fn standing_alone(
 ///
 /// # Errors
 ///
-/// A document that embeds its fonts and was given no bytes for one, and a
-/// document that stands alone in a theme the request holds no colour for.
+/// A document that stands alone in a theme the request holds no colour for.
 pub fn document(
     scene: &Scene,
     document: &DocumentRequest,
@@ -259,10 +213,11 @@ pub fn document(
         names: &names,
         icons,
     };
-    let mut painted = stylesheet(document)?;
+    let mut painted = stylesheet(document);
     painted.push('\n');
     painted.push_str("<defs>");
     write_definitions(&scene.definitions, &names, &mut painted);
+    Glyphs::of(&scene.body).write_definitions(&mut painted);
     painted.push_str("</defs>\n");
     let mut ground = Attributes::new();
     ground
@@ -284,8 +239,6 @@ pub fn document(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" width=\"{width}\" height=\"{height}\" role=\"img\" aria-label=\""
     );
     escape_xml(&scene.title, &mut out);
-    out.push_str("\" font-family=\"");
-    escape_xml(SANS_STACK, &mut out);
     out.push('"');
     if scene.reading.is_some() {
         out.push_str(" data-reading-direction=\"down\"");
@@ -307,12 +260,20 @@ pub fn document(
     Ok(out)
 }
 
-/// Marks that refer to no definition, written as SVG markup: what a viewer
-/// draws beside a picture, as the picture draws it.
+/// Marks that refer to no definition but their own glyphs, written as SVG
+/// markup: what a viewer draws beside a picture, as the picture draws it.
 pub fn markup(items: &[Item]) -> String {
     let names = Names::default();
     let icons = BTreeMap::new();
     let mut out = String::new();
+    let glyphs = Glyphs::of(items);
+    let mut defined = String::new();
+    glyphs.write_definitions(&mut defined);
+    if !defined.is_empty() {
+        out.push_str("<defs>");
+        out.push_str(&defined);
+        out.push_str("</defs>");
+    }
     Writer {
         names: &names,
         icons: &icons,

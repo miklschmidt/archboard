@@ -47,9 +47,7 @@ function receipt(overrides: Record<string, unknown> = {}): Record<string, unknow
 		marks: null,
 		source: {
 			renderer: "semantic-renderer",
-			fonts: "embedded",
 			svgSha256: "ab".repeat(32),
-			facesLoaded: 4,
 			motion: "paused-at-start",
 		},
 		...overrides,

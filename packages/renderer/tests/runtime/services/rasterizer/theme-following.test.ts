@@ -58,7 +58,6 @@ beforeAll(async () => {
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: CONTENT,
 		theme: "auto",
-		fonts: "embedded",
 		grammar: "architecture",
 		// What an export carries beside the drawing follows the scheme with it.
 		frame: { title: "Reads", legend: "horizontal" },

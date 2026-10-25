@@ -39,7 +39,7 @@ import {
 import { layoutEngine } from "#shared/rules/layout/engines.ts";
 import { entryPointsOf } from "#shared/rules/layout/compound-graph.ts";
 import type { PaintedDrawing } from "#shared/rules/render/drawing.ts";
-import { measureArchitecture } from "#shared/rules/text/measurement.ts";
+import { measureArchitecture } from "#shared/rules/render/measure.ts";
 import { withStepLines, type StepLines } from "#shared/rules/render/step-lines.ts";
 import {
 	lineAppearance,
@@ -57,7 +57,6 @@ import {
 	paintDocument,
 } from "#shared/rules/render/paint.ts";
 import { drawFlowchart, drawSequence } from "#shared/rules/render/flows.ts";
-import { farSizeFor } from "#shared/rules/text/measurement.ts";
 
 /**
  * How many of a thing there are, in words a screen reader can say.
@@ -251,11 +250,6 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 			),
 			steps: [...stepLines.derived],
 			groups: groupColours(policy),
-			// Group captions draw their names from far away at the largest size
-			// every card the page holds, drawn or not, fits its name at.
-			farSize: farSizeFor(
-				drawing.cards.map(({ measured, box }) => ({ name: measured.node.name, box })),
-			),
 		},
 		page: pageRequest(request, plain),
 		document: documentRequest(

@@ -106,7 +106,7 @@ async function drawn(
 ): Promise<DrawnBoard> {
 	const outcome = await renderBoard(
 		BOARD,
-		{ variant: "draft", theme: "light", fonts: "linked", legend: "horizontal", ...choices },
+		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");

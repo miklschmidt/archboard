@@ -13,7 +13,7 @@ use crate::paint::design::{
 use crate::paint::palette::Palette;
 use crate::paint::standing::ink_of;
 use crate::request::{Arrowhead, Dash, LineAppearance, Standing};
-use crate::scene::{Colour, Head, HeadInk, MarkerId, Paint, Setting, Shape, Stroke, Text};
+use crate::scene::{Colour, Head, HeadInk, MarkerId, Paint, Shape, Stroke, Text};
 
 /// Every weight, loudest first.
 pub(super) const WEIGHTS: [Emphasis; 3] = [Emphasis::Hero, Emphasis::Normal, Emphasis::Muted];
@@ -171,18 +171,8 @@ pub(super) struct Lettering {
 
 impl Lettering {
     /// Some words set in this lettering at a point.
-    pub(super) fn set(&self, setting: Setting, at: Point, words: &str) -> Text {
-        Text {
-            setting,
-            at,
-            font: self.font,
-            size: self.size,
-            fill: self.fill.clone(),
-            anchor: None,
-            baseline: None,
-            keeps_spaces: false,
-            words: words.to_owned(),
-        }
+    pub(super) fn set(&self, at: Point, words: &str) -> Text {
+        Text::set(at, self.font, self.size, self.fill.clone(), words)
     }
 }
 

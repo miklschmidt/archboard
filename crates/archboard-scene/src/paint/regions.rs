@@ -6,7 +6,7 @@
 use crate::drawing::{DrawingRegion, TextRun};
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 use crate::js;
-use crate::paint::Ctx;
+use crate::measure;
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, concat, grouped, lines, point, shape};
 use crate::paint::colour::{Held, Tone, ToneStep, held_tone, toned};
@@ -344,13 +344,7 @@ fn far_room(region: &DrawingRegion, run: &TextRun, corner: Corner, crossings: &[
 
 /// The caption's run as it is set from far away: as large as `far_size`, the
 /// caption's height and the `room` along the region's top edge let it be.
-fn far_run(
-    ctx: &Ctx<'_>,
-    region: &DrawingRegion,
-    run: &TextRun,
-    far_size: f64,
-    room: f64,
-) -> TextRun {
+fn far_run(region: &DrawingRegion, run: &TextRun, far_size: f64, room: f64) -> TextRun {
     let rect = region.bounds;
     let caption = region.caption.bounds;
     let margin = caption.x + run.x - rect.x;
@@ -364,7 +358,7 @@ fn far_run(
     );
     TextRun {
         font_size: size,
-        width: ctx.measurer.measure(&run.text, run.font, size),
+        width: measure::width(&run.text, run.font, size),
         y: caption.height / 2.0 + size * 0.35,
         ..run.clone()
     }
@@ -372,7 +366,6 @@ fn far_run(
 
 /// One group's region: its frame and its corner brackets, and its caption on its tab, near and far.
 pub(super) fn paint_region(
-    ctx: &Ctx<'_>,
     region: &DrawingRegion,
     palette: &Palette,
     color: Option<PaletteColor>,
@@ -395,7 +388,7 @@ pub(super) fn paint_region(
                     None => Items::new(),
                     Some(run) => {
                         let room = far_room(region, run, corner, &crossings);
-                        let far = far_run(ctx, region, run, far_size, room);
+                        let far = far_run(region, run, far_size, room);
                         let grown = far.font_size / run.font_size;
                         concat(vec![
                             near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),

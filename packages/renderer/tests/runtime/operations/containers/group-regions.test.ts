@@ -418,7 +418,7 @@ test.each(["light", "dark"] as const)(
 			}
 			for (const [, , tab] of regions) {
 				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;
-				const words = /<text [^>]*fill="(#[0-9a-f]{6})"/u.exec(tab!)![1]!;
+				const words = /<g [^>]*fill="(#[0-9a-f]{6})"[^>]*aria-hidden="true">/u.exec(tab!)![1]!;
 				// The caption is 15 units at weight 500: large, bold text.
 				expect(lightnessContrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(
 					APCA.content,

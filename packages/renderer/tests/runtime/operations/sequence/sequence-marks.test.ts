@@ -204,15 +204,16 @@ describe("a stated standing on a sequence", () => {
 		const words = wordsOf(SEQUENCE_STANDING);
 		// Nothing in it is drawn see-through but the row's tint and the ghost of its chip.
 		expect(words.markup).not.toMatch(/<g\b[^>]*\sopacity=/u);
-		const tags = [...words.markup.matchAll(/<(?:rect|text)\b[^>]*>/g)].map(([tag]) => tag);
+		const tags = [...words.markup.matchAll(/<(?:rect|g)\b[^>]*>/g)].map(([tag]) => tag);
 		const plates = tags.filter((tag) => tag.startsWith("<rect") && !/ab-halo|opacity/.test(tag));
-		const texts = tags.filter((tag) => tag.startsWith("<text"));
+		// Words are drawn by their glyphs, in a group of their own.
+		const texts = tags.filter((tag) => tag.includes('aria-hidden="true"'));
 		// A plate under the label's words and one under the note's, each laid first.
 		expect(plates.length).toBeGreaterThanOrEqual(2);
 		expect(tags.indexOf(plates[0]!)).toBeLessThan(tags.indexOf(texts[0]!));
 		expect(tags.indexOf(plates[1]!)).toBeLessThan(tags.indexOf(texts.at(-1)!));
 		// The label's words are in another ink than a kept message's.
-		const kept = [...wordsOf({ s3: "unchanged" }).markup.matchAll(/<text\b[^>]*>/g)][0]![0];
+		const kept = /<g\b[^>]*aria-hidden="true">/.exec(wordsOf({ s3: "unchanged" }).markup)![0];
 		expect(fill(kept)).toBeDefined();
 		expect(fill(texts[0]!)).not.toBe(fill(kept));
 	});

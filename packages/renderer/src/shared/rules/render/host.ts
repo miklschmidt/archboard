@@ -1,11 +1,11 @@
 // What the renderer asks of the place it runs in.
 //
 // The renderer is the same code under Bun (the CLI, the rasterizer, the
-// Archboard server's render route) and in a browser tab (TASK-247). Five things
-// differ between those places, and only five, so they arrive as a host
+// Archboard server's render route) and in a browser tab (TASK-247). Four things
+// differ between those places, and only four, so they arrive as a host
 // installed once before the first picture:
 //
-//   the renderer core, which paints every picture (ADR 0057): under Bun the
+//   the renderer core, which measures and paints every picture (ADR 0057): under Bun the
 //     build of this checkout's sources, refused when it is stale; in a browser
 //     the build the page serves
 //   the layout engine: a pool of workers, Bun Workers on the server and Web
@@ -14,24 +14,21 @@
 //     packages/renderer/assets/theme.css, which Bun reads from disk; a browser draws
 //     only pictures for its own page, which take the page's colours, so it
 //     has none
-//   the diagram fonts as base64, for a document that embeds its faces, which
-//     only a host with the files at hand can give
 //   the Remix Icon path data a policy's node kinds name: the whole set under
 //     Bun, and in a browser only the icons it fetched, so a page does not
 //     carry three thousand icons to draw a dozen
 //
-// Text is measured by the host's canvas, through the global `OffscreenCanvas`
-// Pretext itself uses: the browser's own, which measures exactly what that
-// browser paints, and one backed by @napi-rs/canvas under Bun. The host makes
-// sure that canvas exists and has the diagram faces loaded before measuring.
+// Text is no host's: the core shapes every word in the faces it carries, so
+// every place measures and draws a word alike.
 
 import type { ElkNode } from "@archboard/elk-rs";
 import type * as CoreBuild from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 
-/** What the renderer asks of the core where it runs: pictures painted, and the choices between solves weighed. */
+/** What the renderer asks of the core where it runs: words measured, pictures painted, and the choices between solves weighed. */
 type CorePainter = Pick<
 	typeof CoreBuild,
+	| "measureBoard"
 	| "drawFlowchart"
 	| "drawSequence"
 	| "paintDocument"
@@ -64,12 +61,6 @@ interface RendererHost {
 	readonly solve: (graph: ElkNode, signal?: AbortSignal) => Promise<ElkNode>;
 	/** The theme colours, where a document that stands alone can be drawn. */
 	readonly themeColors?: ThemeColors | undefined;
-	/**
-	 * One diagram font file as base64, for a document that embeds its faces.
-	 * @param file The file's name.
-	 * @returns Its bytes, base64 encoded.
-	 */
-	readonly fontBase64: (file: string) => string;
 	/**
 	 * One Remix Icon's path data, by export name.
 	 * @param name The icon's export name, e.g. `RiServerLine`.

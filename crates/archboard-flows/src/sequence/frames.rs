@@ -15,6 +15,7 @@ use std::collections::HashMap;
 
 use archboard_scene::geometry::{Rect, covering, union};
 use archboard_scene::js;
+use archboard_scene::measure;
 use archboard_scene::request::FrameOperator;
 
 use crate::sequence::design::{
@@ -25,11 +26,9 @@ use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, Place
 use crate::sequence::messages::drawn;
 use archboard_scene::paint::design::PILL_FONT;
 
-use crate::text::Text;
-
 /// How wide some words of a frame are drawn.
-fn words_width(text: &impl Text, words: &str) -> f64 {
-    text.width(words, PILL_FONT, PILL_TEXT_SIZE)
+fn words_width(words: &str) -> f64 {
+    measure::width(words, PILL_FONT, PILL_TEXT_SIZE)
 }
 
 /// What one frame's tab and head row say: its operator, and the words beside it.
@@ -42,12 +41,12 @@ fn head_of(step: FrameStep<'_>) -> (FrameOperator, String) {
 
 /// The narrowest a frame may be and still hold its own words: the tab and the
 /// words beside it, and each alternative's label.
-fn own_width(text: &impl Text, rows: &FrameRows<'_>, tab_width: f64, words: &str) -> f64 {
-    let mut widest = tab_width + FRAME_TAB_PADDING + words_width(text, words) + FRAME_PAD;
+fn own_width(rows: &FrameRows<'_>, tab_width: f64, words: &str) -> f64 {
+    let mut widest = tab_width + FRAME_TAB_PADDING + words_width(words) + FRAME_PAD;
     for guard in &rows.guards {
         widest = js::js_max(
             widest,
-            words_width(text, &format!("[{}]", guard.label)) + FRAME_PAD * 2.0,
+            words_width(&format!("[{}]", guard.label)) + FRAME_PAD * 2.0,
         );
     }
     widest.ceil()
@@ -75,7 +74,6 @@ fn ink_of(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Rect {
 /// frame's inner frames are placed before it. A frame that holds no drawn ink
 /// spans the flow's columns.
 pub(super) fn place_frames<'a>(
-    text: &impl Text,
     frames: Vec<FrameRows<'a>>,
     steps: &[PlacedStep<'_>],
     active: &ActiveAt<'_>,
@@ -95,7 +93,7 @@ pub(super) fn place_frames<'a>(
             .filter_map(|id| inks.get(id.as_str()).copied())
             .chain(rows.inner.iter().filter_map(|id| boxes.get(id).copied()))
             .collect();
-        let frame = sided(text, rows, &held, columns_x, columns_width);
+        let frame = sided(rows, &held, columns_x, columns_width);
         boxes.insert(frame.rows.step.id().to_owned(), frame.bounds);
         placed.push(frame);
     }
@@ -104,7 +102,6 @@ pub(super) fn place_frames<'a>(
 
 /// One frame with its sides, round the ink it holds.
 fn sided<'a>(
-    text: &impl Text,
     rows: FrameRows<'a>,
     held: &[Rect],
     columns_x: f64,
@@ -122,8 +119,8 @@ fn sided<'a>(
         FrameOperator::Alt => "alt",
         FrameOperator::Loop => "loop",
     };
-    let tab_width = (words_width(text, word) + FRAME_TAB_PADDING * 2.0).ceil();
-    let width = js::js_max(right - left, own_width(text, &rows, tab_width, &words));
+    let tab_width = (words_width(word) + FRAME_TAB_PADDING * 2.0).ceil();
+    let width = js::js_max(right - left, own_width(&rows, tab_width, &words));
     PlacedFrame {
         bounds: Rect {
             x: left,

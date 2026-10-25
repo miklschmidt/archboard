@@ -45,11 +45,7 @@ function boardOf(built: boolean) {
  * @returns The drawn reply.
  */
 async function drawn(built: boolean) {
-	const outcome = await renderBoard(
-		boardOf(built),
-		{ theme: "light", fonts: "linked" },
-		DEFAULT_SEMANTIC_POLICY,
-	);
+	const outcome = await renderBoard(boardOf(built), { theme: "light" }, DEFAULT_SEMANTIC_POLICY);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
 	return outcome.reply;
 }

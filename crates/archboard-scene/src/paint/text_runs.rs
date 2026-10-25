@@ -4,7 +4,7 @@ use crate::drawing::{TextRole, TextRun};
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, text};
 use crate::paint::palette::Palette;
-use crate::scene::{Colour, Setting, Text};
+use crate::scene::{Colour, Text};
 
 /// Measured lines, unchanged in content, font and placement.
 pub(super) fn paint_text_runs(
@@ -16,20 +16,16 @@ pub(super) fn paint_text_runs(
     lines(
         runs.iter()
             .map(|run| {
-                text(Text {
-                    setting: Setting::Run,
-                    at: Point {
+                text(Text::set(
+                    Point {
                         x: round_coord(rect.x + run.x),
                         y: round_coord(rect.y + run.y),
                     },
-                    font: run.font,
-                    size: run.font_size,
-                    fill: fill.unwrap_or_else(|| ink_of(run, palette)).clone(),
-                    anchor: None,
-                    baseline: None,
-                    keeps_spaces: true,
-                    words: run.text.clone(),
-                })
+                    run.font,
+                    run.font_size,
+                    fill.unwrap_or_else(|| ink_of(run, palette)).clone(),
+                    &run.text,
+                ))
             })
             .collect(),
     )

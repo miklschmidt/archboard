@@ -110,7 +110,6 @@ async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined
 			...(job.view === undefined ? {} : { view: job.view }),
 			comparison: job.comparison,
 			theme: job.theme,
-			fonts: "embedded",
 			layout: job.engine,
 		},
 		job.policy,

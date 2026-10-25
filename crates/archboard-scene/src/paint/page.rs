@@ -2,13 +2,12 @@
 //! planned when nothing it describes is built, and the boxes of its atlas.
 
 use crate::geometry::{Canvas, Point, Rect, covering, round_coord};
-use crate::paint::Ctx;
+use crate::measure;
 use crate::paint::build::{Items, grouped, lines, shape, text};
 use crate::paint::design::{PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
 use crate::paint::palette::Palette;
 use crate::scene::{
-    Atlas, AtlasBox, Baseline, Boxes, Group, Purpose, Role, Setting, Shape, Slot, Stroke, Text,
-    Transform,
+    Atlas, AtlasBox, Boxes, Group, Purpose, Role, Shape, Slot, Stroke, Text, Transform,
 };
 
 /// A painted page: its body, its size and where each subject landed on it.
@@ -102,8 +101,8 @@ pub(super) fn moved_atlas(atlas: &Atlas, dx: f64, dy: f64) -> Atlas {
 
 /// A page framed as planned: the drawing moved in, a dashed frame round it and
 /// the label on the frame's top edge.
-fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> PaintedPage {
-    let label_width = ctx.measurer.measure(PLANNED_LABEL, PILL_FONT, LABEL_SIZE);
+fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
+    let label_width = measure::width(PLANNED_LABEL, PILL_FONT, LABEL_SIZE);
     let dx = PLANNED_FRAME_MARGIN;
     let dy = PLANNED_FRAME_MARGIN + LABEL_RISE;
     let needed = label_width + 2.0 * (PLANNED_FRAME_INSET + LABEL_INDENT + LABEL_CLEARANCE);
@@ -138,20 +137,19 @@ fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> Pai
         )
         .filled(&palette.background),
     );
-    let label = text(Text {
-        setting: Setting::Caption,
-        at: Point {
-            x: label_x,
-            y: round_coord(top),
-        },
-        font: PILL_FONT,
-        size: LABEL_SIZE,
-        fill: palette.muted.clone(),
-        anchor: None,
-        baseline: Some(Baseline::Central),
-        keeps_spaces: false,
-        words: PLANNED_LABEL.to_owned(),
-    });
+    let label = text(
+        Text::set(
+            Point {
+                x: label_x,
+                y: round_coord(top),
+            },
+            PILL_FONT,
+            LABEL_SIZE,
+            palette.muted.clone(),
+            PLANNED_LABEL,
+        )
+        .central(),
+    );
     PaintedPage {
         body: lines(vec![
             grouped(Group::new(
@@ -169,14 +167,9 @@ fn framed_as_planned(ctx: &Ctx<'_>, page: PaintedPage, palette: &Palette) -> Pai
 }
 
 /// The page a painting is drawn on: as painted, or framed as planned.
-pub(super) fn page_for(
-    ctx: &Ctx<'_>,
-    painting: PaintedPage,
-    palette: &Palette,
-    unbuilt: bool,
-) -> PaintedPage {
+pub(super) fn page_for(painting: PaintedPage, palette: &Palette, unbuilt: bool) -> PaintedPage {
     if unbuilt {
-        framed_as_planned(ctx, painting, palette)
+        framed_as_planned(painting, palette)
     } else {
         painting
     }
