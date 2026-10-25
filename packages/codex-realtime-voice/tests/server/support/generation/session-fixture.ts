@@ -11,15 +11,6 @@ function unavailable(owner: string): never {
  * @returns The owners.
  */
 export function createSessionComponentsFixture(events: string[]): CodexWorkbenchSessionComponents {
-	const semanticPublisher = {
-		subscribeSettledChange: () => () => undefined,
-		freshBrief: () => ({
-			brief: "Test task context.",
-			freshness: { state: "fresh" as const, capturedAtMs: 1, freshUntilMs: 2 },
-		}),
-		freshBriefForRealtime: () => "Test task context.",
-		dispose: () => void events.push("publisher:dispose"),
-	} satisfies CodexWorkbenchSessionComponents["semanticPublisher"];
 	const realtime = {
 		createOffer: async () => unavailable("realtime.createOffer"),
 		onSemanticEvent: () => () => undefined,
@@ -121,7 +112,6 @@ export function createSessionComponentsFixture(events: string[]): CodexWorkbench
 		dispose: () => void events.push("callbacks:dispose"),
 	} satisfies CodexWorkbenchSessionComponents["callbacks"];
 	return {
-		semanticPublisher,
 		realtime,
 		coordinator,
 		spokenApproval,
@@ -155,22 +145,12 @@ export function createWorkhorseComponentsFixture(
 			reason: null,
 		}),
 	} satisfies CodexWorkbenchWorkhorseComponents["workhorse"];
-	const semanticPublisher = {
-		subscribeSettledChange: () => () => undefined,
-		freshBrief: () => ({
-			brief: "Test task context.",
-			freshness: { state: "fresh" as const, capturedAtMs: 1, freshUntilMs: 2 },
-		}),
-		freshBriefForRealtime: () => "Test task context.",
-		dispose: () => void events.push("workhorse-publisher:dispose"),
-	} satisfies CodexWorkbenchWorkhorseComponents["semanticPublisher"];
 	const contextDelivery = {
 		snapshot: () => ({ token: { revision: 0 }, binding: null }),
 		compareAndSwap: () => unavailable("contextDelivery.compareAndSwap"),
 		deliver: async () => unavailable("contextDelivery.deliver"),
 		inspect: () => [],
 		get: () => undefined,
-		replaceHooks: () => void events.push("context:hooks"),
 		childExit: async () => void events.push("context:child-exit"),
 		dispose: () => void events.push("context:dispose"),
 	} satisfies CodexWorkbenchWorkhorseComponents["contextDelivery"];
@@ -191,5 +171,5 @@ export function createWorkhorseComponentsFixture(
 		onNotification: () => undefined,
 		subscribe: () => () => undefined,
 	} satisfies CodexWorkbenchWorkhorseComponents["operations"];
-	return { workhorse, semanticPublisher, contextDelivery, queue, operations };
+	return { workhorse, contextDelivery, queue, operations };
 }

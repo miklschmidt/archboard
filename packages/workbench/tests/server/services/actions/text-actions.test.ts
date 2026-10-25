@@ -1,7 +1,10 @@
-import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
+import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/services/host/archboard.ts";
 import { expect, test } from "bun:test";
 
-import { ArchboardContextSchema } from "#runtime/rules/instructions/context.ts";
+import {
+	ArchboardContextSchema,
+	encodeCanonicalContext,
+} from "#runtime/rules/instructions/context.ts";
 
 test("the Archboard context codec names the archboard trigger and encodes the context it was given", () => {
 	const context = ArchboardContextSchema.parse({
@@ -34,9 +37,8 @@ test("the Archboard context codec names the archboard trigger and encodes the co
 
 	expect(ARCHBOARD_CONTEXT_CODEC.key).toBe("archboard");
 	expect(ARCHBOARD_CONTEXT_CODEC.turnTrigger).toBe("archboard");
-	expect(JSON.parse(ARCHBOARD_CONTEXT_CODEC.encode(context))).toMatchObject({
-		paneId: "pane-exact",
-		board: { key: "board" },
-		claim: { doing: "steering current work" },
-	});
+	// The voice agent captures the brief under `brief`; the codec gives Archboard's bytes back.
+	expect(ARCHBOARD_CONTEXT_CODEC.encode(workbenchContextOf(context))).toBe(
+		encodeCanonicalContext(context),
+	);
 });

@@ -196,16 +196,14 @@ function classifierContext(
 	operationId: string,
 ): WorkbenchExecutionContext {
 	return {
-		paneId: "pane-1",
 		threadLink: { state: "executable", reason: null },
 		child: { id: identity.validator.childId, epoch: identity.validator.epoch },
 		workhorse: { threadId: null, turnId: null },
 		coordinator: { threadId, realtimeSessionId: REALTIME.sessionId },
-		semantic: {
-			brief: "The reviewed command is bounded.",
+		brief: {
+			text: "The reviewed command is bounded.",
 			capturedAtMs: 1,
 			freshUntilMs: 30_000,
-			truncated: false,
 		},
 		operation: {
 			id: operationId,

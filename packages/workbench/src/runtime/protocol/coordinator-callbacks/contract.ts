@@ -1,55 +1,3 @@
-export type {
-	CoordinatorCallbackLinkCorrelation,
-	CoordinatorCallbackCorrelation,
-	CoordinatorCallbackContextPort,
-	CoordinatorCallback,
-	CoordinatorCallbackRealtimeGeneration,
-	CoordinatorCallbackRealtimeRequest,
-	CoordinatorCallbackTurnPort,
-	CoordinatorCallbackCurrentChild,
-	CoordinatorCallbackReadyCoordinator,
-} from "@archboard/codex-realtime-voice/runtime";
-
-import type {
-	CoordinatorCallbackSource as CoreSource,
-	CoordinatorCallbackOptions as CoreOptions,
-	CoordinatorCallbacks as CoreCallbacks,
-} from "@archboard/codex-realtime-voice/runtime";
-import type {
-	PaneFocusEvent,
-	PaneSelectionEvent,
-	SettledSemanticChangeEvent,
-	SemanticContextPublisher,
-} from "#runtime/schemas/semantic-context-types.ts";
-export type SemanticCallbackSource =
-	| SettledSemanticChangeEvent
-	| PaneFocusEvent
-	| PaneSelectionEvent;
-export type CoordinatorCallbackSource = CoreSource | SemanticCallbackSource;
-export type CoordinatorCallbackOptions = Omit<CoreOptions, "host"> & {
-	readonly semantic: Pick<
-		SemanticContextPublisher,
-		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
-	>;
-	readonly canvas: () => CoordinatorCallbackCanvas;
-};
-export type CoordinatorCallbacks = Omit<CoreCallbacks, "enqueue" | "get"> & {
-	readonly enqueue: (event: CoordinatorCallbackSource) => ReturnType<CoreCallbacks["enqueue"]>;
-	readonly get: (event: CoordinatorCallbackSource) => ReturnType<CoreCallbacks["get"]>;
-};
-
-/**
- * One subject a person picked out, as the callback names it.
- *
- * Identities only. What it is called is in the brief, which the same callback
- * carries whole; repeating a label here would be a second answer to "what is
- * this called" that could disagree with the first.
- */
-export interface CoordinatorSemanticSubject {
-	readonly kind: string;
-	readonly id: string;
-}
-
 /** Pane news as the voice model is given it (TASK-293). */
 export interface CoordinatorPaneNews {
 	/** The one sentence of names: where the user's reading now stands, or what changed under it. */
@@ -82,23 +30,4 @@ export interface CoordinatorCallbackCanvas {
 	 * under way. A recording is no narration: nobody is listening to stop for.
 	 */
 	readonly narrated: string | null;
-}
-
-/**
- * Archboard's payload of a host-context event: the pane, the board selection and the pane news
- * that Archboard's callback policy reads and encodes.
- */
-export interface ArchboardHostContext {
-	readonly origin: "human" | "agent" | "mixed" | null;
-	readonly significance: string | null;
-	readonly paneId: string;
-	readonly focused: boolean;
-	/** The selected subjects of the board, never anything that was drawn. */
-	readonly selection: readonly CoordinatorSemanticSubject[];
-	readonly detail: string | null;
-	/**
-	 * The pane news this event is, or null when nothing of it was the user's own doing and nobody
-	 * is told (TASK-293, ADR 0034).
-	 */
-	readonly news: CoordinatorPaneNews | null;
 }

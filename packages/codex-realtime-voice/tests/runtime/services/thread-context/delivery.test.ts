@@ -9,7 +9,6 @@ import {
 	createHarness,
 	FEED_ID,
 	inspectOnlyLink,
-	PANE_ID,
 	unboundLink,
 } from "#tests/runtime/services/thread-context/delivery-support.ts";
 
@@ -20,8 +19,12 @@ function invokeRelease(release: (() => void) | null, message: string): void {
 	release();
 }
 
-function decodePayloadContext(payload: ThreadInjectItemsParams): { readonly paneId: string } {
-	return JSON.parse(payload.items[0]!.content[0]!.text) as { readonly paneId: string };
+function decodePayloadContext(payload: ThreadInjectItemsParams): {
+	readonly brief: { readonly text: string };
+} {
+	return JSON.parse(payload.items[0]!.content[0]!.text) as {
+		readonly brief: { readonly text: string };
+	};
 }
 
 describe("codex thread context delivery", () => {
@@ -45,7 +48,7 @@ describe("codex thread context delivery", () => {
 			role: "developer",
 			content: [{ type: "input_text" }],
 		});
-		expect(decodePayloadContext(result.payload).paneId).toBe(PANE_ID);
+		expect(decodePayloadContext(result.payload).brief.text).toBe(event.text ?? "");
 		expect(result.payload?.threadId).toBe(harness.target.threadId);
 		expect(harness.classifyCalls()).toBe(1);
 		expect(harness.epochRequests()).toHaveLength(2);
@@ -53,16 +56,16 @@ describe("codex thread context delivery", () => {
 		expect(Object.isFrozen(result.event)).toBe(true);
 	});
 
-	test("does not send a cosmetic change", async () => {
+	test("does not send a change whose words the host withheld", async () => {
 		const harness = createHarness();
 
-		const cosmetic = await harness.delivery.deliver(
-			harness.events({ sequence: 2, significance: "cosmetic" }),
+		const withheld = await harness.delivery.deliver(
+			harness.events({ sequence: 2, withheld: "cosmetic" }),
 		);
 
-		expect(cosmetic).toMatchObject({
+		expect(withheld).toMatchObject({
 			outcome: "not_delivered",
-			reason: "cosmetic",
+			reason: "withheld",
 			attempted: false,
 		});
 		expect(harness.received).toHaveLength(0);
@@ -81,8 +84,8 @@ describe("codex thread context delivery", () => {
 		//
 		// Redundancy replaces it: a thread may be told about its own write, and
 		// that is a thing it is told how to read.
-		const first = await harness.delivery.deliver(harness.events({ origin: "agent" }));
-		const second = await harness.delivery.deliver(harness.events({ sequence: 2, origin: "agent" }));
+		const first = await harness.delivery.deliver(harness.events());
+		const second = await harness.delivery.deliver(harness.events({ sequence: 2 }));
 
 		expect(first).toMatchObject({ outcome: "delivered", attempted: true });
 		expect(second).toMatchObject({ outcome: "delivered", attempted: true });
@@ -179,34 +182,29 @@ describe("codex thread context delivery", () => {
 		});
 	});
 
-	test("does not send a stale event or a prior cursor", async () => {
+	test("does not send a stale change or a sequence that does not pass its feed's last", async () => {
 		const harness = createHarness();
 		const first = await harness.delivery.deliver(harness.events({ sequence: 3 }));
-		const stale = await harness.delivery.deliver(harness.events({ sequence: 2 }));
-		const oldFeed = await harness.delivery.deliver(
-			harness.events({ sequence: 4, feedId: "old-feed" }),
+		const prior = await harness.delivery.deliver(harness.events({ sequence: 2 }));
+		const otherFeed = await harness.delivery.deliver(
+			harness.events({ sequence: 1, feedId: "other-feed" }),
 		);
-		const explicitlyStale = await harness.delivery.deliver(
-			harness.events({ sequence: 5, stale: true }),
-		);
+		const stale = await harness.delivery.deliver(harness.events({ sequence: 5, stale: true }));
 
 		expect(first.outcome).toBe("delivered");
+		expect(prior).toMatchObject({
+			outcome: "not_delivered",
+			reason: "stale_cursor",
+			attempted: false,
+		});
+		// Each feed keeps its own sequence.
+		expect(otherFeed.outcome).toBe("delivered");
 		expect(stale).toMatchObject({
-			outcome: "not_delivered",
-			reason: "stale_cursor",
-			attempted: false,
-		});
-		expect(oldFeed).toMatchObject({
-			outcome: "not_delivered",
-			reason: "stale_cursor",
-			attempted: false,
-		});
-		expect(explicitlyStale).toMatchObject({
 			outcome: "not_delivered",
 			reason: "stale_event",
 			attempted: false,
 		});
-		expect(harness.received).toHaveLength(1);
+		expect(harness.received).toHaveLength(2);
 	});
 
 	test("reserves a newer cursor before delayed classification and inspects in first-seen order", async () => {
@@ -365,15 +363,14 @@ describe("codex thread context delivery", () => {
 		});
 	});
 
-	test("uses the publisher subscription and stops accepting events after dispose", async () => {
+	test("stops accepting changes after dispose", async () => {
 		const harness = createHarness();
-		harness.emit(harness.events());
-		await harness.flush();
+		await harness.delivery.deliver(harness.events());
 		expect(harness.received).toHaveLength(1);
 
 		harness.delivery.dispose();
-		harness.emit(harness.events({ sequence: 2 }));
-		await harness.flush();
+		const after = await harness.delivery.deliver(harness.events({ sequence: 2 }));
+		expect(after).toMatchObject({ outcome: "not_delivered", attempted: false });
 		expect(harness.received).toHaveLength(1);
 	});
 });

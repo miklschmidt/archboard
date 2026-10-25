@@ -37,22 +37,23 @@ const operation = z
 			issue.addIssue({ code: "custom", message: "Operation kind and RPC disagree." });
 	});
 
+/** The execution facts a thread reads; any other key is the host's own data, which these never are. */
 const WorkbenchExecutionContextSchema = z.object({
-	paneId: named,
 	threadLink: link,
 	child: z.strictObject({ id: named, epoch: named }),
 	workhorse: z.strictObject({ threadId: named.nullable(), turnId: named.nullable() }),
 	coordinator: z.strictObject({ threadId: named.nullable(), realtimeSessionId: named.nullable() }),
-	semantic: z
-		.strictObject({
-			brief: z.string(),
-			capturedAtMs: timestamp,
-			freshUntilMs: timestamp,
-			truncated: z.boolean(),
-		})
+	/** The host's text, and the window in which it is fresh. */
+	brief: z
+		.strictObject({ text: z.string(), capturedAtMs: timestamp, freshUntilMs: timestamp })
 		.refine((value) => value.freshUntilMs >= value.capturedAtMs),
 	operation,
 });
+
+/** The keys of the execution facts, which host data never replaces. */
+const EXECUTION_CONTEXT_KEYS: readonly string[] = Object.freeze(
+	Object.keys(WorkbenchExecutionContextSchema.shape),
+);
 
 type ExecutionContext = z.infer<typeof WorkbenchExecutionContextSchema>;
 
@@ -67,4 +68,4 @@ function captureExecutionContext<Context extends ExecutionContext>(input: Contex
 	return captured;
 }
 
-export { WorkbenchExecutionContextSchema, captureExecutionContext };
+export { EXECUTION_CONTEXT_KEYS, WorkbenchExecutionContextSchema, captureExecutionContext };

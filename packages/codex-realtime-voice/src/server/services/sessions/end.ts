@@ -101,11 +101,11 @@ function endTabSession(session: CodexWorkbenchTabSession, ending: TabSessionEndi
 						owned.contextDelivery.dispose(),
 			),
 			() => components.callbacks.dispose(),
-			() => components.semanticPublisher.dispose(),
-			...workhorses.flatMap(({ components: owned }) => [
-				() => owned.semanticPublisher.dispose(),
-				() => owned.queue.shutdown(),
-			]),
+			...workhorses.map(
+				({ components: owned }) =>
+					() =>
+						owned.queue.shutdown(),
+			),
 			() => Promise.all([...state.threads].map((threadId) => ending.unload(threadId))),
 			() => components.realtime.dispose(),
 			() => components.coordinatorTools.dispose(),

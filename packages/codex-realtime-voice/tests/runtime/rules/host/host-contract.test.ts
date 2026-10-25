@@ -14,12 +14,11 @@ import { type WorkbenchExecutionContext } from "#runtime/protocol/host/context.t
 
 function context(): WorkbenchExecutionContext {
 	return {
-		paneId: "session",
 		child: { id: "child", epoch: "epoch" },
 		threadLink: { state: "executable", reason: null },
 		workhorse: { threadId: "worker", turnId: null },
 		coordinator: { threadId: "coordinator", realtimeSessionId: null },
-		semantic: { brief: "Host context", capturedAtMs: 1, freshUntilMs: 2, truncated: false },
+		brief: { text: "Host context", capturedAtMs: 1, freshUntilMs: 2 },
 		operation: { id: "operation", kind: "delegate_to_workhorse", rpc: "turn/start", outcome: null },
 	};
 }

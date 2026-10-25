@@ -14,7 +14,7 @@
 // running turn never waits on nobody.
 //
 // A session ends when its tab has gone for good (no pane of it came back within the grace): its
-// approvals are cancelled, its voice, board news and queues stop, every link of its workhorses is
+// approvals are cancelled, its voice, context delivery and queues stop, every link of its workhorses is
 // cleared, and each of its threads is unsubscribed once nothing runs on it, so Codex unloads it.
 // Until then its coordinator's tools and its operations stay, so a turn still running is
 // answered. A tab that comes back under the same id meanwhile gets a fresh session. A child exit
@@ -521,8 +521,7 @@ function createCodexWorkbenchSessions(
 				"Codex child-exit cleanup failed.",
 			),
 		/**
-		 * Stop what every session runs: its voice, its realtime adapter, its board
-		 * news and its queues.
+		 * Stop what every session runs: its voice, its realtime adapter and its queues.
 		 * @returns Resolves once every session has stopped.
 		 */
 		stop: () =>
@@ -530,16 +529,14 @@ function createCodexWorkbenchSessions(
 				every().flatMap(({ components, workhorses }) => [
 					() => stopVoice(components.realtime),
 					() => components.realtime.dispose(),
-					() => components.semanticPublisher.dispose(),
-					...[...workhorses.values()].flatMap((workhorse) => [
-						() => workhorse.components.semanticPublisher.dispose(),
-						() => workhorse.components.queue.shutdown(),
-					]),
+					...[...workhorses.values()].map(
+						(workhorse) => () => workhorse.components.queue.shutdown(),
+					),
 				]),
 				"Codex workbench shutdown failed.",
 			),
 		/**
-		 * Dispose every session's callbacks, spoken approval gate, semantic delivery
+		 * Dispose every session's callbacks, spoken approval gate, context delivery
 		 * and coordinator tools, and forget every session, ending ones included: the
 		 * child is gone, so nothing is left to unload.
 		 */

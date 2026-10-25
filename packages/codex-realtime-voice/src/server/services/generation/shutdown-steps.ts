@@ -37,7 +37,7 @@ function shutdownSteps(
 		 */
 		() => hooks.stopBrowser(components.gateway, reason),
 		/**
-		 * Stop what every tab session runs: its voice, its board news, its queue.
+		 * Stop what every tab session runs: its voice and its queue.
 		 * @returns Resolves once they have stopped.
 		 */
 		() => components.sessions.stop(),
@@ -57,7 +57,7 @@ function shutdownSteps(
 		 */
 		() => components.session[CODEX_SESSION_CONTROL].dispose(),
 		/**
-		 * Dispose every tab session's callbacks, spoken approval gate, semantic
+		 * Dispose every tab session's callbacks, spoken approval gate, context
 		 * delivery and coordinator tools.
 		 * @returns Resolves once they have.
 		 */

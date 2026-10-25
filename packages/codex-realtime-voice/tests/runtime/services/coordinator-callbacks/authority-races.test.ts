@@ -6,7 +6,7 @@ import {
 	harness,
 	link,
 	operationEvent,
-	hostEvent,
+	contextEvent,
 } from "#tests/runtime/services/coordinator-callbacks/support.ts";
 
 /**
@@ -20,7 +20,7 @@ function userPickOrOutcome(h: ReturnType<typeof harness>, route: "coordinator" |
 	if (route === "coordinator") {
 		return operationEvent(h.ids, "outcome_unknown");
 	}
-	return hostEvent(h.ids);
+	return contextEvent(h.ids);
 }
 
 describe("coordinator callback live authority", () => {
@@ -100,7 +100,7 @@ describe("coordinator callback live authority", () => {
 					Reflect.set(live.link, field, value);
 				}
 				h.state.classification = live;
-				const delivery = await h.callbacks.enqueue(hostEvent(h.ids));
+				const delivery = await h.callbacks.enqueue(contextEvent(h.ids));
 				if (scenario === "running") {
 					expect(delivery.outcome).toBe("delivered");
 					expect(h.realtimeRequests).toHaveLength(1);
@@ -149,36 +149,29 @@ describe("coordinator callback live authority", () => {
 	});
 });
 
-test("authority lost during a quiet host copy prevents the later voice append", async () => {
+test("authority lost while the coordinator is told a change leaves the outcome unknown, and it is told once", async () => {
 	const h = harness(true);
 	const callbacks = createCodexCoordinatorCallbacks({
 		...h.options,
-		host: {
-			...h.options.host,
-			delivery: (callback) => ({
-				channel: "context",
-				text: callback.context.brief,
-				reason: null,
-				coordinatorContext: true,
-			}),
-		},
 		coordinatorContext: {
-			inject: async () => {
+			inject: async (request) => {
+				h.injections.push(request);
 				h.state.generation = null;
 				return { attempted: true, outcome: "delivered", reason: null };
 			},
 		},
 	});
 	try {
-		const source = hostEvent(h.ids);
+		const source = { ...contextEvent(h.ids), audience: "coordinator" as const };
 		const first = await callbacks.enqueue(source);
 		const duplicate = await callbacks.enqueue(source);
 		expect(first).toMatchObject({
-			attempted: false,
-			outcome: "not_delivered",
-			reason: "stale_session",
+			attempted: true,
+			outcome: "outcome_unknown",
+			path: "coordinator_context",
 		});
 		expect(duplicate).toBe(first);
+		expect(h.injections).toHaveLength(1);
 		expect(h.realtimeRequests).toHaveLength(0);
 	} finally {
 		callbacks.dispose();
@@ -186,17 +179,17 @@ test("authority lost during a quiet host copy prevents the later voice append", 
 	}
 });
 
-test("host callback data is captured before caller mutation", async () => {
+test("announced data is captured before caller mutation", async () => {
 	const h = harness(true);
 	try {
-		const source = hostEvent(h.ids);
+		const source = contextEvent(h.ids);
 		const result = h.callbacks.enqueue(source);
-		Reflect.set(source.context, "brief", "Changed after receipt.");
+		Reflect.set(source.context, "text", "Changed after receipt.");
 		Reflect.set(source.coordinator, "threadId", null);
 		const delivery = await result;
 		expect(delivery.outcome).toBe("delivered");
 		expect(delivery.callback?.correlation.coordinatorThreadId).toBe(h.ids.coordinator);
-		expect(delivery.callback?.kind === "host_context" && delivery.callback.context.brief).toBe(
+		expect(delivery.callback?.kind === "context" && delivery.callback.context.text).toBe(
 			"Task changed.",
 		);
 		expect(Object.isFrozen(delivery.callback)).toBe(true);

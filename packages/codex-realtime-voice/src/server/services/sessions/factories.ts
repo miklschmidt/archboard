@@ -108,12 +108,6 @@ function createSessionFactories(
 	const { identity, epoch, session, threadLink, transport } = shared;
 	return Object.freeze({
 		/**
-		 * What publishes what the tab's panes show and change, for voice and its coordinator.
-		 * @param created What the session has built so far.
-		 * @returns The publisher.
-		 */
-		semanticPublisher: (created) => bindings.semanticPublisher(created),
-		/**
 		 * The voice side of the conversation, which its coordinator speaks through.
 		 * @param created What the session has built so far.
 		 * @returns The realtime adapter.
@@ -232,13 +226,7 @@ function createWorkhorseFactories(
 				operation: identity.operation,
 			}),
 		/**
-		 * What publishes the changes of the boards of this workhorse's checkout.
-		 * @param created What the workhorse has built so far.
-		 * @returns The publisher.
-		 */
-		semanticPublisher: (created) => bindings.semanticPublisher(created),
-		/**
-		 * What delivers the published context into this workhorse.
+		 * What delivers an announced context change into this workhorse.
 		 * @param created What the workhorse has built so far.
 		 * @returns The controller.
 		 */
@@ -314,8 +302,6 @@ function constructSessionComponents(
 	const created: CreatedSessionComponents = {};
 	const cleanups: (() => unknown)[] = [];
 	try {
-		const semanticPublisher = (created.semanticPublisher = factories.semanticPublisher(created));
-		cleanups.push(() => semanticPublisher.dispose());
 		const realtime = (created.realtime = factories.realtime(created));
 		cleanups.push(() => realtime.dispose());
 		const coordinator = (created.coordinator = factories.coordinator(created));
@@ -325,7 +311,6 @@ function constructSessionComponents(
 		cleanups.push(() => coordinatorTools.dispose());
 		const callbacks = factories.callbacks(created);
 		return Object.freeze({
-			semanticPublisher,
 			realtime,
 			coordinator,
 			spokenApproval,
@@ -349,15 +334,12 @@ function constructWorkhorseComponents(
 	const cleanups: (() => unknown)[] = [];
 	try {
 		const workhorse = (created.workhorse = factories.workhorse(created));
-		const semanticPublisher = (created.semanticPublisher = factories.semanticPublisher(created));
-		cleanups.push(() => semanticPublisher.dispose());
 		const contextDelivery = (created.contextDelivery = factories.contextDelivery(created));
 		cleanups.push(() => contextDelivery.dispose());
 		const queue = (created.queue = factories.queue(created));
 		const operations = factories.operations(created);
 		return Object.freeze({
 			workhorse,
-			semanticPublisher,
 			contextDelivery,
 			queue,
 			operations,

@@ -146,7 +146,12 @@ describe("workhorse news", () => {
 			expect(report.news).not.toContain("{");
 		}
 		expect(
-			h.callbacks.inspect().map((delivery) => [delivery.callback?.type, delivery.path]),
+			h.callbacks
+				.inspect()
+				.map(({ callback, path }) => [
+					callback?.kind === "workhorse_news" ? callback.type : null,
+					path,
+				]),
 		).toEqual([
 			["completed", "coordinator_turn"],
 			["failed", "coordinator_turn"],
@@ -284,7 +289,7 @@ describe("workhorse news of a tab with a workhorse in each checkout", () => {
 		await h.callbacks.flush();
 		const delivered = h.callbacks.inspect().map((delivery) => ({
 			path: delivery.path,
-			type: delivery.callback?.type,
+			type: delivery.callback?.kind === "workhorse_news" ? delivery.callback.type : null,
 			checkout: delivery.callback?.correlation.workhorseLink.checkout,
 			thread: wireOf(h, delivery.callback?.correlation.workhorseThreadId ?? null),
 		}));

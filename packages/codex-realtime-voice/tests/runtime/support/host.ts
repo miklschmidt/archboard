@@ -1,8 +1,3 @@
-import type {
-	CoordinatorCallbackHostPolicy,
-	CoordinatorCallback,
-	CoordinatorHostContextCallback,
-} from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
 import { WorkbenchExecutionContextSchema } from "#runtime/rules/host/context.ts";
 import type {
@@ -53,16 +48,14 @@ function createTestVoicePolicy(
 }
 const TEST_CONTEXT_SCHEMA = WorkbenchExecutionContextSchema;
 const testContextFixture = {
-	paneId: "surface-1",
 	threadLink: { state: "executable", reason: null },
 	child: { id: "child-1", epoch: "epoch-1" },
 	workhorse: { threadId: "thread-workhorse", turnId: "turn-1" },
 	coordinator: { threadId: "thread-coordinator", realtimeSessionId: null },
-	semantic: {
-		brief: "The selected task uses the local worker.",
+	brief: {
+		text: "The selected task uses the local worker.",
 		capturedAtMs: 100,
 		freshUntilMs: 30100,
-		truncated: false,
 	},
 	operation: { id: null, kind: null, rpc: null, outcome: null },
 } as const;
@@ -73,15 +66,3 @@ export {
 	testContextFixture,
 	createTestVoicePolicy,
 };
-
-const TEST_CALLBACK_POLICY: CoordinatorCallbackHostPolicy = Object.freeze({
-	subscribe: () => () => {},
-	encode: (callback: CoordinatorCallback) => JSON.stringify(callback),
-	delivery: (callback: CoordinatorHostContextCallback) => ({
-		channel: "context" as const,
-		text: callback.context.brief,
-		reason: null,
-		coordinatorContext: false,
-	}),
-});
-export { TEST_CALLBACK_POLICY };

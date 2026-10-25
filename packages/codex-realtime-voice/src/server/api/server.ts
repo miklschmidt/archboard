@@ -12,6 +12,13 @@ export {
 	type VoiceAgentIdentity,
 } from "#runtime/protocol/host/identity.ts";
 export type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
+export type {
+	ContextAudience,
+	ContextChange,
+	ContextReceipt,
+	ContextReceiptReason,
+	ContextWords,
+} from "#server/protocol/announce/contract.ts";
 
 export { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 export type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";

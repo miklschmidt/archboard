@@ -32,13 +32,13 @@ import type {
 } from "@archboard/codex-app-server/identity";
 
 /**
- * One host-context event as the host hands it to the callbacks: what the host says changed, where
- * the reader's focus went, or what was picked out, under the execution identities the host saw.
- * The callbacks capture their own correlation; these identities only scope the event.
+ * One announced change for the coordinator or the voice of one tab session, under the execution
+ * identities the agent read when it was announced. The callbacks capture their own correlation;
+ * these identities only scope the change.
  */
-interface CoordinatorHostContextSource {
-	readonly kind: "host";
-	readonly type: "change" | "focus" | "selection";
+interface ContextAnnouncementSource {
+	readonly kind: "context";
+	readonly audience: "coordinator" | "voice";
 	readonly child: { readonly id: ChildId | null; readonly epoch: ChildEpoch | null };
 	readonly coordinator: {
 		readonly threadId: ThreadId | null;
@@ -49,10 +49,10 @@ interface CoordinatorHostContextSource {
 		readonly state: "executable" | "inspect_only" | "unbound";
 		readonly reason: string | null;
 	};
-	readonly context: HostContextEvent;
+	readonly context: AnnouncedContext;
 	/**
-	 * The thread that caused the event, or null. An event this session's own workhorse or
-	 * coordinator caused is refused as `own_change` before delivery.
+	 * The thread that made the change, or null. A change this session's own workhorse or
+	 * coordinator made is refused as `own_change` before delivery.
 	 */
 	readonly author: string | null;
 }
@@ -77,7 +77,7 @@ interface WorkhorseNewsSource {
 
 type CoordinatorCallbackSource =
 	| WorkhorseOperationEvent
-	| CoordinatorHostContextSource
+	| ContextAnnouncementSource
 	| WorkhorseNewsSource;
 
 interface CoordinatorCallbackLinkCorrelation {
@@ -139,50 +139,37 @@ type CoordinatorOperationCallback =
 	  });
 
 /**
- * The part of a host-context event the callbacks read, and the host's own payload they carry
- * untouched to the host policy.
- *
- * A change is identified by its feed and sequence; a focus or a selection by its feed, capture
- * time and `identity`. Two events that share an identity share one delivery.
+ * What a callback carries of one announced change: its identity, its freshness and the host's
+ * words. A change is identified by its feed and sequence; two with the same identity share one
+ * delivery.
  */
-interface HostContextEvent {
-	/** The host feed the event belongs to. Events of two feeds never coalesce. */
+interface AnnouncedContext {
+	/** The host feed the change belongs to. Changes of two feeds never coalesce. */
 	readonly feedId: string;
-	/** The event's place in its feed, which identifies a change; null where the host counts none. */
-	readonly sequence: number | null;
-	/** The host's text of the context, for a host policy to tell or encode. */
-	readonly brief: string;
-	/** When the host captured what the event reports; the delivery record's freshness starts here. */
+	readonly sequence: number;
+	/** When the host captured the change; the delivery record's freshness starts here. */
 	readonly capturedAtMs: number;
-	/** Until when what it reports is fresh; the delivery record's freshness ends here. */
+	/** Until when the change is fresh; the delivery record's freshness ends here. */
 	readonly freshUntilMs: number;
-	/**
-	 * What tells a focus or selection apart from another of the same feed and capture time, as
-	 * stable text the host chooses. A change ignores it.
-	 */
-	readonly identity: string;
-	/**
-	 * Whether a later event of the same type and feed replaces this one while it waits. False for
-	 * an event that must be told on its own.
-	 */
-	readonly coalesces: boolean;
-	/** The host's own data, cloned and frozen on receipt and read only by the host policy. */
-	readonly payload: unknown;
+	/** What the change is about: a later one of the same feed and topic replaces it while it waits. */
+	readonly topic: string | null;
+	/** The words to tell, or null when the host withheld them. */
+	readonly text: string | null;
+	/** Why the host told nothing, or null. */
+	readonly withheld: string | null;
+	/** Whether the voice answers the words now, rather than keeping them as quiet context. */
+	readonly speech: boolean;
 }
 
-interface CoordinatorHostContextCallbackBase {
-	readonly kind: "host_context";
+/** One normalized announced change, delivered to the coordinator or to the voice. */
+interface CoordinatorContextCallback {
+	readonly kind: "context";
+	readonly audience: ContextAnnouncementSource["audience"];
 	readonly correlation: CoordinatorCallbackCorrelation;
 	readonly threadLinkState: "executable" | "inspect_only" | "unbound";
 	readonly threadLinkReason: string | null;
-	readonly context: HostContextEvent;
+	readonly context: AnnouncedContext;
 }
-
-/** One normalized host-context event, as the host policy encodes it and decides its delivery. */
-type CoordinatorHostContextCallback =
-	| (CoordinatorHostContextCallbackBase & { readonly type: "change" })
-	| (CoordinatorHostContextCallbackBase & { readonly type: "focus" })
-	| (CoordinatorHostContextCallbackBase & { readonly type: "selection" });
 /** Workhorse news about the linked workhorse thread, as the coordinator is given it (TASK-321). */
 interface CoordinatorWorkhorseNewsCallback {
 	readonly kind: "workhorse_news";
@@ -194,7 +181,7 @@ interface CoordinatorWorkhorseNewsCallback {
 
 type CoordinatorCallback =
 	| CoordinatorOperationCallback
-	| CoordinatorHostContextCallback
+	| CoordinatorContextCallback
 	| CoordinatorWorkhorseNewsCallback;
 
 interface CoordinatorCallbackRealtimeGeneration {
@@ -296,8 +283,10 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
-	/** Speech the voice model answers now, on the host policy's choice (TASK-293.05). */
+	/** Speech the voice model answers now, on the host's choice. */
 	| "realtime_appendSpeech"
+	/** A developer message in the coordinator's thread, which starts no turn. */
+	| "coordinator_context"
 	/** The coordinator's running turn or a new one, for a workhorse outcome while voice is live. */
 	| "coordinator_turn";
 type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
@@ -314,10 +303,8 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_link"
 	| "stale_session"
 	| "voice_inactive"
-	/** The host policy recorded the event as no doing of the user, and told it to nobody. */
-	| "agent"
-	/** The host policy found that nothing the user is shown is what the event is about. */
-	| "not_shown"
+	/** The host told this audience nothing of the change. */
+	| "withheld"
 	| "recorded_only"
 	| "session_rejected"
 	| "response_lost"
@@ -352,41 +339,7 @@ type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
 		  }
 	);
 
-/**
- * What the host policy decides for one host-context callback: a reason to record it and tell
- * nobody, or the words to give the live voice session on one channel. `coordinatorContext` also
- * puts the words into the coordinator thread's history first.
- */
-type CoordinatorCallbackHostDelivery =
-	| { readonly reason: CoordinatorCallbackDeliveryReason }
-	| {
-			readonly channel: "speech" | "context";
-			readonly text: string;
-			readonly reason: CoordinatorCallbackDeliveryReason | null;
-			readonly coordinatorContext: boolean;
-	  };
-
-/**
- * The host's side of host-context callbacks: it publishes the events, encodes each callback for
- * the delivery record, and decides what reaches the voice session. The callbacks keep ordering,
- * identity, freshness and every execution authority.
- */
-interface CoordinatorCallbackHostPolicy {
-	/** Receives the host's events; returns the cleanup that ends the subscription. */
-	readonly subscribe: (listener: (event: CoordinatorHostContextSource) => void) => () => void;
-	/** Encodes any callback as the text of its delivery record; a throw refuses it as invalid. */
-	readonly encode: (callback: CoordinatorCallback) => string;
-	/** Why a host-context callback is told to nobody from the moment it arrives, or null. */
-	readonly arrivalRefusal?: (
-		event: CoordinatorHostContextSource,
-		callback: CoordinatorHostContextCallback,
-	) => CoordinatorCallbackDeliveryReason | null;
-	/** How a cleared host-context callback is delivered. */
-	readonly delivery: (callback: CoordinatorHostContextCallback) => CoordinatorCallbackHostDelivery;
-}
-
 interface CoordinatorCallbackOptions {
-	readonly host: CoordinatorCallbackHostPolicy;
 	readonly operations: Pick<CodexWorkhorseOperations, "subscribe">;
 	/** Reads Codex thread and turn identities in the notifications workhorse news comes from. */
 	readonly identity: Pick<IdentityAuthority, "decoder" | "validator">;
@@ -402,8 +355,8 @@ interface CoordinatorCallbackOptions {
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	/**
 	 * The link of every ready workhorse of the tab session, one for each checkout (ADR 0050). A
-	 * callback is correlated with the workhorse its thread names, and a host-context event with
-	 * the one voice is bound to, which the host names.
+	 * callback is correlated with the workhorse its thread names, and an announced change with
+	 * the one voice is bound to.
 	 */
 	readonly workhorseLinks: () => readonly CoordinatorCallbackLinkCorrelation[];
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
@@ -443,9 +396,7 @@ interface CoordinatorCallbackClassification {
 }
 
 export {
-	type CoordinatorHostContextSource,
-	type CoordinatorCallbackHostDelivery,
-	type CoordinatorCallbackHostPolicy,
+	type ContextAnnouncementSource,
 	type CoordinatorCallbackSource,
 	type WorkhorseNewsSource,
 	type WorkhorseNewsSituation,
@@ -453,9 +404,9 @@ export {
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,
-	type HostContextEvent,
+	type AnnouncedContext,
 	type CoordinatorCallbackContextPort,
-	type CoordinatorHostContextCallback,
+	type CoordinatorContextCallback,
 	type CoordinatorCallback,
 	type CoordinatorCallbackRealtimeGeneration,
 	type CoordinatorCallbackRealtimeRequest,

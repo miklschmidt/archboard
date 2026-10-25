@@ -279,7 +279,7 @@ export function createCodexRealtimeAdapter(
 			browserSessionId: offer.sessionId,
 			correlationId: offer.correlationId,
 			wireSessionId,
-			startBrief: options.freshSemanticBrief(wireSessionId),
+			startBrief: options.coordinatorContext.read(),
 			presentation,
 			answer,
 			resolveAnswer,

@@ -1,3 +1,4 @@
+import { canonicalJson } from "#runtime/rules/host/canonical-json.ts";
 import { workhorseNewsSentence } from "#runtime/rules/coordinator-callbacks/workhorse-news.ts";
 import {
 	afterAttemptReason,
@@ -14,7 +15,7 @@ import type {
 	CoordinatorCallbackDeliveryReason,
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackOptions,
-	CoordinatorHostContextCallback,
+	CoordinatorContextCallback,
 	CoordinatorCallbackRealtimeRequest,
 	WorkhorseNewsSituation,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -150,12 +151,7 @@ async function clearForDelivery(
 	if (isDisposed()) {
 		return { refusal: refuseBeforeAttempt(callback, evidence, "disposed") };
 	}
-	let text: string;
-	try {
-		text = options.host.encode(callback);
-	} catch {
-		return { refusal: refuseBeforeAttempt(callback, evidence, "invalid_callback") };
-	}
+	const text = canonicalJson(callback);
 	const classified = await classifyForDelivery(callback, options);
 	if (classified !== null) {
 		return { refusal: refuseBeforeAttempt(callback, evidence, classified, text) };
@@ -181,8 +177,6 @@ interface VoiceAppend {
 	readonly generation: NonNullable<CoordinatorCallbackCorrelation["realtimeGeneration"]>;
 	readonly channel: CoordinatorCallbackRealtimeRequest["channel"];
 	readonly text: string;
-	/** What the record says of an append that went through: agent for an outside agent's doing. */
-	readonly reason: CoordinatorCallbackDeliveryReason | null;
 }
 
 /**
@@ -201,20 +195,6 @@ function voiceRequest(append: VoiceAppend): CoordinatorCallbackRealtimeRequest {
 				channel: "context",
 				params: freeze({ threadId, text, role: "developer" }),
 			});
-}
-
-/**
- * What the record of an append says when no authority was lost meanwhile: why the session did
- * not take it, or what the sentence was news of.
- * @param result - How the append settled.
- * @param append - The sentence.
- * @returns The reason, or null.
- */
-function recordedReason(
-	result: CoordinatorCallbackMutationResult,
-	append: VoiceAppend,
-): CoordinatorCallbackDeliveryReason | null {
-	return result.reason ?? append.reason;
 }
 
 /**
@@ -245,7 +225,7 @@ async function deliverThroughVoice(
 		attemptedAtMs: result.attempted ? attemptedAtMs : null,
 		path: VOICE_PATHS[append.channel],
 		outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
-		reason: lostAuthority ?? recordedReason(result, append),
+		reason: lostAuthority ?? result.reason,
 		text: append.text,
 		realtimeRequest,
 	});
@@ -365,70 +345,75 @@ function recordOnly(
 }
 
 /**
- * Give the live voice session the words the host policy chose for a host-context callback, or
- * record the callback when there are none: no voice session, or a host reason to tell nobody.
+ * Tell the coordinator or the live voice one announced change, or record it when it is told to
+ * nobody: no voice session, or the host withheld its words.
  *
- * Words the policy marks as coordinator context are put into the coordinator thread first
- * (TASK-293.06). Speech is appended, which does not cut into audio in progress (TASK-293.05).
- * @param callback - The normalized host-context callback.
+ * The coordinator is given a developer message that starts no turn. The voice is given quiet
+ * context, or speech, which is appended and does not cut into audio in progress.
+ * @param callback - The normalized announced change.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
  * @param evidence - The ordering and freshness evidence for the delivery record.
  * @param text - The encoded callback, kept on the record of one that is told to nobody.
  * @returns The delivery record.
  */
-function deliverPaneNews(
-	callback: CoordinatorHostContextCallback,
+function deliverAnnouncement(
+	callback: CoordinatorContextCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
 	text: string,
 ): Promise<CoordinatorCallbackDelivery> {
 	const generation = callback.correlation.realtimeGeneration;
-	const policy = options.host.delivery(callback);
-	if (generation === null || !("channel" in policy)) {
+	const words = callback.context.text;
+	if (generation === null || words === null) {
 		return Promise.resolve(
-			recordOnly(
-				callback,
-				evidence,
-				text,
-				generation === null ? "voice_inactive" : (policy.reason ?? "recorded_only"),
-			),
+			recordOnly(callback, evidence, text, generation === null ? "voice_inactive" : "withheld"),
 		);
 	}
-	const append: VoiceAppend = {
+	if (callback.audience === "coordinator") {
+		return deliverToCoordinator(callback, options, isDisposed, evidence, {
+			threadId: generation.coordinatorThreadId,
+			text: words,
+		});
+	}
+	return deliverThroughVoice(callback, options, isDisposed, evidence, {
 		generation,
-		channel: policy.channel,
-		text: policy.text,
-		reason: policy.reason,
-	};
-	return policy.coordinatorContext
-		? deliverOutsideNews(callback, options, isDisposed, evidence, append)
-		: deliverThroughVoice(callback, options, isDisposed, evidence, append);
+		channel: callback.context.speech ? "speech" : "context",
+		text: words,
+	});
 }
 
 /**
- * Inject quiet context, then recheck authority before the voice append.
- * @param callback The captured callback.
- * @param options The runtime authorities and delivery ports.
- * @param isDisposed Whether this owner is disposed.
- * @param evidence The delivery evidence.
- * @param append The host-selected words and channel.
- * @returns The settled delivery.
+ * Put one announced change into the coordinator thread's history as a developer message. Authority
+ * is re-checked after the injection, because one that lands as the generation turns over has an
+ * unknown outcome.
+ * @param callback - The normalized announced change.
+ * @param options - The server authorities and ports.
+ * @param isDisposed - Whether the callback module has been disposed.
+ * @param evidence - The ordering and freshness evidence for the delivery record.
+ * @param request - The coordinator thread and the words.
+ * @returns The delivery record.
  */
-async function deliverOutsideNews(
-	callback: CoordinatorHostContextCallback,
+async function deliverToCoordinator(
+	callback: CoordinatorContextCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
-	append: VoiceAppend,
+	request: Parameters<CoordinatorCallbackOptions["coordinatorContext"]["inject"]>[0],
 ): Promise<CoordinatorCallbackDelivery> {
-	await options.coordinatorContext
-		.inject({ threadId: append.generation.coordinatorThreadId, text: append.text })
-		.catch(() => undefined);
-	const reason = isDisposed() ? "disposed" : finalAuthorityReason(callback, options);
-	if (reason !== null) return refuseBeforeAttempt(callback, evidence, reason, append.text);
-	return deliverThroughVoice(callback, options, isDisposed, evidence, append);
+	const attemptedAtMs = (options.now ?? Date.now)();
+	const result = await options.coordinatorContext.inject(request);
+	const lostAuthority = result.attempted
+		? afterAttemptReason(callback, options, isDisposed())
+		: null;
+	return makeDelivery(callback, evidence, {
+		attemptedAtMs: result.attempted ? attemptedAtMs : null,
+		path: "coordinator_context",
+		outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
+		reason: lostAuthority ?? result.reason,
+		text: request.text,
+	});
 }
 
 /**
@@ -467,12 +452,8 @@ function deliverOperationWhileVoiceIsLive(
  * any other operation callback is recorded and told to nobody. With no voice session the
  * coordinator is never run (it is the voice model's subconscious, TASK-321), so neither is sent.
  *
- * A host-context callback (a change, a focus, a selection) reaches the voice model only as the
- * words its host policy chooses (TASK-293, ADR 0034), quietly or as speech. Everything else is
- * recorded and told to nobody. The callback itself used to be appended: a seven-kilobyte envelope of identities and a
- * serialized brief on every report, one per walkthrough step the voice model had asked for, which
- * it then answered (33 of them in the sessions of 2026-09-20). The sentence is a hint for what
- * "this" means; the coordinator still reads the live pane through its own tools when asked.
+ * An announced change reaches the coordinator or the voice only as the words the host chose,
+ * and only while voice is live. Everything else is recorded and told to nobody.
  * @param callback - The normalized callback.
  * @param options - The server authorities and ports.
  * @param isDisposed - Whether the callback module has been disposed.
@@ -491,8 +472,8 @@ async function deliverOne(
 	}
 	const { text } = cleared;
 	const generation = callback.correlation.realtimeGeneration;
-	if (callback.kind === "host_context") {
-		return deliverPaneNews(callback, options, isDisposed, evidence, text);
+	if (callback.kind === "context") {
+		return deliverAnnouncement(callback, options, isDisposed, evidence, text);
 	}
 	if (generation === null) {
 		return recordOnly(callback, evidence, text, "voice_inactive");

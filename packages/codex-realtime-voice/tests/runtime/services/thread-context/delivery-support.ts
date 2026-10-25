@@ -1,6 +1,4 @@
-import { type WorkbenchExecutionContext } from "#runtime/protocol/host/context.ts";
-import { TEST_CONTEXT_CODEC, testContextFixture } from "#tests/runtime/support/host.ts";
-import { type WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
+import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
 import {
 	type CodexEpochError,
 	type EpochExecutionProof,
@@ -34,6 +32,7 @@ import {
 	type CodexThreadContextDeliveryOptions,
 	type CodexThreadContextExecution,
 	type CodexThreadContextTarget,
+	type WorkhorseContextEvent,
 } from "#runtime/services/thread-context/contract.ts";
 const PANE_ID = "pane-a";
 const FEED_ID = "feed-1";
@@ -51,16 +50,12 @@ async function flushMicrotasks(): Promise<void> {
 interface EventOptions {
 	readonly sequence?: number;
 	readonly feedId?: string;
-	readonly cursorFeedId?: string;
-	readonly changeFeedId?: string;
-	readonly origin?: "human" | "agent" | "mixed";
 	/** The agent session that made the change, or null for one nobody attributed. */
 	readonly by?: string | null;
-	readonly significance?: "layout" | "structural" | "cosmetic";
-	readonly focused?: boolean;
-	readonly claimDoing?: string | null;
-	readonly doing?: string | null;
-	readonly brief?: string;
+	readonly text?: string;
+	/** Why the host withheld the words, or null when it told them. */
+	readonly withheld?: string | null;
+	/** Whether the change went stale before it was announced. */
 	readonly stale?: boolean;
 }
 interface HarnessOptions {
@@ -69,12 +64,9 @@ interface HarnessOptions {
 	readonly sessionAuthors?: readonly string[];
 	readonly initialLink?: ThreadLinkSnapshot;
 	readonly classificationLink?: ThreadLinkSnapshot;
-	readonly contextValid?: boolean;
-	/** Alters one architectural field of the built context, to prove it is checked. */
-	readonly forgeContext?: (context: WorkbenchExecutionContext) => WorkbenchExecutionContext;
-	readonly contextCursorSequence?: number;
-	readonly contextFocusPaneId?: string | null;
 	readonly now?: number;
+	/** How the context is encoded. Default: the test host's codec. */
+	readonly contextCodec?: CodexThreadContextDeliveryOptions["contextCodec"];
 }
 interface Harness {
 	/** Replace the threads this port's session writes as, as a restart or New conversation does. */
@@ -84,8 +76,7 @@ interface Harness {
 	readonly delivery: CodexThreadContextDelivery;
 	readonly controller: CodexThreadContextController | null;
 	readonly received: InjectRequest[];
-	readonly events: (options?: EventOptions) => WorkbenchContextEvent;
-	readonly emit: (event: WorkbenchContextEvent) => void;
+	readonly events: (options?: EventOptions) => WorkhorseContextEvent;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
 	readonly setClassificationLink: (link: ThreadLinkSnapshot) => void;
 	readonly setClassifyEffect: (effect: (() => void) | null) => void;
@@ -101,7 +92,6 @@ interface Harness {
 	readonly classifyCalls: () => number;
 	readonly epochRequests: () => readonly EpochExecutionRequest[];
 	readonly flush: () => Promise<void>;
-	readonly subscriptionCount: () => number;
 	readonly retiredEpochs: () => number;
 	readonly readLink: () => ThreadLinkBindingSnapshot;
 }
@@ -214,8 +204,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	const epochRequests: EpochExecutionRequest[] = [];
 	let behavior: (request: InjectRequest) => Promise<InjectResponse> = successfulInject;
 	let resolveHeld: (() => void) | null = null;
-	let listener: ((event: WorkbenchContextEvent) => void) | null = null;
-	let subscriptions = 0;
 	let retired = 0;
 	const read = (): ThreadLinkBindingSnapshot => {
 		const cas: ThreadLinkCasToken = {
@@ -272,35 +260,9 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			return behavior(request);
 		},
 	};
-	const contextForEvent = (event: WorkbenchContextEvent): WorkbenchExecutionContext => ({
-		...testContextFixture,
-		paneId: PANE_ID,
-		child: { id: childId, epoch },
-		workhorse: { threadId, turnId: event.workhorse.turnId },
-		coordinator: event.coordinator,
-		semantic: {
-			brief: event.brief,
-			capturedAtMs: event.freshness.capturedAtMs,
-			freshUntilMs: event.freshness.freshUntilMs,
-			truncated: event.truncated,
-		},
-	});
-
-	const publisher = {
-		subscribeSettledChange(next: (event: WorkbenchContextEvent) => void) {
-			subscriptions++;
-			listener = next;
-			return () => {
-				listener = null;
-			};
-		},
-	};
 	const common = {
-		contextCodec: TEST_CONTEXT_CODEC,
-
-		feedId: FEED_ID,
+		contextCodec: options.contextCodec ?? TEST_CONTEXT_CODEC,
 		now: () => now,
-		publisher,
 		session,
 		threadLink,
 		identity: authority,
@@ -314,7 +276,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	const controller = options.controller
 		? createCodexThreadContextController({
 				...common,
-				hooks: { contextForEvent },
 				retireEpoch: () => void retired++,
 			})
 		: null;
@@ -324,36 +285,26 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			...common,
 			paneId: PANE_ID,
 			target,
-			contextForEvent,
 			// The threads this port's own session writes as: its workhorse, and the
 			// coordinator paired with it when a harness names one.
 			sessionAuthors: () => sessionAuthors,
 		});
-	const events = (input: EventOptions = {}): WorkbenchContextEvent => {
+	const events = (input: EventOptions = {}): WorkhorseContextEvent => {
 		const sequence = input.sequence ?? 1;
-		const feedId = input.feedId ?? FEED_ID;
-		const cursor = { feedId: input.cursorFeedId ?? feedId, sequence };
-		const origin = input.origin ?? "human";
+		const withheld = input.withheld ?? null;
 		return {
-			source: "settled_change",
-			origin,
-			feedId,
-			cursor,
-			child: { id: childId, epoch },
+			feedId: input.feedId ?? FEED_ID,
+			sequence,
+			author: input.by ?? null,
+			capturedAtMs: 100,
+			freshUntilMs: input.stale ? 100 : 200,
+			text: withheld === null ? (input.text ?? `brief-${sequence}`) : null,
+			withheld,
+			payload: {},
 			threadLink: { state: "executable", reason: null },
-			workhorse: { threadId, turnId: null },
+			child: { id: childId, epoch },
+			workhorse: { threadId },
 			coordinator: { threadId: null, realtimeSessionId: null },
-			freshness: { capturedAtMs: 100, freshUntilMs: 200, state: input.stale ? "stale" : "fresh" },
-			truncated: false,
-			staleness: { state: input.stale ? "stale" : "current" },
-			brief: input.brief ?? `brief-${sequence}`,
-			change: {
-				feedId: input.changeFeedId ?? feedId,
-				cursor,
-				origin,
-				significance: input.significance ?? "structural",
-				by: input.by ?? null,
-			},
 		};
 	};
 
@@ -372,7 +323,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		controller,
 		received,
 		events,
-		emit: (event) => listener?.(event),
 		setLink: (next) => {
 			link = next;
 			revision++;
@@ -411,7 +361,6 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		classifyCalls: () => classifyCount,
 		epochRequests: () => Object.freeze([...epochRequests]),
 		flush: flushMicrotasks,
-		subscriptionCount: () => subscriptions,
 		retiredEpochs: () => retired,
 		readLink: read,
 	};

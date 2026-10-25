@@ -163,6 +163,7 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 	const shared = {
 		id: "voice-entry",
 		kind: "callback",
+		topic: null,
 		sourceOrder: 1,
 		capturedAtMs: 100,
 		freshUntilMs: 200,

@@ -9,6 +9,7 @@ import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
+	BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES,
 	DeliveryOutcomeSchema,
 	TimestampSchema,
 } from "#shared/schemas/browser/vocabulary.ts";
@@ -109,7 +110,10 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 	const BrowserVoiceContextEntryBaseSchema = z
 		.object({
 			id: boundedText(2048),
-			kind: z.enum(["semantic", "focus", "selection", "callback"]),
+			/** Who an announced context change was for, or `callback` for the agent's own news. */
+			kind: z.enum(["voice", "coordinator", "callback"]),
+			/** What an announced context change is about, as its host named it. */
+			topic: boundedText(BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES).nullable(),
 			sourceOrder: z.number().int().nonnegative(),
 			capturedAtMs: TimestampSchema,
 			freshUntilMs: TimestampSchema,
@@ -151,7 +155,7 @@ function createBrowserVoiceSchemas(identity: IdentitySchemas) {
 			kind: z.literal("voice_context"),
 			sessionId: BrowserRealtimeSessionIdSchema,
 			ledgerId: boundedText(2048),
-			canonicalBrief: boundedText(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES),
+			canonicalBrief: boundedWireText(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES),
 			ownerEntriesTruncated: z.number().int().nonnegative(),
 			entriesTruncated: z.number().int().nonnegative(),
 			entries: z.array(BrowserVoiceContextEntrySchema).max(BROWSER_VOICE_CONTEXT_ENTRY_LIMIT),

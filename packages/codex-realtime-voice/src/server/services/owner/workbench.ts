@@ -23,6 +23,8 @@ import { createServerCodexWorkbenchApplication } from "#server/services/owner/ap
 import type { CodexWorkbenchHostPolicy } from "#server/protocol/generation/host.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
 import type { BrowserLeaseLedger } from "#server/protocol/gateway/contract.ts";
+import { announceContextChange } from "#server/services/announce/announce.ts";
+import type { ContextChange } from "#server/protocol/announce/contract.ts";
 
 /** An installation supplies private paths, the executable environment, and frozen domain policy. */
 export interface CreateCodexWorkbenchOptions {
@@ -289,5 +291,28 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 			},
 		browser: ingress.port,
 		instructions: host.instructions,
+		/**
+		 * Tell the agents of the live tab sessions about a context change.
+		 * @param change What changed, and who is told.
+		 * @returns One receipt per tab session and audience.
+		 */
+		announce: (change: ContextChange) =>
+			announceContextChange(
+				{
+					/**
+					 * The ready generation.
+					 * @returns Its capabilities.
+					 */
+					scope: () => {
+						if (current === null || !requireOwner().snapshot().ready)
+							throw new Error(
+								"The voice agent is not ready to announce a change. Retry once its status reads ready.",
+							);
+						return current;
+					},
+					resolveCheckout: host.resolveCheckout,
+				},
+				change,
+			),
 	});
 }

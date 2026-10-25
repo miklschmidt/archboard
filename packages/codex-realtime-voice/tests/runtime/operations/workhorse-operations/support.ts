@@ -307,12 +307,11 @@ export function buildFixture(
 		contextFor: ({ operationId, kind, rpc }) => (
 			beforeContext?.(),
 			TEST_CONTEXT_SCHEMA.parse({
-				paneId: "pane",
 				threadLink: { state: "executable", reason: null },
 				child: { id: String(identity.validator.childId), epoch: String(identity.validator.epoch) },
 				workhorse: { threadId: String(workhorseThreadId), turnId: null },
 				coordinator: { threadId: String(coordinatorThreadId), realtimeSessionId: null },
-				semantic: { brief: "", capturedAtMs: 0, freshUntilMs: 0, truncated: false },
+				brief: { text: "", capturedAtMs: 0, freshUntilMs: 0 },
 				operation: {
 					id: authorities.operation.decoder.serializeOperationId(operationId),
 					kind,
