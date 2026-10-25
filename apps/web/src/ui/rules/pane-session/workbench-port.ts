@@ -2,8 +2,8 @@
 //
 // A pane owns the one socket to the Archboard server. The text and voice
 // workbench ride that socket through a transport the pane session does not implement:
-// `@archboard/workbench/controllers` implements `WorkbenchTransportPort`, and
-// `@archboard/workbench/voice` implements `WorkbenchMediaPort`. The pane session
+// the transport and media owners of `@archboard/codex-realtime-voice/controllers`
+// implement `WorkbenchTransportPort` and `WorkbenchMediaPort`. The pane session
 // only attaches a transport generation to its socket after the server has
 // registered the pane, retires it when the socket goes, and hands the current
 // transport to whoever asks. It never reads a workbench message itself.
