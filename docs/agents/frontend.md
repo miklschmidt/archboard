@@ -223,6 +223,6 @@ every token that it uses. An SVG drawn with `--theme auto` sets
 
 After you edit `theme.css`, run `bun run build`. Then restart the Archboard
 server, because the server reads the file only once, at start.
-`tests/system/browser/measured-text.test.ts` compares every color that
+`tests/system/browser/drawn-glyphs.test.ts` compares every color that
 `theme.css` sets with the color the built page has, in both themes. So no other
 stylesheet may set a theme token.
