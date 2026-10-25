@@ -12,9 +12,9 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::attrs;
 use crate::drawing::Emphasis;
-use crate::geometry::{Rect, coord, round_coord};
+use crate::geometry::{Point, Rect, coord, round_coord};
 use crate::js;
-use crate::markup::{Attrs, Markup, group, lines, markup_of, tag, text_node, wrap};
+use crate::markup::{Attrs, Markup, group, lines, spelt, tag, text_node, wrap};
 use crate::paint::Ctx;
 use crate::paint::appearance::{chip_tile, semantic_ink};
 use crate::paint::design::{CHIP_THICKNESS, DIAGRAM_MARGIN, ICON_CHIP_SIZE};
@@ -25,7 +25,7 @@ use crate::paint::standing::standing_pin_at;
 use crate::paint::styles::{HEAD_LENGTH, dash_array, drawn_ink, stroke_width};
 use crate::paint::traffic::pulse_look;
 use crate::request::{Dash, ExportFrame, LegendLayout, PaletteColor, Standing};
-use crate::scene::{Atlas, Item, Role, Value};
+use crate::scene::{Atlas, Item, Role, SubjectKind};
 
 const ROW: f64 = 28.0;
 const GLYPH: f64 = 30.0;
@@ -53,7 +53,6 @@ struct Applied {
     type_name: String,
     type_kind: String,
     icon: Option<Item>,
-    icon_svg: String,
     depiction: String,
     type_color: String,
     line_color: String,
@@ -62,23 +61,26 @@ struct Applied {
 }
 
 impl Applied {
-    fn sample_key(&self) -> [&str; 7] {
-        [
-            &self.type_kind,
-            &self.type_name,
-            &self.icon_svg,
-            &self.type_color,
-            &self.line_color,
-            &self.dash,
-            &self.arrowhead,
-        ]
+    /// What two subjects share when one sample keys them both.
+    fn sample_key(&self) -> (Option<&Item>, [&str; 6]) {
+        (
+            self.icon.as_ref(),
+            [
+                &self.type_kind,
+                &self.type_name,
+                &self.type_color,
+                &self.line_color,
+                &self.dash,
+                &self.arrowhead,
+            ],
+        )
     }
 }
 
-/// An attribute value as a reader of the written document reads it back:
-/// without the characters XML cannot hold.
-fn read_back(value: &Value) -> String {
-    crate::markup::spelt(value)
+/// A value as a reader of the written document reads it back: without the
+/// characters XML cannot hold.
+fn read_back(spelt: &str) -> String {
+    spelt
         .chars()
         .filter(|character| !crate::markup::forbidden(*character))
         .collect()
@@ -96,60 +98,36 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
         open: Vec<Open>,
         met: Vec<(String, Applied)>,
     }
-    /// An element as the document writes it: its name, its attributes, its
-    /// children and whether it is one empty-element tag.
-    type Written<'item> = (
-        &'static str,
-        Vec<(&'static str, Value)>,
-        &'item [Item],
-        bool,
-    );
-    fn attributes_of(item: &Item) -> Option<Written<'_>> {
-        match item {
-            Item::Group(group) => {
-                let mut pairs = Vec::new();
-                if let Some(subject) = &group.subject {
-                    pairs.push((
-                        "data-semantic-kind",
-                        Value::Text(subject.kind.as_str().to_owned()),
-                    ));
-                    let name = if subject.kind == crate::scene::SubjectKind::GroupRegion {
-                        "data-group"
-                    } else {
-                        "data-semantic-id"
-                    };
-                    pairs.push((name, Value::Text(subject.id.clone())));
-                    if let Some(standing) = subject.standing {
-                        pairs.push((
-                            "data-semantic-standing",
-                            Value::Text(standing.as_str().to_owned()),
-                        ));
-                    }
-                }
-                pairs.extend(group.attrs.iter().cloned());
-                Some(("g", pairs, &group.children, false))
-            }
-            Item::Element(element) => Some((
+    fn visit(walk: &mut Walk, item: &Item) {
+        let (name, subject, pairs, children, empty) = match item {
+            Item::Group(group) => (
+                "g",
+                group.subject.as_ref(),
+                &group.attrs,
+                &group.children,
+                false,
+            ),
+            Item::Element(element) => (
                 element.name,
-                element.attrs.clone(),
+                None,
+                &element.attrs,
                 &element.children,
                 element.empty,
-            )),
-            _ => None,
-        }
-    }
-    fn visit(walk: &mut Walk, item: &Item) {
-        let Some((name, pairs, children, empty)) = attributes_of(item) else {
-            return;
+            ),
+            _ => return,
         };
+        // A group's region is written with its group's id, not a subject id,
+        // so the page's key never reads it.
+        let id = subject
+            .filter(|subject| subject.kind != SubjectKind::GroupRegion)
+            .map(|subject| read_back(&subject.id));
         let read = |wanted: &str| {
             pairs
                 .iter()
-                .rev()
                 .find(|(held, _)| *held == wanted)
-                .map(|(_, value)| read_back(value))
+                .map(|(_, value)| read_back(&spelt(value)))
         };
-        let subject = match (read("data-semantic-id"), read("data-type-name")) {
+        let subject = match (id, read("data-type-name")) {
             (Some(id), Some(type_name)) => {
                 walk.met.push((
                     id,
@@ -157,7 +135,7 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
                         type_name,
                         type_kind: read("data-type-kind").unwrap_or_default(),
                         icon: None,
-                        icon_svg: String::new(),
+
                         depiction: read("data-depiction").unwrap_or_default(),
                         type_color: read("data-type-color").unwrap_or_else(|| "neutral".to_owned()),
                         line_color: read("data-line-color").unwrap_or_else(|| "neutral".to_owned()),
@@ -181,12 +159,10 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
         }
         walk.open.pop();
         if name == "svg" && walk.open.last().is_some_and(|parent| parent.icon) {
-            let markup = markup_of(std::slice::from_ref(item));
             for open in &walk.open {
                 if let Some(at) = open.subject
-                    && walk.met[at].1.icon_svg.is_empty()
+                    && walk.met[at].1.icon.is_none()
                 {
-                    walk.met[at].1.icon_svg = markup.clone();
                     walk.met[at].1.icon = Some(item.clone());
                 }
             }
@@ -225,34 +201,42 @@ fn distinct_samples(appearances: Vec<Applied>) -> Vec<Applied> {
     samples
 }
 
-/// What one legend entry keys.
-#[derive(Clone, Copy)]
+/// What one legend entry keys, with what its symbol is drawn from.
 enum Keys {
-    Mark(Standing),
-    Kind,
-    Relationship,
+    /// A comparison's mark, and how many placed subjects carry it.
+    Mark(Standing, usize),
+    Kind(Applied),
+    Relationship(Applied),
     Emphasis,
     Traffic,
 }
 
 impl Keys {
-    fn as_str(self) -> &'static str {
+    fn as_str(&self) -> &'static str {
         match self {
-            Keys::Mark(_) => "mark",
-            Keys::Kind => "kind",
-            Keys::Relationship => "relationship",
+            Keys::Mark(..) => "mark",
+            Keys::Kind(_) => "kind",
+            Keys::Relationship(_) => "relationship",
             Keys::Emphasis => "emphasis",
             Keys::Traffic => "traffic",
         }
     }
 }
 
-/// One entry: what it keys and how its symbol is drawn, its words, and a count.
+/// One entry: what it keys, and its words.
 struct Entry {
     keys: Keys,
-    applied: Option<Applied>,
     words: String,
-    count: Option<usize>,
+}
+
+impl Entry {
+    /// The count beside the entry's words: a mark's.
+    fn count(&self) -> Option<usize> {
+        match self.keys {
+            Keys::Mark(_, count) => Some(count),
+            _ => None,
+        }
+    }
 }
 
 fn line_at(x: f64, y: f64, attributes: Attrs, end: f64) -> Markup {
@@ -361,18 +345,21 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
     symbol
 }
 
-fn line_mark_symbol(traffic: bool, palette: &Palette, x: f64, y: f64) -> Markup {
-    if !traffic {
-        return line_at(
-            x,
-            y,
-            attrs! {
-                "stroke": drawn_ink(palette.edge, palette, Emphasis::Hero),
-                "stroke-width": stroke_width(Emphasis::Hero),
-            },
-            1.0,
-        );
-    }
+/// A line drawn with more emphasis.
+fn emphasis_symbol(palette: &Palette, x: f64, y: f64) -> Markup {
+    line_at(
+        x,
+        y,
+        attrs! {
+            "stroke": drawn_ink(palette.edge, palette, Emphasis::Hero),
+            "stroke-width": stroke_width(Emphasis::Hero),
+        },
+        1.0,
+    )
+}
+
+/// A line with a pulse on it, held still.
+fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Markup {
     let plain = attrs! {
         "stroke": drawn_ink(palette.edge, palette, Emphasis::Normal),
         "stroke-width": stroke_width(Emphasis::Normal),
@@ -438,15 +425,14 @@ fn line_mark_symbol(traffic: bool, palette: &Palette, x: f64, y: f64) -> Markup 
 }
 
 fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Markup {
-    match (entry.keys, &entry.applied) {
-        (Keys::Mark(standing), _) => {
-            standing_pin_at(x + GLYPH / 2.0, y + ROW / 2.0, Some(standing), palette)
+    match &entry.keys {
+        Keys::Mark(standing, _) => {
+            standing_pin_at(x + GLYPH / 2.0, y + ROW / 2.0, Some(*standing), palette)
         }
-        (Keys::Kind, Some(applied)) => kind_symbol(applied, palette, x, y),
-        (Keys::Relationship, Some(applied)) => relationship_symbol(applied, palette, x, y),
-        (Keys::Emphasis, _) => line_mark_symbol(false, palette, x, y),
-        (Keys::Traffic, _) => line_mark_symbol(true, palette, x, y),
-        _ => Markup::new(),
+        Keys::Kind(applied) => kind_symbol(applied, palette, x, y),
+        Keys::Relationship(applied) => relationship_symbol(applied, palette, x, y),
+        Keys::Emphasis => emphasis_symbol(palette, x, y),
+        Keys::Traffic => traffic_symbol(palette, x, y),
     }
 }
 
@@ -503,19 +489,15 @@ fn entries_of(body: &[Item], marks: &[(Standing, &'static str, usize)]) -> Vec<V
         marks
             .iter()
             .map(|(standing, word, count)| Entry {
-                keys: Keys::Mark(*standing),
-                applied: None,
+                keys: Keys::Mark(*standing, *count),
                 words: (*word).to_owned(),
-                count: Some(*count),
             })
             .collect::<Vec<_>>(),
         kinds
             .into_iter()
             .map(|applied| Entry {
-                keys: Keys::Kind,
                 words: applied.type_name.clone(),
-                applied: Some(applied),
-                count: None,
+                keys: Keys::Kind(applied),
             })
             .collect(),
     ];
@@ -523,24 +505,18 @@ fn entries_of(body: &[Item], marks: &[(Standing, &'static str, usize)]) -> Vec<V
     let any = !relationships.is_empty();
     for applied in relationships {
         lined.push(Entry {
-            keys: Keys::Relationship,
             words: applied.type_name.clone(),
-            applied: Some(applied),
-            count: None,
+            keys: Keys::Relationship(applied),
         });
     }
     if any {
         lined.push(Entry {
             keys: Keys::Emphasis,
-            applied: None,
             words: "More emphasis".to_owned(),
-            count: None,
         });
         lined.push(Entry {
             keys: Keys::Traffic,
-            applied: None,
             words: "Illustrated traffic".to_owned(),
-            count: None,
         });
     }
     lists.push(lined);
@@ -552,7 +528,7 @@ fn width_of(ctx: &Ctx, entry: &Entry) -> f64 {
     let words = ctx
         .measurer
         .measure(&entry.words, CARD_NOTE_FONT, WORD_SIZE);
-    let count = entry.count.map_or(0.0, |count| {
+    let count = entry.count().map_or(0.0, |count| {
         COUNT_GAP
             + ctx
                 .measurer
@@ -578,7 +554,7 @@ fn drawn_entry(ctx: &Ctx, entry: &Entry, x: f64, y: f64, palette: &Palette) -> M
                     .with(font_attributes(CARD_NOTE_FONT)),
                 &entry.words,
             ),
-            match entry.count {
+            match entry.count() {
                 None => Markup::new(),
                 Some(count) => text_node(
                     words(
@@ -597,23 +573,22 @@ fn drawn_entry(ctx: &Ctx, entry: &Entry, x: f64, y: f64, palette: &Palette) -> M
     )
 }
 
-/// Each entry at its place, and the size they fill with the margins.
+/// Where each entry stands, in the order its lists hold it, and the size they
+/// fill with the margins.
 struct Placed {
-    at: Vec<(usize, usize, f64, f64)>,
+    at: Vec<Point>,
     width: f64,
     height: f64,
 }
 
-fn extent(
-    ctx: &Ctx,
-    lists: &[Vec<Entry>],
-    at: Vec<(usize, usize, f64, f64)>,
-    bottom: f64,
-) -> Placed {
+fn extent(ctx: &Ctx, lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
     let right = js::max(
         std::iter::once(DIAGRAM_MARGIN).chain(
-            at.iter()
-                .map(|(list, order, x, _)| x + width_of(ctx, &lists[*list][*order])),
+            lists
+                .iter()
+                .flatten()
+                .zip(&at)
+                .map(|(entry, place)| place.x + width_of(ctx, entry)),
         ),
     );
     Placed {
@@ -630,8 +605,11 @@ fn column(ctx: &Ctx, lists: &[Vec<Entry>]) -> Placed {
         if index > 0 {
             y += LIST_GAP / 4.0;
         }
-        for order in 0..list.len() {
-            at.push((index, order, DIAGRAM_MARGIN, y));
+        for _ in list {
+            at.push(Point {
+                x: DIAGRAM_MARGIN,
+                y,
+            });
             y += ROW;
         }
     }
@@ -658,7 +636,7 @@ fn row(ctx: &Ctx, lists: &[Vec<Entry>], wrap_at: f64) -> Placed {
             } else {
                 x += gap;
             }
-            at.push((index, order, x, y));
+            at.push(Point { x, y });
             x += width;
         }
     }
@@ -679,11 +657,12 @@ impl Legend {
             None,
             attrs! { "data-slot": "export-legend", "data-layout": self.layout.as_str() },
             lines(
-                self.laid
-                    .at
+                self.lists
                     .iter()
-                    .map(|(list, order, at_x, at_y)| {
-                        drawn_entry(ctx, &self.lists[*list][*order], x + at_x, y + at_y, palette)
+                    .flatten()
+                    .zip(&self.laid.at)
+                    .map(|(entry, place)| {
+                        drawn_entry(ctx, entry, x + place.x, y + place.y, palette)
                     })
                     .collect(),
             ),
