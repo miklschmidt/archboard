@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
 	chmodSync,
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	realpathSync,
@@ -72,5 +73,13 @@ test("a state directory that is a link is refused: start rejects with startup_fa
 		});
 		expect(status).toMatchObject({ state: "failed", ready: false });
 		expect(status.failure).toEqual(expect.any(String));
+	});
+});
+
+test("a state directory below a linked parent is prepared at the parent's real path", async () => {
+	await withLinkedDirectory(async (root, executablePath) => {
+		const { rejection } = await failedStart(join(root, "link", "state"), executablePath, root);
+		expect(rejection).not.toMatchObject({ cause: { code: "storage_refused" } });
+		expect(existsSync(join(root, "real", "state", "codex-home"))).toBe(true);
 	});
 });

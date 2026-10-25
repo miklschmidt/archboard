@@ -40,7 +40,8 @@ export type VoiceAgentExtensions = Omit<CodexWorkbenchExtensions, "onFatal"> & {
 export interface VoiceAgentOptions {
 	/**
 	 * The agent's private state: Codex home, SQLite home and process-owner records. Created with
-	 * mode 0700. Keep it outside every checkout.
+	 * mode 0700. Keep it outside every checkout. The directory and everything below it must not
+	 * be a symbolic link; links above it, such as `/tmp` on macOS, are resolved once, here.
 	 */
 	readonly storage: {
 		readonly directory: string;
