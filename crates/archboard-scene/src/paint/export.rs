@@ -260,8 +260,7 @@ fn dash_of(word: &str) -> Option<&'static str> {
 }
 
 fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
-    let named =
-        PaletteColor::named(&applied.line_color).and_then(|color| semantic_ink(Some(color)));
+    let named = semantic_ink(PaletteColor::named(&applied.line_color));
     let ink = drawn_ink(
         named.as_deref().unwrap_or(palette.edge),
         palette,
@@ -319,8 +318,7 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
 }
 
 fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Markup {
-    let named =
-        PaletteColor::named(&applied.type_color).and_then(|color| semantic_ink(Some(color)));
+    let named = semantic_ink(PaletteColor::named(&applied.type_color));
     let ink = named.unwrap_or_else(|| palette.glyph.to_owned());
     let rect = Rect {
         x: x + (GLYPH - ICON_CHIP_SIZE) / 2.0,
