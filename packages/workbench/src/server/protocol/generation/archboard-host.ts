@@ -7,7 +7,6 @@ import type {
 import type { VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
-import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
@@ -68,11 +67,6 @@ export interface ArchboardWorkbenchServer {
 	readonly narrationChangesFor: (
 		tabSessionId: TabSessionId,
 	) => (listener: (change: RealtimePresentationChange) => void) => () => void;
-	/**
-	 * What a tab session's canvas holds now: the boards its panes show and the one a narration in
-	 * them is on (TASK-293).
-	 */
-	readonly canvasFor: (tabSessionId: TabSessionId) => CoordinatorCallbackCanvas;
 	/**
 	 * The vault of the pane a tab session presents through, whose boards its voice is told
 	 * about, or null while none of its panes is open.

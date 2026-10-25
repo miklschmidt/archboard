@@ -346,7 +346,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 */
 		onShownChange: (listener) => onShownChange(() => listener()),
 		narrationChangesFor: narrationChangesOf,
-		canvasFor: canvasOf,
 		/**
 		 * The vault of the pane a tab session presents through.
 		 * @param tabSessionId The tab session.
