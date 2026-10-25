@@ -149,3 +149,11 @@ fn unicode_mandatory_separators_break_even_a_wide_line() {
         assert_eq!(texts(&paragraph, 1000.0), ["α", "б", ""]);
     }
 }
+
+#[test]
+fn nonbreaking_spaces_are_content_even_at_the_end_of_a_line() {
+    for words in ["alpha\u{a0}", "alpha\u{202f}"] {
+        let paragraph = Paragraph::new(FACE, 10.0, words);
+        assert_eq!(texts(&paragraph, 1000.0), [words]);
+    }
+}
