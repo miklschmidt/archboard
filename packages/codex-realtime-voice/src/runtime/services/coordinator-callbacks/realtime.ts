@@ -129,8 +129,8 @@ function createCoordinatorCallbackRealtimePort(
 
 /**
  * Build the port that puts one sentence into the coordinator thread's history without starting a
- * turn: one developer message through `thread/inject_items`, the way an announced context
- * reaches it. A lost answer is not retried: the next change says where things stand.
+ * turn: one developer message through `thread/inject_items`, the way the host's application
+ * context reaches it. A lost answer is not retried: the next change says where things stand.
  * @param session - The session's inject method.
  * @returns The frozen port.
  */

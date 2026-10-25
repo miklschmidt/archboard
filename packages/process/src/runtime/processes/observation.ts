@@ -155,7 +155,7 @@ function listDarwinGroupPids(library: DarwinLibrary, pgid: number): readonly num
  * EPERM while the kernel knows the group but may signal no member of it:
  * Darwin's kill(2) passes over zombies, so a group whose members have all
  * exited and wait to be reaped answers EPERM, and that answer once escaped a
- * killed Git group's census as a raw error A live
+ * killed Git group's census as a raw error. A live
  * member this process may not signal answers EPERM as well, so EPERM counts as
  * empty only when the full process census holds no live member of the group.
  * @param library The opened libproc library.
