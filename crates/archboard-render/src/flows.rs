@@ -16,10 +16,10 @@ use crate::{Host, Outline, document_request, icons_of, page_request};
 /// seen: a view scoped to one exchange holds that one. A picture without its
 /// comparison draws of it only the flows, participants and messages the
 /// variant's own reading holds, where they stand with the comparison.
-pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Outline {
+pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Result<Outline, String> {
     let told = request.told();
     if told.flows.is_empty() {
-        return Outline::Nothing;
+        return Ok(Outline::Nothing);
     }
     let content = &request.content;
     // A participant is a card: containment is not drawn in this grammar.
@@ -49,20 +49,22 @@ pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Outline {
         .values()
         .map(|look| look.icon.as_str())
         .collect();
-    let icons = icons_of(host, &icons);
-    Outline::Paint(Box::new(sequence::picture(SequenceRequest {
-        flows: content.flows.clone(),
-        nodes: content.nodes.clone(),
-        held: request.plain().then(|| told.flows.clone()),
-        appearances,
-        clock: SequenceClock {
-            traffic_speed: request.clock.traffic_speed,
-            cycle_cap_ms: request.clock.cycle_cap_ms,
+    let icons = icons_of(host, &icons)?;
+    Ok(Outline::Paint(Box::new(sequence::picture(
+        SequenceRequest {
+            flows: content.flows.clone(),
+            nodes: content.nodes.clone(),
+            held: request.plain().then(|| told.flows.clone()),
+            appearances,
+            clock: SequenceClock {
+                traffic_speed: request.clock.traffic_speed,
+                cycle_cap_ms: request.clock.cycle_cap_ms,
+            },
+            page: page_request(request),
+            document,
+            icons,
         },
-        page: page_request(request),
-        document,
-        icons,
-    })))
+    ))))
 }
 
 /// Every flow of a reading drawn as one flowchart, laid out from what the
@@ -101,7 +103,7 @@ pub(crate) async fn flowchart<H: Host>(
         groups: policy.group_colours(),
         page: page_request(request),
         document,
-        icons: icons_of(host, &icons),
+        icons: icons_of(host, &icons)?,
     };
     Ok(Outline::Paint(Box::new(
         flowchart::picture(chart, host).await?,

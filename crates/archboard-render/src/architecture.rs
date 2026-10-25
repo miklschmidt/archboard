@@ -248,7 +248,7 @@ fn paint_request<H: Host>(
     steps: Vec<String>,
     (shown, whole): (Painted, Option<Painted>),
     host: &H,
-) -> PaintRequest {
+) -> Result<PaintRequest, String> {
     let policy = &request.policy;
     let drawn = whole.as_ref().unwrap_or(&shown);
     // Every part the page lays out, drawn or not, so leaving some out changes
@@ -281,7 +281,7 @@ fn paint_request<H: Host>(
         .values()
         .map(|look| look.icon.as_str())
         .collect();
-    let icons = icons_of(host, &named);
+    let icons = icons_of(host, &named)?;
     let picture = ArchitecturePicture {
         drawing: shown,
         whole,
@@ -291,12 +291,12 @@ fn paint_request<H: Host>(
         groups: policy.group_colours(),
         flowchart: None,
     };
-    PaintRequest {
+    Ok(PaintRequest {
         picture: Picture::Architecture(Box::new(picture)),
         page: page_request(request),
         document,
         icons,
-    }
+    })
 }
 
 /// A reading drawn as an architecture, as the painter's request.
@@ -315,6 +315,6 @@ pub(crate) async fn picture<H: Host>(
     let (laid, steps) = with_step_lines(&request.content, request.held());
     let (measure, drawing) = laid_out(request, &laid, &steps, layouts, host).await?;
     let shown = shown_of(request, &laid, &drawing, &measure);
-    let paint = paint_request(request, &laid, steps, shown, host);
+    let paint = paint_request(request, &laid, steps, shown, host)?;
     Ok(Outline::Paint(Box::new(paint)))
 }
