@@ -230,14 +230,21 @@ function Approval({ approval }: { readonly approval: VoiceApproval }) {
 	);
 }
 
-const client = createVoiceClient({ socketPath: "/voice" });
-void client.connect();
-addEventListener("pagehide", () => void client.dispose());
-createRoot(document.getElementById("root")!).render(
-	<VoiceClientProvider client={client}>
-		<App />
-	</VoiceClientProvider>,
-);
+const root = createRoot(document.getElementById("root")!);
+function mount() {
+	const client = createVoiceClient({ socketPath: "/voice" });
+	void client.connect();
+	window.addEventListener("pagehide", () => void client.dispose(), { once: true });
+	root.render(
+		<VoiceClientProvider client={client}>
+			<App />
+		</VoiceClientProvider>,
+	);
+}
+mount();
+window.addEventListener("pageshow", (event) => {
+	if (event.persisted) mount();
+});
 ```
 
 Start the server from the directory that the workhorse works in:
@@ -402,7 +409,7 @@ The state has these fields:
 
 ### React
 
-`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
+`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. Dispose it on `pagehide`, so a hidden page holds no socket and no microphone. When `pageshow` has `persisted: true`, the browser restored the page from its back-forward cache: create and connect a new client. The tab session id stays in `sessionStorage`, so the new client continues the conversation when the page comes back within 60 seconds. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
 
 ## Security
 
