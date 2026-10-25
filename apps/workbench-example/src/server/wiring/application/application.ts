@@ -42,8 +42,7 @@ function requireAssets(directory: string): void {
  */
 function profile(role: "coordinator" | "workhorse", domainInstructions: string) {
 	return createWorkbenchThreadProfile({
-		serviceName: "workbench-example",
-		threadSource: "workbench-example",
+		identity: { serviceName: "workbench-example", threadSource: "workbench-example" },
 		role,
 		domainInstructions,
 		dynamicTools: [],

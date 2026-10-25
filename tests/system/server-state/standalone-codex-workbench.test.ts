@@ -8,15 +8,13 @@ import { prepareProductionFixture, productionRecords } from "./support/codex-pro
 
 const instructions = {
 	coordinator: createWorkbenchThreadProfile({
-		serviceName: "neutral-proof",
-		threadSource: "neutral-proof",
+		identity: { serviceName: "neutral-proof", threadSource: "neutral-proof" },
 		role: "coordinator",
 		domainInstructions: "Coordinate work in the admitted checkout.\n",
 		dynamicTools: [],
 	}),
 	workhorse: createWorkbenchThreadProfile({
-		serviceName: "neutral-proof",
-		threadSource: "neutral-proof",
+		identity: { serviceName: "neutral-proof", threadSource: "neutral-proof" },
 		role: "workhorse",
 		domainInstructions: "Complete work in the admitted checkout.\n",
 		dynamicTools: [],

@@ -223,7 +223,7 @@ function planCall(context: ExecutionContext, validated: ValidatedCoordinatorTool
 			result: complete(
 				refusedResponse(
 					"system_error",
-					`The Archboard server could not issue a current operation identity: ${errorMessage(error)}`,
+					`The server could not issue a current operation identity: ${errorMessage(error)}`,
 				),
 				false,
 			),

@@ -24,17 +24,18 @@ const ARCHBOARD_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 		encodeCanonicalContext(canonicalContext(ArchboardContextSchema.parse(context))),
 });
 
+/** How Archboard names itself to Codex: the values its existing threads were started with. */
+const ARCHBOARD_IDENTITY = Object.freeze({ serviceName: "archboard", threadSource: "archboard" });
+
 const ARCHBOARD_INSTRUCTIONS: WorkbenchInstructions = Object.freeze({
 	coordinator: createWorkbenchThreadProfile({
-		serviceName: "archboard",
-		threadSource: "archboard",
+		identity: ARCHBOARD_IDENTITY,
 		role: "coordinator",
 		domainInstructions: COORDINATOR_DOMAIN_INSTRUCTIONS,
 		dynamicTools: [],
 	}),
 	workhorse: createWorkbenchThreadProfile({
-		serviceName: "archboard",
-		threadSource: "archboard",
+		identity: ARCHBOARD_IDENTITY,
 		role: "workhorse",
 		domainInstructions: WORKHORSE_DOMAIN_INSTRUCTIONS,
 		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
