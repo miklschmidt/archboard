@@ -5,10 +5,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { currentVariant } from "@archboard/board/document";
-import type {
-	SemanticEdgeInput,
-	SemanticNodeInput,
-} from "@archboard/board/commands";
+import type { SemanticEdgeInput, SemanticNodeInput } from "@archboard/board/commands";
 
 import {
 	inOrder,

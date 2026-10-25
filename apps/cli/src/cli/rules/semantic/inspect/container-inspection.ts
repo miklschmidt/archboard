@@ -8,10 +8,7 @@
 // into an answer with a schema, and saying them in words for a reader.
 
 import { z } from "zod";
-import {
-	inspectContainer,
-	interfaceMeasures,
-} from "@archboard/board/container-interface";
+import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
