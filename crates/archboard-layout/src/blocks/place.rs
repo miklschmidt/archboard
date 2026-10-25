@@ -39,26 +39,26 @@ use super::weighing::routed_weighed;
 use super::wraps::{Unwrapped, best_wrap, weighed};
 
 /// The root option carrying the placed drawing, as the JSON the assembly answers.
-const BLOCKS_PLACED: &str = "archboard.blocks.placed";
+pub(crate) const BLOCKS_PLACED: &str = "archboard.blocks.placed";
 /// The root option carrying what the renderer's choices between solves read
 /// of the drawing (`choosing.rs`), as JSON only the core reads.
-const BLOCKS_READING: &str = "archboard.blocks.reading";
+pub(crate) const BLOCKS_READING: &str = "archboard.blocks.reading";
 /// The root option asking a solve to tell its drawing's reading, `true` when
 /// asked: only a drawing a choice weighs needs one, and reading a drawing
 /// costs about as much as routing a small one.
-const BLOCKS_READ: &str = "archboard.blocks.read";
+pub(crate) const BLOCKS_READ: &str = "archboard.blocks.read";
 /// The root option naming how a solve draws the board's containers and group regions.
-const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
+pub(crate) const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
 /// The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids.
-const BLOCKS_APART: &str = "archboard.blocks.apart";
+pub(crate) const BLOCKS_APART: &str = "archboard.blocks.apart";
 /// The root option asking a solve to face every block's walls, `true` when asked.
-const BLOCKS_FACING: &str = "archboard.blocks.facing";
+pub(crate) const BLOCKS_FACING: &str = "archboard.blocks.facing";
 /// The root option laying a solve's first block that could stack only one way, `true` stacked.
-const BLOCKS_STACKING: &str = "archboard.blocks.stacking";
+pub(crate) const BLOCKS_STACKING: &str = "archboard.blocks.stacking";
 /// The root option asking a solve to answer once that block is laid, `true` when asked.
-const BLOCKS_UNTIL_STOOD: &str = "archboard.blocks.until-stood";
+pub(crate) const BLOCKS_UNTIL_STOOD: &str = "archboard.blocks.until-stood";
 /// The root option a solve answers what that block stood at in, as JSON.
-const BLOCKS_STOOD: &str = "archboard.blocks.stood";
+pub(crate) const BLOCKS_STOOD: &str = "archboard.blocks.stood";
 
 /// What ends a solve early: what its first block that could stack stood at,
 /// when it was asked to answer once that block is laid, or what went wrong.

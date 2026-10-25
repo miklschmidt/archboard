@@ -226,7 +226,7 @@ fn read(reading: &str) -> Result<Reading, String> {
 /// # Errors
 ///
 /// When either reading is not one a solve told.
-pub fn draws_better(one: &str, other: &str) -> Result<bool, String> {
+pub(crate) fn draws_better(one: &str, other: &str) -> Result<bool, String> {
     let (one, other) = (read(one)?, read(other)?);
     if one.parted != other.parted {
         return Ok(one.parted < other.parted);
@@ -256,7 +256,7 @@ pub fn draws_better(one: &str, other: &str) -> Result<bool, String> {
 /// # Errors
 ///
 /// When either reading is not one a solve told.
-pub fn reads_better_packed(packed: &str, inline: &str) -> Result<bool, String> {
+pub(crate) fn reads_better_packed(packed: &str, inline: &str) -> Result<bool, String> {
     let (one, other) = (read(packed)?, read(inline)?);
     let scored = |reading: &Reading| {
         score_of(&Weighed {
@@ -320,7 +320,7 @@ fn stood_of(told: &str) -> Result<Stood, String> {
 /// # Errors
 ///
 /// When either is not what a solve told.
-pub fn stacks_of(stacked: &str, plain: &str) -> Result<bool, String> {
+pub(crate) fn stacks_of(stacked: &str, plain: &str) -> Result<bool, String> {
     Ok(stacks(&stood_of(stacked)?, &stood_of(plain)?))
 }
 
@@ -338,7 +338,7 @@ fn blocks_of(graph: &str, nesting: Nesting) -> Result<BlockTree, String> {
 /// # Errors
 ///
 /// When the graph, its options or the nesting are unreadable.
-pub fn joining_of(graph: &str, nesting: &str) -> Result<Vec<String>, String> {
+pub(crate) fn joining_of(graph: &str, nesting: &str) -> Result<Vec<String>, String> {
     Ok(blocks_of(graph, Nesting::named(nesting)?)?
         .joining
         .into_iter()
@@ -350,7 +350,7 @@ pub fn joining_of(graph: &str, nesting: &str) -> Result<Vec<String>, String> {
 /// # Errors
 ///
 /// When the graph or its options are unreadable.
-pub fn has_regions(graph: &str) -> Result<bool, String> {
+pub(crate) fn has_regions(graph: &str) -> Result<bool, String> {
     let tree = blocks_of(graph, Nesting::Inline)?;
     Ok(tree
         .get(tree.root)

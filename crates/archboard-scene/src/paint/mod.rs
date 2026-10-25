@@ -45,6 +45,7 @@ mod text_runs;
 mod traffic;
 mod tray;
 
+pub use legend_entries::{Applied, Drawn, PictureKey, picture_key};
 pub use marks::{ViewerMarks, viewer_marks};
 
 /// What every part of one picture is painted with: the icons the host has.

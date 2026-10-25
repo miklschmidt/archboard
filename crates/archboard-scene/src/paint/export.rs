@@ -3,7 +3,7 @@
 //! (TASK-468). The drawing is moved down whole and the page grows; asked for
 //! nothing, the page is the page that was painted.
 //!
-//! The legend lists what the page's key lists (`render/picture-key.ts`), read
+//! The legend lists what the page's key lists (`archboard_svg::appearances`), read
 //! from the drawn scene: the marks a comparison puts on what it changed, each
 //! node kind, each relationship kind, and the two things a line says beside
 //! its kind, each with the picture's own symbol.

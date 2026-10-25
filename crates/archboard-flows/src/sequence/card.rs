@@ -30,11 +30,7 @@ pub(super) fn card_text_width(card_width: f64) -> f64 {
 /// The room a participant keeps beside its name for the mark of a part that
 /// opens another board.
 pub(super) fn mark_room(node: &Node) -> f64 {
-    if node.opens_board() {
-        DRILL_MARK_ROOM
-    } else {
-        0.0
-    }
+    if node.drills { DRILL_MARK_ROOM } else { 0.0 }
 }
 
 /// The run a participant's name has on its card: the text run, less the mark

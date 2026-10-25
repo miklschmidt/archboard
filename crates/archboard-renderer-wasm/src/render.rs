@@ -1,0 +1,167 @@
+//! The render's binding: a render request in, as the JSON of the host's
+//! request, and the picture with its key out (`archboard_render::Rendered`).
+//!
+//! The host runs each solve the render asks for on its layout engine, side by
+//! side on as many workers as it has, and calls one off when the render drops
+//! it (`RenderHost`); it gives the path data of the icons a picture draws.
+
+use std::collections::BTreeMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::rc::Rc;
+use std::task::{Context, Poll};
+
+use archboard_layout::Solver;
+use archboard_render::request::RenderRequest;
+use archboard_render::{Host, Renderer};
+use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::JsFuture;
+
+use crate::layout::said;
+
+#[wasm_bindgen(typescript_custom_section)]
+const RENDER_HOST: &str = r#"
+import type { Rendered } from "./types.ts";
+
+/** What a render asks of the place it runs in. */
+export interface RenderHost {
+    /**
+     * One measured graph laid out the way its root options name, answered as
+     * `layOutBoard` answers it. The signal calls off a solve that still waits
+     * for an engine: it is refused with the signal's reason.
+     */
+    solve(graph: string, signal: AbortSignal): Promise<string>;
+    /** Each icon's path data, by export name, of the icons named that the host has. */
+    icons(names: string[]): Record<string, readonly string[]>;
+}
+
+export type { Rendered };
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    /// What a render asks of the place it runs in.
+    #[wasm_bindgen(typescript_type = "RenderHost")]
+    pub type RenderHost;
+
+    #[wasm_bindgen(method, js_name = solve)]
+    fn solve_on(this: &RenderHost, graph: String, signal: &AbortSignal) -> js_sys::Promise;
+
+    #[wasm_bindgen(method, js_name = icons)]
+    fn icons_of(this: &RenderHost, names: Vec<String>) -> js_sys::Object;
+
+    /// What calls a solve off.
+    type AbortController;
+
+    #[wasm_bindgen(constructor)]
+    fn new() -> AbortController;
+
+    #[wasm_bindgen(method, getter)]
+    fn signal(this: &AbortController) -> AbortSignal;
+
+    #[wasm_bindgen(method)]
+    fn abort(this: &AbortController);
+
+    /// The signal a solve is called off by.
+    type AbortSignal;
+}
+
+/// One solve the host runs. Dropping it before it answers calls it off.
+pub struct Solving {
+    answer: JsFuture,
+    calling: AbortController,
+    answered: bool,
+}
+
+impl std::fmt::Debug for Solving {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Solving")
+            .field("answered", &self.answered)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Future for Solving {
+    type Output = Result<String, String>;
+
+    fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        let answer = Pin::new(&mut self.answer).poll(context);
+        answer.map(|answer| {
+            self.answered = true;
+            let answer = answer.map_err(|error| said(&error, "A solve"))?;
+            answer
+                .as_string()
+                .ok_or_else(|| "A solve answered no JSON".to_owned())
+        })
+    }
+}
+
+impl Drop for Solving {
+    fn drop(&mut self) {
+        if !self.answered {
+            self.calling.abort();
+        }
+    }
+}
+
+impl Solver for RenderHost {
+    type Solve<'s> = Solving;
+
+    fn solve(&self, graph: String) -> Solving {
+        let calling = AbortController::new();
+        let answer = JsFuture::from(self.solve_on(graph, &calling.signal()));
+        Solving {
+            answer,
+            calling,
+            answered: false,
+        }
+    }
+}
+
+impl Host for RenderHost {
+    fn icons(&self, names: &[&str]) -> BTreeMap<String, Vec<String>> {
+        let named = names.iter().map(|name| (*name).to_owned()).collect();
+        js_sys::Object::entries(&self.icons_of(named))
+            .iter()
+            .filter_map(|entry| {
+                let entry: js_sys::Array = entry.unchecked_into();
+                let name = entry.get(0).as_string()?;
+                let paths: js_sys::Array = entry.get(1).dyn_into().ok()?;
+                Some((
+                    name,
+                    paths.iter().filter_map(|path| path.as_string()).collect(),
+                ))
+            })
+            .collect()
+    }
+}
+
+thread_local! {
+    /// The renderer of this place, which remembers the layouts it laid out.
+    static RENDERER: Rc<Renderer> = Rc::default();
+}
+
+/// One reading drawn in the grammar its view asked for: the JSON of a render
+/// request in; the picture and its key, or why nothing was drawn, out.
+///
+/// # Errors
+///
+/// A request that does not read as its type, a solve the host failed or
+/// answered unreadably, and a document the SVG painter refuses.
+#[wasm_bindgen(unchecked_return_type = "Rendered")]
+pub async fn render(request: String, host: RenderHost) -> Result<JsValue, JsError> {
+    let request: RenderRequest = serde_json::from_str(&request).map_err(|error| {
+        JsError::new(&format!(
+            "The render request does not match its type: {error}"
+        ))
+    })?;
+    let renderer = RENDERER.with(Rc::clone);
+    let rendered = renderer
+        .render(&request, &host)
+        .await
+        .map_err(|error| JsError::new(&error))?;
+    let written =
+        serde_json::to_string(&rendered).map_err(|error| JsError::new(&error.to_string()))?;
+    js_sys::JSON::parse(&written).map_err(|error| JsError::new(&said(&error, "Reading a picture")))
+}

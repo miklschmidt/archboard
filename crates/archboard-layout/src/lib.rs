@@ -1,15 +1,17 @@
-//! The renderer core's layout of architecture boards (ADR 0057): one solve of
-//! a board's measured graph, Track or Blocks, goes in and comes out laid out
-//! ([`lay_out_board`]), with what the renderer's choices between the solves
-//! of one board read of the drawing; the core weighs two such readings where
-//! the renderer chooses ([`draws_better`] and its kin). The host gives it
-//! Graphviz ([`Graphviz`]); everything else it works out itself.
+//! The renderer core's layout of architecture boards (ADR 0057): a board's
+//! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
+//! drawing is chosen between the solves of one board, each a measured graph
+//! laid out one way ([`lay_out_board`]) and read for what the choice weighs;
+//! the host runs the solves ([`Solver`]), side by side where it can, and gives
+//! each its Graphviz ([`Graphviz`]). The chosen drawing is put on a page
+//! fitted to it, and its crossings are settled ([`bridge_crossings`]).
 //!
 //! The layout was first written in TypeScript, and every solve answers what
 //! that engine answered, to the bit: floating point in the same order, maps
 //! read in the order they were filled, sorts as stable, and numbers spelt as
 //! ECMAScript spells them (`ecma`, `json`).
 
+mod architecture;
 mod blocks;
 mod constants;
 mod ecma;
@@ -17,13 +19,17 @@ mod geometry;
 mod graph;
 mod json;
 mod placed;
+mod routes;
 mod track;
 mod viz;
 
-pub use blocks::choosing::{
-    draws_better, has_regions, joining_of, pair_crossings, reads_better_packed, stacks_of,
+pub use architecture::{
+    Content, Edge, Engine, InProcess, Laying, Measured, MeasuredGroups, Node, Solver, Standings,
+    draw, shown_drawing,
 };
+pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_board;
+pub use routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 
 /// Graphviz, as the host runs it: lay out one graph and answer its `json0`
 /// output. The graph is a viz-js `Graph` object given as JSON, and the host

@@ -11,7 +11,7 @@ use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role, SubjectKind};
 /// How the picture drew a subject: as a part of some appearance, or as a
 /// relationship's line.
 #[derive(Clone, Debug)]
-pub(super) enum Drawn {
+pub enum Drawn {
     /// A part, a card or a container.
     Part(NodeAppearance),
     /// A relationship's line.
@@ -20,10 +20,11 @@ pub(super) enum Drawn {
 
 /// What a picture draws a subject as, read back from the drawn scene.
 #[derive(Clone, Debug)]
-pub(super) struct Applied {
-    pub(super) drawn: Drawn,
+pub struct Applied {
+    /// How it was drawn.
+    pub drawn: Drawn,
     /// The icon its chip draws, when it draws one.
-    pub(super) icon: Option<Icon>,
+    pub icon: Option<Icon>,
 }
 
 /// What two subjects share when one sample keys them both: the icon, the
@@ -40,7 +41,7 @@ type SampleKey<'a> = (
 
 impl Applied {
     /// What the subject's kind is called.
-    pub(super) fn type_name(&self) -> &str {
+    pub fn type_name(&self) -> &str {
         match &self.drawn {
             Drawn::Part(appearance) => &appearance.type_name,
             Drawn::Line(facts) => &facts.appearance.name,
@@ -154,15 +155,15 @@ fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
 }
 
 /// One sample of each distinct appearance, where it was first met, as it was last met.
-fn distinct_samples(appearances: Vec<Applied>) -> Vec<Applied> {
-    let mut samples: Vec<Applied> = Vec::new();
-    for applied in appearances {
+fn distinct_samples(appearances: Vec<(String, Applied)>) -> Vec<(String, Applied)> {
+    let mut samples: Vec<(String, Applied)> = Vec::new();
+    for sample in appearances {
         match samples
             .iter_mut()
-            .find(|held| held.sample_key() == applied.sample_key())
+            .find(|held| held.1.sample_key() == sample.1.sample_key())
         {
-            Some(entry) => *entry = applied,
-            None => samples.push(applied),
+            Some(entry) => *entry = sample,
+            None => samples.push(sample),
         }
     }
     samples
@@ -238,29 +239,56 @@ pub(super) fn mark_counts(
     .collect()
 }
 
+/// What a picture's key lists, read back from its scene: each subject it
+/// draws with an appearance, in the order it draws them, and one sample of
+/// each distinct part kind and relationship kind among them.
+#[derive(Clone, Debug)]
+pub struct PictureKey {
+    /// Each subject and what it was drawn as, where it was first met, as it was last met.
+    pub subjects: Vec<(String, Applied)>,
+    /// One sample of each distinct part kind drawn, and the last subject drawn so.
+    pub kinds: Vec<(String, Applied)>,
+    /// One sample of each distinct relationship kind drawn, likewise.
+    pub relationships: Vec<(String, Applied)>,
+}
+
+/// What a picture's key lists, read back from the items of its body.
+pub fn picture_key(body: &[Item]) -> PictureKey {
+    let subjects = picture_appearances(body);
+    let of = |part: bool| {
+        distinct_samples(
+            subjects
+                .iter()
+                .filter(|(_, one)| matches!(one.drawn, Drawn::Part(_)) == part)
+                .cloned()
+                .collect(),
+        )
+    };
+    let kinds = of(true);
+    let relationships = of(false);
+    PictureKey {
+        subjects,
+        kinds,
+        relationships,
+    }
+}
+
 /// The legend's lists, empty ones left out: the comparison's marks, the part
 /// kinds drawn, and the relationship kinds drawn followed by emphasis and traffic.
 pub(super) fn entries_of(
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
 ) -> Vec<Vec<Entry>> {
-    let appearances: Vec<Applied> = picture_appearances(body)
+    let PictureKey {
+        kinds,
+        relationships,
+        ..
+    } = picture_key(body);
+    let kinds = kinds.into_iter().map(|(_, applied)| applied);
+    let relationships: Vec<Applied> = relationships
         .into_iter()
         .map(|(_, applied)| applied)
         .collect();
-    let kinds = distinct_samples(
-        appearances
-            .iter()
-            .filter(|one| matches!(one.drawn, Drawn::Part(_)))
-            .cloned()
-            .collect(),
-    );
-    let relationships = distinct_samples(
-        appearances
-            .into_iter()
-            .filter(|one| matches!(one.drawn, Drawn::Line(_)))
-            .collect(),
-    );
     let mut lists = vec![
         marks
             .iter()
