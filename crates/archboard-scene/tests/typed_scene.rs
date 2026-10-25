@@ -3,6 +3,8 @@
 //! stroked with and which words each card says, with no SVG, path data or CSS
 //! to parse. The board is the dogfood vault's "Codex session", as the renderer
 //! hands it to the core (`tests/fixtures/codex-session.paint.json`).
+//! The fixture keeps icon names without their paths because scene painting
+//! reads only which icons are available.
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::paint::paint;

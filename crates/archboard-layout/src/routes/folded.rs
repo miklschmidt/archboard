@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{
-    EPSILON, Point, Rect, curve_through, inflate, path_of, vertices_of,
+    EPSILON, Point, Rect, curve_through, inflate, same_rounded_curve, vertices_of,
 };
 
 use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
@@ -441,7 +441,6 @@ pub(super) fn moved_lane(scene: &Scene<'_>, leg: &Leg, to: f64) -> Option<Moved>
     if lacks_clearance(&curve, edge.label.as_ref().map(|label| label.bounds)) {
         return None;
     }
-    edge.path = path_of(&curve);
     edge.curve = curve;
     Some(Moved { edge, points })
 }
@@ -479,7 +478,7 @@ pub(crate) fn unfold_crossings(
         .iter()
         .map(|edge| {
             let points = vertices_of(&edge.curve);
-            (path_of(&curve_through(&points, false)) == path_of(&edge.curve)).then_some(points)
+            same_rounded_curve(&curve_through(&points, false), &edge.curve).then_some(points)
         })
         .collect();
     let legs: Vec<Leg> = vertices

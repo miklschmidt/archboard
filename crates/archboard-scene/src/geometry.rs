@@ -93,11 +93,6 @@ pub fn round_coord(value: f64) -> f64 {
     if rounded == 0.0 { 0.0 } else { rounded }
 }
 
-/// A coordinate as it is written into the document.
-pub fn coord(value: f64) -> String {
-    js::number(round_coord(value))
-}
-
 /// The smallest box containing both of them.
 pub fn covering(a: Rect, b: Rect) -> Rect {
     let left = js::js_min(a.x, b.x);
@@ -237,29 +232,51 @@ pub fn point_at(curve: &Curve, t: f64) -> Point {
     }
 }
 
-/// One segment as path data, with its leading space.
-fn segment_path(segment: &Segment) -> String {
-    match segment {
-        Segment::Line { to } => format!(" L{},{}", coord(to.x), coord(to.y)),
-        Segment::Cubic { first, second, to } => format!(
-            " C{},{} {},{} {},{}",
-            coord(first.x),
-            coord(first.y),
-            coord(second.x),
-            coord(second.y),
-            coord(to.x),
-            coord(to.y)
-        ),
+/// Whether two coordinates have the same value at drawing precision.
+/// All indeterminate coordinates compare alike, as their written values do.
+fn same_rounded_coordinate(a: f64, b: f64) -> bool {
+    let a = round_coord(a);
+    let b = round_coord(b);
+    a == b || (a.is_nan() && b.is_nan())
+}
+
+/// Whether two points coincide at drawing precision.
+fn same_rounded_point(a: Point, b: Point) -> bool {
+    same_rounded_coordinate(a.x, b.x) && same_rounded_coordinate(a.y, b.y)
+}
+
+/// Whether two pieces have the same kind, control points and end at drawing precision.
+fn same_rounded_segment(a: &Segment, b: &Segment) -> bool {
+    match (a, b) {
+        (Segment::Line { to: a }, Segment::Line { to: b }) => same_rounded_point(*a, *b),
+        (
+            Segment::Cubic {
+                first: first_a,
+                second: second_a,
+                to: to_a,
+            },
+            Segment::Cubic {
+                first: first_b,
+                second: second_b,
+                to: to_b,
+            },
+        ) => [(*first_a, *first_b), (*second_a, *second_b), (*to_a, *to_b)]
+            .into_iter()
+            .all(|(a, b)| same_rounded_point(a, b)),
+        _ => false,
     }
 }
 
-/// A route as path data.
-pub fn path_of(curve: &Curve) -> String {
-    let mut path = format!("M{},{}", coord(curve.from.x), coord(curve.from.y));
-    for segment in &curve.segments {
-        path.push_str(&segment_path(segment));
-    }
-    path
+/// Whether two routes have the same ordered pieces after rounding every
+/// coordinate to a hundredth. This keeps the drawing unchanged when a layout
+/// pass reconstructs a route from its vertices.
+pub fn same_rounded_curve(a: &Curve, b: &Curve) -> bool {
+    same_rounded_point(a.from, b.from)
+        && a.segments.len() == b.segments.len()
+        && a.segments
+            .iter()
+            .zip(&b.segments)
+            .all(|(a, b)| same_rounded_segment(a, b))
 }
 
 /// The box round every point a route runs through, its control points included.
@@ -437,10 +454,10 @@ mod tests {
 
     #[test]
     fn rounds_coordinates_to_hundredths() {
-        assert_eq!(coord(1.005), "1");
-        assert_eq!(coord(-0.001), "0");
-        assert_eq!(coord(12.345), "12.35");
-        assert_eq!(coord(0.125), "0.13");
+        assert_eq!(round_coord(1.005), 1.0);
+        assert_eq!(round_coord(-0.001).to_bits(), 0.0_f64.to_bits());
+        assert_eq!(round_coord(12.345), 12.35);
+        assert_eq!(round_coord(0.125), 0.13);
     }
 
     #[test]
@@ -487,9 +504,22 @@ mod tests {
             ],
             false,
         );
-        assert_eq!(
-            path_of(&curve),
-            "M0,0 L92,0 C96.42,0 100,3.58 100,8 L100,50"
-        );
+        let expected = Curve {
+            from: Point { x: 0.0, y: 0.0 },
+            segments: vec![
+                Segment::Line {
+                    to: Point { x: 92.0, y: 0.0 },
+                },
+                Segment::Cubic {
+                    first: Point { x: 96.42, y: 0.0 },
+                    second: Point { x: 100.0, y: 3.58 },
+                    to: Point { x: 100.0, y: 8.0 },
+                },
+                Segment::Line {
+                    to: Point { x: 100.0, y: 50.0 },
+                },
+            ],
+        };
+        assert!(same_rounded_curve(&curve, &expected));
     }
 }
