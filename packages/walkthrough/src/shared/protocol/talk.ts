@@ -19,8 +19,6 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
-	type DiagramTheme,
-	type LayoutEngineName,
 } from "@archboard/board/render-reply";
 import {
 	addressedVariant,
@@ -146,25 +144,18 @@ const TalkSchema = z
 	});
 type Talk = z.infer<typeof TalkSchema>;
 
-/** What a talk is made of: what was recorded, how it is drawn, and the log of what was heard. */
-interface TalkParts {
-	/** When the talk was recorded. */
+/**
+ * What a talk is made of: what `talk.json` says of it, without the format, the voice's file or the
+ * events; when it was recorded; and the log of what was heard, which gives the voice's length and
+ * the events.
+ */
+type TalkParts = Omit<
+	z.input<typeof TalkSchema>,
+	"format" | "version" | "recordedAt" | "audio" | "events"
+> & {
 	readonly recordedAt: Date;
-	/** The language the voice spoke, as a BCP 47 tag. */
-	readonly language: string;
-	/** The theme the talk is rendered in unless another is asked for. */
-	readonly theme: DiagramTheme;
-	/** The layout engine the talk is rendered with; the default engine when absent. */
-	readonly layout?: LayoutEngineName;
-	/** The board presented, as it was when the talk was recorded. */
-	readonly board: z.input<typeof TalkBoardSchema>;
-	/** The voice's length and what happened while it spoke. */
 	readonly log: TalkLog;
-	/** The board's document as the Archboard server served it. */
-	readonly document: unknown;
-	/** The vault's checked policy the board was drawn under. */
-	readonly policy: z.input<typeof VaultCheckSchema>;
-}
+};
 
 /**
  * The talk of its parts, in the format `talk.json` holds, with its voice as the file beside it.
