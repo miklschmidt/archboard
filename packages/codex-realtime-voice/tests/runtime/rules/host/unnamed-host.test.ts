@@ -8,6 +8,7 @@ import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
 import { createSpokenApprovalClassifierPrompt } from "#runtime/rules/spoken-approval/classifier.ts";
 import { createCoordinatorThreadStartParams } from "#runtime/services/coordinator/model.ts";
 import { createWorkhorseThreadStartParams } from "#runtime/rules/workhorse-start/model.ts";
+import { createRealtimeStartParams } from "#runtime/rules/realtime/start-policy.ts";
 
 // The package is public: a host that names nothing must not hand Codex, or store, the name of the
 // host it was first built for (TASK-530.04).
@@ -38,6 +39,14 @@ test("a host that supplies no identity gives Codex and its records no Archboard 
 		workhorse,
 		coordinatorStart: createCoordinatorThreadStartParams("/coordinator", null, coordinator),
 		workhorseStart: createWorkhorseThreadStartParams("/checkout", workhorse),
+		realtimeStarts: [false, true].map((suppressCoordinatorSpeech) =>
+			createRealtimeStartParams({
+				threadId: records.thread,
+				realtimeSessionId: identity.issuer.mintRealtimeSessionId(),
+				sdp: "v=0",
+				voice: { prompt: "Speak briefly.", suppressCoordinatorSpeech, delegationAckFiller: true },
+			}),
+		),
 		classifier: createSpokenApprovalClassifierPrompt({
 			productName: coordinator.identity.productName,
 			voiceNamespace: coordinator.identity.toolNamespaces.voice,
