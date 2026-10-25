@@ -3,6 +3,7 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
+[ADR 0057](../adr/0057-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
 The app migration history is in `docs/design/apps-migration.md`.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
@@ -101,11 +102,22 @@ split by behavior.
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
+- **An interface is the few operations its callers need** (ADR 0057). Design it from the jobs that
+  callers do. Measure it by everything a caller must learn: names, types, invariants, ordering,
+  error modes and configuration. A public name needs a caller outside the package, but a caller is
+  not enough. When callers import pieces of a package and connect them, move that assembly into the
+  package as one operation, change the callers to use it, and make the pieces private. Do not hide
+  the same width in one large file or behind one object.
+- **Interface width has a recorded ceiling.** `tests/system/repository-policy/interface-width.test.ts`
+  counts the names that the code entries of each package's `exports` export. It fails when a package
+  exceeds its ceiling in `interface-width-ceilings.json` beside the test, and when that file does
+  not list exactly the packages that exist. When a package gets narrower, lower its ceiling. Never
+  raise a ceiling: design a deeper operation instead.
 - **An `api/` folder is the package's interface over private implementation.** A package that
   adopts it points the `exports` of an area only into that area's `api/`. An api file re-exports
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
-  from the private files that define the names, and it holds no second definition. A public name
-  needs a concrete caller outside the package, so a name nobody outside imports stays private.
+  from the private files that define the names, and it holds no second definition. A name that no
+  code outside the package imports stays private, and so does a piece that callers only connect.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
   `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
