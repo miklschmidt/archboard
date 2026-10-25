@@ -6,7 +6,7 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 import type { LayoutEngineName, StandaloneTheme } from "@archboard/board/render-reply";
 import type { DiagramGrammar } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
-import type { Drawn, ExportFrame } from "#shared/protocol/generated/core/types.ts";
+import type { Drawn, ExportFrame, NothingDrawn } from "#shared/protocol/generated/core/types.ts";
 
 /** How one subject stands against the variant it is compared with. */
 type SubjectStanding = ChangeKind;
@@ -18,7 +18,7 @@ type SubjectStanding = ChangeKind;
 type StatedStandings = Readonly<Record<string, SubjectStanding>>;
 
 /** Why some content could not be drawn. */
-type RenderErrorCode = "NOTHING_TO_RENDER";
+type RenderErrorCode = NothingDrawn;
 
 /**
  * Refuses content the renderer cannot draw. The code is stable; the message is
@@ -136,7 +136,6 @@ export {
 	type DiagramRenderRequest,
 	type SemanticViewRenderRequest,
 	type RenderedDiagram,
-	type RenderErrorCode,
 	type StatedStandings,
 	type SubjectStanding,
 	SemanticRenderError,
