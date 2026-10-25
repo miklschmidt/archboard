@@ -4,15 +4,15 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 92,
+	"version": 95,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-25T14:48:33.081Z",
+	"updatedAt": "2026-10-25T17:30:21.113Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
 			"name": "Two doors to a turn",
 			"grammar": "architecture",
-			"summary": "A pane's message goes straight to Codex; the coordinator reaches it through the workhorse's operations.",
+			"summary": "A chat's message goes straight to Codex; the coordinator reaches it through the workhorse's operations.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -76,7 +76,7 @@
 			"id": "of6s00hl",
 			"name": "A typed message",
 			"grammar": "sequence",
-			"summary": "How a pane's typed message becomes a turn, or is refused.",
+			"summary": "How a chat's typed message becomes a turn, or is refused.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -90,7 +90,7 @@
 			"id": "hMVrdlEe",
 			"name": "A queue edit",
 			"grammar": "sequence",
-			"summary": "How a pane's edit of the queue reaches Codex and is read back.",
+			"summary": "How a chat's edit of the queue reaches Codex and is read back.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [],
@@ -17795,7 +17795,7 @@
 		{
 			"id": "0nKAHLWg",
 			"name": "TASK-530",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "wgFXEHS7",
 			"summary": "Checkout workhorse creation, commands, queues, approvals, and coordinator reporting",
 			"documents": [
@@ -20224,9 +20224,9 @@
 		{
 			"id": "Lbr1X2ea",
 			"name": "TASK-530.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "0nKAHLWg",
-			"summary": "The voice package names no Archboard concept",
+			"summary": "Checkout workhorse creation, commands, queues, approvals, and coordinator reporting",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -20240,8 +20240,8 @@
 						"order": 1000,
 						"name": "Browser gateway",
 						"kind": "module",
-						"responsibility": "Where a pane's command arrives, already admitted under its tab session's lease, and is carried out by the workhorse of the checkout the pane's tab shows",
-						"description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time: it hears the change and presents every pane of the tab again, with the workhorse of the new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message or an interrupt (Stop) to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the shown checkout, and a lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for: once it has run, only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. None of them passes through the workhorse operations.",
+						"responsibility": "Where a chat's command arrives, already admitted under its tab session's lease, and is carried out by the workhorse of the checkout the chat's tab shows",
+						"description": "The gateway asks which checkout the chat's tab shows on every read and command, because the person can activate another one at any time: it hears the change and presents every chat of the tab again, with the workhorse of the new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message or an interrupt (Stop) to the text actions (text-actions.ts), a queue edit to its queue, a new workhorse to its create action (thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the shown checkout, and a lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for: once it has run, only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. None of them passes through the workhorse operations.",
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20254,7 +20254,7 @@
 						"name": "Coordinator tools",
 						"kind": "module",
 						"responsibility": "The coordinator's tool calls: each becomes one of the four operations of the workhorse of the checkout the call names, or, for stop_workhorses, a stop of every workhorse of the tab",
-						"description": "Each workhorse tool takes a required checkout, the directory that holds a board's vault, and the replay ledger counts the same arguments in another checkout as another call. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse and say so. stop_workhorses names no checkout and no turn: it interrupts the running turn of every workhorse of the tab session, and says what each one did.",
+						"description": "Each workhorse tool takes a required checkout, a directory the host admits, and the replay ledger counts the same arguments in another checkout as another call. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse and say so. stop_workhorses names no checkout and no turn: it interrupts the running turn of every workhorse of the tab session, and says what each one did.",
 						"parent": "WkOwgUIR",
 						"groups": [
 							"voice"
@@ -20432,8 +20432,8 @@
 						"order": 14000,
 						"name": "Coordinator callbacks",
 						"kind": "module",
-						"responsibility": "Deliver ordered workhorse and host context to the voice coordinator",
-						"description": "The shared runtime owns callback ordering, correlation, and delivery outcomes. The host supplies its own context sources through its adapter: Archboard turns its board changes, focus and selection into host context events. The tell_coordinator tool uses this same callback owner.",
+						"responsibility": "Deliver ordered workhorse news and a host's announced context changes to the voice coordinator and the voice",
+						"description": "The shared runtime owns callback ordering, correlation, and delivery outcomes. A host announces its own context changes through the voice agent's announce, which gives the coordinator's and the voice's parts to this queue: Archboard announces its board changes, focus and selection. The tell_coordinator tool uses this same callback owner.",
 						"parent": "WkOwgUIR",
 						"groups": [
 							"voice"
@@ -20448,8 +20448,8 @@
 						"order": 15000,
 						"name": "Session workhorses",
 						"kind": "module",
-						"responsibility": "One workhorse for each checkout of a tab session: its starter, queue, operations and board news, built on first use",
-						"description": "A workhorse works in its checkout, the directory that holds its vault, and its thread-link key is the tab session and the checkout together. It belongs to the checkout, not to the repository identity, so a new chosen checkout leaves it linked. A stop for one checkout interrupts the turn that workhorse runs, and a stop for the tab interrupts the turn of every workhorse. The coordinator's stop_workhorses tool stops every running workhorse of the tab by voice.",
+						"responsibility": "One workhorse for each checkout of a tab session: its starter, queue, operations and context delivery, built on first use",
+						"description": "A workhorse works in its checkout, a directory the host admitted, and its thread-link key is the tab session and the checkout together. It belongs to the checkout, so it stays linked until its tab session ends. A stop for one checkout interrupts the turn that workhorse runs, and a stop for the tab interrupts the turn of every workhorse. The coordinator's stop_workhorses tool stops every running workhorse of the tab by voice.",
 						"parent": "WkOwgUIR",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20931,7 +20931,7 @@
 						"from": "j8IHgWO5",
 						"to": "4slFgCMu",
 						"kind": "rpc",
-						"label": "pane news: realtime/appendText",
+						"label": "a context change: realtime/appendText for the voice",
 						"emphasis": "muted",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -21204,12 +21204,26 @@
 							"path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/validation.ts",
 							"symbol": "toolRoleOf"
 						}
+					},
+					{
+						"id": "HiOX9Fc5",
+						"order": 42000,
+						"from": "j8IHgWO5",
+						"to": "L4s2Ndtt",
+						"kind": "call",
+						"label": "a callback as canonical JSON, kept on its record",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+							"symbol": "canonicalJson"
+						}
 					}
 				],
 				"flows": [
 					{
 						"id": "PzwdxC3t",
-						"name": "A pane sends a typed message",
+						"name": "A chat sends a typed message",
 						"participants": [
 							"tIEJl3KY",
 							"4slFgCMu"
@@ -21309,7 +21323,7 @@
 								"id": "LAcgzO4x",
 								"from": "tIEJl3KY",
 								"to": "tIEJl3KY",
-								"label": "record the outcome as the pane's operation outcome",
+								"label": "record the outcome as the chat's operation outcome",
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -21321,7 +21335,7 @@
 					},
 					{
 						"id": "f9ntEBs4",
-						"name": "A pane edits the queue",
+						"name": "A chat edits the queue",
 						"participants": [
 							"tIEJl3KY",
 							"mWD948LG",
@@ -21496,7 +21510,7 @@
 								"id": "fbVWqzdu",
 								"from": "tIEJl3KY",
 								"to": "tIEJl3KY",
-								"label": "answer the pane with the outcome and a fresh snapshot",
+								"label": "answer the chat with the outcome and a fresh snapshot",
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -22585,7 +22599,7 @@
 							{
 								"id": "KVnICaNb",
 								"heading": "Two callers, two ways in",
-								"body": "A pane's typed message goes straight to the workhorse of its checkout as turn/start or turn/steer with the board's context, and its queue edits go straight to that thread's queue. Everything the coordinator asks goes through the four operations of the checkout it names instead, one after another, so two of its effects never interleave and each is settled and reported in one place.",
+								"body": "A chat's typed message goes straight to the workhorse of its tab's checkout as turn/start or turn/steer with the board's context, and its queue edits go straight to that thread's queue. Everything the coordinator asks goes through the four operations of the checkout it names instead, one after another, so two of its effects never interleave and each is settled and reported in one place.",
 								"subjects": [
 									"tIEJl3KY",
 									"gPWhZQeZ",
@@ -22651,7 +22665,7 @@
 			}
 		}
 	],
-	"current": "0nKAHLWg",
+	"current": "Lbr1X2ea",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
@@ -22724,6 +22738,12 @@
 			"from": "wgFXEHS7",
 			"at": "2026-10-25T05:19:01.064Z",
 			"reason": "TASK-530 moved the workhorse into packages/codex-realtime-voice, made the coordinator namespace a workhorse starts with the host's, and matched workhorse operation calls by role"
+		},
+		{
+			"variant": "Lbr1X2ea",
+			"from": "0nKAHLWg",
+			"at": "2026-10-25T17:30:21.113Z",
+			"reason": "TASK-530.05: a pane became a chat, a workhorse's board news became its context delivery, the coordinator callbacks take a host's announced changes and encode canonical JSON, and a checkout is any directory the host admits"
 		}
 	],
 	"shelvings": [
