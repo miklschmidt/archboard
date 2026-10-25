@@ -34,12 +34,13 @@ class CoreBuildError extends Error {
 
 /**
  * Load the core's build on this thread, at once, and check it against the
- * sources it must be made from.
+ * sources it must be made from. The glue keeps the instance it made first, so
+ * a second load on the same thread checks the hash again and instantiates nothing.
  * @param expected The source hash the build must record; the checkout's own by default.
  * @returns The core.
  * @throws {CoreBuildError} When there is no build, or it was made from other sources.
  */
-function coreBuild(expected: string = coreSourceHash()): Core {
+function loadCore(expected: string = coreSourceHash()): Core {
 	let core: Core;
 	let bytes: Buffer;
 	try {
@@ -67,14 +68,4 @@ function coreBuild(expected: string = coreSourceHash()): Core {
 	return core;
 }
 
-/**
- * Load the core's build and check it against the sources it must be made from.
- * @param expected The source hash the build must record; the checkout's own by default.
- * @returns The core.
- * @throws {CoreBuildError} When there is no build, or it was made from other sources.
- */
-async function loadCore(expected?: string): Promise<Core> {
-	return coreBuild(expected);
-}
-
-export { CoreBuildError, coreBuild, loadCore, type Core, type CoreBuildRefusal };
+export { CoreBuildError, loadCore, type Core, type CoreBuildRefusal };
