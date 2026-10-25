@@ -8,11 +8,8 @@ import type {
 	BrowserSnapshot,
 } from "@archboard/codex-realtime-voice/contract";
 import type { VoiceSignIn } from "@archboard/codex-realtime-voice/browser";
-import type {
-	ApprovalChoice,
-	DynamicApprovalVerdict,
-	WorkbenchQueueActions,
-} from "@archboard/codex-realtime-voice/controllers";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type { DynamicApprovalVerdict, WorkbenchQueueActions } from "#ui/state/surfaces/voice-parts.ts";
 import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";
 import type { Conversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
 

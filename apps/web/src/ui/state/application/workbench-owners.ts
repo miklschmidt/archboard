@@ -7,16 +7,10 @@ import { createSnapshotCache, type SnapshotStore } from "#ui/state/application/s
 import { createProgressClock } from "#ui/state/application/progress-clock.ts";
 import type { VoiceSession } from "@archboard/workbench/voice";
 import {
-	createWorkbenchApprovalsController,
-	type WorkbenchApprovalsController,
-	createWorkbenchComposerController,
-	type WorkbenchComposerController,
-	createWorkbenchQueueController,
-	type WorkbenchQueueController,
-	createThreadLinkController,
-	type ThreadLinkController,
+	createConversationControllers,
+	type BrowserWorkbenchTransport,
+	type ConversationControllers,
 } from "@archboard/codex-realtime-voice/controllers";
-import { type BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {
@@ -26,13 +20,9 @@ interface ApprovalDecisions {
 }
 
 /** The owners over one transport. */
-interface WorkbenchOwners {
+interface WorkbenchOwners extends ConversationControllers {
 	readonly paneId: string;
 	readonly transport: BrowserWorkbenchTransport;
-	readonly queue: WorkbenchQueueController;
-	readonly composer: WorkbenchComposerController;
-	readonly approvals: WorkbenchApprovalsController;
-	readonly threadLink: ThreadLinkController;
 	/** The approvals controller's decisions, cached per publication. */
 	readonly approvalDecisions: SnapshotStore<ApprovalDecisions>;
 	/** When the running turn last reported anything new. */
@@ -57,7 +47,7 @@ interface WorkbenchOwnersOptions {
  * @param approvals The approvals controller.
  * @returns The busy keys and the error text per key.
  */
-function approvalDecisions(approvals: WorkbenchApprovalsController): ApprovalDecisions {
+function approvalDecisions(approvals: ConversationControllers["approvals"]): ApprovalDecisions {
 	const state = approvals.decisionState();
 	const errors: Record<string, string> = {};
 	for (const [key, result] of state.results) {
@@ -77,23 +67,12 @@ function approvalDecisions(approvals: WorkbenchApprovalsController): ApprovalDec
  */
 function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners {
 	const { paneId, transport } = options;
-	const queue = createWorkbenchQueueController(transport);
-	const composer = createWorkbenchComposerController({ transport });
-	const approvals = createWorkbenchApprovalsController(transport);
-	const threadLink = createThreadLinkController({
-		/**
-		 * The pane an action is captured against.
-		 * @returns The capture.
-		 */
-		capturePane: () => ({ paneId, transport }),
-	});
+	const controllers = createConversationControllers({ paneId, transport });
+	const { approvals } = controllers;
 	return Object.freeze({
 		paneId,
 		transport,
-		queue,
-		composer,
-		approvals,
-		threadLink,
+		...controllers,
 		approvalDecisions: createSnapshotCache(approvals.subscribe, () => approvalDecisions(approvals)),
 		progress: createProgressClock(transport),
 	});
