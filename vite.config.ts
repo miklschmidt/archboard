@@ -293,7 +293,6 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/store",
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
-					"packages/workspace/tests/runtime/clients/git-async.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
 					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
 					"packages/board/tests/runtime/store/policy.test.ts",
