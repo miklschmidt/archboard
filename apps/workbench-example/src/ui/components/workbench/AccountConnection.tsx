@@ -1,33 +1,21 @@
 import { useCallback } from "react";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { ExampleClient, ExampleClientSnapshot } from "#ui/clients/workbench/client.ts";
+import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
 
 /**
  * Keep sign-in separate from the two conversation owners.
- * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
- * @param props.state The current page projection.
  * @returns The rendered controls or content.
  */
-function AccountConnection({
-	client,
-	state,
-}: {
-	readonly client: ExampleClient;
-	readonly state: ExampleClientSnapshot;
-}) {
-	const snapshot = state.transport.snapshot;
+function AccountConnection() {
+	const state = useVoiceState();
+	const snapshot = state.server;
 	if (snapshot?.account.state === "ready") return null;
 	const login = snapshot === null ? null : snapshot.login;
 	return (
 		<section className="sign-in" aria-label="Codex sign-in">
 			<h2>Connect your Codex account</h2>
 			<p>This application keeps its own private sign-in.</p>
-			<LoginActions
-				client={client}
-				login={login}
-				disabled={state.busy || state.transport.connection !== "connected"}
-			/>
+			<LoginActions login={login} disabled={state.busy || state.connection !== "connected"} />
 			<AccountProblem snapshot={snapshot} />
 		</section>
 	);
@@ -47,25 +35,23 @@ function AccountProblem({ snapshot }: { readonly snapshot: BrowserSnapshot | nul
 /**
  * Keep the login URL and cancellation tied to the current pending login.
  * @param props The rendered state and its action owners.
- * @param props.client The shared connection and media client.
  * @param props.login The current sign-in state.
  * @param props.disabled Whether these controls are unavailable.
  * @returns The rendered controls or content.
  */
 function LoginActions({
-	client,
 	login,
 	disabled,
 }: {
-	readonly client: ExampleClient;
 	readonly login: BrowserSnapshot["login"] | null;
 	readonly disabled: boolean;
 }) {
+	const client = useVoiceClient();
 	const signIn = useCallback(() => {
-		void client.login();
+		void client.signIn();
 	}, [client]);
 	const cancel = useCallback(() => {
-		void client.cancelLogin();
+		void client.cancelSignIn();
 	}, [client]);
 	const refresh = useCallback(() => {
 		void client.refresh();

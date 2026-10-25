@@ -6,7 +6,7 @@ import { Button, Dialog } from "@archboard/ui-kit/components";
 import { DiagnosticList } from "#ui/components/vault-diagnostics/DiagnosticList.tsx";
 import { useVaultCheck } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
 import { useVaultRepair } from "#ui/hooks/vault-diagnostics/use-vault-repair.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import type { VaultCheckSchema } from "@archboard/board/policy";
 import type { z } from "zod";
 

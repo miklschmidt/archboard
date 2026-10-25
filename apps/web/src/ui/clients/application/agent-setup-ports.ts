@@ -12,10 +12,12 @@ import type {
 } from "@archboard/workbench/agent";
 import type { AgentFocus } from "#ui/state/application/agent-focus.ts";
 import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice";
-import type {
-	ThreadLinkActionCompletion,
-	ThreadLinkController,
-} from "@archboard/workbench/controllers";
+import type { ConversationControllers } from "@archboard/codex-realtime-voice/controllers";
+
+/** The thread link controller of a pane. */
+type ThreadLinkController = ConversationControllers["threadLink"];
+/** How one thread-link action settled. */
+type ThreadLinkActionCompletion = Awaited<ReturnType<ThreadLinkController["create"]>>;
 
 /** Why a step reports nothing of its own: a later action on the pane replaced it. */
 const REPLACED = "A later action on this pane replaced this one before it settled.";

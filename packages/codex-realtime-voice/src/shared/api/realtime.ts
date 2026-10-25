@@ -4,8 +4,6 @@ export {
 	parseRealtimeItemId,
 	type RealtimeCorrelation,
 	type RealtimePhase,
-	type RealtimeRecoverableErrorReason,
-	type RealtimeTerminalErrorReason,
 	type RealtimeState,
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";

@@ -6,12 +6,10 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-} from "@archboard/codex-realtime-voice/contract";
+import { BROWSER_IDLE_SPOKEN_APPROVAL, createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
-import type { BrowserSnapshot, CodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import type { CodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 type Coordinator = BrowserSnapshot["coordinator"];
 type Voice = BrowserSnapshot["voice"];

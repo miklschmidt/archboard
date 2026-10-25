@@ -5,13 +5,8 @@
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
-import type {
-	BrowserWorkbenchMediaOwner,
-	BrowserWorkbenchMediaState,
-	RealtimeMediaSnapshot,
-	BrowserWorkbenchCapabilities,
-	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchMediaOwner, BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchMediaState, RealtimeMediaSnapshot, BrowserWorkbenchCapabilities } from "#ui/state/surfaces/voice-parts.ts";
 
 /**
  * Every state the persistent voice control may present. `agent_speaking` is the

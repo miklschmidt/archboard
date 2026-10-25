@@ -1,13 +1,11 @@
 // A transport double whose published state a test moves by hand, and the
 // snapshots it moves through on the way from signed out to a conversation.
 
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	type BrowserSnapshot,
-} from "@archboard/codex-realtime-voice/contract";
+import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/codex-realtime-voice/schemas";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 const { decoder, validator } = createIdentityAuthorities().identity;
 

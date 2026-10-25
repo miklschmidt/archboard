@@ -8,7 +8,9 @@ import {
 	voicePort,
 } from "#ui/clients/application/agent-setup-ports.ts";
 import type { VoiceSessionStatus, VoiceSessionView } from "@archboard/workbench/voice";
-import type { ThreadLinkController } from "@archboard/workbench/controllers";
+import type { ConversationControllers } from "@archboard/codex-realtime-voice/controllers";
+
+type ThreadLinkController = ConversationControllers["threadLink"];
 
 type TalkOptions = NonNullable<Parameters<AgentSetup["talk"]>[0]>;
 type ThreadLinkActionSnapshot = ReturnType<ThreadLinkController["snapshot"]>;
