@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T17:06:00Z'
-updated_date: '2026-10-25T18:11:00Z'
+updated_date: '2026-10-25T18:28:00Z'
 labels:
   - compare
   - ui
@@ -46,3 +46,18 @@ Tests: a two-pane application test (pick in A picks in B, letting go clears both
 
 Proposals: Browser application@TASK-538.02 (from TASK-537.01) adds Linked panes and Pane beside. Board viewer@TASK-538.02 (from TASK-539.02) adds Pane beside and the inspector's call to it.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built as planned in e57e8945b.
+
+- The linked panes rule is rules/application/pane-link.ts. hooks/application/use-pane-links.ts keeps one links object until the link changes, so pane news rebuilds no pane. PaneStatus gained `presenting`, which the pane core sets beside `view`.
+- The pick propagation is in use-pane-reading.ts. The new `leave(paneId)` and the stage's optional `onLeave` let a drill-down or a move back clear one pane only. Without `onLeave` (the replay and the stage harness), the stage lets the pick go as before.
+- The Selection tab names the variant beside through rules/semantic-board-canvas/board/missing-pick.ts and the PaneBesideContext. A pick that arrives from the linked pane ends a group (use-group-selection, `displaced`).
+- Tests: tests/ui/components/application/linked-panes.test.tsx (criteria 1, 2, 3 and the drill-down of 4) and tests/ui/rules/application/pane-link.test.ts (another board, another vault, a walkthrough, one pane). Removing each behavior in turn fails its test.
+
+Closing:
+- Code check: the findings with and without `--variant TASK-538.02` are the same. The run read Board viewer 94Opxrki and Browser application 0RcVGuzC.
+- Footprint read against base 814c0eedf (the parent of e57e8945b). Named and changed: Render stage states, Pane beside (Board viewer); Application composition, Pane composition, Linked panes, Pane beside (Browser application). Changed but not named, inside changes only: Viewer entry point and Board stage (SemanticBoardStage.tsx gained the optional onLeave and passes whether a part is picked to the group), and Open or leave a board (use-drill-moves.ts calls onLeave in place of onSelect(null)). The relationships they draw are unchanged. Named but not changed: parts of TASK-537.01, TASK-538.01 and TASK-539.02, which this proposal is branched from and which were committed before the base.
+<!-- SECTION:NOTES:END -->
