@@ -200,11 +200,16 @@ function part(
 	// A stretch moved onto its own line's column straightens that line as it
 	// parts the pair, so those moves come before a lane aside.
 	const own = new Set([up.bottomX, down.topX]);
+	// A pair can stand beside a third line, so clearing only this pair's
+	// columns can merely transfer the collision to that line.
+	const channel = nets.filter((net) => net.channel === up.channel);
+	const upper = new Set(channel.flatMap(({ bottomX }) => [bottomX - LANE, bottomX + LANE]));
+	const lower = new Set(channel.flatMap(({ topX }) => [topX - LANE, topX + LANE]));
 	const moves = [
-		...[down.bottomX - LANE, down.bottomX + LANE, up.bottomX].flatMap((x) =>
+		...[...upper, up.bottomX].flatMap((x) =>
 			stretchesBeyond(scene, leaving, "top").map((stretch) => ({ x, from: up.topX, stretch })),
 		),
-		...[up.topX - LANE, up.topX + LANE, down.topX].flatMap((x) =>
+		...[...lower, down.topX].flatMap((x) =>
 			stretchesBeyond(scene, entering, "bottom").map((stretch) => ({
 				x,
 				from: down.bottomX,
