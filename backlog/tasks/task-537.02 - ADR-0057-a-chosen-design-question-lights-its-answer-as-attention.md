@@ -1,9 +1,11 @@
 ---
 id: TASK-537.02
 title: 'ADR 0057: a chosen design question lights its answer as attention'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-25T17:03:00Z'
+updated_date: '2026-10-25T17:37:00Z'
 labels:
   - design-questions
 dependencies: []
@@ -26,3 +28,9 @@ ADR 0045 says that the pane inspector is the one place where a reading shows. AD
 - [ ] #4 CONTEXT.md defines Design question, and its Light entry says that a chosen design question can take the place of a pick
 - [ ] #5 The owner accepts the ADR
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ADR 0057 is written with status proposed. It waits for the owner to accept it (criterion 5). ADR 0044 and ADR 0045 point to it at their heads and at the clauses it narrows. CONTEXT.md defines Design question, and the Light entry names a chosen design question.
+<!-- SECTION:NOTES:END -->

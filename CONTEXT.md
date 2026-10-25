@@ -356,6 +356,13 @@ same kind as every relationship it receives. The board shows its shape and not
 what its body does, so it is a question for the reader, never a fault.
 _Avoid_: wrapper, proxy, facade, shallow part
 
+**Design question**:
+A question that the Board tab asks of the board on screen: where does
+understanding or changing the code take more work than its job needs? Its
+answer names subjects and counts them, such as the pass-through entry points.
+It gives no score and no verdict. Choosing it lights its answer (ADR 0057).
+_Avoid_: smell, lint, warning, score, finding (that is what the code check reports)
+
 **Interface measures**:
 Five counts of one container on one variant: its entry points, hidden parts,
 callers, outgoing relationships and pass-through entry points. They say what the
@@ -616,7 +623,7 @@ touches any of it, the parts at their other ends, and the containers that hold
 them. The rest recedes. A relationship is lit along the whole of its route, even
 where the picture has another relationship draw a stretch of a lane they share.
 The light is attention, like the selection: nothing is written, and a presented
-walkthrough step or a selected group takes its place.
+walkthrough step, a selected group or a chosen design question takes its place.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:

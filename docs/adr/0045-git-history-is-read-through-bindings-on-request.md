@@ -15,13 +15,9 @@ section on hotspots and change coupling gives the reasons.
 TASK-448 amended this ADR on 2026-10-07. Locality and footprint now use bound
 declarations when the code-facts adapters resolve them.
 
-Amended by TASK-526.01 (2026-10-24): behind is read by
-`archboard check code`, and by `archboard check` and `archboard check all`,
-which run the code check. The plain `archboard check` is now
-`archboard check semantics`, the check that the canvases poll. Behind stays
-information and never fails the check.
-[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
-decides the split.
+ADR 0057 (TASK-537.02) amends the section "Derived on request, never stored,
+never drawn": a design question that a person chose can light the subjects that
+it names. The reading itself still shows only in words.
 
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
@@ -383,7 +379,9 @@ what is on a board.
 No reading changes the picture. Traffic is authored illustration and never
 measurement (ADR 0027), so no reading sets traffic. No reading sets emphasis, a
 colour or a mark, because every visual channel is taken (ADR 0025, ADR 0031).
-The pane inspector is the one place where a user sees a reading (TASK-369.07).
+The pane inspector is the one place where a user sees a reading (TASK-369.07). A
+design question that a person chose can light the subjects that it names, as
+attention (ADR 0057).
 
 The Archboard server derives the readings, because the pane inspector needs a
 route and the CLI talks to the server. One walk of each repository's log serves
