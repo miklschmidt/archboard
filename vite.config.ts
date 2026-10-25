@@ -161,9 +161,10 @@ const testCache = {
 		"ARCHBOARD_RENDERER_CHROMIUM",
 	],
 };
-// The Rust checks read only the crates and their lock file.
+// The Rust checks read only the crates, the workspace manifest that holds their lint policy,
+// clippy's thresholds and the lock file.
 const coreCache = {
-	input: ["crates/**", "Cargo.toml", "Cargo.lock"],
+	input: ["crates/**", "Cargo.toml", "clippy.toml", "Cargo.lock"],
 	output: [],
 	env: analysisCache.env,
 };
