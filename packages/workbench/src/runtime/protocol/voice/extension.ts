@@ -1,7 +1,10 @@
 // Archboard's names for the parts of the voice agent's extension contract that it implements.
 // Every type is read from the one contract the voice package publishes, `VoiceAgentExtensions`,
 // so a change of the contract reaches Archboard's code as a type error, not as a drifted copy.
-import type { VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
+import type {
+	VoiceAgentBrowserPort,
+	VoiceAgentExtensions,
+} from "@archboard/codex-realtime-voice/server";
 import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 
 type Extensions = Required<VoiceAgentExtensions>;
@@ -66,3 +69,22 @@ export type OwnedWaitCleanupCause = Extract<
 	Parameters<CodexWaitGraph["release"]>[0],
 	{ readonly owner: unknown }
 >["cause"];
+/** One tab session's coordinator, realtime voice and thread components. */
+export type CodexWorkbenchSessionComponents = CodexWorkbenchTabSession["components"];
+/** One workhorse of a tab session, the one that works in one checkout. */
+export type CodexWorkbenchWorkhorse =
+	CodexWorkbenchTabSession["workhorses"] extends ReadonlyMap<string, infer Workhorse>
+		? Workhorse
+		: never;
+/** One workhorse's thread and queue components. */
+export type CodexWorkbenchWorkhorseComponents = CodexWorkbenchWorkhorse["components"];
+/** The browser actions a domain's dynamic approvals answer. */
+export type BrowserDynamicApprovalActions = NonNullable<
+	CodexWorkbenchDomain["approvals"]
+>["browser"];
+/** The lease-bound browser context an approval answer arrives with. */
+export type BrowserActionContext = Parameters<BrowserDynamicApprovalActions["resolve"]>[1];
+/** What answering a browser action resolves with. */
+export type BrowserActionResult = Awaited<ReturnType<BrowserDynamicApprovalActions["resolve"]>>;
+/** The exact physical socket a host registers with the browser port. */
+export type BrowserConnectionInstance = Parameters<VoiceAgentBrowserPort["accept"]>[0];

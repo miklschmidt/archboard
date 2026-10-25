@@ -2,13 +2,13 @@
 // (ADR 0050). A tab session presents through one of its open panes, hears the boards of the vaults
 // its panes are in, and tells each workhorse the changes of its own checkout.
 
+import type { CodexWorkbenchWorkhorse } from "#runtime/protocol/voice/extension.ts";
 import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,
 } from "#runtime/protocol/voice/extension.ts";
 import { panesInOrder } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import type { CodexWorkbenchWorkhorse } from "@archboard/codex-realtime-voice/server";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { presentingPane } from "#server/rules/pane/presenting-pane.ts";
 import type {
