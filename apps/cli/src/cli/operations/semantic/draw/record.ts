@@ -19,7 +19,7 @@ import {
 	RecordingLanguageSchema,
 	type RecordingState,
 } from "@archboard/walkthrough/recording";
-import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/request-context";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { registeredRepositoryOfVault as repositoryOfVault } from "@archboard/workspace/checkouts";
 import {
@@ -226,7 +226,7 @@ function progressLine(state: RecordingState): string | null {
  * @throws {Error} With code DOING_REQUIRED when --discard comes without --doing.
  */
 function requireDoingForDiscard(discard: boolean): void {
-	if (discard && currentWriteDoing() === null) {
+	if (discard && statedInvocation().doing === null) {
 		throw Object.assign(
 			new Error('--discard deletes the board, which is a board write: say why with --doing "…".'),
 			{ code: "DOING_REQUIRED" },

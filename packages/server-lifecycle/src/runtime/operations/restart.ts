@@ -11,9 +11,8 @@ import {
 	type EnsureResult,
 	ensureServerRunning,
 	refuseUnstartableServer,
-	type StopResult,
-	stopServer,
 } from "#runtime/operations/spawn.ts";
+import { type StopResult, stopServer } from "#runtime/operations/stop.ts";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
 interface RestartResult extends EnsureResult {

@@ -17,7 +17,6 @@
 		"./request-context": "./src/runtime/api/request-context.ts",
 		"./semantic-board-client": "./src/runtime/api/semantic-board-client.ts",
 		"./panes": "./src/runtime/api/panes.ts",
-		"./pane-messages": "./src/runtime/api/pane-messages.ts",
-		"./startup-terminal": "./src/runtime/api/startup-terminal.ts"
+		"./pane-messages": "./src/runtime/api/pane-messages.ts"
 	}
 }

@@ -1,13 +1,5 @@
 import { z } from "zod";
-import {
-	getHealth,
-	getSyncStatus,
-	OtherSourceError,
-	readPidFile,
-	serverPort,
-	isServerHealth,
-} from "@archboard/server-lifecycle/server";
-import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
+import { serverStatus } from "@archboard/server-lifecycle/server";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { ServerStateSchema } from "#cli/protocol/contract/schemas.ts";
 
@@ -49,6 +41,9 @@ const StatusResultSchema = z.union([
 ]);
 type StatusResult = z.infer<typeof StatusResultSchema>;
 
+/** A server that answered as itself, as the status operation reports it. */
+type RunningServer = Extract<Awaited<ReturnType<typeof serverStatus>>, { state: "running" }>;
+
 /**
  * Reads a timestamp as a wall-clock time, which is what a person comparing
  * "when it started" against "when the file changed" actually needs.
@@ -61,11 +56,10 @@ const clock = (at: string): string => new Date(at).toLocaleTimeString();
  * Tells the person their Archboard server is answering from code older than the files on
  * disk, and what to do about it. A running server read its source at start, so
  * editing source changes the next command, not the process already running.
- * @param health - The health the server reported.
+ * @param source - The source state the server reported.
  * @returns What is stale and what to say about it, or null when the source is current.
  */
-function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
-	const source = health.source;
+function staleSource(source: RunningServer["source"]) {
 	if (!source?.stale || !source.newestFile || !source.newestAt) {
 		return null;
 	}
@@ -81,41 +75,22 @@ function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 }
 
 /**
- * Reads the synchronization state, which is an addition to a status rather
- * than part of it: a server that answered its health has already reported
- * everything a status must contain.
- * @returns The synchronization fields, or nothing when they could not be read.
- */
-async function bestEffortSyncStatus(): Promise<Record<string, unknown>> {
-	try {
-		return await getSyncStatus();
-	} catch {
-		return {};
-	}
-}
-
-/**
  * The status of a server that answered: how many browsers are looking at it,
- * and a warning when it is running older code than the files on disk. The pid
- * falls back to the pid file for a server whose health does not report one.
- * @param health - The health the server reported.
- * @param sync - The synchronization fields, empty when they could not be read.
+ * and a warning when it is running older code than the files on disk.
+ * @param running - The running server.
  * @returns The running status, with the staleness warning as a diagnostic.
  */
-function runningStatus(
-	health: Awaited<ReturnType<typeof getHealth>>,
-	sync: Record<string, unknown>,
-) {
-	const stale = staleSource(health);
+function runningStatus(running: RunningServer) {
+	const stale = staleSource(running.source);
 	return {
 		result: {
 			// Synchronization first, so health stays the authority for what it and
 			// the sync route both answer.
-			...sync,
+			...running.sync,
 			running: true as const,
-			url: ARCHBOARD_URL,
-			pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
-			browserClients: health.websocket_clients,
+			url: running.url,
+			pid: running.pid,
+			browserClients: running.browserClients,
 			...(stale ? { stale } : {}),
 		},
 		...(stale ? { diagnostics: [stale.says] } : {}),
@@ -194,33 +169,16 @@ const statusContract = defineCommand({
 	 * @returns The status as the command's result, with an outcome when no server answered.
 	 */
 	async handler() {
-		let health;
-		try {
-			health = await getHealth();
-		} catch (error) {
-			if (error instanceof OtherSourceError) {
-				return {
-					result: { running: false as const, url: ARCHBOARD_URL, conflict: error.message },
+		const status = await serverStatus();
+		if (status.state === "running") {
+			return runningStatus(status);
+		}
+		return status.state === "conflict"
+			? {
+					result: { running: false as const, url: status.url, conflict: status.conflict },
 					outcome: "foreign-service",
-				};
-			}
-			return {
-				result: { running: false as const, url: ARCHBOARD_URL },
-				outcome: "unavailable",
-			};
-		}
-		if (!isServerHealth(health)) {
-			return {
-				result: {
-					running: false as const,
-					url: ARCHBOARD_URL,
-					conflict:
-						"another service (or a pre-1.1 Archboard server build) is answering at this URL",
-				},
-				outcome: "foreign-service",
-			};
-		}
-		return runningStatus(health, await bestEffortSyncStatus());
+				}
+			: { result: { running: false as const, url: status.url }, outcome: "unavailable" };
 	},
 });
 
