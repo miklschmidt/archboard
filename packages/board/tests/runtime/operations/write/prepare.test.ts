@@ -140,6 +140,40 @@ test("the vault's policy is admitted when the write is prepared and again when i
 	expect(bytes()).toBe(before);
 });
 
+test("a board that awaits its migration is prepared at the version its commit finds, and writes nothing before the commit", async () => {
+	// From before nodes carried their order: the next read under its lease migrates it.
+	const legacy = {
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "legacy1",
+		name,
+		level: "system",
+		version: 3,
+		createdAt: "2026-09-11T00:00:00.000Z",
+		updatedAt: "2026-09-12T00:00:00.000Z",
+		views: [],
+		current: "v1",
+		variants: [
+			{
+				id: "v1",
+				name: "Initial",
+				lifecycle: "current",
+				content: { nodes: [{ id: "n1", name: "API", kind: "api" }], edges: [] },
+			},
+		],
+	};
+	writeFileSync(locateSemanticBoard(name, vault).file, `${JSON.stringify(legacy)}\n`);
+	const before = bytes();
+	const prepared = prepareAdding(4, "Worker");
+	if (prepared.outcome !== "prepared") throw new Error(prepared.problem);
+	expect(prepared.previousVersion).toBe(4);
+	expect(bytes()).toBe(before);
+	const committed = await prepared.commit({ writer });
+	if (committed.outcome !== "applied") throw new Error(committed.problem);
+	expect(committed.board).toEqual(prepared.board);
+	expect(committed.board.version).toBe(5);
+});
+
 /**
  * Prepare correcting the historical state of this test's board.
  * @returns The preparation.
