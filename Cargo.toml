@@ -9,7 +9,7 @@ edition = "2024"
 license = "BUSL-1.1"
 publish = false
 
-# The analysis policy of every crate (TASK-520.09). docs/agents/strict-analysis.md
+# The analysis policy of every crate (TASK-520.09). docs/agents/strict-analysis-rust.md
 # says why each group and lint is here and why the others are not. Everything is
 # a warning, so a build still runs while a fix is under way, and lint:core denies
 # every warning. An exception is a local #[expect(lint, reason = "...")] at the
