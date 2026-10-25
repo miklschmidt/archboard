@@ -144,7 +144,11 @@ Both export commands can draw what a reader needs beside the picture:
 Every SVG and PNG that the two commands give out carries its render recipe:
 the board, the variant (or "current" when you named none), the view and the
 comparison by id, the drawing choices, and a fingerprint of what the picture
-draws. An SVG keeps it in its `<metadata>` element and a PNG in a text chunk.
+is drawn from: the drawn variant and the one it is drawn against, the view, the
+vault's presentation policy and the title. A walkthrough edit or a changed code
+citation leaves the picture current. A rename leaves it current too, unless its
+title names the board. An SVG keeps the recipe in its `<metadata>` element and
+a PNG in a text chunk.
 A post-processor that strips metadata, such as SVGO with its default
 `removeMetadata`, removes the recipe, so keep the metadata.
 
