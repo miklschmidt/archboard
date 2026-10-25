@@ -93,7 +93,7 @@ const LEAVES: Readonly<Record<string, (node: Node, prefix: readonly string[]) =>
 	use_as_clause: (node, prefix) => {
 		const path = segmentsOf(node.childForFieldName("path"));
 		const alias = node.childForFieldName("alias")?.text ?? "_";
-		const whole = path?.join("::") === "self" ? [] : path;
+		const whole = prefix.length > 0 && path?.join("::") === "self" ? [] : path;
 		return pathLeaf(whole, prefix, false).map((leaf) => ({ ...leaf, alias }));
 	},
 	/**
@@ -178,9 +178,11 @@ function fromFile(path: readonly string[], nesting: readonly string[]): string[]
  */
 function leafImport(leaf: Leaf, declared: Declared): Import | undefined {
 	const last = leaf.glob ? "*" : leaf.path.at(-1);
-	if (last === undefined || HEADS.has(last)) return undefined;
+	if (last === undefined) return undefined;
+	const local = leaf.alias ?? last;
+	if (HEADS.has(last)) return wholeImport(leaf.path.join("::"), local, declared);
 	const specifier = (leaf.glob ? [...leaf.path, "*"] : leaf.path).join("::");
-	const names = [{ imported: last, local: leaf.alias ?? last, typeOnly: false }];
+	const names = [{ imported: last, local, typeOnly: false }];
 	return { specifier, ...declared, names, typeOnly: false };
 }
 
