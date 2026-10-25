@@ -31,7 +31,7 @@ pub struct ToneStep {
 }
 
 /// How much of an ink's chroma a tone counts.
-pub const CHROMA_CAP: f64 = 0.12;
+const CHROMA_CAP: f64 = 0.12;
 
 impl ToneStep {
     /// A tone that counts the usual share of the ink's chroma.

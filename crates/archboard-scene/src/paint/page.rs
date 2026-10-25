@@ -61,14 +61,14 @@ pub fn shifted(canvas: &Canvas, body: Markup) -> Markup {
 }
 
 /// What the planned frame says.
-pub const PLANNED_LABEL: &str = "Planned — nothing on this board is built";
+const PLANNED_LABEL: &str = "Planned — nothing on this board is built";
 const LABEL_SIZE: f64 = 12.0;
 const LABEL_RISE: f64 = LABEL_SIZE / 2.0 + 2.0;
 const LABEL_INDENT: f64 = 16.0;
 const LABEL_CLEARANCE: f64 = 6.0;
 
 /// Every box of one kind, moved with the body.
-pub fn moved_all(boxes: &Boxes, dx: f64, dy: f64) -> Boxes {
+fn moved_all(boxes: &Boxes, dx: f64, dy: f64) -> Boxes {
     Boxes(
         boxes
             .0
