@@ -21,15 +21,13 @@
 //! line that reaches a shape is the same line read backwards.
 
 use archboard_scene::geometry::{
-    Curve, EPSILON, Point, Rect, Segment, curve_through, segment_start, vertices_of,
+    BEND_RADIUS, Curve, EPSILON, Point, Rect, Segment, curve_through, segment_start, vertices_of,
 };
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
 
 use crate::routes::reversed;
 
-/// The radius of every bend a line takes.
-const BEND_RADIUS: f64 = archboard_scene::geometry::BEND_RADIUS;
 /// The straight run a line keeps before its arrowhead.
 const APPROACH_STRAIGHT: f64 = 12.0;
 /// How far beyond the turn out of a point a line runs before it turns again,

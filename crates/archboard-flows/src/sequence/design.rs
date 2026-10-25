@@ -6,11 +6,13 @@
 
 use archboard_scene::paint::styles::{Head, head_reach};
 
+pub use archboard_scene::geometry::BEND_RADIUS;
 pub use archboard_scene::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_NOTE_GAP, DIAGRAM_MARGIN, HEADER_SLAB_INSET,
     ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_LINE, PART_TITLE_LINE, PILL_HEIGHT,
     PILL_PADDING_X, PILL_TEXT_SIZE, TEXT_LINE_HEIGHT, TITLE_SIZE,
 };
+pub use archboard_scene::paint::drill_mark::DRILL_MARK_ROOM;
 pub use archboard_scene::paint::shadow::SHADOW_REACH;
 
 use crate::board::MessageKind;
@@ -21,8 +23,6 @@ pub const NEST_INSET: f64 = 18.0;
 pub const CONTAINER_BOTTOM_PAD: f64 = 14.0;
 /// The room inside a sequence card either side of its words.
 pub const CARD_PADDING_X: f64 = 13.0;
-/// The radius of every bend a line takes.
-pub const BEND_RADIUS: f64 = 8.0;
 
 /// A participant card's height, and its height with a responsibility.
 pub const CARD_HEIGHT: f64 = 46.0;
@@ -34,8 +34,6 @@ pub const TITLE_SIZE_SMALL: f64 = 11.5;
 /// half a point at a time, to a floor, before the column widens.
 pub const TITLE_SIZE_MIN: f64 = 10.5;
 pub const TITLE_SIZE_STEP: f64 = 0.5;
-/// What a part keeps clear beside its name for the mark of a board it opens.
-pub const DRILL_MARK_ROOM: f64 = 2.0 * 6.5 + 8.0;
 /// A flow's header row, with and without its summary.
 pub const HEADER_HEIGHT: f64 = PART_TITLE_LINE;
 pub const HEADER_HEIGHT_WITH_NOTE: f64 = PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;

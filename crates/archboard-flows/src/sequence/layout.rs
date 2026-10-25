@@ -38,7 +38,9 @@ use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
 use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
-use crate::text::{CARD_TITLE_FONT, Text, fitted_size};
+use archboard_scene::paint::fonts::CARD_TITLE_FONT;
+
+use crate::text::{Text, fitted_size};
 
 /// Which alternative of each decision that holds a message it runs on, by
 /// decision id. Two messages on different alternatives of one decision never
