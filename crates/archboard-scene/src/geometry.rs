@@ -161,6 +161,31 @@ pub fn segment_start(curve: &Curve, index: usize) -> Point {
         .map_or(curve.from, Segment::to)
 }
 
+/// A line read backwards: the same pieces, from its end to its start.
+pub fn reversed(curve: &Curve) -> Curve {
+    let segments = curve
+        .segments
+        .iter()
+        .enumerate()
+        .map(|(index, segment)| {
+            let to = segment_start(curve, index);
+            match *segment {
+                Segment::Line { .. } => Segment::Line { to },
+                Segment::Cubic { first, second, .. } => Segment::Cubic {
+                    first: second,
+                    second: first,
+                    to,
+                },
+            }
+        })
+        .rev()
+        .collect();
+    Curve {
+        from: curve.end(),
+        segments,
+    }
+}
+
 /// The point a fraction of the way along one segment.
 pub fn point_on_segment(from: Point, segment: &Segment, t: f64) -> Point {
     match segment {
@@ -416,6 +441,40 @@ mod tests {
         assert_eq!(coord(-0.001), "0");
         assert_eq!(coord(12.345), "12.35");
         assert_eq!(coord(0.125), "0.13");
+    }
+
+    #[test]
+    fn a_reversed_line_runs_the_same_pieces_backwards() {
+        let point = |x, y| Point { x, y };
+        let curve = Curve {
+            from: point(0.0, 0.0),
+            segments: vec![
+                Segment::Line {
+                    to: point(0.0, 10.0),
+                },
+                Segment::Cubic {
+                    first: point(0.0, 14.0),
+                    second: point(4.0, 18.0),
+                    to: point(8.0, 18.0),
+                },
+            ],
+        };
+        let back = reversed(&curve);
+        assert_eq!(back.from, point(8.0, 18.0));
+        assert_eq!(
+            back.segments,
+            [
+                Segment::Cubic {
+                    first: point(4.0, 18.0),
+                    second: point(0.0, 14.0),
+                    to: point(0.0, 10.0),
+                },
+                Segment::Line {
+                    to: point(0.0, 0.0)
+                },
+            ]
+        );
+        assert_eq!(reversed(&back), curve);
     }
 
     #[test]
