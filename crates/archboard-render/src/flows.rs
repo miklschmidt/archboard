@@ -33,6 +33,16 @@ pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Result<Out
         .collect();
     let parts: Vec<&Node> = participants.iter().collect();
     let appearances = node_appearances(&parts, &request.policy, request.level.as_deref());
+    if let Some(missing) = content
+        .flows
+        .iter()
+        .flat_map(|flow| &flow.participants)
+        .find(|id| !appearances.contains_key(*id))
+    {
+        return Err(format!(
+            "Sequence participant {missing} has no node in the reading. Include its node before rendering."
+        ));
+    }
     let steps: usize = told.flows.iter().map(|flow| flow.steps.len()).sum();
     let names: Vec<&str> = told.flows.iter().map(|flow| flow.name.as_str()).collect();
     let name = format!(

@@ -163,8 +163,9 @@ impl Renderer {
     ///
     /// # Errors
     ///
-    /// A solve the host failed or answered unreadably, and a document the SVG
-    /// painter refuses, or icons the host cannot read.
+    /// A sequence participant without a node, a solve the host failed or
+    /// answered unreadably, icons the host cannot read, or a document the SVG
+    /// painter refuses.
     pub async fn render<H: Host>(
         &self,
         request: &RenderRequest,
