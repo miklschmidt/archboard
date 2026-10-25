@@ -25,12 +25,8 @@ import {
 	SidebarRow,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import {
-	LINE_MARKS,
-	sampleKey,
-	type AppliedAppearance,
-	type PictureKey,
-} from "@archboard/renderer/picture";
+import type { AppliedAppearance, PictureKey } from "@archboard/board/render-reply";
+import { LINE_MARKS, type LineMark } from "@archboard/renderer/picture";
 
 /** One kind of line the key shows. */
 type LineMark = (typeof LINE_MARKS)[number]["mark"];
@@ -51,7 +47,7 @@ function SemanticLegend(props: { readonly picture: PictureKey }): JSX.Element {
 			{kinds.length > 0 && (
 				<ul aria-label="Node kinds" className="flex flex-col">
 					{kinds.map((item) => (
-						<Entry key={sampleKey(item)} label={item.typeName}>
+						<Entry key={item.id} label={item.typeName}>
 							<TypeSample appearance={item} className="size-5 [&>svg]:size-3.5" />
 						</Entry>
 					))}
@@ -72,7 +68,7 @@ function Lines(props: { readonly relationships: readonly AppliedAppearance[] }):
 	return (
 		<ul aria-label="Relationships" className="flex flex-col pt-2">
 			{props.relationships.map((item) => (
-				<Entry key={sampleKey(item)} label={item.typeName}>
+				<Entry key={item.id} label={item.typeName}>
 					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
 				</Entry>
 			))}

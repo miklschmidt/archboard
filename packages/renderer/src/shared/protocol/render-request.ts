@@ -6,7 +6,7 @@ import type { SemanticPolicy } from "@archboard/board/policy";
 import type { LayoutEngineName, StandaloneTheme } from "@archboard/board/render-reply";
 import type { DiagramGrammar } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
-import type { ExportFrame, PaintedDocument } from "#shared/protocol/generated/core/types.ts";
+import type { Drawn, ExportFrame } from "#shared/protocol/generated/core/types.ts";
 
 /** How one subject stands against the variant it is compared with. */
 type SubjectStanding = ChangeKind;
@@ -129,8 +129,8 @@ interface SemanticViewRenderRequest extends DiagramRenderRequest {
 	readonly grammar: DiagramGrammar;
 }
 
-/** One drawn diagram, in any grammar: the document the renderer core wrote. */
-type RenderedDiagram = PaintedDocument;
+/** One drawn diagram, in any grammar: the document the renderer core wrote, and its key. */
+type RenderedDiagram = Drawn;
 
 export {
 	type DiagramRenderRequest,

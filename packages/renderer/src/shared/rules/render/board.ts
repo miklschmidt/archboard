@@ -35,9 +35,8 @@ import type { ToldStanding } from "@archboard/board/reconciliation";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import type { VariantContent } from "@archboard/board/content";
 import type { FlowStep } from "@archboard/board/flow";
-import { SemanticRenderError } from "#shared/protocol/render-request.ts";
+import { SemanticRenderError, type SubjectStanding } from "#shared/protocol/render-request.ts";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
-import { placedStanding } from "#shared/rules/render/picture-key.ts";
 
 /** What a render of one board asks for. */
 interface BoardRenderChoices {
@@ -409,6 +408,27 @@ function drawnPolicy(policy: SemanticPolicy): unknown {
 		]),
 	);
 	return { ...policy, relationshipKinds };
+}
+
+/**
+ * How the subjects a drawing placed stand: a comparison's standing kept to
+ * them. A reading holds more than its grammar draws (a sequence view keeps the
+ * relationships between its participants and draws none of them), so a mark
+ * is counted, and a subject named, only where the drawing put one (TASK-497).
+ * @param standing How every subject of the reading stands.
+ * @param placed The subjects the drawing placed, by id.
+ * @returns The standing of those alone.
+ */
+function placedStanding(
+	standing: Readonly<Record<string, SubjectStanding>>,
+	placed: readonly string[],
+): Record<string, SubjectStanding> {
+	return Object.fromEntries(
+		placed.flatMap((id) => {
+			const stands = standing[id];
+			return stands === undefined ? [] : [[id, stands]];
+		}),
+	);
 }
 
 /**

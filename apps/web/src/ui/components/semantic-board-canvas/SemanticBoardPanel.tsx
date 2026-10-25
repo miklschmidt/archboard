@@ -35,7 +35,7 @@ import {
 import { SemanticViewBar } from "#ui/components/semantic-board-canvas/SemanticViewBar.tsx";
 import { SemanticWalkthroughBar } from "#ui/components/semantic-board-canvas/SemanticWalkthroughBar.tsx";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
-import { keyOf, type AppliedAppearance } from "@archboard/renderer/picture";
+import type { PictureKey } from "@archboard/board/render-reply";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
@@ -69,8 +69,8 @@ interface SemanticBoardPanelProps {
 	 * @param group The group's id, or null to let go.
 	 */
 	onChooseGroup: (group: string | null) => void;
-	/** What the picture on screen draws each kind with, for the key. */
-	appearances: ReadonlyMap<string, AppliedAppearance>;
+	/** What the key to the picture on screen lists, or null while nothing typed is drawn. */
+	pictureKey: PictureKey | null;
 	/** Whether this pane draws comparison treatment. */
 	comparison: boolean;
 	/** Change the canvas comparison treatment. */
@@ -195,7 +195,7 @@ function groupSection(props: SemanticBoardPanelProps): ReactNode {
  * @returns The legend, or null while nothing typed is drawn.
  */
 function legend(props: SemanticBoardPanelProps): ReactNode {
-	const picture = keyOf(props.appearances);
+	const picture = props.pictureKey;
 	return picture === null ? null : <SemanticLegend picture={picture} />;
 }
 

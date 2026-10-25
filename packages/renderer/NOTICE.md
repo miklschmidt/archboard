@@ -8,9 +8,10 @@ The source packages were `@coldtea/pr-lens-renderer` 0.2.4 and
 
 Retained code includes the layout of sequence diagrams, call/reply matching,
 route geometry, coordinate rounding, XML escaping, and helpers that write SVG elements.
-The renderer core's painter (`crates/archboard-scene` and `crates/archboard-svg`)
-ports the coordinate rounding, the XML escaping and the element writing to Rust,
-under this notice too.
+The renderer core (`crates/`) holds all of it now, ported to Rust under this
+notice too: the sequence layout in `crates/archboard-flows`, the route geometry
+in `crates/archboard-layout` and `crates/archboard-scene`, and the coordinate
+rounding, the XML escaping and the element writing in `crates/archboard-svg`.
 
 Bundled fonts use the SIL Open Font License 1.1.
 Their provenance and license texts are in

@@ -224,12 +224,48 @@ const PictureReceiptShape = {
 	marks: PictureMarksSchema.nullable(),
 };
 
+/**
+ * How a picture drew one subject, as the renderer core read it off the picture
+ * it drew: each fact as the subject's group in the document says it.
+ */
+const AppliedAppearanceSchema = z.object({
+	id: z.string(),
+	/** What its kind is called. */
+	typeName: z.string(),
+	/** The key of its kind in the vault's policy. */
+	typeKind: z.string(),
+	/** The icon's own markup, as the picture draws it; empty for a line. */
+	iconSvg: z.string(),
+	/** `card` or `container` for a part; empty for a line. */
+	depiction: z.string(),
+	typeColor: z.string(),
+	lineColor: z.string(),
+	dash: z.string(),
+	arrowhead: z.string(),
+});
+type AppliedAppearance = z.infer<typeof AppliedAppearanceSchema>;
+
+/**
+ * What a picture's key lists (TASK-383): one sample of each part kind and of
+ * each relationship kind the picture draws, in the order it draws them, so
+ * nothing in the key is absent from the picture.
+ */
+const PictureKeySchema = z.object({
+	kinds: z.array(AppliedAppearanceSchema).readonly(),
+	relationships: z.array(AppliedAppearanceSchema).readonly(),
+});
+type PictureKey = z.infer<typeof PictureKeySchema>;
+
 /** A board that was drawn. */
 const DrawnBoardSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
 	width: z.number().positive(),
 	height: z.number().positive(),
 	atlas: DiagramAtlasSchema,
+	/** Each subject the picture draws with the appearance it was drawn with, in drawing order. */
+	appearances: z.array(AppliedAppearanceSchema).readonly(),
+	/** What the picture's key lists, or null when it draws no subject of a kind. */
+	key: PictureKeySchema.nullable(),
 	/** What the picture draws; `changes.standing` says how each of these stands, and no other. */
 	drawn: DrawnSubjectsSchema,
 });
@@ -266,6 +302,10 @@ function wasDrawn(reply: SemanticRenderReply): reply is DrawnBoard {
 }
 
 export {
+	AppliedAppearanceSchema,
+	type AppliedAppearance,
+	PictureKeySchema,
+	type PictureKey,
 	OfferedViewSchema,
 	type OfferedView,
 	SubjectStandingSchema,
