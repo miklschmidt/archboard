@@ -147,13 +147,15 @@ The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
 `./unknown-record` exports read a caught value without Node and are safe for the browser. The two
 `errorMessage` functions differ on purpose: `./errno` says `unknown error` for a value that is no
-Error or string, and `./thrown-error` stringifies it.
+Error or string, and `./thrown-error` stringifies it. The package imports no other package, so a
+package that runs outside Archboard can carry it.
 
 The third is `process` (`@archboard/process`). It owns a child process group and ends it. Its implementation
 sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
-where it exposed 6 files. `./observation` reads the process table. `./git-group` carries the
-operations on the group of a Git command: capturing it, asking whether it or another member exists,
-and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
+where it exposed 6 files. It imports only `timing` and `diagnostics`, so a package that runs
+outside Archboard can carry it. `./observation` reads the process table. `./git-group` carries the
+operations on the group of a Git command, for the Git client of `workspace`: capturing it, asking
+whether it or another member exists, and the TERM-then-KILL end of it. `./codex-group` carries the Codex process-group operations and
 their TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package
 does not import `codex-app-server`. `./git-owner` is the one export that is not an api file: it is
 the script that a Git command runs under, and callers find it with `import.meta.resolve` and spawn
@@ -165,10 +167,17 @@ subpaths, where it exposed 10 files. `./repositories` and `./languages` are in `
 for the browser, with no Node import: the listing schemas of the navigator, and the languages that an
 agent can configure a server for. The rest is Node-bound. `./checkouts` carries what is known of
 checkouts: the Git lookups, the repository registry and the validation of a language server
-command, which uses `node:path`, so the browser never imports it. The registry's
+command, which uses `node:path`, so the browser never imports it. Its `gitCheckoutOfVault` asks
+Git synchronously for the checkout that holds a vault, its root and identity, for the vault check
+that every open canvas polls and that cannot wait for the asynchronous lookups. The registry's
 `repositoryOfVault` is exported as `registeredRepositoryOfVault`, because `./repository-listing`
 defines a different `repositoryOfVault`, the one that the server projection answers with.
-`./vault` finds a vault, `./source-checkout` finds the checkout whose source runs, and
+`./vault` finds a vault as ADR 0049 says. `findVault` only finds it, for a command that asks
+where it is without registering anything. `findAndRegisterVault` is what a command does before it
+starts: it finds the vault, registers the checkout or untracked vault that holds it when the registry
+does not know it, and answers with the vault, what it registered, or why the registry could not be
+written, which does not refuse the command. The CLI words its line on stderr from that answer.
+`./source-checkout` finds the checkout whose source runs, and
 `./atomic-write` and `./state-dir` write files durably and name the state directory.
 `./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
 finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
