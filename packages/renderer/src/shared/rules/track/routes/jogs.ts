@@ -18,9 +18,14 @@
 // A step no move can close, since whatever stands beside its ends holds them,
 // is opened instead to the shortest step its two bends turn whole. The same
 // moves part two lines that read as one (parting.ts).
-import { save, restore } from "#shared/rules/track/routes/saved.ts";
 import { BEND_RADIUS } from "#shared/constants/spacing.ts";
-import { LANE, moveRun, type Chain, type Station } from "#shared/rules/track/routes/chains.ts";
+import {
+	LANE,
+	moveRun,
+	runOf,
+	type Chain,
+	type Station,
+} from "#shared/rules/track/routes/chains.ts";
 import type { Net } from "#shared/rules/track/channels/channels.ts";
 import { nudgeLabel, slidePort } from "#shared/rules/track/labels/labels.ts";
 import { centreX, cardFace, type Scene } from "#shared/rules/track/scene/scene.ts";
@@ -180,6 +185,51 @@ function stretchBeyond(
 		stretch.push({ station: next[end], net: next, end });
 	}
 	return stretch;
+}
+
+/** What a stretch's move changes, to put back when part of it cannot move. */
+interface Saved {
+	readonly lanes: Map<Station, number>;
+	readonly boxes: Map<Station, Station["item"]>;
+	readonly ends: Map<Net, [number, number]>;
+}
+
+/**
+ * Keep what moving some stations could change.
+ * @param scene The scene, for the ports that slide.
+ * @param chains Every relationship's chain.
+ * @param nets Every net.
+ * @param stations The stations.
+ * @returns The saved state.
+ */
+function save(
+	scene: Scene,
+	chains: readonly Chain[],
+	nets: readonly Net[],
+	stations: readonly Station[],
+): Saved {
+	const lanes = new Map<Station, number>();
+	for (const station of stations)
+		for (const lane of runOf(chains, station)?.lanes ?? []) lanes.set(lane, lane.x);
+	const boxes = new Map(
+		stations
+			.filter(({ kind, item }) => kind === "label" || scene.slides.has(item!))
+			.map((station) => [station, { ...station.item! }] as const),
+	);
+	return { lanes, boxes, ends: new Map(nets.map((net) => [net, [net.topX, net.bottomX]])) };
+}
+
+/**
+ * Put back what a failed stretch moved.
+ * @param saved The saved state.
+ */
+function restore(saved: Saved): void {
+	for (const [lane, x] of saved.lanes) lane.x = x;
+	for (const [station, item] of saved.boxes) station.item!.box = item!.box;
+	for (const [net, [top, bottom]] of saved.ends) {
+		net.topX = top;
+		net.bottomX = bottom;
+	}
 }
 
 /**

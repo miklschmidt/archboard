@@ -431,15 +431,13 @@ class Scene {
 		readonly after: Spot;
 	}): (x: number) => boolean {
 		const { lanes, before, after } = between;
-		const held = new Map<string, { low: number; high: number; inside: boolean }>();
-		for (const { band } of lanes)
-			for (const [id, [low, high]] of this.walled(band)) {
-				if (held.has(id)) continue;
+		const held = lanes.flatMap(({ band }) =>
+			[...this.walled(band)].flatMap(([id, [low, high]]) => {
 				const inside = this.inside(id, before);
-				if (inside === this.inside(id, after)) held.set(id, { low, high, inside });
-			}
-		const walls = [...held.values()];
-		return (x) => walls.every(({ low, high, inside }) => (x > low && x < high) === inside);
+				return inside === this.inside(id, after) ? [{ low, high, inside }] : [];
+			}),
+		);
+		return (x) => held.every(({ low, high, inside }) => (x > low && x < high) === inside);
 	}
 
 	/**
