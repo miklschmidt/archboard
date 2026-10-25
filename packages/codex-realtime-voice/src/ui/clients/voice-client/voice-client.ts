@@ -324,15 +324,24 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	return Object.freeze(client);
 }
 
+/** The id this page names while storage cannot hold one; a reload then starts another. */
+let pageTabSessionId: string | null = null;
+
 /**
- * The tab's session id, minted once and kept in `sessionStorage`.
+ * The tab's session id, minted once and kept in `sessionStorage`. Storage that
+ * refuses, as a privacy setting can make it, leaves one id for this page.
  * @param key The storage key.
  * @returns The id.
  */
 function storedTabSessionId(key: string): string {
-	const id = sessionStorage.getItem(key) ?? crypto.randomUUID();
-	sessionStorage.setItem(key, id);
-	return id;
+	try {
+		const id = sessionStorage.getItem(key) ?? crypto.randomUUID();
+		sessionStorage.setItem(key, id);
+		return id;
+	} catch {
+		pageTabSessionId ??= crypto.randomUUID();
+		return pageTabSessionId;
+	}
 }
 
 /**
