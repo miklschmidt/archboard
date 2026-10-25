@@ -1,11 +1,11 @@
 ---
 id: TASK-530.03
 title: The voice package builds, licenses and documents itself for npm
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T01:26:00Z'
-updated_date: '2026-10-25T05:47:00Z'
+updated_date: '2026-10-25T06:01:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -40,3 +40,9 @@ README review (review/voice-readme): quickstart run from the packed tarball outs
 
 AC #1 evidence: scripts/pack-codex-realtime-voice.ts (bun run pack:voice) builds ESM and bundled declarations for every public entry, with files dist, src, LICENSE and README.md and a manifest of pinned dependencies and peers; voice-package.test.ts packs it, installs the tarball outside the repository and type-checks with skipLibCheck false. AC #4 evidence: packages/codex-realtime-voice/README.md has Requirements, Install, Quickstart, Concepts, Configuration, Security, Advanced hosting, Troubleshooting (nine cases) and License; its checked blocks are type-checked by the same test.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+bun run pack:voice (scripts/pack-codex-realtime-voice.ts) builds ESM and bundled declarations for every public entry into a publishable package: MIT LICENSE, README, pinned dependencies, peers (react and @types/bun optional), and only MIT workspace code bundled; it refuses a bundle of any other license. The README covers requirements, install, a quickstart on Bun.serve (attach for a node:http server is under configuration), concepts, configuration, security, advanced hosting and nine troubleshooting cases. voice-package.test.ts packs it, installs the tarball in a project outside the repository, type-checks every public entry and the README's checked blocks under bun init's compiler options with skipLibCheck false, and imports the server entry. Follow-up: no test runs a voice agent, which needs a Codex executable and a sign-in.
+<!-- SECTION:FINAL_SUMMARY:END -->
