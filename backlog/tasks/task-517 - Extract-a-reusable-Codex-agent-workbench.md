@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: 2026-10-24 11:37
-updated_date: '2026-10-25T00:06:00Z'
+updated_date: '2026-10-25T00:10:00Z'
 labels: []
 dependencies: []
 references:
@@ -82,6 +82,8 @@ The complete repaired gate at 33aa81f0f passes all 13 stages in 534 seconds: 5,3
 Post-adoption document validation passes: architecture asset generation, 149 repository tests, and formatting. The final regular board check has zero diagnostics. All non-Codex README assets are current. Four owner-run assets remain stale because this task does not spend model usage on recordings: bun run readme:assets explainer pr-walkthrough newcomer ask. Refreshed animated clips remain under /tmp/nix-shell.SqUKhs/archboard-readme-assets/attachments; no attachment or package was published. Existing README attachment URLs remain. Live microphone capture, audible playback, and model speech still require account/hardware acceptance. Controlled SDP negotiation, browser permission failure/recovery, and independent stop behavior passed. Existing aggregate Vite chunk size and libavoid initialization messages remain outside the changed contract and did not fail any gate.
 
 PR 2 now targets origin/main at 7488ab12, which precedes the local task base and includes the earlier Vite+ and overview-label work. The requested archboard-pr body accounts for that scope. A focused Workbench reuse view and branch-bound new package/example support the comparison with TASK-500.06. Seventeen footprints have no unread repository. The already-adopted TASK-517 variant refuses proposal footprint mode, so its normal footprint and explicit parent comparison provide the evidence. The picture passes native and half-size inspection. A private recording server at port 46549 uses an isolated registry and leaves the global chosen checkout unchanged. A temporary reviewer walkthrough is recording and will be removed after capture.
+
+PR #2 body now follows archboard-pr: Summary, Evidence, and Merge Danger, with the uploaded auto-theme SVG, standalone browser screenshot, and 1:29 narrated walkthrough. Parent inspected all five chapter frames and the verbatim transcript. Posting and readback pass: one marker pair, two images, one video URL, no local paths. The recording uses the actual shared production runtime and keeps /tmp/task517-pr2/talk. The temporary reviewer walkthrough was removed. The durable Workbench reuse view remains. Architecture assets and formatting pass. No source code changed, and no branch commits were pushed. The isolated recording server and its claim are released; the global chosen checkout stays unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
