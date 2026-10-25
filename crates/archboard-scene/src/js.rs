@@ -111,18 +111,7 @@ pub fn plain_decimal(value: f64) -> String {
         None => ("", mantissa),
     };
     let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    // The point stands after the mantissa's whole digits, moved by the exponent:
-    // `point` digits stand before it, or `zeros` zeros between it and the digits.
-    let whole = mantissa.find('.').unwrap_or(mantissa.len());
-    let shift = exponent.unsigned_abs() as usize;
-    let (point, zeros) = if exponent >= 0 {
-        (whole + shift, 0)
-    } else {
-        match whole.checked_sub(shift) {
-            Some(point) if point > 0 => (point, 0),
-            _ => (0, shift - whole),
-        }
-    };
+    let (point, zeros) = moved_point(mantissa.find('.').unwrap_or(mantissa.len()), exponent);
     let written = if point == 0 {
         format!("0.{}{digits}", "0".repeat(zeros))
     } else if point >= digits.len() {
@@ -131,6 +120,20 @@ pub fn plain_decimal(value: f64) -> String {
         format!("{}.{}", &digits[..point], &digits[point..])
     };
     format!("{sign}{written}")
+}
+
+/// Where the decimal point stands once an exponent moves it from after a
+/// mantissa's `whole` digits: how many digits stand before it, or, when none
+/// do, how many zeros stand between it and the digits.
+fn moved_point(whole: usize, exponent: i32) -> (usize, usize) {
+    let shift = exponent.unsigned_abs() as usize;
+    if exponent >= 0 {
+        return (whole + shift, 0);
+    }
+    match whole.checked_sub(shift) {
+        Some(point) if point > 0 => (point, 0),
+        _ => (0, shift - whole),
+    }
 }
 
 /// Two to a power, exactly.
@@ -347,24 +350,32 @@ mod tests {
 
     #[test]
     fn spells_numbers_as_ecmascript_does() {
-        assert_eq!(number(-0.0), "0");
-        assert_eq!(number(1e21), "1e+21");
-        assert_eq!(number(1e-7), "1e-7");
-        assert_eq!(number(123.456), "123.456");
-        assert_eq!(number(0.1 + 0.2), "0.30000000000000004");
-        assert_eq!(number(5.0), "5");
+        for (value, spelt) in [
+            (-0.0, "0"),
+            (1e21, "1e+21"),
+            (1e-7, "1e-7"),
+            (123.456, "123.456"),
+            (0.1 + 0.2, "0.30000000000000004"),
+            (5.0, "5"),
+        ] {
+            assert_eq!(number(value), spelt, "{value:?}");
+        }
     }
 
     #[test]
     fn fixes_ties_upward() {
-        assert_eq!(to_fixed(0.125, 2), "0.13");
-        assert_eq!(to_fixed(0.03125, 4), "0.0313");
-        assert_eq!(to_fixed(1.005, 2), "1.00");
-        assert_eq!(to_fixed(-0.0, 2), "0.00");
-        assert_eq!(to_fixed(-0.0001, 2), "-0.00");
-        assert_eq!(to_fixed(9.995, 2), "9.99");
-        assert_eq!(to_fixed(0.5, 0), "1");
-        assert_eq!(to_fixed(9.5, 0), "10");
+        for (value, digits, fixed) in [
+            (0.125, 2, "0.13"),
+            (0.03125, 4, "0.0313"),
+            (1.005, 2, "1.00"),
+            (-0.0, 2, "0.00"),
+            (-0.0001, 2, "-0.00"),
+            (9.995, 2, "9.99"),
+            (0.5, 0, "1"),
+            (9.5, 0, "10"),
+        ] {
+            assert_eq!(to_fixed(value, digits), fixed, "{value:?} to {digits}");
+        }
     }
 
     #[test]

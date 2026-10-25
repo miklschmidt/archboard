@@ -65,89 +65,143 @@ fn end_of_type(text: &[char], mut at: usize) -> usize {
     at
 }
 
+/// A declaration being written read-only: the text read so far and what is
+/// written of it, the brackets open at the point reached, and whether a field's
+/// name may start there.
+struct ReadOnly {
+    text: Vec<char>,
+    at: usize,
+    out: String,
+    /// Whether each open bracket is an object's brace.
+    objects: Vec<bool>,
+    field_start: bool,
+}
+
+impl ReadOnly {
+    /// Copy a comment that opens here, and say whether there was one.
+    fn comment(&mut self) -> bool {
+        let text = &self.text;
+        if !(text[self.at] == '/' && text.get(self.at + 1) == Some(&'*')) {
+            return false;
+        }
+        let close = (self.at + 2..text.len().saturating_sub(1))
+            .find(|&index| text[index] == '*' && text[index + 1] == '/')
+            .map_or(text.len(), |index| index + 2);
+        self.out.extend(&text[self.at..close]);
+        self.at = close;
+        true
+    }
+
+    /// Where a string that opens here ends, past its closing quote.
+    fn string_end(&self) -> Option<usize> {
+        (self.text[self.at] == '"').then(|| {
+            (self.at + 1..self.text.len())
+                .find(|&index| self.text[index] == '"')
+                .map_or(self.text.len(), |index| index + 1)
+        })
+    }
+
+    /// Write a field whose name, or quoted name such as a union's tag, starts
+    /// here as read-only, and an optional one open to `undefined`; say whether
+    /// there was one.
+    fn field(&mut self) -> bool {
+        let text = &self.text;
+        let character = text[self.at];
+        if !(self.field_start
+            && (character.is_alphabetic() || character == '_' || character == '"'))
+        {
+            return false;
+        }
+        let name_end = self.string_end().unwrap_or_else(|| {
+            (self.at..text.len())
+                .find(|&index| !(text[index].is_alphanumeric() || text[index] == '_'))
+                .unwrap_or(text.len())
+        });
+        let optional = text.get(name_end) == Some(&'?');
+        let colon = name_end + usize::from(optional);
+        if text.get(colon) != Some(&':') {
+            return false;
+        }
+        self.out.push_str("readonly ");
+        self.out.extend(&text[self.at..=colon]);
+        self.at = colon + 1;
+        self.field_start = false;
+        if optional {
+            self.open_to_undefined();
+        }
+        true
+    }
+
+    /// Write the type of an optional field that starts here as a union with `undefined`.
+    fn open_to_undefined(&mut self) {
+        let end = end_of_type(&self.text, self.at);
+        let field_type: String = self.text[self.at..end].iter().collect();
+        self.out.push_str(field_type.trim_end());
+        self.out.push_str(" | undefined");
+        self.out
+            .push_str(&field_type[field_type.trim_end().len()..]);
+        self.at = end;
+    }
+
+    /// Copy a string that opens here, and say whether there was one.
+    fn string(&mut self) -> bool {
+        let Some(close) = self.string_end() else {
+            return false;
+        };
+        self.out.extend(&self.text[self.at..close]);
+        self.at = close;
+        true
+    }
+
+    /// Copy one character, keeping track of the brackets it opens and closes
+    /// and of whether a field's name may follow it.
+    fn character(&mut self) {
+        let character = self.text[self.at];
+        match character {
+            '{' => {
+                self.objects.push(true);
+                self.field_start = true;
+            }
+            '[' | '(' | '<' => {
+                self.objects.push(false);
+                self.field_start = false;
+            }
+            '}' | ']' | ')' => {
+                self.objects.pop();
+                self.field_start = false;
+            }
+            '>' if self.at > 0 && self.text[self.at - 1] != '=' => {
+                self.objects.pop();
+                self.field_start = false;
+            }
+            ',' => self.field_start = self.objects.last() == Some(&true),
+            character if character.is_whitespace() => {}
+            _ => self.field_start = false,
+        }
+        self.out.push(character);
+        self.at += 1;
+    }
+}
+
 /// A declaration with every object field read-only, every optional field
 /// open to `undefined`, and every array a read-only one.
 fn read_only(declaration: &str) -> String {
-    let text: Vec<char> = declaration
-        .replace("Array<", "ReadonlyArray<")
-        .chars()
-        .collect();
-    let mut out = String::new();
-    // Whether each open bracket is an object's brace.
-    let mut objects: Vec<bool> = Vec::new();
-    let mut field_start = false;
-    let mut at = 0;
-    while at < text.len() {
-        let character = text[at];
-        if character == '/' && text.get(at + 1) == Some(&'*') {
-            let close = (at + 2..text.len().saturating_sub(1))
-                .find(|&index| text[index] == '*' && text[index + 1] == '/')
-                .map_or(text.len(), |index| index + 2);
-            out.extend(&text[at..close]);
-            at = close;
-            continue;
+    let mut reading = ReadOnly {
+        text: declaration
+            .replace("Array<", "ReadonlyArray<")
+            .chars()
+            .collect(),
+        at: 0,
+        out: String::new(),
+        objects: Vec::new(),
+        field_start: false,
+    };
+    while reading.at < reading.text.len() {
+        if !(reading.comment() || reading.field() || reading.string()) {
+            reading.character();
         }
-        // Where a string that opens here ends, past its closing quote.
-        let string_end = (character == '"').then(|| {
-            (at + 1..text.len())
-                .find(|&index| text[index] == '"')
-                .map_or(text.len(), |index| index + 1)
-        });
-        if field_start && (character.is_alphabetic() || character == '_' || character == '"') {
-            // A field's name, or a quoted one such as a union's tag.
-            let name_end = string_end.unwrap_or_else(|| {
-                (at..text.len())
-                    .find(|&index| !(text[index].is_alphanumeric() || text[index] == '_'))
-                    .unwrap_or(text.len())
-            });
-            let optional = text.get(name_end) == Some(&'?');
-            let colon = name_end + usize::from(optional);
-            if text.get(colon) == Some(&':') {
-                out.push_str("readonly ");
-                out.extend(&text[at..=colon]);
-                at = colon + 1;
-                field_start = false;
-                if optional {
-                    let end = end_of_type(&text, at);
-                    let field_type: String = text[at..end].iter().collect();
-                    out.push_str(field_type.trim_end());
-                    out.push_str(" | undefined");
-                    out.push_str(&field_type[field_type.trim_end().len()..]);
-                    at = end;
-                }
-                continue;
-            }
-        }
-        if let Some(close) = string_end {
-            out.extend(&text[at..close]);
-            at = close;
-            continue;
-        }
-        match character {
-            '{' => {
-                objects.push(true);
-                field_start = true;
-            }
-            '[' | '(' | '<' => {
-                objects.push(false);
-                field_start = false;
-            }
-            '}' | ']' | ')' => {
-                objects.pop();
-                field_start = false;
-            }
-            '>' if at > 0 && text[at - 1] != '=' => {
-                objects.pop();
-                field_start = false;
-            }
-            ',' => field_start = objects.last() == Some(&true),
-            character if character.is_whitespace() => {}
-            _ => field_start = false,
-        }
-        out.push(character);
-        at += 1;
     }
-    out
+    reading.out
 }
 
 /// Print the declarations, each exported and read-only, under the header that
