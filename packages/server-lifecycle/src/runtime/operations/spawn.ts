@@ -33,7 +33,8 @@ import {
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
 } from "#runtime/operations/server-startup-cleanup.ts";
-import { errorCode, errorMessage } from "@archboard/diagnostics/thrown-error";
+import { errnoCode } from "@archboard/diagnostics/errno";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import {
 	serverPort,
 	healthOrNull,
@@ -230,7 +231,7 @@ function signalSpawnedServer(spawned: SpawnedServer, signal: NodeJS.Signals): vo
 	try {
 		spawned.child.kill(signal);
 	} catch (error) {
-		if (errorCode(error) !== "ESRCH") {
+		if (errnoCode(error) !== "ESRCH") {
 			throw error;
 		}
 	}

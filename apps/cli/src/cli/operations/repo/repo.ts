@@ -6,7 +6,6 @@ import {
 	listRegistry,
 	registryPath,
 	RepoRegistryError,
-	type RegistryListing,
 	LanguageServersSchema,
 } from "@archboard/workspace/checkouts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
@@ -178,7 +177,7 @@ const repoListContract = defineCommand({
  * @param listing The registry.
  * @returns The text.
  */
-function listingText(listing: RegistryListing): string {
+function listingText(listing: ReturnType<typeof listRegistry>): string {
 	if (listing.checkouts.length === 0 && listing.vaults.length === 0) {
 		return "No checkout is known on this machine yet.\nRun `repo add` inside a checkout to register it.";
 	}

@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { Language } from "#runtime/operations/language-servers/languages.ts";
-import type { LanguageServers } from "@archboard/workspace/checkouts";
+import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
 
 /** The server one language uses in a checkout, or why it has none. */
 type LanguageServer =
@@ -137,7 +137,7 @@ function typescriptServer(root: string): LanguageServer {
 function languageServerOf(
 	language: Language,
 	root: string,
-	configured: LanguageServers,
+	configured: z.infer<typeof LanguageServersSchema>,
 ): LanguageServer {
 	if (language === "typescript") return typescriptServer(root);
 	const server = configured[language];
