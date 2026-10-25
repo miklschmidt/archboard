@@ -108,7 +108,6 @@ fn line_ink(
 }
 
 /// One final route, its head, its halo and the insides of the ports it runs into.
-#[allow(clippy::too_many_arguments)]
 fn paint_edge_line(
     routed: &Edge,
     palette: &Palette,
@@ -334,6 +333,11 @@ pub struct HeldPage<'a> {
     pub card_kind: SubjectKind,
 }
 
+/// Two numbers in ascending order, a number that is not one tied with every other.
+fn ascending(a: f64, b: f64) -> std::cmp::Ordering {
+    a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal)
+}
+
 /// The line appearance of a relationship.
 fn look_of<'a>(vocabulary: &'a Vocabulary, id: &str) -> &'a LineAppearance {
     vocabulary
@@ -343,7 +347,6 @@ fn look_of<'a>(vocabulary: &'a Vocabulary, id: &str) -> &'a LineAppearance {
 }
 
 /// The final drawing painted, with the atlas from the same boxes.
-#[allow(clippy::too_many_arguments)]
 pub fn paint_architecture(
     ctx: &Ctx,
     drawing: &Painted,
@@ -423,28 +426,13 @@ pub fn paint_architecture(
     );
     let mut boxes: Vec<&Node> = containers.iter().collect();
     boxes.sort_by(|a, b| {
-        let depth = a.depth - b.depth;
-        let difference = if depth != 0.0 && !depth.is_nan() {
-            depth
-        } else {
-            a.measured.node.order - b.measured.node.order
-        };
-        difference
-            .partial_cmp(&0.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
+        ascending(a.depth, b.depth)
+            .then_with(|| ascending(a.measured.node.order, b.measured.node.order))
     });
     let mut ordered_cards: Vec<&Node> = cards.iter().collect();
-    ordered_cards.sort_by(|a, b| {
-        (a.measured.node.order - b.measured.node.order)
-            .partial_cmp(&0.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    ordered_cards.sort_by(|a, b| ascending(a.measured.node.order, b.measured.node.order));
     let mut regions: Vec<_> = drawing.drawing.regions.iter().flatten().collect();
-    regions.sort_by(|a, b| {
-        (a.depth - b.depth)
-            .partial_cmp(&0.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    regions.sort_by(|a, b| ascending(a.depth, b.depth));
     let routes: Vec<&crate::geometry::Curve> = edges.iter().map(|routed| &routed.curve).collect();
 
     let mut painted: Vec<Markup> = vec![masks.definitions];
