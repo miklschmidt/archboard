@@ -1,4 +1,3 @@
-import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
 import { sameThreadLinkIdentity } from "#runtime/rules/thread-link/binding.ts";
 import {
 	type ThreadLinkBindingSnapshot,
@@ -11,14 +10,14 @@ import {
 	type CodexThreadContextBindingSnapshot,
 	type CodexThreadContextBindingToken,
 	type CodexThreadContextController,
-	type CodexThreadContextControllerHooks,
 	type CodexThreadContextControllerOptions,
 	type CodexThreadContextDelivery,
 	type CodexThreadContextDeliveryOutcome,
 	type CodexThreadContextEventId,
 	type CodexThreadContextTarget,
+	type WorkhorseContextEvent,
 } from "#runtime/services/thread-context/contract.ts";
-import { createUnsubscribedCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
+import { createCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
 import { eventId, eventKey } from "#runtime/services/thread-context/event-identity.ts";
 
 interface ActiveBinding {
@@ -116,13 +115,13 @@ function sameBinding(
 }
 
 /**
- * The outcome for an event seen while no binding was active.
- * @param event - The settled semantic change.
+ * The outcome for a change seen while no binding was active.
+ * @param event - The announced change.
  * @param reason - Whether there was no binding or the controller was disposed.
  * @returns The frozen `not_delivered` outcome with no target.
  */
 function unboundOutcome(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	reason: "unbound" | "disposed",
 ): CodexThreadContextDeliveryOutcome {
 	return Object.freeze({
@@ -136,6 +135,10 @@ function unboundOutcome(
 		attempted: false,
 		outcome: "not_delivered",
 		reason,
+		freshness: Object.freeze({
+			capturedAtMs: event.capturedAtMs,
+			freshUntilMs: event.freshUntilMs,
+		}),
 		payload: null,
 	});
 }
@@ -267,9 +270,9 @@ function sessionThreadsOf(
 }
 
 /**
- * One process-lifetime subscription and event ledger over replaceable exact
- * bindings: events always settle here, through the active binding's own
- * unsubscribed delivery port when one exists.
+ * One process-lifetime ledger of announced changes over replaceable exact
+ * bindings: changes always settle here, through the active binding's own
+ * delivery port when one exists.
  * @param options - The controller options.
  * @returns The controller.
  */
@@ -278,7 +281,6 @@ export function createCodexThreadContextController(
 ): CodexThreadContextController {
 	let revision = 0;
 	let active: ActiveBinding | null = null;
-	let hooks: CodexThreadContextControllerHooks = options.hooks;
 	let executionAvailable = true;
 	let disposed = false;
 	const pending = new Map<string, Promise<CodexThreadContextDeliveryOutcome>>();
@@ -298,11 +300,11 @@ export function createCodexThreadContextController(
 		Object.freeze({ token: token(), binding: active?.binding ?? null });
 
 	/**
-	 * Delivers an event once through whichever binding is active at that moment.
-	 * @param event - The settled semantic change.
+	 * Delivers a change once through whichever binding is active at that moment.
+	 * @param event - The announced change.
 	 * @returns The outcome promise shared by every caller for this identity.
 	 */
-	const deliver = (event: WorkbenchContextEvent): Promise<CodexThreadContextDeliveryOutcome> => {
+	const deliver = (event: WorkhorseContextEvent): Promise<CodexThreadContextDeliveryOutcome> => {
 		const key = eventKey(eventId(event));
 		const inFlight = pending.get(key);
 		if (inFlight !== undefined) {
@@ -326,10 +328,6 @@ export function createCodexThreadContextController(
 		pending.set(key, result);
 		return result;
 	};
-
-	const unsubscribe = options.publisher.subscribeSettledChange((event) => {
-		void deliver(event);
-	});
 
 	/**
 	 * Refuses a transition the ledger cannot accept: a disposed controller, a
@@ -366,17 +364,22 @@ export function createCodexThreadContextController(
 	 * capability is only readable while that binding revision stays active.
 	 * @param binding - The frozen binding being activated.
 	 * @param bindingRevision - The revision assigned to it.
-	 * @returns The unsubscribed delivery port.
+	 * @returns The delivery port.
 	 */
 	const deliveryFor = (
 		binding: CodexThreadContextBinding,
 		bindingRevision: number,
 	): CodexThreadContextDelivery =>
-		createUnsubscribedCodexThreadContextDelivery({
-			...options,
+		createCodexThreadContextDelivery({
+			session: options.session,
+			threadLink: options.threadLink,
+			identity: options.identity,
+			epoch: options.epoch,
+			now: options.now,
+			contextCodec: options.contextCodec,
 			paneId: binding.paneId,
 			target: binding.target,
-			// The threads whose board writes are this session's own: the workhorse
+			// The threads whose changes are this session's own: the workhorse
 			// this binding names, and the coordinator paired with it when there is
 			// one. A thread is the session — it goes on being the same thread across
 			// turns, and New conversation makes a new one — so this is the identity a write
@@ -396,12 +399,6 @@ export function createCodexThreadContextController(
 				executionAvailable && active?.revision === bindingRevision
 					? options.currentExecution()
 					: null,
-			/**
-			 * Builds the canonical context through the currently installed hooks.
-			 * @param event - The settled semantic change.
-			 * @returns The context for this binding.
-			 */
-			contextForEvent: (event) => hooks.contextForEvent(event, binding),
 		});
 
 	/**
@@ -446,7 +443,6 @@ export function createCodexThreadContextController(
 		active = null;
 		revision += 1;
 		retiring?.delivery.dispose();
-		unsubscribe();
 	};
 
 	return Object.freeze({
@@ -470,19 +466,6 @@ export function createCodexThreadContextController(
 		get: (event: CodexThreadContextEventId) => settled.get(eventKey(event)),
 		snapshot,
 		compareAndSwap,
-		/**
-		 * Installs new context hooks for every later event.
-		 * @param next - The replacement hooks.
-		 */
-		replaceHooks(next: CodexThreadContextControllerHooks) {
-			if (disposed) {
-				throw new CodexThreadContextControllerError(
-					"disposed",
-					"The thread-context controller is disposed.",
-				);
-			}
-			hooks = next;
-		},
 		/**
 		 * Handles the bound child's exit: execution is withdrawn first, the
 		 * binding is cleared, the epoch is retired, and the controller disposed.

@@ -120,7 +120,7 @@ const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
 const transitionFailures: string[] = [];
 function harness(
 	coordinatorContext: CodexRealtimeAdapterOptions["coordinatorContext"] = {
-		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+		read: startBrief,
 		subscribe: () => () => {},
 	},
 	presentationChanges?: {
@@ -151,7 +151,6 @@ function harness(
 		identity,
 		coordinatorContext,
 		voice: createArchboardVoicePolicy(presentationChanges?.subscribe),
-		freshSemanticBrief: () => startBrief(),
 		currentBinding: () => bindingState.binding,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
@@ -173,8 +172,12 @@ function harness(
 	};
 }
 
+/**
+ * What the coordinator is told about the host page by default, which a voice session starts with.
+ * @returns The catalogue text.
+ */
 function startBrief(): string {
-	return '{"source":"fresh_brief","board":"Architecture"}';
+	return '{"type":"archboard_board_catalogue","boards":[],"omitted":0}';
 }
 
 function notificationEvent(

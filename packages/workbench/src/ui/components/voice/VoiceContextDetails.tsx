@@ -81,7 +81,9 @@ function VoiceContextBody(props: { readonly voiceContext: VoiceContext }): JSX.E
 				<ol aria-label="Later context" className="flex flex-col gap-0.5">
 					{voiceContext.entries.map((entry) => (
 						<li key={entry.id} className="flex items-baseline gap-2">
-							<span className="text-body w-16 shrink-0 font-medium">{entry.kind}</span>
+							<span className="text-body w-16 shrink-0 font-medium">
+								{entry.topic ?? entry.kind}
+							</span>
 							<span className="text-technical text-muted-foreground min-w-0 truncate font-mono">
 								{entryWords(entry)}
 							</span>

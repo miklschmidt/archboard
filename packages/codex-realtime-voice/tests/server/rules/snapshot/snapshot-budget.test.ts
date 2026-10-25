@@ -290,6 +290,7 @@ test("fits voice delivery history in fixed producer records without altering ret
 			entries: bodies.map((body, sourceOrder) => ({
 				id: `budget-entry-${sourceOrder}`,
 				kind: "callback",
+				topic: null,
 				sourceOrder,
 				capturedAtMs: 100,
 				freshUntilMs: 200,

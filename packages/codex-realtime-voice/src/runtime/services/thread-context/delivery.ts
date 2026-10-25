@@ -3,7 +3,8 @@ import {
 	createWorkbenchThreadInjectItemsParams,
 	type ThreadInjectItemsParams,
 } from "#runtime/rules/host/bodies.ts";
-import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
+import { captureExecutionContext } from "#runtime/rules/host/context.ts";
+import type { WorkbenchExecutionContext } from "#runtime/protocol/host/context.ts";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
@@ -15,18 +16,14 @@ import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextDeliveryState,
 	CodexThreadContextEventId,
+	WorkhorseContextEvent,
 } from "#runtime/services/thread-context/contract.ts";
-import { contextMatchesEvent } from "#runtime/services/thread-context/context-match.ts";
 import {
 	afterAttemptReason,
 	finalReason,
 } from "#runtime/services/thread-context/delivery-guards.ts";
 import type { DeliveryState } from "#runtime/services/thread-context/delivery-state.ts";
-import {
-	canonicalContextCursorToken,
-	eventId,
-	eventKey,
-} from "#runtime/services/thread-context/event-identity.ts";
+import { eventId, eventKey } from "#runtime/services/thread-context/event-identity.ts";
 import {
 	classificationErrorReason,
 	eventReason,
@@ -76,8 +73,8 @@ function stepFailure<Value>(reason: Reason): Step<Value> {
 }
 
 /**
- * The immutable outcome record for one event identity.
- * @param event - The settled semantic change.
+ * The immutable outcome record for one change identity.
+ * @param event - The announced change.
  * @param options - The delivery options naming pane and target.
  * @param state - Whether the event was delivered, refused, or its response was lost.
  * @param reason - The stable reason for anything but a delivery.
@@ -86,7 +83,7 @@ function stepFailure<Value>(reason: Reason): Step<Value> {
  * @returns The frozen outcome.
  */
 function outcome(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 	state: CodexThreadContextDeliveryState,
 	reason: Reason | null,
@@ -104,20 +101,24 @@ function outcome(
 		attempted,
 		outcome: state,
 		reason,
+		freshness: Object.freeze({
+			capturedAtMs: event.capturedAtMs,
+			freshUntilMs: event.freshUntilMs,
+		}),
 		payload,
 	});
 }
 
 /**
  * An outcome for an event refused before any injection attempt.
- * @param event - The settled semantic change.
+ * @param event - The announced change.
  * @param options - The delivery options.
  * @param reason - Why it was refused.
  * @param payload - The canonical body, when it had already been built.
  * @returns The frozen `not_delivered` outcome.
  */
 function refused(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 	reason: Reason,
 	payload: ThreadInjectItemsParams | null = null,
@@ -167,21 +168,25 @@ function targetAuthorityReason(options: Options): Reason | null {
 }
 
 /**
- * Everything checked before the pane binding is read: the event, the target
- * and the live child capability.
- * @param event - The settled semantic change.
+ * Everything checked before the pane binding is read: the change, its
+ * freshness, the target and the live child capability.
+ * @param event - The announced change.
  * @param options - The delivery options.
- * @param lastSequence - The highest sequence reserved before this event.
+ * @param lastSequence - The highest sequence of its feed reserved before this change.
  * @returns The refusal reason, or null when delivery may continue.
  */
 function preflightReason(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 	lastSequence: number,
 ): Reason | null {
 	const eventFailure = eventReason(event, options, lastSequence);
 	if (eventFailure !== null) {
 		return eventFailure;
+	}
+	const now = options.now();
+	if (!Number.isFinite(now) || now >= event.freshUntilMs) {
+		return "stale_event";
 	}
 	const targetFailure = targetAuthorityReason(options);
 	if (targetFailure !== null) {
@@ -210,24 +215,43 @@ function readInitialBinding(options: Options): Step<ThreadLinkBindingSnapshot> {
 }
 
 /**
- * Builds the canonical injection body from the adapter's context, refusing a
- * context that is not exactly the event.
- * @param event - The settled semantic change.
- * @param options - The delivery options carrying the context adapter.
+ * The execution context one change is delivered under: the host's data, then the identities the
+ * agent read when the change was announced, which the host's data never replaces.
+ * @param event - The announced change, already proven to name the target.
+ * @param options - The delivery options naming the target.
+ * @returns The validated, frozen context.
+ */
+function announcedContext(
+	event: WorkhorseContextEvent,
+	options: Options,
+): WorkbenchExecutionContext {
+	return captureExecutionContext({
+		...event.payload,
+		threadLink: event.threadLink,
+		child: { id: options.target.childId, epoch: options.target.epoch },
+		workhorse: { threadId: options.target.threadId, turnId: null },
+		coordinator: event.coordinator,
+		brief: {
+			text: event.text ?? "",
+			capturedAtMs: event.capturedAtMs,
+			freshUntilMs: event.freshUntilMs,
+		},
+		operation: { id: null, kind: null, rpc: null, outcome: null },
+	});
+}
+
+/**
+ * Builds the canonical injection body, refusing a context the codec cannot encode.
+ * @param event - The announced change.
+ * @param options - The delivery options carrying the codec.
  * @returns The body, or `invalid_context`.
  */
 function buildPayload(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 ): Step<ThreadInjectItemsParams> {
 	try {
-		const context = options.contextForEvent(event);
-		if (
-			!contextMatchesEvent(event, context, options.target) ||
-			(options.matchesHostContext !== undefined && !options.matchesHostContext(event, context))
-		) {
-			return stepFailure("invalid_context");
-		}
+		const context = announcedContext(event, options);
 		return stepValue(
 			createWorkbenchThreadInjectItemsParams(
 				{ threadId: options.target.threadId, context },
@@ -334,17 +358,17 @@ function settleAfterAttempt(state: DeliveryState, options: Options): Outcome {
 /**
  * Runs the asynchronous half of a delivery: classification, the synchronous
  * final guard and the single injection attempt.
- * @param event - The settled semantic change.
+ * @param event - The announced change.
  * @param options - The delivery options.
  * @param prepared - The binding and payload captured synchronously.
  * @param highestReservedSequence - Reads the highest sequence reserved so far.
  * @returns The final outcome.
  */
 async function deliverPrepared(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 	prepared: PreparedDelivery,
-	highestReservedSequence: () => number,
+	highestReservedSequence: (feedId: string) => number,
 ): Promise<Outcome> {
 	const { payload } = prepared;
 	// This is deliberately the last asynchronous authority read. The synchronous
@@ -377,17 +401,17 @@ async function deliverPrepared(
 /**
  * Delivers one event once: every refusal before the attempt is
  * `not_delivered` with its reason, and nothing here ever retries.
- * @param event - The settled semantic change.
+ * @param event - The announced change.
  * @param options - The delivery options.
  * @param lastSequence - The highest sequence reserved before this event.
  * @param highestReservedSequence - Reads the highest sequence reserved so far.
  * @returns The final outcome.
  */
 async function deliverOne(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: Options,
 	lastSequence: number,
-	highestReservedSequence: () => number,
+	highestReservedSequence: (feedId: string) => number,
 ): Promise<Outcome> {
 	const preflight = preflightReason(event, options, lastSequence);
 	if (preflight !== null) {
@@ -410,80 +434,77 @@ async function deliverOne(
 }
 
 /**
- * The once-only delivery port: an event ledger keyed by event identity, a
- * reserved-sequence watermark, and optionally the publisher subscription.
+ * The once-only delivery port: a ledger keyed by change identity, and a
+ * reserved-sequence watermark for each feed.
  * @param options - The delivery options.
- * @param subscribe - Whether this port subscribes to the publisher itself.
  * @returns The delivery port.
  */
-function createDelivery(options: Options, subscribe: boolean): CodexThreadContextDelivery {
+function createCodexThreadContextDelivery(options: Options): CodexThreadContextDelivery {
 	const pending = new Map<string, Promise<Outcome>>();
 	const settled = new Map<string, Outcome>();
 	const firstSeenKeys: string[] = [];
-	let highestReservedSequence = -1;
+	const highestReserved = new Map<string, number>();
 	let disposed = false;
 
 	/**
-	 * Advances the feed watermark for a newly seen event.
-	 * @param event - The settled semantic change.
-	 * @returns The watermark before this event was reserved.
+	 * The highest sequence of one feed reserved so far.
+	 * @param feedId - The feed.
+	 * @returns The sequence, or -1 before any change of that feed.
 	 */
-	const reserveSequence = (event: WorkbenchContextEvent): number => {
-		const previousSequence = highestReservedSequence;
-		const sequence = event.cursor?.sequence ?? -1;
-		if (event.feedId === options.feedId && sequence > highestReservedSequence) {
-			highestReservedSequence = sequence;
+	const highestReservedSequence = (feedId: string): number => highestReserved.get(feedId) ?? -1;
+
+	/**
+	 * Advances the feed watermark for a newly seen change.
+	 * @param event - The announced change.
+	 * @returns The watermark of its feed before this change was reserved.
+	 */
+	const reserveSequence = (event: WorkhorseContextEvent): number => {
+		const previousSequence = highestReservedSequence(event.feedId);
+		if (event.sequence > previousSequence) {
+			highestReserved.set(event.feedId, event.sequence);
 		}
 		return previousSequence;
 	};
 
 	/**
-	 * Starts the delivery of a first-seen event; an unexpected throw settles it
+	 * Starts the delivery of a first-seen change; an unexpected throw settles it
 	 * as a revalidation failure rather than an unsettled promise.
-	 * @param event - The settled semantic change.
-	 * @param previousSequence - The watermark before this event was reserved.
+	 * @param event - The announced change.
+	 * @param previousSequence - The watermark of its feed before this change was reserved.
 	 * @returns The outcome promise.
 	 */
-	const start = (event: WorkbenchContextEvent, previousSequence: number): Promise<Outcome> =>
+	const start = (event: WorkhorseContextEvent, previousSequence: number): Promise<Outcome> =>
 		(disposed
 			? Promise.resolve(refused(event, options, "disposed"))
-			: deliverOne(event, options, previousSequence, () => highestReservedSequence)
+			: deliverOne(event, options, previousSequence, highestReservedSequence)
 		).catch(() => refused(event, options, "thread_revalidation_failed"));
 
-	/**
-	 * Delivers an event once: a pending or settled identity returns its
-	 * existing outcome instead of a second attempt.
-	 * @param event - The settled semantic change.
-	 * @returns The outcome promise shared by every caller for this identity.
-	 */
-	const deliver = (event: WorkbenchContextEvent): Promise<Outcome> => {
-		const key = eventKey(eventId(event));
-		const existing = pending.get(key);
-		if (existing !== undefined) {
-			return existing;
-		}
-		const settledOutcome = settled.get(key);
-		if (settledOutcome !== undefined) {
-			return Promise.resolve(settledOutcome);
-		}
-		firstSeenKeys.push(key);
-		const promise = start(event, reserveSequence(event)).then((result) => {
-			pending.delete(key);
-			settled.set(key, result);
-			return result;
-		});
-		pending.set(key, promise);
-		return promise;
-	};
-
-	const unsubscribe = subscribe
-		? options.publisher.subscribeSettledChange((event) => {
-				void deliver(event);
-			})
-		: () => undefined;
-
 	return Object.freeze({
-		deliver,
+		/**
+		 * Delivers a change once: a pending or settled identity returns its
+		 * existing outcome instead of a second attempt.
+		 * @param event - The announced change.
+		 * @returns The outcome promise shared by every caller for this identity.
+		 */
+		deliver: (event: WorkhorseContextEvent): Promise<Outcome> => {
+			const key = eventKey(eventId(event));
+			const existing = pending.get(key);
+			if (existing !== undefined) {
+				return existing;
+			}
+			const settledOutcome = settled.get(key);
+			if (settledOutcome !== undefined) {
+				return Promise.resolve(settledOutcome);
+			}
+			firstSeenKeys.push(key);
+			const promise = start(event, reserveSequence(event)).then((result) => {
+				pending.delete(key);
+				settled.set(key, result);
+				return result;
+			});
+			pending.set(key, promise);
+			return promise;
+		},
 		/**
 		 * Settled outcomes in first-seen order.
 		 * @returns The frozen list of outcomes.
@@ -496,47 +517,18 @@ function createDelivery(options: Options, subscribe: boolean): CodexThreadContex
 				}),
 			),
 		/**
-		 * Looks up the settled outcome for one event identity.
-		 * @param event - The event identity.
+		 * Looks up the settled outcome for one change identity.
+		 * @param event - The change identity.
 		 * @returns The outcome, or undefined while pending or never seen.
 		 */
 		get: (event: CodexThreadContextEventId) => settled.get(eventKey(event)),
 		/**
-		 * Stops the subscription; later events settle as `disposed`.
+		 * Stops accepting changes; later ones settle as `disposed`.
 		 */
 		dispose: () => {
-			if (disposed) {
-				return;
-			}
 			disposed = true;
-			unsubscribe();
 		},
 	});
 }
 
-/**
- * The public delivery port, subscribed to the publisher for its lifetime.
- * @param options - The delivery options.
- * @returns The delivery port.
- */
-function createCodexThreadContextDelivery(options: Options): CodexThreadContextDelivery {
-	return createDelivery(options, true);
-}
-
-/**
- * Module-internal leaf for the process-lifetime binding controller's sole
- * subscription: the controller feeds events in, so this port must not subscribe.
- * @param options - The delivery options.
- * @returns The delivery port.
- */
-function createUnsubscribedCodexThreadContextDelivery(
-	options: Options,
-): CodexThreadContextDelivery {
-	return createDelivery(options, false);
-}
-
-export {
-	canonicalContextCursorToken,
-	createCodexThreadContextDelivery,
-	createUnsubscribedCodexThreadContextDelivery,
-};
+export { createCodexThreadContextDelivery };

@@ -1,7 +1,5 @@
 import { expect, test } from "bun:test";
 
-import { TEST_CALLBACK_POLICY } from "#tests/runtime/support/host.ts";
-import { createSessionComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";
 import { createSessionBindings } from "#server/services/sessions/bindings.ts";
 import { DEFAULT_VOICE_AGENT_IDENTITY } from "#runtime/protocol/host/identity.ts";
 
@@ -25,10 +23,6 @@ function bindingsOfTab() {
 		server: {
 			host: {
 				instructions: { coordinator: { identity: DEFAULT_VOICE_AGENT_IDENTITY } },
-				sessionContextFor: () => ({
-					publisher: createSessionComponentsFixture([]).semanticPublisher,
-					callbacks: TEST_CALLBACK_POLICY,
-				}),
 			},
 		},
 		shared: {},

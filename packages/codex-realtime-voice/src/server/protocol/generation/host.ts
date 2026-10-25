@@ -7,12 +7,9 @@ import type {
 } from "#runtime/protocol/host/context.ts";
 import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
 import type {
-	WorkbenchContextPublisher,
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
-	WorkbenchContextEvent,
 } from "#runtime/protocol/host/context-source.ts";
-import type { CoordinatorCallbackHostPolicy } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomainTools,
@@ -22,24 +19,11 @@ import type { WorkbenchVoicePresentationAdapter } from "#server/services/voice/p
 import type { CodexWorkbenchGateway } from "#server/protocol/gateway/contract.ts";
 import type { CodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
 
-/** Domain context is data. It never replaces the core execution and approval gates. */
-export interface CodexWorkbenchSessionContext {
-	readonly publisher: WorkbenchContextPublisher;
-	readonly callbacks: CoordinatorCallbackHostPolicy;
-}
-export interface CodexWorkbenchWorkhorseContext {
-	readonly publisher: WorkbenchContextPublisher;
-	readonly feedId: string;
-	readonly contextForEvent: (event: WorkbenchContextEvent) => WorkbenchExecutionContext;
-	readonly matchesHostContext?: (
-		event: WorkbenchContextEvent,
-		context: WorkbenchExecutionContext,
-	) => boolean;
-}
 /**
  * The policy the core runs a generation under. The agent builds a default for every member; a
- * host's extension replaces that member whole. The default context members share the generation
- * that the default `onGeneration` installs, so a host that replaces `onGeneration` replaces them too.
+ * host's extension replaces that member whole. The default `contextForOperation` reads the
+ * generation that the default `onGeneration` installs, so a host that replaces `onGeneration`
+ * replaces it too.
  */
 export interface CodexWorkbenchHostPolicy {
 	readonly instructions: WorkbenchInstructions;
@@ -58,16 +42,6 @@ export interface CodexWorkbenchHostPolicy {
 		authority: WorkbenchOperationAuthority,
 		operation: PendingOperation,
 	) => WorkbenchExecutionContext;
-	/**
-	 * Where a tab session's host context is published, and how its events become coordinator
-	 * callbacks. Default: the host text, delivered as quiet context that starts no speech.
-	 */
-	readonly sessionContextFor: (id: TabSessionId) => CodexWorkbenchSessionContext;
-	/** Where one workhorse's host context is published, and the context each event carries. */
-	readonly workhorseContextFor: (
-		id: TabSessionId,
-		checkout: string,
-	) => CodexWorkbenchWorkhorseContext;
 	readonly shownCheckoutOf: (browserId: string) => string;
 	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	readonly onShownChange: (listener: () => void) => () => void;

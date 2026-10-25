@@ -31,7 +31,7 @@ interface CodexRealtimeGeneration extends CodexRealtimeBinding {
 	readonly browserSessionId: BrowserRealtimeSessionId;
 	readonly browserCorrelationId: RealtimeCorrelationId;
 	readonly wireSessionId: RealtimeSessionId;
-	/** The host context captured once for this realtime start, byte for byte. */
+	/** What the coordinator context read at this realtime start, byte for byte. */
 	readonly startBrief: string;
 }
 
@@ -46,7 +46,7 @@ interface CodexRealtimeAdapterOptions {
 		| "threadInjectItems"
 	>;
 	readonly identity: IdentityAuthority;
-	readonly freshSemanticBrief: (wireSessionId: RealtimeSessionId) => string;
+	/** What the coordinator is told about the host page; read once at a start as its brief. */
 	readonly coordinatorContext: WorkbenchContextSource;
 	readonly voice: WorkbenchVoicePolicy;
 	readonly currentBinding: () => CodexRealtimeBinding | null;

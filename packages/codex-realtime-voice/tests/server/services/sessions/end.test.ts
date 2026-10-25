@@ -30,7 +30,6 @@ function recordingOwners(events: string[]): CodexWorkbenchSessionComponents {
 			dispose: note("callbacks:dispose"),
 			onServerRequest: note("callbacks:request"),
 		},
-		semanticPublisher: { dispose: note("publisher:dispose") },
 		coordinatorTools: {
 			dispose: note("coordinatorTools:dispose"),
 			onServerRequest: note("coordinatorTools:request"),
@@ -45,7 +44,6 @@ function recordingWorkhorse(events: string[]): CodexWorkbenchWorkhorseComponents
 		workhorse: { snapshot: () => ({ threadId: null }) },
 		operations: { onNotification: () => undefined, subscribe: () => () => undefined },
 		contextDelivery: { dispose: note("delivery:dispose") },
-		semanticPublisher: { dispose: note("workhorse-publisher:dispose") },
 		queue: { shutdown: async () => void events.push("queue:shutdown") },
 	} as unknown as CodexWorkbenchWorkhorseComponents;
 }
@@ -161,8 +159,6 @@ test("a tab session's end settles its approvals, stops its news and link, and un
 		"spokenApproval:dispose",
 		"delivery:dispose",
 		"callbacks:dispose",
-		"publisher:dispose",
-		"workhorse-publisher:dispose",
 		"queue:shutdown",
 	]);
 	// An approval its threads raise now is shown to nobody, so it is cancelled on receipt.

@@ -459,7 +459,7 @@ A host without a domain of its own passes no `extensions`. These fields add your
 | `repositoryOfCheckout`                 | The repository name that the page shows for a checkout.                                                                                                                                                                                                                              |
 | `presentation`, `recording`            | How a voice presentation reaches the page, and whether a presentation is a recording.                                                                                                                                                                                                |
 
-The remaining fields (`coordinatorContextFor`, `voiceFor`, `sessionContextFor`, `workhorseContextFor`, `contextForOperation`, `onGeneration`, `onBrowserGateway`, `browserCheckoutOf`, `installBrowserSessions` and `browserLeaseLedger`) replace the package's own owners. They are for a host that routes its sockets itself.
+The remaining fields (`coordinatorContextFor`, `voiceFor`, `contextForOperation`, `onGeneration`, `onBrowserGateway`, `browserCheckoutOf`, `installBrowserSessions` and `browserLeaseLedger`) replace the package's own owners. They are for a host that routes its sockets itself.
 
 The extension types are not exported by name. Derive them from `VoiceAgentExtensions`. This context source tells the coordinator what the person selected:
 
@@ -488,6 +488,36 @@ export function select(next: string): void {
 ```
 
 Pass it as `extensions: { context }` to `createVoiceAgent`.
+
+### Announcing a change
+
+When something changes that the agents must know about, call `agent.announce(change)`. The change names its audience: `workhorse` for the workhorses of some checkouts, `coordinator`, `voice`, or any combination. Each audience gets its own `text`, or `withheld` with the reason that you tell it nothing.
+
+A workhorse gets the text as a developer message that starts no turn, also while a turn runs. Its `payload` is your own data, which the context codec encodes with the execution facts. The coordinator gets the text as a developer message. The voice gets it as quiet context, or with `speech: true` as speech that waits for the audio in progress. The coordinator and the voice get a change only while voice is live.
+
+Each audience hears one `feed` and `sequence` at most once, and a workhorse refuses a sequence that does not pass the last one of its feed. Give the thread that made the change as `author`: nobody hears their own change. While a change for the coordinator or the voice waits, a later change with the same `feed` and `topic` replaces it. The audiences are told at the same time, in no fixed order.
+
+<!-- checked: announce.ts -->
+
+```ts
+import type { VoiceAgent } from "@archboard/codex-realtime-voice/server";
+
+let sequence = 0;
+
+export async function fileSaved(agent: VoiceAgent, checkout: string, file: string): Promise<void> {
+	const receipts = await agent.announce({
+		feed: "editor",
+		sequence: sequence++,
+		workhorse: { checkouts: [checkout], text: `The person saved ${file}.` },
+		voice: { text: `${file} is saved.` },
+	});
+	for (const receipt of receipts) {
+		if (receipt.outcome !== "delivered") console.info(receipt.audience, receipt.reason);
+	}
+}
+```
+
+`announce` resolves with one receipt for each tab session and audience, and for each checkout of a workhorse. A receipt with `outcome_unknown` means that the message possibly arrived. The agent never sends it again.
 
 ### A host that owns its sockets
 

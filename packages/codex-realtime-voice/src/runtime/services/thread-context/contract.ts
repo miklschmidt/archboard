@@ -1,8 +1,8 @@
 import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {
-	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
+	WorkbenchExecutionContext,
 } from "#runtime/protocol/host/context.ts";
 import type { ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
 import type {
@@ -12,14 +12,10 @@ import type {
 	ThreadLinkTarget,
 } from "#runtime/rules/thread-link/contract.ts";
 import type {
-	WorkbenchContextPublisher,
-	WorkbenchContextEvent,
-} from "#runtime/protocol/host/context-source.ts";
-type ContextPublisher = Pick<WorkbenchContextPublisher, "subscribeSettledChange">;
-import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthority,
+	RealtimeSessionId,
 	ThreadId,
 } from "@archboard/codex-app-server/identity";
 
@@ -41,11 +37,36 @@ type CodexThreadContextEventId = Readonly<{
 	readonly sequence: number;
 }>;
 
-/** Stable reasons retained when a semantic event is refused or its response is lost. */
+/**
+ * One announced change as one workhorse is told it: the host's words and data, and the
+ * identities the agent read when the change was announced. The host supplies no identity.
+ */
+interface WorkhorseContextEvent {
+	readonly feedId: string;
+	readonly sequence: number;
+	/** The thread that made the change, or null when nobody said. */
+	readonly author: string | null;
+	readonly capturedAtMs: number;
+	readonly freshUntilMs: number;
+	/** The words, or null when the host withheld them. */
+	readonly text: string | null;
+	/** Why the host withheld the words, or null. */
+	readonly withheld: string | null;
+	/** The host's own data, which the context codec encodes beside the execution facts. */
+	readonly payload: Readonly<Record<string, unknown>>;
+	readonly threadLink: WorkbenchExecutionContext["threadLink"];
+	readonly child: { readonly id: ChildId | null; readonly epoch: ChildEpoch | null };
+	readonly workhorse: { readonly threadId: ThreadId | null };
+	readonly coordinator: {
+		readonly threadId: ThreadId | null;
+		readonly realtimeSessionId: RealtimeSessionId | null;
+	};
+}
+
+/** Stable reasons retained when a context change is refused or its response is lost. */
 type CodexThreadContextDeliveryReason =
 	| ThreadLinkReasonCode
 	| "child_exit"
-	| "cosmetic"
 	| "disposed"
 	| "invalid_context"
 	| "invalid_event"
@@ -56,7 +77,9 @@ type CodexThreadContextDeliveryReason =
 	| "stale_cursor"
 	| "stale_event"
 	| "thread_revalidation_failed"
-	| "unbound";
+	| "unbound"
+	/** The host told this workhorse nothing of the change. */
+	| "withheld";
 
 type CodexThreadContextDeliveryState = "delivered" | "not_delivered" | "outcome_unknown";
 
@@ -66,11 +89,13 @@ interface CodexThreadContextDeliveryOutcomeBase {
 	readonly attempted: boolean;
 	readonly outcome: CodexThreadContextDeliveryState;
 	readonly reason: CodexThreadContextDeliveryReason | null;
+	/** The window in which the change was fresh. */
+	readonly freshness: { readonly capturedAtMs: number; readonly freshUntilMs: number };
 	/** The exact canonical body, when the body was built before refusal or attempt. */
 	readonly payload: ThreadInjectItemsParams | null;
 }
 
-/** The immutable record for one semantic event identity. */
+/** The immutable record for one change identity. */
 type CodexThreadContextDeliveryOutcome =
 	| (CodexThreadContextDeliveryOutcomeBase & {
 			readonly paneId: string;
@@ -113,29 +138,20 @@ interface CodexThreadContextDeliveryOptions {
 	 * and New conversation makes a new workhorse thread under the same port.
 	 */
 	readonly sessionAuthors?: () => readonly string[];
-	/** The feed identity is fixed for this delivery port; old feeds are stale. */
-	readonly feedId: string;
 	/** The clock used by the final synchronous freshness gate before injection. */
 	readonly now: () => number;
-	readonly publisher: ContextPublisher;
 	readonly session: Pick<CodexSession, "threadInjectItems">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "read" | "classify">;
 	readonly target: CodexThreadContextTarget;
 	readonly identity: IdentityAuthority;
 	readonly epoch: Pick<CodexEpochStore, "assertCurrent">;
 	readonly currentExecution: () => CodexThreadContextExecution | null;
-	/** Supplies the full canonical context; this adapter must not mint identity or proof. */
-	readonly contextForEvent: (event: WorkbenchContextEvent) => WorkbenchExecutionContext;
 	readonly contextCodec: WorkbenchContextCodec;
-	readonly matchesHostContext?: (
-		event: WorkbenchContextEvent,
-		context: WorkbenchExecutionContext,
-	) => boolean;
 }
 
 interface CodexThreadContextDelivery {
-	/** Deliver an event directly, using the same once-only port as the subscription. */
-	readonly deliver: (event: WorkbenchContextEvent) => Promise<CodexThreadContextDeliveryOutcome>;
+	/** Deliver a change once: the same change again answers with its first outcome. */
+	readonly deliver: (event: WorkhorseContextEvent) => Promise<CodexThreadContextDeliveryOutcome>;
 	/** Settled outcomes in first-seen order. */
 	readonly inspect: () => readonly CodexThreadContextDeliveryOutcome[];
 	readonly get: (event: CodexThreadContextEventId) => CodexThreadContextDeliveryOutcome | undefined;
@@ -187,26 +203,17 @@ class CodexThreadContextControllerError extends Error {
 	}
 }
 
-interface CodexThreadContextControllerHooks {
-	readonly contextForEvent: (
-		event: WorkbenchContextEvent,
-		binding: CodexThreadContextBinding,
-	) => WorkbenchExecutionContext;
-}
-
 interface CodexThreadContextControllerOptions extends Omit<
 	CodexThreadContextDeliveryOptions,
-	"paneId" | "target" | "contextForEvent" | "publisher"
+	"paneId" | "target" | "sessionAuthors"
 > {
-	readonly publisher: ContextPublisher;
-	readonly hooks: CodexThreadContextControllerHooks;
 	/**
 	 * The thread paired with the workhorse this controller serves, when the server
 	 * has one: the coordinator of the same session.
 	 *
 	 * Asked for rather than remembered, because a coordinator comes and goes
 	 * within one workhorse's life. Its only use is that the pair does not hear
-	 * each other's board writes — they are one session to the person talking to
+	 * each other's changes — they are one session to the person talking to
 	 * them. A server with no coordinator returns null and nothing changes.
 	 */
 	readonly pairedThreadId?: () => string | null;
@@ -220,7 +227,6 @@ interface CodexThreadContextController extends CodexThreadContextDelivery {
 	readonly compareAndSwap: (
 		transition: CodexThreadContextBindingTransition,
 	) => CodexThreadContextBindingSnapshot;
-	readonly replaceHooks: (hooks: CodexThreadContextControllerHooks) => void;
 	/** Null execution first, then clear the matching epoch and dispose the owner. */
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
 }
@@ -229,6 +235,7 @@ export {
 	type CodexThreadContextExecution,
 	type CodexThreadContextTarget,
 	type CodexThreadContextEventId,
+	type WorkhorseContextEvent,
 	type CodexThreadContextDeliveryReason,
 	type CodexThreadContextDeliveryState,
 	type CodexThreadContextDeliveryOutcome,
@@ -240,7 +247,6 @@ export {
 	type CodexThreadContextBindingTransition,
 	type CodexThreadContextControllerErrorCode,
 	CodexThreadContextControllerError,
-	type CodexThreadContextControllerHooks,
 	type CodexThreadContextControllerOptions,
 	type CodexThreadContextController,
 };

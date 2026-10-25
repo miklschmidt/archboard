@@ -1,9 +1,9 @@
 import { realpathSync, statSync } from "node:fs";
-import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import { captureExecutionContext } from "#runtime/rules/host/context.ts";
+import { canonicalJson } from "#runtime/rules/host/canonical-json.ts";
 import { sameBinding } from "#runtime/services/thread-context/link-equality.ts";
 import { workhorseLink } from "#server/services/generation/binding-readers.ts";
 import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
@@ -12,18 +12,11 @@ import type {
 	WorkbenchExecutionContext,
 } from "#runtime/protocol/host/context.ts";
 import type {
-	WorkbenchContextEvent,
-	WorkbenchContextPublisher,
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
 } from "#runtime/protocol/host/context-source.ts";
 import type {
-	CoordinatorCallbackHostPolicy,
-	CoordinatorHostContextSource,
-} from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type {
 	CodexWorkbenchHostPolicy,
-	CodexWorkbenchWorkhorseContext,
 	WorkbenchOperationAuthority,
 	PendingOperation,
 } from "#server/protocol/generation/host.ts";
@@ -55,12 +48,14 @@ interface Capture {
 	readonly link: NonNullable<ReturnType<typeof workhorseLink>>;
 	readonly execution: Pick<
 		WorkbenchExecutionContext,
-		"paneId" | "child" | "threadLink" | "workhorse" | "coordinator"
-	> &
-		Pick<WorkbenchContextEvent, "child" | "workhorse" | "coordinator">;
+		"child" | "threadLink" | "workhorse" | "coordinator"
+	>;
 }
-interface ContextOwner extends CodexWorkbenchWorkhorseContext {
-	readonly callbacks: CoordinatorCallbackHostPolicy;
+/** The host text and the window in which it is fresh. */
+interface FreshBrief {
+	readonly text: string;
+	readonly capturedAtMs: number;
+	readonly freshUntilMs: number;
 }
 /**
  * Resolve a real checkout directory without requiring a vault.
@@ -75,19 +70,6 @@ function realDirectory(named: string): string | null {
 	} catch {
 		return null;
 	}
-}
-/**
- * Serialize context in a deterministic object-key order.
- * @param value The context value.
- * @returns Its canonical JSON.
- */
-function canonicalJson(value: unknown): string {
-	if (value === null || typeof value !== "object") return JSON.stringify(value);
-	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-	return `{${Object.entries(value)
-		.toSorted(([a], [b]) => a.localeCompare(b))
-		.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
-		.join(",")}}`;
 }
 const CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 	key: "workbench_context",
@@ -110,10 +92,10 @@ const VOICE_POLICY: WorkbenchVoicePolicy = Object.freeze({
  * Capture a live workhorse and the exact binding that authorizes its context.
  * @param scope The installed generation.
  * @param id The tab session.
- * @param checkout The checkout, or null for the voice workhorse.
+ * @param checkout The checkout.
  * @returns The capture, or null while the target is not ready.
  */
-function capture(scope: Scope, id: TabSessionId, checkout: string | null): Capture | null {
+function capture(scope: Scope, id: TabSessionId, checkout: string): Capture | null {
 	scope.assertCurrent();
 	const target = sessionTarget(scope, id, checkout);
 	if (target === null) return null;
@@ -134,17 +116,17 @@ function capture(scope: Scope, id: TabSessionId, checkout: string | null): Captu
  * Find an existing live session and workhorse without creating either.
  * @param scope The installed generation.
  * @param id The tab session.
- * @param checkout The checkout, or null for voice.
+ * @param checkout The checkout.
  * @returns The target, or null before it exists.
  */
 function sessionTarget(
 	scope: Scope,
 	id: TabSessionId,
-	checkout: string | null,
+	checkout: string,
 ): Pick<Capture, "session" | "workhorse"> | null {
 	const session = scope.sessions.list().find((item) => item.id === id);
 	if (session?.state.phase !== "live") return null;
-	const workhorse = checkout === null ? session.voiceWorkhorse() : session.workhorses.get(checkout);
+	const workhorse = session.workhorses.get(checkout);
 	return workhorse == null ? null : { session, workhorse };
 }
 /**
@@ -177,7 +159,6 @@ function capturedExecution(
 	const realtime = target.session.components.realtime.generation();
 	const turn = target.workhorse.state.activeTurn;
 	return cloneAndFreeze({
-		paneId: link.binding.paneId,
 		child: {
 			id: scope.identity.identity.validator.childId,
 			epoch: scope.identity.identity.validator.epoch,
@@ -213,26 +194,18 @@ function sameCapture(before: Capture, after: Capture | null): boolean {
  * Build immutable execution facts around the real host text.
  * @param target The captured workhorse authority.
  * @param brief The host text and freshness window.
- * @param operation The pending operation, or null for context delivery.
+ * @param operation The pending operation.
  * @returns The independently validated execution context.
  */
 function executionContext(
 	target: Capture,
-	brief: ReturnType<WorkbenchContextPublisher["freshBrief"]>,
-	operation: PendingOperation | null,
+	brief: FreshBrief,
+	operation: PendingOperation,
 ): WorkbenchExecutionContext {
 	return captureExecutionContext({
 		...target.execution,
-		semantic: {
-			brief: brief.brief,
-			capturedAtMs: brief.freshness.capturedAtMs,
-			freshUntilMs: brief.freshness.freshUntilMs,
-			truncated: false,
-		},
-		operation:
-			operation === null
-				? { id: null, kind: null, rpc: null, outcome: null }
-				: { ...operation, outcome: null },
+		brief,
+		operation: { ...operation, outcome: null },
 	});
 }
 /**
@@ -252,7 +225,7 @@ function assertOperationAuthority(authority: WorkbenchOperationAuthority, target
 		throw new Error("Operation authority changed. Read its conversation and retry.");
 }
 /**
- * Build a normal host policy over core-owned context and event delivery.
+ * Build a normal host policy over core-owned operation context.
  * @param input The host instructions, context and checkout admission policy.
  * @param selectors The core browser-session selectors.
  * @returns The host policy with concrete context owners.
@@ -274,7 +247,6 @@ function createDefaultWorkbenchHost(
 					}),
 				);
 	let active: Scope | null = null;
-	const owners = new Map<string, ContextOwner>();
 	/**
 	 * Report an unrecoverable host source failure.
 	 * @param error The source failure.
@@ -318,16 +290,13 @@ function createDefaultWorkbenchHost(
 	 * Capture a fresh replacement of the host context.
 	 * @returns The real host text and its freshness window.
 	 */
-	const freshBrief = (): ReturnType<WorkbenchContextPublisher["freshBrief"]> => {
-		const brief = source.read();
+	const freshBrief = (): FreshBrief => {
+		const text = source.read();
 		const capturedAtMs = Date.now();
 		return cloneAndFreeze({
-			brief,
-			freshness: {
-				state: "fresh" as const,
-				capturedAtMs,
-				freshUntilMs: capturedAtMs + CODEX_REALTIME_MS.contextFreshness,
-			},
+			text,
+			capturedAtMs,
+			freshUntilMs: capturedAtMs + CODEX_REALTIME_MS.contextFreshness,
 		});
 	};
 	/**
@@ -338,172 +307,6 @@ function createDefaultWorkbenchHost(
 		if (active === null) throw new Error("Start the workbench before reading execution context.");
 		active.assertCurrent();
 		return active;
-	};
-	/**
-	 * Read a ready target while an invalidation races with normal lifecycle changes.
-	 * @param scope The generation this owner belongs to.
-	 * @param id The tab session.
-	 * @param checkout The workhorse checkout, or null for voice.
-	 * @returns The target, or null when its authority is unavailable.
-	 */
-	const eventCapture = (
-		scope: Scope,
-		id: TabSessionId,
-		checkout: string | null,
-	): Capture | null => {
-		try {
-			return active === scope ? capture(scope, id, checkout) : null;
-		} catch {
-			return null;
-		}
-	};
-	/**
-	 * Build one event owner for a tab session or checkout workhorse.
-	 * @param id The tab session.
-	 * @param checkout The workhorse checkout, or null for voice.
-	 * @returns The retained context owner.
-	 */
-	const ownerFor = (id: TabSessionId, checkout: string | null): ContextOwner => {
-		const key = JSON.stringify([id, checkout]);
-		const retained = owners.get(key);
-		if (retained !== undefined) return retained;
-		const generation = currentScope();
-		const feedId = randomUUID();
-		let sequence = 0;
-		let disposed = false;
-		const changes = new Set<(event: WorkbenchContextEvent) => void>();
-		const callbacks = new Set<(event: CoordinatorHostContextSource) => void>();
-		/**
-		 * Publish exact-identity events only after an actual source invalidation.
-		 */
-		const invalidate = (): void => {
-			const before = disposed ? null : eventCapture(generation, id, checkout);
-			if (before === null) return;
-			let brief: ReturnType<typeof freshBrief>;
-			try {
-				brief = freshBrief();
-			} catch (error) {
-				fatal(error);
-				return;
-			}
-			if (!sameCapture(before, eventCapture(generation, id, checkout))) return;
-			const cursor = { feedId, sequence: ++sequence };
-			const event: WorkbenchContextEvent = cloneAndFreeze({
-				source: "settled_change",
-				origin: "mixed",
-				feedId,
-				cursor,
-				child: before.execution.child,
-				threadLink: before.execution.threadLink,
-				workhorse: before.execution.workhorse,
-				coordinator: before.execution.coordinator,
-				freshness: brief.freshness,
-				staleness: { state: "current" },
-				brief: brief.brief,
-				truncated: false,
-				change: { feedId, cursor, origin: "mixed", significance: "structural", by: null },
-			});
-			const callback: CoordinatorHostContextSource = cloneAndFreeze({
-				kind: "host",
-				type: "change",
-				child: event.child,
-				workhorse: event.workhorse,
-				coordinator: event.coordinator,
-				threadLink: { state: "executable", reason: null },
-				author: null,
-				context: {
-					feedId,
-					sequence,
-					brief: event.brief,
-					capturedAtMs: event.freshness.capturedAtMs,
-					freshUntilMs: event.freshness.freshUntilMs,
-					identity: "",
-					coalesces: true,
-					payload: null,
-				},
-			});
-			changes.forEach((listener) => listener(event));
-			callbacks.forEach((listener) => listener(callback));
-		};
-		const stop = source.subscribe(invalidate, fatal);
-		/** Release this owner's source and listeners exactly once. */
-		const dispose = (): void => {
-			if (disposed) return;
-			disposed = true;
-			owners.delete(key);
-			changes.clear();
-			callbacks.clear();
-			stop();
-		};
-		const publisher: WorkbenchContextPublisher = {
-			freshBrief,
-			/**
-			 * Read the real host text for a realtime start.
-			 * @returns The current host context text.
-			 */
-			freshBriefForRealtime: () => freshBrief().brief,
-			/**
-			 * Receive ordered context replacements for this exact workhorse.
-			 * @param listener The context receiver.
-			 * @returns Its subscription cleanup.
-			 */
-			subscribeSettledChange: (listener) => {
-				changes.add(listener);
-				return () => {
-					changes.delete(listener);
-				};
-			},
-			dispose,
-		};
-		const policy: CoordinatorCallbackHostPolicy = {
-			/**
-			 * Receive callback sources for this tab session's voice workhorse.
-			 * @param listener The callback receiver.
-			 * @returns Its subscription cleanup.
-			 */
-			subscribe: (listener) => {
-				callbacks.add(listener);
-				return () => {
-					callbacks.delete(listener);
-				};
-			},
-			encode: canonicalJson,
-			/**
-			 * Deliver real host text as quiet context without starting speech.
-			 * @param callback The captured host callback.
-			 * @returns Its quiet delivery policy.
-			 */
-			delivery: (callback) => ({
-				channel: "context",
-				text: callback.context.brief,
-				reason: null,
-				coordinatorContext: false,
-			}),
-		};
-		const owner: ContextOwner = {
-			publisher,
-			callbacks: policy,
-			feedId,
-			/**
-			 * Build context from the event's immutable text under current exact authority.
-			 * @param event The captured context event.
-			 * @returns The execution context.
-			 */
-			contextForEvent: (event) => {
-				const target = eventCapture(generation, id, checkout);
-				if (
-					target === null ||
-					event.feedId !== feedId ||
-					!isDeepStrictEqual(event.child, target.execution.child) ||
-					!isDeepStrictEqual(event.workhorse, target.execution.workhorse) ||
-					!isDeepStrictEqual(event.coordinator, target.execution.coordinator)
-				)
-					throw new Error("The workhorse changed. Read its current context and retry.");
-				return executionContext(target, { brief: event.brief, freshness: event.freshness }, null);
-			},
-		};
-		owners.set(key, owner);
-		return owner;
 	};
 	return {
 		...selectors,
@@ -541,49 +344,19 @@ function createDefaultWorkbenchHost(
 				throw new Error("Context authority changed. Read the conversation and retry.");
 			return context;
 		},
-		/**
-		 * Supply the session's concrete context and callback owners.
-		 * @param id The tab session.
-		 * @returns Its context owners.
-		 */
-		sessionContextFor: (id) => ownerFor(id, null),
-		/**
-		 * Supply the checkout's concrete event owner.
-		 * @param id The tab session.
-		 * @param named The admitted checkout.
-		 * @returns Its context owner.
-		 */
-		workhorseContextFor: (id, named) => {
-			const checkout = resolveCheckout(named);
-			if (checkout === null) throw new Error("The context checkout is not admitted.");
-			return ownerFor(id, checkout);
-		},
 		repositoryOfCheckout: resolveCheckout,
 		...(input.domainTools === undefined ? {} : { domainTools: input.domainTools }),
 		/**
-		 * Install one generation and retire its context subscriptions together.
+		 * Install one generation, which operation context is read from until it retires.
 		 * @param scope The live generation.
-		 * @returns The generation's context cleanup.
+		 * @returns The generation's retirement.
 		 */
 		onGeneration: (scope) => {
 			if (active !== null)
 				throw new Error("Retire the installed host generation before replacing it.");
 			active = scope;
 			return () => {
-				if (active !== scope) return;
-				active = null;
-				const retiring = [...owners.values()];
-				owners.clear();
-				const failures: unknown[] = [];
-				for (const owner of retiring) {
-					try {
-						owner.publisher.dispose();
-					} catch (error) {
-						failures.push(error);
-					}
-				}
-				if (failures.length > 0)
-					fatal(new AggregateError(failures, "Some context subscriptions did not close."));
+				if (active === scope) active = null;
 			};
 		},
 		onFatal: fatal,

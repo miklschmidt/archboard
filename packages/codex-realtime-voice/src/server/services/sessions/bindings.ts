@@ -34,8 +34,6 @@ import {
 	readyDelegatedWorkhorse,
 	workhorseOfCheckout,
 } from "#server/services/sessions/checkouts.ts";
-import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
-import type { CoordinatorCallbackHostPolicy } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
 /** What building one tab session's bindings needs from around it. */
 interface SessionBindingContext {
@@ -53,12 +51,6 @@ interface WorkhorseBindingContext {
 	readonly scope: CodexWorkbenchWorkhorseScope;
 	readonly server: CodexWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
-}
-
-/** A session's binding context with its semantic publisher's options, made once. */
-interface ScopedBindingContext extends SessionBindingContext {
-	readonly publisher: WorkbenchContextPublisher;
-	readonly callbacks: CoordinatorCallbackHostPolicy;
 }
 
 /** Which workhorse an operation belongs to: its tab session, its checkout and its link key. */
@@ -103,16 +95,10 @@ function provenWorkhorseTarget(
  * @returns Those bindings.
  */
 function voiceBindings(
-	context: ScopedBindingContext,
-): Pick<CodexWorkbenchSessionBindings, "semanticPublisher" | "realtime" | "coordinator"> {
-	const { server, scope, publisher } = context;
+	context: SessionBindingContext,
+): Pick<CodexWorkbenchSessionBindings, "realtime" | "coordinator"> {
+	const { server, scope } = context;
 	return {
-		/**
-		 * Where this session's voice context is published from: the server's change feed, read for
-		 * this session's own panes and the workhorse voice is bound to.
-		 * @returns The publisher options.
-		 */
-		semanticPublisher: () => publisher,
 		/**
 		 * What the voice session is bound to, and how it reads a fresh brief.
 		 * @param created What the session has built so far.
@@ -122,12 +108,6 @@ function voiceBindings(
 			coordinatorContext: server.host.coordinatorContextFor(scope.id),
 			voice: server.host.voiceFor(scope.id),
 			trace: scope.state.voiceTrace.note,
-			/**
-			 * The semantic brief a voice session opens with, read fresh and stated against that session.
-			 * @param wireSessionId The session it is for.
-			 * @returns The brief.
-			 */
-			freshSemanticBrief: publisher.freshBriefForRealtime,
 			/**
 			 * The child epoch and threads a voice session may be opened against: the coordinator's,
 			 * and that of the workhorse of the checkout voice starts from.
@@ -168,7 +148,7 @@ function voiceBindings(
  * @returns Those bindings.
  */
 function coordinatorBindings(
-	context: ScopedBindingContext,
+	context: SessionBindingContext,
 ): Pick<CodexWorkbenchSessionBindings, "spokenApproval" | "coordinatorTools" | "coordinatorCall"> {
 	const { shared, scope, server } = context;
 	const { state } = scope;
@@ -300,7 +280,7 @@ function coordinatorBindings(
  * @returns Those bindings.
  */
 function callbackBindings(
-	context: ScopedBindingContext,
+	context: SessionBindingContext,
 ): Pick<CodexWorkbenchSessionBindings, "callbacks"> {
 	const { server, shared, scope } = context;
 	const { identity, epoch, session } = shared;
@@ -311,7 +291,6 @@ function callbackBindings(
 		 * @returns The callbacks binding.
 		 */
 		callbacks: (created) => ({
-			host: context.callbacks,
 			operations: scope.workhorseOperations,
 			realtime: createCoordinatorCallbackRealtimePort({
 				session,
@@ -416,14 +395,10 @@ function callbackBindings(
  * @returns The bindings.
  */
 function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSessionBindings {
-	const scoped = {
-		...context,
-		...context.server.host.sessionContextFor(context.scope.id),
-	};
 	return {
-		...voiceBindings(scoped),
-		...coordinatorBindings(scoped),
-		...callbackBindings(scoped),
+		...voiceBindings(context),
+		...coordinatorBindings(context),
+		...callbackBindings(context),
 		...(context.server.host.presentation === undefined
 			? {}
 			: { presentation: context.server.host.presentation }),
@@ -431,8 +406,8 @@ function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSe
 }
 
 /**
- * Compose one workhorse's bindings: the checkout it works in, the board changes it is told, and
- * the binding its queue and operations run under.
+ * Compose one workhorse's bindings: the checkout it works in, how it is told a context change,
+ * and the binding its queue and operations run under.
  * @param context What the workhorse provides.
  * @returns The bindings.
  */
@@ -442,8 +417,6 @@ function createWorkhorseBindings(
 	const { server, shared, scope } = context;
 	const { identity, epoch } = shared;
 	const tab = scope.session;
-	const source = server.host.workhorseContextFor(tab.id, scope.checkout);
-	const publisher = source.publisher;
 	/**
 	 * The child epoch and threads this workhorse and the tab's coordinator run on together.
 	 * @param created What the workhorse has built so far.
@@ -461,28 +434,11 @@ function createWorkhorseBindings(
 			profile: server.host.instructions.workhorse,
 		}),
 		/**
-		 * Where this workhorse's board news is published from: the changes of its checkout's boards
-		 * that its tab hears.
-		 * @returns The publisher options.
-		 */
-		semanticPublisher: () => publisher,
-		/**
-		 * How semantic context is delivered into this workhorse.
-		 * @param created What the workhorse has built so far.
+		 * How a context change is delivered into this workhorse.
 		 * @returns The delivery binding.
 		 */
-		contextDelivery: (created) => ({
+		contextDelivery: () => ({
 			contextCodec: server.host.contextCodec,
-			/**
-			 * Compare the captured host payload with the event before core authority gates allow delivery.
-			 * @param event The source event with its identity and freshness.
-			 * @param capturedContext The immutable context to compare.
-			 * @returns Whether the stated condition holds.
-			 */
-			...(source.matchesHostContext === undefined
-				? {}
-				: { matchesHostContext: source.matchesHostContext }),
-			feedId: source.feedId,
 			/**
 			 * The coordinator paired with this workhorse.
 			 * @returns Its thread, or null when none is ready.
@@ -493,7 +449,6 @@ function createWorkhorseBindings(
 			 * @returns Now, in milliseconds.
 			 */
 			now: () => Date.now(),
-			publisher: requireCreated(created, "semanticPublisher"),
 			/**
 			 * The child epoch this generation runs under.
 			 * @returns The child and epoch.
@@ -502,15 +457,6 @@ function createWorkhorseBindings(
 				childId: identity.identity.validator.childId,
 				epoch: identity.identity.validator.epoch,
 			}),
-			hooks: {
-				/**
-				 * The canonical context one settled change is delivered as, filed under the pane of
-				 * the tab it presents.
-				 * @param event The settled change.
-				 * @returns The context.
-				 */
-				contextForEvent: source.contextForEvent,
-			},
 			/**
 			 * Close the epoch store, which retires the epoch itself.
 			 * @returns Whatever closing it returns.

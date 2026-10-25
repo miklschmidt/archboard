@@ -229,7 +229,7 @@ function voiceAuthorityReason(
 	}
 	if (
 		correlation.realtimeGeneration !== null &&
-		callback.kind === "host_context" &&
+		callback.kind === "context" &&
 		correlation.realtimeSessionId !== correlation.realtimeGeneration.wireSessionId
 	) {
 		return "stale_session";

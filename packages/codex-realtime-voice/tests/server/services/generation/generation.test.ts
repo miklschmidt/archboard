@@ -89,7 +89,6 @@ test("the production generation creates every owner once before readiness and sh
 		"browser:remove",
 		"gateway:dispose",
 		"realtime:dispose",
-		"publisher:dispose",
 		"queue:stop",
 		"dynamic:cancel:server_shutdown",
 		"ordinary:settle:server_shutdown",

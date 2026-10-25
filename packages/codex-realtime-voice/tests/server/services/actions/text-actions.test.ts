@@ -115,7 +115,6 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 		},
 		contextForOperation: (_context, operation) =>
 			TEST_CONTEXT_SCHEMA.parse({
-				paneId: "pane-1",
 				threadLink: { state: "executable", reason: null },
 				child: {
 					id: authorities.identity.validator.childId,
@@ -123,11 +122,10 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 				},
 				workhorse: { threadId, turnId: currentTurnId },
 				coordinator: { threadId: null, realtimeSessionId: null },
-				semantic: {
-					brief: "selected service",
+				brief: {
+					text: "selected service",
 					capturedAtMs: 10,
 					freshUntilMs: 20,
-					truncated: false,
 				},
 				operation: { ...operation, outcome: null },
 			}),

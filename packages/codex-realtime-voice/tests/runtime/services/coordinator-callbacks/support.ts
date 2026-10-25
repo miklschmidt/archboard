@@ -1,6 +1,5 @@
 import { createCodexCoordinatorCallbacks } from "#runtime/services/coordinator-callbacks/callbacks.ts";
-import { TEST_CALLBACK_POLICY } from "#tests/runtime/support/host.ts";
-import type { CoordinatorHostContextSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import type { ContextAnnouncementSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { createCoordinatorCallbackRealtimePort } from "#runtime/services/coordinator-callbacks/realtime.ts";
 import {
 	type CoordinatorCallbackCurrentChild,
@@ -335,7 +334,6 @@ function harness(active = true): Harness {
 				answerWaiter = null;
 			},
 		},
-		host: TEST_CALLBACK_POLICY,
 		operations: {
 			subscribe(listener) {
 				listeners.add(listener);
@@ -408,17 +406,26 @@ export {
 	link,
 	type CallbackSourceType,
 	operationEvent,
-	hostEvent,
+	contextEvent,
 	type HarnessState,
 	type Harness,
 	harness,
 	close,
 };
 
-function hostEvent(ids: Identities): CoordinatorHostContextSource {
+/**
+ * One announced change for the voice, under the harness's identities.
+ * @param ids The harness identities.
+ * @param context What differs from the fixture's change.
+ * @returns The source.
+ */
+function contextEvent(
+	ids: Identities,
+	context: Partial<ContextAnnouncementSource["context"]> = {},
+): ContextAnnouncementSource {
 	return {
-		kind: "host",
-		type: "selection",
+		kind: "context",
+		audience: "voice",
 		child: { id: ids.child, epoch: ids.epoch },
 		coordinator: { threadId: ids.coordinator, realtimeSessionId: ids.wireSessionId },
 		workhorse: { threadId: ids.workhorse, turnId: null },
@@ -427,12 +434,13 @@ function hostEvent(ids: Identities): CoordinatorHostContextSource {
 		context: {
 			feedId: "test-feed",
 			sequence: 1,
-			brief: "Task changed.",
 			capturedAtMs: 100,
 			freshUntilMs: 30100,
-			identity: "one",
-			coalesces: true,
-			payload: null,
+			topic: "selection",
+			text: "Task changed.",
+			withheld: null,
+			speech: false,
+			...context,
 		},
 	};
 }

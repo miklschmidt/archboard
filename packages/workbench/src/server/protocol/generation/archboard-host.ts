@@ -9,10 +9,6 @@ import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
-import type {
-	SemanticContextPublisherOptions,
-	SettledSemanticChangeEvent,
-} from "#runtime/schemas/semantic-context-types.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
 
@@ -31,8 +27,6 @@ export interface ArchboardWorkbenchServer {
 				| "coordinatorContextFor"
 				| "voiceFor"
 				| "contextForOperation"
-				| "sessionContextFor"
-				| "workhorseContextFor"
 				| "repositoryOfCheckout"
 			>
 		> & {
@@ -47,19 +41,6 @@ export interface ArchboardWorkbenchServer {
 	readonly sourceRoot: string;
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	/**
-	 * Where one tab session's voice context is published from: the one change feed, read for that
-	 * session's own panes and the workhorse its voice is bound to.
-	 */
-	readonly semanticPublisherFor: (tabSessionId: TabSessionId) => SemanticContextPublisherOptions;
-	/**
-	 * Where one workhorse's board news is published from: the changes of the boards of its
-	 * checkout that its tab session hears, as that workhorse is told them.
-	 */
-	readonly workhorsePublisherFor: (
-		tabSessionId: TabSessionId,
-		checkout: string,
-	) => SemanticContextPublisherOptions;
-	/**
 	 * The checkout whose conversation a browser pane's tab shows, the shown conversation (ADR 0050):
 	 * pinned on the first read to the checkout of the tab's focused pane, and changed after that
 	 * only by the person's own act in the browser. Every pane of the tab shows that checkout's
@@ -72,11 +53,6 @@ export interface ArchboardWorkbenchServer {
 	readonly onShownChange: (listener: () => void) => () => void;
 	/** The repository a checkout is listed under, or null when the navigator lists it nowhere. */
 	readonly repositoryOfCheckout: (checkout: string) => string | null;
-	/** The canonical context of a settled change, filed under the pane the change presents. */
-	readonly contextForEvent: (
-		event: SettledSemanticChangeEvent,
-		operation?: PendingOperation,
-	) => ArchboardContext;
 	/**
 	 * The context an operation of one workhorse runs under, refused once that workhorse's link has
 	 * moved. A browser command names the exact pane that sent it by `clientId`; work nobody's

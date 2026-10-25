@@ -5,9 +5,7 @@ import { createProductionHooks } from "#server/services/generation/hooks.ts";
 import { createGenerationOwnerStore } from "#server/services/generation/owners.ts";
 import type { CodexWorkbenchGenerationInput } from "#server/services/owner/owner-state.ts";
 import type { CodexWorkbenchHostPolicy } from "#server/protocol/generation/host.ts";
-import { createSessionComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";
 import {
-	TEST_CALLBACK_POLICY,
 	TEST_CONTEXT_CODEC,
 	TEST_INSTRUCTIONS,
 	createTestVoicePolicy,
@@ -18,7 +16,6 @@ export function createProductionBindingsFixture(
 	hostOverrides: Partial<CodexWorkbenchHostPolicy> = {},
 ) {
 	const root = "/fixture";
-	const publisher = createSessionComponentsFixture([]).semanticPublisher;
 	const host: CodexWorkbenchHostPolicy = {
 		instructions: TEST_INSTRUCTIONS,
 		contextCodec: TEST_CONTEXT_CODEC,
@@ -26,12 +23,6 @@ export function createProductionBindingsFixture(
 		voiceFor: () => createTestVoicePolicy(),
 		coordinatorContextFor: () => ({ read: () => "{}", subscribe: () => () => undefined }),
 		contextForOperation: () => testContextFixture,
-		sessionContextFor: () => ({ publisher, callbacks: TEST_CALLBACK_POLICY }),
-		workhorseContextFor: () => ({
-			publisher,
-			feedId: "test-feed",
-			contextForEvent: () => testContextFixture,
-		}),
 		shownCheckoutOf: () => "/work/project",
 		shownConversationOf: () => null,
 		onShownChange: () => () => undefined,
@@ -64,6 +55,6 @@ export function createProductionBindingsFixture(
 			}),
 		hooks: (input: CodexWorkbenchGenerationInput) =>
 			createProductionHooks({ server, storage, input, owners: generations.for(input) }),
-		close: () => publisher.dispose(),
+		close: () => undefined,
 	};
 }

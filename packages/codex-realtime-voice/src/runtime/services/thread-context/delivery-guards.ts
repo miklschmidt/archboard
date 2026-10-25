@@ -109,23 +109,23 @@ function finalAuthorityReason(options: CodexThreadContextDeliveryOptions): Reaso
 }
 
 /**
- * The last freshness gate: the event must still be inside its window and no
- * later event may have been reserved on this feed.
+ * The last freshness gate: the change must still be inside its window and no
+ * later change of its feed may have been reserved.
  * @param state - The delivery state.
- * @param options - The delivery options carrying the clock and feed.
- * @param highestReservedSequence - Reads the highest sequence reserved so far.
- * @returns `stale_event`, `stale_cursor`, or null when the event is still current.
+ * @param options - The delivery options carrying the clock.
+ * @param highestReservedSequence - Reads the highest sequence of a feed reserved so far.
+ * @returns `stale_event`, `stale_cursor`, or null when the change is still current.
  */
 function finalFreshnessReason(
 	state: DeliveryState,
 	options: CodexThreadContextDeliveryOptions,
-	highestReservedSequence: () => number,
+	highestReservedSequence: (feedId: string) => number,
 ): Reason | null {
 	const now = options.now();
-	if (!Number.isFinite(now) || now >= state.event.freshness.freshUntilMs) {
+	if (!Number.isFinite(now) || now >= state.event.freshUntilMs) {
 		return "stale_event";
 	}
-	if (state.id.feedId === options.feedId && state.id.sequence < highestReservedSequence()) {
+	if (state.id.sequence < highestReservedSequence(state.id.feedId)) {
 		return "stale_cursor";
 	}
 	return null;
@@ -155,14 +155,14 @@ function finalEventReason(
  * @param state - The delivery state.
  * @param options - The delivery options.
  * @param classification - The classification just read.
- * @param highestReservedSequence - Reads the highest sequence reserved so far.
+ * @param highestReservedSequence - Reads the highest sequence of a feed reserved so far.
  * @returns The refusal reason, or null when the injection may proceed.
  */
 function finalReason(
 	state: DeliveryState,
 	options: CodexThreadContextDeliveryOptions,
 	classification: ThreadLinkClassification,
-	highestReservedSequence: () => number,
+	highestReservedSequence: (feedId: string) => number,
 ): Reason | null {
 	const eventFailure = finalEventReason(state, options);
 	if (eventFailure !== null) {

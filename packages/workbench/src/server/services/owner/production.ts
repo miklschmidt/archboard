@@ -87,8 +87,6 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 			coordinatorContextFor: server.host.coordinatorContextFor,
 			voiceFor: server.host.voiceFor,
 			contextForOperation: server.host.contextForOperation,
-			sessionContextFor: server.host.sessionContextFor,
-			workhorseContextFor: server.host.workhorseContextFor,
 			repositoryOfCheckout: server.host.repositoryOfCheckout,
 			...(server.host.presentation ? { presentation: server.host.presentation } : {}),
 			...(server.host.recording ? { recording: server.host.recording } : {}),

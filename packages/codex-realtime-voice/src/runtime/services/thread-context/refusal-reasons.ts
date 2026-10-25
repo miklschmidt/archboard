@@ -1,7 +1,5 @@
 import { CodexEpochError } from "#runtime/store/epoch/contract.ts";
 import { ADDITIONAL_CONTEXT_POLICY } from "#runtime/rules/instructions/context-policy.ts";
-import type { WorkbenchContextEvent } from "#runtime/protocol/host/context-source.ts";
-type ContextCursor = NonNullable<WorkbenchContextEvent["cursor"]>;
 import {
 	CodexThreadLinkError,
 	type ThreadLinkReasonCode,
@@ -13,6 +11,7 @@ import type {
 	CodexThreadContextTarget,
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextExecution,
+	WorkhorseContextEvent,
 } from "#runtime/services/thread-context/contract.ts";
 import type { DeliveryTarget } from "#runtime/services/thread-context/delivery-state.ts";
 
@@ -166,11 +165,11 @@ function targetLinkReason(link: ThreadLinkSnapshot, target: DeliveryTarget): Rea
 }
 
 /**
- * The reason an event's own thread-link snapshot refuses delivery.
- * @param event - The settled semantic change.
- * @returns The refusal reason, or null when the event's link is executable.
+ * The reason the link a change was announced under refuses delivery.
+ * @param event - The announced change.
+ * @returns The refusal reason, or null when the link was executable.
  */
-function eventLinkReason(event: WorkbenchContextEvent): Reason | null {
+function eventLinkReason(event: WorkhorseContextEvent): Reason | null {
 	if (event.threadLink.state === "executable") {
 		return null;
 	}
@@ -183,139 +182,46 @@ function eventLinkReason(event: WorkbenchContextEvent): Reason | null {
 }
 
 /**
- * Applies the significance policy: a cosmetic change carries no design intent
- * and is nobody's news.
- *
- * Who wrote it is deliberately not judged here. Every origin is deliverable —
- * after ADR 0023 a person does not write a board at all, so refusing `agent`
- * would refuse everything — and whether a change is this thread's own is
- * decided by the writer identity it carries, not by the vocabulary.
- * @param event - The settled semantic change.
- * @returns The refusal reason, or null when the change qualifies.
- */
-function eventShapeReason(event: WorkbenchContextEvent): Reason | null {
-	if (event.source !== "settled_change") {
-		return "invalid_event";
-	}
-	if (event.origin !== "human" && event.origin !== "mixed" && event.origin !== "agent") {
-		return "invalid_event";
-	}
-	if (event.change.significance === "cosmetic") {
-		return "cosmetic";
-	}
-	return null;
-}
-
-/**
  * Whether this change is one this session's own work made.
  *
- * The rule a reader asked for: a session hears every board update except the
+ * The rule a reader asked for: a session hears every change except the
  * ones it makes itself. What is compared is the writing thread against the
  * threads this session IS — the workhorse and the coordinator paired with it —
- * and never a surface. A pane rode here once, and a pane is what a person has
- * open: it was read to decide who should not be told, so closing one or looking
- * at another board went quiet, and two threads on one claimed board suppressed
- * each other.
+ * and never a surface. A view of the page cannot be compared: closing one or
+ * looking at something else would go quiet, and two threads working on one
+ * thing would suppress each other.
  *
  * A thread that goes on being the same thread is the same session, so a write
  * landing after the turn that made it is still its own; a new conversation or a
- * new session is a new thread and so a new author. Neither the identity the board
- * was held under nor the board itself is compared: a claim is one value shared
- * by a whole campaign, and what a pane displays has nothing to do with what a
- * session needs to know.
+ * new session is a new thread and so a new author.
  *
- * A change nobody attributed is delivered. An external command line states no
- * session, and delivering its change is redundancy the session is told how to
- * read, where dropping it would be the silence this exists to prevent. The
- * value is stated by the writer and nothing here can check it — the same trust
- * boundary `--doing` sits on — and the harm runs one way: a session that lies
- * about its identity buys silence for itself, never noise for anybody else.
- * @param event - The settled semantic change.
- * @param sessionAuthors - The threads this session is; empty when it has none to compare.
+ * A change nobody attributed is delivered. A command line states no session,
+ * and delivering its change is redundancy the session is told how to read,
+ * where dropping it would be the silence this exists to prevent. The value is
+ * stated by the host and nothing here can check it, and the harm runs one way:
+ * a session that lies about its identity buys silence for itself, never noise
+ * for anybody else.
+ * @param event - The announced change.
+ * @param sessionAuthors - The threads this session is; absent when it has none to compare.
  * @returns The refusal reason, or null when the change is somebody else's.
  */
 function ownSessionReason(
-	event: WorkbenchContextEvent,
-	sessionAuthors: readonly string[],
+	event: WorkhorseContextEvent,
+	sessionAuthors: CodexThreadContextDeliveryOptions["sessionAuthors"],
 ): Reason | null {
-	const by = event.change.by;
-	return by !== null && sessionAuthors.includes(by) ? "own_change" : null;
+	const by = event.author;
+	return by !== null && (sessionAuthors?.() ?? []).includes(by) ? "own_change" : null;
 }
 
 /**
- * Validates the event cursor against this delivery port's feed.
- * @param cursor - The event's cursor.
- * @param eventFeedId - The feed the event says it belongs to.
- * @param expectedFeedId - The feed this delivery port is fixed to.
- * @returns `invalid_event` for a malformed sequence, `stale_cursor` for another feed, else null.
+ * Refuses a change whose feed or sequence cannot identify it.
+ * @param event - The announced change.
+ * @returns `invalid_event` for an empty feed or a sequence that is no whole number from 0.
  */
-function cursorReason(
-	cursor: ContextCursor,
-	eventFeedId: string,
-	expectedFeedId: string,
-): Reason | null {
-	if (!Number.isInteger(cursor.sequence) || cursor.sequence < 0) {
-		return "invalid_event";
-	}
-	if (eventFeedId !== expectedFeedId || cursor.feedId !== expectedFeedId) {
-		return "stale_cursor";
-	}
-	return null;
-}
-
-/**
- * Checks that the embedded change record agrees with the event envelope.
- * @param event - The settled semantic change.
- * @param cursor - The event's cursor.
- * @returns `invalid_event` on any disagreement, otherwise null.
- */
-function changeRecordReason(event: WorkbenchContextEvent, cursor: ContextCursor): Reason | null {
-	if (
-		event.change.feedId !== event.feedId ||
-		event.change.cursor.feedId !== cursor.feedId ||
-		event.change.cursor.sequence !== cursor.sequence ||
-		event.change.origin !== event.origin
-	) {
-		return "invalid_event";
-	}
-	return null;
-}
-
-/**
- * Structural validation of the event: policy shape, cursor and change record.
- * @param event - The settled semantic change.
- * @param feedId - The feed this delivery port is fixed to.
- * @returns The refusal reason, or null when the event is well formed.
- */
-function eventFormReason(event: WorkbenchContextEvent, feedId: string): Reason | null {
-	const shape = eventShapeReason(event);
-	if (shape !== null) {
-		return shape;
-	}
-	if (event.cursor === null) {
-		return "invalid_event";
-	}
-	const cursor = cursorReason(event.cursor, event.feedId, feedId);
-	if (cursor !== null) {
-		return cursor;
-	}
-	return changeRecordReason(event, event.cursor);
-}
-
-/**
- * Checks that the event is still fresh and carries an executable thread link.
- *
- * Which pane it presents is not this port's to check: the port is keyed by the
- * link it delivers for, and the event comes from that conversation's own
- * publisher, presented through whichever of its panes was open.
- * @param event - The settled semantic change.
- * @returns The refusal reason, or null when the event's context is usable.
- */
-function eventContextReason(event: WorkbenchContextEvent): Reason | null {
-	if (event.staleness.state !== "current" || event.freshness.state !== "fresh") {
-		return "stale_event";
-	}
-	return eventLinkReason(event);
+function eventFormReason(event: WorkhorseContextEvent): Reason | null {
+	return event.feedId.length === 0 || !Number.isSafeInteger(event.sequence) || event.sequence < 0
+		? "invalid_event"
+		: null;
 }
 
 /** The identity evidence an event must carry before it can be matched to a target. */
@@ -327,32 +233,29 @@ interface ProvenEvent {
 }
 
 /**
- * Extracts the child generation, workhorse thread and cursor an event proves.
- * @param event - The settled semantic change.
+ * Extracts the child generation, workhorse thread and sequence a change proves.
+ * @param event - The announced change.
  * @returns The proven identities, or null when any of them is missing.
  */
-function provenEvent(event: WorkbenchContextEvent): ProvenEvent | null {
-	if (event.child.id === null || event.child.epoch === null) {
-		return null;
-	}
-	if (event.workhorse.threadId === null || event.cursor === null) {
+function provenEvent(event: WorkhorseContextEvent): ProvenEvent | null {
+	if (event.child.id === null || event.child.epoch === null || event.workhorse.threadId === null) {
 		return null;
 	}
 	return {
 		childId: event.child.id,
 		epoch: event.child.epoch,
 		threadId: event.workhorse.threadId,
-		sequence: event.cursor.sequence,
+		sequence: event.sequence,
 	};
 }
 
 /**
  * Checks that the event's proven generation and thread are the delivery target
- * and that its sequence advances past what this port already reserved.
+ * and that its sequence passes what this port already reserved for its feed.
  * @param proven - The identities the event proves.
  * @param target - The exact delivery target.
- * @param lastSequence - The highest sequence reserved before this event.
- * @returns The refusal reason, or null when the event targets this delivery.
+ * @param lastSequence - The highest sequence of its feed reserved before this change.
+ * @returns The refusal reason, or null when the change targets this delivery.
  */
 function eventTargetReason(
 	proven: ProvenEvent,
@@ -373,34 +276,46 @@ function eventTargetReason(
 }
 
 /**
- * The complete event-side revalidation: form, context and target, in the
- * order the contract lists them, so the first failing check names the reason.
- * @param event - The settled semantic change.
- * @param options - The delivery options naming feed, pane and target.
- * @param lastSequence - The highest sequence reserved before this event.
- * @returns The refusal reason, or null when the event may proceed.
+ * The complete change-side revalidation, in the order the contract lists them,
+ * so the first failing check names the reason: its identity, whose it is,
+ * whether the host withheld it, the link it was announced under, and its target.
+ * @param event - The announced change.
+ * @param options - The delivery options naming the session and target.
+ * @param lastSequence - The highest sequence of its feed reserved before this change.
+ * @returns The refusal reason, or null when the change may proceed.
  */
 function eventReason(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	options: CodexThreadContextDeliveryOptions,
 	lastSequence: number,
 ): Reason | null {
-	const admissible =
-		eventFormReason(event, options.feedId) ??
-		ownSessionReason(event, options.sessionAuthors?.() ?? []) ??
-		eventContextReason(event);
-	return admissible ?? targetReason(event, options.target, lastSequence);
+	return (
+		eventFormReason(event) ??
+		ownSessionReason(event, options.sessionAuthors) ??
+		withheldReason(event) ??
+		eventLinkReason(event) ??
+		targetReason(event, options.target, lastSequence)
+	);
 }
 
 /**
- * What the event proves about its target, or why it proves nothing.
- * @param event - The settled semantic change.
+ * Refuses a change whose words the host withheld from this workhorse.
+ * @param event - The announced change.
+ * @returns `withheld`, or null when the host told it words.
+ */
+function withheldReason(event: WorkhorseContextEvent): Reason | null {
+	return event.withheld === null ? null : "withheld";
+}
+
+/**
+ * What the change proves about its target, or why it proves nothing.
+ * @param event - The announced change.
  * @param target - The exact delivery target.
- * @param lastSequence - The highest sequence reserved before this event.
+ * @param lastSequence - The highest sequence of its feed reserved before this change.
  * @returns The refusal reason, or null when the target is proven.
  */
 function targetReason(
-	event: WorkbenchContextEvent,
+	event: WorkhorseContextEvent,
 	target: CodexThreadContextTarget,
 	lastSequence: number,
 ): Reason | null {

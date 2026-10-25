@@ -9,58 +9,26 @@ import {
 	type DefaultWorkbenchHostInput,
 } from "#server/services/host/default.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
-import type {
-	WorkbenchContextEvent,
-	WorkbenchContextSource,
-} from "#runtime/protocol/host/context-source.ts";
-import type { CoordinatorHostContextSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import type { WorkbenchContextSource } from "#runtime/protocol/host/context-source.ts";
 import type { WorkbenchOperationAuthority } from "#server/protocol/generation/host.ts";
 import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contract.ts";
 import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 
 function contextSource() {
-	const listeners = new Set<() => void>();
-	const errors = new Set<(error: Error) => void>();
-	let text = "The actual host task.";
 	let onRead: (() => void) | null = null;
-	let failure: Error | null = null;
-	let stops = 0;
 	const source: WorkbenchContextSource = {
 		read: () => {
 			onRead?.();
-			if (failure !== null) throw failure;
-			return text;
+			return "The actual host task.";
 		},
-		subscribe: (listener, error) => {
-			listeners.add(listener);
-			errors.add(error);
-			return () => {
-				stops++;
-				listeners.delete(listener);
-				errors.delete(error);
-			};
-		},
+		subscribe: () => () => {},
 	};
 	return {
 		source,
-		listeners,
-		setText: (next: string) => {
-			text = next;
-		},
 		setRead: (next: (() => void) | null) => {
 			onRead = next;
 		},
-		fail: (error: Error) => {
-			failure = error;
-		},
-		emit: () => {
-			for (const listener of listeners) listener();
-		},
-		emitError: (error: Error) => {
-			for (const listener of errors) listener(error);
-		},
-		stops: () => stops,
 	};
 }
 
@@ -207,7 +175,6 @@ describe("the default workbench host", () => {
 			}
 			expect(h.host.resolveCheckout(tmpdir())).toBeNull();
 			expect(h.host.coordinatorContextFor(h.id).read()).toContain(h.root);
-			expect(h.host.sessionContextFor(h.id).publisher.freshBrief().brief).toContain(h.root);
 			expect(h.host.voiceFor(h.id).start(null)).toMatchObject({
 				suppressCoordinatorSpeech: false,
 				delegationAckFiller: true,
@@ -238,13 +205,12 @@ describe("the default workbench host", () => {
 			const context = h.host.contextForOperation(h.authority, OPERATION);
 			expect(context.child).toEqual({ id: h.authority.childId, epoch: h.authority.epoch });
 			expect(context.workhorse.threadId).toBe(h.authority.threadId);
-			expect(context.paneId).toBe(h.key);
-			expect(context.semantic.brief).toBe("The actual host task.");
-			expect(context.semantic.freshUntilMs - context.semantic.capturedAtMs).toBe(
+			expect(context.brief.text).toBe("The actual host task.");
+			expect(context.brief.freshUntilMs - context.brief.capturedAtMs).toBe(
 				CODEX_REALTIME_MS.contextFreshness,
 			);
 			expect(context.operation).toEqual({ ...OPERATION, outcome: null });
-			expect(Object.isFrozen(context.semantic)).toBe(true);
+			expect(Object.isFrozen(context.brief)).toBe(true);
 			expect(h.proofRequests).toHaveLength(2);
 			expect(h.host.contextCodec.key).toBe("workbench_context");
 			const reversed = Object.fromEntries(Object.entries(context).toReversed()) as typeof context;
@@ -270,86 +236,6 @@ describe("the default workbench host", () => {
 			expect(() => h.host.contextForOperation(h.authority, OPERATION)).toThrow();
 			h.retire();
 			expect(() => h.host.contextForOperation(h.authority, OPERATION)).toThrow();
-		} finally {
-			h.close();
-		}
-	});
-
-	test("emits exact immutable events and callback sources only for actual context invalidations", () => {
-		const source = contextSource();
-		const h = harness({ context: source.source });
-		try {
-			const workhorse = h.host.workhorseContextFor(h.id, h.root);
-			const voice = h.host.sessionContextFor(h.id);
-			const events: WorkbenchContextEvent[] = [];
-			const callbacks: CoordinatorHostContextSource[] = [];
-			workhorse.publisher.subscribeSettledChange((event) => events.push(event));
-			voice.callbacks.subscribe((event) => callbacks.push(event));
-			expect(events).toHaveLength(0);
-			expect(callbacks).toHaveLength(0);
-			source.setText("The host task changed.");
-			source.emit();
-			expect(events).toHaveLength(1);
-			expect(callbacks).toHaveLength(1);
-			const event = events[0]!;
-			expect(event.child).toEqual({ id: h.authority.childId, epoch: h.authority.epoch });
-			expect(event.workhorse.threadId).toBe(h.authority.threadId);
-			expect(event.feedId).toBe(workhorse.feedId);
-			expect(event.cursor).toEqual({ feedId: workhorse.feedId, sequence: 1 });
-			expect(Object.isFrozen(event.change.cursor)).toBe(true);
-			expect(callbacks[0]!.context.brief).toBe("The host task changed.");
-			expect(workhorse.contextForEvent(event).semantic.brief).toBe(event.brief);
-			h.replaceBinding();
-			expect(h.host.workhorseContextFor(h.id, h.root)).toBe(workhorse);
-			source.emit();
-			expect(events[1]!.cursor?.sequence).toBe(2);
-			workhorse.publisher.dispose();
-			workhorse.publisher.dispose();
-			voice.publisher.dispose();
-			expect(source.listeners.size).toBe(0);
-			expect(source.stops()).toBe(2);
-		} finally {
-			h.close();
-		}
-	});
-
-	test("drops a context invalidation when authority changes during the host read", () => {
-		const source = contextSource();
-		const h = harness({ context: source.source });
-		try {
-			const owner = h.host.workhorseContextFor(h.id, h.root);
-			const events: WorkbenchContextEvent[] = [];
-			owner.publisher.subscribeSettledChange((event) => events.push(event));
-			source.setRead(h.replaceBinding);
-			source.emit();
-			expect(events).toHaveLength(0);
-			source.setRead(null);
-			source.emit();
-			expect(events[0]!.cursor?.sequence).toBe(1);
-			h.retire();
-			expect(source.listeners.size).toBe(0);
-			source.emit();
-			expect(events).toHaveLength(1);
-		} finally {
-			h.close();
-		}
-	});
-
-	test("reports source failures and releases all subscriptions when the generation retires", () => {
-		const source = contextSource();
-		const failures: unknown[] = [];
-		const h = harness({ context: source.source, onFatal: (error) => failures.push(error) });
-		try {
-			h.host.workhorseContextFor(h.id, h.root);
-			h.host.sessionContextFor(h.id);
-			const error = new Error("The host context is unavailable.");
-			source.fail(error);
-			source.emit();
-			source.emitError(error);
-			expect(failures.every((failure) => failure === error)).toBe(true);
-			expect(failures.length).toBeGreaterThan(0);
-			h.retire();
-			expect(source.listeners.size).toBe(0);
 		} finally {
 			h.close();
 		}

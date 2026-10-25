@@ -7,6 +7,7 @@ import type {
 	WorkbenchVoicePolicy,
 } from "#runtime/protocol/host/context-source.ts";
 import type { BrowserLeaseLedger } from "#server/protocol/gateway/contract.ts";
+import type { ContextChange, ContextReceipt } from "#server/protocol/announce/contract.ts";
 import {
 	attachBrowserSockets,
 	type VoiceAgentAttachOptions,
@@ -147,6 +148,17 @@ export interface VoiceAgent {
 	 * digests to notice when a change of its instructions or tools would reach Codex.
 	 */
 	readonly instructions: Workbench["instructions"];
+	/**
+	 * Tell the agents of the browser tabs that something they should know about changed: the
+	 * workhorses of some checkouts, the coordinator, the live voice, or any combination. Each
+	 * audience hears one `feed` and `sequence` at most once, and nothing starts a turn. The
+	 * audiences are told concurrently, so no audience waits for another, and no order between them
+	 * is promised.
+	 * @returns One receipt per tab session and audience, and per checkout for a workhorse.
+	 * @throws {TypeError} When the change is malformed, for example when it names no audience.
+	 * @throws {Error} While {@link VoiceAgent.status} does not read ready.
+	 */
+	readonly announce: (change: ContextChange) => Promise<readonly ContextReceipt[]>;
 }
 
 /**
@@ -262,5 +274,6 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 		},
 		browser: workbench.browser,
 		instructions: workbench.instructions,
+		announce: workbench.announce,
 	});
 }

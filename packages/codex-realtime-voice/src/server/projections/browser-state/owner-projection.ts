@@ -36,11 +36,11 @@ type WorkhorseComponents = CodexWorkbenchWorkhorseComponents;
 /** What the gateway hands a projection read: the pane, its binding, its lease. */
 type ProjectionContext = Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0];
 
-/** One record of a semantic context delivery, as the controller kept it. */
-type SemanticDelivery = ReturnType<WorkhorseComponents["contextDelivery"]["inspect"]>[number];
+/** One record of a context delivery, as the controller kept it. */
+type ContextDelivery = ReturnType<WorkhorseComponents["contextDelivery"]["inspect"]>[number];
 
-/** The binding a semantic delivery was made under. */
-type SemanticBinding = NonNullable<
+/** The binding a context delivery was made under. */
+type ContextDeliveryBinding = NonNullable<
 	ReturnType<WorkhorseComponents["contextDelivery"]["snapshot"]>["binding"]
 >;
 
@@ -74,7 +74,7 @@ interface ServerOwnerProjectionInput {
  * @param context The pane being read.
  * @returns True when they are the same binding.
  */
-function bindingIsForPane(binding: SemanticBinding, context: ProjectionContext): boolean {
+function bindingIsForPane(binding: ContextDeliveryBinding, context: ProjectionContext): boolean {
 	return (
 		binding.link.revision === context.binding.revision &&
 		binding.target.threadId === context.binding.link.threadId &&
@@ -91,8 +91,8 @@ function bindingIsForPane(binding: SemanticBinding, context: ProjectionContext):
  * @returns True when the delivery belongs to the binding.
  */
 function deliveryIsForBinding(
-	delivery: SemanticDelivery | undefined,
-	binding: SemanticBinding,
+	delivery: ContextDelivery | undefined,
+	binding: ContextDeliveryBinding,
 ): boolean {
 	return (
 		delivery?.paneId === binding.paneId &&
@@ -104,7 +104,7 @@ function deliveryIsForBinding(
 }
 
 /**
- * The semantic delivery this pane may be shown.
+ * The context delivery this pane may be shown.
  *
  * Delivery history is process-wide; only the exact current binding may publish
  * its result and freshness into a pane's snapshot, and every pane showing that
@@ -113,10 +113,10 @@ function deliveryIsForBinding(
  * @param context The pane being read.
  * @returns The delivery, or undefined when none of it is this pane's.
  */
-function presentedSemantic(
+function presentedContextDelivery(
 	components: WorkhorseComponents,
 	context: ProjectionContext,
-): SemanticDelivery | undefined {
+): ContextDelivery | undefined {
 	const binding = components.contextDelivery.snapshot().binding;
 	if (binding === null || !bindingIsForPane(binding, context)) {
 		return undefined;
@@ -126,15 +126,13 @@ function presentedSemantic(
 }
 
 /**
- * The semantic panel: the outcome of this pane's own delivery, and how fresh
- * the brief behind it is.
+ * The context delivery panel: the outcome of this pane's own delivery, and the window in which
+ * the change it told was fresh.
  * @param delivery This pane's delivery, or undefined when it has none.
- * @param publisher What knows the brief's freshness.
  * @returns The panel.
  */
-function semanticPanel(
-	delivery: SemanticDelivery | undefined,
-	publisher: WorkhorseComponents["semanticPublisher"],
+function contextDeliveryPanel(
+	delivery: ContextDelivery | undefined,
 ): BrowserOwnerProjection["contextDelivery"] {
 	if (delivery === undefined) {
 		return { kind: "codex_context_delivery", outcome: null, freshness: null };
@@ -146,7 +144,7 @@ function semanticPanel(
 			outcome: delivery.outcome,
 			reason: delivery.reason,
 		},
-		freshness: publisher.freshBrief().freshness,
+		freshness: delivery.freshness,
 	};
 }
 
@@ -255,10 +253,7 @@ function workhorsePanels(
 	return {
 		settings: workhorseSettings(components.workhorse.snapshot()),
 		queue: presentedQueue(state, context),
-		contextDelivery: semanticPanel(
-			presentedSemantic(components, context),
-			components.semanticPublisher,
-		),
+		contextDelivery: contextDeliveryPanel(presentedContextDelivery(components, context)),
 	};
 }
 

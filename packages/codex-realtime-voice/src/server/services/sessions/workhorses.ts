@@ -3,14 +3,13 @@
 // A tab session has one workhorse for each checkout it works in. A workhorse runs in its checkout,
 // so it reads that repository's agent instructions, skills and Codex configuration. Each one has
 // its own thread link, keyed by the tab session and the checkout, its own queue, its own
-// operations and its own board-change delivery. A workhorse is built the first time something
+// operations and its own delivery of context changes. A workhorse is built the first time something
 // asks for its checkout: the tab's shown conversation, or the coordinator giving it work.
 //
 // A workhorse belongs to a checkout, not to a repository identity, so a new chosen checkout of its
 // identity leaves it as it is, linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "#runtime/services/thread-context/contract.ts";
 import type { CodexWorkhorseOperations } from "#runtime/protocol/workhorse-operations/contract.ts";
@@ -28,8 +27,6 @@ import type { CodexQueueProjectionInput } from "#server/protocol/projection/proj
 /** The runtime owners one workhorse runs on. */
 interface CodexWorkbenchWorkhorseComponents {
 	readonly workhorse: CodexWorkhorseStart;
-	/** Publishes the changes of the boards of this workhorse's checkout, as this workhorse is told. */
-	readonly semanticPublisher: WorkbenchContextPublisher;
 	readonly contextDelivery: CodexThreadContextController;
 	readonly queue: CodexWorkhorseQueue<OperationId>;
 	readonly operations: CodexWorkhorseOperations;

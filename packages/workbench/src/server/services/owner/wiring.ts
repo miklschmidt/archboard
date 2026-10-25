@@ -4,17 +4,11 @@ import type {
 } from "#runtime/protocol/voice/extension.ts";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
 import { createVoiceAgent, type VoiceAgent } from "@archboard/codex-realtime-voice/server";
-import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
-import { createArchboardCallbackPolicy } from "#runtime/services/coordinator-callbacks/deliver.ts";
-import {
-	archboardPublisher,
-	archboardWorkhorseContext,
-} from "#server/services/host/archboard-publisher.ts";
+import { createArchboardAnnouncements } from "#server/services/host/archboard-announcements.ts";
 import { ARCHBOARD_VOICE_PRESENTATION } from "#server/services/host/archboard-presentation.ts";
 import { createArchboardDomainTools } from "#server/services/generation/domain.ts";
 import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
-import type { SemanticContextPublisher } from "#runtime/schemas/semantic-context-types.ts";
-import { ARCHBOARD_CONTEXT_CODEC } from "#runtime/services/host/archboard.ts";
+import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/services/host/archboard.ts";
 import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { checkoutNamedBy } from "#server/services/host/archboard-checkouts.ts";
 import { createArchboardCoordinatorContextSource } from "#server/services/host/archboard-context-source.ts";
@@ -54,7 +48,6 @@ import { repositoryOfVault, vaultIn } from "@archboard/workspace/repository-list
 import {
 	boundSessionOf,
 	changePane,
-	deliveryBound,
 	hearsVault,
 	openPaneOf,
 	operationPane,
@@ -150,17 +143,80 @@ function installBrowserGateway(
  */
 function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
-	const sessionPublishers = new Map<TabSessionId, SemanticContextPublisher>();
-	/**
-	 * Require the semantic publisher that belongs to this live tab session.
-	 * @param id The tab session id.
-	 * @returns The installed session publisher.
-	 */
-	const publisherFor = (id: TabSessionId): SemanticContextPublisher => {
-		const publisher = sessionPublishers.get(id);
-		if (publisher === undefined) throw new Error("The Archboard session publisher is not ready.");
-		return publisher;
-	};
+	const announcements = createArchboardAnnouncements({
+		/**
+		 * Publish what this tab hears: the changes of the boards of its panes' vaults, each built
+		 * for the workhorse of the board's checkout, and the reports of its panes.
+		 * @param tabSessionId The tab session.
+		 * @returns The publisher options.
+		 */
+		publisherOptions: (tabSessionId) => ({
+			feed: workbenchFeedFor((vault) => {
+				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
+				return session !== undefined && hearsVault(session, vault);
+			}),
+			feedId: semanticChangeFeed.feedId,
+			fresh: {
+				/**
+				 * A fresh semantic input for the board of the pane the session presents through.
+				 * @returns The input.
+				 */
+				read: () => {
+					const { components, session } = liveSession(tabSessionId);
+					const owners = semanticOwners(components, session, session.voiceWorkhorse());
+					return fullInputFor(owners, openPaneOf(session));
+				},
+			},
+			/**
+			 * The semantic input for a settled change, under the identity of the workhorse of the
+			 * board's checkout, which is the one told it.
+			 * @param event The settled change.
+			 * @returns The input, at the change's cursor.
+			 */
+			contextForChange: (event: SettledChangeSourceEvent) => {
+				const { components, session } = liveSession(tabSessionId);
+				const workhorse = session.workhorses.get(checkoutOfVault(event.vault)) ?? null;
+				return semanticInputFor(
+					semanticOwners(components, session, workhorse),
+					event.vault,
+					event.board,
+					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
+					changePane(session),
+				);
+			},
+		}),
+		/**
+		 * This session's canvas, with no narration while a recording holds the voice.
+		 * @param id The tab session.
+		 * @returns The canvas.
+		 */
+		canvas: (id) => {
+			const canvas = canvasOf(id);
+			const recording = isArchboardRecording(
+				active?.sessions
+					.list()
+					.find((session) => session.id === id)
+					?.components.realtime.presentation(),
+			);
+			return recording ? { ...canvas, narrated: null } : canvas;
+		},
+		/**
+		 * Announce one change through the voice agent.
+		 * @param change The change.
+		 * @returns Its receipts.
+		 */
+		announce: async (change) => {
+			if (codexApplication === null) throw new Error("The Codex workbench has not been created.");
+			return codexApplication.announce(change);
+		},
+		/**
+		 * Log a change that could not be announced.
+		 * @param error Why.
+		 */
+		onError: (error) => {
+			logger.error("Cannot announce an Archboard context change:", error);
+		},
+	});
 	/**
 	 * The live generation and one of its tab sessions.
 	 * @param tabSessionId The tab session.
@@ -220,58 +276,13 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			 */
 			onFatal: (error) => integration.onFatal(error),
 			/**
-			 * Build the tab's semantic publisher and coordinator callback policy.
-			 * @param id The tab session id.
-			 * @returns The session context publisher and callbacks.
-			 */
-			sessionContextFor: (id) => {
-				const options = integration.semanticPublisherFor(id);
-				const publisher = createSemanticContextPublisher(options);
-				sessionPublishers.set(id, publisher);
-				const neutral = archboardPublisher(publisher, options);
-				return {
-					publisher: {
-						...neutral,
-						/** Release this publisher and remove its registration if it still owns the session. */
-						dispose: () => {
-							if (sessionPublishers.get(id) === publisher) sessionPublishers.delete(id);
-							publisher.dispose();
-						},
-					},
-					callbacks: createArchboardCallbackPolicy({
-						semantic: publisher,
-						/**
-						 * Read this session's canvas context and suppress live narration during recording.
-						 * @returns The callback canvas context.
-						 */
-						canvas: () => {
-							const canvas = integration.canvasFor(id);
-							const recording = isArchboardRecording(
-								active?.sessions
-									.list()
-									.find((session) => session.id === id)
-									?.components.realtime.presentation(),
-							);
-							return recording ? { ...canvas, narrated: null } : canvas;
-						},
-					}),
-				};
-			},
-			/**
-			 * Build context delivery for one checkout's workhorse in this tab.
-			 * @param id The tab session id.
-			 * @param checkout The workhorse's checkout directory.
-			 * @returns The publisher and context correlation functions for the workhorse.
-			 */
-			workhorseContextFor: (id, checkout) => archboardWorkhorseContext(integration, id, checkout),
-			/**
 			 * Read context for the exact operation and execution authority supplied by the core.
 			 * @param authority The core-owned operation authority.
 			 * @param operation The pending operation identity.
 			 * @returns The canonical context of this exact operation.
 			 */
 			contextForOperation: (authority, operation) =>
-				integration.contextForOperation(authority, operation),
+				workbenchContextOf(integration.contextForOperation(authority, operation)),
 			/**
 			 * Build this tab session’s Archboard voice policy.
 			 * @param tabSessionId The tab session that owns this policy.
@@ -299,7 +310,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					 * @returns The cleanup that ends the subscriptions.
 					 */
 					subscribe: (listener) => {
-						const publisher = publisherFor(tabSessionId);
+						const publisher = announcements.publisherFor(tabSessionId);
 						const stops = [
 							publisher.subscribePaneFocus(listener),
 							publisher.subscribePaneSelection(listener),
@@ -318,90 +329,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		onCodexProcessGroupOwned: (codexGroup) => {
 			reportStartupOwnership(codexGroup);
 		},
-		/**
-		 * Publish this tab's pane context with the identity of the workhorse bound to voice.
-		 * @param tabSessionId The tab session.
-		 * @returns The publisher options.
-		 */
-		semanticPublisherFor: (tabSessionId) => ({
-			feed: workbenchFeedFor((vault) => {
-				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
-				return session !== undefined && hearsVault(session, vault);
-			}),
-			feedId: semanticChangeFeed.feedId,
-			fresh: {
-				/**
-				 * A fresh semantic input for the board of the pane the session presents through.
-				 * @returns The input.
-				 */
-				read: () => {
-					const { components, session } = liveSession(tabSessionId);
-					const owners = semanticOwners(components, session, session.voiceWorkhorse());
-					return fullInputFor(owners, openPaneOf(session));
-				},
-			},
-			/**
-			 * The semantic input for a settled change, as the session's voice is shown it.
-			 * @param event The settled change.
-			 * @returns The input, at the change's cursor.
-			 */
-			contextForChange: (event: SettledChangeSourceEvent) => {
-				const { components, session } = liveSession(tabSessionId);
-				return semanticInputFor(
-					semanticOwners(components, session, session.voiceWorkhorse()),
-					event.vault,
-					event.board,
-					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					changePane(session),
-				);
-			},
-		}),
-		/**
-		 * Publish checkout board changes that this tab hears under the workhorse's identity.
-		 * @param tabSessionId The workhorse's tab session.
-		 * @param checkout The checkout it works in.
-		 * @returns The publisher options.
-		 */
-		workhorsePublisherFor: (tabSessionId, checkout) => ({
-			feed: workbenchFeedFor((vault) => {
-				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
-				return (
-					session !== undefined && checkoutOfVault(vault) === checkout && hearsVault(session, vault)
-				);
-			}),
-			feedId: semanticChangeFeed.feedId,
-			fresh: {
-				/**
-				 * Read fresh board context from this session's presenting pane under the workhorse's identity.
-				 * @returns The input.
-				 */
-				read: () => {
-					const { components, session } = liveSession(tabSessionId);
-					const owners = semanticOwners(components, session, requireWorkhorse(session, checkout));
-					return fullInputFor(owners, openPaneOf(session));
-				},
-			},
-			/**
-			 * The semantic input for a settled change, as this workhorse is shown it.
-			 * @param event The settled change.
-			 * @returns The input, at the change's cursor.
-			 * @throws {Error} When the workhorse has no delivery bound.
-			 */
-			contextForChange: (event: SettledChangeSourceEvent) => {
-				const { components, session } = liveSession(tabSessionId);
-				const workhorse = requireWorkhorse(session, checkout);
-				if (!deliveryBound(workhorse)) {
-					throw new Error("The Codex semantic publisher has no current thread-context binding.");
-				}
-				return semanticInputFor(
-					semanticOwners(components, session, workhorse),
-					event.vault,
-					event.board,
-					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					changePane(session),
-				);
-			},
-		}),
 		/**
 		 * Read the tab's shown checkout and pin its first value from the focused pane, else the asking pane.
 		 * @param browserId The browser's client id.
@@ -434,20 +361,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		presentingVaultFor: (tabSessionId) =>
 			presentingPaneOf(liveSession(tabSessionId).session)?.vault ?? null,
 		/**
-		 * The canonical context of a settled event, filed under the pane it presents.
-		 * @param event The settled event.
-		 * @param operation The operation in flight, if any.
-		 * @returns The context.
-		 */
-		contextForEvent: (event, operation) =>
-			canonicalContextFromBrief(
-				event,
-				event.pane.paneId,
-				operation === undefined
-					? { id: null, kind: null, rpc: null, outcome: null }
-					: { ...operation, outcome: null },
-			),
-		/**
 		 * Capture canonical operation context and refuse a tab session link that changed since the lease.
 		 * @param authority The leased authority.
 		 * @param operation The operation.
@@ -462,7 +375,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			}
 			const exactInput = fullInputFor(semanticOwners(components, session, workhorse), pane);
 			return canonicalContextFromBrief(
-				publisherFor(session.id).freshBriefFor(exactInput),
+				announcements.publisherFor(session.id).freshBriefFor(exactInput),
 				pane.paneId,
 				{ ...operation, outcome: null },
 			);
@@ -487,6 +400,14 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 */
 		installLifecycleSignals: (components) => {
 			active = components;
+			/** Give every tab session of the graph its publisher, and dispose of the rest. */
+			const reconcile = (): void => {
+				const ids = components.sessions.list().map(({ id }) => id);
+				for (const id of ids) announcements.publisherFor(id);
+				announcements.keepOnly(ids);
+			};
+			reconcile();
+			const stopReconciling = components.sessions.onChange(reconcile);
 			/**
 			 * Publish fresh focus or selection context only to the pane's own tab conversation.
 			 * @param clientId The pane reporting a change.
@@ -498,7 +419,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				const pane = panes.get(clientId);
 				const session = boundSessionOf(components, clientId);
 				if (pane === undefined || session === null) return;
-				const semanticPublisher = publisherFor(session.id);
+				const semanticPublisher = announcements.publisherFor(session.id);
 				try {
 					const owners = semanticOwners(components, session, session.voiceWorkhorse());
 					const read = fullInputFor(owners, pane);
@@ -520,6 +441,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				return session === undefined ? [] : liveWorkhorseCheckouts(session);
 			};
 			return () => {
+				stopReconciling();
+				announcements.dispose();
 				if (active === components) {
 					active = null;
 					codexWiring.codex.publishPaneContext = null;

@@ -42,7 +42,6 @@ describe("codex thread-context binding controller", () => {
 		});
 		expect(duplicate).toBe(unbound);
 		expect(harness.received).toHaveLength(0);
-		expect(harness.subscriptionCount()).toBe(1);
 	});
 
 	test("binds exact workhorse evidence and rejects stale or duplicate transitions", async () => {
@@ -86,21 +85,9 @@ describe("codex thread-context binding controller", () => {
 
 		expect(controller.snapshot().binding).toBeNull();
 		expect(harness.retiredEpochs()).toBe(1);
-		expect(harness.subscriptionCount()).toBe(1);
 		expect(await controller.deliver(harness.events({ sequence: 2 }))).toMatchObject({
 			reason: "disposed",
 			attempted: false,
 		});
-	});
-
-	test("hook replacement keeps controller identity, subscription, and ledger", async () => {
-		const { harness, controller } = controllerHarness();
-		bind(controller, bindingFor(harness));
-		const first = await controller.deliver(harness.events());
-		controller.replaceHooks({ contextForEvent: () => ({}) as never });
-
-		expect(await controller.deliver(harness.events())).toBe(first);
-		expect(harness.subscriptionCount()).toBe(1);
-		expect(controller.snapshot().binding).not.toBeNull();
 	});
 });

@@ -2,14 +2,14 @@ import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/ide
 import type { WorkhorseOperationEvent } from "#runtime/protocol/workhorse-operations/contract.ts";
 import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
 import type {
+	ContextAnnouncementSource,
 	CoordinatorCallback,
-	CoordinatorHostContextSource,
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackLinkCorrelation,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
-	CoordinatorHostContextCallback,
+	CoordinatorContextCallback,
 	CoordinatorWorkhorseNewsCallback,
 	WorkhorseNewsSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
@@ -61,11 +61,11 @@ function operationKind(): "operation" {
 }
 
 /**
- * The discriminant for host-context callbacks, as a function for the same reason as the operation kind.
- * @returns The host-context kind.
+ * The discriminant for announced-change callbacks, as a function for the same reason as the operation kind.
+ * @returns The context kind.
  */
-function hostContextKind(): "host_context" {
-	return "host_context";
+function contextKind(): "context" {
+	return "context";
 }
 
 /**
@@ -183,14 +183,14 @@ function normalizeOperationCallback(
 }
 
 /**
- * Build the correlation a host-context callback carries. A host-context event belongs to no operation and no coordinator turn, so those fields are null by construction.
- * @param event - The settled change, focus or selection event.
- * @param workhorseLink - The link correlation at the time of the event.
+ * Build the correlation an announced-change callback carries. A change belongs to no operation and no coordinator turn, so those fields are null by construction.
+ * @param event - The announced change.
+ * @param workhorseLink - The link correlation at the time of the change.
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The frozen correlation.
  */
-function hostContextCorrelation(
-	event: CoordinatorHostContextSource,
+function contextCorrelation(
+	event: ContextAnnouncementSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorCallbackCorrelation {
@@ -212,39 +212,25 @@ function hostContextCorrelation(
 }
 
 /**
- * The fields every host-context callback shares, before its type is set.
- * @param event - The host-context event.
- * @param workhorseLink - The link correlation at the time of the event.
+ * Normalize one announced change into the callback the coordinator or the voice is given.
+ * @param event - The announced change.
+ * @param workhorseLink - The link correlation at the time of the change.
  * @param realtimeGeneration - The voice generation in force, or null.
- * @returns The shared fields.
+ * @returns The frozen callback.
  */
-function hostContextBase(
-	event: CoordinatorHostContextSource,
+function normalizeContextCallback(
+	event: ContextAnnouncementSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
-) {
-	return {
-		kind: hostContextKind(),
-		correlation: hostContextCorrelation(event, workhorseLink, realtimeGeneration),
+): CoordinatorContextCallback {
+	return freeze({
+		kind: contextKind(),
+		audience: event.audience,
+		correlation: contextCorrelation(event, workhorseLink, realtimeGeneration),
 		threadLinkState: event.threadLink.state,
 		threadLinkReason: event.threadLink.reason,
 		context: cloneAndFreeze(event.context),
-	};
-}
-
-/**
- * Normalize one host-context event into the callback the coordinator sees.
- * @param event - The change, focus or selection event.
- * @param workhorseLink - The link correlation at the time of the event.
- * @param realtimeGeneration - The voice generation in force, or null.
- * @returns The frozen host-context callback.
- */
-function normalizeHostContextCallback(
-	event: CoordinatorHostContextSource,
-	workhorseLink: CoordinatorCallbackLinkCorrelation,
-	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
-): CoordinatorHostContextCallback {
-	return freeze({ ...hostContextBase(event, workhorseLink, realtimeGeneration), type: event.type });
+	});
 }
 
 /**
@@ -284,7 +270,7 @@ function normalizeWorkhorseNewsCallback(
 
 /**
  * Normalize whichever source event arrived.
- * @param event - The workhorse or host-context source event.
+ * @param event - The workhorse or announced-change source event.
  * @param workhorseLink - The link correlation at the time of the event.
  * @param realtimeGeneration - The voice generation in force, or null.
  * @returns The frozen callback.
@@ -298,7 +284,7 @@ function normalizeCoordinatorCallback(
 		return normalizeWorkhorseNewsCallback(event, workhorseLink, realtimeGeneration);
 	}
 	if ("kind" in event) {
-		return normalizeHostContextCallback(event, workhorseLink, realtimeGeneration);
+		return normalizeContextCallback(event, workhorseLink, realtimeGeneration);
 	}
 	return normalizeOperationCallback(event, workhorseLink, realtimeGeneration);
 }
@@ -313,13 +299,14 @@ function valueOrNull(value: string | null): string {
 }
 
 /**
- * The scope a host-context callback belongs to: its child, epoch, threads, turn, voice session and feed. Two callbacks from different scopes never coalesce.
- * @param callback - The host-context callback.
+ * The scope an announced-change callback belongs to: who it is for, its child, epoch, threads, turn, voice session and feed. Two callbacks from different scopes never coalesce.
+ * @param callback - The announced-change callback.
  * @returns The scope as stable text.
  */
-function hostContextScope(callback: CoordinatorHostContextCallback): string {
+function contextScope(callback: CoordinatorContextCallback): string {
 	const correlation = callback.correlation;
 	return JSON.stringify([
+		callback.audience,
 		correlation.childId,
 		correlation.epoch,
 		correlation.coordinatorThreadId,
@@ -360,27 +347,21 @@ function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "workhorse_news") {
 		return workhorseNewsKey(callback);
 	}
-	return hostContextKey(callback);
+	return contextKey(callback);
 }
 
 /**
- * The identity of one host-context callback: its scope and what the host reported. A change is
- * its sequence; a focus or a selection is its capture time and the host's identity of it.
- * @param callback - The host-context callback.
+ * The identity of one announced-change callback: its scope and its sequence.
+ * @param callback - The announced-change callback.
  * @returns The key.
  */
-function hostContextKey(callback: CoordinatorHostContextCallback): string {
-	const scope = hostContextScope(callback);
-	const { sequence, capturedAtMs, identity } = callback.context;
-	if (callback.type === "change") {
-		return `host_context:change:${scope}:${sequence ?? "null"}`;
-	}
-	return `host_context:${callback.type}:${scope}:${capturedAtMs}:${identity}`;
+function contextKey(callback: CoordinatorContextCallback): string {
+	return `context:${contextScope(callback)}:${callback.context.sequence}`;
 }
 
 /**
  * The key two callbacks must share to coalesce: only same-operation lifecycle updates and
- * same-kind host-context events in the same scope replace one another.
+ * announced changes of one topic in the same scope replace one another.
  * @param callback - The normalized callback.
  * @returns The coalescing key.
  */
@@ -391,16 +372,16 @@ function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string
 	if (callback.kind === "workhorse_news") {
 		return workhorseNewsKey(callback);
 	}
-	// An event the host marks as told on its own is never folded into the next.
-	if (!callback.context.coalesces) {
-		return hostContextKey(callback);
-	}
-	return `host_context:${callback.type}:${hostContextScope(callback)}`;
+	// A change without a topic is told on its own and never folded into the next.
+	const { topic } = callback.context;
+	return topic === null
+		? contextKey(callback)
+		: `context:${contextScope(callback)}:topic:${JSON.stringify(topic)}`;
 }
 
 export {
 	normalizeOperationCallback,
-	normalizeHostContextCallback,
+	normalizeContextCallback,
 	normalizeCoordinatorCallback,
 	coordinatorCallbackKey,
 	coordinatorCallbackCoalescingKey,

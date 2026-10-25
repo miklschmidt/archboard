@@ -228,7 +228,7 @@ async function settleChildExit(
 		 */
 		() => approvals.childExit({ child, epoch }),
 		/**
-		 * Every tab session drops the board news it was carrying, settles what its spoken approval
+		 * Every tab session drops the context changes it was carrying, settles what its spoken approval
 		 * was waiting on, and settles its coordinator's tool calls.
 		 * @returns Resolves once they have.
 		 */

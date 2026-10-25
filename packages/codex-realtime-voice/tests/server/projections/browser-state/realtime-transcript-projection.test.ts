@@ -53,7 +53,6 @@ test("raw realtime transcript identities publish as canonical browser items", as
 			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 			subscribe: () => () => {},
 		},
-		freshSemanticBrief: () => '{"source":"realtime-transcript-projection"}',
 		session: {
 			realtimeStart: async (params) => {
 				starts.push(params);

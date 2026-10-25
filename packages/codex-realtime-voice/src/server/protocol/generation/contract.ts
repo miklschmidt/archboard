@@ -8,7 +8,6 @@ import type { CodexEpochStoreOptions } from "#runtime/store/epoch/contract.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
 import type { CodexRealtimeAdapterOptions } from "#runtime/services/realtime/contract.ts";
-import type { WorkbenchContextPublisher } from "#runtime/protocol/host/context-source.ts";
 import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { CodexThreadContextControllerOptions } from "#runtime/services/thread-context/contract.ts";
 import type { CodexThreadLinkOptions } from "#runtime/rules/thread-link/thread-link.ts";
@@ -83,7 +82,6 @@ interface CodexWorkbenchWorkhorseBindings {
 	readonly workhorse: WorkhorseComponentBuilder<
 		Omit<CodexWorkhorseStartOptions, "session" | "threadLink" | "epoch" | "identity" | "operation">
 	>;
-	readonly semanticPublisher: WorkhorseComponentBuilder<WorkbenchContextPublisher>;
 	readonly contextDelivery: WorkhorseComponentBuilder<
 		Omit<CodexThreadContextControllerOptions, "session" | "threadLink" | "identity" | "epoch">
 	>;
@@ -101,7 +99,6 @@ interface CodexWorkbenchWorkhorseBindings {
 /** What each of one tab session's own components is configured with. */
 interface CodexWorkbenchSessionBindings {
 	readonly presentation?: import("#server/services/voice/presentation.ts").WorkbenchVoicePresentationAdapter;
-	readonly semanticPublisher: SessionComponentBuilder<WorkbenchContextPublisher>;
 	readonly realtime: SessionComponentBuilder<
 		Omit<CodexRealtimeAdapterOptions, "session" | "identity">
 	>;

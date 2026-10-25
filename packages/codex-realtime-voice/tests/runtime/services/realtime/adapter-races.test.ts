@@ -100,7 +100,6 @@ function raceHarness(): RaceHarness {
 			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 			subscribe: () => () => {},
 		},
-		freshSemanticBrief: () => '{"source":"race"}',
 		session: {
 			realtimeStart: (params) => {
 				starts.push(params);

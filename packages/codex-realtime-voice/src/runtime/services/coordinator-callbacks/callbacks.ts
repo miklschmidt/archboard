@@ -18,7 +18,6 @@ import {
 } from "#runtime/rules/coordinator-callbacks/normalize.ts";
 import type {
 	CoordinatorCallback,
-	CoordinatorHostContextCallback,
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbackDeliveryOutcome,
 	CoordinatorCallbackDeliveryReason,
@@ -80,35 +79,7 @@ function settledLedgerLimitOf(options: CoordinatorCallbackOptions): number {
 }
 
 /**
- * Subscribe to every source of callbacks. If any subscription fails, the ones already made are
- * undone before the failure travels, so a half-installed module is never left behind.
- * @param options - The module options carrying the source ports.
- * @param enqueue - The step each source event is handed to.
- * @returns The cleanups, in subscription order.
- */
-function subscribeSources(
-	options: CoordinatorCallbackOptions,
-	enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>,
-): Array<() => void> {
-	const cleanups: Array<() => void> = [];
-	try {
-		cleanups.push(options.operations.subscribe((event) => void enqueue(event)));
-		cleanups.push(options.host.subscribe((event) => void enqueue(event)));
-	} catch (error) {
-		for (const cleanup of cleanups) {
-			try {
-				cleanup();
-			} catch {
-				/* Preserve the registration failure. */
-			}
-		}
-		throw error;
-	}
-	return cleanups;
-}
-
-/**
- * Whether one settled change is this session's own work.
+ * Whether one announced change is this session's own work.
  *
  * The session is the coordinator and every workhorse it drives, one for each
  * checkout (ADR 0050). Both identities are read at the moment the change
@@ -118,9 +89,9 @@ function subscribeSources(
  *
  * A change nobody attributed is not anybody's own: it is delivered, which is
  * redundancy rather than silence.
- * @param event - The settled change.
+ * @param event - The source event.
  * @param options - The callback options, for the live identities.
- * @returns True when this session wrote it.
+ * @returns True when this session made it.
  */
 function ownSessionWrite(
 	event: CoordinatorCallbackSource,
@@ -131,46 +102,25 @@ function ownSessionWrite(
 }
 
 /**
- * Why a callback is told to nobody from the moment it arrives: this session made it itself, or
- * the host policy refuses it as it arrives (TASK-293.06). Both are decided as the event lands.
+ * Why a callback is told to nobody from the moment it arrives: this session made it itself.
  * @param event - The source event.
- * @param callback - Its normalized callback.
- * @param options - The callback options, for the live identities and the host policy.
+ * @param options - The callback options, for the live identities.
  * @returns The reason, or null when it goes on to delivery.
  */
 function arrivalRefusal(
 	event: CoordinatorCallbackSource,
-	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,
 ): CoordinatorCallbackDeliveryReason | null {
-	if (ownSessionWrite(event, options)) return "own_change";
-	if (callback.kind !== "host_context") return null;
-	return hostArrivalRefusal(event, callback, options);
+	return ownSessionWrite(event, options) ? "own_change" : null;
 }
 
 /**
- * Ask the host whether its source is visible or relevant at arrival.
- * @param event The source event.
- * @param callback The normalized host callback.
- * @param options The host policy and runtime authorities.
- * @returns The host refusal reason, or null.
- */
-function hostArrivalRefusal(
-	event: CoordinatorCallbackSource,
-	callback: CoordinatorHostContextCallback,
-	options: CoordinatorCallbackOptions,
-): CoordinatorCallbackDeliveryReason | null {
-	if (!("kind" in event) || event.kind !== "host") return null;
-	return options.host.arrivalRefusal?.(event, callback) ?? null;
-}
-
-/**
- * Read the author the host attributed to its source event.
+ * Read the author the host attributed to an announced change.
  * @param event The source event.
  * @returns The author, or null for runtime events.
  */
 function authorOf(event: CoordinatorCallbackSource): string | null {
-	return "kind" in event && event.kind === "host" ? event.author : null;
+	return "kind" in event && event.kind === "context" ? event.author : null;
 }
 
 /**
@@ -188,19 +138,19 @@ function sessionThreads(options: CoordinatorCallbackOptions): readonly string[] 
 }
 
 /**
- * The freshness a host-context callback carries; a callback of any other kind has none, and is
+ * The freshness an announced change carries; a callback of any other kind has none, and is
  * fresh from the moment it arrives instead.
  * @param callback - The normalized callback, or null when normalization failed.
- * @returns The host-context freshness fields, or null.
+ * @returns The change's freshness fields, or null.
  */
-function hostContextFreshnessOf(
+function contextFreshnessOf(
 	callback: CoordinatorCallback | null,
 ): { readonly capturedAtMs: number; readonly freshUntilMs: number } | null {
-	return callback?.kind === "host_context" ? callback.context : null;
+	return callback?.kind === "context" ? callback.context : null;
 }
 
 /**
- * Build the module that turns workhorse and host-context events into coordinator callbacks and
+ * Build the module that turns workhorse events and announced changes into coordinator callbacks and
  * delivers each one at most once, in source order, down a single path. Callbacks with the same
  * identity share one delivery; a newer callback that supersedes a pending one replaces it in
  * place; and everything the buffer cannot hold settles as not delivered with the reason why.
@@ -221,13 +171,13 @@ export function createCodexCoordinatorCallbacks(
 	const now = options.now ?? Date.now;
 
 	/**
-	 * Stamp one event with its arrival order and freshness window. A host-context callback keeps the
-	 * time the person's gesture was captured; anything else is fresh from now.
+	 * Stamp one event with its arrival order and freshness window. An announced change keeps the
+	 * time the host captured it; anything else is fresh from now.
 	 * @param callback - The normalized callback, or null when normalization failed.
 	 * @returns The frozen evidence.
 	 */
 	const captureEvidence = (callback: CoordinatorCallback | null): CallbackDeliveryEvidence => {
-		const context = hostContextFreshnessOf(callback);
+		const context = contextFreshnessOf(callback);
 		const capturedAtMs = context === null ? now() : context.capturedAtMs;
 		return Object.freeze({
 			sourceOrder: nextSourceOrder++,
@@ -389,13 +339,11 @@ export function createCodexCoordinatorCallbacks(
 			return Promise.resolve(invalidDelivery(captureEvidence(null)));
 		}
 		const evidence = captureEvidence(callback);
-		// A session hears every host change except the ones it makes itself, and
-		// the coordinator is the other half of one session. Asked here rather than
-		// on the subscription because this is the one gate both paths pass through,
-		// and asked before delivery rather than after normalization — a normalized
-		// callback keeps what a voice says out loud and drops who wrote it, so there
-		// is nowhere downstream left to ask.
-		const refused = arrivalRefusal(event, callback, options);
+		// A session hears every change except the ones it makes itself, and the
+		// coordinator is the other half of one session. Asked here, before
+		// delivery: a normalized callback keeps what a voice says out loud and
+		// drops who wrote it, so there is nowhere downstream left to ask.
+		const refused = arrivalRefusal(event, options);
 		if (refused !== null) {
 			return Promise.resolve(
 				makeDelivery(callback, evidence, {
@@ -443,7 +391,7 @@ export function createCodexCoordinatorCallbacks(
 		return promise;
 	};
 
-	const cleanups = subscribeSources(options, enqueue);
+	const unsubscribe = options.operations.subscribe((event) => void enqueue(event));
 	const workhorseNews = createWorkhorseNewsObserver(options);
 	const tellCoordinator = createTellCoordinator({
 		transport: options.transport,
@@ -513,12 +461,10 @@ export function createCodexCoordinatorCallbacks(
 				return;
 			}
 			disposed = true;
-			for (const cleanup of cleanups) {
-				try {
-					cleanup();
-				} catch {
-					/* Source cleanup cannot reopen delivery or alter settled outcomes. */
-				}
+			try {
+				unsubscribe();
+			} catch {
+				/* Source cleanup cannot reopen delivery or alter settled outcomes. */
 			}
 			for (const entry of pending.splice(0)) {
 				settleWithoutAttempt(entry, "not_delivered", "disposed");

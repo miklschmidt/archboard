@@ -289,8 +289,9 @@ test("the production browser projection publishes immutable voice start and orde
 			};
 			const callback = (type: "focus" | "selection") =>
 				({
-					kind: "semantic",
-					type,
+					kind: "context",
+					audience: "voice",
+					context: { topic: type },
 					correlation: { realtimeGeneration },
 				}) as unknown as NonNullable<CoordinatorCallbackDelivery["callback"]>;
 			const delivery = (
@@ -326,7 +327,10 @@ test("the production browser projection publishes immutable voice start and orde
 	expect(evidence?.ownerEntriesTruncated).toBe(3);
 	expect(evidence?.entriesTruncated).toBe(3);
 	expect(evidence?.entries.map((entry) => entry.sourceOrder)).toEqual([2, 4]);
-	expect(evidence?.entries.map((entry) => entry.kind)).toEqual(["focus", "selection"]);
+	expect(evidence?.entries.map((entry) => [entry.kind, entry.topic])).toEqual([
+		["voice", "focus"],
+		["voice", "selection"],
+	]);
 	expect(evidence?.entries.map((entry) => entry.body)).toEqual(["exact-focus", "exact-selection"]);
 });
 
