@@ -60,6 +60,8 @@ The browser version joins the test cache key, so a Chrome update invalidates pri
 
 A separate macOS CI job runs `test:macos` and exercises the native process observer, Codex lifecycle,
 Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
+It installs dependencies and runs the lane inside `nix develop`.
+The lane builds the renderer core first because its board lifecycle tests render pictures.
 The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
