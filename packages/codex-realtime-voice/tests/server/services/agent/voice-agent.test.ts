@@ -83,3 +83,20 @@ test("a state directory below a linked parent is prepared at the parent's real p
 		expect(existsSync(join(root, "real", "state", "codex-home"))).toBe(true);
 	});
 });
+
+test("a link above the state directory in a directory other users can write is not followed: start refuses it", async () => {
+	await withLinkedDirectory(async (root, executablePath) => {
+		mkdirSync(join(root, "open"));
+		chmodSync(join(root, "open"), 0o777);
+		symlinkSync(join(root, "real"), join(root, "open", "link"), "dir");
+		const { rejection } = await failedStart(
+			join(root, "open", "link", "state"),
+			executablePath,
+			root,
+		);
+		expect(rejection).toMatchObject({
+			code: "startup_failed",
+			cause: { code: "storage_refused" },
+		});
+	});
+});

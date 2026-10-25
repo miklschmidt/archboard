@@ -46,7 +46,8 @@ export interface VoiceAgentOptions {
 	/**
 	 * The agent's private state: Codex home, SQLite home and process-owner records. Created with
 	 * mode 0700. Keep it outside every checkout. The directory and everything below it must not
-	 * be a symbolic link; links above it, such as `/tmp` on macOS, are resolved once, here.
+	 * be a symbolic link. A link above it that you or root own, in directories no other user can
+	 * change, such as `/tmp` on macOS, is resolved once, here; any other link is refused at start.
 	 */
 	readonly storage: {
 		readonly directory: string;
