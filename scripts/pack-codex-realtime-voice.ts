@@ -65,8 +65,37 @@ function entryName(subpath: string): string {
 	return subpath.slice("./".length);
 }
 
+/**
+ * The workspace packages whose code the MIT package may bundle: those licensed MIT.
+ * @returns Their names.
+ */
+async function mitWorkspacePackages(): Promise<string[]> {
+	const directory = path.join(root, "packages");
+	const manifests = await Promise.all(
+		(await readdir(directory)).map(async (name) =>
+			z
+				.object({ name: z.string(), license: z.string() })
+				.parse(JSON.parse(await readFile(path.join(directory, name, "package.json"), "utf8"))),
+		),
+	);
+	return manifests.filter((manifest) => manifest.license === "MIT").map(({ name }) => name);
+}
+
+/**
+ * The pattern source that matches an import of any of some packages, subpaths included.
+ * @param names The package names.
+ * @returns The source, anchored at its start.
+ */
+function importOf(names: readonly string[]): string {
+	return `^(?:${names.map((name) => name.replace("/", "\\/")).join("|")})(?:/|$)`;
+}
+
 const packages = [...DEPENDENCIES, ...OPTIONAL_PEERS, "@openai/codex"];
-const external = packages.map((name) => new RegExp(`^${name.replace("/", "\\/")}(?:/|$)`));
+const external = packages.map((name) => new RegExp(importOf([name])));
+// Every other workspace package stays an import, which `onlyImport` refuses, so the build cannot
+// bundle code of another license into this MIT package.
+const bundled = importOf(await mitWorkspacePackages());
+const otherWorkspacePackage = new RegExp(`(?!${bundled})^@archboard(?:-app)?\\/`);
 await rm(output, { recursive: true, force: true });
 await build({
 	config: false,
@@ -86,8 +115,8 @@ await build({
 		tsgo: { path: path.join(root, "scripts/pack-codex-realtime-voice-tsgo.ts") },
 	},
 	deps: {
-		neverBundle: [...external, /^bun:/],
-		alwaysBundle: [/^@archboard\//],
+		neverBundle: [...external, otherWorkspacePackage, /^bun:/],
+		alwaysBundle: [new RegExp(bundled)],
 		onlyImport: [...packages, /^bun:/],
 	},
 	report: false,
