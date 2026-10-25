@@ -459,7 +459,12 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
-				<SemanticSubjectTip target={tip.shown} reading={reading} far={far} />
+				<SemanticSubjectTip
+					target={tip.shown}
+					reading={reading}
+					far={far}
+					overview={drawing.view === null}
+				/>
 				<LeavingPart departure={departure} at="spinner" />
 			</div>
 		</section>

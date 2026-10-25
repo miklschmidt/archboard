@@ -360,23 +360,24 @@ test("a board with no part in a registered repository answers an empty ranking, 
 	expect(answer.skipped.map((one) => one.reason)).toEqual(["unbound"]);
 });
 
+const small = (version: number): SemanticBoard =>
+	SemanticBoardSchema.parse({
+		...built,
+		version,
+		variants: [
+			{
+				id: "v1",
+				name: "Built",
+				lifecycle: "current",
+				content: {
+					nodes: [{ order: 1000, ...part("pT", "Tiny", { repo: TINY, path: "t.ts" }) }],
+				},
+			},
+		],
+	});
+
 test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
 	const reading = lens.createLocalityReading();
-	const small = (version: number): SemanticBoard =>
-		SemanticBoardSchema.parse({
-			...built,
-			version,
-			variants: [
-				{
-					id: "v1",
-					name: "Built",
-					lifecycle: "current",
-					content: {
-						nodes: [{ order: 1000, ...part("pT", "Tiny", { repo: TINY, path: "t.ts" }) }],
-					},
-				},
-			],
-		});
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
