@@ -1,16 +1,16 @@
-//! The selection ring every subject carries, and the cards and frame headings
-//! of a message sequence.
+//! The selection ring every subject carries, the card a part is drawn as in
+//! either grammar, and the cards and frame headings of a message sequence.
 
 use crate::attrs;
 use crate::geometry::{Rect, coord};
 use crate::markup::{Markup, group, lines, tag, text_node};
 use crate::paint::Ctx;
-use crate::paint::appearance::{appearance_attributes, card_look, type_chip};
+use crate::paint::appearance::{appearance_attributes, card_look};
 use crate::paint::design::{
     ARCHITECTURE_NOTE_GAP, ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE,
     PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
 };
-use crate::paint::far_card::{NearCard, Words, paint_card_views};
+use crate::paint::far_card::{NearCard, Part, Words, paint_card_views};
 use crate::paint::far_view::Place;
 use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 use crate::paint::palette::Palette;
@@ -109,10 +109,44 @@ pub fn paint_card(
     } else {
         rect.y + (rect.height - ICON_CHIP_SIZE) / 2.0
     };
+    let part = Part {
+        kind: SubjectKind::Node,
+        node: &placed.node,
+        rect,
+        appearance,
+        standing,
+        unsettled,
+    };
+    let near = NearCard {
+        chip_x: rect.x + CARD_PADDING_X,
+        chip_y,
+        words: Words {
+            markup: lines(vec![title, note]),
+            anchor: Place {
+                x: text_x,
+                y: title_y,
+                size: title_size,
+            },
+        },
+    };
+    paint_slab_card(ctx, &part, palette, None, near)
+}
+
+/// A part drawn as a card, in either grammar: its seat, its halo, its slab
+/// (cut through by its ports, if it has any), its near and far views, and
+/// its standing's pin and warning.
+pub fn paint_slab_card(
+    ctx: &Ctx,
+    part: &Part,
+    palette: &Palette,
+    cut: Option<&str>,
+    near: NearCard,
+) -> Markup {
+    let Part { rect, standing, .. } = *part;
     group(
         Role::Card,
-        subject(SubjectKind::Node, &placed.node.id, standing),
-        appearance_attributes(appearance),
+        subject(part.kind, &part.node.id, standing),
+        appearance_attributes(part.appearance),
         lines(vec![
             slab_seat(rect, SLAB_RADIUS),
             if standing == Some(Standing::Removed) {
@@ -120,37 +154,17 @@ pub fn paint_card(
             } else {
                 Markup::new()
             },
-            halo(rect, SLAB_RADIUS, &styles, standing),
+            halo(rect, SLAB_RADIUS, &Styles::of(palette), standing),
             slab(
                 rect,
-                &card_look(appearance.body_color, palette),
+                &card_look(part.appearance.body_color, palette),
                 palette,
                 standing,
-                None,
+                cut,
             ),
-            paint_card_views(
-                ctx,
-                &placed.node.name,
-                placed.node.responsibility.as_deref(),
-                rect,
-                appearance.drill,
-                &words,
-                NearCard {
-                    chip: type_chip(0.0, 0.0, appearance, palette, standing, ctx.icons),
-                    chip_x: rect.x + CARD_PADDING_X,
-                    chip_y,
-                    words: Words {
-                        markup: lines(vec![title, note]),
-                        anchor: Place {
-                            x: text_x,
-                            y: title_y,
-                            size: title_size,
-                        },
-                    },
-                },
-            ),
+            paint_card_views(ctx, part, palette, near),
             standing_pin(rect, standing, palette),
-            warning_badge(rect, unsettled, palette),
+            warning_badge(rect, part.unsettled, palette),
         ]),
     )
 }

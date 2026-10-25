@@ -3,18 +3,21 @@
 //! of its responsibility, sized to the room its box holds. Both views are drawn
 //! here together, as one shared element transition (TASK-428).
 
-use crate::drawing::{DiagramFont, TextRole, TextRun};
+use crate::drawing::{DiagramFont, NodeFacts, TextRole, TextRun};
 use crate::geometry::{Point, Rect};
 use crate::js;
 use crate::markup::{Markup, concat, lines};
 use crate::paint::Ctx;
+use crate::paint::appearance::type_chip;
 use crate::paint::design::ICON_CHIP_SIZE;
 use crate::paint::drill_mark::{DRILL_MARK_ROOM, corner_drill_mark};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
 use crate::paint::fonts::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 use crate::paint::palette::Palette;
+use crate::paint::standing::standing_palette;
 use crate::paint::text_runs::paint_text_runs;
-use crate::request::DrillDirection;
+use crate::request::{NodeAppearance, Standing};
+use crate::scene::SubjectKind;
 
 const NAME_LINE: f64 = 1.15;
 const GIST_LINE: f64 = 1.25;
@@ -252,9 +255,19 @@ pub fn words_in(runs: &[TextRun], rect: Rect, palette: &Palette) -> Words {
     }
 }
 
-/// What a card draws near: its chip drawn at the origin, where it stands, and its words.
+/// A part as its card or its heading draws it: what it is, the box its views
+/// fill, its look, and how it stands.
+pub struct Part<'a> {
+    pub kind: SubjectKind,
+    pub node: &'a NodeFacts,
+    pub rect: Rect,
+    pub appearance: &'a NodeAppearance,
+    pub standing: Option<Standing>,
+    pub unsettled: bool,
+}
+
+/// What a card draws near: where its chip stands, and its words.
 pub struct NearCard {
-    pub chip: Markup,
     pub chip_x: f64,
     pub chip_y: f64,
     pub words: Words,
@@ -265,19 +278,14 @@ fn gist_of(text: Option<&str>) -> Option<&str> {
     text.filter(|text| !js::trim(text).is_empty())
 }
 
-/// A card's near and far views, and the chip they share.
-pub fn paint_card_views(
-    ctx: &Ctx,
-    name: &str,
-    responsibility: Option<&str>,
-    rect: Rect,
-    drill: Option<DrillDirection>,
-    palette: &Palette,
-    near: NearCard,
-) -> Markup {
+/// A part's near and far views, and the kind chip they share.
+pub fn paint_card_views(ctx: &Ctx, part: &Part, palette: &Palette, near: NearCard) -> Markup {
+    let rect = part.rect;
+    let drill = part.appearance.drill;
+    let words = standing_palette(palette, part.standing);
     let mark = |scale: f64| match drill {
         None => Markup::new(),
-        Some(direction) => corner_drill_mark(rect, direction, palette.glyph, scale),
+        Some(direction) => corner_drill_mark(rect, direction, words.glyph, scale),
     };
     let tile = js::js_min(TILE, rect.height - EDGE * 2.0);
     let x = EDGE + tile + EDGE;
@@ -291,13 +299,13 @@ pub fn paint_card_views(
         };
     let stack = settle(
         ctx,
-        name,
-        gist_of(responsibility),
+        &part.node.name,
+        gist_of(part.node.responsibility.as_deref()),
         room,
         rect.height - PAD_Y * 2.0,
     );
     let top = EDGE + js::js_max(0.0, (tile - stack.height) / 2.0);
-    let far = words_in(&runs_of(ctx, &stack, x, top), rect, palette);
+    let far = words_in(&runs_of(ctx, &stack, x, top), rect, &words);
     let near_chip = Place {
         x: near.chip_x,
         y: near.chip_y,
@@ -309,7 +317,11 @@ pub fn paint_card_views(
         size: tile,
     };
     lines(vec![
-        shared_chip(near.chip, near_chip, far_chip),
+        shared_chip(
+            type_chip(0.0, 0.0, part.appearance, palette, part.standing, ctx.icons),
+            near_chip,
+            far_chip,
+        ),
         near_layer(concat(vec![
             moving_words(near.words.markup, near.words.anchor, far.anchor),
             mark(1.0),
