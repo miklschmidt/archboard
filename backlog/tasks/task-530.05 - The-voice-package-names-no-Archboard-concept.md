@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: In Progress
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-25T14:48:00Z'
+updated_date: '2026-10-25T15:10:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -39,3 +39,9 @@ Reviews: one reviewer per Wave A scope and one for the package and Archboard hos
 Wave C: proposals TASK-530.05 on Codex realtime voice, Voice coordinator and Codex workhorse drawn to what was built, code check and footprint, adopt.
 Then the heavy Blocks budget for Codex realtime voice (TASK-536), bun run check, push, CI.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Names chosen by the user (2026-10-25): pane, as one place in the page that shows the conversation, becomes chat and chatId; the walkthrough presentation becomes narrative (VoiceNarrative, realtimeStart.narrative), and the queue's own narratives take another name; recording becomes unattended, one hook; repositoryOfCheckout becomes checkoutLabel and the workhorse entry's repository becomes label. Board news becomes a context change that a host announces with agent.announce to any combination of workhorse, coordinator and voice (the user's requirement).
+<!-- SECTION:NOTES:END -->
