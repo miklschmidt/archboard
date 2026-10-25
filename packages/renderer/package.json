@@ -2,7 +2,7 @@
 	"name": "@archboard/renderer",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Draws a board as a picture: the pure picture code the browser and Bun share, the Bun host with its canvas and layout workers, the browser host, the rasterizer and its private headless Chromium, and the stylesheet and fonts the pictures are drawn with.",
+	"description": "Hosts the renderer core in Bun and the browser, runs its layout workers and rasterizer, and supplies the shared stylesheet and fonts.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {

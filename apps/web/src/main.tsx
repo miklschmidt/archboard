@@ -20,7 +20,7 @@ if (!root) {
 	throw new Error("The page has no #root element to mount into.");
 }
 
-// Pictures are drawn here, with this browser's canvas and a pool of engine
+// Pictures are drawn here, with the renderer core and a pool of engine
 // workers, from the boards this tab reads (TASK-247). The renderer is its own
 // chunk, fetched and started while the application boots, so the shell and a
 // kept picture never wait for it.

@@ -44,4 +44,4 @@ function useStageAppearances(
 	);
 }
 
-export { useStageAppearances, type StageAppearances };
+export { useStageAppearances };
