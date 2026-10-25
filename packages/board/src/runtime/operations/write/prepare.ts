@@ -89,14 +89,58 @@ function preparedTransition(
 					`this write was prepared where no board was and it is at version ${before.version}; prepare it again`,
 				);
 			}
-			const { board, descendants, notices } = checked;
-			return {
-				ok: true,
-				board,
-				...(descendants === undefined ? {} : { descendants }),
-				...(notices === undefined ? {} : { notices }),
-			};
+			return { ok: true, board: checked.board, ...checked.reported };
 		},
+	};
+}
+
+/**
+ * The change a preparation states, as a transition.
+ * @param preparation The preparation.
+ * @returns Its transition, or the historical correction's.
+ */
+function statedTransition(preparation: SemanticWritePreparation): SemanticTransition {
+	return preparation.correct === undefined
+		? preparation.transition
+		: correctHistoricalTransition(preparation.correct);
+}
+
+/**
+ * A checked candidate as a prepared write, bound to the one commit that writes it.
+ * @param preparation Which board, and the vault it lives in.
+ * @param transition The change as stated.
+ * @param checked The checked candidate.
+ * @param at The timestamp the candidate was stamped with, which the commit stamps again.
+ * @returns The prepared write.
+ */
+function preparedWrite(
+	preparation: SemanticWritePreparation,
+	transition: SemanticTransition,
+	checked: CheckedCandidate,
+	at: string,
+): PreparedSemanticWrite {
+	return {
+		outcome: "prepared",
+		board: checked.board,
+		location: checked.moved.location,
+		previousVersion: checked.previousVersion,
+		descendants: checked.reported.descendants ?? [],
+		/**
+		 * Write the prepared candidate under the board's lease.
+		 * @param by Who writes, and what cancels waiting for the lease.
+		 * @returns What the write did, or why it did nothing.
+		 */
+		commit: (by) =>
+			writeSemanticBoardAt(
+				{
+					vault: preparation.vault,
+					board: preparation.board,
+					...by,
+					expectedVersion: checked.previousVersion ?? undefined,
+					transition: preparedTransition(transition, checked),
+				},
+				at,
+			),
 	};
 }
 
@@ -113,10 +157,7 @@ function prepareSemanticBoardWrite(
 	preparation: SemanticWritePreparation,
 ): PreparedSemanticWrite | SemanticWriteRejection {
 	const { vault, expectedVersion } = preparation;
-	const transition =
-		preparation.correct === undefined
-			? preparation.transition
-			: correctHistoricalTransition(preparation.correct);
+	const transition = statedTransition(preparation);
 	const location = locateSemanticBoard(resolveSemanticBoard(preparation.board, vault).name, vault);
 	// Read as the commit's lease would read it: a board that awaits its
 	// migration is answered at the version the commit then finds.
@@ -131,27 +172,9 @@ function prepareSemanticBoardWrite(
 		at,
 		() => read,
 	);
-	if (checked.outcome === "rejected") {
-		return checked;
-	}
-	return {
-		outcome: "prepared",
-		board: checked.board,
-		location: checked.moved.location,
-		previousVersion: checked.previousVersion,
-		descendants: checked.descendants ?? [],
-		commit: (by) =>
-			writeSemanticBoardAt(
-				{
-					vault,
-					board: preparation.board,
-					...by,
-					expectedVersion: checked.previousVersion ?? undefined,
-					transition: preparedTransition(transition, checked),
-				},
-				at,
-			),
-	};
+	return checked.outcome === "rejected"
+		? checked
+		: preparedWrite(preparation, transition, checked, at);
 }
 
 export { prepareSemanticBoardWrite };

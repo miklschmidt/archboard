@@ -36,10 +36,13 @@ interface CheckedCandidate {
 	readonly board: SemanticBoard;
 	/** The version the board was at, or null when there was none. */
 	readonly previousVersion: number | null;
-	/** What every draft under the change did about it. */
-	readonly descendants?: readonly DescendantOutcome[];
-	/** What the change did that the answer should say. */
-	readonly notices?: readonly WriteNotice[];
+	/** What the change reported beside the board. */
+	readonly reported: {
+		/** What every draft under the change did about it. */
+		readonly descendants?: readonly DescendantOutcome[];
+		/** What the change did that the answer should say. */
+		readonly notices?: readonly WriteNotice[];
+	};
 }
 
 /**
@@ -265,14 +268,13 @@ function checkedCandidate(
 	if (!("board" in checked)) {
 		return { ...checked, version: before.version };
 	}
-	const { descendants, notices } = candidate;
+	const { ok: _ok, board: _produced, ...reported } = candidate;
 	return {
 		outcome: "checked",
 		moved,
 		board: checked.board,
 		previousVersion: before.version,
-		...(descendants === undefined ? {} : { descendants }),
-		...(notices === undefined ? {} : { notices }),
+		reported,
 	};
 }
 

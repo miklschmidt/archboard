@@ -264,7 +264,7 @@ function applyUnderLease(
 		command.vault,
 		moved,
 		{ id: heldAs, kind: command.writer.kind },
-		() => persisted(moved, checked.board, checked.previousVersion, checked),
+		() => persisted(moved, checked.board, checked.previousVersion, checked.reported),
 	);
 	return "outcome" in written
 		? written
