@@ -188,7 +188,7 @@ async function footprint(base: string, proposal?: string, head?: string): Promis
 	if (current === undefined) throw new Error("the board has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
-		await lens.readFootprint({
+		await lens.readVariantFootprint({
 			vault: scratch,
 			board: value,
 			against: current,
@@ -423,7 +423,7 @@ test("a --head that looks like an option is a ref and never an option", async ()
 async function readAgainst(proposal: string, variantName?: string) {
 	const value = board();
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readFootprint({
+		await lens.readVariantFootprint({
 			vault: scratch,
 			board: value,
 			against: variantName === undefined ? undefined : resolveVariant(value, variantName),

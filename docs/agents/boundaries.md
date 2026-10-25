@@ -397,8 +397,9 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
 
 - `./code-check` is the answer of the code check and the answer of the route that remembers it:
   `CodeCheckAnswer` and `RememberedFindings`, with their schemas. The schema is in
-  `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes
-  and the start of a period, from `shared/protocol/`. It also gives the label of a commit's
+  `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes,
+  the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from
+  `shared/protocol/`. It also gives the label of a commit's
   attribution, from `shared/schemas/`. A part of an answer, such as a finding, a skip, a timing or a commit, has no
   public name. A reader names it by its place in the answer, such as
   `CodeCheckAnswer["findings"][number]`.
@@ -408,7 +409,9 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   plan the check does not read, gives a refusal (`NO_SUCH_DRAFT`, `PLAN_REFUSED`) with its words.
   The code check keeps what behind read, so a server makes one. `checkCandidateCode` and
   `suggestHistoricalCommits` check the candidate of a correction. `./history-lens` makes the
-  locality reading and reads a footprint. `./code-facts` is `symbolLine`: the line that defines a
+  locality reading and reads a footprint. Each takes the vault, the board's name and the variants'
+  names, reads the board, and chooses the variants itself (ADR 0045): it answers `{ok: true, answer}`
+  or a refusal `{ok: false, code, problem}` with a `HistoryRefusalCode` or the board store's code. `./code-facts` is `symbolLine`: the line that defines a
   binding's symbol in the one file the binding names. The code opener opens the file at that line.
 - The steps of a pass, behind, the code facts reader and the language servers have no api file. The
   code check opens the language servers through its own session. The package's tests reach the
@@ -789,8 +792,8 @@ of `dist/`.
   served vault). `middleware/mutation-work/` runs a request's work under its lease. `sockets/panes/` accepts the
   pane sockets, `watchers/semantic-boards/` watches the board files on disk, `state/` holds the pane vaults, the
   agent activity and the memory of code findings, `projections/board-announcements/` turns a lock or a doing line
-  into what a pane hears, `services/checkout-work/` owns the machine-local checkout work, `rules/footprint/`
-  picks the variants a footprint reads and `protocol/semantic-write/` is what a write request must prove.
+  into what a pane hears, `services/checkout-work/` owns the machine-local checkout work and
+  `protocol/semantic-write/` is what a write request must prove.
 - The app reads the pane and tab services, request context and listener address through the exports of
   `packages/workbench`. It mounts that package's pane context and voice trace routes, and the router of
   `packages/code-opener`.
