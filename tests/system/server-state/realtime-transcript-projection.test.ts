@@ -7,7 +7,7 @@ import {
 } from "@archboard/codex-realtime-voice/runtime";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

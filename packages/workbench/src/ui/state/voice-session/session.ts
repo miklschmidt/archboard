@@ -3,7 +3,7 @@
 // reads are constructed elsewhere and are never disposed here.
 
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
-import { JsonValueSchema } from "@archboard/codex-realtime-voice/contract";
+import { JsonValueSchema } from "@archboard/codex-realtime-voice/schemas";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,

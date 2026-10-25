@@ -10,7 +10,7 @@ import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {

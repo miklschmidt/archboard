@@ -1,8 +1,6 @@
-import type {
-	BrowserDynamicApproval,
-	BrowserDynamicApprovalEffect,
-} from "@archboard/codex-realtime-voice/contract";
-import type { BrowserSchemas } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserDynamicApprovalEffect } from "@archboard/codex-realtime-voice/schemas";
+import type { BrowserSchemas } from "@archboard/codex-realtime-voice/schemas";
 import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,
