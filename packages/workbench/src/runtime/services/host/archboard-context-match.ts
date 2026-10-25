@@ -1,6 +1,6 @@
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { SettledSemanticChangeEvent } from "#runtime/schemas/semantic-context-types.ts";
-import { canonicalSemanticCursorToken } from "@archboard/codex-realtime-voice/runtime";
+import { canonicalContextCursorToken } from "@archboard/codex-realtime-voice/runtime";
 import { sameStringValues } from "@archboard/codex-realtime-voice/runtime";
 
 /**
@@ -146,7 +146,7 @@ function archboardContextMatchesEvent(
 	if (event.cursor === null || event.version === null) {
 		return false;
 	}
-	const cursor = canonicalSemanticCursorToken(event.cursor);
+	const cursor = canonicalContextCursorToken(event.cursor);
 	return boardMatches(context, event, cursor) && capturedStateMatches(context, event);
 }
 

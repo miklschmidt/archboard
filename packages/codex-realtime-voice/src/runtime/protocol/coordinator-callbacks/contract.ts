@@ -31,7 +31,12 @@ import type {
 	TurnId,
 } from "@archboard/codex-app-server/identity";
 
-interface CoordinatorHostCallbackSource {
+/**
+ * One host-context event as the host hands it to the callbacks: what the host says changed, where
+ * the reader's focus went, or what was picked out, under the execution identities the host saw.
+ * The callbacks capture their own correlation; these identities only scope the event.
+ */
+interface CoordinatorHostContextSource {
 	readonly kind: "host";
 	readonly type: "change" | "focus" | "selection";
 	readonly child: { readonly id: ChildId | null; readonly epoch: ChildEpoch | null };
@@ -44,10 +49,13 @@ interface CoordinatorHostCallbackSource {
 		readonly state: "executable" | "inspect_only" | "unbound";
 		readonly reason: string | null;
 	};
-	readonly semantic: CoordinatorSemanticCallbackData;
+	readonly context: HostContextEvent;
+	/**
+	 * The thread that caused the event, or null. An event this session's own workhorse or
+	 * coordinator caused is refused as `own_change` before delivery.
+	 */
 	readonly author: string | null;
 }
-type SemanticCallbackSource = CoordinatorHostCallbackSource;
 
 /**
  * One event of the linked workhorse thread itself, whoever started the turn (TASK-321): a turn
@@ -69,7 +77,7 @@ interface WorkhorseNewsSource {
 
 type CoordinatorCallbackSource =
 	| WorkhorseOperationEvent
-	| SemanticCallbackSource
+	| CoordinatorHostContextSource
 	| WorkhorseNewsSource;
 
 interface CoordinatorCallbackLinkCorrelation {
@@ -131,72 +139,50 @@ type CoordinatorOperationCallback =
 	  });
 
 /**
- * One subject a person picked out, as the callback names it.
+ * The part of a host-context event the callbacks read, and the host's own payload they carry
+ * untouched to the host policy.
  *
- * Identities only. What it is called is in the brief, which the same callback
- * carries whole; repeating a label here would be a second answer to "what is
- * this called" that could disagree with the first.
+ * A change is identified by its feed and sequence; a focus or a selection by its feed, capture
+ * time and `identity`. Two events that share an identity share one delivery.
  */
-interface CoordinatorSemanticSubject {
-	readonly kind: string;
-	readonly id: string;
-}
-
-interface CoordinatorSemanticCallbackData {
+interface HostContextEvent {
+	/** The host feed the event belongs to. Events of two feeds never coalesce. */
 	readonly feedId: string;
+	/** The event's place in its feed, which identifies a change; null where the host counts none. */
 	readonly sequence: number | null;
-	readonly origin: "human" | "agent" | "mixed" | null;
-	readonly significance: string | null;
+	/** The host's text of the context, for a host policy to tell or encode. */
 	readonly brief: string;
+	/** When the host captured what the event reports; the delivery record's freshness starts here. */
 	readonly capturedAtMs: number;
+	/** Until when what it reports is fresh; the delivery record's freshness ends here. */
 	readonly freshUntilMs: number;
-	readonly paneId: string;
-	readonly focused: boolean;
-	/** The selected subjects of the board, never anything that was drawn. */
-	readonly selection: readonly CoordinatorSemanticSubject[];
-	readonly detail: string | null;
 	/**
-	 * The pane news this event is, or null when nothing of it was the user's own doing and nobody
-	 * is told (TASK-293, ADR 0034).
+	 * What tells a focus or selection apart from another of the same feed and capture time, as
+	 * stable text the host chooses. A change ignores it.
 	 */
-	readonly news: CoordinatorPaneNews | null;
+	readonly identity: string;
+	/**
+	 * Whether a later event of the same type and feed replaces this one while it waits. False for
+	 * an event that must be told on its own.
+	 */
+	readonly coalesces: boolean;
+	/** The host's own data, cloned and frozen on receipt and read only by the host policy. */
+	readonly payload: unknown;
 }
 
-/** Pane news as the voice model is given it (TASK-293). */
-interface CoordinatorPaneNews {
-	/** The one sentence of names: where the user's reading now stands, or what changed under it. */
-	readonly sentence: string;
-	/**
-	 * Whether, during a narration, it is a reason to stop the talk: a pick that is not empty, a
-	 * view or variant the user chose, or anything an agent outside this session did. An emptied
-	 * selection or a move to another pane is not.
-	 */
-	readonly stops: boolean;
-	/**
-	 * Who did what it tells: the user by hand, or an agent that is neither this session's workhorse
-	 * nor its coordinator (TASK-293.06). Neither of those asked for an agent's change, so the
-	 * coordinator is told it too.
-	 */
-	readonly by: "user" | "agent";
-	/**
-	 * For a board an outside agent wrote, its aggregate key: the write is told only while a pane of
-	 * this canvas shows that board, and stops only a narration of it. Null for anything else.
-	 */
-	readonly board: string | null;
-}
-
-interface CoordinatorSemanticCallbackBase {
-	readonly kind: "semantic";
+interface CoordinatorHostContextCallbackBase {
+	readonly kind: "host_context";
 	readonly correlation: CoordinatorCallbackCorrelation;
 	readonly threadLinkState: "executable" | "inspect_only" | "unbound";
 	readonly threadLinkReason: string | null;
-	readonly semantic: CoordinatorSemanticCallbackData;
+	readonly context: HostContextEvent;
 }
 
-type CoordinatorSemanticCallback =
-	| (CoordinatorSemanticCallbackBase & { readonly type: "change" })
-	| (CoordinatorSemanticCallbackBase & { readonly type: "focus" })
-	| (CoordinatorSemanticCallbackBase & { readonly type: "selection" });
+/** One normalized host-context event, as the host policy encodes it and decides its delivery. */
+type CoordinatorHostContextCallback =
+	| (CoordinatorHostContextCallbackBase & { readonly type: "change" })
+	| (CoordinatorHostContextCallbackBase & { readonly type: "focus" })
+	| (CoordinatorHostContextCallbackBase & { readonly type: "selection" });
 /** Workhorse news about the linked workhorse thread, as the coordinator is given it (TASK-321). */
 interface CoordinatorWorkhorseNewsCallback {
 	readonly kind: "workhorse_news";
@@ -208,7 +194,7 @@ interface CoordinatorWorkhorseNewsCallback {
 
 type CoordinatorCallback =
 	| CoordinatorOperationCallback
-	| CoordinatorSemanticCallback
+	| CoordinatorHostContextCallback
 	| CoordinatorWorkhorseNewsCallback;
 
 interface CoordinatorCallbackRealtimeGeneration {
@@ -262,17 +248,6 @@ interface CoordinatorCallbackContextPort {
 	}) => Promise<CoordinatorCallbackMutationResult>;
 }
 
-/** What the canvas of this tab session holds now, read when a callback is delivered. */
-interface CoordinatorCallbackCanvas {
-	/** The boards its panes show, by aggregate key. */
-	readonly boards: readonly string[];
-	/**
-	 * The board a live narration in one of its panes is on, by aggregate key, or null when none is
-	 * under way. A recording is no narration: nobody is listening to stop for.
-	 */
-	readonly narrated: string | null;
-}
-
 /** What news the coordinator is given is: work that ended, a wait on the user, or a message. */
 type WorkhorseNewsSituation = "ended" | "waiting" | "message";
 
@@ -321,7 +296,7 @@ type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
-	/** Speech the voice model answers now: pane news during a narration (TASK-293.05). */
+	/** Speech the voice model answers now, on the host policy's choice (TASK-293.05). */
 	| "realtime_appendSpeech"
 	/** The coordinator's running turn or a new one, for a workhorse outcome while voice is live. */
 	| "coordinator_turn";
@@ -339,8 +314,9 @@ type CoordinatorCallbackDeliveryReason =
 	| "stale_link"
 	| "stale_session"
 	| "voice_inactive"
+	/** The host policy recorded the event as no doing of the user, and told it to nobody. */
 	| "agent"
-	/** An outside agent wrote a board no pane of this canvas shows (TASK-293.06). */
+	/** The host policy found that nothing the user is shown is what the event is about. */
 	| "not_shown"
 	| "recorded_only"
 	| "session_rejected"
@@ -376,6 +352,11 @@ type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
 		  }
 	);
 
+/**
+ * What the host policy decides for one host-context callback: a reason to record it and tell
+ * nobody, or the words to give the live voice session on one channel. `coordinatorContext` also
+ * puts the words into the coordinator thread's history first.
+ */
 type CoordinatorCallbackHostDelivery =
 	| { readonly reason: CoordinatorCallbackDeliveryReason }
 	| {
@@ -384,14 +365,24 @@ type CoordinatorCallbackHostDelivery =
 			readonly reason: CoordinatorCallbackDeliveryReason | null;
 			readonly coordinatorContext: boolean;
 	  };
+
+/**
+ * The host's side of host-context callbacks: it publishes the events, encodes each callback for
+ * the delivery record, and decides what reaches the voice session. The callbacks keep ordering,
+ * identity, freshness and every execution authority.
+ */
 interface CoordinatorCallbackHostPolicy {
-	readonly subscribe: (listener: (event: CoordinatorHostCallbackSource) => void) => () => void;
+	/** Receives the host's events; returns the cleanup that ends the subscription. */
+	readonly subscribe: (listener: (event: CoordinatorHostContextSource) => void) => () => void;
+	/** Encodes any callback as the text of its delivery record; a throw refuses it as invalid. */
 	readonly encode: (callback: CoordinatorCallback) => string;
+	/** Why a host-context callback is told to nobody from the moment it arrives, or null. */
 	readonly arrivalRefusal?: (
-		event: CoordinatorHostCallbackSource,
-		callback: CoordinatorSemanticCallback,
+		event: CoordinatorHostContextSource,
+		callback: CoordinatorHostContextCallback,
 	) => CoordinatorCallbackDeliveryReason | null;
-	readonly delivery: (callback: CoordinatorSemanticCallback) => CoordinatorCallbackHostDelivery;
+	/** How a cleared host-context callback is delivered. */
+	readonly delivery: (callback: CoordinatorHostContextCallback) => CoordinatorCallbackHostDelivery;
 }
 
 interface CoordinatorCallbackOptions {
@@ -411,8 +402,8 @@ interface CoordinatorCallbackOptions {
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	/**
 	 * The link of every ready workhorse of the tab session, one for each checkout (ADR 0050). A
-	 * callback is correlated with the workhorse its thread names, and pane news with the one voice
-	 * is bound to, which the semantic publisher names.
+	 * callback is correlated with the workhorse its thread names, and a host-context event with
+	 * the one voice is bound to, which the host names.
 	 */
 	readonly workhorseLinks: () => readonly CoordinatorCallbackLinkCorrelation[];
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
@@ -452,10 +443,9 @@ interface CoordinatorCallbackClassification {
 }
 
 export {
-	type CoordinatorHostCallbackSource,
+	type CoordinatorHostContextSource,
 	type CoordinatorCallbackHostDelivery,
 	type CoordinatorCallbackHostPolicy,
-	type SemanticCallbackSource,
 	type CoordinatorCallbackSource,
 	type WorkhorseNewsSource,
 	type WorkhorseNewsSituation,
@@ -463,12 +453,9 @@ export {
 	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,
-	type CoordinatorSemanticCallbackData,
-	type CoordinatorPaneNews,
-	type CoordinatorCallbackCanvas,
+	type HostContextEvent,
 	type CoordinatorCallbackContextPort,
-	type CoordinatorSemanticSubject,
-	type CoordinatorSemanticCallback,
+	type CoordinatorHostContextCallback,
 	type CoordinatorCallback,
 	type CoordinatorCallbackRealtimeGeneration,
 	type CoordinatorCallbackRealtimeRequest,
