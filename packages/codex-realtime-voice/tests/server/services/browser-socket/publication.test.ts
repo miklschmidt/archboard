@@ -21,6 +21,14 @@ async function rejectedSend(error: Error): Promise<void> {
 }
 
 describe("server Codex publication boundary", () => {
+	test("the production socket adapter takes a null callback error as a completed write", async () => {
+		const adapter = createServerCodexBrowserSocketSend({
+			readyState: WebSocket.OPEN,
+			send: (_data, callback) => queueMicrotask(() => callback(null)),
+		});
+		await expect(adapter.send({ written: true })).resolves.toBeUndefined();
+	});
+
 	test("the production socket adapter rejects closing and callback-failed sends", async () => {
 		let attempts = 0;
 		const closing = createServerCodexBrowserSocketSend({

@@ -54,7 +54,8 @@ interface ServerCodexBrowserSocketSend {
 
 interface ServerCodexBrowserWebSocket {
 	readonly readyState: number;
-	readonly send: (data: string, callback: (error?: Error) => void) => void;
+	/** A successful write passes no error: Bun 1.4.3's `ws` passes `undefined`, Bun 1.4.4's passes `null`. */
+	readonly send: (data: string, callback: (error?: Error | null) => void) => void;
 }
 
 /**
@@ -79,7 +80,7 @@ function createServerCodexBrowserSocketSend(
 			await new Promise<void>((resolve, reject) => {
 				try {
 					socket.send(JSON.stringify(message), (error) =>
-						error === undefined ? resolve() : reject(error),
+						error === undefined || error === null ? resolve() : reject(error),
 					);
 				} catch (error) {
 					reject(error);
