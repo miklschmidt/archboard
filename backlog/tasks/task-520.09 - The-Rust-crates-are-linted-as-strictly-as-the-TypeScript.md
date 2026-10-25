@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T04:29:00Z'
-updated_date: '2026-10-25T05:38:00Z'
+updated_date: '2026-10-25T06:02:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-520
@@ -51,4 +51,11 @@ Evidence:
 - Corpus: render-corpus compare /tmp/lints-before /tmp/lints-after: "0 of 2344 drawings differ".
 - bun run check: exit 0, all 18 vp tasks successful, bun tests 4881 pass 1 skip 0 fail, system 257 pass, serial browser lane 19 files exit 0.
 - No #[allow] anywhere in crates/ (allow_attributes refuses one); no crate-wide expect.
+
+Follow-up (coordinator's three gaps), head eefb78d23 plus this note:
+- File length: tests/system/repository-policy/rust-crates.test.ts (test:repository) refuses any .rs file under crates/ over 600 lines, counted as max-lines counts. The 13 long files were split into 23 new modules (commits f9e60e8be, a9069c6ec, a794e2c48, 6b70d47d4, c465bf5e8). A multiset diff of removed and added lines shows only use lists, impl headers, visibility and rustfmt reflow: the code moved and did not change. Largest crate file now 588 lines.
+- Inheritance: the same test refuses a crate manifest under crates/ without [lints] workspace = true. A probe with workspace = false failed it, and a probe with a 601-line file failed the cap.
+- Rustdoc: [workspace.lints.rustdoc] all = warn, and lint:core-docs in lint:all runs RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps --document-private-items. It found 13 unresolved links, which were the router's paper citations [W09]/[W12]/[D05], now escaped. A probe with one unescaped citation failed the lane.
+- Evidence: render-corpus compare /tmp/lints-before /tmp/lints-after2: "0 of 2344 drawings differ". bun run check: exit 0, 19/19 tasks, bun tests 4881 pass 1 skip 0 fail, system 257 pass, repository 144 pass, serial browser lane exit 0.
+- Observed, not changed: the export-types binary prints its declarations in a different order after each rebuild (three rebuilds gave three md5 sums). The set of declarations is the same. Not checked at the base commit.
 <!-- SECTION:NOTES:END -->
