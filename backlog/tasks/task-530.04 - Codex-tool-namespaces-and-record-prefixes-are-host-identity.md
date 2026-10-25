@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:24:00Z'
-updated_date: '2026-10-25T02:47:00Z'
+updated_date: '2026-10-25T04:11:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -21,7 +21,7 @@ TASK-530.01 made the service name and thread source host options, but the coordi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An outside host's Codex threads, prompts and stored records carry no Archboard name unless the host supplies it
+- [x] #1 An outside host's Codex threads, prompts and stored records carry no Archboard name unless the host supplies it
 - [x] #2 Archboard passes its existing names and its thread profiles, manifest digests and stored records stay byte-identical
 - [x] #3 Incoming tool calls are matched by role, not by a literal Archboard name
 <!-- AC:END -->
@@ -38,4 +38,6 @@ Archboard passes its names: profile digests unchanged; catalogue.test.ts pins 22
 Checks: type-check 0, lint 0, pack:voice 0; bun test --isolate packages/codex-realtime-voice packages/workbench/tests apps/server/tests tests/system/repository-policy tests/system/server-state/workbench-example.test.ts tests/system/server-state/standalone-codex-workbench.test.ts: 1738 pass 0 fail; voice-package.test.ts 1 pass. Interface widths unchanged (voice 132, app-server 121).
 
 Left (AC 1 not met): the record prefix. WIRE_PREFIX = 'archboard' in packages/codex-app-server/src/shared/schemas/identity-values.ts still spells every <prefix>:<domain>:<token> identity, copied as ^archboard: regexes in voice record-shape.ts, manifest-scalars.ts and epoch-identity.ts. Planned shape: createIdentityLedger(prefix) mints the child with the host's prefix, every other server-minted value takes the ledger child's prefix, parsing accepts a prefix-shaped first segment, and VoiceAgentIdentity gains recordPrefix (default voice, Archboard archboard) passed through the generation bindings to createIdentityLedger. Also left for TASK-530: about 60 browser copy strings in packages/codex-realtime-voice/src/ui say 'The Archboard server'.
+
+Second part, branch voice/host-record-prefix (3eede5bca record prefix, 682713dd0 wording). createIdentityLedger(recordPrefix) mints the child with the host's prefix; every identity the ledger spells copies the child's prefix; parsing accepts any first segment of the shape [a-z][a-z0-9-]{0,15}, and an epoch belongs to its child only under the same prefix. The limit is 16, not 32: the longest operation id must stay within OPERATION_ID_MAX_BYTES 128 (workbench-identity.test proves it at 16). VoiceAgentIdentity.recordPrefix (default voice, Archboard archboard) reaches the ledger through ProductionCodexWorkbenchBindings.recordPrefix. createIdentityAuthorities() with no ledger uses the unnamed prefix codex (tests only). Archboard: archboard-profiles.test pins recordPrefix archboard beside its unchanged profile digests. Wording: UI copy says the server, the workbench or this page; the default decline reason is Declined at the workbench.; comments that meant this client or workbench are reworded. Remaining hits: 256 @archboard/ imports, 2 first-host comments (server.ts:19, storage.ts:125). AC1 evidence: packages/codex-realtime-voice/tests/runtime/rules/host/unnamed-host.test.ts, which fails when the default prefix is archboard. Nine voice UI tests still pin copy by exact text; their literals were updated, not rewritten. Checks: type-check 0, lint 0, pack:voice 0, named test list 2407 pass 0 fail.
 <!-- SECTION:NOTES:END -->
