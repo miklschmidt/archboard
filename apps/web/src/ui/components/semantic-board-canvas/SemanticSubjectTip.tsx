@@ -30,6 +30,7 @@ import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts"
  * What the picture has to add about the part under the pointer, placed against it.
  * @param props The part, the reading it is described from and how far away the picture is seen.
  * @param props.target The part whose tip is open, or null.
+ * @param props.appearance How the render reply draws the subject under the pointer.
  * @param props.reading What the board says about the variant the picture draws, or null.
  * @param props.far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @param props.overview Whether the picture is the overview, whose joined lines are subjects of their own.
@@ -37,6 +38,7 @@ import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts"
  */
 function SemanticSubjectTip(props: {
 	readonly target: TipTarget | null;
+	readonly appearance: AppliedAppearance | undefined;
 	readonly reading: VariantReading | null;
 	readonly far: boolean;
 	readonly overview: boolean;
@@ -44,7 +46,9 @@ function SemanticSubjectTip(props: {
 	const { target } = props;
 	const levels = useQuery(vaultCheckQuery(usePaneVault())).data?.policy.levels;
 	const tip =
-		target === null ? null : tipOver(target, props.reading, props.far, levels, props.overview);
+		target === null
+			? null
+			: tipOver(target, props.appearance, props.reading, props.far, levels, props.overview);
 	const anchor = useTipAnchor(target);
 	if (tip === null || anchor === null) {
 		return null;
@@ -106,6 +110,7 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
 /**
  * What the tip over one part of the picture says, once the board has been read.
  * @param target The part under the pointer.
+ * @param appearance How the picture draws that subject, when it names its type.
  * @param reading What the board says about the variant the picture draws, or null.
  * @param far Whether the picture is seen from far away.
  * @param levels The vault's levels, coarsest first, which place the board a part opens.
@@ -114,6 +119,7 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
  */
 function tipOver(
 	target: TipTarget,
+	appearance: AppliedAppearance | undefined,
 	reading: VariantReading | null,
 	far: boolean,
 	levels: readonly string[] | undefined,
@@ -122,7 +128,7 @@ function tipOver(
 	const variant = reading?.variant ?? null;
 	return variant === null
 		? null
-		: subjectTip(variant, target, far, { here: reading?.level, levels }, overview);
+		: subjectTip(variant, target, appearance, far, { here: reading?.level, levels }, overview);
 }
 
 /**

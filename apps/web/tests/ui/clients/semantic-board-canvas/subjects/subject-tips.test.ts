@@ -10,6 +10,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
+import type { AppliedAppearance } from "@archboard/board/render-reply";
 import { SemanticVariantSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "#tests/ui/support/semantic-board-canvas/fixture-orders.ts";
 import {
@@ -61,6 +62,33 @@ const VARIANT = SemanticVariantSchema.parse(
 	}),
 );
 
+/** The line's appearance in the render reply, independent of its SVG groups. */
+const LINE: AppliedAppearance = {
+	id: "e1",
+	typeName: "Calls",
+	typeKind: "call",
+	iconSvg: "",
+	depiction: "",
+	typeColor: "neutral",
+	lineColor: "sky",
+	dash: "dashed",
+	arrowhead: "open",
+};
+
+/** The container's appearance, including the icon drawn in its separate header. */
+const CONTAINER: AppliedAppearance = {
+	...LINE,
+	id: "c1",
+	typeName: "System",
+	typeKind: "system",
+	iconSvg: '<svg data-icon="reply"></svg>',
+	depiction: "container",
+	typeColor: "rose",
+	lineColor: "neutral",
+	dash: "solid",
+	arrowhead: "filled",
+};
+
 /**
  * A picture holding a card, a container's frame and header, and a relationship
  * drawn as a line and a label, as the renderer marks them.
@@ -69,12 +97,12 @@ const VARIANT = SemanticVariantSchema.parse(
 function drawn(): SVGSVGElement {
 	document.body.innerHTML =
 		`<svg xmlns="http://www.w3.org/2000/svg">` +
-		`<g data-semantic-kind="region" data-semantic-id="c1" data-type-name="System"><rect id="frame"></rect><line id="rule"></line></g>` +
+		`<g data-semantic-kind="region" data-semantic-id="c1"><rect id="frame"></rect><line id="rule"></line></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n1"><rect id="card"></rect></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n2"><rect id="plain"></rect></g>` +
-		`<g data-semantic-kind="edge" data-semantic-id="e1" data-type-name="Calls"><path id="wire"></path></g>` +
+		`<g data-semantic-kind="edge" data-semantic-id="e1"><path id="wire"></path></g>` +
 		`<g data-semantic-kind="edge" data-semantic-id="e1" data-semantic-part="label"><rect id="pill"></rect></g>` +
-		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><g data-type-icon=""><svg id="icon"></svg></g><text id="title"></text></g>` +
+		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><text id="title"></text></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n1" data-semantic-part="lifeline"><rect id="bar"></rect></g>` +
 		`</svg>`;
 	const rule = document.querySelector("#rule");
@@ -105,29 +133,30 @@ function at(picture: Element, id: string): Element {
 test("a card's tip adds what the card does not draw at this distance, and what a double-click opens", () => {
 	const card = tipTargetAt(at(drawn(), "card"), 0)!;
 	expect(card.part).toBe("card");
-	const near = subjectTip(VARIANT, card, false)!;
+	const near = subjectTip(VARIANT, card, undefined, false)!;
 	expect(near.title).toBe("API");
 	expect(near.lead).toBeUndefined();
 	expect(near.body).toBe("Holds no state between requests.");
 	expect(near.hint).toContain("api");
-	const far = subjectTip(VARIANT, card, true)!;
+	const far = subjectTip(VARIANT, card, undefined, true)!;
 	expect(far.lead).toBe("Answers requests");
 	expect(far.body).toBe("Holds no state between requests.");
 });
 
 test("a card with nothing more to say has a tip only from far away", () => {
 	const plain = tipTargetAt(at(drawn(), "plain"), 0)!;
-	expect(subjectTip(VARIANT, plain, false)).toBeNull();
-	expect(subjectTip(VARIANT, plain, true)!.lead).toBe("Keeps boards");
+	expect(subjectTip(VARIANT, plain, undefined, false)).toBeNull();
+	expect(subjectTip(VARIANT, plain, undefined, true)!.lead).toBe("Keeps boards");
 });
 
 test("a label's tip names its words and the kind of line the picture draws them on", () => {
 	const picture = drawn();
 	expect(tipTargetAt(at(picture, "wire"), 0)).toBeNull();
 	const label = tipTargetAt(at(picture, "pill"), 0);
-	const tip = subjectTip(VARIANT, label!, false)!;
+	const tip = subjectTip(VARIANT, label!, LINE, false)!;
 	expect(tip.title).toBe("reads");
-	expect(tip.kind).toBe("Calls");
+	expect(tip.kind).toBe(LINE.typeName);
+	expect(tip.appearance).toBe(LINE);
 	expect(tip.body).toBe("Once per request.");
 });
 
@@ -137,11 +166,10 @@ test("a container answers the pointer on its header band, not across its frame",
 	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(band!);
 	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(band!);
 	expect(tipTargetAt(at(picture, "frame"), 60)).toBeNull();
-	const header = subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)!;
+	const header = subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, CONTAINER, false)!;
 	expect(header.body).toBe("One process per vault.");
-	// The frame carries the container's type; its header draws the kind's icon.
-	expect(header.appearance?.typeName).toBe("System");
-	expect(header.appearance?.iconSvg).toContain('id="icon"');
+	// The reply supplies the type and icon even when the SVG carries neither.
+	expect(header.appearance).toBe(CONTAINER);
 });
 
 test("a double-click opens a card or a container by its header, and a lifeline has no tip", () => {
@@ -210,7 +238,8 @@ test("a joined line's tip in the overview names its drawn ends and every relatio
 		}),
 	);
 	const label = tipTargetAt(at(drawn(), "pill"), 0)!;
-	const tip = subjectTip(joined, label, false, {}, true)!;
+	const tip = subjectTip(joined, label, LINE, false, {}, true)!;
+	expect(tip.appearance).toBe(LINE);
 	expect(tip.title).toContain("Server");
 	expect(tip.title).toContain("Store");
 	expect(tip.body).toContain("reads");
@@ -218,5 +247,5 @@ test("a joined line's tip in the overview names its drawn ends and every relatio
 	expect(tip.body).toContain("Jobs");
 	expect(tip.body).not.toContain("Once.");
 	// Everything draws e1 alone, so its tip is e1's.
-	expect(subjectTip(joined, label, false, {}, false)!.title).toBe("reads");
+	expect(subjectTip(joined, label, LINE, false, {}, false)!.title).toBe("reads");
 });
