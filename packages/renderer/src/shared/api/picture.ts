@@ -2,8 +2,10 @@
 export type { BoardRenderChoices, BoardRenderOutcome } from "#shared/rules/render/board.ts";
 export {
 	cornerWarning,
-	headLength,
+	HEAD_LENGTH,
 	lineInk,
+	OPEN_ARM,
+	PULSE_BREADTH,
 	lineWarning,
 	lineWidth,
 	pulseInk,

@@ -8,8 +8,10 @@
 import { useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import {
-	headLength,
+	HEAD_LENGTH,
 	lineInk,
+	OPEN_ARM,
+	PULSE_BREADTH,
 	pulseInk,
 	lineWidth,
 	standingMark,
@@ -24,12 +26,6 @@ const LINE_BOX = { height: 20, middle: 10 } as const;
 
 /** A line the way the picture draws one its author gave no emphasis. */
 const PLAIN_WIDTH = lineWidth("normal");
-
-/** How long and how wide the picture draws the head of that line. */
-const HEAD = headLength("normal");
-
-/** How thick the arms of an open head are, in the ten-unit square its marker is drawn in. */
-const OPEN_ARM = 1.7;
 
 /**
  * A line sample's frame: a box as wide as asked, coloured by `color`.
@@ -74,13 +70,13 @@ function RelationshipSample(props: {
 	const width = props.width ?? 36;
 	// Drawn in the picture's own expression for it: a coloured line at its line
 	// strength over the page, the neutral line as it is.
-	const ink = lineInk(paletteInk(appearance.lineColor, "--diagram-edge"));
+	const ink = lineInk(appearance.lineColor);
 	const dash =
 		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
 	const tip = width - 1;
 	const filled = appearance.arrowhead === "filled";
 	// A filled head covers the end of its line. An open head's arms meet where its line ends.
-	const end = filled ? tip - HEAD / 2 : tip;
+	const end = filled ? tip - HEAD_LENGTH / 2 : tip;
 	return (
 		<LineFrame width={width} color={ink}>
 			<path
@@ -107,10 +103,10 @@ function RelationshipSample(props: {
 function ArrowHead(props: { readonly filled: boolean; readonly tip: number }): JSX.Element {
 	return (
 		<svg
-			x={props.tip - HEAD}
-			y={LINE_BOX.middle - HEAD / 2}
-			width={HEAD}
-			height={HEAD}
+			x={props.tip - HEAD_LENGTH}
+			y={LINE_BOX.middle - HEAD_LENGTH / 2}
+			width={HEAD_LENGTH}
+			height={HEAD_LENGTH}
 			viewBox="0 0 10 10"
 		>
 			{props.filled ? (
@@ -153,10 +149,10 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 }
 
 /** The picture's own proportions of a pulse in small: how thick its core is, and how long its light runs. */
-const PULSE = { width: PLAIN_WIDTH + 0.6, span: 40, glow: 3 } as const;
+const PULSE = { width: PULSE_BREADTH, span: 40, glow: 3 } as const;
 
 /** The light of a pulse on the neutral line: the line's colour with white mixed in, as the picture draws it. */
-const PULSE_LIGHT: CSSProperties = { stopColor: pulseInk(NEUTRAL_LINE) };
+const PULSE_LIGHT: CSSProperties = { stopColor: pulseInk(undefined) };
 
 /**
  * The light of a pulse along its length: nothing, a tail that gathers toward a

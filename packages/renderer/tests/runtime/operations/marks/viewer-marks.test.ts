@@ -11,7 +11,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	cornerWarning,
-	headLength,
+	HEAD_LENGTH,
 	lineInk,
 	lineWidth,
 	pulseInk,
@@ -28,8 +28,8 @@ const CONTENT = orderedFixture({
 	edges: [{ id: "ab", from: "a", to: "b", kind: "http", emphasis: "normal", traffic: {} }],
 });
 
-/** The ink the default policy gives an HTTP relationship, at full strength. */
-const SKY = "var(--semantic-sky)";
+/** The colour the default policy gives an HTTP relationship. */
+const SKY = "sky";
 
 /**
  * Markup with every placement taken out, so a mark drawn at the origin reads
@@ -60,5 +60,5 @@ test("a pane draws the pins, warnings, inks and heads the picture draws", async 
 	const head = /marker-end="url\(#([^)]+)\)"/u.exec(line)![1]!;
 	const marker = new RegExp(`<marker id="${head}"[^>]*>`, "u").exec(drawn.svg)![0];
 	const width = Number(/markerWidth="([\d.]+)"/u.exec(marker)![1]);
-	expect(width * lineWidth("normal")).toBeCloseTo(headLength("normal"), 1);
+	expect(width * lineWidth("normal")).toBeCloseTo(HEAD_LENGTH, 1);
 });
