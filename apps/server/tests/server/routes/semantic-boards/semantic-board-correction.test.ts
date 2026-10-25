@@ -198,6 +198,35 @@ test("stale versions and undescribed applies stop before checking or writing", a
 	expect(readFileSync(file, "utf8")).toBe(before);
 });
 
+test("a missing board and a candidate the vault refuses are answered in the route's codes", async () => {
+	rmSync(file);
+	const missing = await ask("preview");
+	expect(missing.status).toBe(422);
+	expect(await missing.json()).toMatchObject({ code: "BOARD_MISSING" });
+	writeFileSync(file, JSON.stringify(family()));
+	const before = readFileSync(file, "utf8");
+	const config = join(vault, ".archboard", "config.yaml");
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(
+		config,
+		Bun.YAML.stringify({
+			levels: ["system"],
+			nodeKinds: { service: { name: "Service", icon: "RiServerLine" } },
+			relationshipKinds: { request: { name: "Request", dash: "solid", arrowhead: "filled" } },
+			groups: {},
+		}),
+	);
+	try {
+		const unconfigured = await ask("preview", {}, { nodes: [{ name: "Probe", kind: "worker" }] });
+		expect(unconfigured.status).toBe(422);
+		expect(await unconfigured.json()).toMatchObject({ code: "INVALID_BOARD" });
+	} finally {
+		rmSync(config);
+	}
+	expect(check).not.toHaveBeenCalled();
+	expect(readFileSync(file, "utf8")).toBe(before);
+});
+
 test("suggestion uses the historical state's supersession time", async () => {
 	const response = await fetch(
 		`${base}/api/semantic-boards/correct-suggest?${new URLSearchParams({ vault, board: "Example", variant: "Initial" })}`,
