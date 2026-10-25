@@ -1,11 +1,11 @@
 ---
 id: TASK-532
 title: Five modules deepened from the architecture debate
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:39:00Z'
-updated_date: '2026-10-25T05:47:00Z'
+updated_date: '2026-10-25T06:00:00Z'
 labels: []
 dependencies: []
 references:
@@ -23,7 +23,7 @@ Two independent reviewers (Codex gpt-6-astra at xhigh and Claude Opus 5.5) each 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each subtask is merged into feat/reusable-codex-workbench with its focused tests passing
+- [x] #1 Each subtask is merged into feat/reusable-codex-workbench with its focused tests passing
 - [x] #2 The interface width ceilings do not rise
 <!-- AC:END -->
 
@@ -48,4 +48,12 @@ Vault closing (branch vault/close-529-530-532, from f667552b2):
 - Code finding (no source changed): the pane socket and several announcement routes reach the board store only for address parsing. A narrower address export can remove that reach. EXPOSED_UNUSED on Pane session (apps/web/src/ui/clients/pane-session) was in the base run.
 
 AC #2 evidence: git diff df9e4ba5a HEAD -- tests/system/repository-policy/interface-width-ceilings.json is empty, and the repository lane (interface-width.test.ts) passes, 153 tests.
+
+AC #1 evidence: TASK-532.01 to .05 are Done and merged into feat/reusable-codex-workbench. Full gate on ad2c07c13: every lane up to test:modules passes; test:modules has 4990 pass and 8 fail, all in packages/renderer wide-boards.test.ts (six over the 3000 ms first-layout limit and one 20 s timeout, waived, and Codex workhorse (blocks) with one label off its own route, a renderer layout defect, out of scope). The remaining lanes: test:repository 153 pass, test:serial-browser all pass, test:system 259 pass and 1 fail from a pane-registration race in the test helper, repaired in TASK-535 (592666338), after which test:system passes 260.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The architecture debate between Claude and Codex chose five deepenings, each built by a subagent, reviewed and merged: one browser module owns every board refresh (532.01); history readings name their board and own which variants they read (532.02); a drill-down target is read one way for the inspector and the double-click (532.03); the board store prepares a write and commits exactly the prepared candidate (532.04); the CLI reads a stated variant change once for edit and resolve (532.05). The reviews fixed two refresh gaps, a drill-down disagreement after a failed listing, and restored three CLI cases and an HTTP race test. The interface width ceilings did not rise. The vault adopted the task's proposals.
+<!-- SECTION:FINAL_SUMMARY:END -->
