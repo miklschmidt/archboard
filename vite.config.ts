@@ -40,8 +40,6 @@ const RENDERER_SOURCES = [
 	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
 	"node_modules/@viz-js/viz/package.json",
-	"node_modules/libavoid-js/package.json",
-	"node_modules/libavoid-js/dist/libavoid.wasm",
 ];
 
 /**

@@ -29,7 +29,8 @@ The current rules are:
 - A frame's relationship with its own descendant meets its title divider;
   external relationships meet its outline. Incoming frame arrows use a clear
   face with room for their head and bend. Protect complete title bands.
-- Route around cards and title bands with libavoid. Relationships with matching
+- Route around cards and title bands with the router of the renderer core
+  (TASK-520.02). Relationships with matching
   kind, comparison standing and local direction share ports on each face;
   different channels use distinct attachment positions and lanes. On Track a
   difference in emphasis or in traffic makes a different channel too; Blocks
@@ -72,7 +73,7 @@ skips, fixed title detour flanks, folded-layout exceptions, the multiple-flank
 scorecard search, and later route fanning/jog repair. Integration-added private
 port ordering, pin spreading, endpoint checkpoints, minimum jog/approach rules,
 label-axis scoring, and crossing-driven corner compression were also deleted at the user's request. Graphviz places the graph;
-libavoid routes it. [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md)
+libavoid routed it until the core's router replaced it (TASK-520.02). [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md)
 and [the measured investigation](shared-container-rows.md) record the choice.
 
 ## Historical audit before adoption

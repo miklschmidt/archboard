@@ -435,16 +435,14 @@ test("a region round one card paints its caption beside the lines into the card"
 
 // Reduced from a board of a work vault, letters replaced: a chain of cards
 // above a wide pool that is its group's only member at the board level. Its
-// region, laid out as a cluster or a block of its own, stood the pool off the
-// chain, and the line into it ran across to reach it.
-test.each(["track", "blocks"] as const)(
-	"the %s engine stands a chain over the middle of a container alone in its region",
-	async (layout) => {
-		const drawing = await drawn(orderedFixture(legacyRouting), layout);
-		const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
-		expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
-	},
-);
+// region, laid out as a cluster of its own, stood the pool off the chain, and
+// the line into it ran across to reach it. The blocks engine can slide the
+// chain in line with that line instead (block-packing.test.ts).
+test("the track engine stands a chain over the middle of a container alone in its region", async () => {
+	const drawing = await drawn(orderedFixture(legacyRouting), "track");
+	const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
+	expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
+});
 
 // Two containers their group gathers at the board level: packed as a block,
 // their region holds their frames alone and draws only trunks, and the label

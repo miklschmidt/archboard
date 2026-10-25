@@ -4,9 +4,9 @@
 // a wide one, not under the block its line comes from.
 import { expect, test } from "bun:test";
 import { instance } from "@viz-js/viz";
-import { AvoidLib } from "libavoid-js";
 import { createLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { SOLVE_STAGE } from "#shared/rules/render/host.ts";
+import { loadCore } from "#runtime/services/core.ts";
 
 /**
  * A framed block holding one card.
@@ -26,8 +26,8 @@ function frame(id: string, width: number, height: number) {
 }
 
 test("a small block late in the order fills the room a short row leaves", async () => {
-	await AvoidLib.load();
-	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
+	await loadCore();
+	const solve = createLayoutEngine(await instance());
 	const call = { "archboard.relationship.kind": "call" };
 	const placed = solve(
 		{
@@ -49,8 +49,8 @@ test("a small block late in the order fills the room a short row leaves", async 
 });
 
 test("a block alone on its row stands under the block its line comes from", async () => {
-	await AvoidLib.load();
-	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
+	await loadCore();
+	const solve = createLayoutEngine(await instance());
 	const placed = solve(
 		{
 			id: "root",
