@@ -75,17 +75,23 @@ const semanticReplayContract = defineCommand({
 	path: ["semantic", "replay"],
 	shared: ["url"],
 	summary: "Render a recorded talk to a video file, frame by frame",
-	description:
-		"Renders the picture of a talk that a recording kept: a directory holding talk.json, which " +
-		"has the board as it was recorded and when each step and subtitle line came, and voice.wav, " +
-		"the voice. Each frame of the video is drawn by the Archboard server's own page in a private " +
-		"headless Chromium, in software at 1920x1080, then encoded at 30 frames a second with the " +
-		"voice into an MP4 or WebM file (by the --out extension). No Codex or voice is used and " +
-		"the board need not exist, so a talk can be rendered again in the other theme with " +
-		"--theme, with the other layout engine with --layout, or after a renderer fix. Needs a Chromium " +
-		"or Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM, and ffmpeg: " +
-		"the one named by ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through " +
-		"Nix.",
+	description: [
+		"Renders the picture of a talk that a recording kept to an MP4 or WebM file, chosen by the --out extension.",
+		"",
+		"The talk directory holds:",
+		"- talk.json: the board as it was recorded and when each step and subtitle line came.",
+		"- voice.wav: the voice.",
+		"",
+		"How it renders:",
+		"- The Archboard server's own page draws each frame of the video in a private headless Chromium, in software at 1920x1080.",
+		"- The command encodes the frames at 30 frames a second with the voice.",
+		"- No Codex or voice is used, and the board need not exist.",
+		"- So a talk can be rendered again in the other theme with --theme, with the other layout engine with --layout, or after a renderer fix.",
+		"",
+		"Needs:",
+		"- A Chromium or Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
+		"- ffmpeg: the one named by ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through Nix.",
+	].join("\n"),
 	examples: [
 		"archboard semantic replay ~/.local/state/archboard/recordings/20260930T101500Z-pipeline --out pipeline.mp4",
 		"archboard semantic replay ./pr-1234-talk --theme dark --out pr-1234-dark.webm",

@@ -52,17 +52,21 @@ const semanticResolveContract = defineCommand({
 	path: ["semantic", "resolve"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Settle what a proposal is holding",
-	description:
-		"Answers the disagreements one proposal is holding against the variant it came from. The " +
-		"answer is JSON with `choices`, each naming the disagreement by its `subject` and `field` " +
-		"exactly as the board reports them, and saying which `side` this proposal takes: `mine` keeps " +
-		"what it says, `theirs` takes the value from the variant it came from. Answering part of it " +
-		"is normal; the rest stays open and says so. A third answer is not a side — write it as an " +
-		"ordinary edit. Settling also catches the proposal up with everything its predecessor decided " +
-		"while it was unsettled, and lets the drafts under it move again, all in the same write. " +
-		`--variant says which proposal is being settled, by id or name, ${UNNAMED_VARIANT}; ` +
-		"the answer's own `variant` says the same thing, and where the two differ the " +
-		"command line wins and the write says so.",
+	description: [
+		"Answers the disagreements that one proposal is holding against the variant it came from. Answering part of them is normal. The rest stays open and says so.",
+		"",
+		"The answer:",
+		"- It is JSON with `choices`.",
+		"- Each choice names the disagreement by its `subject` and `field`, exactly as the board reports them.",
+		"- Each choice says which `side` this proposal takes. `mine` keeps what the proposal says. `theirs` takes the value from the variant that the proposal came from.",
+		"- A third answer is not a side. Write it as an ordinary edit.",
+		"",
+		"In the same write, settling also catches the proposal up with everything that its predecessor decided while it was unsettled. It also lets the drafts under the proposal move again.",
+		"",
+		"Variant:",
+		`- --variant says which proposal is being settled, by id or name, ${UNNAMED_VARIANT}.`,
+		"- The `variant` of the answer says the same thing. Where the two differ, the command line wins and the write says so.",
+	].join("\n"),
 	examples: [
 		'archboard semantic resolve pipeline --expect-version 7 --input answer.json --doing "settling the gateway name"',
 	],
@@ -182,17 +186,20 @@ const semanticAdoptContract = defineCommand({
 	path: ["semantic", "adopt"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Make one variant the architecture that is implemented",
-	description:
-		"Makes a variant of this board the architecture that is implemented. Nothing is renamed and " +
-		"nothing is reparented: the adopted variant becomes current and goes on being editable, and " +
-		"the variant that was current, when there was one, becomes the architecture that was " +
-		"implemented until now and stops being editable. On a board nobody had built, nothing becomes " +
-		"history: this is the moment its architecture starts existing. Every proposal still says " +
-		"which state it was derived from. The move itself is recorded " +
-		"with its reason, which is the part somebody is looking for a year later. A variant that is " +
-		"still holding a disagreement, or that is derived from one that is, cannot be adopted. " +
-		"Neither can one built on an architecture a later adoption superseded, unless forced: it " +
-		"would leave out what that adoption brought.",
+	description: [
+		"Makes a variant of this board the architecture that is implemented. Nothing is renamed and nothing is reparented.",
+		"",
+		"What changes:",
+		"- The adopted variant becomes current and goes on being editable.",
+		"- The variant that was current, when there was one, becomes the architecture that was implemented until now. It stops being editable.",
+		"- On a board that nobody had built, nothing becomes history. This is the moment that its architecture starts existing.",
+		"- Every proposal still says which state it was derived from.",
+		"- The move itself is recorded with its reason. That is the part somebody looks for a year later.",
+		"",
+		"Refusals:",
+		"- A variant that is still holding a disagreement, or that is derived from one that is, cannot be adopted.",
+		"- PARENT_SUPERSEDED: when the variant is built on an architecture that a later adoption superseded. Adopting it would leave out what that adoption brought. Branch again from the current variant and restate the change, or pass --force.",
+	].join("\n"),
 	examples: [
 		'archboard semantic adopt pipeline --variant "Queued ingest" --reason "the queue paid for itself in a week" --expect-version 9 --doing "adopting the queued ingest"',
 	],

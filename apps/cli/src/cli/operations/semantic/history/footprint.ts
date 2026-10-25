@@ -153,33 +153,33 @@ const semanticFootprintContract = defineCommand({
 	path: ["semantic", "footprint"],
 	shared: ["url", "directory"],
 	summary: "Map a branch onto a board and set it against a proposal",
-	description:
-		"A bound symbol narrows commits to its declaration through the language adapters. " +
-		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
-		"Reports which parts of a board's current variant the commits from the merge base of --base " +
-		"and HEAD up to HEAD, or with --head up to that ref, changed, through their bound declarations or paths, in the checkout that holds the vault for its own repository and in the chosen checkout of every " +
-		"other. --base is any ref that resolves in the checkout, such as main, origin/main or a commit; nothing is fetched, and a checkout where it does not resolve is named in the " +
-		"answer and not read. Each checkout is read at its HEAD, or at --head, which is resolved in each " +
-		"checkout as the code check resolves a ref (the name, else the branch of that name on origin) and " +
-		"never checked out, so a change that is not committed is not in it. A checkout where --head " +
-		"does not resolve is named in the answer and not read; when it resolves in none, the command is " +
-		"refused with HEAD_UNRESOLVED. Each part lists its commits; large commits (more than 30 files) are " +
-		"kept and marked. With --variant it also reads a proposal, a draft of the board, against " +
-		"the current variant, or the variant --against names, and splits the parts into named and " +
-		"changed, changed but not named, and named but not changed. On a board with no current " +
-		"variant a proposal is read against its parent, and a proposal with no parent is read " +
-		"against nothing, so it names every part it holds. Without --variant the board needs a current variant, " +
-		"or --against names the variant whose parts are read. The proposal names a part that the comparison marks added, " +
-		"changed or removed, and a part at either end of a relationship or a step that it marks, " +
-		"and each named part says why. A part with no binding, a part that opens another board, a " +
-		"repository this machine has not registered, and a part in a checkout where --base does not " +
-		"resolve are skipped: they are in none of the lists and are listed with the reason. A part " +
-		"pinned to a branch or commit its checkout does not have out is read up to that ref from " +
-		"Git, never checked out, unless --head names where the commits end. In a draft, every part " +
-		"of a repository is read up to the draft's own branch, which holds the layers below it, " +
-		"except a part that pins a branch that one does not hold. A part pinned to a ref the " +
-		"checkout cannot resolve is skipped as head-unresolved. Information only: nothing is " +
-		"stored and the exit status does not change.",
+	description: [
+		"Reports which parts of a board's current variant the commits of a branch changed. A part counts as changed when the commits touch its bound declaration or its bound path. The command reads the checkout that holds the vault for its own repository and the chosen checkout of every other repository.",
+		"",
+		"Which commits:",
+		"- The commits run from the merge base of --base and HEAD up to HEAD, or with --head up to that ref.",
+		"- --base is any ref that resolves in the checkout, such as main, origin/main or a commit. Nothing is fetched. A checkout where --base does not resolve is named in the answer and not read.",
+		"- Each checkout is read at its HEAD, or at --head. The command resolves --head in each checkout as the code check resolves a ref (the name, else the branch of that name on origin) and never checks it out. A change that is not committed is not in it.",
+		"- A checkout where --head does not resolve is named in the answer and not read.",
+		"- HEAD_UNRESOLVED: when --head resolves in none of the checkouts. The command is refused.",
+		"",
+		"A bound symbol narrows the commits to its declaration through the language adapters. The answer labels the path-wide fallback when a symbol is unsupported or unresolved. Each part lists its commits. Large commits (more than 30 files) are kept and marked.",
+		"",
+		"Reading a proposal:",
+		"- With --variant the command also reads a proposal, a draft of the board, against the current variant, or against the variant that --against names.",
+		"- It splits the parts into named and changed, changed but not named, and named but not changed.",
+		"- On a board with no current variant a proposal is read against its parent. A proposal with no parent is read against nothing, so it names every part it holds.",
+		"- Without --variant the board needs a current variant, or --against names the variant whose parts are read.",
+		"- The proposal names a part that the comparison marks added, changed or removed. It also names a part at either end of a relationship or a step that the comparison marks. Each named part says why.",
+		"",
+		"Skipped parts:",
+		"- A part with no binding, a part that opens another board, a repository that this machine has not registered, and a part in a checkout where --base does not resolve are skipped. They are in none of the lists. The answer lists each one with the reason.",
+		"- A part pinned to a branch or commit that its checkout does not have out is read up to that ref from Git, and never checked out. --head overrides this and names where the commits end.",
+		"- In a draft, every part of a repository is read up to the draft's own branch, which holds the layers below it. A part that pins a branch that the draft does not hold is the exception.",
+		"- A part pinned to a ref that the checkout cannot resolve is skipped as head-unresolved.",
+		"",
+		"The answer is information only. The command stores nothing and the exit status does not change.",
+	].join("\n"),
 	examples: [
 		"archboard semantic footprint payments --base origin/main",
 		"archboard semantic footprint payments --base feat/layer-one --head feat/layer-two",

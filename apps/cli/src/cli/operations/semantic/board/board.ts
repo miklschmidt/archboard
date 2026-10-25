@@ -44,6 +44,7 @@ import {
 	targetedVariant,
 	UNNAMED_VARIANT,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+import { BRANCH_HELP, EDIT_HELP } from "#cli/operations/semantic/board/board-help.ts";
 import {
 	boardHeldRefusal,
 	boardVersionRefusal,
@@ -190,25 +191,7 @@ const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Change a semantic architecture board",
-	description:
-		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
-		"optional board `level` metadata, the target variant's `summary` and `documents`, `nodes`, `edges`, `flows`, " +
-		"`views`, `walkthroughs` and the matching `remove...` lists, read from --input or " +
-		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
-		"variant; views are shared by the whole board. --variant says which variant the change lands " +
-		`on, by id or name, ${UNNAMED_VARIANT}; the batch's own \`variant\` says ` +
-		"the same thing, and where the two differ the command line wins and the write says so. " +
-		"--expect-version is required: state the " +
-		"version the board reported when you read it, and the write is refused if somebody has changed " +
-		"it since. A view's scope reads exactly as it is written: name relationships and the view shows " +
-		"those and no others, so one connection can be isolated; name none and it shows every " +
-		"relationship between the nodes it kept. Either way both ends of a shown relationship, every " +
-		"participant of a shown flow, and every container they sit inside come with it, except a " +
-		"container that holds all of them. A stated id the variant lacks restores that subject " +
-		"under its id when the variant's predecessor or recorded reconciliation base holds it. " +
-		"A refusal an edit can make on purpose names its code, and --confirm with that code " +
-		"passes it: restoring an id only another variant holds, adding a part an ancestor holds " +
-		"under another id, or removing more than half of what the variant inherited.",
+	description: EDIT_HELP,
 	examples: [
 		'archboard semantic edit pipeline --expect-version 3 --input change.json --doing "adding the renderer"',
 		'archboard semantic edit pipeline --variant "Queued ingest" --expect-version 4 --input change.json --doing "putting the queue in the proposal"',
@@ -350,15 +333,7 @@ const semanticBranchContract = defineCommand({
 	path: ["semantic", "branch"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Derive a proposal from a variant of a semantic board",
-	description:
-		"Adds a proposal derived from a variant this board already has. The predecessor's architecture " +
-		"is carried over whole, with every entity keeping the identity it already had, which is what " +
-		"makes the two comparable: a node that keeps its id through a rename is a rename, and the same " +
-		"node written again under a fresh id would be a deletion standing beside an addition. The " +
-		"predecessor's document references are copied too, and an edit's `documents` restates them. The " +
-		"proposal starts as a draft and designates nothing — what is current stays where it is until " +
-		"somebody says otherwise — and what it actually proposes is said afterwards, as ordinary edits " +
-		`to it. --from names the variant to derive from, ${UNNAMED_VARIANT}.`,
+	description: BRANCH_HELP,
 	examples: [
 		'archboard semantic branch pipeline --as "Queued ingest" --expect-version 4 --doing "proposing a queue"',
 	],

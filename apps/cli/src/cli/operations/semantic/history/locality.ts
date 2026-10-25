@@ -115,21 +115,25 @@ const semanticLocalityContract = defineCommand({
 	shared: ["url", "directory"],
 	summary:
 		"Rank the parts of a board by how often their bound declarations or paths changed, and pair the parts that change together",
-	description:
-		"A bound symbol narrows commits to its declaration through the language adapters. " +
-		"The answer labels path-wide fallback when a symbol is unsupported or unresolved. " +
-		"Reads Git through the bindings of each part of one variant, and ranks every part " +
-		"by the number of commits that changed its declaration or path in a period. A hotspot is a part " +
-		"that many commits changed. The period of a repository is the commits on the HEAD of " +
-		"its checkout, the one that holds the vault for its own repository and the chosen one for any " +
-		"other, from a start up to the commit time of HEAD, the year before it by default, so one HEAD always gives one answer. Each part lists its commits, " +
-		"newest first. Commits of more than 30 files are left out of every count, and the " +
-		"answer says how many. A part with no binding, a part that opens another board, a part " +
-		"bound into a repository with no checkout to read here and a part pinned to a ref " +
-		"that its checkout does not have out are not read; the answer lists them with the " +
-		"reason, so they never look like a part that no commit changed. The count is of " +
-		"commits, not of changed lines or of the complexity of the code. Nothing is written, " +
-		"and the reading never changes a board.",
+	description: [
+		"Reads Git through the bindings of each part of one variant. It ranks every part by the number of commits that changed its declaration or path in a period. A hotspot is a part that many commits changed. A bound symbol narrows the commits to its declaration through the language adapters. The answer labels the path-wide fallback when a symbol is unsupported or unresolved.",
+		"",
+		"The period:",
+		"- The period of a repository is the commits on the HEAD of its checkout. That checkout is the one that holds the vault for its own repository and the chosen one for any other.",
+		"- The period runs from a start up to the commit time of HEAD. The start is the year before it by default.",
+		"- One HEAD always gives one answer.",
+		"",
+		"The count:",
+		"- Each part lists its commits, newest first.",
+		"- Commits of more than 30 files are left out of every count. The answer says how many.",
+		"- The count is of commits. It is not a count of changed lines or a measure of the complexity of the code.",
+		"",
+		"Parts that are not read:",
+		"- A part with no binding, a part that opens another board, a part bound into a repository with no checkout to read here, and a part pinned to a ref that its checkout does not have out.",
+		"- The answer lists each one with the reason, so it never looks like a part that no commit changed.",
+		"",
+		"Nothing is written. The reading never changes a board.",
+	].join("\n"),
 	examples: [
 		"archboard semantic locality payments",
 		'archboard semantic locality payments --variant "Read cache"',
