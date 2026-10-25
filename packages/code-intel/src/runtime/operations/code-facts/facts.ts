@@ -208,7 +208,8 @@ type AdapterName =
 	| "objc"
 	| "nix"
 	| "terraform"
-	| "swift";
+	| "swift"
+	| "rust";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can

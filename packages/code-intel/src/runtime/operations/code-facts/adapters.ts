@@ -59,6 +59,9 @@ import {
 import { createKubernetesResolver } from "#runtime/operations/code-facts/kubernetes/kubernetes-resolution.ts";
 import { flakeFacts } from "#runtime/operations/code-facts/nix/nix-adapter.ts";
 import { pythonFacts } from "#runtime/operations/code-facts/python/python-adapter.ts";
+import { rustFacts } from "#runtime/operations/code-facts/rust/rust-adapter.ts";
+import { cargoFacts } from "#runtime/operations/code-facts/rust/rust-cargo.ts";
+import { createRustResolver } from "#runtime/operations/code-facts/rust/rust-resolution.ts";
 import { createPythonResolver } from "#runtime/operations/code-facts/python/python-resolution.ts";
 import { terraformFacts } from "#runtime/operations/code-facts/terraform/terraform-adapter.ts";
 import { createTerraformResolver } from "#runtime/operations/code-facts/terraform/terraform-resolution.ts";
@@ -144,6 +147,9 @@ const SWIFT_MANIFEST = treeSitter(
 	manifestFacts,
 );
 
+/** Rust through tree-sitter-rust; a `Cargo.toml` beside it with Bun's TOML parser (TASK-540). */
+const RUST = treeSitter("tree-sitter-rust/tree-sitter-rust.wasm", "rust.scm", rustFacts);
+
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
 	{
@@ -160,6 +166,11 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "swift",
 		reads: { ".swift": SWIFT, "Package.swift": SWIFT_MANIFEST },
 		resolver: createSwiftResolver,
+	},
+	{
+		name: "rust",
+		reads: { ".rs": RUST, "Cargo.toml": cargoFacts },
+		resolver: createRustResolver,
 	},
 	{
 		name: "terraform",
