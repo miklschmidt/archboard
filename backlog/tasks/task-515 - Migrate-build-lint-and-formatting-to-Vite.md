@@ -1,16 +1,16 @@
 ---
 id: TASK-515
-title: 'Migrate build, lint, and formatting to Vite+'
+title: Migrate build, lint, and formatting to Vite+
 status: Done
 assignee:
   - '@codex'
-created_date: '2026-10-24 02:27'
-updated_date: '2026-10-24 03:42'
+created_date: 2026-10-24 02:27
+updated_date: '2026-10-25T00:35:00Z'
 labels: []
 dependencies: []
 references:
   - TASK-500
-  - 'https://viteplus.dev/guide/migrate'
+  - https://viteplus.dev/guide/migrate
 type: chore
 ordinal: 922000
 ---
@@ -60,6 +60,10 @@ Final repaired gate and repeat pass at 8d9bdaa55. The first run takes 559.091 se
 Final board audit: archboard check passes. The code check keeps the same 41 existing findings. Agent workbench and Codex workhorse Thread link remain correct after helper hoists in 27c1801f5. Live panes Pane registry remains correct after the same internal refactor. Codex session Response contracts retains its optional-key contract after the mapped-type expression change in 86e9f8bed. Skill evaluation Evaluation inputs changes only README formatting. Archboard package containers retain their responsibilities, boundaries, and interfaces after helper, test, and formatting changes. The repair in 8d9bdaa55 changes fixture isolation and build metadata, so no further board proposal is needed.
 
 Simplification pass retains one task map, one browser inventory, and one capacity inventory. Short package scripts expose common actions. Ordered pipelines reuse cached leaves, and fixing commands bypass caches. No temporary probe task or compatibility script remains. Generated skill artifacts stay ignored. Installed skill copies need archboard install-skill to refresh their installation document.
+
+Pre-push review: Standards finds no remaining violations. Spec review reproduces unsafe cache hits for hidden inputs. Commit f1f5f3f9e adds .archboard/README.md to test inputs and .prettierignore, .vscode, and .impeccable JSON to formatter inputs. Focused probes prove that these files now invalidate saved results. Both integration reviews and the backend helper review report no remaining findings. Parent frontend review derives the chip type from MeasuredLabel and corrects the TASK-514 record in a38cc867c. No runtime behavior changes.
+
+The final pre-push bun run check passes at f1f5f3f9e in 588.907 seconds: 5,326 pass, one skip, zero failures. Lint reports zero warnings and errors. The existing bundle-size advisory remains. The unchanged repeat passes in 0.557 seconds with all 12 task results cached. Logs: /tmp/archboard-task515-prepush-check.log and /tmp/archboard-task515-prepush-repeat.log. The user defers TASK-516. Bun remains the test runtime and runner.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
