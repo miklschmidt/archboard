@@ -3,6 +3,8 @@
 // read it in one order that this file holds: the version the write was made
 // against comes before the input is opened, and a flag that overrides the
 // stated variant is said before the schema or the server can refuse the write.
+// It also owns the targeting rule on every branch: the flag always decides, and
+// it is spoken about exactly when it overrode a variant stated otherwise.
 // Only the Archboard server is a stand-in.
 
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
@@ -165,17 +167,26 @@ for (const { command, valid, refused } of commands) {
 		expect(stderr.indexOf(REFUSAL)).toBeGreaterThan(warned);
 	});
 
-	test(`semantic ${command} says nothing when the flag and the change name the variant alike`, async () => {
-		const { stderr, exited } = await run(command, valid, [
-			"--expect-version",
-			"3",
-			"--variant",
-			"Current",
-		]);
-		expect(exited).toBe(5);
-		expect(stderr).not.toContain("warning:");
-		expect(sentVariant()).toBe("Current");
-	});
+	// The flag decides in every case, and it is spoken about exactly when it
+	// overrode a variant the change stated otherwise.
+	const targetings = [
+		{ when: "the change states the flag's variant, spaced", variant: " Current ", warns: 0 },
+		{ when: "the change states no variant", variant: undefined, warns: 0 },
+		{ when: "the change states a variant that is not a name", variant: 7, warns: 1 },
+	] as const;
+	for (const { when, variant, warns } of targetings) {
+		test(`semantic ${command} sends the flag's variant and warns ${warns} time(s) when ${when}`, async () => {
+			const { stderr, exited } = await run(command, { ...valid, variant }, [
+				"--expect-version",
+				"3",
+				"--variant",
+				"Current",
+			]);
+			expect(exited).toBe(5);
+			expect(stderr.split("\n").filter((line) => line.startsWith("warning:"))).toHaveLength(warns);
+			expect(sentVariant()).toBe("Current");
+		});
+	}
 
 	test(`semantic ${command} refuses a change that is not a JSON object before saying anything`, async () => {
 		const { stderr, exited } = await run(
