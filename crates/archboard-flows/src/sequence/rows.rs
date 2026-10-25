@@ -201,16 +201,13 @@ pub fn words_for(
         UNBOUNDED
     };
     MessageWords {
-        lines: text.message_lines(&label_for(step), limit, PILL_TEXT_SIZE, MESSAGE_LINE_STEP),
+        lines: text.message_lines(
+            &step.drawn_label(),
+            limit,
+            PILL_TEXT_SIZE,
+            MESSAGE_LINE_STEP,
+        ),
         centre,
-    }
-}
-
-/// The label as drawn: a repeated step says so rather than being drawn twice.
-fn label_for(step: &Message) -> String {
-    match step.repeat {
-        None => step.label.clone(),
-        Some(repeat) => format!("{} ×{repeat}", step.label),
     }
 }
 

@@ -43,6 +43,16 @@ pub struct Message {
     pub repeat: Option<u32>,
 }
 
+impl Message {
+    /// Its words as drawn: a repeated step says so rather than being drawn twice.
+    pub fn drawn_label(&self) -> String {
+        match self.repeat {
+            None => self.label.clone(),
+            Some(repeat) => format!("{} ×{repeat}", self.label),
+        }
+    }
+}
+
 /// One answer to a decision's question, and the steps that run on it.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Alternative {
