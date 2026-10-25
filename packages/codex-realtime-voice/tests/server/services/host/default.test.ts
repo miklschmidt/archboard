@@ -13,7 +13,7 @@ import type {
 	WorkbenchContextEvent,
 	WorkbenchContextSource,
 } from "#runtime/protocol/host/context-source.ts";
-import type { CoordinatorHostCallbackSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import type { CoordinatorHostContextSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { WorkbenchOperationAuthority } from "#server/protocol/generation/host.ts";
 import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contract.ts";
 import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
@@ -282,7 +282,7 @@ describe("the default workbench host", () => {
 			const workhorse = h.host.workhorseContextFor(h.id, h.root);
 			const voice = h.host.sessionContextFor(h.id);
 			const events: WorkbenchContextEvent[] = [];
-			const callbacks: CoordinatorHostCallbackSource[] = [];
+			const callbacks: CoordinatorHostContextSource[] = [];
 			workhorse.publisher.subscribeSettledChange((event) => events.push(event));
 			voice.callbacks.subscribe((event) => callbacks.push(event));
 			expect(events).toHaveLength(0);
@@ -297,7 +297,7 @@ describe("the default workbench host", () => {
 			expect(event.feedId).toBe(workhorse.feedId);
 			expect(event.cursor).toEqual({ feedId: workhorse.feedId, sequence: 1 });
 			expect(Object.isFrozen(event.change.cursor)).toBe(true);
-			expect(callbacks[0]!.semantic.brief).toBe("The host task changed.");
+			expect(callbacks[0]!.context.brief).toBe("The host task changed.");
 			expect(workhorse.contextForEvent(event).semantic.brief).toBe(event.brief);
 			h.replaceBinding();
 			expect(h.host.workhorseContextFor(h.id, h.root)).toBe(workhorse);
