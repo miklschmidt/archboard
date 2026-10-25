@@ -355,13 +355,13 @@ The agent that `createVoiceAgent` returns has these members:
 
 `bunHandlers` takes these options. It throws a `TypeError` when `path`, or an `origin` that you give, can never admit a socket.
 
-| Field       | Default                    | What it does                                                                                                                                                                                                                                                                                 |
-| ----------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`      | Required                   | The socket path, such as `/voice`. It must start with `/`. A request that is not a socket upgrade on this path goes to `fetch`.                                                                                                                                                              |
-| `fetch`     | Answers `404`              | Your handler of every other request. It receives the request and the server, as the `fetch` of `Bun.serve` does, and it can upgrade sockets of its own.                                                                                                                                      |
-| `websocket` | None                       | Your handlers of the sockets that your `fetch` upgrades. Bun has one handler set for each server, so the package tells its own sockets apart by their `data` and gives every other socket to these handlers. Their options, such as `maxPayloadLength`, apply to every socket of the server. |
-| `origin`    | The origin of `server.url` | The HTTP origin of your server exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. The default is the address that the server listens on, so a server on port `0` needs none. Give it when browsers reach the server by another name. See [Security](#security).   |
-| `checkout`  | The only listed checkout   | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function.                                                                                                                                |
+| Field       | Default                    | What it does                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`      | Required                   | The socket path, such as `/voice`. It must start with `/`. A request that is not a socket upgrade on this path goes to `fetch`.                                                                                                                                                                                                                                                                                   |
+| `fetch`     | Answers `404`              | Your handler of every other request. It receives the request and the server, as the `fetch` of `Bun.serve` does, and it can upgrade sockets of its own.                                                                                                                                                                                                                                                           |
+| `websocket` | None                       | Your handlers of the sockets that your `fetch` upgrades. Bun has one handler set for each server, so the package tells its own sockets apart by their `data` and gives every other socket to these handlers. Their options, such as `maxPayloadLength`, apply to every socket of the server. When `backpressureLimit` makes Bun drop a frame to the page, the package closes that socket and the page reconnects. |
+| `origin`    | The origin of `server.url` | The HTTP origin of your server exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. The default names the `hostname` that you gave `Bun.serve`, or `localhost` when you gave none, so a server on port `0` needs none. Give it when browsers reach the server by another name, as for a server on `0.0.0.0`, on a unix socket or behind a proxy. See [Security](#security).              |
+| `checkout`  | The only listed checkout   | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function.                                                                                                                                                                                                                                                     |
 
 When `fetch` upgrades sockets of its own, name the type of their `data`, as in `agent.bunHandlers<{ room: string }>({ path, fetch, websocket })`.
 
@@ -542,9 +542,9 @@ If `voice.problem` is "This browser cannot install realtime microphone and audio
 
 ### The socket is refused
 
-The page shows "The voice connection failed. Reconnect to try again." and `connection` stays `stopped`. The browser's network panel shows the socket upgrade answered with `403`. The page address is not the `origin` that you gave to `attach`. For example, you opened `http://localhost:4100` and the origin is `http://127.0.0.1:4100`.
+The page shows "The voice connection failed. Reconnect to try again." and `connection` stays `stopped`. The browser's network panel shows the socket upgrade answered with `403`. The page address is not the socket's origin: the `origin` that you gave to `attach` or `bunHandlers`, or, when you gave `bunHandlers` none, the origin of `server.url`. For example, you opened `http://localhost:4100` and the origin is `http://127.0.0.1:4100`.
 
-1. Open the page at exactly the address in `origin`.
+1. Open the page at exactly the address in `origin`. When `bunHandlers` has no `origin` and the server runs on `0.0.0.0`, on a unix socket or behind a proxy, give it the `origin` that the browser uses.
 2. Serve the page and the socket from the same server. A page from a development server on another port has another origin.
 
 A `400` answer means that the socket URL has no valid `tabSessionId` or `paneId`. `createVoiceClient` always sends both, so look at a custom `paneId`. A socket that closes at once with code `1011` and "The voice agent is unavailable. Restart the server." reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit.
@@ -561,13 +561,13 @@ The same rejection also names a state directory that the package cannot use:
 - "must have mode 0700, received 0755": run `chmod 700` on the directory, or let the package create it.
 - "Refusing symlink-escaped Codex storage path component": the path has a symbolic link that the package does not follow. That is the state directory itself, a directory below it, or a link above it that another user owns or could replace. `createVoiceAgent` follows a link above the state directory only when you or root own it and no other user can change the directories that lead to it, so a directory in `/tmp` or `os.tmpdir()` on macOS works. Give the state directory's real path, not a link in a shared directory.
 
-### Other errors from `createVoiceAgent` and `attach`
+### Other errors from `createVoiceAgent`, `bunHandlers` and `attach`
 
 - "A workbench role requires domain instructions.": an instruction is empty. Give text for both roles.
 - A `TypeError` that starts with "A voice agent": an `identity` value has the wrong shape. The message names the rule.
-- "Name an absolute socket path" or "Name the listener's own origin": `attach` received a `path` without a leading `/`, or an `origin` with a path, a trailing slash or another scheme than `http` or `https`.
+- "Name an absolute socket path" or "Name the listener's own origin": `bunHandlers` or `attach` received a `path` without a leading `/`, or an `origin` with a path, a trailing slash or another scheme than `http` or `https`.
 - "The allowed checkout `<path>` is not a readable directory.": a listed checkout does not exist. Create it or remove it from `checkouts`.
-- "Name the checkout these sockets work in: the agent admits more than one.": pass `checkout` to `attach`.
+- "Name the checkout these sockets work in: the agent admits more than one.": pass `checkout` to `bunHandlers` or `attach`.
 
 ### The page stays on reconnecting
 

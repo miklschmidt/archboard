@@ -32,8 +32,10 @@ type Fetched = Response | undefined | Promise<Response | undefined>;
 export interface VoiceAgentBunOptions<HostData> extends Omit<VoiceAgentAttachOptions, "origin"> {
 	/**
 	 * The server's own HTTP origin exactly, such as `http://127.0.0.1:4100`. Default: the origin of
-	 * the receiving server's `url`, so a server on port 0 needs none. Name it when the browser
-	 * reaches the server under another name than the one it listens on.
+	 * the receiving server's `url`, so a server on port 0 needs none. That `url` names the
+	 * `hostname` the server was given, and `localhost` when it was given none: name the origin when
+	 * the browser reaches the server under another name, as for a server on `0.0.0.0`, on a unix
+	 * socket or behind a proxy. A default the browser does not match refuses it with 403.
 	 */
 	readonly origin?: string;
 	/**
@@ -128,7 +130,9 @@ function upgradeOf(request: Request): UpgradeRequest | null {
 /**
  * Adapt Bun's socket to what the browser port sends with. `ws.send` answers the bytes it sent,
  * -1 when it queued the frame under backpressure, which Bun still sends in order, and 0 when it
- * dropped the frame, which is a failed publication.
+ * dropped the frame over the server's `backpressureLimit`. Bun keeps the socket open after a drop,
+ * so the adapter ends it: the browser reconnects and reads the state again instead of missing a
+ * frame on an open socket, and the port releases it instead of waiting for its confirmation.
  * @param ws The open socket.
  * @returns The socket as the browser port's connection.
  */
@@ -142,13 +146,21 @@ function connectionOf(ws: Bun.ServerWebSocket<VoiceSocket>): AdmittedConnection 
 			return ws.readyState;
 		},
 		/**
-		 * Send one text frame and report a dropped one as an error.
+		 * Send one text frame, and end the socket and report the error when Bun dropped it.
 		 * @param data The frame's text.
 		 * @param callback Receives null once Bun took the frame, or the drop.
 		 */
 		send: (data, callback) => {
-			const sent = ws.send(data);
-			callback(sent === 0 ? new Error("The browser socket dropped the message.") : null);
+			if (ws.send(data) !== 0) {
+				callback(null);
+				return;
+			}
+			ws.terminate();
+			callback(
+				new Error(
+					"The browser socket dropped a message over its backpressure limit, so it was closed. The browser reconnects to read the state again.",
+				),
+			);
 		},
 		/**
 		 * Close the socket with a code and reason.
