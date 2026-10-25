@@ -1,4 +1,53 @@
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+<<<<<<< HEAD:packages/codex-realtime-voice/tests/runtime/protocol/coordinator-tool-contract/catalogue.test.ts
+=======
+import { describe, expect, test } from "bun:test";
+
+import {
+	VOICE_TOOLS_MANIFEST_JSON,
+	VOICE_TOOL_NAMESPACE,
+	WORKHORSE_TOOLS_MANIFEST_JSON,
+	WORKHORSE_TOOL_NAMESPACE,
+	WORKHORSE_TOOL_NAMES,
+	assertCanonicalManifest,
+	verifyCoordinatorManifestIntegrity,
+} from "@archboard/codex-realtime-voice/runtime";
+import {
+	CODEX_QUEUE_OPERATION_CONTRACTS,
+	CODEX_QUEUE_PARAMETER_SCHEMAS,
+	CODEX_QUEUE_PROTOCOL,
+} from "@archboard/codex-realtime-voice/runtime";
+import {
+	COORDINATOR_IDENTITY,
+	CoordinatorIdentitySchema,
+} from "@archboard/codex-realtime-voice/runtime";
+import {
+	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
+	DynamicToolEnvelopeSchema,
+	DynamicToolResponseSchema,
+} from "@archboard/codex-realtime-voice/runtime";
+import {
+	InspectWorkhorseResultSchema,
+	DelegateToWorkhorseResultSchema,
+	ManageWorkhorseQueueResultSchema,
+	ResolveSpokenApprovalResultSchema,
+	SteerWorkhorseResultSchema,
+	StopWorkhorsesResultSchema,
+	parseCoordinatorToolResult,
+} from "@archboard/codex-realtime-voice/runtime";
+import {
+	ManageWorkhorseQueueInputSchema,
+	QueueAddInputSchema,
+	QueueDeleteInputSchema,
+	QueueListInputSchema,
+	QueueReorderInputSchema,
+	QueueStartInputSchema,
+	QueueUpdateInputSchema,
+	parseCoordinatorToolInput,
+	VOICE_TOOL_INPUT_SCHEMAS,
+	WORKHORSE_TOOL_INPUT_SCHEMAS,
+} from "@archboard/codex-realtime-voice/runtime";
+>>>>>>> worktree-agent-a0ee352498211ac39:packages/workbench/tests/runtime/protocol/coordinator-tool-contract/catalogue.test.ts
 import {
 	ThreadQueueAddParamsSchema,
 	ThreadQueueDeleteParamsSchema,
@@ -56,15 +105,15 @@ import {
 
 describe("coordinator namespace manifests", () => {
 	test("matches independent reviewed snapshots and fixed bytes", () => {
-		expect(ARCHBOARD_WORKHORSE_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
-		expect(ARCHBOARD_VOICE_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
-		expect(JSON.parse(ARCHBOARD_WORKHORSE_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
-		expect(JSON.parse(ARCHBOARD_VOICE_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
+		expect(WORKHORSE_TOOL_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
+		expect(VOICE_TOOL_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
+		expect(JSON.parse(WORKHORSE_TOOLS_MANIFEST_JSON)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
+		expect(JSON.parse(VOICE_TOOLS_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect(verifyCoordinatorManifestIntegrity()).toEqual({
 			workhorseSha256: "22124bd3aec1052b7de3edb0c003752ea7a020b0c9874d32097524df9b529b11",
 			voiceSha256: "04531fce9db31c61320137b41470b488d0b5cbe1ccbdf92a2279f03b7883ab8b",
 		});
-		for (const namespace of [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE]) {
+		for (const namespace of [WORKHORSE_TOOL_NAMESPACE, VOICE_TOOL_NAMESPACE]) {
 			expect(namespace.type).toBe("namespace");
 			expect(namespace.tools.every((tool) => tool.type === "function")).toBe(true);
 			expect(namespace.tools.every((tool) => !tool.deferLoading)).toBe(true);
@@ -79,40 +128,40 @@ describe("coordinator namespace manifests", () => {
 			JSON.parse(JSON.stringify(COORDINATOR_IDENTITY)),
 		);
 		expect(COORDINATOR_IDENTITY.dynamicTools).toEqual(["archboard_workhorse", "archboard_voice"]);
-		expect(ARCHBOARD_WORKHORSE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
-			...ARCHBOARD_WORKHORSE_TOOL_NAMES,
+		expect(WORKHORSE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
+			...WORKHORSE_TOOL_NAMES,
 		]);
-		expect(ARCHBOARD_VOICE_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
+		expect(VOICE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			"resolve_spoken_approval",
 		]);
 	});
 
 	test("rejects missing, extra, reordered, and ambiguous manifest mutations", () => {
-		const missing = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const missing = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		missing.tools.pop();
 		expect(() => assertCanonicalManifest("archboard_workhorse", missing)).toThrow();
 
-		const extra = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const extra = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		extra.tools.push(structuredClone(extra.tools[0]!));
 		expect(() => assertCanonicalManifest("archboard_workhorse", extra)).toThrow();
 
-		const reordered = structuredClone(ARCHBOARD_WORKHORSE_NAMESPACE) as unknown as {
+		const reordered = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
 			tools: unknown[];
 		};
 		reordered.tools.reverse();
 		expect(() => assertCanonicalManifest("archboard_workhorse", reordered)).toThrow();
 
-		const vague = structuredClone(ARCHBOARD_VOICE_NAMESPACE) as unknown as {
+		const vague = structuredClone(VOICE_TOOL_NAMESPACE) as unknown as {
 			tools: Array<{ description: string }>;
 		};
 		vague.tools[0]!.description = "Do the thing.";
 		expect(() => assertCanonicalManifest("archboard_voice", vague)).toThrow();
 
-		const byteMutation = ARCHBOARD_VOICE_MANIFEST_JSON.replace(
+		const byteMutation = VOICE_TOOLS_MANIFEST_JSON.replace(
 			"resolve_spoken_approval",
 			"resolve_spoken_approval_changed",
 		);

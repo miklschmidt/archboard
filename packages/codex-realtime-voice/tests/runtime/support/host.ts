@@ -22,15 +22,13 @@ const TEST_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 });
 const TEST_INSTRUCTIONS: WorkbenchInstructions = Object.freeze({
 	coordinator: createWorkbenchThreadProfile({
-		serviceName: "test-host",
-		threadSource: "test-host",
+		identity: { serviceName: "test-host", threadSource: "test-host" },
 		role: "coordinator",
 		domainInstructions: "Coordinate the requested task.\n",
 		dynamicTools: [],
 	}),
 	workhorse: createWorkbenchThreadProfile({
-		serviceName: "test-host",
-		threadSource: "test-host",
+		identity: { serviceName: "test-host", threadSource: "test-host" },
 		role: "workhorse",
 		domainInstructions: "Complete the requested task.\n",
 		dynamicTools: [],
