@@ -419,7 +419,7 @@ describe("renderArchitecture", () => {
 	test("a picture draws its words in glyphs it defines and needs no font", async () => {
 		const rendered = await render();
 		const defined = new Set(
-			Array.from(rendered.svg.matchAll(/<path id="(g[sm][45]-\d+)"/g), ([, id]) => id),
+			Array.from(rendered.svg.matchAll(/<path id="(g[a-z][45]-\d+)"/g), ([, id]) => id),
 		);
 		const used = Array.from(rendered.svg.matchAll(/<use href="#(g[^"]+)"/g), ([, id]) => id);
 		expect(used.length).toBeGreaterThan(100);

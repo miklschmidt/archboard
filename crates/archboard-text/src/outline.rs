@@ -69,7 +69,7 @@ type Drawn = HashMap<(Face, u32), Rc<[Segment]>>;
 /// nothing, such as a space. Each is drawn once, then read again.
 pub fn outline(face: Face, glyph: u32) -> Rc<[Segment]> {
     thread_local! {
-        static SCALERS: [ScalerFont; 4] = Face::ALL.map(|face| ScalerFont::force_unhinted(face.font().clone(), None));
+        static SCALERS: [ScalerFont; 8] = Face::ALL.map(|face| ScalerFont::force_unhinted(face.font().clone(), None));
         static DRAWN: RefCell<Drawn> = RefCell::new(HashMap::new());
     }
     if let Some(known) = DRAWN.with(|drawn| drawn.borrow().get(&(face, glyph)).cloned()) {

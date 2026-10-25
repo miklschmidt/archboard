@@ -14,3 +14,6 @@ harfrust = "0.15"
 skrifa = "0.49"
 unicode-linebreak = "0.1"
 unicode-segmentation = "1"
+serde = { version = "1", features = ["derive"] }
+# The faces are part of the scene contract, whose TypeScript types are generated.
+ts-rs = "12"

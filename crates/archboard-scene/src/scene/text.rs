@@ -4,6 +4,7 @@
 //! glyphs and their places, which every painter draws, and its words, for the
 //! reader who searches, copies or listens.
 
+use archboard_text::Face;
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -13,11 +14,14 @@ use crate::measure;
 use crate::scene::Item;
 use crate::scene::colour::Colour;
 
-/// One glyph of a run: the glyph in the run's face, and where its origin
-/// stands from the run's point, in the units of the face.
+/// One glyph of a run: the glyph in its face, and where its origin stands
+/// from the run's point, in font units (every face has 1000 to the em).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
 pub struct GlyphPlace {
-    /// The glyph, by its id in the face.
+    /// The face the glyph is drawn from: the run's own, or the face a
+    /// character the run's face has no glyph for falls back to.
+    pub face: Face,
+    /// The glyph, by its id in its face.
     pub id: u32,
     /// How far along the baseline its origin stands.
     pub x: i32,
@@ -64,6 +68,7 @@ impl Text {
                 .glyphs
                 .iter()
                 .map(|glyph| GlyphPlace {
+                    face: glyph.face,
                     id: glyph.id,
                     x: glyph.x,
                     y: glyph.y,
