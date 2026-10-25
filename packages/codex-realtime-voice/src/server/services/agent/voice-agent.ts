@@ -40,7 +40,8 @@ export type VoiceAgentExtensions = Omit<CodexWorkbenchExtensions, "onFatal"> & {
 export interface VoiceAgentOptions {
 	/**
 	 * The agent's private state: Codex home, SQLite home and process-owner records. Created with
-	 * mode 0700. Keep it outside every checkout.
+	 * mode 0700. Keep it outside every checkout. The directory and everything below it must not
+	 * be a symbolic link; links above it, such as `/tmp` on macOS, are resolved once, here.
 	 */
 	readonly storage: {
 		readonly directory: string;
@@ -58,7 +59,11 @@ export interface VoiceAgentOptions {
 	 * admitted path for a named checkout and null for a refused one.
 	 */
 	readonly checkouts: readonly string[] | ((named: string) => string | null);
-	/** The host's own instructions, appended to the built-in coordinator and workhorse roles. */
+	/**
+	 * The host's own instructions, appended to the built-in coordinator and workhorse roles. Both
+	 * must be non-empty: for an empty one, {@link createVoiceAgent} throws a `TypeError` with the
+	 * message "A workbench role requires domain instructions."
+	 */
 	readonly instructions: { readonly coordinator: string; readonly workhorse: string };
 	/**
 	 * How the agent names itself to Codex, to the user and in its records. Each value left out is
@@ -87,8 +92,12 @@ export type VoiceAgentBrowserPort = Workbench["browser"];
 /** One realtime Codex voice agent: a coordinator per browser tab and a workhorse per checkout. */
 export interface VoiceAgent {
 	/**
-	 * Start the private Codex process and wait for it. Resolves with its status; check `ready`.
-	 * Start again after a failure or a shutdown to replace the process.
+	 * Start the private Codex process and wait for it. Start again after a failure or a shutdown
+	 * to replace the process.
+	 * @returns The status once the process is ready: `ready` is always `true`.
+	 * @throws {Error} When Codex cannot start, an error whose `code` is `startup_failed` and whose
+	 * `cause` names the reason; {@link VoiceAgent.status} then reads `failed`. A start during a
+	 * shutdown, or while the process already runs, also rejects.
 	 */
 	readonly start: () => Promise<VoiceAgentStatus>;
 	/** Read the process status without starting anything. */
