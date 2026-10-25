@@ -5,13 +5,15 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-25T21:25:00Z'
-updated_date: '2026-10-25T21:29:00Z'
+updated_date: '2026-10-25T21:42:00Z'
 labels: []
 dependencies: []
 references:
   - https://github.com/dolthub/dolt
+  - https://github.com/dolthub/doltgresql
 documentation:
   - docs/design/architecture-discovery-and-interaction.md
+  - docs/design/architecture-storage-research.md
 type: spike
 ordinal: 925000
 ---
@@ -43,4 +45,8 @@ Compare storage technologies for Archboard as a hosted service. Keep the existin
 
 <!-- SECTION:NOTES:BEGIN -->
 The owner asked to preserve the agreed UX model before research and named Dolt as a candidate. The design note records those inputs without changing shipped behavior or adopting a database.
+
+The owner prefers DoltgreSQL over MySQL-compatible Dolt. Prioritize DoltgreSQL and assess PostgreSQL compatibility, maturity, branching, merge behavior and hosted operation independently of Dolt.
+
+The synthesis and four focused technology reports are complete. The report prioritizes DoltgreSQL, compares TerminusDB and hosted PostgreSQL, and screens native graph, temporal, multimodel and newer options. A disposable DoltgreSQL 1.4.0 run passed recursive reads, branch isolation and disjoint merge, exposed a same-field conflict, and demonstrated that SQL constraints alone allow a containment cycle. The reproduction and outputs are in docs/design/architecture-storage/doltgresql-smoke.md. The owned server stopped cleanly. All seven authored Markdown files pass focused formatting and local links resolve. The full repository gate found additional formatting and renderer timing failures; remaining lanes and failure reproducibility are being collected without changing unrelated files.
 <!-- SECTION:NOTES:END -->
