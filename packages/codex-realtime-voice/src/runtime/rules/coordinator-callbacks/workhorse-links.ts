@@ -1,6 +1,6 @@
-// Which workhorse a callback is about. A tab session has one workhorse for each checkout (ADR
-// 0050), so a callback is correlated with the workhorse its own thread names: an operation's, the
-// thread workhorse news came from, and for an announced change the workhorse voice is bound to.
+// Which workhorse a callback is about. A tab session has one workhorse for each checkout, so a
+// callback is correlated with the workhorse its own thread names: an operation's, the thread
+// workhorse news came from, and for an announced change the workhorse voice is bound to.
 
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type {

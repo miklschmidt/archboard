@@ -265,7 +265,7 @@ test("cached queue submissions are presented only for the thread they were read 
 });
 
 test("the production browser projection publishes immutable voice start and ordered delivery evidence", () => {
-	const canonicalBrief = '{"source":"semantic_context","captured":"exact-start"}';
+	const canonicalBrief = '{"source":"host_context","captured":"exact-start"}';
 	const harness = projectionHarness({
 		voiceContext: (authorities) => {
 			const voiceIdentity = authorities.identity;
