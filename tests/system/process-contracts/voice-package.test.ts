@@ -1,6 +1,6 @@
 // The npm build of @archboard/codex-realtime-voice works outside this repository: a Bun project
-// installs the packed tarball, type-checks a file that imports every public entry, and imports the
-// server entry.
+// installs the packed tarball, type-checks a file that imports every public entry together with
+// the README's checked code blocks, and imports the server entry.
 import { expect, test } from "bun:test";
 import {
 	mkdtempSync,
@@ -15,6 +15,14 @@ import path from "node:path";
 
 const root = path.resolve(import.meta.dir, "../../..");
 const packed = path.join(root, "dist/codex-realtime-voice");
+/** The packages beside the tarball that the README's install line names for the quickstart page. */
+const QUICKSTART_PACKAGES = [
+	"react",
+	"react-dom",
+	"@types/react",
+	"@types/react-dom",
+	"@types/bun",
+];
 
 /**
  * Run a command to completion and require that it succeeds.
@@ -29,7 +37,36 @@ function run(command: readonly string[], cwd: string): string {
 	return result.stdout.toString();
 }
 
-test("an outside Bun project installs the packed package and uses every public entry", () => {
+/**
+ * The README's checked code blocks: each fenced block that follows a `<!-- checked: <file> -->`
+ * line, as the file it is written to.
+ * @returns Each block's file name and code.
+ */
+function checkedReadmeBlocks(): readonly { readonly file: string; readonly code: string }[] {
+	const readme = readFileSync(path.join(root, "packages/codex-realtime-voice/README.md"), "utf8");
+	return [...readme.matchAll(/^<!-- checked: (\S+) -->\n+```\w+\n([\s\S]*?)^```$/gm)].map(
+		([, file, code]) => ({ file: file ?? "", code: code ?? "" }),
+	);
+}
+
+/**
+ * The exact versions this repository pins, so the consumer installs what the repository tests.
+ * @param names The packages.
+ * @returns Each as `name@version`.
+ */
+function pinned(names: readonly string[]): string[] {
+	const manifest = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as {
+		dependencies: Record<string, string>;
+		devDependencies: Record<string, string>;
+	};
+	return names.map((name) => {
+		const version = manifest.dependencies[name] ?? manifest.devDependencies[name];
+		expect(version, `the repository pins ${name}`).toBeDefined();
+		return `${name}@${version}`;
+	});
+}
+
+test("an outside Bun project installs the packed package, uses every public entry and the README's code", () => {
 	const project = realpathSync(mkdtempSync(path.join(tmpdir(), "codex-realtime-voice-consumer-")));
 	try {
 		run(["bun", "run", "pack:voice"], root);
@@ -44,8 +81,18 @@ test("an outside Bun project installs the packed package and uses every public e
 			path.join(project, "package.json"),
 			JSON.stringify({ name: "consumer", private: true, type: "module" }),
 		);
-		// The Codex executable is a peer that the host installs. Importing the package needs none.
-		run(["bun", "add", "--omit", "peer", path.join(project, tarball ?? "")], project);
+		// The Codex executable is a peer that the host installs. Type-checking and importing need none.
+		run(
+			[
+				"bun",
+				"add",
+				"--omit",
+				"peer",
+				path.join(project, tarball ?? ""),
+				...pinned(QUICKSTART_PACKAGES),
+			],
+			project,
+		);
 
 		const specifiers = Object.keys(manifest.exports).map(
 			(subpath) => `${manifest.name}${subpath.slice(1)}`,
@@ -54,35 +101,35 @@ test("an outside Bun project installs the packed package and uses every public e
 			path.join(project, "consumer.ts"),
 			[
 				...specifiers.map((specifier, index) => `import * as entry${index} from "${specifier}";`),
-				`import { createVoiceAgent, resolveCodexExecutable, type VoiceAgent } from "${manifest.name}/server";`,
 				`export const entries = [${specifiers.map((_, index) => `entry${index}`).join(", ")}];`,
-				"export function start(directory: string, checkout: string): VoiceAgent {",
-				"\treturn createVoiceAgent({",
-				"\t\tstorage: { directory },",
-				"\t\tcodex: { executablePath: resolveCodexExecutable() },",
-				"\t\tcheckouts: [checkout],",
-				'\t\tinstructions: { coordinator: "", workhorse: "" },',
-				"\t\tonFatal: (error: unknown) => console.error(error),",
-				"\t});",
-				"}",
 				"",
 			].join("\n"),
 		);
+		const blocks = checkedReadmeBlocks();
+		expect(blocks.map(({ file }) => file)).toEqual(
+			expect.arrayContaining(["server.ts", "page.tsx"]),
+		);
+		for (const { file, code } of blocks) writeFileSync(path.join(project, file), code);
+		// The compiler options of `bun init`, which a developer who copies the README has.
 		writeFileSync(
 			path.join(project, "tsconfig.json"),
 			JSON.stringify({
 				compilerOptions: {
-					target: "ES2023",
-					module: "ESNext",
+					target: "ESNext",
+					module: "Preserve",
 					moduleResolution: "bundler",
-					lib: ["ES2023", "DOM"],
-					typeRoots: [path.join(root, "node_modules/@types")],
+					moduleDetection: "force",
+					lib: ["ESNext", "DOM", "DOM.Iterable"],
 					types: ["bun"],
+					jsx: "react-jsx",
 					strict: true,
+					noUncheckedIndexedAccess: true,
+					noImplicitOverride: true,
+					verbatimModuleSyntax: true,
 					noEmit: true,
 					skipLibCheck: false,
 				},
-				include: ["consumer.ts"],
+				include: ["consumer.ts", ...blocks.map(({ file }) => file)],
 			}),
 		);
 		run([path.join(root, "node_modules/.bin/tsc"), "-p", "tsconfig.json"], project);
