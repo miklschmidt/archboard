@@ -30,7 +30,12 @@ fn arrow(direction: DrillDirection) -> &'static str {
 
 /// The mark in a box's top-right corner, in a part's own ink, drawn `scale`
 /// times its near size about its centre.
-pub fn corner_drill_mark(rect: Rect, direction: DrillDirection, ink: &str, scale: f64) -> Markup {
+pub(super) fn corner_drill_mark(
+    rect: Rect,
+    direction: DrillDirection,
+    ink: &str,
+    scale: f64,
+) -> Markup {
     let cx = rect.x + rect.width - DRILL_MARK_INSET;
     let cy = rect.y + DRILL_MARK_INSET;
     let scaled = if scale == 1.0 {

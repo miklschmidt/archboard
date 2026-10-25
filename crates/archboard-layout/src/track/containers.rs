@@ -12,7 +12,7 @@ use crate::track::scene::{ItemId, Map, Placement, Set};
 
 /// A frame's box once the scene is spaced, and how deep in frames it sits.
 #[derive(Clone, Debug, PartialEq)]
-pub struct FrameShape {
+pub(crate) struct FrameShape {
     pub id: String,
     pub bx: Rect,
     pub depth: usize,
@@ -24,7 +24,7 @@ pub struct FrameShape {
 
 /// A group region's band and caption once the scene is spaced.
 #[derive(Clone, Debug, PartialEq)]
-pub struct RegionShape {
+pub(crate) struct RegionShape {
     pub group: String,
     pub parent: Option<String>,
     pub bx: Rect,
@@ -34,7 +34,7 @@ pub struct RegionShape {
 
 /// A frame or group region, with everything it holds.
 #[derive(Clone, Debug)]
-pub struct Container {
+pub(crate) struct Container {
     /// Room it keeps below the lowest thing it holds.
     pub inset: f64,
     /// Its title row or caption, and every card, title row and label it holds, however deep.
@@ -46,10 +46,10 @@ pub struct Container {
 }
 
 /// The placed relationships a scene's containers hold the labels of, by id.
-pub type Edges<'a> = Map<&'a str, &'a PlacedEdge>;
+pub(crate) type Edges<'a> = Map<&'a str, &'a PlacedEdge>;
 
 /// Every frame and group region of a scene, with what each holds.
-pub struct Containers<'a> {
+pub(crate) struct Containers<'a> {
     pub scene: &'a Placement,
     pub all: Vec<Container>,
     pub frames: Map<String, usize>,
@@ -58,7 +58,7 @@ pub struct Containers<'a> {
 
 impl<'a> Containers<'a> {
     /// Read what each frame and region holds.
-    pub fn new(scene: &'a Placement, edges: &Edges<'_>) -> Containers<'a> {
+    pub(crate) fn new(scene: &'a Placement, edges: &Edges<'_>) -> Containers<'a> {
         let mut containers = Containers {
             scene,
             all: Vec::new(),
@@ -116,7 +116,7 @@ impl<'a> Containers<'a> {
     }
 
     /// Everything a region holds: its members, and everything inside the frames among them.
-    pub fn region_inside(&self, members: &[String]) -> Vec<String> {
+    pub(crate) fn region_inside(&self, members: &[String]) -> Vec<String> {
         members
             .iter()
             .flat_map(|id| {
@@ -179,7 +179,7 @@ impl<'a> Containers<'a> {
 
     /// Where a container's bottom edge stands once the scene is spaced: one
     /// inset below the lowest thing it holds, the containers inside it included.
-    pub fn bottom_of(&self, container: usize, left: f64) -> f64 {
+    pub(crate) fn bottom_of(&self, container: usize, left: f64) -> f64 {
         let container = &self.all[container];
         let items = container.items.iter().map(|&item| {
             let bx = self.scene.moved_id(item, left);
@@ -194,7 +194,7 @@ impl<'a> Containers<'a> {
     }
 
     /// How far below each band the containers that end on it reach, before spacing.
-    pub fn closings(&self) -> Vec<f64> {
+    pub(crate) fn closings(&self) -> Vec<f64> {
         let mut closing = vec![0.0; self.scene.bands.len()];
         for at in self
             .frames
@@ -209,7 +209,7 @@ impl<'a> Containers<'a> {
     }
 
     /// The bands a container ends on right above another container it stands over.
-    pub fn facing(&self) -> Set<usize> {
+    pub(crate) fn facing(&self) -> Set<usize> {
         let all: Vec<usize> = self
             .frames
             .values()
@@ -232,7 +232,7 @@ impl<'a> Containers<'a> {
     }
 
     /// The lowest band a container holds anything on.
-    pub fn last_band(&self, container: usize) -> usize {
+    pub(crate) fn last_band(&self, container: usize) -> usize {
         max(self.all[container]
             .items
             .iter()
@@ -252,7 +252,7 @@ impl<'a> Containers<'a> {
 
 /// Every frame: Graphviz's width, from its title row down to one inset below
 /// everything it holds.
-pub fn frame_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> Vec<FrameShape> {
+pub(crate) fn frame_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> Vec<FrameShape> {
     let containers = Containers::new(scene, edges);
     scene
         .frames
@@ -279,7 +279,7 @@ pub fn frame_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> Vec<Fram
 
 /// Every group region: Graphviz's width, from its caption row down to below
 /// everything it holds.
-pub fn region_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> Vec<RegionShape> {
+pub(crate) fn region_shapes(scene: &Placement, edges: &Edges<'_>, left: f64) -> Vec<RegionShape> {
     let containers = Containers::new(scene, edges);
     scene
         .regions

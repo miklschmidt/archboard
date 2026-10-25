@@ -13,19 +13,19 @@ use crate::track::clear::ClearOf;
 use crate::track::scene::{ItemId, Map, Placement, Set, Spot, centre_x};
 
 /// Distance between neighbouring lanes and tracks.
-pub const LANE: f64 = 16.0;
+pub(crate) const LANE: f64 = 16.0;
 /// How far a line keeps from a card's corner, as ports do.
-pub const FACE_MARGIN: f64 = 20.0;
+pub(crate) const FACE_MARGIN: f64 = 20.0;
 /// How many quarter lanes either way a lane looks for a free column.
 const SEARCH_STEPS: usize = 64;
 /// How far a lane keeps from a container wall it passes beside: half a lane.
 const WALL_CLEARANCE: f64 = LANE / 2.0;
 /// How far a lane keeps from a group region's wall where it has the room: a lane and a half.
-pub const REGION_CLEARANCE: f64 = 1.5 * LANE;
+pub(crate) const REGION_CLEARANCE: f64 = 1.5 * LANE;
 
 /// What a station is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Kind {
+pub(crate) enum Kind {
     Card,
     Label,
     Lane,
@@ -33,15 +33,15 @@ pub enum Kind {
 
 /// A station, by its place in the track.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct StationId(pub usize);
+pub(crate) struct StationId(pub usize);
 
 /// A chain, by its place in the track.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ChainId(pub usize);
+pub(crate) struct ChainId(pub usize);
 
 /// Where a chain touches a band.
 #[derive(Clone, Copy, Debug)]
-pub struct Station {
+pub(crate) struct Station {
     pub kind: Kind,
     pub band: usize,
     /// The card or label box; absent for a lane.
@@ -56,7 +56,7 @@ pub struct Station {
 
 impl Station {
     /// A station of its own x.
-    pub fn new(kind: Kind, band: usize, item: Option<ItemId>, x: f64) -> Station {
+    pub(crate) fn new(kind: Kind, band: usize, item: Option<ItemId>, x: f64) -> Station {
         Station {
             kind,
             band,
@@ -70,28 +70,28 @@ impl Station {
 
 /// A relationship's stations, and whether it runs upward from source to target.
 #[derive(Clone, Debug)]
-pub struct Chain {
+pub(crate) struct Chain {
     pub stations: Vec<StationId>,
     pub upward: bool,
 }
 
 /// One run of lanes in a chain, with the stations either side of it.
 #[derive(Clone, Debug, PartialEq)]
-pub struct LaneRun {
+pub(crate) struct LaneRun {
     pub lanes: Vec<StationId>,
     pub before: StationId,
     pub after: StationId,
 }
 
 /// Every chain's stations, by band.
-pub type ByBand = Map<usize, StationId>;
+pub(crate) type ByBand = Map<usize, StationId>;
 
 /// What the lines one chain crosses in a channel count, given the chains
 /// crossed and the two stations either side of the channel.
-pub type Counted<'c> = dyn FnMut(&Track<'_>, &[usize], StationId, StationId) -> f64 + 'c;
+pub(crate) type Counted<'c> = dyn FnMut(&Track<'_>, &[usize], StationId, StationId) -> f64 + 'c;
 
 /// The scene a router works on, and every station, chain, net and trunk it made.
-pub struct Track<'s> {
+pub(crate) struct Track<'s> {
     pub scene: &'s mut Placement,
     pub stations: Vec<Station>,
     pub chains: Vec<Chain>,
@@ -101,7 +101,7 @@ pub struct Track<'s> {
 
 impl<'s> Track<'s> {
     /// A router of a scene, with nothing made yet.
-    pub fn new(scene: &'s mut Placement) -> Track<'s> {
+    pub(crate) fn new(scene: &'s mut Placement) -> Track<'s> {
         Track {
             scene,
             stations: Vec::new(),
@@ -112,38 +112,38 @@ impl<'s> Track<'s> {
     }
 
     /// A station.
-    pub fn station(&self, id: StationId) -> &Station {
+    pub(crate) fn station(&self, id: StationId) -> &Station {
         &self.stations[id.0]
     }
 
     /// A station, to change.
-    pub fn station_mut(&mut self, id: StationId) -> &mut Station {
+    pub(crate) fn station_mut(&mut self, id: StationId) -> &mut Station {
         &mut self.stations[id.0]
     }
 
     /// Keep a new station.
-    pub fn add(&mut self, station: Station) -> StationId {
+    pub(crate) fn add(&mut self, station: Station) -> StationId {
         self.stations.push(station);
         StationId(self.stations.len() - 1)
     }
 
     /// A chain.
-    pub fn chain(&self, id: ChainId) -> &Chain {
+    pub(crate) fn chain(&self, id: ChainId) -> &Chain {
         &self.chains[id.0]
     }
 
     /// A net.
-    pub fn net(&self, id: NetId) -> &Net {
+    pub(crate) fn net(&self, id: NetId) -> &Net {
         &self.nets[id.0]
     }
 
     /// A net, to change.
-    pub fn net_mut(&mut self, id: NetId) -> &mut Net {
+    pub(crate) fn net_mut(&mut self, id: NetId) -> &mut Net {
         &mut self.nets[id.0]
     }
 
     /// A station's x: a label's is the centre of its box.
-    pub fn x(&self, id: StationId) -> f64 {
+    pub(crate) fn x(&self, id: StationId) -> f64 {
         let station = &self.stations[id.0];
         if station.live {
             centre_x(self.scene.item(station.item.expect("a label's box")))
@@ -153,7 +153,7 @@ impl<'s> Track<'s> {
     }
 
     /// Stand a station at an x: a label's box stands centred on it.
-    pub fn set_x(&mut self, id: StationId, x: f64) {
+    pub(crate) fn set_x(&mut self, id: StationId, x: f64) {
         let station = self.stations[id.0];
         if station.live {
             let item = self.scene.item_mut(station.item.expect("a label's box"));
@@ -164,7 +164,7 @@ impl<'s> Track<'s> {
     }
 
     /// Where a station stands.
-    pub fn spot(&self, id: StationId) -> Spot {
+    pub(crate) fn spot(&self, id: StationId) -> Spot {
         Spot {
             band: self.station(id).band,
             x: self.x(id),
@@ -172,7 +172,7 @@ impl<'s> Track<'s> {
     }
 
     /// A label's station, its x the centre of its box.
-    pub fn label_station(&mut self, item: ItemId, band: usize) -> StationId {
+    pub(crate) fn label_station(&mut self, item: ItemId, band: usize) -> StationId {
         self.add(Station {
             kind: Kind::Label,
             band,
@@ -206,7 +206,7 @@ impl<'s> Track<'s> {
     }
 
     /// The stations of one relationship, from its upper end to its lower end.
-    pub fn chain_of(&mut self, edge: &PlacedEdge) -> ChainId {
+    pub(crate) fn chain_of(&mut self, edge: &PlacedEdge) -> ChainId {
         let source = self.scene.endpoint(&edge.source);
         let target = self.scene.endpoint(&edge.target);
         let upward = self.scene.item(target).band < self.scene.item(source).band;
@@ -238,7 +238,7 @@ impl<'s> Track<'s> {
     }
 
     /// Every run of consecutive lanes in some chains.
-    pub fn lane_runs(&self, chains: &[ChainId]) -> Vec<LaneRun> {
+    pub(crate) fn lane_runs(&self, chains: &[ChainId]) -> Vec<LaneRun> {
         let mut runs = Vec::new();
         for &chain in chains {
             let stations = &self.chain(chain).stations;
@@ -264,7 +264,7 @@ impl<'s> Track<'s> {
     /// Where a line meets a station: a lane's or label's x, or the point of a
     /// card's face nearest the other end. `at` is where a lane or label stands
     /// instead of its own x, when it is the one being placed.
-    pub fn meets_at(&self, station: StationId, toward: f64, at: Option<f64>) -> f64 {
+    pub(crate) fn meets_at(&self, station: StationId, toward: f64, at: Option<f64>) -> f64 {
         if self.station(station).kind != Kind::Card {
             return at.unwrap_or_else(|| self.x(station));
         }
@@ -273,7 +273,7 @@ impl<'s> Track<'s> {
     }
 
     /// Whether two chains meet at one station: the same one, or the same card.
-    pub fn meets(&self, one: StationId, other: StationId) -> bool {
+    pub(crate) fn meets(&self, one: StationId, other: StationId) -> bool {
         one == other || {
             let item = self.station(one).item;
             item.is_some() && item == self.station(other).item
@@ -284,7 +284,7 @@ impl<'s> Track<'s> {
     /// next, its lanes and label standing at some x: those whose order against
     /// it swaps across a channel. `counted` is what the chains crossed in one
     /// channel count, given their places in `bands`: one each, unless told.
-    pub fn crossings_of(
+    pub(crate) fn crossings_of(
         &self,
         own: &[StationId],
         xs: &[f64],
@@ -324,7 +324,7 @@ impl<'s> Track<'s> {
     }
 
     /// How many other chains a run on one column would cross between one band and the next.
-    pub fn inversions(&self, run: &LaneRun, x: f64, bands: &[ByBand]) -> f64 {
+    pub(crate) fn inversions(&self, run: &LaneRun, x: f64, bands: &[ByBand]) -> f64 {
         let own: Vec<StationId> = std::iter::once(run.before)
             .chain(run.lanes.iter().copied())
             .chain(std::iter::once(run.after))
@@ -337,7 +337,7 @@ impl<'s> Track<'s> {
     }
 
     /// What each band holds with every run but one in place.
-    pub fn free_without(&self, runs: &[LaneRun], left: usize) -> Occupancy {
+    pub(crate) fn free_without(&self, runs: &[LaneRun], left: usize) -> Occupancy {
         let mut occupancy = Occupancy::new(self.scene, &Set::default());
         for (index, run) in runs.iter().enumerate() {
             if index != left {
@@ -352,7 +352,13 @@ impl<'s> Track<'s> {
     /// Move the run of lanes a lane belongs to onto a column, when that column
     /// is free on every band the run passes, or only the piece of it the lane
     /// stands in. Answers whether it moved.
-    pub fn move_run(&mut self, chains: &[ChainId], lane: StationId, x: f64, piece: bool) -> bool {
+    pub(crate) fn move_run(
+        &mut self,
+        chains: &[ChainId],
+        lane: StationId,
+        x: f64,
+        piece: bool,
+    ) -> bool {
         let runs = self.lane_runs(chains);
         let Some(at) = runs.iter().position(|run| run.lanes.contains(&lane)) else {
             return false;
@@ -377,7 +383,7 @@ impl<'s> Track<'s> {
 
     /// A run's lanes in pieces, each the lanes that stand on one column, with
     /// the stations either side of it, top to bottom.
-    pub fn pieces_of(&self, run: &LaneRun) -> Vec<LaneRun> {
+    pub(crate) fn pieces_of(&self, run: &LaneRun) -> Vec<LaneRun> {
         let mut pieces = Vec::new();
         let mut start = 0;
         for (index, &lane) in run.lanes.iter().enumerate() {
@@ -403,7 +409,7 @@ impl<'s> Track<'s> {
     }
 
     /// The run of lanes a lane belongs to.
-    pub fn run_of(&self, chains: &[ChainId], lane: StationId) -> Option<LaneRun> {
+    pub(crate) fn run_of(&self, chains: &[ChainId], lane: StationId) -> Option<LaneRun> {
         self.lane_runs(chains)
             .into_iter()
             .find(|run| run.lanes.contains(&lane))
@@ -412,7 +418,7 @@ impl<'s> Track<'s> {
     /// The x a line can pass a station at straight: anywhere along a card's or
     /// title row's face clear of its corners, anywhere across a label box, or
     /// a lane's own x. A line held to one point of its card passes there alone.
-    pub fn reach_of(&self, id: StationId) -> (f64, f64) {
+    pub(crate) fn reach_of(&self, id: StationId) -> (f64, f64) {
         let station = self.station(id);
         let Some(item) = station.item else {
             let x = self.x(id);
@@ -435,7 +441,7 @@ impl<'s> Track<'s> {
 
     /// Where a run of lanes lets its line pass straight from the station above
     /// it into the one below: the point both can reach nearest the lanes, if any.
-    pub fn meeting(&self, before: StationId, after: StationId, near: f64) -> Option<f64> {
+    pub(crate) fn meeting(&self, before: StationId, after: StationId, near: f64) -> Option<f64> {
         let (a, b) = self.reach_of(before);
         let (c, d) = self.reach_of(after);
         let low = js_max(a, c);
@@ -445,7 +451,7 @@ impl<'s> Track<'s> {
 
     /// Where a run of lanes to or from a container runs straight on: the
     /// columns to try, best first; none for a run between two cards.
-    pub fn straight_on(&self, before: StationId, after: StationId) -> Vec<f64> {
+    pub(crate) fn straight_on(&self, before: StationId, after: StationId) -> Vec<f64> {
         let titled = |id: StationId| {
             self.station(id)
                 .item
@@ -498,7 +504,7 @@ fn outside_frame(wall: f64, walls: (f64, f64), items: &[(f64, f64)]) -> (f64, f6
 }
 
 /// Which horizontal intervals of each band are taken by items and settled lanes.
-pub struct Occupancy {
+pub(crate) struct Occupancy {
     pub taken: Vec<Vec<(f64, f64)>>,
     /// What each band holds but the stretches its walls keep a lane off.
     pub held: Vec<Vec<(f64, f64)>>,
@@ -509,14 +515,14 @@ pub struct Occupancy {
 }
 
 /// [`Occupancy::fitting`]: the test of a column for a run.
-pub struct Fitting {
+pub(crate) struct Fitting {
     clear: std::rc::Rc<ClearOf>,
     frames: crate::track::scene::KeepsFrames,
 }
 
 impl Fitting {
     /// Whether a column is free on every band and keeps the frames.
-    pub fn passes(&self, x: f64) -> bool {
+    pub(crate) fn passes(&self, x: f64) -> bool {
         self.clear.passes(x) && self.frames.passes(x)
     }
 }
@@ -524,7 +530,7 @@ impl Fitting {
 impl Occupancy {
     /// Start with every item's box, widened by a lane either side, but for the
     /// items `without`, as the label boxes of a line being placed.
-    pub fn new(scene: &Placement, without: &Set<ItemId>) -> Occupancy {
+    pub(crate) fn new(scene: &Placement, without: &Set<ItemId>) -> Occupancy {
         let mut taken: Vec<Vec<(f64, f64)>> = scene.bands.iter().map(|_| Vec::new()).collect();
         for &item in scene.cards.values().chain(scene.labels.values()) {
             if without.contains(&item) {
@@ -574,7 +580,7 @@ impl Occupancy {
     /// What a band holds for a lane of a line that passes some bands: each
     /// wall kept off only as far as it is on the band beside the line where a
     /// card stands nearest it.
-    pub fn along(&self, band: usize, bands: &[usize]) -> Vec<(f64, f64)> {
+    pub(crate) fn along(&self, band: usize, bands: &[usize]) -> Vec<(f64, f64)> {
         let walls = self.walls[band].iter().map(|(wall, &(low, high))| {
             bands.iter().fold((low, high), |narrowest, &other| {
                 match self.walls[other].get(wall) {
@@ -590,7 +596,7 @@ impl Occupancy {
     }
 
     /// Every edge of what some lanes' bands hold.
-    pub fn edges(&self, track: &Track<'_>, lanes: &[StationId]) -> Vec<f64> {
+    pub(crate) fn edges(&self, track: &Track<'_>, lanes: &[StationId]) -> Vec<f64> {
         lanes
             .iter()
             .flat_map(|&lane| {
@@ -602,12 +608,12 @@ impl Occupancy {
     }
 
     /// Whether a whole run may move to one column.
-    pub fn fits(&mut self, track: &Track<'_>, run: &LaneRun, x: f64) -> bool {
+    pub(crate) fn fits(&mut self, track: &Track<'_>, run: &LaneRun, x: f64) -> bool {
         self.fitting(track, run).passes(x)
     }
 
     /// [`Occupancy::fits`], read once for a search that tries column after column and takes no lane meanwhile.
-    pub fn fitting(&mut self, track: &Track<'_>, run: &LaneRun) -> Fitting {
+    pub(crate) fn fitting(&mut self, track: &Track<'_>, run: &LaneRun) -> Fitting {
         let bands: Vec<usize> = run
             .lanes
             .iter()
@@ -633,7 +639,7 @@ impl Occupancy {
     }
 
     /// Take a lane's column on its band.
-    pub fn take(&mut self, track: &Track<'_>, lane: StationId) {
+    pub(crate) fn take(&mut self, track: &Track<'_>, lane: StationId) {
         let x = track.x(lane);
         let band = track.station(lane).band;
         let span = (x - LANE, x + LANE);
@@ -645,7 +651,11 @@ impl Occupancy {
 
 /// The nearest x to one that passes a test, searched outward a quarter lane at
 /// a time and at some exact edges within the same reach; on a tie the step comes first.
-pub fn nearest(from: f64, mut passes: impl FnMut(f64) -> bool, edges: &[f64]) -> Option<f64> {
+pub(crate) fn nearest(
+    from: f64,
+    mut passes: impl FnMut(f64) -> bool,
+    edges: &[f64],
+) -> Option<f64> {
     let mut candidates: Vec<(f64, usize)> =
         Vec::with_capacity(2 * (SEARCH_STEPS + 1) + edges.len());
     for step in 0..=SEARCH_STEPS {

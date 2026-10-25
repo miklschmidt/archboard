@@ -22,7 +22,7 @@ use crate::track::scene::{Map, Placement, Set, centre_x};
 use crate::track::spacing::Rim;
 
 /// Space kept around the drawing.
-pub const PAGE_MARGIN: f64 = 24.0;
+pub(crate) const PAGE_MARGIN: f64 = 24.0;
 /// How far outside the scene a line to a wall aims while its ports and tracks are settled.
 const WALL_REACH: f64 = 4.0 * LANE;
 /// How far apart two ends may be and still be drawn as one straight drop.
@@ -30,7 +30,7 @@ const STRAIGHT: f64 = 0.5;
 
 /// One line a scene is routed for: a relationship, or the part of one a block draws.
 #[derive(Clone, Debug)]
-pub struct SceneLine<'a> {
+pub(crate) struct SceneLine<'a> {
     pub id: String,
     pub order: f64,
     /// What must match for two lines to share a trunk: kind and standing.
@@ -54,7 +54,7 @@ struct Routed {
 /// The kind two lines must share to share a trunk, read off a relationship:
 /// its kind, its comparison standing, its emphasis and whether it carries
 /// traffic.
-pub fn trunk_kind(edge: &crate::graph::Edge) -> String {
+pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
         edge.option("archboard.relationship.standing")
@@ -68,7 +68,7 @@ pub fn trunk_kind(edge: &crate::graph::Edge) -> String {
 }
 
 /// The order a placed relationship carries: `Number(options["archboard.order"] ?? 0)`.
-pub fn order_of(edge: &PlacedEdge) -> f64 {
+pub(crate) fn order_of(edge: &PlacedEdge) -> f64 {
     number_of(edge.option("archboard.order").unwrap_or("0"))
 }
 
@@ -460,7 +460,7 @@ fn chain_kind(line: &SceneLine<'_>, upward: bool) -> String {
 /// moves, `top` where the first band starts, and `rim` the room the block
 /// keeps at its edge rows where no line turns. Answers each line's points,
 /// from its source to its target.
-pub fn route_scene(
+pub(crate) fn route_scene(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
     margin: f64,

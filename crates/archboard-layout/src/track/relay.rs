@@ -139,7 +139,7 @@ impl Track<'_> {
     /// it, longest first, each keeping clear of every other line's lanes as
     /// they stand; its label box moves with it. `kinds` is every chain, and
     /// what it must share with another to share a trunk.
-    pub fn relay_laps(&mut self, kinds: &[(ChainId, Rc<str>)], movable: &[ChainId]) {
+    pub(crate) fn relay_laps(&mut self, kinds: &[(ChainId, Rc<str>)], movable: &[ChainId]) {
         let straying: Vec<ChainId> = movable
             .iter()
             .copied()

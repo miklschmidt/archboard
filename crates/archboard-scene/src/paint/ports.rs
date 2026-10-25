@@ -28,7 +28,7 @@ const FADE_ID: &str = "ab-port-fade";
 
 /// One slot, cut through a card's front edge where a line meets its foot.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Port {
+pub(super) struct Port {
     pub x: f64,
     pub foot: f64,
     pub half: f64,
@@ -37,7 +37,7 @@ pub struct Port {
 
 /// The ports of a drawing: each card's slots, and each line's, as indices into `all`.
 #[derive(Default)]
-pub struct Ports {
+pub(super) struct Ports {
     pub all: Vec<Port>,
     /// Each card's slots, in the order the cards are drawn.
     pub by_card: Vec<(String, Vec<usize>)>,
@@ -48,7 +48,7 @@ pub struct Ports {
 
 impl Ports {
     /// The slots a line runs into.
-    pub fn of_edge(&self, id: &str) -> Vec<Port> {
+    pub(super) fn of_edge(&self, id: &str) -> Vec<Port> {
         self.by_edge
             .get(id)
             .map(|slots| slots.iter().map(|at| self.all[*at]).collect())
@@ -56,7 +56,7 @@ impl Ports {
     }
 
     /// The box of a card drawn whole.
-    pub fn box_of(&self, id: &str) -> Option<Rect> {
+    pub(super) fn box_of(&self, id: &str) -> Option<Rect> {
         self.boxes
             .iter()
             .find(|(card, _)| card == id)
@@ -108,7 +108,11 @@ fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
 }
 
 /// Every port of a drawing: where a line drawn whole meets the foot of a card drawn whole.
-pub fn ports_of(cards: &[Node], edges: &[Edge], drawn_whole: &dyn Fn(&str) -> bool) -> Ports {
+pub(super) fn ports_of(
+    cards: &[Node],
+    edges: &[Edge],
+    drawn_whole: &dyn Fn(&str) -> bool,
+) -> Ports {
     let mut boxes: Vec<(String, Rect)> = Vec::new();
     for card in cards
         .iter()
@@ -274,7 +278,7 @@ fn floor_of(slot: Rect) -> String {
 }
 
 /// The inside of a port, drawn in its line's group under the card.
-pub fn port_inside(
+pub(super) fn port_inside(
     port: &Port,
     well: bool,
     stroke: Attrs,
@@ -334,7 +338,7 @@ pub fn port_inside(
 }
 
 /// A card's cut: its id and its clip's definition.
-pub struct Cut {
+pub(super) struct Cut {
     pub id: String,
     pub markup: Markup,
 }
@@ -359,7 +363,7 @@ fn port_cut(ports: &[Port], rect: Rect) -> Option<Cut> {
 
 /// How a drawing's ports are drawn: which line draws each port's well, and
 /// how each card with a port is cut.
-pub struct PortPlan {
+pub(super) struct PortPlan {
     /// The line that draws each port's well, by port index.
     pub wells: HashMap<usize, String>,
     /// Each cut card's clip, in the order the cards are drawn.
@@ -368,7 +372,7 @@ pub struct PortPlan {
 
 impl PortPlan {
     /// The clip a card's body is drawn through, if it has ports.
-    pub fn cut_of(&self, card: &str) -> Option<&Cut> {
+    pub(super) fn cut_of(&self, card: &str) -> Option<&Cut> {
         self.cuts
             .iter()
             .find(|(id, _)| id == card)
@@ -377,7 +381,7 @@ impl PortPlan {
 }
 
 /// How a drawing's ports are drawn.
-pub fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
+pub(super) fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
     let mut wells = HashMap::new();
     for routed in edges {
         for index in ports
@@ -414,7 +418,7 @@ fn inside_port(point: Point, ports: &[Port]) -> Option<Point> {
 }
 
 /// The route a line's pulses ride: on from each end that runs into a port.
-pub fn ride_into(curve: &Curve, ports: &[Port]) -> Curve {
+pub(super) fn ride_into(curve: &Curve, ports: &[Port]) -> Curve {
     let start = inside_port(curve.from, ports);
     let end = inside_port(curve.end(), ports);
     let mut segments = Vec::new();
@@ -432,12 +436,12 @@ pub fn ride_into(curve: &Curve, ports: &[Port]) -> Curve {
 }
 
 /// Whether a route ends in a port.
-pub fn ends_in_port(curve: &Curve, ports: &[Port]) -> bool {
+pub(super) fn ends_in_port(curve: &Curve, ports: &[Port]) -> bool {
     inside_port(curve.end(), ports).is_some()
 }
 
 /// The gradients every port is drawn in.
-pub fn port_definitions(palette: &Palette) -> Markup {
+pub(super) fn port_definitions(palette: &Palette) -> Markup {
     concat(vec![
         wrap(
             "radialGradient",

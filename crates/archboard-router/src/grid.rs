@@ -7,15 +7,15 @@
 use crate::{Dir, End, Point, Rect, Scene};
 
 /// Two coordinates closer than this are one.
-pub const SAME: f64 = 1e-6;
+pub(crate) const SAME: f64 = 1e-6;
 
 /// Whether two points are one point.
-pub fn close(a: Point, b: Point) -> bool {
+pub(crate) fn close(a: Point, b: Point) -> bool {
     (a.x - b.x).abs() < SAME && (a.y - b.y).abs() < SAME
 }
 
 /// The sign of a difference: 1, -1, or 0 within [`SAME`].
-pub fn sign(value: f64) -> i32 {
+pub(crate) fn sign(value: f64) -> i32 {
     if value > SAME {
         1
     } else if value < -SAME {
@@ -27,7 +27,7 @@ pub fn sign(value: f64) -> i32 {
 
 /// A buffered obstacle: the space no route may enter.
 #[derive(Clone, Copy, Debug)]
-pub struct Buffer {
+pub(crate) struct Buffer {
     pub left: f64,
     pub right: f64,
     pub top: f64,
@@ -36,7 +36,7 @@ pub struct Buffer {
 
 impl Buffer {
     /// The obstacle grown by the clearance on every side.
-    pub fn around(rect: &Rect, clearance: f64) -> Buffer {
+    pub(crate) fn around(rect: &Rect, clearance: f64) -> Buffer {
         Buffer {
             left: rect.x - clearance,
             right: rect.x + rect.width + clearance,
@@ -46,7 +46,7 @@ impl Buffer {
     }
 
     /// Whether a point lies strictly inside, not on the edge.
-    pub fn holds(&self, point: Point) -> bool {
+    pub(crate) fn holds(&self, point: Point) -> bool {
         point.x > self.left + SAME
             && point.x < self.right - SAME
             && point.y > self.top + SAME
@@ -56,7 +56,7 @@ impl Buffer {
 
 /// Where a pin's route leaves its own obstacle's buffer, going the way the
 /// pin leaves.
-pub fn stub_end(buffer: &Buffer, at: Point, leaves: Dir) -> Point {
+pub(crate) fn stub_end(buffer: &Buffer, at: Point, leaves: Dir) -> Point {
     match leaves {
         Dir::Up => Point {
             x: at.x,
@@ -78,7 +78,7 @@ pub fn stub_end(buffer: &Buffer, at: Point, leaves: Dir) -> Point {
 }
 
 /// The grid of one scene, with which vertices and edges lie in free space.
-pub struct Grid {
+pub(crate) struct Grid {
     pub xs: Vec<f64>,
     pub ys: Vec<f64>,
     /// Every obstacle's buffer, by obstacle index.
@@ -101,7 +101,7 @@ fn sorted(mut values: Vec<f64>) -> Vec<f64> {
 
 impl Grid {
     /// The grid of a scene, the buffers named in `exempt` not blocking.
-    pub fn new(scene: &Scene, exempt: &[usize]) -> Grid {
+    pub(crate) fn new(scene: &Scene, exempt: &[usize]) -> Grid {
         let clearance = scene.params.clearance;
         let buffers: Vec<Buffer> = scene
             .obstacles
@@ -211,29 +211,29 @@ impl Grid {
     }
 
     /// The column of an x coordinate, if the grid has it.
-    pub fn column(&self, x: f64) -> Option<usize> {
+    pub(crate) fn column(&self, x: f64) -> Option<usize> {
         index_of(&self.xs, x)
     }
 
     /// The row of a y coordinate, if the grid has it.
-    pub fn row(&self, y: f64) -> Option<usize> {
+    pub(crate) fn row(&self, y: f64) -> Option<usize> {
         index_of(&self.ys, y)
     }
 
     /// The vertex of a point, if it stands on the grid in free space.
-    pub fn vertex(&self, at: Point) -> Option<usize> {
+    pub(crate) fn vertex(&self, at: Point) -> Option<usize> {
         let (i, j) = (self.column(at.x)?, self.row(at.y)?);
         let vertex = j * self.xs.len() + i;
         self.free[vertex].then_some(vertex)
     }
 
     /// How many vertices the grid has.
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.xs.len() * self.ys.len()
     }
 
     /// Where a vertex stands.
-    pub fn point(&self, vertex: usize) -> Point {
+    pub(crate) fn point(&self, vertex: usize) -> Point {
         let width = self.xs.len();
         Point {
             x: self.xs[vertex % width],
@@ -242,7 +242,7 @@ impl Grid {
     }
 
     /// The free neighbour of a vertex one step in a direction, if any.
-    pub fn step(&self, vertex: usize, dir: Dir) -> Option<usize> {
+    pub(crate) fn step(&self, vertex: usize, dir: Dir) -> Option<usize> {
         let width = self.xs.len();
         let (i, j) = (vertex % width, vertex / width);
         let next = match dir {

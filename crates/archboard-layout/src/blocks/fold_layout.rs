@@ -68,7 +68,7 @@ struct Stacked {
 }
 
 /// A folded block's own layout.
-pub struct FoldLayout<'t> {
+pub(crate) struct FoldLayout<'t> {
     tree: &'t BlockTree,
     laid: &'t LaidMap,
     block: BlockId,
@@ -86,7 +86,7 @@ pub struct FoldLayout<'t> {
 
 impl<'t> FoldLayout<'t> {
     /// Start the layout of a folded block.
-    pub fn new(
+    pub(crate) fn new(
         tree: &'t BlockTree,
         laid: &'t LaidMap,
         block: BlockId,
@@ -518,7 +518,7 @@ impl<'t> FoldLayout<'t> {
     }
 
     /// Lay the folded block out.
-    pub fn lay(mut self) -> Laid {
+    pub(crate) fn lay(mut self) -> Laid {
         let block = self.tree.get(self.block);
         let mut courses: Vec<Course> = block
             .lines

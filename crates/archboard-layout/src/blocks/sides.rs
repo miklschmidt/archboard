@@ -20,7 +20,7 @@ use super::tree::{BlockId, BlockTree, Projection, exit_key};
 /// The edges of each block a line's chain crosses, where its outermost blocks
 /// do not stand the way its faces point, keyed by `exit_key` by the port it
 /// would otherwise be.
-pub fn sides_of(tree: &BlockTree, laid: &LaidMap) -> Map<String, Side> {
+pub(crate) fn sides_of(tree: &BlockTree, laid: &LaidMap) -> Map<String, Side> {
     let mut sides = Map::default();
     let back = tree.back_edges();
     for projection in &tree.projections {

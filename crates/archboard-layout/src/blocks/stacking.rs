@@ -25,7 +25,7 @@ const NEAR: f64 = 0.05;
 
 /// A score at the block's best, and how well its page fits the pane.
 #[derive(Clone, Copy, Debug)]
-pub struct Scored {
+pub(crate) struct Scored {
     pub score: f64,
     pub fit: f64,
 }
@@ -33,7 +33,7 @@ pub struct Scored {
 /// What the stacking choice weighs of a block laid out one way: its titles
 /// tied, and pulled down where that is kept.
 #[derive(Clone, Debug)]
-pub struct Stood {
+pub(crate) struct Stood {
     pub tied: Scored,
     pub settled: Scored,
     pub length: f64,
@@ -42,7 +42,7 @@ pub struct Stood {
 
 impl Stood {
     /// What it stood at, as the solve tells it.
-    pub fn json(&self) -> J {
+    pub(crate) fn json(&self) -> J {
         let scored = |one: &Scored| {
             vec![
                 ("score".to_owned(), J::Num(one.score)),
@@ -74,7 +74,7 @@ impl Stood {
 /// stack is laid, when only one way is, whether the solve answers once it is,
 /// and what that way stood at once laid.
 #[derive(Clone, Debug, Default)]
-pub struct Stacking {
+pub(crate) struct Stacking {
     pub way: Option<bool>,
     pub until: bool,
     pub stood: Option<Stood>,
@@ -129,7 +129,7 @@ fn scores_stacked(stacked: &Scored, plain: &Scored) -> bool {
 /// its titles tied and pulled down, pulling them down changing the choice only
 /// where that draws no more line, and its lines as drawn read better; or where
 /// either way it is chosen reads no worse on any measure than the other.
-pub fn stacks(stacked: &Stood, plain: &Stood) -> bool {
+pub(crate) fn stacks(stacked: &Stood, plain: &Stood) -> bool {
     let tied = scores_stacked(&stacked.tied, &plain.tied);
     let pulled = scores_stacked(&stacked.settled, &plain.settled);
     let length = |one: bool| if one { stacked.length } else { plain.length };
@@ -148,7 +148,7 @@ pub fn stacks(stacked: &Stood, plain: &Stood) -> bool {
 /// stacking names, when it names one, and what that way stood at is kept; a
 /// solve that answers once it is laid ends there. Answers the block laid out,
 /// and whether it stacks.
-pub fn stacked_or_not(
+pub(crate) fn stacked_or_not(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,

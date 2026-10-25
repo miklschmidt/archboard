@@ -25,12 +25,12 @@ use serde::{Deserialize, Serialize};
 use crate::board::{Flow, Message, Node, Step};
 
 /// The kind of a flow's frame.
-pub const FLOW_KIND: &str = "flow";
+pub(super) const FLOW_KIND: &str = "flow";
 /// The kind of a decision, a loop or a terminal, which is drawn by its shape
 /// and never by its kind.
-pub const SHAPE_KIND: &str = "flowchart-shape";
+pub(super) const SHAPE_KIND: &str = "flowchart-shape";
 /// The kind of every line: one step leads to the next.
-pub const NEXT_KIND: &str = "next";
+pub(super) const NEXT_KIND: &str = "next";
 /// The line into the steps a loop repeats.
 const REPEAT: &str = "repeat";
 /// The line out of a loop once it is done.
@@ -73,7 +73,7 @@ pub struct Content {
 
 /// Every flow of a reading as one flowchart graph.
 #[derive(Clone, Debug)]
-pub struct Graph {
+pub(super) struct Graph {
     /// The flows as frames, their steps and terminals as nodes, and every line between.
     pub content: Content,
     /// The nodes drawn as shapes of their own, by id.
@@ -84,7 +84,7 @@ pub struct Graph {
 
 impl Graph {
     /// The shape a node is drawn as, when it is drawn as one.
-    pub fn shape(&self, id: &str) -> Option<FlowchartShape> {
+    pub(super) fn shape(&self, id: &str) -> Option<FlowchartShape> {
         self.shapes.get(id).copied()
     }
 }
@@ -120,7 +120,7 @@ impl<'a> Building<'a> {
     }
 
     /// Join every loose end to one node.
-    fn link(&mut self, exits: &[Exit], to: &str) {
+    fn link(&mut self, exits: &[Exit<'_>], to: &str) {
         for exit in exits {
             let order = self.edges.len();
             self.edges.push(GraphEdge {
@@ -269,7 +269,7 @@ impl<'a> Building<'a> {
 }
 
 /// Every flow of a reading as one flowchart graph.
-pub fn flowchart_of(flows: &[Flow], parts: &[Node]) -> Graph {
+pub(super) fn flowchart_of(flows: &[Flow], parts: &[Node]) -> Graph {
     let mut building = Building {
         nodes: Vec::new(),
         edges: Vec::new(),

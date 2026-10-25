@@ -13,13 +13,13 @@ use crate::paint::design::CARD_RADIUS;
 /// The least distance between two pulses on a line.
 const MIN_SPACING: f64 = 36.0;
 /// How many times faster a pulse flies than the speed its author gave.
-pub const PULSE_PACE: f64 = 2.0;
+pub(super) const PULSE_PACE: f64 = 2.0;
 const SLOWEST: f64 = 8.0;
 const FASTEST: f64 = 600.0;
 
 /// One line that carries traffic, as the rhythm is worked out.
 #[derive(Clone, Debug)]
-pub struct Lane {
+pub(super) struct Lane {
     pub id: String,
     pub from: String,
     pub to: String,
@@ -33,7 +33,7 @@ pub struct Lane {
 
 /// How one line's pulses move.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Rhythm {
+pub(super) struct Rhythm {
     pub speed: f64,
     pub spacing: f64,
     pub phase: f64,
@@ -61,7 +61,7 @@ fn seeded(seed: &str) -> f64 {
 }
 
 /// A number held to the range `[0, period)`.
-pub fn within(value: f64, period: f64) -> f64 {
+pub(super) fn within(value: f64, period: f64) -> f64 {
     ((value % period) + period) % period
 }
 
@@ -154,7 +154,7 @@ fn phases_of(
 }
 
 /// How every lane's pulses move, by id.
-pub fn relay_rhythms(
+pub(super) fn relay_rhythms(
     lanes: &[Lane],
     across: &dyn Fn(&str, Point, Point) -> f64,
 ) -> HashMap<String, Rhythm> {
@@ -298,7 +298,7 @@ fn locate(ring: &Ring, point: Point) -> f64 {
 }
 
 /// How far the shorter way round the edge of a card is from one place to another.
-pub fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
+pub(super) fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
     let ring = ring_of(rect);
     let forward = within(locate(&ring, to) - locate(&ring, from), ring.length);
     js::js_min(forward, ring.length - forward)

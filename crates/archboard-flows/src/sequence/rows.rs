@@ -22,7 +22,7 @@ const UNBOUNDED: f64 = 9_007_199_254_740_991.0;
 
 /// A step's note, placed under its message.
 #[derive(Clone, Debug)]
-pub struct PlacedNote {
+pub(super) struct PlacedNote {
     /// The plate the words sit on.
     pub bounds: Rect,
     /// Every line, whole, its baseline measured from the plate's inner top.
@@ -31,7 +31,7 @@ pub struct PlacedNote {
 
 /// Where a message runs: the lifelines it leaves and reaches, and its height.
 #[derive(Clone, Copy, Debug)]
-pub struct MessageEnds {
+pub(super) struct MessageEnds {
     pub from_x: f64,
     pub to_x: f64,
     pub y: f64,
@@ -39,7 +39,7 @@ pub struct MessageEnds {
 
 /// The left and right edges of a flow's columns, which a note stays inside.
 #[derive(Clone, Copy, Debug)]
-pub struct ColumnBounds {
+pub(super) struct ColumnBounds {
     pub left: f64,
     pub right: f64,
     pub pitch: f64,
@@ -49,7 +49,7 @@ pub struct ColumnBounds {
 
 /// A message's words as drawn: their lines, and where a long hop centres them.
 #[derive(Clone, Debug)]
-pub struct MessageWords {
+pub(super) struct MessageWords {
     /// Every line, whole, with its painted width.
     pub lines: Vec<WordLine>,
     /// The x a crossing message's plate is centred on; a self-message's plate
@@ -85,7 +85,7 @@ fn minimum_note_width(text: &impl Text, note: Option<&str>) -> f64 {
 
 /// The column width that leaves every note a readable corridor, or zero when
 /// no message carries one.
-pub fn required_note_column_width(text: &impl Text, flows: &[Flow]) -> f64 {
+pub(super) fn required_note_column_width(text: &impl Text, flows: &[Flow]) -> f64 {
     let mut width: f64 = 0.0;
     for flow in flows {
         for step in messages_of(&flow.steps) {
@@ -114,7 +114,7 @@ fn note_anchor(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> f64 {
 
 /// Where a message's note goes: under the message, starting where its own
 /// words start, wrapped to the hop and held inside the flow's columns.
-pub fn place_note(
+pub(super) fn place_note(
     text: &impl Text,
     step: &Message,
     ends: MessageEnds,
@@ -188,7 +188,7 @@ fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Op
 }
 
 /// A message's words, wrapped to the room its plate has.
-pub fn words_for(
+pub(super) fn words_for(
     text: &impl Text,
     step: &Message,
     ends: MessageEnds,
@@ -213,7 +213,7 @@ pub fn words_for(
 
 /// The vertical step from one message to the next. A self-message needs more,
 /// because it drops below its own row before it comes back.
-pub fn pitch_of(kind: MessageKind) -> f64 {
+pub(super) fn pitch_of(kind: MessageKind) -> f64 {
     if kind == MessageKind::Myself {
         SELF_MESSAGE_PITCH
     } else {

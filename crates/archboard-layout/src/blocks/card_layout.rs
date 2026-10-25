@@ -42,14 +42,14 @@ const RANK_GAP: f64 = 28.0;
 /// Graphviz asked once for each graph one layout of a board gives it.
 /// Graphviz answers a graph the same way every time, so a graph it has
 /// answered is answered again from the text it gave.
-pub struct Engine<'g> {
+pub(crate) struct Engine<'g> {
     host: &'g mut dyn Graphviz,
     answers: FxHashMap<String, Rc<str>>,
 }
 
 impl<'g> Engine<'g> {
     /// Graphviz, answering each graph once.
-    pub fn new(host: &'g mut dyn Graphviz) -> Engine<'g> {
+    pub(crate) fn new(host: &'g mut dyn Graphviz) -> Engine<'g> {
         Engine {
             host,
             answers: FxHashMap::default(),
@@ -61,7 +61,7 @@ impl<'g> Engine<'g> {
     /// # Errors
     ///
     /// What Graphviz refused the graph with.
-    pub fn render(&mut self, graph: &Graph) -> Result<Rc<str>, String> {
+    pub(crate) fn render(&mut self, graph: &Graph) -> Result<Rc<str>, String> {
         let text = graph.text();
         if let Some(answer) = self.answers.get(&text) {
             return Ok(Rc::clone(answer));
@@ -74,7 +74,7 @@ impl<'g> Engine<'g> {
 
 /// How a block is arranged beyond Graphviz's own ranking.
 #[derive(Clone, Debug, Default)]
-pub struct Arrangement {
+pub(crate) struct Arrangement {
     /// How many rows each item a wide rank wraps is set below its place.
     pub lowered: Plan,
     /// Whether the cards no line touches are set out as a grid.
@@ -92,14 +92,14 @@ enum Sub {
 }
 
 /// The block ranked by Graphviz and lined up, its lines not yet routed.
-pub struct Lined {
+pub(crate) struct Lined {
     pub placed: PlacedBlock,
     pub centres: Map<String, Point>,
     pub boxes: Map<String, Rect>,
 }
 
 /// One block of cards' layout, from its Graphviz graph to its routed lines.
-pub struct CardLayout<'t> {
+pub(crate) struct CardLayout<'t> {
     tree: &'t BlockTree,
     laid: &'t LaidMap,
     id: BlockId,
@@ -116,7 +116,7 @@ pub struct CardLayout<'t> {
 
 impl<'t> CardLayout<'t> {
     /// Start a block's layout.
-    pub fn new(
+    pub(crate) fn new(
         tree: &'t BlockTree,
         laid: &'t LaidMap,
         id: BlockId,
@@ -401,7 +401,7 @@ impl<'t> CardLayout<'t> {
     }
 
     /// Every line Graphviz ranks, between the vendor nodes it joins.
-    pub fn links(&self) -> Vec<Link> {
+    pub(crate) fn links(&self) -> Vec<Link> {
         self.links_by(|end| self.vendor_of(end))
     }
 
@@ -427,13 +427,13 @@ impl<'t> CardLayout<'t> {
 
     /// Whether stacking would change the block: some line runs from one inline
     /// container into another.
-    pub fn stacks(&self) -> bool {
+    pub(crate) fn stacks(&self) -> bool {
         !self.clusters.entering_edges(&self.links()).is_empty()
     }
 
     /// The block's cards no line touches, in the board's order, with their
     /// sizes, by the cluster that holds them.
-    pub fn loose_cards(&self) -> Vec<Vec<Loose>> {
+    pub(crate) fn loose_cards(&self) -> Vec<Vec<Loose>> {
         let touched: Set<String> = self
             .block
             .lines
@@ -556,7 +556,7 @@ impl<'t> CardLayout<'t> {
     /// # Errors
     ///
     /// What Graphviz refused the block's graph with, or answered unreadably.
-    pub fn lay(&mut self, gv: &mut Engine<'_>) -> Result<Rc<Laid>, String> {
+    pub(crate) fn lay(&mut self, gv: &mut Engine<'_>) -> Result<Rc<Laid>, String> {
         let Lined {
             placed, centres, ..
         } = self.lined(gv)?;
@@ -581,7 +581,7 @@ impl<'t> CardLayout<'t> {
     /// # Errors
     ///
     /// What Graphviz refused the block's graph with, or answered unreadably.
-    pub fn lined(&mut self, gv: &mut Engine<'_>) -> Result<Lined, String> {
+    pub(crate) fn lined(&mut self, gv: &mut Engine<'_>) -> Result<Lined, String> {
         self.build();
         let graph = self.graph();
         let answer = gv.render(&graph)?;
@@ -888,7 +888,7 @@ impl<'t> CardLayout<'t> {
 /// A block of cards routed again with some of its ports moved along their
 /// edges, where its parent settled them: Graphviz does not rank it again, and
 /// it keeps its width.
-pub struct Reroute {
+pub(crate) struct Reroute {
     block: BlockId,
     insets: Insets,
     held: f64,
@@ -902,7 +902,12 @@ impl Reroute {
     /// own coordinates, every pin on a block inside it where that block's
     /// settled port now stands, and every block inside it as large as it was
     /// routed again.
-    pub fn reroute(&self, tree: &BlockTree, laid: &LaidMap, ports: &Map<String, f64>) -> Laid {
+    pub(crate) fn reroute(
+        &self,
+        tree: &BlockTree,
+        laid: &LaidMap,
+        ports: &Map<String, f64>,
+    ) -> Laid {
         let mut placed = self.placed.borrow_mut();
         for leaf in leaves_of(&mut placed.children) {
             if let Some(&x) = ports.get(&leaf.id) {

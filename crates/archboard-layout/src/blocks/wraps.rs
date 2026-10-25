@@ -26,7 +26,7 @@ const MIN_WRAPPED: usize = 4;
 
 /// What a laid-out block is weighed on: its page, and its crossings with each
 /// line that laps round it counted as one more.
-pub fn weighed(laid: &Laid) -> Weighed {
+pub(crate) fn weighed(laid: &Laid) -> Weighed {
     let crossings = crossings_of(laid.lines.values().map(Vec::as_slice)) + laid.laps.unwrap_or(0.0);
     Weighed {
         width: laid.width,
@@ -38,7 +38,7 @@ pub fn weighed(laid: &Laid) -> Weighed {
 
 /// What a block is laid out with, beside Graphviz: every block laid out so
 /// far, this one whole, whether it stacks, and its insets.
-pub struct Whole<'a> {
+pub(crate) struct Whole<'a> {
     pub laid: &'a LaidMap,
     pub whole: &'a Laid,
     pub stacked: bool,
@@ -51,7 +51,7 @@ pub struct Whole<'a> {
 /// # Errors
 ///
 /// What Graphviz refused a wrap's graph with.
-pub fn best_wrap(
+pub(crate) fn best_wrap(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,

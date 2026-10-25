@@ -190,7 +190,7 @@ fn fit_all(fittings: &mut [Fitting], items: &[Rect], lines: &[&[Point]]) {
 }
 
 /// Every frame and group region of a routed scene, with its side walls fitted to what it holds.
-pub fn fit_sides(
+pub(crate) fn fit_sides(
     scene: &Placement,
     edges: &Edges<'_>,
     lines: &[&[Point]],

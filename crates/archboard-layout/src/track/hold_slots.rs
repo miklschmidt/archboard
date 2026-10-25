@@ -68,7 +68,7 @@ fn slot_shift(columns: &Columns<'_, '_>, holds: &Holds<'_>, name: &str) -> Optio
 
 /// Move every member a hold stood a slot in from its container's wall onto
 /// the wall, where that crowds nothing and crosses no line.
-pub fn close_slots(columns: &mut Columns<'_, '_>, holds: Option<&Holds<'_>>) {
+pub(crate) fn close_slots(columns: &mut Columns<'_, '_>, holds: Option<&Holds<'_>>) {
     let Some(holds) = holds else {
         return;
     };

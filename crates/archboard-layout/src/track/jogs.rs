@@ -22,37 +22,37 @@ use crate::track::channels::{End, NetId};
 use crate::track::scene::{Item, Map, Set, card_face, centre_x};
 
 /// Under this, two stations stand in one column.
-pub const STRAIGHT: f64 = 0.5;
+pub(crate) const STRAIGHT: f64 = 0.5;
 /// How near its card's corner a port may come to let its line run straight.
 const CORNER_ROOM: f64 = 12.0;
 /// How many passes close jogs that one move opens elsewhere.
-pub const PASSES: usize = 3;
+pub(crate) const PASSES: usize = 3;
 /// Up to this, a sideways step reads as a kink in one line, not a route.
 const KINK: f64 = 2.0 * LANE;
 
 /// Where a net stands: its line, top to bottom, and its place in it.
 #[derive(Clone, Copy, Debug)]
-pub struct Place {
+pub(crate) struct Place {
     pub route: usize,
     pub index: usize,
 }
 
 /// A station of a stretch, with the net arriving at it and which end of the net it stands at.
 #[derive(Clone, Copy, Debug)]
-pub struct Reach {
+pub(crate) struct Reach {
     pub station: StationId,
     pub net: NetId,
     pub end: End,
 }
 
 /// Which steps count as new ones a move must not open.
-pub type Guard = fn(&Track<'_>, NetId) -> bool;
+pub(crate) type Guard = fn(&Track<'_>, NetId) -> bool;
 
 /// What a pass keeps from growing: a count over every net, never more after a move than before it.
-pub type Kept<'k> = &'k dyn Fn(&Track<'_>, &[NetId]) -> f64;
+pub(crate) type Kept<'k> = &'k dyn Fn(&Track<'_>, &[NetId]) -> f64;
 
 /// What a pass that runs first keeps: nothing.
-pub fn nothing(_: &Track<'_>, _: &[NetId]) -> f64 {
+pub(crate) fn nothing(_: &Track<'_>, _: &[NetId]) -> f64 {
     0.0
 }
 
@@ -64,19 +64,19 @@ struct Saved {
 }
 
 /// How far a net steps sideways.
-pub fn step(track: &Track<'_>, net: NetId) -> f64 {
+pub(crate) fn step(track: &Track<'_>, net: NetId) -> f64 {
     let net = track.net(net);
     abs(net.top_x - net.bottom_x)
 }
 
 /// Whether a net steps sideways by less than its two bends need.
-pub fn notched(track: &Track<'_>, net: NetId) -> bool {
+pub(crate) fn notched(track: &Track<'_>, net: NetId) -> bool {
     let step = step(track, net);
     step > STRAIGHT && step < 2.0 * BEND_RADIUS
 }
 
 /// Whether a net steps sideways by no more than a kink.
-pub fn kinked(track: &Track<'_>, net: NetId) -> bool {
+pub(crate) fn kinked(track: &Track<'_>, net: NetId) -> bool {
     let step = step(track, net);
     step > STRAIGHT && step <= KINK + STRAIGHT
 }
@@ -158,7 +158,7 @@ impl Track<'_> {
 
     /// The stretch of a line beyond one end of a net: that end's station, and
     /// every station after it the line reaches straight, nearest first.
-    pub fn stretch_beyond(&self, route: &[NetId], index: usize, end: End) -> Vec<Reach> {
+    pub(crate) fn stretch_beyond(&self, route: &[NetId], index: usize, end: End) -> Vec<Reach> {
         let net = route[index];
         let mut stretch = vec![Reach {
             station: self.net(net).at(end),
@@ -227,7 +227,7 @@ impl Track<'_> {
     }
 
     /// Stand every net's end at its station where the station is a lane or a label.
-    pub fn follow(&mut self, nets: &[NetId]) {
+    pub(crate) fn follow(&mut self, nets: &[NetId]) {
         for &net in nets {
             for end in [End::Top, End::Bottom] {
                 let station = self.net(net).at(end);
@@ -308,7 +308,7 @@ impl Track<'_> {
     /// and none when the move would open a step `guard` counts on another line,
     /// or when `better` says the drawing is no better for it.
     #[allow(clippy::too_many_arguments)]
-    pub fn move_stretch(
+    pub(crate) fn move_stretch(
         &mut self,
         chains: &[ChainId],
         nets: &[NetId],
@@ -506,7 +506,7 @@ impl Track<'_> {
     /// Close every step too short for its two bends that a move can close,
     /// and, in the first pass of a block the Blocks engine lays out, every
     /// step back at a label. `kept` is what no move may add to.
-    pub fn close_jogs(&mut self, chains: &[ChainId], routes: &[Vec<NetId>], kept: Kept<'_>) {
+    pub(crate) fn close_jogs(&mut self, chains: &[ChainId], routes: &[Vec<NetId>], kept: Kept<'_>) {
         let nets: Vec<NetId> = routes.concat();
         for pass in 0..PASSES {
             let mut closed = Vec::new();
@@ -534,7 +534,7 @@ impl Track<'_> {
 
     /// Open every step still too short for its two bends, one no move could
     /// close, to the shortest step they turn whole.
-    pub fn open_notches(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
+    pub(crate) fn open_notches(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
         let nets: Vec<NetId> = routes.concat();
         for route in routes {
             for (index, &net) in route.iter().enumerate() {

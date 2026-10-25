@@ -21,7 +21,7 @@ const AWAY_PLACE: &str = "--away";
 /// Where a chip stands: its top left corner and its side; or where a block of
 /// words starts: the left end of its first baseline and its first line's size.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Place {
+pub(super) struct Place {
     pub x: f64,
     pub y: f64,
     pub size: f64,
@@ -43,7 +43,7 @@ fn placed(x: f64, y: f64, scale: f64, unit: &str) -> String {
 }
 
 /// A card's kind chip as one element that both views share, drawn at its near place.
-pub fn shared_chip(chip: Markup, near: Place, far: Place) -> Markup {
+pub(super) fn shared_chip(chip: Markup, near: Place, far: Place) -> Markup {
     let near_scale = written(near.size / ICON_CHIP_SIZE);
     let far_scale = written(far.size / ICON_CHIP_SIZE);
     group(
@@ -63,7 +63,7 @@ pub fn shared_chip(chip: Markup, near: Place, far: Place) -> Markup {
 }
 
 /// A layer's words, which the stylesheet moves to where the other layer's words start.
-pub fn moving_words(words: Markup, home: Place, away: Place) -> Markup {
+pub(super) fn moving_words(words: Markup, home: Place, away: Place) -> Markup {
     let scale = written(away.size / home.size);
     let x = away.x - home.x * scale;
     let y = away.y - home.y * scale;
@@ -76,12 +76,12 @@ pub fn moving_words(words: Markup, home: Place, away: Place) -> Markup {
 }
 
 /// What a part draws when the picture is seen near.
-pub fn near_layer(markup: Markup) -> Markup {
+pub(super) fn near_layer(markup: Markup) -> Markup {
     group(Role::NearView, None, attrs! { "class": NEAR_CLASS }, markup)
 }
 
 /// What a part draws only from far away, hidden by its own attribute.
-pub fn far_layer(markup: Markup) -> Markup {
+pub(super) fn far_layer(markup: Markup) -> Markup {
     group(
         Role::FarView,
         None,

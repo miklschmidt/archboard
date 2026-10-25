@@ -11,14 +11,14 @@ use crate::track::scene::Map;
 use super::card_layout::Reroute;
 
 /// How far a region's caption sits in from its band's corner.
-pub const CAPTION_INSET: f64 = 4.0;
+pub(crate) const CAPTION_INSET: f64 = 4.0;
 
 /// How close two coordinates are and still one.
-pub const SAME: f64 = 0.01;
+pub(crate) const SAME: f64 = 0.01;
 
 /// A width and a height.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Size {
+pub(crate) struct Size {
     pub width: f64,
     pub height: f64,
 }
@@ -26,7 +26,7 @@ pub struct Size {
 /// A region's header as a block lays it out: its caption's tab, from the
 /// region's top down to the caption's foot, so the room a block keeps under
 /// its header is the room under the tab.
-pub fn tab_of(caption: Option<Size>) -> Size {
+pub(crate) fn tab_of(caption: Option<Size>) -> Size {
     let Size { width, height } = caption.unwrap_or(Size {
         width: 1.0,
         height: 1.0,
@@ -39,7 +39,7 @@ pub fn tab_of(caption: Option<Size>) -> Size {
 
 /// One rank of a laid-out block: where it lies, and the block's items on it.
 #[derive(Clone, Debug)]
-pub struct Band {
+pub(crate) struct Band {
     pub top: f64,
     pub bottom: f64,
     pub items: Vec<String>,
@@ -47,7 +47,7 @@ pub struct Band {
 
 /// A block laid out: its size, and where its items, labels, ports and lines are inside it.
 #[derive(Clone, Default)]
-pub struct Laid {
+pub(crate) struct Laid {
     pub width: f64,
     pub height: f64,
     /// Every item's, header's, port's and label's box, in the block's own coordinates.
@@ -68,18 +68,18 @@ pub struct Laid {
 }
 
 /// Every block laid out so far, by id.
-pub type LaidMap = Map<String, Rc<Laid>>;
+pub(crate) type LaidMap = Map<String, Rc<Laid>>;
 
 /// The room a block keeps around what it holds.
 #[derive(Clone, Copy, Debug)]
-pub struct Insets {
+pub(crate) struct Insets {
     pub side: f64,
     pub top: f64,
     pub bottom: f64,
 }
 
 /// Points moved by an offset.
-pub fn shifted(points: &[Point], by: Point) -> Vec<Point> {
+pub(crate) fn shifted(points: &[Point], by: Point) -> Vec<Point> {
     points
         .iter()
         .map(|point| Point {
@@ -90,7 +90,7 @@ pub fn shifted(points: &[Point], by: Point) -> Vec<Point> {
 }
 
 /// A box moved by an offset.
-pub fn moved(one: Rect, by: Point) -> Rect {
+pub(crate) fn moved(one: Rect, by: Point) -> Rect {
     Rect {
         x: one.x + by.x,
         y: one.y + by.y,
@@ -106,7 +106,7 @@ fn straight(one: Point, two: Point, three: Point) -> bool {
 }
 
 /// Points without repeats or points in the middle of a straight run.
-pub fn corners(points: &[Point]) -> Vec<Point> {
+pub(crate) fn corners(points: &[Point]) -> Vec<Point> {
     let mut kept: Vec<Point> = Vec::with_capacity(points.len());
     for &point in points {
         let last = kept.last().copied();

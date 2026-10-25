@@ -6,7 +6,7 @@ use crate::ecma;
 
 /// A JSON value, its object keys in the order they were set.
 #[derive(Clone, Debug)]
-pub enum J {
+pub(crate) enum J {
     Num(f64),
     Str(String),
     Bool(bool),
@@ -16,7 +16,7 @@ pub enum J {
 
 impl J {
     /// An object from its members, in order.
-    pub fn obj<const N: usize>(members: [(&str, J); N]) -> J {
+    pub(crate) fn obj<const N: usize>(members: [(&str, J); N]) -> J {
         J::Obj(
             members
                 .into_iter()
@@ -26,19 +26,19 @@ impl J {
     }
 
     /// A string.
-    pub fn str(value: &str) -> J {
+    pub(crate) fn str(value: &str) -> J {
         J::Str(value.to_owned())
     }
 
     /// The text `JSON.stringify` writes for it.
-    pub fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         let mut out = String::new();
         self.write(&mut out);
         out
     }
 
     /// Write the text into a string.
-    pub fn write(&self, out: &mut String) {
+    pub(crate) fn write(&self, out: &mut String) {
         match self {
             J::Num(value) => number_into(out, *value),
             J::Str(value) => string_into(out, value),
@@ -70,7 +70,7 @@ impl J {
 }
 
 /// A number, as `JSON.stringify` writes it: `null` when it is not finite.
-pub fn number_into(out: &mut String, value: f64) {
+pub(crate) fn number_into(out: &mut String, value: f64) {
     if value.is_finite() {
         out.push_str(&ecma::number(value));
     } else {
@@ -79,7 +79,7 @@ pub fn number_into(out: &mut String, value: f64) {
 }
 
 /// A string as `JSON.stringify` quotes it.
-pub fn string_into(out: &mut String, value: &str) {
+pub(crate) fn string_into(out: &mut String, value: &str) {
     out.push('"');
     for character in value.chars() {
         match character {
