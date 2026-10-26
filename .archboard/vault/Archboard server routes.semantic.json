@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 164,
+	"version": 165,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T23:03:37.086Z",
+	"updatedAt": "2026-10-26T23:35:29.652Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -150896,7 +150896,7 @@
 		{
 			"id": "RW4E0EaH",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "o6rDNILx",
 			"summary": "Resolve explicit code and model references from current, draft, and retained architecture without changing ownership.",
 			"documents": [
@@ -155999,7 +155999,7 @@
 		{
 			"id": "FT3kmhlr",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "RW4E0EaH",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -161100,7 +161100,7 @@
 			}
 		}
 	],
-	"current": "RW4E0EaH",
+	"current": "FT3kmhlr",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -161312,6 +161312,12 @@
 			"from": "o6rDNILx",
 			"at": "2026-10-26T22:55:39.350Z",
 			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
+		},
+		{
+			"variant": "FT3kmhlr",
+			"from": "RW4E0EaH",
+			"at": "2026-10-26T23:35:29.652Z",
+			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
 		}
 	],
 	"shelvings": [
