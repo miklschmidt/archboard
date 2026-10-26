@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 107,
+	"version": 109,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T08:23:08.908Z",
+	"updatedAt": "2026-10-26T09:38:22.357Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -289,6 +289,41 @@
 					"cNaEpWjJ",
 					"ZLJy8ivl",
 					"AJGft3Pe"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "KoSDgGxN",
+			"name": "Legacy board writes",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"VCoMuJnP",
+					"0z23E66v",
+					"IbkA2Se8",
+					"UFO3ulXp",
+					"qTv7HuBw"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "1pjdUbe5",
+			"name": "Canonical checkpoints",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"Bd4GPG6d",
+					"ZRq51Ecz",
+					"cNaEpWjJ",
+					"ZLJy8ivl",
+					"RfwX9gsx",
+					"4P7YZdnj"
 				],
 				"edges": [],
 				"flows": []
@@ -53565,7 +53600,7 @@
 		{
 			"id": "luWuDR18",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "5jMVnOIW",
 			"summary": "Read authored canonical model files through the existing runtime",
 			"documents": [
@@ -58010,7 +58045,7 @@
 		{
 			"id": "90xGRcVg",
 			"name": "TASK-549.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "luWuDR18",
 			"summary": "Retain and reopen exact local architecture checkpoints",
 			"documents": [
@@ -58452,14 +58487,16 @@
 						"order": 29000,
 						"name": "Board transitions",
 						"kind": "module",
-						"responsibility": "The pure half of a change: turns a stated command into a candidate board, reconciles descendants and settles disagreements, and answers a write with what it lost"
+						"responsibility": "The pure half of a change: turns a stated command into a candidate board, reconciles descendants and settles disagreements, and answers a write with what it lost",
+						"parent": "EekL5c17"
 					},
 					{
 						"id": "0z23E66v",
 						"order": 30000,
 						"name": "Durable writes",
 						"kind": "module",
-						"responsibility": "Commits a board change or a discard under the lease of the board and version check, and writes the file where its name puts it"
+						"responsibility": "Commits a board change or a discard under the lease of the board and version check, and writes the file where its name puts it",
+						"parent": "EekL5c17"
 					},
 					{
 						"id": "zYwmlbj8",
@@ -58473,7 +58510,8 @@
 						"order": 32000,
 						"name": "Board move",
 						"kind": "module",
-						"responsibility": "Moves a whole board to another repository's vault in a fixed order, and previews what the move would rewrite without writing"
+						"responsibility": "Moves a whole board to another repository's vault in a fixed order, and previews what the move would rewrite without writing",
+						"parent": "EekL5c17"
 					},
 					{
 						"id": "nSTHru5x",
@@ -58608,6 +58646,13 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workspace/src/runtime/clients/git-command.ts"
 						}
+					},
+					{
+						"id": "EekL5c17",
+						"order": 43000,
+						"name": "Legacy board writes",
+						"kind": "module",
+						"responsibility": "Validates, writes, and moves legacy board documents"
 					}
 				],
 				"edges": [
@@ -62580,7 +62625,7 @@
 			}
 		}
 	],
-	"current": "luWuDR18",
+	"current": "90xGRcVg",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -62707,6 +62752,12 @@
 			"from": "5jMVnOIW",
 			"at": "2026-10-26T06:38:00.124Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "90xGRcVg",
+			"from": "luWuDR18",
+			"at": "2026-10-26T09:31:59.639Z",
+			"reason": "Retain exact local architecture and reopen explicit historical readings"
 		}
 	],
 	"shelvings": [

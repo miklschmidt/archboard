@@ -6,7 +6,7 @@
 	"level": "service",
 	"version": 142,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T08:40:46.117Z",
+	"updatedAt": "2026-10-26T09:32:01.559Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -29514,7 +29514,7 @@
 		{
 			"id": "Cu1IBS4u",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "6C82GLIe",
 			"summary": "Read canonical root modules and authored details in a pane",
 			"documents": [
@@ -32948,7 +32948,7 @@
 		{
 			"id": "Coee17cN",
 			"name": "TASK-549.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Cu1IBS4u",
 			"summary": "Open current or retained architecture with explicit source evidence",
 			"documents": [
@@ -36380,7 +36380,7 @@
 			}
 		}
 	],
-	"current": "Cu1IBS4u",
+	"current": "Coee17cN",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -36483,6 +36483,12 @@
 			"from": "6C82GLIe",
 			"at": "2026-10-26T06:38:03.719Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "Coee17cN",
+			"from": "Cu1IBS4u",
+			"at": "2026-10-26T09:32:01.559Z",
+			"reason": "Retain exact local architecture and reopen explicit historical readings"
 		}
 	],
 	"shelvings": [

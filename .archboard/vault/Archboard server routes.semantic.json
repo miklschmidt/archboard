@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 109,
+	"version": 110,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T08:23:09.446Z",
+	"updatedAt": "2026-10-26T09:32:01.088Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -58383,7 +58383,7 @@
 		{
 			"id": "3eJku1sU",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "MFjeX8GB",
 			"summary": "Expose the canonical model read through the shared runtime",
 			"documents": [
@@ -62877,7 +62877,7 @@
 		{
 			"id": "ihbp3mkh",
 			"name": "TASK-549.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "3eJku1sU",
 			"summary": "Retain and reopen exact local architecture checkpoints",
 			"documents": [
@@ -67375,7 +67375,7 @@
 			}
 		}
 	],
-	"current": "3eJku1sU",
+	"current": "ihbp3mkh",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -67508,6 +67508,12 @@
 			"from": "MFjeX8GB",
 			"at": "2026-10-26T06:38:02.513Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "ihbp3mkh",
+			"from": "3eJku1sU",
+			"at": "2026-10-26T09:32:01.088Z",
+			"reason": "Retain exact local architecture and reopen explicit historical readings"
 		}
 	],
 	"shelvings": [
