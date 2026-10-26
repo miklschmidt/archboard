@@ -51,8 +51,8 @@ function projectFlow(
 	architecture: ReturnType<typeof projectModel>,
 	flow: ModelFlow,
 ): ReturnType<typeof projectModel> {
-	const participants = new Set(flow.participants);
-	const nodes = architecture.complete.nodes.filter((module) => participants.has(module.id));
+	const byId = new Map(architecture.complete.nodes.map((module) => [module.id, module]));
+	const nodes = flow.participants.flatMap((id) => byId.get(id) ?? []);
 	return {
 		...architecture,
 		flow,
