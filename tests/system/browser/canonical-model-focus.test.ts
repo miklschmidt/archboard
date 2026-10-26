@@ -180,6 +180,43 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"Shop#Handler",
 		"Shop#Worker",
 	]);
+	const partial = new URL(server.base);
+	partial.searchParams.set("modelA", "Shop");
+	partial.searchParams.set("scopeA", "Shop#Handler");
+	partial.searchParams.set("focusA", "Shop#Decode,Shop#Missing");
+	await browser.run(["open", partial.href]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-focus-missing"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Decode"]') !== null`,
+			),
+		Boolean,
+		"the partial focus without a replacement subject",
+		WAIT,
+	);
+	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Handler"]);
+	partial.searchParams.set("focusA", "Shop#Missing");
+	await browser.run(["open", partial.href]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-focus-missing"]') !== null && document.querySelector('[data-slot="model-empty-diagram"]') !== null`,
+			),
+		Boolean,
+		"the unavailable focused reading",
+		WAIT,
+	);
+	expect(await drawnModules(browser)).toEqual([]);
+	await browser.run(["click", '[data-slot="model-clear-focus"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-focus-missing"]') === null && document.querySelector('[data-slot="model-reading"][data-scope="Shop#Handler"]') !== null`,
+			),
+		Boolean,
+		"the underlying scope after clearing missing focus",
+		WAIT,
+	);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);

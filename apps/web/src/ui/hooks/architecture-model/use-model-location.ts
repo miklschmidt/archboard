@@ -22,6 +22,15 @@ function useModelLocation(paneId: string) {
 	const scope = search[`scope${paneId}`] ?? null;
 	const checkpoint = search[`checkpoint${paneId}`] ?? null;
 	const focused = search[`focus${paneId}`];
+	const hiddenKinds = search[`hideKinds${paneId}`];
+	const hiddenGroups = search[`hideGroups${paneId}`];
+	const filters = useMemo(
+		() => ({
+			hideKinds: hiddenKinds?.split(",") ?? [],
+			hideGroups: hiddenGroups?.split(",") ?? [],
+		}),
+		[hiddenKinds, hiddenGroups],
+	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
 		[focused],
@@ -78,7 +87,39 @@ function useModelLocation(paneId: string) {
 		},
 		[navigate, focused],
 	);
-	return { model, scope, checkpoint, focus, setFocus, open, selectCheckpoint, identify };
+	const toggleFilter = useCallback(
+		(field: "hideKinds" | "hideGroups", id: string): void => {
+			const current = filters[field];
+			const next = current.includes(id)
+				? current.filter((value) => value !== id)
+				: [...current, id];
+			navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
+		},
+		[filters, navigate],
+	);
+	const reveal = useCallback(
+		(ids: readonly string[], kinds: readonly string[]): void => {
+			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
+			navigate({
+				focus: [...new Set(ids)].toSorted(),
+				hideKinds: hidden.length === 0 ? undefined : hidden,
+			});
+		},
+		[filters.hideKinds, navigate],
+	);
+	return {
+		model,
+		scope,
+		checkpoint,
+		focus,
+		filters,
+		toggleFilter,
+		reveal,
+		setFocus,
+		open,
+		selectCheckpoint,
+		identify,
+	};
 }
 
 /**

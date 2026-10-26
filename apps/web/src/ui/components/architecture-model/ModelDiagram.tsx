@@ -36,7 +36,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const camera = useBoardCamera(props.reducedMotion);
 	if (projection.content.nodes.length === 0)
 		return (
-			<output className="text-body text-muted-foreground p-8">
+			<output data-slot="model-empty-diagram" className="text-body text-muted-foreground p-8">
 				No modules are visible in this reading.
 			</output>
 		);

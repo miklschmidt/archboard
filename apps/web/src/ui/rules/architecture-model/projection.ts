@@ -1,9 +1,11 @@
+import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { VariantContent } from "@archboard/board/content";
 import { overviewLines } from "@archboard/board/views";
 import { inspectContainer } from "@archboard/board/container-interface";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
+type ModelFilters = Pick<ModelAddress, "hideKinds" | "hideGroups">;
 
 /**
  * Adapt canonical meaning to the existing renderer content contract.
@@ -80,14 +82,33 @@ function projectScope(model: Model, scope: string | null) {
  * @param model The coherent model.
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
+ * @param filters Hidden relationship kinds and group regions.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
  */
 function projectModel(
 	model: Model,
 	scope: string | null = null,
 	focus: readonly string[] | null = null,
+	filters: ModelFilters = {},
 ) {
-	return focus === null ? projectScope(model, scope) : projectFocused(model, scope, focus);
+	const projection =
+		focus === null ? projectScope(model, scope) : projectFocused(model, scope, focus);
+	const connections = projection.connections.filter(
+		({ line }) => !filters.hideKinds?.includes(line.kind),
+	);
+	return {
+		...projection,
+		allConnections: projection.connections,
+		connections,
+		content: {
+			...projection.content,
+			nodes: projection.content.nodes.map((node) => ({
+				...node,
+				groups: node.groups?.filter((group) => !filters.hideGroups?.includes(group)),
+			})),
+			edges: projection.content.edges.filter((edge) => !filters.hideKinds?.includes(edge.kind)),
+		},
+	};
 }
 
 /**
@@ -277,4 +298,4 @@ function visibleEndpoint(
 	return at;
 }
 
-export { projectModel, type Model };
+export { projectModel, type Model, type ModelFilters };

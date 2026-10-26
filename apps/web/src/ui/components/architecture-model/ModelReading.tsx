@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
+import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelSelectionDetails } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
@@ -35,12 +37,23 @@ interface ModelReadingProps {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
-	const { scope, open, focus, setFocus } = useModelLocation(props.paneId);
+	const { scope, open, focus, setFocus, filters, toggleFilter, reveal } = useModelLocation(
+		props.paneId,
+	);
 	const { id } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(id, next), [id, open]);
-	const projection = useMemo(() => projectModel(model, scope, focus), [model, scope, focus]);
+	const projection = useMemo(
+		() => projectModel(model, scope, focus, filters),
+		[model, scope, focus, filters],
+	);
 	const selection = useModelSelection(projection);
 	const { clear } = selection;
+	const revealSelection = useCallback((): void => {
+		const kinds = model.relationships
+			.filter((edge) => selection.ids.has(edge.id))
+			.map((edge) => edge.kind);
+		reveal([...selection.ids], kinds);
+	}, [model.relationships, selection.ids, reveal]);
 	const attach = useCallback(
 		(element: HTMLDivElement | null) => {
 			if (element === null) return undefined;
@@ -69,7 +82,9 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				trail={projection.trail}
 				onOpen={onOpen}
 			/>
-			<ModelSelectionBar selection={selection} focus={focus} onFocus={setFocus} />
+			<ModelSelectionBar selection={selection} focus={focus} onFocus={setFocus}>
+				<ModelFilters model={model} filters={filters} onToggle={toggleFilter} />
+			</ModelSelectionBar>
 			<FocusAvailability missing={projection.missingFocus} />
 			{projection.missing ? (
 				<output data-slot="model-missing-scope" className="text-body p-8">
@@ -81,6 +96,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 					key={scope ?? "root"}
 					model={model}
 					selection={selection}
+					onReveal={revealSelection}
 					scope={scope}
 					projection={projection}
 					reducedMotion={props.reducedMotion}
@@ -94,6 +110,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 interface ScopedModelReadingProps {
 	model: Model;
 	selection: ModelSelection;
+	onReveal: () => void;
 	scope: string | null;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
@@ -163,6 +180,11 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 				/>
 			</Suspense>
 			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
+				<ModelHiddenSelection
+					projection={props.projection}
+					selected={selected}
+					onReveal={props.onReveal}
+				/>
 				<ModelSelectionDetails {...props} />
 			</div>
 		</div>

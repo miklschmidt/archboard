@@ -1,4 +1,4 @@
-import { useCallback, type JSX } from "react";
+import { useCallback, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 
@@ -8,10 +8,12 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
  * @param props.selection Canonical selected identities.
  * @param props.focus The captured focused identities, or no focus.
  * @param props.onFocus Changes the focused reading.
+ * @param props.children Additional reading controls.
  * @returns Stable selection and focus controls without resizing the canvas.
  */
 function ModelSelectionBar(props: {
 	selection: ModelSelection;
+	children?: ReactNode;
 	focus: readonly string[] | null;
 	onFocus: (ids: readonly string[] | null) => void;
 }): JSX.Element {
@@ -52,6 +54,7 @@ function ModelSelectionBar(props: {
 			>
 				Clear selection
 			</Button>
+			{props.children}
 		</div>
 	);
 }

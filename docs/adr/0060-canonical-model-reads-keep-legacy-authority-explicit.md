@@ -150,3 +150,23 @@ The query cache accepts only the scene key for the current reading revision.
 A late result for another key cannot replace that reading.
 File paths, formatting, evidence, and hidden descriptions do not require a new scene.
 The existing camera and selection owners remain independent of layout.
+
+## Selection, focus, and filters
+
+Selection holds canonical subject identities outside the reading address.
+Pointer modifiers and Ctrl/Cmd+Enter toggle the same identities.
+Dragging from empty canvas selects through the renderer bounds.
+Space-drag and middle-button drag pan, and Escape clears selection.
+Selection updates the mounted scene without requesting layout or adding browser history.
+
+Focus captures those identities in the pane address.
+It preserves selected ancestors and descendants, expands their required paths, and adds direct endpoint context.
+Hidden internal relationships never become invented self-connections on a visible ancestor.
+Missing focused identities remain explicit, including when every target is unavailable.
+Clearing focus restores the underlying scope.
+
+Relationship filters hide lines and group filters hide visual group regions.
+The model keeps every relationship and group membership.
+The inspector derives interfaces before filters and retains hidden selections.
+Reveal selection opens the required paths and removes filters that hide selected relationships.
+Focus and filters survive reload, Back, and Forward independently for each pane.
