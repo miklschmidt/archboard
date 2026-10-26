@@ -73,13 +73,13 @@ function ModuleEvidence(props: ModuleDetailsProps): JSX.Element {
 	);
 	return (
 		<dl className="text-body grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
-			<Fact name="Part of">
-				{module.parent !== undefined && (
+			{module.parent !== undefined && (
+				<Fact name="Part of">
 					<span data-slot="module-parent" data-module-id={module.parent}>
 						{moduleName(model, module.parent)}
 					</span>
-				)}
-			</Fact>
+				</Fact>
+			)}
 			<Fact name="Groups">
 				{module.groups?.map((id) => model.policy.groups[id]?.name ?? id).join(", ")}
 			</Fact>
