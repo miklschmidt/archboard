@@ -172,6 +172,7 @@ const ArchitectureModelFailureSchema = z
 			"PUBLICATION_DESTINATION_CHANGED",
 			"PUBLICATION_INVALID",
 			"ARCHIVE_NETWORK_FAILED",
+			"ARCHIVE_NOT_PORTABLE",
 		]),
 		error: z.string(),
 		diagnostics: z.array(ModelDiagnosticSchema).min(1),

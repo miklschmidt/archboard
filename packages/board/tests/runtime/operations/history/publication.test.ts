@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import {
 	listArchitectureCheckpoints,
+	readArchitectureCheckpoint,
 	readArchitecturePublication,
 } from "@archboard/board/store-read";
 import {
@@ -14,6 +15,7 @@ import {
 	publicationFixture,
 	git,
 	retain,
+	changeResponsibility,
 } from "#tests/runtime/support/publication-fixture.ts";
 
 afterEach(cleanPublicationFixtures);
@@ -49,7 +51,12 @@ test("explicit archive publication persists evidence while code pushes remain lo
 		destination,
 	});
 	expect(git(remote, "rev-parse", destination.ref)).toBe(checkpoint.id);
-	expect(await readArchitecturePublication(vault, checkpoint.id)).toMatchObject(published);
+	expect(await readArchitecturePublication(vault, checkpoint.id)).toMatchObject({
+		success: true,
+		publication: "published",
+		checkpoint: checkpoint.id,
+		destination,
+	});
 	expect(await listArchitectureCheckpoints(vault)).toMatchObject({
 		success: true,
 		checkpoints: [{ id: checkpoint.id, publication: "published", state: checkpoint.state }],
@@ -61,9 +68,10 @@ test("explicit archive publication persists evidence while code pushes remain lo
 
 test("network failure persists publication-pending and never reverses local retention", async () => {
 	const { root, vault, destination, remote } = publicationFixture();
-	const checkpoint = await retain(vault);
+	const baseline = await retain(vault, "baseline");
+	changeResponsibility(vault, "Depends on an unpublished baseline");
+	const checkpoint = await retain(vault, "dependent", [baseline.id]);
 	await configureArchitecturePublication(vault, destination);
-	const local = await listArchitectureCheckpoints(vault);
 	const hidden = `${remote}.offline`;
 	renameSync(remote, hidden);
 	const failed = await publishArchitectureHistory(vault, {
@@ -84,12 +92,41 @@ test("network failure persists publication-pending and never reverses local rete
 		success: true,
 		checkpoints: [
 			{ id: checkpoint.id, publication: "publication-pending", revision: checkpoint.revision },
+			{ id: baseline.id, publication: "publication-pending", revision: baseline.revision },
 		],
 	});
-	if (!local.success) throw new Error(JSON.stringify(local));
 	expect(git(root, "rev-parse", "archboard-history")).toBe(checkpoint.id);
 	renameSync(hidden, remote);
 	expect(
 		await publishArchitectureHistory(vault, { ...destination, checkpoint: checkpoint.id }),
 	).toMatchObject({ success: true, publication: "published" });
-});
+}, 30_000);
+
+test("publication evidence is private, shared by linked worktrees, and invalidated by a changed remote", async () => {
+	const { home, root, vault, destination } = publicationFixture();
+	const checkpoint = await retain(vault);
+	await configureArchitecturePublication(vault, destination);
+	await publishArchitectureHistory(vault, { ...destination, checkpoint: checkpoint.id });
+	const linked = join(home, "linked");
+	git(root, "worktree", "add", "--quiet", "-b", "parallel", linked);
+	const addressed = join(linked, ".archboard/vault");
+	expect(await readArchitecturePublication(addressed, checkpoint.id)).toMatchObject({
+		success: true,
+		publication: "published",
+		destination,
+	});
+	git(root, "remote", "set-url", "archive", `file://${join(home, "different.git")}`);
+	expect(await readArchitecturePublication(vault, checkpoint.id)).toMatchObject({
+		success: false,
+		code: "PUBLICATION_DESTINATION_CHANGED",
+	});
+	expect(await readArchitectureCheckpoint(vault, checkpoint.id)).toMatchObject({
+		success: true,
+		revision: checkpoint.revision,
+	});
+	expect(
+		await publishArchitectureHistory(vault, { ...destination, checkpoint: checkpoint.id }),
+	).toMatchObject({ success: false, code: "PUBLICATION_DESTINATION_CHANGED" });
+	const next = await retain(vault, "still-local");
+	expect(next.publication).toBe("saved-locally");
+}, 30_000);

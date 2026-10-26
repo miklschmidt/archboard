@@ -479,10 +479,11 @@ async function retainOperation(
  * @param context The caller's checkout.
  * @returns The retained record identities and metadata.
  */
-async function archiveRecords(context: ArchiveContext) {
+async function archiveRecords(context: ArchiveContext, tips?: string[]) {
 	const tip = await archiveTip(context);
-	if (tip === undefined) return [];
-	const history = await git(context.root, ["rev-list", tip], { maxOutputBytes: Infinity });
+	const roots = tips ?? (tip === undefined ? [] : [tip]);
+	if (roots.length === 0) return [];
+	const history = await git(context.root, ["rev-list", ...roots], { maxOutputBytes: Infinity });
 	return settledValues(
 		(history ?? "")
 			.split("\n")

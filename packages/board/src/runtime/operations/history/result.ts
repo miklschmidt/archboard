@@ -5,6 +5,8 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	ARCHIVE_NOT_PORTABLE:
+		"Keep this checkpoint local. Publication cannot redact immutable checkpoint metadata. Future retained source associations require a portable repository identity rather than a machine path.",
 	ARCHIVE_NETWORK_FAILED:
 		"Restore access to the configured remote and retry the same explicit publish or fetch request. Local architecture remains retained.",
 	PUBLICATION_NOT_CONFIGURED:

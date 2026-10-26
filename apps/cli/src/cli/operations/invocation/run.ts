@@ -1,4 +1,10 @@
 import {
+	modelPublicationContract,
+	modelPublicationConfigureContract,
+	modelPublishContract,
+	modelFetchContract,
+} from "#cli/operations/model/publication.ts";
+import {
 	checkAllContract,
 	checkCodeContract,
 	checkContract,
@@ -80,6 +86,21 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			inventory: child(
 				contract(modelInventoryContract, "apps/cli/src/cli/operations/model/migration.ts"),
+			),
+			publication: child(
+				contract(modelPublicationContract, "apps/cli/src/cli/operations/model/publication.ts"),
+			),
+			"publication-configure": child(
+				contract(
+					modelPublicationConfigureContract,
+					"apps/cli/src/cli/operations/model/publication.ts",
+				),
+			),
+			publish: child(
+				contract(modelPublishContract, "apps/cli/src/cli/operations/model/publication.ts"),
+			),
+			fetch: child(
+				contract(modelFetchContract, "apps/cli/src/cli/operations/model/publication.ts"),
 			),
 			plan: child(contract(modelPlanContract, "apps/cli/src/cli/operations/model/migration.ts")),
 		},

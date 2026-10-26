@@ -1,3 +1,4 @@
+import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express, Response } from "express";
 import { z } from "zod";
 import {
@@ -60,6 +61,7 @@ function respond(
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
+	mountArchitecturePublicationRoutes(app);
 	app.get("/api/architecture/model", requireVault, async (req, res) => {
 		const query = QuerySchema.safeParse(req.query);
 		if (!query.success) {

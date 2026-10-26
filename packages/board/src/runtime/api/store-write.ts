@@ -17,5 +17,6 @@ export { retainArchitectureCheckpoint } from "#runtime/operations/history/retain
 export {
 	configureArchitecturePublication,
 	publishArchitectureHistory,
+	fetchArchitectureHistory,
 } from "#runtime/operations/history/publication.ts";
 export { saveLegacyMappingPlan } from "#runtime/operations/legacy-inventory/save-plan.ts";
