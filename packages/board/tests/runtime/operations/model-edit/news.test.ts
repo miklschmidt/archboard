@@ -116,7 +116,7 @@ test("explicit scope exclusion and take-back reject the former writer without ch
 	expect(other.success).toBe(true);
 	expect(await editArchitectureModule(vault, { ...input, subject: "Shop#Worker" })).toMatchObject({
 		success: false,
-		code: "CLAIM_REQUIRED",
+		code: "CLAIM_HELD",
 	});
 	await takeBackArchitectureClaim(vault, { claim: input.claim, origin: "human" });
 	expect(await editArchitectureModule(vault, input)).toMatchObject({

@@ -115,9 +115,9 @@ const modelEditContract = defineCommand({
 	...modelClaimContract,
 	path: ["model", "edit"],
 	shared: ["url", "directory", "doing"],
-	summary: "Change one canonical module description durably",
+	summary: "Edit canonical module structure and relationships durably",
 	description:
-		"Reads target, subject, complete expectedRevision, operationId, writer, claim and description from JSON. The doing line comes from --doing. A lost response uses the same request and operation identity.",
+		"Reads the explicit target, complete expectedRevision, operationId, writer, claim and changes from JSON. Changes add, edit or remove modules and relationships. Description requests remain supported. The doing line comes from --doing. Retry the exact request after a lost response.",
 	examples: [
 		'archboard model edit --input edit.json --doing "explaining request routing" -C /tmp/shop',
 	],
@@ -129,11 +129,11 @@ const modelEditContract = defineCommand({
 			method: "POST",
 			path: "/api/architecture/module",
 			cardinality: "one",
-			description: "Apply or recover one durable description edit",
+			description: "Apply or recover one durable architecture batch",
 		},
 	],
 	/**
-	 * Apply one explicit description edit without interpreting the transaction in the CLI.
+	 * Apply one explicit architecture intent through the shared runtime.
 	 * @param input The complete caller input.
 	 * @param context The caller checkout or invocation context.
 	 * @returns The shared runtime result and CLI outcome.
@@ -141,7 +141,7 @@ const modelEditContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model edit");
 		const request = context.parse(
-			ArchitectureModuleEditSchema.omit({ doing: true }),
+			z.object({ doing: z.never().optional() }).catchall(z.unknown()),
 			await statedJson(input, context),
 		);
 		return presented(

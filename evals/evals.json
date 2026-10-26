@@ -1797,7 +1797,7 @@
 				{
 					"feature": "read-only",
 					"requirement": "Creates no plan and changes no active architecture. Explains that composition and installation remain unavailable in this workflow.",
-					"skill": ["references/legacy-migration.md"]
+					"skill": ["references/legacy-migration.md#read-the-inventory"]
 				}
 			],
 			"outcomes": [
@@ -1820,7 +1820,10 @@
 				"no-writes"
 			],
 			"guidance": ["references/legacy-migration.md"],
-			"captures": []
+			"captures": [
+				{ "label": "application", "board": "Flask application" },
+				{ "label": "detail", "board": "Flask detail" }
+			]
 		}
 	]
 }

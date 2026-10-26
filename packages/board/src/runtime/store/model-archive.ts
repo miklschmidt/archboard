@@ -9,6 +9,7 @@ import { git, GitCommandError } from "@archboard/process/git";
 import { repoIdentityAt } from "@archboard/workspace/checkouts";
 import {
 	ArchitectureCheckpointSchema,
+	QualifiedSubjectIdSchema,
 	type ArchitectureCheckpoint,
 	type ArchitectureModel,
 } from "#shared/schemas/model.ts";
@@ -21,6 +22,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		kind: z.literal("checkpoint"),
 		vault: z.string(),
 		edit: ArchitectureModuleEditSchema.optional(),
+		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict();
 const ArchiveRecordSchema = z.discriminatedUnion("kind", [
