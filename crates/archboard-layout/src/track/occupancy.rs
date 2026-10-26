@@ -228,6 +228,26 @@ impl Occupancy {
         self.held[band].push(span);
         self.alongs.clear();
     }
+
+    /// Take many lanes' columns, in turn, making room on each band once.
+    pub(crate) fn take_all(
+        &mut self,
+        track: &Track<'_>,
+        lanes: impl IntoIterator<Item = StationId>,
+    ) {
+        let lanes: Vec<StationId> = lanes.into_iter().collect();
+        let mut more = vec![0; self.taken.len()];
+        for &lane in &lanes {
+            more[track.station(lane).band] += 1;
+        }
+        for (band, &count) in more.iter().enumerate() {
+            self.taken[band].reserve(count);
+            self.held[band].reserve(count);
+        }
+        for lane in lanes {
+            self.take(track, lane);
+        }
+    }
 }
 
 /// The nearest x to one that passes a test, searched outward a quarter lane at

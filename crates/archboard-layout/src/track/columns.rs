@@ -211,9 +211,7 @@ impl Track<'_> {
             .map(|&label| self.station(label).item.expect("a label"))
             .collect();
         let mut occupancy = Occupancy::new(self.scene, &without);
-        for &lane in others {
-            occupancy.take(self, lane);
-        }
+        occupancy.take_all(self, others.iter().copied());
         let fits = self.line_fitting(&mut occupancy, stretch);
         let wanted = self.x(labels[0]);
         let (low, high) = (self.reach_of(stretch.before), self.reach_of(stretch.after));

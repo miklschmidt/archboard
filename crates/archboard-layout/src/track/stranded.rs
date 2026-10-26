@@ -188,13 +188,12 @@ impl Track<'_> {
             })
             .collect();
         let mut occupancy = Occupancy::new(self.scene, &Set::default());
-        for (index, run) in runs.iter().enumerate() {
-            if !straight.contains(&index) {
-                for &lane in &run.lanes {
-                    occupancy.take(self, lane);
-                }
-            }
-        }
+        let lanes = runs
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| !straight.contains(index))
+            .flat_map(|(_, run)| run.lanes.iter().copied());
+        occupancy.take_all(self, lanes);
         let mut moved = false;
         for index in straight {
             moved |= self.straighten(&runs[index], &mut occupancy);
