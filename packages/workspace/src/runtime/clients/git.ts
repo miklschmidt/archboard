@@ -274,27 +274,44 @@ function realDirectory(target: string): string | undefined {
 }
 
 /**
- * Whether a checkout keeps a config of its own beside its repository's: a
- * `config.worktree` in its git directory, which `extensions.worktreeConfig`
- * turns on and which can name another `origin`. A `.git` that cannot be read
- * counts as one, so that Git is asked.
+ * Resolve a checkout's Git directory, including a linked worktree's gitfile.
  * @param root A checkout's root.
- * @returns Whether it keeps one.
+ * @returns Its real Git directory, or undefined when the entry cannot resolve.
  */
-function keepsOwnConfig(root: string): boolean {
-	const entry = path.join(root, ".git");
+function gitDirectoryOf(root: string): string | undefined {
 	try {
-		if (fs.statSync(entry).isDirectory()) {
-			return fs.existsSync(path.join(entry, "config.worktree"));
+		let directory = path.join(root, ".git");
+		if (!fs.statSync(directory).isDirectory()) {
+			const gitfile = fs.readFileSync(directory, "utf8");
+			if (!gitfile.startsWith("gitdir: ")) return undefined;
+			directory = path.resolve(root, gitfile.slice(8).trimEnd());
 		}
-		// A linked worktree's `.git` is a file that names its git directory.
-		const named = fs
-			.readFileSync(entry, "utf8")
-			.replace(/^gitdir:/u, "")
-			.trim();
-		return fs.existsSync(path.resolve(root, named, "config.worktree"));
+		return realDirectory(directory);
 	} catch {
-		return true;
+		return undefined;
+	}
+}
+
+/**
+ * The common Git directory of a checkout without its own configuration.
+ * @param root A checkout's root.
+ * @returns Its real common directory, or undefined when it needs inspection.
+ */
+function sharedGitDirectory(root: string): string | undefined {
+	try {
+		const real = gitDirectoryOf(root);
+		if (
+			real === undefined ||
+			!fs.existsSync(path.join(real, "HEAD")) ||
+			fs.existsSync(path.join(real, "config.worktree"))
+		)
+			return undefined;
+		const common = path.join(real, "commondir");
+		return fs.existsSync(common)
+			? realDirectory(path.resolve(real, fs.readFileSync(common, "utf8").trimEnd()))
+			: real;
+	} catch {
+		return undefined;
 	}
 }
 
@@ -307,10 +324,8 @@ function keepsOwnConfig(root: string): boolean {
  *
  * One `git worktree list` names every worktree. A worktree reads the
  * repository's `origin`, as its checkout does, so it has the checkout's
- * identity, and Git is asked about it again only when it or the checkout keeps
- * a config of its own (`keepsOwnConfig`). Such a worktree can name another
- * `origin`, and then it is another repository. So a checkout with many
- * worktrees runs one Git command for all of them, never several in each.
+ * identity when both use only their common configuration. A worktree with its
+ * own configuration or a changed gitfile needs inspection instead.
  * @param checkout The checkout.
  * @param options Cancellation.
  * @returns Each worktree's real root and identity; none when Git cannot list them.
@@ -324,25 +339,21 @@ async function worktreesOf(
 		const root = entry.bare || entry.prunable ? undefined : realDirectory(entry.path);
 		return root === undefined || root === checkout.root || isGitDirectory(root) ? [] : [root];
 	});
-	const shared = !keepsOwnConfig(checkout.root);
+	const shared = sharedGitDirectory(checkout.root);
 	const worktrees: CheckoutOfIdentity[] = [];
 	for (const root of roots) {
-		if (shared && !keepsOwnConfig(root)) {
+		if (shared !== undefined && sharedGitDirectory(root) === shared) {
 			worktrees.push({ root, identity: checkout.identity });
 			continue;
 		}
 		// A worktree's own configuration can also change its root or make it bare.
 		// oxlint-disable-next-line no-await-in-loop -- inspect exceptional worktrees one at a time to keep the Git process count bounded
 		const inspected = await inspectCheckout(root, options);
-		if (
-			inspected !== undefined &&
-			inspected.root !== checkout.root &&
-			inspected.identity === checkout.identity
-		) {
-			worktrees.push(inspected);
-		}
+		if (inspected !== undefined) worktrees.push(inspected);
 	}
-	return worktrees;
+	return worktrees.filter(
+		(each) => each.root !== checkout.root && each.identity === checkout.identity,
+	);
 }
 
 export {

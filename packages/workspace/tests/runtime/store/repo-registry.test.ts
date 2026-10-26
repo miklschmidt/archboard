@@ -190,6 +190,22 @@ test.each(["core.bare", "core.worktree"])(
 	},
 );
 
+test.each(["invalid", "foreign"])(
+	"a listed worktree with a %s gitfile is inspected",
+	async (kind) => {
+		const base = repository(join(scratch, `gitfile-${kind}`));
+		const side = addWorktree(base, `gitfile-${kind}-side`);
+		const foreign = repository(join(scratch, `gitfile-${kind}-other`));
+		git(foreign, "remote", "set-url", "origin", "https://github.com/test/other.git");
+		writeFileSync(
+			join(side, ".git"),
+			kind === "invalid" ? "invalid gitfile\n" : `gitdir: ${join(foreign, ".git")}\n`,
+		);
+		expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
+		expect(orders().roots).toEqual([base]);
+	},
+);
+
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);
