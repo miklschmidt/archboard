@@ -122,4 +122,10 @@ Each signed operation retains its affected identities beside the original reques
 Recovery details, results, and completion events derive their subjects from that retained record.
 Old description records retain their original single-subject interpretation.
 A recovered transfer never allocates another identity or repeats the accepted operation.
+
+The existing event stream refreshes current browser readings after the complete structural operation.
+Module selection follows identity through a rename or containment change.
+The details show the selected module's parent.
+Removing the selected module leaves an explicit missing state without selecting a replacement.
+Pinned historical readings remain unchanged by those current events.
 Unrelated files remain byte-identical.

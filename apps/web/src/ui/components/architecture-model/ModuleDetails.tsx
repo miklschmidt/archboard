@@ -73,13 +73,7 @@ function ModuleEvidence(props: ModuleDetailsProps): JSX.Element {
 	);
 	return (
 		<dl className="text-body grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
-			{module.parent !== undefined && (
-				<Fact name="Part of">
-					<span data-slot="module-parent" data-module-id={module.parent}>
-						{moduleName(model, module.parent)}
-					</span>
-				</Fact>
-			)}
+			<ModuleParent {...props} />
 			<Fact name="Groups">
 				{module.groups?.map((id) => model.policy.groups[id]?.name ?? id).join(", ")}
 			</Fact>
@@ -101,6 +95,23 @@ function ModuleEvidence(props: ModuleDetailsProps): JSX.Element {
 				</Fact>
 			)}
 		</dl>
+	);
+}
+
+/**
+ * The parent explains containment without changing the selected identity.
+ * @param props The selected module and complete model.
+ * @returns Its parent fact, or nothing for a root.
+ */
+function ModuleParent(props: ModuleDetailsProps): JSX.Element | null {
+	const { module, model } = props;
+	if (module.parent === undefined) return null;
+	return (
+		<Fact name="Part of">
+			<span data-slot="module-parent" data-module-id={module.parent}>
+				{moduleName(model, module.parent)}
+			</span>
+		</Fact>
 	);
 }
 

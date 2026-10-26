@@ -5,6 +5,7 @@ import type { ArchitectureCheckpointRetain, ArchitectureModelRead } from "@archb
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { TEST_VAULT_CLI_TIMEOUT_MS } from "../support/timing.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -37,6 +38,7 @@ async function configureDestination(browser: AgentBrowserSession): Promise<void>
 async function waitForAction(
 	browser: AgentBrowserSession,
 	action: "publish" | "fetch",
+	timeoutMs: number = WAIT.timeoutMs,
 ): Promise<void> {
 	await pollUntil(
 		() =>
@@ -45,7 +47,7 @@ async function waitForAction(
 			),
 		Boolean,
 		`the available ${action} action`,
-		WAIT,
+		{ timeoutMs },
 	);
 }
 
@@ -117,12 +119,9 @@ test("saved architecture publishes only after the reader chooses its destination
 	).toBe("false");
 	renameSync(remote, `${remote}.offline`);
 	await browser.run(["click", '[data-slot="publication-publish"]']);
-	await pollUntil(
-		publication,
-		(state) => state === "publication-pending",
-		"the pending publication",
-		WAIT,
-	);
+	// This vault command includes Git transport and cleanup. Its final status follows completion.
+	await waitForAction(browser, "publish", TEST_VAULT_CLI_TIMEOUT_MS);
+	expect(await publication()).toBe("publication-pending");
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('[data-slot="publication-failure"]')?.getAttribute('data-code') ?? null`,
