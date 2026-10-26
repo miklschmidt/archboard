@@ -126,3 +126,50 @@ test("module decomposition follows breadcrumbs and browser history without chang
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);
 }, 60_000);
+
+test("canonical addresses restore separate scopes and keep missing readings explicit", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "addressed-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	const checkpoint = "a".repeat(40);
+	const search = new URLSearchParams({
+		modelA: "Shop", scopeA: "Shop#Gateway", modelB: "Shop", checkpointB: checkpoint, pane: "B",
+	});
+	await browser.run(["open", `${server.base}/?${search}`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() => browser.eval<number>(`document.querySelectorAll('[data-slot="architecture-model-stage"]').length`),
+		(count) => count === 2,
+		"both addressed model panes",
+		WAIT,
+	);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-pane="A"] [data-scope="Shop#Gateway"]') !== null && document.querySelector('[data-pane="B"] [data-slot="model-error"]') !== null`),
+		Boolean,
+		"the exact missing reading beside the current scope",
+		WAIT,
+	);
+	expect(await browser.eval<boolean>(`document.querySelector('[data-pane="B"] [data-slot="module-list"]') === null`)).toBe(true);
+	await browser.run(["reload"]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-pane="A"] [data-scope="Shop#Gateway"]') !== null && document.querySelector('[data-pane="B"] [data-reading="${checkpoint}"]') !== null`),
+		Boolean,
+		"the same two readings after reload",
+		WAIT,
+	);
+	await browser.run(["open", `${server.base}/?modelA=Unknown&scopeA=Shop%23Gateway`]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-error"][data-code="MODEL_NOT_FOUND"]') !== null`),
+		Boolean,
+		"the requested model refusal",
+		WAIT,
+	);
+	expect(await browser.eval<boolean>(`document.querySelector('[data-slot="module-list"]') === null`)).toBe(true);
+}, 60_000);
