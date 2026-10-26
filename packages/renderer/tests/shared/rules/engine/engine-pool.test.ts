@@ -53,6 +53,11 @@ class HeldWorker extends EventTarget {
 		const message = this.sent[index]!;
 		this.dispatchEvent(new MessageEvent("message", { data: { id: message.id, ...reply } }));
 	}
+
+	/** Say that its core is instantiated. */
+	ready(): void {
+		this.dispatchEvent(new MessageEvent("message", { data: { ready: true } }));
+	}
 }
 
 /**
@@ -304,6 +309,21 @@ test("a solve waits for the first worker free, and the pool grows one worker at 
 	workers[0]!.answer(1, { data: "b!" });
 	expect(await Promise.all([second, third, fourth, fifth])).toEqual(["b!", "c!", "d!", "e!"]);
 	expect(workers).toHaveLength(2);
+});
+
+test("a worker whose core is instantiated lets the next solve start another worker before it answers", () => {
+	const { solve, workers } = heldPool(3);
+	void solve("long");
+	void solve("short");
+	void solve("later");
+	expect(workers).toHaveLength(1);
+	workers[0]!.ready();
+	// The first worker still solves; the second starts, and the third waits until it is ready too.
+	expect(workers).toHaveLength(2);
+	expect(sentTo(workers[1]!)).toEqual(["short"]);
+	workers[1]!.ready();
+	expect(workers).toHaveLength(3);
+	expect(sentTo(workers[2]!)).toEqual(["later"]);
 });
 
 test("a solve called off while it waits is never sent, and one a worker holds still answers", async () => {

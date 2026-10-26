@@ -14,7 +14,7 @@ core in Rust paints the drawing that layout answers, bridges and all
 ([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
 so where a rule below says it runs in the painter, it runs in
 `crates/archboard-scene/src/paint/`. Since TASK-520.04 (2026-10-25) the core also
-lays out every Track solve (section 52), so where a rule below says Track runs it in
+lays out every Track solve (section 54), so where a rule below says Track runs it in
 `shared/rules/blocks/` or `shared/rules/track/`, it runs in
 `crates/archboard-layout/src/blocks/` or `crates/archboard-layout/src/track/`.
 
@@ -2603,7 +2603,7 @@ point, one from the right point, and a third from the bottom point.
 Two things put every answer on the bottom point. The track router gives the
 lines of one kind that leave one card face one shared port and one trunk
 (`channels.ts`), and every line of a flowchart is of one kind. Then
-`flowchart-ports.ts` (now `ports.rs` of `crates/archboard-flows`, section 52)
+`flowchart-ports.ts` (now `ports.rs` of `crates/archboard-flows`, section 53)
 moved that port to the middle of the side it crosses.
 Moving the line ends after the layout cannot fix this. An answer whose label
 Graphviz stood inside the diamond's width would run back under the diamond.
@@ -2787,7 +2787,18 @@ Measured and not kept:
   workers starting at once. It needs a protocol that tells each candidate's
   weight and keeps the winner's solve. On a runner with few cores, the solves
   wait for each other. Not built.
-## 51. The core's router routes the trunks of Blocks (2026-10-25, TASK-520.02)
+
+This change was made to the TypeScript renderer, while the renderer core of
+sections 52 to 60 was built beside it. When the two were joined, only the
+worker part carried over: a layout worker says `{ ready: true }` once it has
+instantiated the core, and the pool starts its next worker then. The stacking
+choice is the core's (`crates/archboard-layout/src/architecture/choosing.rs`,
+section 59). It asks for two partial solves and, when they do not answer at
+once, for the whole board laid each way, and calls off the way it does not
+choose. The pool does not stop a worker that holds a solve called off; that
+solve finishes, and the pool remembers its answer.
+
+## 52. The core's router routes the trunks of Blocks (2026-10-25, TASK-520.02)
 
 The renderer core routes the trunks of Blocks with its own orthogonal router
 (`crates/archboard-router`), in place of libavoid
@@ -2843,7 +2854,7 @@ into the pool.
 The Blocks cases of Browser application and Board viewer no longer need a
 test budget of their own: Board viewer, the slowest, takes about 5 s.
 
-## 52. The core lays out sequences and flowcharts (2026-10-25, TASK-520.06)
+## 53. The core lays out sequences and flowcharts (2026-10-25, TASK-520.06)
 
 The renderer core lays out every message sequence and every flowchart
 (`crates/archboard-flows`,
@@ -2898,7 +2909,7 @@ writes the graph as JSON and reads the drawing back as JSON, where the
 TypeScript layout handed the engine its own objects. That crossing ends when
 the core holds the track engine (TASK-520.04).
 
-## 53. The core lays out Track (2026-10-25, TASK-520.04)
+## 54. The core lays out Track (2026-10-25, TASK-520.04)
 
 The renderer core answers every Track solve. The crate
 `crates/archboard-layout` holds the solve: the block tree, each block of
@@ -2931,7 +2942,7 @@ lap round the page and the scene flags that chose these rules. What Blocks
 still runs stays in `shared/rules/blocks/` and `shared/rules/track/`, and
 the crate holds a copy of it until TASK-520.05 ports Blocks.
 
-## 54. The core lays out Blocks (2026-10-25, TASK-520.05)
+## 55. The core lays out Blocks (2026-10-25, TASK-520.05)
 
 The renderer core answers every solve of an architecture, Track and Blocks.
 The crate `crates/archboard-layout` lays a board out one way in one
@@ -2956,7 +2967,7 @@ reading. A solve tells one only when it is asked (`archboard.blocks.read`),
 because reading a drawing costs about as much as routing a small one. A
 solve no longer names a stage: its root options name its nesting.
 
-The port was held to the TypeScript stage as Track was (section 53). The
+The port was held to the TypeScript stage as Track was (section 54). The
 2,394 Blocks solves of the corpus were recorded with their Graphviz calls
 and replayed through the crate. Each gave Graphviz the same graphs byte for
 byte and answered the same drawing. The one difference was a title box's
@@ -2976,7 +2987,7 @@ is gone, about 18,000 lines. `blocks/tree/` keeps the block engine, the
 solves and the joins choice. The unit tests of the removed rules moved
 with them into the crate.
 
-## 55. The renderer package is a thin host of the core (2026-10-25, TASK-520.08)
+## 56. The renderer package is a thin host of the core (2026-10-25, TASK-520.08)
 
 The core draws a picture in one call. The crate `crates/archboard-render`
 takes the reading to draw, the vault's policy and the render's choices, and
@@ -3016,7 +3027,7 @@ step lines, appearances, the picture key scan, the engines, the solves, the
 joins choice, the compound graph, page fit, the routes and the spacing. The
 tests of the removed rules moved into the crates.
 
-## 56. A frame that closes a cycle turns its line, and side-by-side containers share their gutter (2026-10-25, TASK-520)
+## 57. A frame that closes a cycle turns its line, and side-by-side containers share their gutter (2026-10-25, TASK-520)
 
 Two faults of Track came to light when TASK-520.08 adopted new content on
 the boards Renderer layout and Semantic renderer. The same content drew
@@ -3049,7 +3060,7 @@ length 83,854 to 65,397, page area 12.37 to 9.91 megapixels.
 `wide-boards.test.ts` holds both boards whole, and a Rust test in each file
 holds each rule.
 
-## 57. The core runs Graphviz itself (2026-10-26, TASK-548.01)
+## 58. The core runs Graphviz itself (2026-10-26, TASK-548.01)
 
 The core lays out every graph a solve ranks with graphviz-pure 0.2.1, a
 pure-Rust port of Graphviz 16.1.0, vendored under `crates/vendor` with its
@@ -3067,7 +3078,7 @@ machine, alternating with the commit before, two runs of `timing.ts 7` took
 10,062 ms, and the slowest first render, Agent workbench, took 1,703 ms and
 1,674 ms against 1,754 ms and 1,702 ms.
 
-## 58. The critical path of a first render (2026-10-26, TASK-548.04)
+## 59. The critical path of a first render (2026-10-26, TASK-548.04)
 
 The slowest first renders waited for two solves of the stacking choice in a
 row: a partial solve, then the whole solve that it chose. The whole solve
@@ -3078,7 +3089,7 @@ measurements, the tools that measure a critical path, the critical paths against
 500 ms target and what still stands between the boards and it. No drawing
 changed.
 
-## 59. graphviz-pure lays our graphs out faster, to the same bytes (2026-10-26, TASK-548.03)
+## 60. graphviz-pure lays our graphs out faster, to the same bytes (2026-10-26, TASK-548.03)
 
 The vendored graphviz-pure gives every graph the same answer, byte for byte,
 in about a third less time. On the 1,072 Graphviz calls of the first renders

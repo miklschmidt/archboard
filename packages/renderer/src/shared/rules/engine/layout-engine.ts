@@ -7,7 +7,9 @@
 // before changes a drawing.
 //
 // The worker accepts `{ core }` once, then `{ id, graph }`, and answers each
-// solve with `{ id, data }` or `{ id, error, fatal }`.
+// solve with `{ id, data }` or `{ id, error, fatal }`. It says `{ ready: true }`
+// once it instantiated the core, so the pool can start its next worker then
+// (TASK-527).
 
 import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
 
@@ -89,7 +91,11 @@ export function serveLayoutEngine(
 		const message = event.data;
 		if (isCore(message)) {
 			ready = Promise.resolve().then(() => instantiate(message.core));
-			ready.catch(() => undefined);
+			ready.then(
+				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+				() => scope.postMessage({ ready: true }),
+				() => undefined,
+			);
 			return;
 		}
 		if (!isSolve(message)) return;
