@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T18:58:00Z'
-updated_date: '2026-10-26T18:59:00Z'
+updated_date: '2026-10-26T19:06:00Z'
 labels:
   - process
 dependencies: []
@@ -24,6 +24,14 @@ On 2026-10-26, 37 orphaned packages/process/src/runtime/processes/git-owner.ts p
 - [x] #1 An owner whose parent's IPC channel closes before release exits within seconds
 - [x] #2 A test fails when the owner ignores a closed channel
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Spec review reproduced two gaps in the initial disconnect handler: an owner disconnected before start and an owner running a long-lived command both remained alive after 3 seconds. Resolving release alone could not bypass the awaited start, command exit, or output forwarding. The revised handler uses the existing detached-group identity and signal helpers to kill its own group on a lost parent, so an active Git child does not become an orphan. The handler is removed before the normal intentional disconnect; explicit release still waits for the parent inspection and output drain. Five immediate disconnect probes now exited within the 3-second bound. The current Archboard board describes the process package as owning and ending child process groups and remains accurate; no proposal is needed. No agent-facing interface or evaluated consumer-skill behavior changes, so the consumer skill and evaluation scenarios remain accurate.
+
+Review validation: system Bun 1.4.3 ran bun test packages/process after the runtime and regression changes: 16 passed, 0 failed. Coverage includes disconnect before start, during a live command, and after the result, plus normal explicit release, output limits, cancellation, and descendant cleanup.
+<!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
