@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 159,
+	"version": 161,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-26T05:08:44.760Z",
+	"updatedAt": "2026-10-26T05:24:21.465Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -76198,7 +76198,7 @@
 		{
 			"id": "A155qmIg",
 			"name": "TASK-538.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "87RvG4KF",
 			"summary": "Open a proposal beside from the About page",
 			"content": {
@@ -81002,9 +81002,9 @@
 		{
 			"id": "qgRlJgGl",
 			"name": "TASK-538.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "A155qmIg",
-			"summary": "A picked container shows its interface measures on each proposal side by side",
+			"summary": "How a pane reads a board: the stage and its sidebar, selection, the camera, and moves between boards",
 			"content": {
 				"nodes": [
 					{
@@ -85831,7 +85831,7 @@
 			}
 		}
 	],
-	"current": "A155qmIg",
+	"current": "qgRlJgGl",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -86036,6 +86036,12 @@
 			"from": "87RvG4KF",
 			"at": "2026-10-26T04:39:37.065Z",
 			"reason": "A proposal opens beside from the About page and the navigator, read through the view of the pane it came from (TASK-538.04)"
+		},
+		{
+			"variant": "qgRlJgGl",
+			"from": "A155qmIg",
+			"at": "2026-10-26T05:24:21.465Z",
+			"reason": "A picked container shows its interface measures on each variant of its board: the part Measure each variant, rendered by Render stage states"
 		}
 	],
 	"shelvings": [
