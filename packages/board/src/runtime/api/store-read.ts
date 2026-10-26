@@ -10,3 +10,4 @@ export {
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
 } from "#runtime/operations/history/read.ts";
+export { readLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";

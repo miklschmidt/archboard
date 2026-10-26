@@ -187,6 +187,7 @@ export {
 	type ArchitectureCheckpoint,
 	type ArchitectureCheckpointRetain,
 	type ArchitectureCheckpointList,
+	QualifiedSubjectIdSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 	ArchitectureModelReadSchema,
