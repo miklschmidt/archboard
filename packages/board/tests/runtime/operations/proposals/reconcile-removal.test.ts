@@ -1,10 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
 import { editArchitectureModule } from "@archboard/board/store-write";
-import { fixture, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
+import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { request, selected, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
 afterEach(disposeFixtures);
 test("settlement keeps a changed subject after predecessor deletion without replacing its identity", async () => {
-	const { vault } = fixture();
+	const { root, vault } = fixture();
 	const draft = await proposal(vault, "Keep worker", "Current", [
 		{ type: "edit-module", subject: "Shop#Worker", set: { description: "Retries queued work." } },
 	]);
@@ -31,6 +31,7 @@ test("settlement keeps a changed subject after predecessor deletion without repl
 		changes: [],
 	});
 	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	git(root, "gc", "--prune=now");
 	expect(
 		(await selected(vault, draft.target.state!)).modules.find((m) => m.id === "Shop#Worker")
 			?.description,

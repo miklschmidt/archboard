@@ -148,3 +148,78 @@ test("incompatible flow and nested-holder moves keep the complete proposal side"
 	});
 	expect(reading.collections[0]!.flows[1]!.steps).toMatchObject([{ id: "Shop#Notify" }]);
 });
+
+test("take-theirs order settlement also updates the unchanged middle sibling", async () => {
+	const { vault } = behaviorFixture();
+	const { readFileSync, writeFileSync } = await import("node:fs");
+	const { join } = await import("node:path");
+	const file = join(vault, "unrelated-name.flows.json");
+	const contents = JSON.parse(readFileSync(file, "utf8"));
+	contents.flows[0].steps = [
+		contents.flows[0].steps[0],
+		{ id: "Shop#Second", kind: "sync", from: "Shop#Gateway", to: "Shop#Worker", label: "Second" },
+	];
+	contents.flows[0].steps.push({
+		id: "Shop#Middle",
+		kind: "sync",
+		from: "Shop#Gateway",
+		to: "Shop#Worker",
+		label: "Middle",
+	});
+	writeFileSync(file, JSON.stringify(contents));
+	const draft = await proposal(vault, "Second first", "Current", [
+		{
+			type: "move-step",
+			subject: "Shop#Second",
+			placement: { holder: "Shop#Checkout", before: "Shop#Send" },
+		},
+	]);
+	const changed = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "move-step",
+				subject: "Shop#Middle",
+				placement: { holder: "Shop#Checkout", before: "Shop#Send" },
+			},
+		],
+	});
+	expect(changed).toMatchObject({ success: true, reconciliation: true });
+	const held = await selected(vault, draft.target.state!);
+	const issues = held.selectedState!.standing!.issues;
+	expect(issues.every((issue) => issue.kind === "competing-order")).toBe(true);
+	const intent = await request(vault, draft.target.state!);
+	expect(
+		await editArchitectureModule(vault, {
+			...intent,
+			operationId: "mixed-order",
+			proposal: {
+				type: "settle",
+				resolutions: issues.map((issue, index) => ({
+					subject: issue.subject,
+					field: issue.field,
+					take: index === 0 ? ("mine" as const) : ("theirs" as const),
+				})),
+			},
+			changes: [],
+		}),
+	).toMatchObject({ success: false, code: "MODEL_INVALID", applied: false });
+	const settled = await editArchitectureModule(vault, {
+		...intent,
+		proposal: {
+			type: "settle",
+			resolutions: issues.map((issue) => ({
+				subject: issue.subject,
+				field: issue.field,
+				take: "theirs" as const,
+			})),
+		},
+		changes: [],
+	});
+	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	expect(
+		(await selected(vault, draft.target.state!)).collections[0]!.flows[0]!.steps.map(
+			(step) => step.id,
+		),
+	).toEqual(["Shop#Middle", "Shop#Send", "Shop#Second"]);
+});

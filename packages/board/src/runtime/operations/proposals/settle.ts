@@ -1,3 +1,4 @@
+import { orderOf } from "#shared/rules/reconcile/told-order.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { ProposalSchema, SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
@@ -11,7 +12,7 @@ import {
 	decodeSubjects,
 	predecessorRevision,
 } from "#runtime/operations/proposals/read.ts";
-import { subjectsOf, type Subjects } from "#runtime/operations/proposals/subjects.ts";
+import { subjectsOf, heldSubjects, type Subjects } from "#runtime/operations/proposals/subjects.ts";
 import {
 	proposalDependencies,
 	retainBaseline,
@@ -67,6 +68,10 @@ function takeSubject(result: Subjects, source: Subjects, id: string): void {
 function takeTheirs(result: Subjects, theirs: Subjects, issue: Issue): void {
 	const source = theirs.get(issue.subject),
 		mine = result.get(issue.subject);
+	if (issue.kind === "competing-order") {
+		takeOrderedSide(result, theirs, issue.subject);
+		return;
+	}
 	if (
 		issue.kind !== "competing-field" ||
 		mine === undefined ||
@@ -77,6 +82,43 @@ function takeTheirs(result: Subjects, theirs: Subjects, issue: Issue): void {
 		return;
 	}
 	takeField(mine, source, issue.field);
+}
+/**
+ * Settle an order through the complete disputed holder.
+ * @param result The mutable intended subjects.
+ * @param source The coherent predecessor side.
+ * @param id The disputed identity.
+ */
+function takeOrderedSide(result: Subjects, source: Subjects, id: string): void {
+	const subject = source.get(id);
+	if (subject?.kind === "step" && subject.placement !== undefined) {
+		takeSiblingOrder(result, source, subject.placement.holder, subject.placement.alternative);
+		return;
+	}
+	takeSubject(result, source, id);
+}
+/**
+ * Take the predecessor order while preserving proposal-only sibling slots.
+ * @param result The mutable intended subjects.
+ * @param source The coherent predecessor side.
+ * @param holder The exact disputed holder.
+ * @param alternative The exact decision label, when present.
+ */
+function takeSiblingOrder(
+	result: Subjects,
+	source: Subjects,
+	holder: string,
+	alternative: string | undefined,
+): void {
+	const own = heldSubjects(result, holder, alternative).map(([id]) => id);
+	const theirs = heldSubjects(source, holder, alternative).map(([id]) => id);
+	const ordered = orderOf({ base: own, mine: own, theirs }, "step").ids;
+	for (const [index, id] of ordered.entries()) {
+		const placement = result.get(id)!.placement!;
+		const next = ordered[index + 1];
+		if (next === undefined) delete placement.before;
+		else placement.before = next;
+	}
 }
 /**
  * Copy only the chosen field or placement, preserving unrelated proposal fields.
@@ -167,6 +209,40 @@ function requireCompleteChoices(issues: Issue[], resolutions: Resolution[]): voi
 			);
 }
 /**
+ * Identify one complete order decision through its exact holder and alternative.
+ * @param subjects The coherent proposal subjects.
+ * @param id The disputed subject identity.
+ * @returns A stable holder key for agreement among choices.
+ */
+function orderHolder(subjects: Subjects, id: string): string {
+	const placement = subjects.get(id)?.placement;
+	return JSON.stringify([placement?.holder ?? id, placement?.alternative]);
+}
+/**
+ * Treat one holder's order as one decision rather than incompatible per-step choices.
+ * @param subjects The coherent proposal subjects before choices.
+ * @param issues The durable disagreements.
+ * @param resolutions The caller's complete choices.
+ */
+function requireOrderAgreement(
+	subjects: Subjects,
+	issues: Issue[],
+	resolutions: Resolution[],
+): void {
+	const choices = new Map<string, Set<Resolution["take"]>>();
+	for (const issue of issues.filter((value) => value.kind === "competing-order")) {
+		const holder = orderHolder(subjects, issue.subject);
+		const group = choices.get(holder) ?? new Set();
+		group.add(resolutions.find((resolution) => matches(resolution, issue))!.take);
+		choices.set(holder, group);
+	}
+	if ([...choices.values()].some((group) => group.size > 1))
+		throw new ArchiveError(
+			"MODEL_INVALID",
+			"Give all order issues in one holder the same choice. Use edited for a third order.",
+		);
+}
+/**
  * Apply each explicit predecessor choice without interpreting ordinary edits as settlement.
  * @param subjects The mutable intended subjects.
  * @param predecessor The complete settled predecessor.
@@ -180,6 +256,7 @@ function applyResolutions(
 	resolutions: Resolution[],
 ): void {
 	requireCompleteChoices(issues, resolutions);
+	requireOrderAgreement(subjects, issues, resolutions);
 	const theirs = subjectsOf(predecessor);
 	for (const resolution of resolutions) {
 		const covered = issues.filter((issue) => matches(resolution, issue));
