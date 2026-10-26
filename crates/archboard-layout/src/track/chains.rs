@@ -376,13 +376,12 @@ impl<'s> Track<'s> {
     /// What each band holds with every run but one in place.
     pub(crate) fn free_without(&self, runs: &[LaneRun], left: usize) -> Occupancy {
         let mut occupancy = Occupancy::new(self.scene, &Set::default());
-        for (index, run) in runs.iter().enumerate() {
-            if index != left {
-                for &lane in &run.lanes {
-                    occupancy.take(self, lane);
-                }
-            }
-        }
+        let lanes = runs
+            .iter()
+            .enumerate()
+            .filter(|&(index, _)| index != left)
+            .flat_map(|(_, run)| run.lanes.iter().copied());
+        occupancy.take_all(self, lanes);
         occupancy
     }
 

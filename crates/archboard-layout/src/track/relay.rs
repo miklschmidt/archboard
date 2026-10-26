@@ -301,15 +301,14 @@ impl Relay {
             .map(|&station| track.station(station).item.expect("a label"))
             .collect();
         let mut occupancy = Occupancy::new(track.scene, &own);
-        for &other in &self.chains {
-            if other != chain {
-                for &station in &track.chain(other).stations {
-                    if track.station(station).kind == Kind::Lane {
-                        occupancy.take(track, station);
-                    }
-                }
-            }
-        }
+        let lanes = self
+            .chains
+            .iter()
+            .filter(|&&other| other != chain)
+            .flat_map(|&other| &track.chain(other).stations)
+            .copied()
+            .filter(|&station| track.station(station).kind == Kind::Lane);
+        occupancy.take_all(track, lanes);
         occupancy
     }
 
