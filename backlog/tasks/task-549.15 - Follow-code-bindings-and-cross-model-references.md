@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:53:00Z'
+updated_date: '2026-10-26T19:54:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,4 +72,6 @@ TASK-549.04, TASK-549.10
 The worktree starts at integration 5432fed897. The stable public contract is saved externally as task-549.15-contract.md. Draft proposals: Board persistence@TASK-549.15, Archboard server routes@TASK-549.15, Command interface@TASK-549.15. Public runtime RED/GREEN slices cover local and foreign bindings, explicit reference navigation, immutable foreign pins, missing retained content, changed source refusal, and foreign source associations. CLI/HTTP and existing opener system owners now pass their first new cases. The .06 source remains unmerged and uncopied.
 
 Signed implementation checkpoints 96ad2f9a1 and a87f293bd implement explicit foreign subject references, immutable foreign checkpoint pins, canonical binding resolution, and existing-opener activation. Signed merge 8df910922 incorporates integration 3a0efd30d9624cb472d343d72a3dda3c4da9ca86. No unintegrated .06 source was merged or copied. The final simplification shares one checkout snapshot per reference list and keeps own-repository source evidence on its existing direct context. The new runtime fixtures isolate their registry without timeout changes. The three architecture proposals remain draft. Parent browser acceptance and final ticket closure remain pending. No acceptance criterion is claimed complete.
+
+Backend handoff evidence: the broad runtime run passes 86 tests across 16 files. The focused post-simplification source run passes 9 tests, and canonical navigation/opener adapters pass 9 tests across 3 files. The wider existing adapter/opener run passes 148 tests, and the final CLI help/model/consumer run passes 21 tests. Both TypeScript projects, full lint and formatting pass. Architecture semantics has zero diagnostics, and the three affected draft code checks have zero warnings. Ten inherited code warnings remain on unrelated boards. The interface owner reports the existing board width of 245/188; the public entry diff is empty and no ceiling changes. The Canonical reads view was rendered and inspected. Browser acceptance and adoption remain with the parent.
 <!-- SECTION:NOTES:END -->
