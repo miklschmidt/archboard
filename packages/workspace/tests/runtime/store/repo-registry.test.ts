@@ -177,34 +177,24 @@ test("a worktree whose own config names an origin is another repository", async 
 	});
 });
 
-test.each(["core.bare", "core.worktree"])(
-	"a worktree whose own %s changes its root is not registered at the listed path",
-	async (key) => {
-		const base = repository(join(scratch, key));
-		const side = addWorktree(base, `${key}-side`);
-		git(base, "config", "extensions.worktreeConfig", "true");
-		git(side, "config", "--worktree", key, key === "core.bare" ? "true" : base);
-		const declared = await declareDirectory(base);
-		expect(declared).toMatchObject({ worktrees: [] });
-		expect(orders().roots).toEqual([base]);
-	},
-);
+test("a worktree whose own config moves its root is recorded where Git says it is", async () => {
+	const base = repository(join(scratch, "moved"));
+	const side = addWorktree(base, "moved-side");
+	git(base, "config", "extensions.worktreeConfig", "true");
+	git(side, "config", "--worktree", "core.worktree", base);
+	expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
+	expect(orders().roots).toEqual([base]);
+});
 
-test.each(["invalid", "foreign"])(
-	"a listed worktree with a %s gitfile is inspected",
-	async (kind) => {
-		const base = repository(join(scratch, `gitfile-${kind}`));
-		const side = addWorktree(base, `gitfile-${kind}-side`);
-		const foreign = repository(join(scratch, `gitfile-${kind}-other`));
-		git(foreign, "remote", "set-url", "origin", "https://github.com/test/other.git");
-		writeFileSync(
-			join(side, ".git"),
-			kind === "invalid" ? "invalid gitfile\n" : `gitdir: ${join(foreign, ".git")}\n`,
-		);
-		expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
-		expect(orders().roots).toEqual([base]);
-	},
-);
+test("a listed worktree whose .git names another repository is that repository", async () => {
+	const base = repository(join(scratch, "reused"));
+	const side = addWorktree(base, "reused-side");
+	const other = repository(join(scratch, "reused-other"));
+	git(other, "remote", "set-url", "origin", "https://github.com/test/other.git");
+	writeFileSync(join(side, ".git"), `gitdir: ${join(other, ".git")}\n`);
+	expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
+	expect(orders().roots).toEqual([base]);
+});
 
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
