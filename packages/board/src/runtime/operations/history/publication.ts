@@ -20,7 +20,7 @@ import {
 	markPending,
 	acknowledgePublication,
 	retention,
-	fetchArchive,
+	withFetchedArchive,
 	requireCompleteArchive,
 	publicationEvidence,
 } from "#runtime/store/model-publication.ts";
@@ -39,21 +39,28 @@ async function readArchitecturePublication(
 	vault: string,
 	checkpoint: string,
 ): Promise<Publication> {
-	GitObjectIdSchema.parse(checkpoint);
+	if (!GitObjectIdSchema.safeParse(checkpoint).success)
+		return archiveFailure(
+			"CHECKPOINT_INVALID",
+			new Error("Use a complete immutable checkpoint identity."),
+			checkpoint,
+		);
 	return historyResult("ARCHIVE_UNREADABLE", async () => {
 		const context = await publicationContext(vault);
-		const reading = await readArchitectureCheckpoint(vault, checkpoint);
-		if (!reading.success)
-			return { ...reading, publication: "unavailable" as const, checkpoint, retention };
 		const destination =
 			context.configuration === undefined ? undefined : await configuredDestination(context);
-		return {
-			success: true as const,
+		const status = {
 			checkpoint,
 			retention,
 			...(destination === undefined
 				? {}
 				: { destination: { remote: destination.remote, ref: destination.ref } }),
+		};
+		const reading = await readArchitectureCheckpoint(vault, checkpoint);
+		if (!reading.success) return { ...reading, ...status, publication: "unavailable" as const };
+		return {
+			success: true as const,
+			...status,
 			...(await publicationEvidence(context, checkpoint)),
 		};
 	});
@@ -74,25 +81,26 @@ async function fetchArchitectureHistory(
 		const context = await publicationContext(vault);
 		const destination = await configuredDestination(context, request);
 		try {
-			const fetched = await fetchArchive(context, destination);
-			await requirePublishedCheckpoint(context, request.checkpoint, fetched.tip);
-			const reading = await readArchitectureCheckpoint(vault, request.checkpoint);
-			if (!reading.success)
+			return await withFetchedArchive(context, destination, async (tip) => {
+				await requirePublishedCheckpoint(context, request.checkpoint, tip);
+				const reading = await readArchitectureCheckpoint(vault, request.checkpoint);
+				if (!reading.success)
+					return {
+						...reading,
+						publication: "unavailable" as const,
+						checkpoint: request.checkpoint,
+						retention,
+					};
+				await acknowledgePublication(context, destination.fingerprint, tip);
 				return {
-					...reading,
-					publication: "unavailable" as const,
+					success: true as const,
+					publication: "published" as const,
 					checkpoint: request.checkpoint,
+					destination: { remote: destination.remote, ref: destination.ref },
 					retention,
+					publishedTip: tip,
 				};
-			await acknowledgePublication(context, destination.fingerprint, fetched.tip);
-			return {
-				success: true as const,
-				publication: "published" as const,
-				checkpoint: request.checkpoint,
-				destination: { remote: destination.remote, ref: destination.ref },
-				retention,
-				publishedTip: fetched.tip,
-			};
+			});
 		} catch (error) {
 			return {
 				...archiveFailure(
@@ -167,7 +175,7 @@ async function publishArchitectureHistory(
 	input: z.infer<typeof ArchitecturePublicationRequestSchema>,
 ): Promise<Publication> {
 	const request = ArchitecturePublicationRequestSchema.parse(input);
-	return historyResult("ARCHIVE_NETWORK_FAILED", async () => {
+	return historyResult("ARCHIVE_WRITE_FAILED", async () => {
 		const context = await publicationContext(vault);
 		const destination = await configuredDestination(context, request);
 		const reading = await readArchitectureCheckpoint(vault, request.checkpoint);
@@ -176,7 +184,7 @@ async function publishArchitectureHistory(
 		const tip = await archiveTip(context);
 		if (tip === undefined)
 			throw new ArchiveError("ARCHIVE_UNREADABLE", "The local archive has no tip.");
-		markPending(context, destination.fingerprint, request.checkpoint, tip);
+		await markPending(context, destination.fingerprint, request.checkpoint, tip);
 		try {
 			const published = await publishClosure(context, destination, tip);
 			await acknowledgePublication(context, destination.fingerprint, published);
@@ -223,7 +231,7 @@ async function publishClosure(
 			"ARCHIVE_BUSY",
 			"Concurrent remote publications prevented this append. Retry the retained publication.",
 		);
-	await requireCompleteArchive(context, tip);
+	await requireCompleteArchive(context, tip, true);
 	try {
 		await git(context.root, [
 			"push",
@@ -257,13 +265,14 @@ async function retryStalePublication(
 	error: unknown,
 ): Promise<string> {
 	if (!(error instanceof GitCommandError) || error.failure !== "exit") throw error;
-	const fetched = await fetchArchive(context, destination);
-	if (await isArchiveAncestor(context, fetched.tip, tip)) throw error;
-	await appendCheckpoint(context, fetched.tip, await archiveTip(context));
-	const joined = await archiveTip(context);
-	if (joined === undefined)
-		throw new ArchiveError("ARCHIVE_UNREADABLE", "The joined archive has no tip.");
-	return publishClosure(context, destination, joined, attempt + 1);
+	return withFetchedArchive(context, destination, async (remoteTip) => {
+		if (await isArchiveAncestor(context, remoteTip, tip)) throw error;
+		await appendCheckpoint(context, remoteTip, await archiveTip(context));
+		const joined = await archiveTip(context);
+		if (joined === undefined)
+			throw new ArchiveError("ARCHIVE_UNREADABLE", "The joined archive has no tip.");
+		return publishClosure(context, destination, joined, attempt + 1);
+	});
 }
 
 export {
