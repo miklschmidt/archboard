@@ -1,7 +1,7 @@
 ---
 id: TASK-549.15
 title: Follow code bindings and cross-model references
-status: In Progress
+status: Done
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
@@ -46,15 +46,15 @@ TASK-549.04, TASK-549.10
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Readers open code and follow explicit references into another model without changing architectural ownership. Existing checkout selection still resolves code bindings.
-- [ ] #2 A cross-model reference names its model, subject, and state. Historical readings pin foreign revisions and never substitute current content.
-- [ ] #3 CLI and browser readers expose unavailable models or source evidence. No operation silently transfers ownership or writes across two models.
+- [x] #1 Readers open code and follow explicit references into another model without changing architectural ownership. Existing checkout selection still resolves code bindings.
+- [x] #2 A cross-model reference names its model, subject, and state. Historical readings pin foreign revisions and never substitute current content.
+- [x] #3 CLI and browser readers expose unavailable models or source evidence. No operation silently transfers ownership or writes across two models.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -103,3 +103,9 @@ The final reference presentation uses authored subject, model, and state names f
 
 Final readable reference labels preserve the exact selected foreign state and saved checkpoint. The isolated public runtime reference owner passes 9 cases and 34 assertions. The other 23 focused proposal, adapter, and opener cases pass in the combined run. That combined run hit three unchanged five-second reference deadlines and cleanup errors; the isolated owner resolves those failures without changing timeouts. Ten focused browser cases pass, and the final reference-only pass succeeds with 14 assertions after simplifying the label components. Types, full lint, formatting, and vault semantics pass. The four affected draft code checks have zero warnings. Ten inherited warnings remain elsewhere. Parent inspected destination names, flow collection details, and the canonical architecture rendering. The two indirect navigation relationships were traced through useModelNavigation and useReferenceNavigation into the existing query and router owners. No second cache, registry, renderer, or writer exists. The known board width remains assigned to TASK-549.24.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonical readers open code and explicit foreign subjects through the shared model reader and existing opener. Stable addresses preserve repository, model, state, subject, and exact historical pins. Browser navigation covers modules, relationships, collections, flows, and steps with readable destination names and unavailable outcomes. Foreign reads change neither ownership nor authored content. Focused public real-file/Git and browser owners pass, as do types, lint, formatting, and semantics. All four combined architecture proposals are adopted. Original backend variants remain shelved provenance. Claims are released and the worktree server is stopped. The known package width debt remains with TASK-549.24.
+<!-- SECTION:FINAL_SUMMARY:END -->

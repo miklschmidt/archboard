@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 194,
+	"version": 195,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T22:47:39.804Z",
+	"updatedAt": "2026-10-26T22:55:38.817Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -136386,7 +136386,7 @@
 		{
 			"id": "pJeSfYJs",
 			"name": "TASK-549.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "l5wQV8vl",
 			"summary": "Read create edit and compare explicit canonical draft states through normal CLI",
 			"content": {
@@ -140489,7 +140489,7 @@
 		{
 			"id": "88bBHFNP",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "pJeSfYJs",
 			"summary": "Resolve explicit code and model references from current, draft, and retained architecture without changing ownership.",
 			"documents": [
@@ -144596,7 +144596,7 @@
 			}
 		}
 	],
-	"current": "pJeSfYJs",
+	"current": "88bBHFNP",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -144862,6 +144862,12 @@
 			"from": "l5wQV8vl",
 			"at": "2026-10-26T20:58:26.675Z",
 			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
+		},
+		{
+			"variant": "88bBHFNP",
+			"from": "pJeSfYJs",
+			"at": "2026-10-26T22:55:38.817Z",
+			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
 		}
 	],
 	"shelvings": [
