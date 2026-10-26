@@ -14,6 +14,7 @@ import {
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
+import type { PaneSession } from "#ui/state/application/pane-handles.ts";
 import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
 import type { PaneEntry } from "#ui/rules/application/pane-list.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
@@ -116,19 +117,42 @@ function paneElement(sources: PaneViewSources, entry: PaneEntry, index: number):
 	const { panes, readings } = sources;
 	const { paneId } = entry;
 	/**
+	 * A driven update supersedes a local gesture before its report settles.
+	 * @param target The pane receiving the update.
+	 * @param part The part whose gesture no longer explains its reading.
+	 */
+	function withdrawGesture(
+		target: string,
+		part: Parameters<PaneSession["userChangeFailed"]>[0],
+	): void {
+		panes.handles.session(target)?.userChangeFailed(part);
+	}
+	/**
 	 * The person chose a different way of reading this pane's board.
 	 * @param view The view's id, or null for the overview.
 	 * @param cause An automatic reveal, which changes only this pane and adds no history entry.
 	 */
 	const readThrough: ApplicationPaneProps["onViewChange"] = (view, cause): void => {
-		if (cause === "reveal") readings.showView(paneId, view);
-		else readings.chooseView(paneId, view);
+		if (cause === "reveal") {
+			withdrawGesture(paneId, "view");
+			readings.showView(paneId, view);
+			return;
+		}
+		for (const reached of readings.chooseView(paneId, view)) {
+			if (reached.paneId !== paneId && reached.from !== view) {
+				withdrawGesture(reached.paneId, "view");
+			}
+		}
 	};
 	/**
 	 * The person picked a subject out in this pane, or cleared it.
 	 * @param subject The subject, or null.
 	 */
 	function pickHere(subject: PickedSubject | null): void {
+		const linked = sources.links[paneId]?.paneId;
+		if (linked !== undefined && readings.pickedIn(linked)?.id !== subject?.id) {
+			withdrawGesture(linked, "selection");
+		}
 		readings.pick(paneId, subject);
 	}
 	/** This pane left the board its pick was made on. */

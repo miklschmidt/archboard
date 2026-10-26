@@ -11,7 +11,9 @@
 // What the panes report to the server is what is checked, because that is what
 // an agent is told each pane reads (ADR 0023).
 
-import { expect, test } from "bun:test";
+import { expect, jest, test } from "bun:test";
+
+import { PANE_MS } from "@archboard/timing";
 
 import {
 	act,
@@ -36,16 +38,43 @@ import {
  * @param paneId The pane.
  * @param id The part.
  */
-async function pickIn(paneId: string, id: string): Promise<void> {
+function pickNow(paneId: string, id: string): void {
 	const card = pane(paneId)?.querySelector(`[data-semantic-id='${id}']`);
 	if (card == null) throw new Error(`Pane ${paneId} draws no ${id}.`);
 	const at = { pointerId: 1, button: 0, clientX: 5, clientY: 5 };
-	await act(async () => {
+	act(() => {
 		fireEvent.pointerDown(card, at);
 		fireEvent.pointerUp(card, at);
 		fireEvent.click(card, at);
 	});
+}
+
+/**
+ * Pick a part and let the page settle.
+ * @param paneId The pane.
+ * @param id The part.
+ */
+async function pickIn(paneId: string, id: string): Promise<void> {
+	pickNow(paneId, id);
 	await settle();
+}
+
+/**
+ * Apply two gestures before the report timer can publish either one.
+ * @param gestures The gestures.
+ */
+async function beforeReport(gestures: () => void): Promise<void> {
+	jest.useFakeTimers();
+	try {
+		await act(async () => {
+			gestures();
+		});
+		await act(async () => {
+			jest.advanceTimersByTime(PANE_MS.selectionDebounce);
+		});
+	} finally {
+		jest.useRealTimers();
+	}
 }
 
 /**
@@ -203,6 +232,70 @@ test("a linked pick takes each pane's answer light and letting go restores each 
 	expect(attendedIn("A", "is-lit")).toEqual(lights.A);
 	expect(attendedIn("B", "is-lit")).toEqual(lights.B);
 	expect({ address: window.location.search, history: window.history.length }).toEqual(before);
+});
+
+test("a question step does not claim a later linked pick as its pane's own gesture", async () => {
+	await twoPanes();
+	await chooseViewIn("A", "Everything");
+	await viewsRead();
+	await stepIn("A", "charge");
+	await viewsRead();
+	readings.length = 0;
+	await pickIn("B", "pay");
+	expect(await reported("A")).toEqual({ picked: ["pay"], byHand: false });
+	expect(await reported("B")).toEqual({ picked: ["pay"], byHand: true });
+});
+
+test("a no-op view choice does not label a later question reveal as a view gesture", async () => {
+	await twoPanes();
+	await viewsRead();
+	await chooseViewIn("A", "");
+	await viewsRead();
+	readings.length = 0;
+	await stepIn("A", "charge");
+	await viewsRead();
+	expect(readings.some((reading) => reading.byUser?.includes("view"))).toBe(false);
+});
+
+test("a linked pick that overtakes a local pick reports only its own pane's gesture", async () => {
+	await twoPanes();
+	await stepIn("A", "charge");
+	await viewsRead();
+	readings.length = 0;
+	await beforeReport(() => {
+		pickNow("A", "ord");
+		pickNow("B", "pay");
+	});
+	expect(await reported("A")).toEqual({ picked: ["pay"], byHand: false });
+	expect(await reported("B")).toEqual({ picked: ["pay"], byHand: true });
+});
+
+test("a linked view that overtakes a local view reports only its own pane's gesture", async () => {
+	await twoPanes();
+	await chooseViewIn("A", "Everything");
+	await viewsRead();
+	await stepIn("A", "charge");
+	await viewsRead();
+	act(() => {
+		fireEvent.click(pane("B")!.querySelector("[data-slot='semantic-sidebar-toggle']")!);
+	});
+	await settle();
+	readings.length = 0;
+	await beforeReport(() => {
+		fireEvent.click(
+			pane("A")!.querySelector(
+				`[data-slot='semantic-view-choice'][data-semantic-view='${QUERIES.id}']`,
+			)!,
+		);
+		fireEvent.click(
+			pane("B")!.querySelector("[data-slot='semantic-view-choice'][data-semantic-view='']")!,
+		);
+	});
+	expect(await viewsRead()).toEqual({ A: null, B: null });
+	expect(readings.findLast((reading) => reading.paneId === "A")?.byUser ?? []).not.toContain(
+		"view",
+	);
+	expect(readings.findLast((reading) => reading.paneId === "B")?.byUser).toContain("view");
 });
 
 test("linked views and Back keep pane-local answer steps, and closing one pane keeps the other's attention", async () => {

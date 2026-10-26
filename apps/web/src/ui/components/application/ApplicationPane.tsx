@@ -393,10 +393,12 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 	// a pane that moves has its pick cleared above this. So this is where the user's hand is.
 	const onSelect = useCallback(
 		(id: string | null, subject?: SelectedSubject): void => {
-			onUserChanged("selection");
+			// A question can clear an already empty pick without changing the reading.
+			// No mark can remain for a later pick from the linked pane to use.
+			if (id !== (picked?.id ?? null)) onUserChanged("selection");
 			onPick(id === null ? null : pickedSubject(id, subject));
 		},
-		[onPick, onUserChanged],
+		[onPick, onUserChanged, picked],
 	);
 	// Leaving the board lets the pick go by the person's hand too, but in this pane only:
 	// the pane linked to it keeps its own (TASK-538.02).
@@ -406,10 +408,10 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 	}, [leave, onUserChanged]);
 	const onView = useCallback<ApplicationPaneProps["onViewChange"]>(
 		(next, cause): void => {
-			if (cause !== "reveal") onUserChanged("view");
+			if (cause !== "reveal" && next !== view) onUserChanged("view");
 			onViewChange(next, cause);
 		},
-		[onUserChanged, onViewChange],
+		[onUserChanged, onViewChange, view],
 	);
 	const onOpenCode = useCallback((): void => {
 		if (picked !== null) {
