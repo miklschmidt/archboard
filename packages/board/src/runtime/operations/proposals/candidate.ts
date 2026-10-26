@@ -29,7 +29,12 @@ import {
 	CheckpointRecordSchema,
 } from "#runtime/store/model-archive.ts";
 
-type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }>;
+type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
+	proposal: Extract<
+		Extract<ArchitectureModuleEdit, { proposal: unknown }>["proposal"],
+		{ type: "create" | "edit" }
+	>;
+};
 /**
  * Retain a complete immutable predecessor before installing a compact draft.
  * @param vault The explicit vault.
@@ -40,9 +45,9 @@ type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }>;
  */
 async function retainBaseline(
 	vault: string,
-	request: Request,
+	request: ArchitectureModuleEdit,
 	predecessor: ArchitectureModel,
-	state: z.infer<typeof ProposalSchema>,
+	state: Pick<z.infer<typeof ProposalSchema>, "id" | "name">,
 ) {
 	const context = await archiveContext(vault);
 	await assertArchiveWritable(context);
@@ -282,4 +287,4 @@ async function proposalCandidate(
 		dependencies: [proposal.baseline],
 	};
 }
-export { proposalCandidate };
+export { proposalCandidate, retainBaseline, updateChanges, decodedDraft, proposalInputs };

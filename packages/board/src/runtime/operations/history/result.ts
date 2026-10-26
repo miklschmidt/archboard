@@ -10,7 +10,8 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	STATE_NOT_FOUND: "Read the proposal catalogue and use an existing stable state identity.",
 	STATE_AMBIGUOUS: "Use one stable state identity from the diagnostic.",
 	PREDECESSOR_CHANGED:
-		"Keep the immutable baseline and draft changes. Reconciliation belongs to TASK-549.07.",
+		"Read current inputs, claim the following family, and submit an explicit reconcile intent against its predecessor.",
+	PROPOSAL_BLOCKED: "Settle the named ancestor before editing or settling this descendant.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",
@@ -130,6 +131,7 @@ function checkpointMetadata(
 		vault: _vault,
 		edit: _edit,
 		subjects: _subjects,
+		reconciliations: _reconciliations,
 		...metadata
 	} = record;
 	return { ...metadata, id, publication };
@@ -155,7 +157,10 @@ function editResult(
 	return {
 		success: true,
 		applied: true,
-		reconciliation: false,
+		reconciliation:
+			record.reconciliations?.some((entry) => entry.standing !== undefined) ||
+			record.selection?.standing !== undefined,
+		...(record.reconciliations === undefined ? {} : { reconciliations: record.reconciliations }),
 		operationId: request.operationId,
 		target:
 			record.selection?.lifecycle === "draft"
@@ -164,14 +169,7 @@ function editResult(
 		...(record.selection?.lifecycle !== "draft"
 			? {}
 			: {
-					selectedState: {
-						id: record.selection.id,
-						name: record.selection.name,
-						formerNames: record.selection.formerNames,
-						summary: record.selection.summary,
-						documents: record.selection.documents,
-						lifecycle: "draft" as const,
-					},
+					selectedState: { ...record.selection, lifecycle: "draft" as const },
 				}),
 		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,

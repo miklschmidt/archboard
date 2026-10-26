@@ -1,9 +1,11 @@
 ---
 id: TASK-549.07
 title: Reconcile and settle dependent proposals
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T21:08:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,22 @@ TASK-549.06
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Extend the existing architecture read/write seam with retained reconciliation standing and explicit settlement. Publish task-549.07-contract.md for parent browser work.
+2. Create draft TASK-549.07 proposals on Board persistence, Command interface, and Archboard server routes. Preserve current variants and all identities.
+3. Use TDD with real temporary files and Git through the public architecture operations. Reuse the semantic reconciliation engine, then publish complete families through the existing durable journal.
+4. Cover descendant claims, blocked ancestry, conflict preservation, settlement, exact retries, and recovery. Adapt normal CLI/HTTP results without another engine.
+5. Update consumer guidance, ADR0061, test ownership, and evaluation coverage. Run focused regressions, types, lint, formatting, and proposal checks without model evaluations.
+6. Pause for simplification, merge latest signed integration, release claims, stop the server, commit clean source, and hand off backend evidence. Leave task In Progress and proposals draft.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Started from clean signed integration 212ef722bd5b0b9d6ce976119231be8d6378abb8. TASK-549.06 is Done and integrated. Parent owns frontend and full acceptance. Public operation seams and signed branch work are approved.
+
+Published early backend contract beside the delegate brief. Created draft TASK-549.07 proposals on Board persistence, Command interface and Archboard server routes. First public operation test failed on descendant claim scopes, then passed after claim validation and parent-first family candidate integration. Source and browser type checks found one result narrowing issue, now corrected. No frontend source or browser tests changed.
+<!-- SECTION:NOTES:END -->

@@ -1,3 +1,4 @@
+import { ReconciliationIssueSchema } from "#shared/schemas/reconciliation.ts";
 import { z } from "zod";
 import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
@@ -44,6 +45,24 @@ const ProposalChangeSchema = z.discriminatedUnion("type", [
 		placement: PlacementSchema,
 	}),
 ]);
+const ModelIssueSchema = ReconciliationIssueSchema.extend({
+	subject: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
+});
+const ModelStandingSchema = z
+	.strictObject({
+		against: SemanticIdSchema,
+		baseline: CheckpointIdSchema,
+		atRevision: z.string().regex(/^[a-f0-9]{64}$/u),
+		issues: z.array(ModelIssueSchema),
+		blockedBy: SemanticIdSchema.optional(),
+	})
+	.refine(
+		(value) => value.issues.length > 0 || value.blockedBy !== undefined,
+		"Standing requires issues or a blocked ancestor.",
+	);
+const FamilyStandingSchema = z.array(
+	z.strictObject({ state: SemanticIdSchema, standing: ModelStandingSchema.optional() }),
+);
 const ProposalSchema = StateMetadataSchema.extend({
 	schemaVersion: z.literal(1),
 	lifecycle: z.literal("draft"),
@@ -51,12 +70,14 @@ const ProposalSchema = StateMetadataSchema.extend({
 	predecessorRevision: z.string().regex(/^[a-f0-9]{64}$/u),
 	baseline: CheckpointIdSchema,
 	changes: z.array(ProposalChangeSchema),
+	standing: ModelStandingSchema.optional(),
 	retiredIds: z.array(QualifiedSubjectIdSchema).optional(),
 }).strict();
 const SelectedStateSchema = StateMetadataSchema.extend({
 	lifecycle: z.enum(["current", "draft", "historical", "shelved"]),
 	predecessor: SemanticIdSchema.nullable().optional(),
 	baseline: CheckpointIdSchema.optional(),
+	standing: ModelStandingSchema.optional(),
 }).strict();
 const ComparisonSchema = z.strictObject({
 	reason: z.enum(["explicit", "current", "predecessor"]),
@@ -80,6 +101,9 @@ const ComparisonSchema = z.strictObject({
 });
 export {
 	StateSelectionSchema,
+	ModelStandingSchema,
+	ModelIssueSchema,
+	FamilyStandingSchema,
 	ProposalSchema,
 	SelectedStateSchema,
 	ComparisonSchema,

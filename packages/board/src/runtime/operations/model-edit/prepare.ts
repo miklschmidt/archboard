@@ -71,6 +71,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		},
 		edit: request,
 		subjects: candidate.subjects,
+		reconciliations: candidate.reconciliations,
 		sources: await captureSource(context),
 	});
 	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));

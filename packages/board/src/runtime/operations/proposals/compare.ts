@@ -12,17 +12,15 @@ type Comparison = NonNullable<ArchitectureModel["comparison"]>["subjects"][numbe
 function contentOf(model: ArchitectureModel): VariantContent {
 	return {
 		nodes: model.modules.map(
-			({
-				schemaVersion: _version,
-				outgoing: _outgoing,
-				file: _file,
-				formerNames: _former,
-				documents: _documents,
-				...module
-			}) => module,
+			({ schemaVersion: _version, outgoing: _outgoing, file: _file, ...module }) => module,
 		),
 		edges: model.relationships,
-		flows: model.collections.flatMap((collection) => collection.flows),
+		flows: model.collections.flatMap((collection) =>
+			collection.flows.map((flow) => ({
+				...flow,
+				collection: `${model.manifest.id}#${collection.id}`,
+			})),
+		),
 		walkthroughs: [],
 	};
 }
@@ -132,4 +130,4 @@ function comparisonOf(before: ArchitectureModel, after: ArchitectureModel): Comp
 		...collections,
 	];
 }
-export { comparisonOf };
+export { comparisonOf, contentOf };

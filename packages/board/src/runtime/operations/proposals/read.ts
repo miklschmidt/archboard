@@ -112,7 +112,7 @@ async function requirePredecessor(
 	if (predecessorRevision(predecessor) !== proposal.predecessorRevision)
 		throw new ArchiveError(
 			"PREDECESSOR_CHANGED",
-			"The predecessor changed after this immutable baseline. Reconciliation is unavailable until TASK-549.07.",
+			"The predecessor changed after this immutable baseline. Submit an explicit reconcile intent against the predecessor.",
 			proposal.file,
 			[proposal.id, proposal.predecessor],
 		);
@@ -179,12 +179,10 @@ async function materializeProposal(
 		throw new ArchiveError("MODEL_INVALID", "Proposal ancestry contains a cycle.");
 	const baseline = await proposalBaseline(context, catalogue, proposal);
 	if (!baseline.success) return baseline;
-	const blocked = await requirePredecessor(
-		context,
-		catalogue,
-		proposal,
-		new Set([...visited, proposal.id]),
-	);
+	const blocked =
+		proposal.standing === undefined
+			? await requirePredecessor(context, catalogue, proposal, new Set([...visited, proposal.id]))
+			: undefined;
 	return blocked ?? decodeProposal(baseline, proposal, catalogue);
 }
 /**
@@ -378,4 +376,5 @@ export {
 	resolveState,
 	readSelectedState,
 	decodeProposal,
+	proposalBaseline,
 };
