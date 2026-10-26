@@ -10,7 +10,7 @@ use crate::geometry::{Point, polyline_x};
 use crate::placed::PlacedEdge;
 use crate::track::channels::{Net, NetId, Trunk};
 use crate::track::occupancy::Occupancy;
-use crate::track::scene::{ItemId, Map, Placement, Set, Spot, centre_x};
+use crate::track::scene::{ItemId, Placement, Set, Spot, centre_x};
 
 /// Distance between neighbouring lanes and tracks.
 pub(crate) const LANE: f64 = 16.0;
@@ -79,8 +79,49 @@ pub(crate) struct LaneRun {
     pub after: StationId,
 }
 
-/// Every chain's stations, by band.
-pub(crate) type ByBand = Map<usize, StationId>;
+/// A chain's stations, by band. A chain has a station on every band from its
+/// upper end's to its lower end's, so they stand in one list from its first
+/// band; where two stations share a band, the later one is kept.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct ByBand {
+    first: usize,
+    stations: Vec<Option<StationId>>,
+}
+
+impl ByBand {
+    /// The station on a band, if the chain has one there.
+    pub(crate) fn get(&self, band: &usize) -> Option<&StationId> {
+        self.stations.get(band.checked_sub(self.first)?)?.as_ref()
+    }
+
+    /// Every station, top to bottom.
+    pub(crate) fn values(&self) -> impl Iterator<Item = &StationId> {
+        self.stations.iter().flatten()
+    }
+}
+
+impl std::ops::Index<&usize> for ByBand {
+    type Output = StationId;
+
+    fn index(&self, band: &usize) -> &StationId {
+        self.get(band).expect("a station on the band")
+    }
+}
+
+impl FromIterator<(usize, StationId)> for ByBand {
+    fn from_iter<I: IntoIterator<Item = (usize, StationId)>>(iter: I) -> ByBand {
+        let pairs: Vec<(usize, StationId)> = iter.into_iter().collect();
+        let Some(first) = pairs.iter().map(|&(band, _)| band).min() else {
+            return ByBand::default();
+        };
+        let last = pairs.iter().map(|&(band, _)| band).max().unwrap_or(first);
+        let mut stations = vec![None; last - first + 1];
+        for (band, station) in pairs {
+            stations[band - first] = Some(station);
+        }
+        ByBand { first, stations }
+    }
+}
 
 /// What the lines one chain crosses in a channel count, given the chains
 /// crossed and the two stations either side of the channel.
