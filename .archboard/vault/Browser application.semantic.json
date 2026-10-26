@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 172,
+	"version": 174,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T18:51:04.886Z",
+	"updatedAt": "2026-10-26T19:24:09.176Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -64868,7 +64868,7 @@
 		{
 			"id": "dfw8YWLy",
 			"name": "TASK-549.11",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "wwirh4GU",
 			"documents": [
 				{
@@ -68488,7 +68488,7 @@
 		{
 			"id": "JN8jIONv",
 			"name": "TASK-549.12",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "dfw8YWLy",
 			"summary": "Switch diagram modes through explicit complete flow readings",
 			"documents": [
@@ -69221,7 +69221,7 @@
 						"name": "Model reading",
 						"kind": "module",
 						"responsibility": "Shows recursive modules, interfaces, connection evidence, and exact reading history",
-						"description": "One cache serves canonical current and exact readings. Durable events refresh names, containment, and source-owned relationships. Selection follows identity and shows its parent or explicit removal. Separate sharing status supports explicit destination configuration, publication, retry, and fetching. Network actions never select current architecture. The router preserves model, scope, and checkpoint per pane. Direct context and aggregate inspection keep every underlying relationship. Scene selection and the camera remain independent from layout. Transient multi-selection resolves canonical subjects without layout or history changes. A visible Focus action and relationship-kind and group-region controls change the reading. Hidden selections remain inspectable and can be revealed. Pointer modifiers and Ctrl/Cmd+Enter toggle the same identities. Empty-canvas dragging selects through renderer bounds. Space and middle-button dragging pan. Escape clears selection. The diagram loads behind its own deferred boundary. Focus and filtering retain explicit missing and hidden subjects. Reveal opens selected paths and removes filters that hide selected relationships. A diagram mode control offers architecture, sequence, and flowchart. Behavioral modes require an explicit applicable flow and expose missing selections. The complete chosen flow includes every participant and step regardless of the prior structural scope or filters. Returning to architecture restores that reading.",
+						"description": "One cache serves canonical current and exact readings. Durable events refresh names, containment, and source-owned relationships. Selection follows identity and shows its parent or explicit removal. Separate sharing status supports explicit destination configuration, publication, retry, and fetching. Network actions never select current architecture. The router preserves model, scope, and checkpoint per pane. Direct context and aggregate inspection keep every underlying relationship. Scene selection and the camera remain independent from layout. Transient multi-selection resolves canonical subjects without layout or history changes. A visible Focus action and relationship-kind and group-region controls change the reading. Hidden selections remain inspectable and can be revealed. Pointer modifiers and Ctrl/Cmd+Enter toggle the same identities. Empty-canvas dragging selects through renderer bounds. Space and middle-button dragging pan. Escape clears selection. The diagram loads behind its own deferred boundary. Focus and filtering retain explicit missing and hidden subjects. Reveal opens selected paths and removes filters that hide selected relationships. A diagram mode control offers architecture, sequence, and flowchart. Behavioral modes require an explicit applicable flow and expose missing selections. The complete chosen flow includes every participant and step regardless of the prior structural scope or filters. Returning to architecture restores that reading. Flow steps remain known when another mode or flow hides them. The inspector offers an explicit action for each authored flow, preserving selection without combining exchanges. Structural Focus accepts modules and relationships. Mode and flow changes frame the new diagram through the existing camera owner.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -69306,11 +69306,11 @@
 						"name": "Model projection",
 						"kind": "module",
 						"responsibility": "Projects recursive scopes and aggregates directed connections by kind",
-						"description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification. Authored open-module self-connections stay visible without converting hidden internal self-connections into ancestor loops. Group filtering changes visual memberships only in projected content. Behavioral projection reads one authored flow and all required participants without converting structural relationships into execution order. Relevant flow choices follow the current subjects, and structural filters never remove messages.",
+						"description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification. Authored open-module self-connections stay visible without converting hidden internal self-connections into ancestor loops. Group filtering changes visual memberships only in projected content. Behavioral projection reads one authored flow and all required participants without converting structural relationships into execution order. Relevant flow choices follow the current subjects, and structural filters never remove messages. One complete subject inventory includes flows and their nested steps. Hidden behavior remains separate from structural focus. Flow relevance includes selected step participants and contained modules.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/rules/architecture-model/projection.ts"
+							"path": "apps/web/src/ui/rules/architecture-model"
 						}
 					}
 				],
@@ -72107,7 +72107,7 @@
 			}
 		}
 	],
-	"current": "dfw8YWLy",
+	"current": "JN8jIONv",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -72252,6 +72252,12 @@
 			"from": "wwirh4GU",
 			"at": "2026-10-26T18:43:53.876Z",
 			"reason": "Selection, focus, and filters now preserve canonical subjects and complete interface meaning"
+		},
+		{
+			"variant": "JN8jIONv",
+			"from": "dfw8YWLy",
+			"at": "2026-10-26T19:24:09.176Z",
+			"reason": "Readers now use explicit complete flows for sequence and flowchart diagrams while preserving architecture readings"
 		}
 	],
 	"shelvings": [

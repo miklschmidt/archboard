@@ -1,11 +1,11 @@
 ---
 id: TASK-549.12
 title: Switch between architecture, sequence, and flowchart readings
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:13:00Z'
+updated_date: '2026-10-26T19:24:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,15 +46,15 @@ TASK-549.05, TASK-549.11
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A reader changes diagram grammar and chooses an applicable flow. Multiple matches require a choice, and missing flows remain explicit.
-- [ ] #2 Behavioral readings include all required participants and steps, including those outside the prior scope. Structural filters do not remove flow messages.
-- [ ] #3 Returning to architecture restores the prior reading. No selection of structural relationships invents execution order.
+- [x] #1 A reader changes diagram grammar and chooses an applicable flow. Multiple matches require a choice, and missing flows remain explicit.
+- [x] #2 Behavioral readings include all required participants and steps, including those outside the prior scope. Structural filters do not remove flow messages.
+- [x] #3 Returning to architecture restores the prior reading. No selection of structural relationships invents execution order.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -80,4 +80,12 @@ Browser application@TASK-549.12 is draft at version172. The proposal describes p
 First grammar slice passes its RED-to-GREEN browser owner: one case and seven assertions. The reader chooses among relevant flows, draws complete sequence and flowchart content outside the prior scope, preserves structural filters without removing messages, and restores architecture scope/focus/filter addresses. Source/frontend types and full lint pass. The browser owner waits until the menu option is the actual hit target before clicking. Missing-flow recovery, history/reload coverage, behavioral selection details, final documentation, visual inspection, architecture adoption, and closure remain incomplete.
 
 The behavioral-selection regression first failed because an existing hidden step appeared missing. It now passes within the mode owner, one case and nine assertions. Complete subject lookup includes flows and nested steps. The inspector offers separate explicit flow actions for hidden behavioral selections. Structural Focus refuses behavioral subjects, and reveal preserves selection. The original scope camera remount remains, with deliberate grammar/flow changes framing their own scene. Corrected lint passes. Missing-flow/history coverage, final checks, visual inspection, and adoption remain open.
+
+Final evidence: ten distinct browser cases and71assertions pass. Modes2/17, navigation3/19, selection1/5, focus1/9, filters1/6, gestures1/6, and structural refresh1/9. Exact history, empty flow choices, deletion/restoration, stable selection across modes, explicit per-flow reveal, and unchanged revisions pass. Visual inspection found participant order differed from sequence columns; the regression failed and now passes with authored order. Source/frontend types, full lint with zero findings, formatting, evaluation metadata, and git diff --check pass. No package public API or shared semantic rule changes require repeating their already passing owners. Browser application@TASK-549.12 is adopted at version174. Thirty prior variant meanings, views, and decisions remain intact. Proposal code checks have zero warnings; ten known unrelated warnings remain elsewhere. Semantics has zero findings. Parent inspected sequence, flowchart, and architecture renders. Temporary screenshot calls are removed. The simplification pass preserves the existing renderer, one router authority, one selection owner, and shared controls. The common missing-flow investigation action remains approved TASK-549.13. No push, full-gate success, or whole-spec completion is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Readers choose Architecture, Sequence, or Flowchart through the existing local renderer. Behavioral modes require an explicit relevant flow and include every participant and step in authored order. The preceding architecture scope, focus, and filters return unchanged. Flow and step selections remain known across modes, with explicit reveal actions. Exact addresses survive browser history and reload; missing flows remain explicit and recover when restored. Browser evidence, types, lint, metadata, architecture checks, and consumer documentation match delivery.
+<!-- SECTION:FINAL_SUMMARY:END -->

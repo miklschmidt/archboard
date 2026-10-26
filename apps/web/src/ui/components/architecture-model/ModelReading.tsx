@@ -241,10 +241,12 @@ function ScopedModelReading(
 	return (
 		<div className="flex min-h-0 flex-1">
 			<nav
-				aria-label="Modules"
+				aria-label={props.grammar === "architecture" ? "Modules" : "Participants"}
 				className="border-border w-80 shrink-0 overflow-y-auto border-r px-6 py-8"
 			>
-				<h3 className="text-title mb-4 font-semibold">Modules</h3>
+				<h3 className="text-title mb-4 font-semibold">
+					{props.grammar === "architecture" ? "Modules" : "Participants"}
+				</h3>
 				{children.length === 0 && (
 					<p className="text-body text-muted-foreground">This scope has no child modules.</p>
 				)}

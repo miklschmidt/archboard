@@ -201,6 +201,20 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			"Shop#Finish",
 		]),
 	);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
+		),
+	).toEqual(["Shop#Gateway", "Shop#Handler", "Shop#Worker"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-flow-selector"]')?.getAttribute('aria-expanded') === 'false'`,
+			),
+		Boolean,
+		"the completed flow choice",
+		WAIT,
+	);
 	await chooseMode(browser, "flowchart");
 	await pollUntil(
 		() =>
@@ -284,6 +298,159 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			`Number(document.querySelector('[data-slot="model-selection-count"]')?.getAttribute('data-count'))`,
 		),
 	).toBe(1);
+	const after = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!after.body.success) throw new Error(after.body.error);
+	expect(after.body.revision).toEqual(before.body.revision);
+}, 60_000);
+
+test("behavioral addresses restore exact flows and recover missing definitions without replacement", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "model-mode-recovery");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	const collection = {
+		schemaVersion: 1,
+		id: "Behavior",
+		name: "Requests",
+		flows: [
+			{
+				id: "Shop#Request",
+				name: "Handle request",
+				participants: ["Shop#Gateway", "Shop#Worker"],
+				steps: [
+					{
+						id: "Shop#Send",
+						from: "Shop#Gateway",
+						to: "Shop#Worker",
+						kind: "sync",
+						label: "Deliver",
+					},
+				],
+			},
+		],
+	};
+	const file = join(vault, "requests.flows.json");
+	const bytes = JSON.stringify(collection);
+	writeFileSync(file, bytes);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const before = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!before.body.success) throw new Error(before.body.error);
+	const browser = resources.use(await createAgentBrowser());
+	const address = new URL(server.base);
+	address.searchParams.set("modelA", "Shop");
+	address.searchParams.set("scopeA", "Shop#Gateway");
+	address.searchParams.set("grammarA", "sequence");
+	address.searchParams.set("flowA", "Shop#Request");
+	await browser.run(["open", address.href]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() => drawnSubjects(browser),
+		(ids) => ids.includes("Shop#Send"),
+		"the exact addressed flow",
+		WAIT,
+	);
+	await chooseMode(browser, "flowchart");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"][data-grammar="flowchart"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Send"]') !== null`,
+			),
+		Boolean,
+		"the flowchart history entry",
+		WAIT,
+	);
+	await browser.eval("window.history.back()");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"][data-grammar="sequence"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Send"]') !== null`,
+			),
+		Boolean,
+		"the preceding sequence reading",
+		WAIT,
+	);
+	await browser.eval("window.history.forward()");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"][data-grammar="flowchart"]') !== null`,
+			),
+		Boolean,
+		"the forward flowchart reading",
+		WAIT,
+	);
+	await browser.run(["reload"]);
+	await pollUntil(
+		() => drawnSubjects(browser),
+		(ids) => ids.includes("Shop#Send"),
+		"the reloaded flowchart",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string[]>(
+			`['grammarA','flowA','scopeA'].map(key => new URLSearchParams(location.search).get(key))`,
+		),
+	).toEqual(["flowchart", "Shop#Request", "Shop#Gateway"]);
+	const exact = await browser.eval<string>("location.href");
+	writeFileSync(file, JSON.stringify({ ...collection, flows: [] }));
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-flow-missing"]') !== null`),
+		Boolean,
+		"the removed flow without replacement",
+		WAIT,
+	);
+	expect(await drawnSubjects(browser)).toEqual([]);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('flowA')`),
+	).toBe("Shop#Request");
+	const withoutFlow = new URL(exact);
+	withoutFlow.searchParams.delete("flowA");
+	await browser.run(["open", withoutFlow.href]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-flow-required"]') !== null`),
+		Boolean,
+		"a behavioral reading without any authored flow",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="model-flow-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-flow-selector"]')?.getAttribute('aria-expanded') === 'true'`,
+			),
+		Boolean,
+		"the empty flow choices",
+		WAIT,
+	);
+	expect(await browser.eval<number>(`document.querySelectorAll('[data-flow-id]').length`)).toBe(0);
+	expect(await drawnSubjects(browser)).toEqual([]);
+	await browser.run(["open", exact]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-flow-missing"]') !== null`),
+		Boolean,
+		"the original unavailable flow",
+		WAIT,
+	);
+	writeFileSync(file, bytes);
+	await pollUntil(
+		() => drawnSubjects(browser),
+		(ids) => ids.includes("Shop#Send"),
+		"the restored exact flow",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-flow-missing"]') === null`,
+		),
+	).toBe(true);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);
