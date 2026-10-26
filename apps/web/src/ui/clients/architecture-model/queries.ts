@@ -49,6 +49,12 @@ const architectureModelKeys = {
 			selection.against ?? null,
 		] as const,
 	/**
+	 * Every mutable state and comparison follows completed model edits.
+	 * @param vault The explicit vault.
+	 * @returns Current-input reading keys, excluding exact checkpoints.
+	 */
+	mutable: (vault: string) => ["architecture-model", vault, "reading", null] as const,
+	/**
 	 * The retained metadata in one vault.
 	 * @param vault The explicitly addressed vault.
 	 * @returns Its query key.

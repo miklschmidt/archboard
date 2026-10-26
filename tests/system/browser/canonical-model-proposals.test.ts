@@ -154,6 +154,51 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
 	).toBe(draft);
+	const selected = await request<ArchitectureModelRead>(`/api/architecture/model?state=${draft}`);
+	if (!selected.body.success) throw new Error(JSON.stringify(selected.body));
+	const draftTarget = { model: "Shop", state: draft };
+	const editClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: draftTarget,
+			writer: "fixture-agent",
+			reason: "Refining queued delivery",
+			subjects: ["Shop", draft, "Shop#Gateway", "Shop#Worker", "Shop#Request", "Shop#Send"],
+		},
+	});
+	if (!editClaim.body.success) throw new Error(JSON.stringify(editClaim.body));
+	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target: draftTarget,
+			expectedRevision: selected.body.revision,
+			operationId: "refine-proposal",
+			writer: "fixture-agent",
+			doing: "Refining queued delivery",
+			claim: editClaim.body.claim.id,
+			proposal: { type: "edit", set: { name: "Queued delivery revised" } },
+			changes: [
+				{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued API revised" } },
+				{ type: "edit-step", subject: "Shop#Send", set: { label: "Enqueue later" } },
+			],
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: editClaim.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!edited.body.success) throw new Error(JSON.stringify(edited.body));
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] > span')?.textContent ?? null`,
+			),
+		(name) => name === "Queued API revised",
+		"the live selected draft update",
+		WAIT,
+	);
 	const flowAddress = new URL(await browser.eval<string>("location.href"));
 	flowAddress.searchParams.set("grammarA", "sequence");
 	flowAddress.searchParams.set("flowA", "Shop#Request");
@@ -163,7 +208,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 			browser.eval<string | null>(
 				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"]')?.textContent ?? null`,
 			),
-		(text) => text?.includes("Enqueue") === true,
+		(text) => text?.includes("Enqueue later") === true,
 		"the draft flow after reload",
 		WAIT,
 	);
@@ -200,6 +245,15 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
 	).toBeNull();
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"] > span')?.textContent ?? null`,
+			),
+		(label) => label === "Enqueue",
+		"the original flow in the retained draft",
+		WAIT,
+	);
 	const current = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!current.body.success) throw new Error(JSON.stringify(current.body));
 	expect(current.body.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
