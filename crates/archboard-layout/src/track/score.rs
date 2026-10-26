@@ -307,6 +307,25 @@ fn across(one: &Rect, other: &Rect) -> bool {
     one.x < other.x + other.width && other.x < one.x + one.width
 }
 
+/// Whether a wrap leaves a lowered card without any possible supporting row.
+/// A group that starts on a later row can stand on another group's cards.
+/// Once it starts, each of its later rows needs the preceding row in that group.
+/// This is the coordinate-independent part of `sinks`.
+pub(crate) fn unsupported(plan: &Plan, around: impl Fn(&str) -> Option<String>) -> bool {
+    let mut groups: Map<Option<String>, Set<usize>> = Map::default();
+    let rows: Set<usize> = plan.values().copied().collect();
+    for (card, &row) in plan {
+        groups.entry(around(card)).or_default().insert(row);
+    }
+    groups.values().any(|kin| {
+        let first = kin.iter().copied().min().unwrap_or(0);
+        kin.iter().copied().filter(|&row| row > 0).any(|row| {
+            let support = if row == first { &rows } else { kin };
+            !support.contains(&(row - 1))
+        })
+    })
+}
+
 /// Whether a wrap, laid out, sinks a card rather than wrapping it: some
 /// lowered card has no card in the row above standing over it.
 pub(crate) fn sinks(
@@ -511,6 +530,20 @@ mod tests {
     #[test]
     fn a_region_the_wrap_lowers_whole_may_stand_under_any_card_of_the_row_above() {
         let plan = plan(&[("hub", 0), ("peer", 0), ("first", 1), ("second", 1)]);
+        assert!(!sinks(&plan, &wrapped(), around));
+    }
+
+    #[test]
+    fn a_group_with_a_gap_between_its_rows_cannot_wrap() {
+        let plan = plan(&[("hub", 0), ("peer", 1), ("first", 0), ("second", 2)]);
+        assert!(unsupported(&plan, around));
+        assert!(sinks(&plan, &wrapped(), around));
+    }
+
+    #[test]
+    fn a_region_that_starts_on_a_later_row_can_use_another_groups_support() {
+        let plan = plan(&[("hub", 0), ("peer", 0), ("first", 1), ("second", 1)]);
+        assert!(!unsupported(&plan, around));
         assert!(!sinks(&plan, &wrapped(), around));
     }
 
