@@ -1,9 +1,10 @@
 ---
 id: TASK-549.15
 title: Follow code bindings and cross-model references
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T19:27:00Z'
 labels:
   - ready-for-agent
 dependencies:

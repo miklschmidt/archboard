@@ -52,6 +52,17 @@ Missing subjects remain explicit until their architecture returns or the reader 
 Focus and filters survive reload and browser history navigation.
 Selection itself stays temporary and does not add history.
 
+Use the diagram selector to choose Architecture, Sequence, or Flowchart.
+For Sequence or Flowchart, choose an authored flow from the Flow selector.
+The choices involve the selected subjects, focused subjects, or open module.
+The diagram includes every participant and step that the selected flow requires.
+The participant list keeps the order that the flow defines.
+Structural filters do not remove flow messages.
+Returning to Architecture restores the preceding scope, focus, and filters.
+If the selected flow is unavailable, choose another flow or restore its definition.
+A hidden selected step remains in the inspector with an action to open its exact flow.
+These actions preserve selection and change no architecture files.
+
 Open the Current menu in the model header to select a saved reading.
 The menu lists the state, retention time, agent intent, and abbreviated identity.
 The selected reading shows its complete checkpoint identity and source evidence.

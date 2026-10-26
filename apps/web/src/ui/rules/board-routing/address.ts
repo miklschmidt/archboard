@@ -8,6 +8,8 @@ interface ModelAddress {
 	readonly id: string;
 	readonly scope: string | null;
 	readonly checkpoint: string | null;
+	readonly grammar?: string | undefined;
+	readonly flow?: string | undefined;
 	readonly focus?: readonly string[] | undefined;
 	readonly hideKinds?: readonly string[] | undefined;
 	readonly hideGroups?: readonly string[] | undefined;
@@ -163,7 +165,9 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 	if (one === other) return true;
 	if (one === undefined || other === undefined) return false;
 	return (
-		(["id", "scope", "checkpoint"] as const).every((field) => one[field] === other[field]) &&
+		(["id", "scope", "checkpoint", "grammar", "flow"] as const).every(
+			(field) => one[field] === other[field],
+		) &&
 		(["focus", "hideKinds", "hideGroups"] as const).every((field) =>
 			sameSubjects(one[field], other[field]),
 		)
