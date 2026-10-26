@@ -8,11 +8,15 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
  * @param props.selection Canonical selected identities.
  * @param props.focus The captured focused identities, or no focus.
  * @param props.onFocus Changes the focused reading.
+ * @param props.canFocus Whether selected subjects belong to architecture.
+ * @param props.architectural Whether structural focus actions apply.
  * @param props.children Additional reading controls.
  * @returns Stable selection and focus controls without resizing the canvas.
  */
 function ModelSelectionBar(props: {
 	selection: ModelSelection;
+	architectural: boolean;
+	canFocus: boolean;
 	children?: ReactNode;
 	focus: readonly string[] | null;
 	onFocus: (ids: readonly string[] | null) => void;
@@ -32,16 +36,18 @@ function ModelSelectionBar(props: {
 			>
 				{selection.ids.size} selected
 			</output>
-			<Button
-				data-slot="model-focus"
-				variant="outline"
-				size="sm"
-				disabled={selection.ids.size === 0}
-				onClick={focusSelection}
-			>
-				Focus
-			</Button>
-			{focus !== null && (
+			{props.architectural && (
+				<Button
+					data-slot="model-focus"
+					variant="outline"
+					size="sm"
+					disabled={selection.ids.size === 0 || !props.canFocus}
+					onClick={focusSelection}
+				>
+					Focus
+				</Button>
+			)}
+			{props.architectural && focus !== null && (
 				<Button data-slot="model-clear-focus" variant="outline" size="sm" onClick={clearFocus}>
 					Clear focus ({focus.length})
 				</Button>

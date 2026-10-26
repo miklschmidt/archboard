@@ -115,6 +115,9 @@ not add imports or a second state path before that work.
 
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
+  `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.
+  Missing grammar means architecture. Missing flow in a behavioral mode requires a choice.
+  Behavioral modes preserve the architecture fields so that returning restores the prior reading.
   These lists contain comma-separated canonical identities or vocabulary keys.
   An absent focus keeps recursive scope navigation. Absent filters show all configured features.
   An absent scope means repository roots. An absent checkpoint means current inputs.
