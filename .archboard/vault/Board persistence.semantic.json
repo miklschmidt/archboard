@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 129,
+	"version": 131,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T14:21:48.561Z",
+	"updatedAt": "2026-10-26T14:58:22.867Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -94237,6 +94237,19 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/shared/schemas/model-operations.ts"
 						}
+					},
+					{
+						"id": "e0GTqv1k",
+						"order": 53500,
+						"name": "Canonical structure candidate",
+						"kind": "module",
+						"responsibility": "Builds a checked module graph with identity-preserving edits and a complete affected claim scope",
+						"description": "Uses structure.ts and containment.ts to allocate through the identity authority, preserve former names and order, transfer outgoing relationships, repair removals and retain unrelated input bytes.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts"
+						}
 					}
 				],
 				"edges": [
@@ -96267,20 +96280,6 @@
 						}
 					},
 					{
-						"id": "wP2zZutN",
-						"order": 147000,
-						"from": "8Uq1mtzw",
-						"to": "cNaEpWjJ",
-						"kind": "call",
-						"label": "decodeModel",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
-							"symbol": "decodeModel"
-						}
-					},
-					{
 						"id": "iPPIY0dg",
 						"order": 148000,
 						"from": "W6wFcSQz",
@@ -96460,6 +96459,62 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-archive.ts",
 							"symbol": "ArchitectureModuleEditSchema"
+						}
+					},
+					{
+						"id": "I3nQ73xf",
+						"order": 161000,
+						"from": "8Uq1mtzw",
+						"to": "e0GTqv1k",
+						"kind": "call",
+						"label": "editCandidate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "editCandidate"
+						}
+					},
+					{
+						"id": "L2flrrBd",
+						"order": 163000,
+						"from": "e0GTqv1k",
+						"to": "ov7pPg21",
+						"kind": "call",
+						"label": "requireSubjectClaim",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "requireSubjectClaim"
+						}
+					},
+					{
+						"id": "JVhp6YbR",
+						"order": 164000,
+						"from": "e0GTqv1k",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "wP2zZutN",
+						"order": 147000,
+						"from": "e0GTqv1k",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "decodeModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "decodeModel"
 						}
 					}
 				],

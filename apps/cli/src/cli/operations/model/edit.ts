@@ -141,7 +141,7 @@ const modelEditContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model edit");
 		const request = context.parse(
-			z.union(ArchitectureModuleEditSchema.options.map((schema) => schema.omit({ doing: true }))),
+			z.object({ doing: z.never().optional() }).catchall(z.unknown()),
 			await statedJson(input, context),
 		);
 		return presented(
