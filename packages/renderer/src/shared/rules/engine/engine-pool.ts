@@ -27,14 +27,18 @@
 // answer and calls off what it no longer needs before a worker starts it.
 // The queue keeps its order.
 //
-// Graphviz's answer depends on its graph alone (ADR 0058), and a render's
-// solves lay many of the same graphs out, as do the renders after an edit
-// that keeps every card's size. Each worker's core remembers what it laid
-// out, and tells the pool with each answer; the pool remembers it too and
-// hands it at once to every other worker, and to each worker it starts. So a
+// Graphviz's answer depends on its graph alone (ADR 0058), and the solves of
+// a render lay many of the same graphs out, as do later renders of a board
+// for the graphs an edit left as they were. Each worker's core remembers what
+// it laid out, and tells the pool with each answer; the pool remembers it too
+// and hands it at once to every other worker, and to each worker it starts. So a
 // solve sent after another's answer lays out no graph that one laid out, on
 // whichever worker (TASK-548.02). Solves that run at the same time cannot
 // share: a worker cannot wait for another while it solves.
+//
+// The pool also remembers each solve's answer by its graph, so a solve asked
+// for again, as every solve of a re-render after an edit that keeps every
+// card's size is, is answered at once and reaches no worker.
 //
 // The workers accept `{ id, graph }` and `{ graphviz }`, and answer with
 // `{ id, data, graphviz }` or `{ id, error, fatal, graphviz }`, `graphviz`
@@ -64,6 +68,15 @@ interface EngineAnswer {
  * to the same answer.
  */
 const REMEMBERED_GRAPHVIZ = 32 * 1024 * 1024;
+
+/**
+ * The most text the pool remembers of solves, graphs and answers together, in
+ * characters: 16 Mi. The first render of a wide board, such as Agent
+ * workbench, solves about 0.5 M of it, so it holds the solves of some thirty
+ * wide boards. Past it, the solves remembered first are forgotten first; a
+ * forgotten solve is laid out again, to the same answer.
+ */
+const REMEMBERED_SOLVES = 16 * 1024 * 1024;
 
 /**
  * What the pool uses of a worker: sending it a solve, hearing it answer or
@@ -150,14 +163,22 @@ function settle(pending: Pending, answer: EngineAnswer): void {
 }
 
 /**
- * Graphviz answers by their graphs, oldest first, within a bound.
+ * Answers by the graphs they answer, oldest first, within a bound.
  * @param bound The most characters they hold, graphs and answers together.
- * @returns Remembering new pairs, and every pair remembered.
+ * @returns Reading one answer, remembering new pairs, and every pair remembered.
  */
-function rememberedGraphviz(bound: number) {
+function rememberedAnswers(bound: number) {
 	const answers = new Map<string, string>();
 	let size = 0;
 	return {
+		/**
+		 * The answer remembered for a graph.
+		 * @param graph The graph.
+		 * @returns Its answer, or nothing when none is remembered.
+		 */
+		get(graph: string): string | undefined {
+			return answers.get(graph);
+		},
 		/**
 		 * Remember answers, forgetting the oldest past the bound.
 		 * @param pairs Graphs, each followed by its answer.
@@ -203,7 +224,8 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	const queued: Pending[] = [];
 	let nextId = 0;
 	let handoff: MessageChannel | undefined;
-	const graphviz = rememberedGraphviz(REMEMBERED_GRAPHVIZ);
+	const graphviz = rememberedAnswers(REMEMBERED_GRAPHVIZ);
+	const solved = rememberedAnswers(REMEMBERED_SOLVES);
 
 	/**
 	 * Remember the Graphviz answers one worker laid out, and hand the new ones
@@ -392,17 +414,30 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 				reject(signal.reason);
 				return;
 			}
+			const known = solved.get(graph);
+			if (known !== undefined) {
+				resolve(known);
+				return;
+			}
 			/**
 			 * Remove this caller's solve only while it still waits for a worker:
 			 * one a worker holds is answered all the same.
 			 */
 			const cancel = (): void => {
-				const index = queued.findIndex((pending) => pending.resolve === resolve);
+				const index = queued.findIndex((pending) => pending.cancel === cancel);
 				if (index < 0) return;
 				queued.splice(index, 1);
 				reject(signal?.reason);
 			};
-			queued.push({ graph, signal, cancel, resolve, reject, retried: false });
+			/**
+			 * Remember the answer, so the same solve asked again reaches no worker.
+			 * @param answer The solved graph.
+			 */
+			const remember = (answer: string): void => {
+				solved.learn([graph, answer]);
+				resolve(answer);
+			};
+			queued.push({ graph, signal, cancel, resolve: remember, reject, retried: false });
 			signal?.addEventListener("abort", cancel, { once: true });
 			dispatch();
 		});

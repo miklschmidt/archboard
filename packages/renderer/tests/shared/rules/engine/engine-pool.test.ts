@@ -448,6 +448,15 @@ test("a graph one worker laid out is handed once to every other worker, and to e
 	expect(await second).toBe("second!");
 });
 
+test("a solve asked for again is answered from what the pool remembers, and reaches no worker", async () => {
+	const { solve, workers } = heldPool(1);
+	const first = solve("graph");
+	workers[0]!.answer(0, { data: "laid out" });
+	await first;
+	expect(await solve("graph")).toBe("laid out");
+	expect(sentTo(workers[0]!)).toEqual(["graph"]);
+});
+
 test("an engine abort, never a layout refusal, marks a worker for replacement", () => {
 	expect(engineAborted(new WebAssembly.RuntimeError("unreachable"))).toBe(true);
 	expect(engineAborted(new Error("Layout relationship e1: Route leg 2 has 4 units"))).toBe(false);
