@@ -134,7 +134,8 @@ recipe names.
     carried `warnings` ([Vocabulary](#essentials)), and
     `archboard check code` after a write that adds or changes an anchor or a
     binding's `symbol` ([Verification](#essentials)). `archboard check` runs
-    both.
+    both, and `check embeds`, which says which board pictures that the
+    repository keeps are outdated.
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a view a later reading wants, the correction
     the picture showed you.

@@ -2,9 +2,9 @@
 // text chunk, anything else as text that may hold an SVG's recipe element.
 
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
-import { pngRecipeText } from "#runtime/operations/recipe/png-recipe.ts";
+import { embedRecipeInPng, pngRecipeText } from "#runtime/operations/recipe/png-recipe.ts";
 import { RenderRecipeSchema, type RenderRecipe } from "#runtime/operations/recipe/schema.ts";
-import { svgRecipeText } from "#runtime/operations/recipe/svg-recipe.ts";
+import { replaceRecipeInSvg, svgRecipeText } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**
  * What a file says about how it was drawn: its recipe, no recipe at all, or a
@@ -91,4 +91,18 @@ function issueLine(issue: {
 		: `${issue.path.map(String).join(".")}: ${issue.message}`;
 }
 
-export { readRenderRecipe, type RenderRecipeRead };
+/**
+ * A file that carries a recipe, with another recipe in its place and every
+ * other byte as it was: what refreshes the recipe of a picture that has not
+ * changed, whatever a post-processor did to it.
+ * @param bytes The file, which carries a recipe.
+ * @param recipe The recipe it carries from now on.
+ * @returns The file's new bytes.
+ * @throws {Error} When an SVG carries no recipe element or the bytes are no PNG or SVG.
+ */
+function replaceRenderRecipe(bytes: Uint8Array, recipe: RenderRecipe): Uint8Array {
+	if (isPng(bytes)) return embedRecipeInPng(bytes, recipe);
+	return Buffer.from(replaceRecipeInSvg(Buffer.from(bytes).toString("utf8"), recipe), "utf8");
+}
+
+export { readRenderRecipe, replaceRenderRecipe, type RenderRecipeRead };

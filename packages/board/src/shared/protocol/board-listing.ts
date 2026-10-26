@@ -48,6 +48,12 @@ type BoardLink = z.infer<typeof BoardLinkSchema>;
 
 /** One board the vault holds. */
 const ListedBoardSchema = z.object({
+	/**
+	 * The board's id, absent for a board that could not be read. A render
+	 * recipe names its board by id, so the embeds check finds the name it goes
+	 * by now here (ADR 0057).
+	 */
+	id: z.string().optional(),
 	name: z.string(),
 	key: z.string(),
 	/** The board's version, absent for a board that could not be read. */
@@ -258,6 +264,7 @@ function listedBoard(
 	// The current variant, or on a board nobody has built its draft (ADR 0031).
 	const opened = addressedVariant(board);
 	return {
+		id: board.id,
 		name,
 		key,
 		// The browser checks its cached pictures against this on load.

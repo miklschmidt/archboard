@@ -131,8 +131,10 @@ echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
 Each command prints its answer as JSON on stdout and one sentence on stderr.
 The three writes take the board to versions 1, 2 and 3. `compare` reports the
 queue and its two relationships as added. `check` runs every check: the
-semantics check of the vault and the code check. It exits 0 when the
-configuration and every board are valid and the code check has no warning.
+semantics check of the vault, the code check and the embeds check. It exits 0
+when the configuration and every board are valid and neither the code check
+nor the embeds check has a warning. The session's vault is in no Git checkout,
+so the embeds check has no file to read there.
 
 The board is the file `payments.semantic.json` in the vault. It holds the
 current variant and every proposal. Write it only through the CLI.

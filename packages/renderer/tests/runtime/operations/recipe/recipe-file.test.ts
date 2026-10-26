@@ -13,7 +13,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderBoard } from "#runtime/operations/render.ts";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { embedRecipeInPng } from "#runtime/operations/recipe/png-recipe.ts";
-import { readRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
+import { readRenderRecipe, replaceRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 import { EXPORT_BOARD } from "#tests/runtime/support/export-board.ts";
@@ -162,6 +162,32 @@ test("a PNG carries the recipe in a text chunk after its header, and stays a val
 	// A decoder ignores what follows the end chunk, and so does the reader.
 	expect(recipeIn(Buffer.concat([carried, Buffer.from("appended")]))).toEqual(recipe);
 	expect(readRenderRecipe(PNG)).toEqual({ kind: "absent" });
+});
+
+/**
+ * An SVG without the metadata element that holds its recipe.
+ * @param svg The document.
+ * @returns The rest of it.
+ */
+function withoutMetadata(svg: string): string {
+	return svg.replace(/<metadata>[\s\S]*<\/metadata>/u, "");
+}
+
+test("a recipe replaced in a file leaves every other byte as it was, and a PNG carries one recipe", async () => {
+	const carried = await drawnSvg(true);
+	const recipe = recipeIn(Buffer.from(carried, "utf8"));
+	const newer: RenderRecipe = { ...recipe, fingerprint: `sha256:${"1".repeat(64)}` };
+	// A post-processor's work around the recipe stays.
+	const processed = carried.replace("<svg", "<!-- subset --><svg").replace("</svg>", "<g/></svg>");
+	const replaced = replaceRenderRecipe(Buffer.from(processed, "utf8"), newer);
+	expect(recipeIn(replaced)).toEqual(newer);
+	expect(withoutMetadata(Buffer.from(replaced).toString("utf8"))).toBe(withoutMetadata(processed));
+	const png = embedRecipeInPng(PNG, { ...recipe, raster: { scale: 1, region: null } });
+	const bitmap = { ...newer, raster: { scale: 1, region: null } };
+	const again = replaceRenderRecipe(png, bitmap);
+	expect(recipeIn(again)).toEqual(bitmap);
+	expect(chunkList(again).map((one) => one.type)).toEqual(["IHDR", "iTXt", "IDAT", "IEND"]);
+	expect(() => replaceRenderRecipe(Buffer.from("<svg/>", "utf8"), newer)).toThrow();
 });
 
 test("a recipe that cannot be read is said to be unreadable, not absent", async () => {

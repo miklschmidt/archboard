@@ -201,7 +201,7 @@ Run these commands in the repository:
 
 ```bash
 archboard status          # the server runs, and at which URL
-archboard check           # every check: the vault and its boards are valid, and the boards match their code
+archboard check           # every check: the vault and its boards are valid, the boards match their code, and the board pictures the repository keeps are current
 archboard semantic config # the vocabulary in use, and the configuration file
 ```
 
