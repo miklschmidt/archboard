@@ -8,8 +8,11 @@
 //! column, or row, of the run before or after it. A slide is kept only where
 //! the line's new stretch keeps clear of every card, title, label, other line
 //! and wall, crosses no more lines and no wall it did not cross, and still
-//! runs through the line's own label. A run other lines share, a trunk, moves
-//! only with all of them and only where none runs much longer for it.
+//! runs straight through the line's own label: no turn comes within a bend's
+//! radius of the label, since a turn rounds that far along each run it joins
+//! and a label on the curve sits off its line. A run other lines share, a
+//! trunk, moves only with all of them and only where none runs much longer
+//! for it.
 
 use rustc_hash::FxHashSet;
 
@@ -211,6 +214,7 @@ struct Weighing<'w> {
     walls: &'w [Rect],
     /// Every title band, grown by a lane.
     bands: &'w [Rect],
+    /// The line's own label, grown by a bend's radius: what its turns keep clear of.
     label: Option<Rect>,
 }
 
@@ -219,9 +223,10 @@ struct Weigher<'w> {
     runs: Vec<Vec<Span>>,
     boxes: Vec<Rect>,
     labels: Vec<Option<Rect>>,
+    /// Each line's own label, grown by a bend's radius.
+    own: Vec<Option<Rect>>,
     bands: Vec<Rect>,
     walls: &'w [Rect],
-    lines: &'w [Drawn<'w>],
 }
 
 impl Weigher<'_> {
@@ -248,7 +253,7 @@ impl Weigher<'_> {
             boxes,
             walls: self.walls,
             bands: &self.bands,
-            label: self.lines[line].label,
+            label: self.own[line],
         }
     }
 }
@@ -553,13 +558,16 @@ fn weigher_of<'w>(
             .iter()
             .map(|line| line.label.map(|label| inflate(label, LABEL_CLEARANCE)))
             .collect(),
+        own: lines
+            .iter()
+            .map(|line| line.label.map(|label| inflate(label, BEND_RADIUS)))
+            .collect(),
         bands: around
             .bands
             .iter()
             .map(|&band| inflate(band, LANE))
             .collect(),
         walls: around.walls,
-        lines,
     }
 }
 
