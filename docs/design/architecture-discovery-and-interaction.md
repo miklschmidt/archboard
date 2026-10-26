@@ -177,16 +177,34 @@ A rename or changed responsibility does not create a different subject.
 Repository and source-revision associations remain necessary even if the
 architecture stops living in Git-tracked files.
 
-The owner identifies hosted Archboard as a longstanding product direction.
-Storage research must treat hosting as a first-class requirement. Local JSON
-files and the current board ownership model do not constrain the technology
-selection.
+## Local operation and hosted boundary
+
+The owner clarified the deployment direction on 2026-10-26. The complete
+replacement must work locally before deployment to a hosted environment.
+Local operation includes the new storage model, frontend, renderer, and their
+integration with machine-local agents.
+
+The eventual hosted service contains board storage, the frontend, and the
+renderer. All agent execution and agent session state stay on the user's
+machine. The hosted service contains no repository checkouts. Code bindings
+continue to identify source that local tools can access.
+
+Scaleway Kapsule is the intended production deployment target. EU sovereignty
+and low maintenance guide that deployment. Kapsule is a future operating
+environment, not a prerequisite for developing or using the new model locally.
+The database engine remains undecided.
+
+The storage and rendering interfaces must support both local and hosted
+operation. The connection between the frontend and machine-local agents
+remains a design decision. Hosted agent workers and cloud repository checkouts
+are outside this direction.
 
 ## Open decisions
 
 The following choices remain unresolved:
 
-- The database engine, hosting model, and local deployment needs.
+- The database engine and local startup and storage configuration.
+- The connection between the hosted frontend and machine-local agents.
 - The storage and revision model for canonical subjects and proposals.
 - The role of Merkle structures in snapshots, comparisons, or synchronization.
 - The migration of overlapping board subjects and their historical identities.

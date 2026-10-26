@@ -9,6 +9,13 @@ defines the product that storage must support. The existing semantic model is
 sound. Modules, containment, relationships, flows, explanations, and proposals
 remain. The problem is duplicated ownership across boards and flat JSON files.
 
+Deployment scope clarified on 2026-10-26: prove the complete system locally
+before moving board storage, the frontend, and the renderer to Scaleway Kapsule.
+Agents stay machine-local, and the hosted service contains no repository
+checkouts. The [deployment boundary](architecture-discovery-and-interaction.md#local-operation-and-hosted-boundary)
+records this direction. The selected engine must run locally. Managed offerings
+remain useful comparisons rather than required dependencies.
+
 ## Recommendation
 
 Evaluate DoltgreSQL first, TerminusDB as the competing versioned graph, and
@@ -244,10 +251,11 @@ demonstrated substitute for hosted revision, tenant, and recovery contracts.
 [Kuzu](https://github.com/kuzudb/kuzu),
 [LadybugDB releases](https://github.com/LadybugDB/ladybug/releases).
 
-SQLite remains a possible local store or control fixture. Hosting is now a
-first-class target, so minimizing the local installation no longer decides
-the recommendation. No synchronization engine or general conflict-free data
-structure automatically settles architectural conflicts either.
+SQLite remains a possible local store or control fixture. The selected engine
+must support local operation and the eventual hosted service. A small local
+installation alone does not decide the recommendation. No synchronization
+engine or general conflict-free data structure automatically settles
+architectural conflicts either.
 
 ## Hosted costs and operating boundaries
 
@@ -325,7 +333,8 @@ storage changes underneath them. Agent actions continue to name architectural
 subjects. Database-specific SQL, branch names, and internal identifiers do not
 become concepts that readers must manage.
 
-One successful read path is insufficient. The next decision needs evidence
-from the complete proposal lifecycle and the hosted isolation/recovery cases.
+One successful read path is insufficient. The next decision needs local evidence
+from the complete proposal lifecycle and the isolation and recovery cases that
+the eventual hosted service must satisfy.
 Choose the engine that removes the most required application and operating
 work while preserving those contracts.
