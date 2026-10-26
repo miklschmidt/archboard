@@ -35,6 +35,7 @@ import {
 	type SemanticTarget,
 } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { NoBoardHeader } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
+import { ArchitectureModelStage } from "#ui/components/architecture-model/ArchitectureModelStage.tsx";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
 import {
@@ -248,7 +249,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
 			{address === null ? (
-				<NoBoard />
+				<ArchitectureModelStage key={vault} vault={vault}>
+					<NoBoard />
+				</ArchitectureModelStage>
 			) : (
 				// Every read the picture makes names the vault this pane is in (ADR 0050).
 				<PaneVaultContext value={vault}>
