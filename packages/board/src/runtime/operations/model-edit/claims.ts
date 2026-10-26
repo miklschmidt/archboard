@@ -1,6 +1,6 @@
 import { notifyArchitecture } from "#runtime/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
-import { CLAIM_DEFAULT_MS } from "@archboard/timing";
+import { CLAIM_MS } from "@archboard/timing";
 import { mintId } from "#shared/rules/ids.ts";
 import {
 	ArchitectureClaimRequestSchema,
@@ -91,7 +91,7 @@ function renewClaim(
 	const claim = {
 		...overlap,
 		reason: request.reason,
-		until: new Date(Date.now() + CLAIM_DEFAULT_MS).toISOString(),
+		until: new Date(Date.now() + CLAIM_MS.default).toISOString(),
 	};
 	writeState(vault, "claims.json", {
 		...state,
@@ -146,7 +146,7 @@ async function claimArchitectureSubjects(
 				...request,
 				id: mintId(),
 				since: new Date().toISOString(),
-				until: new Date(Date.now() + CLAIM_DEFAULT_MS).toISOString(),
+				until: new Date(Date.now() + CLAIM_MS.default).toISOString(),
 			};
 			writeState(vault, "claims.json", { ...state, claims: [...live, claim] });
 			return { success: true as const, claim };

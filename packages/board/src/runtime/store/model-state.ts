@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
-import { LOCK_LEASE_MS, LOCK_RENEW_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import { mkdirDurably, writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
 import {
@@ -195,8 +195,8 @@ async function withModelLock<T>(
 		throw error;
 	}
 	const timer = setInterval(
-		() => renewRecord(leaseVault, MODEL_LOCK, id, LOCK_LEASE_MS),
-		LOCK_RENEW_MS,
+		() => renewRecord(leaseVault, MODEL_LOCK, id, BOARD_LOCK_MS.lease),
+		BOARD_LOCK_MS.renew,
 	);
 	timer.unref();
 	try {

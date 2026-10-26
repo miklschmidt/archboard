@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { writeFileAtomic, unlinkDurably } from "@archboard/workspace/atomic-write";
-import { git } from "@archboard/workspace/checkouts";
+import { git } from "@archboard/process/git";
 import { editResult } from "#runtime/operations/history/result.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import {
