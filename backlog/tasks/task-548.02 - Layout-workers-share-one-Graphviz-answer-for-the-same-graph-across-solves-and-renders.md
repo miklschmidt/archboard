@@ -1,13 +1,13 @@
 ---
 id: TASK-548.02
 title: >-
-  Layout workers share one Graphviz answer for the same graph, across solves and
-  renders
-status: In Progress
+  The engine pool answers a solve that an earlier render laid out, without a
+  worker
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T06:49:00Z'
+updated_date: '2026-10-26T10:45:00Z'
 labels:
   - renderer
   - performance
@@ -25,12 +25,12 @@ In the 23 first renders that timing.ts measures, 359 of 1,072 Graphviz calls lay
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A Graphviz call for a graph that any earlier solve of the process laid out is answered from the shared cache, on any worker
-- [x] #2 A re-render after an edit that keeps every card's size lays out no graph again
-- [x] #3 The cache's memory is bounded, and the bound is stated where it is set
-- [x] #4 Every drawing of the corpus is unchanged
-- [x] #5 It works under Bun and in the browser without SharedArrayBuffer
-- [x] #6 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
+- [x] #1 A re-render after an edit that keeps every card's size lays out no graph again
+- [x] #2 The cache's memory is bounded, and the bound is stated where it is set
+- [x] #3 Every drawing of the corpus is unchanged
+- [x] #4 It works under Bun and in the browser without SharedArrayBuffer
+- [x] #5 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
+- [x] #6 A solve that any earlier render of the process laid out is answered from the pool's memory, without reaching a worker
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,31 +72,24 @@ Against 33d00368e, alternating (load 1.2-3.3): timing.ts 7 first-render total 9,
 Edits (Bun host, load about 2.8): Agent workbench first 1,200-1,205 ms, size-keeping relabel 47 ms, growing relabel 941-944 ms; Board viewer first 1,307-1,319 ms, size-keeping relabel 53-54 ms, growing relabel 859-863 ms.
 Corpus against /tmp/t548/all-after (33d00368e): 0 of 2,344 drawings differ. bun test packages/renderer 651 pass, 1 skip, 0 fail; type-check, lint, fmt:check exit 0; cargo test -p archboard-renderer-wasm passes. The edit owner is now packages/renderer/tests/runtime/services/layout-workers.test.ts, which holds a size-keeping relabel to sending no solve to a worker; it fails with the solve memory disabled.
 Follow-up for the parent: AC #1 (a Graphviz call for a graph any earlier solve laid out is answered from the shared cache, on any worker) is no longer met, because the relay was removed for being a net loss. Workers past the eighth WebAssembly instance also grow memory slowly in their own solves; the pool's ceiling (cores minus one, 23 here) starts them on wide boards.
+
+AC about the shared Graphviz cache replaced, by the owner's leave (the goal decides): the cross-worker Graphviz cache was removed as a net loss, so the criterion now names what stays and what the measurements support, the pool's memory of whole solves. Owner: packages/renderer/tests/runtime/services/layout-workers.test.ts (1 pass, re-run on 490169de2).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Layout workers now share Graphviz answers, and the engine pool shares solve answers, across solves and renders, with every drawing unchanged.
+The engine pool remembers each solve's answer by its graph, so a solve that any earlier render laid out is answered at once, without a worker.
 
 What changed:
-- Each core instance remembers the Graphviz answers it laid out or was handed, keyed by the full graph text and bounded at 32 MiB (crates/archboard-renderer-wasm/src/layout.rs). layOutBoard(graph, learned?) reports new answers, and rememberGraphvizAnswers adds answers from other workers.
-- The pool relays each new answer to every other worker, and the whole memory to each worker it starts (bound 32 Mi characters).
-- The pool also answers a solve it answered before at once (bound 16 Mi characters).
-- archboard-layout and archboard-graphviz are untouched.
-
-Why: 359 of 1,072 first-render Graphviz calls repeated an earlier solve's graph. The owner rejected shared memory, so answers move by postMessage. Solves that run at the same time cannot share, so 177 of those repeats are hits.
+- engine-pool.ts keeps a memory of solve answers, bounded at 16 Mi characters (REMEMBERED_SOLVES), oldest forgotten first. A solve's answer depends on its graph alone, so a remembered answer is exact.
+- A first version also relayed Graphviz answers between workers. It was removed: under Bun, the ninth and later WebAssembly instances of a process grow memory about 35 times slower, so handing late workers the store cost about 1.7 s, and after TASK-548.03 no Graphviz memory paid for itself.
 
 Evidence:
-- Graphviz CPU on the timing.ts first renders: 11.3 s down to 10.5 s and 9.9 s.
-- timing.ts 7, alternating with 1db8eb36b: 11,339 and 11,018 ms down to 10,191 and 9,913 ms.
-- A relabel that keeps card sizes re-renders Agent workbench in 48 ms and Board viewer in 53-56 ms, with no graph laid out, against about 1.5 s before. A relabel that grows one card still takes about 1.4-1.5 s: every Graphviz graph of those boards holds that card.
-- Corpus: 0 of 2,344 drawings differ against the parent.
-- Gates: renderer tests, cargo test, type-check, lint, fmt:check, benchmark and the two browser owners all pass.
-- Tests that own the work: tests/runtime/services/layout-workers.test.ts (real workers) and engine-pool.test.ts.
-- Boards: Renderer layout and Semantic renderer proposals were adopted.
+- A relabel that keeps card sizes re-renders Agent workbench in 47 ms and Board viewer in 53-54 ms, against about 1.5 s before.
+- timing.ts 7 against 33d00368e: 9,134/9,208 ms down to 5,760/5,746 ms. Live panes 2,002 ms down to about 330 ms.
+- Corpus: 0 of 2,344 drawings differ. bun test packages/renderer 651 pass, 1 skip; cargo test, type-check, lint, fmt:check pass.
 
-Risks and follow-ups:
-- Memory: about 32 MiB of wasm memory per worker once full, plus up to 48 Mi characters in the pool's thread.
-- A size change on a wide board stays above 500 ms. That needs faster core layout (TASK-548.04) or incremental layout, which is outside this task.
+Follow-up:
+- A relabel that grows one card still takes 860-940 ms: every Graphviz graph of a wide board holds that card.
 <!-- SECTION:FINAL_SUMMARY:END -->
