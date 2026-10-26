@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 148,
+	"version": 149,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T04:53:00.256Z",
+	"updatedAt": "2026-10-26T05:12:27.013Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -32927,7 +32927,7 @@
 		{
 			"id": "iphW7PZx",
 			"name": "TASK-538.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "FbryquXH",
 			"summary": "Open a proposal beside, keeping the view",
 			"content": {
@@ -36404,7 +36404,7 @@
 		{
 			"id": "1m7q7Keo",
 			"name": "TASK-550",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "iphW7PZx",
 			"summary": "Opening a board beside one pane is one history entry",
 			"content": {
@@ -39879,7 +39879,7 @@
 			}
 		}
 	],
-	"current": "iphW7PZx",
+	"current": "1m7q7Keo",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -39988,6 +39988,12 @@
 			"from": "FbryquXH",
 			"at": "2026-10-26T04:39:36.564Z",
 			"reason": "A proposal opens beside from the About page and the navigator, read through the view of the pane it came from (TASK-538.04)"
+		},
+		{
+			"variant": "1m7q7Keo",
+			"from": "iphW7PZx",
+			"at": "2026-10-26T05:12:27.013Z",
+			"reason": "Opening a board beside one pane adds the second pane on that board, as one history entry"
 		}
 	],
 	"shelvings": [

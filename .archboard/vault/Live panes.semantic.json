@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 68,
+	"version": 69,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-26T04:52:44.776Z",
+	"updatedAt": "2026-10-26T05:12:26.474Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -17486,7 +17486,7 @@
 		{
 			"id": "sbaqooMF",
 			"name": "TASK-550",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "os4w3COk",
 			"summary": "Opening a board beside one pane is one history entry",
 			"content": {
@@ -20433,7 +20433,7 @@
 			}
 		}
 	],
-	"current": "AiVALJQa",
+	"current": "sbaqooMF",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -20501,16 +20501,10 @@
 			"reason": "Its exchanges are flows, drawn by sequence and flowchart views (TASK-482.07)"
 		},
 		{
-			"variant": "csyD8fmQ",
+			"variant": "sbaqooMF",
 			"from": "os4w3COk",
-			"at": "2026-10-24T15:08:46.122Z",
-			"reason": "Pane registration and browser activation use an Archboard adapter to the shared tab session owner (TASK-517)."
-		},
-		{
-			"variant": "AiVALJQa",
-			"from": "csyD8fmQ",
-			"at": "2026-10-25T05:26:21.863Z",
-			"reason": "Pane show and the pane registry open a board through readBoardVariant, the shared tab sessions and the Codex workbench moved to Codex realtime voice (TASK-529.01, TASK-530)"
+			"at": "2026-10-26T05:12:26.474Z",
+			"reason": "A pane added for a board names it on its socket, and the server starts the pane on it"
 		}
 	]
 }
