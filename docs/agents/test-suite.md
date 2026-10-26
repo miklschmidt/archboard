@@ -380,6 +380,10 @@ It covers selection, changed or missing current inputs, source evidence, archive
 It shares the canonical reader interaction helpers with the viewing owner.
 `canonical-model-navigation.test.ts` covers recursive scope, exact reading addresses, independent panes, connection aggregation, and complete interfaces.
 It also proves that a hidden metadata edit preserves the mounted scene while the visible revision advances.
+`canonical-model-selection.test.ts` covers pointer modifiers, keyboard selection, and immediate highlighting without layout or history changes.
+`canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
+`canonical-model-focus.test.ts` covers mixed ancestor/descendant focus, required context, history restoration, and unavailable subjects.
+`canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, reveal, and unchanged authored revisions.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
 `semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.

@@ -1128,6 +1128,13 @@
 					"owner": "tests/system/browser/canonical-model-navigation.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical selection, focus, and visibility filters",
+					"expectedUse": "Readers select canonical subjects without layout, focus required paths, preserve hidden selections, and reveal them without changing architecture.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/browser/canonical-model-selection.test.ts; canonical-model-gestures.test.ts; canonical-model-focus.test.ts; canonical-model-filters.test.ts"
+				},
+				{
 					"path": "canonical independent collections, flow/step identity, nested placements, alternative renames, affected claims, reference repair and explicit behavioral rendering",
 					"expectedUse": "Author cross-module behavior through one durable batch. Preserve continuing identities and explicit order. Render only an explicitly selected flow. Never derive reverse relationships from returns.",
 					"scenarios": [],

@@ -136,7 +136,7 @@ function overviewLines(
 	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
 	for (const edge of content.edges) {
 		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
-		if (from === to && !openSelf.has(from)) continue;
+		if (!drawsConnection(edge, from, to, openSelf)) continue;
 		const key = `${from}\u0000${to}`;
 		const joins = joined.get(key);
 		if (joins === undefined) joined.set(key, [edge]);
@@ -146,6 +146,23 @@ function overviewLines(
 		line: oneLine(joins, drawnAs(joins[0].from), drawnAs(joins[0].to)),
 		joins,
 	}));
+}
+
+/**
+ * Keep authored open-module self-connections without inventing loops from hidden internals.
+ * @param edge The original authored relationship.
+ * @param from Its visible source.
+ * @param to Its visible target.
+ * @param open The open modules in this reading.
+ * @returns Whether the relationship has a visible connection.
+ */
+function drawsConnection(
+	edge: SemanticEdge,
+	from: string,
+	to: string,
+	open: ReadonlySet<string>,
+): boolean {
+	return from !== to || (open.has(from) && edge.from === from && edge.to === to);
 }
 
 /**
