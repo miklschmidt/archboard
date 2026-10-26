@@ -1,0 +1,211 @@
+import { expect, test } from "bun:test";
+import { cpSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import type {
+	ArchitectureModelRead,
+	ArchitectureModuleEditResult,
+	ArchitectureClaimResult,
+} from "@archboard/board/model";
+import { createJsonRequester } from "../support/http.ts";
+import { startOwnedServer } from "../support/owned-server.ts";
+import { vaultIn } from "../support/test-vault.ts";
+import {
+	browserTestRoots,
+	serverTestEnvironment,
+	createAgentBrowser,
+	pollUntil,
+	registerServerBase,
+	type AgentBrowserSession,
+} from "./support/agent-browser.ts";
+import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import { serverPath } from "./support/navigator-support.ts";
+
+const WAIT = { timeoutMs: 10_000 } as const;
+
+async function selectState(browser: AgentBrowserSession, id: string): Promise<void> {
+	await browser.run(["click", '[data-slot="model-reading-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const item = document.querySelector('[data-state-id="${id}"]'); if (!item) return false; const r = item.getBoundingClientRect(); return r.height > 0 && item.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
+			),
+		Boolean,
+		"the proposal state choice",
+		WAIT,
+	);
+	await browser.run(["click", `[data-state-id="${id}"]`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-state-details"][data-selected-state="${id}"][data-lifecycle="draft"]') !== null`,
+			),
+		Boolean,
+		"the explicit draft reading",
+		WAIT,
+	);
+}
+
+test("proposal readings keep draft lifecycle and module flow changes separate from current", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "proposal-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	writeFileSync(
+		join(vault, "requests.flows.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Behavior",
+			name: "Requests",
+			flows: [
+				{
+					id: "Shop#Request",
+					name: "Request",
+					participants: ["Shop#Gateway", "Shop#Worker"],
+					steps: [
+						{
+							id: "Shop#Send",
+							from: "Shop#Gateway",
+							to: "Shop#Worker",
+							kind: "sync",
+							label: "Dispatch",
+						},
+					],
+				},
+			],
+		}),
+	);
+	initializeSource(root);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const initial = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!initial.body.success || initial.body.manifest.current === null)
+		throw new Error(JSON.stringify(initial.body));
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+			),
+		Boolean,
+		"the current architecture",
+		WAIT,
+	);
+	const target = { model: initial.body.manifest.id, state: initial.body.manifest.current.id };
+	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			writer: "fixture-agent",
+			reason: "Proposing queued delivery",
+			subjects: ["Shop", "Shop#Gateway", "Shop#Worker", "Shop#Request", "Shop#Send"],
+		},
+	});
+	if (!claimed.body.success) throw new Error(JSON.stringify(claimed.body));
+	const created = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			expectedRevision: initial.body.revision,
+			operationId: "queued-proposal",
+			writer: "fixture-agent",
+			doing: "Proposing queued delivery",
+			claim: claimed.body.claim.id,
+			proposal: { type: "create", name: "Queued delivery", summary: "Queue accepted work" },
+			changes: [
+				{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued API" } },
+				{ type: "edit-step", subject: "Shop#Send", set: { kind: "async", label: "Enqueue" } },
+			],
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: claimed.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!created.body.success || created.body.target.state === null)
+		throw new Error(JSON.stringify(created.body));
+	const draft = created.body.target.state;
+	await selectState(browser, draft);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] > span')?.textContent ?? null`,
+			),
+		(name) => name === "Queued API",
+		"the draft module definition",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-comparison"]')?.getAttribute('data-against') ?? null`,
+		),
+	).toBe("Current");
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
+	).toBe(draft);
+	const flowAddress = new URL(await browser.eval<string>("location.href"));
+	flowAddress.searchParams.set("grammarA", "sequence");
+	flowAddress.searchParams.set("flowA", "Shop#Request");
+	await browser.run(["open", flowAddress.href]);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"]')?.textContent ?? null`,
+			),
+		(text) => text?.includes("Enqueue") === true,
+		"the draft flow after reload",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-state-details"][data-selected-state="${draft}"][data-lifecycle="draft"]') !== null`,
+		),
+	).toBe(true);
+	await selectReading(browser, "current");
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"]')?.textContent ?? null`,
+			),
+		(text) => text?.includes("Dispatch") === true,
+		"the unchanged current flow",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-comparison"]') === null && document.querySelector('[data-slot="model-state-details"][data-selected-state="Current"][data-lifecycle="current"]') !== null`,
+		),
+	).toBe(true);
+	await selectReading(browser, created.body.checkpoint.id);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-state-details"][data-selected-state="${draft}"][data-lifecycle="draft"]') !== null`,
+			),
+		Boolean,
+		"the retained draft identity",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
+	).toBeNull();
+	const current = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!current.body.success) throw new Error(JSON.stringify(current.body));
+	expect(current.body.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
+	expect(current.body.collections[0]?.flows[0]?.steps[0]).toMatchObject({
+		id: "Shop#Send",
+		kind: "sync",
+		label: "Dispatch",
+	});
+}, 60_000);

@@ -18,6 +18,7 @@ import {
 	hasNoCheckpoints,
 } from "#ui/clients/architecture-model/queries.ts";
 import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
@@ -56,12 +57,21 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const {
 		checkpoint,
+		state,
+		against,
+		selectState,
 		selectCheckpoint,
 		model: requestedModel,
 		identify,
 	} = useModelLocation(props.paneId);
 	const feed = useArchitectureFeed(props.vault);
-	const query = useQuery(architectureModelQuery(props.vault, checkpoint));
+	const query = useQuery(
+		architectureModelQuery(props.vault, checkpoint, {
+			state,
+			against,
+		}),
+	);
+	const catalogue = useQuery(architectureModelQuery(props.vault));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
 	const resolvedId = data?.manifest.id;
@@ -88,7 +98,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			data-state={readingState(query, stale)}
 			data-stale={stale}
 			data-connection={feed.connection}
-			data-reading={checkpoint ?? "current"}
+			data-reading={readingIdentity(checkpoint, state)}
 			aria-busy={query.isFetching}
 			aria-label="Architecture"
 			className="bg-background flex min-h-0 flex-1 flex-col"
@@ -96,6 +106,10 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching}>
 				<ModelReadingSelector
 					checkpoint={checkpoint}
+					state={state}
+					selected={data?.selectedState}
+					catalogue={catalogue}
+					onState={selectState}
 					onSelect={selectCheckpoint}
 					history={history}
 				/>
@@ -171,6 +185,16 @@ function ModelIdentityFailure(props: {
 			/>
 		</section>
 	);
+}
+
+/**
+ * Preserve the requested state or checkpoint even when its content is unavailable.
+ * @param checkpoint The exact retained reading.
+ * @param state The explicit mutable state.
+ * @returns The addressed reading identity, or current inputs.
+ */
+function readingIdentity(checkpoint: string | null, state: string | null): string {
+	return checkpoint ?? state ?? "current";
 }
 
 /**
@@ -278,6 +302,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
 				<>
+					<ModelStateDetails model={model} />
 					<CheckpointEvidence model={model} />
 					<ModelReading
 						key={model.manifest.id}
