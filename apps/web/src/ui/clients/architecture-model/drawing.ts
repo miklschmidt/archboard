@@ -1,4 +1,5 @@
 import { prepareContentHere } from "@archboard/renderer/browser";
+import type { DiagramGrammar } from "@archboard/board/views";
 import { queryOptions } from "@tanstack/react-query";
 import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
 
@@ -6,11 +7,16 @@ import type { projectModel, Model } from "#ui/rules/architecture-model/projectio
  * Each reading revision accepts only the scene key derived from its content and interfaces.
  * @param model The coherent architecture revision.
  * @param projection The content this reading shows.
+ * @param grammar The explicitly requested diagram mode.
  * @returns A local rendering query, independent of selection and camera state.
  */
-function modelDrawingQuery(model: Model, projection: ReturnType<typeof projectModel>) {
+function modelDrawingQuery(
+	model: Model,
+	projection: ReturnType<typeof projectModel>,
+	grammar: DiagramGrammar,
+) {
 	const prepared = prepareContentHere({
-		grammar: "architecture",
+		grammar,
 		content: projection.content,
 		variant: projection.complete,
 		policy: model.policy,

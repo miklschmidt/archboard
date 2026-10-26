@@ -3,9 +3,9 @@ id: TASK-549.06
 title: Create and compare compact proposals
 status: In Progress
 assignee:
-  - '@codex-compact-proposals'
+  - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:05:00Z'
+updated_date: '2026-10-26T19:28:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -81,4 +81,6 @@ Backend acceptance evidence: nine proposal cases pass with 67 assertions at the 
 Merged latest integration 5432fed897cd0b7bcbb8ada2c41dabd533305cca through signed merge cc0f88d30b07a4ba80335ba3cb8562e1e176e617. The merge preserves both histories and the complete committed TASK-549.11 delivery. Frontend source, browser tests, ui-kit, selection scope rules, and the Browser application board remain byte-identical to that integration head. No frontend implementation or browser test ran in this slice. The simplification pause keeps one canonical decoder, one identity authority, one durable transaction and archive engine, and the existing semantic comparison rules. Internal baseline reads skip discarded source/publication details. Acceptance criterion 1 remains open for parent browser work. Definition of Done item 2 remains open for the parent to close the complete mixed slice. All three task architecture proposals remain draft. Do not mark TASK-549.06 Done.
 
 Closing backend records: Board persistence@TASK-549.06 is draft AFx23EEN at version 166; Command interface@TASK-549.06 is draft pJeSfYJs at version 189; Archboard server routes@TASK-549.06 is draft o6rDNILx at version 155. The closing graph comparison retains all 66 original parts (63 unchanged and three changed) and 188 original relationships, with one compact-proposal part and 13 explicit relationships added. All three claims are released, and the worktree server at http://127.0.0.1:16610 is stopped. The final contract and backend handoff remain outside the repository under /home/msc/.local/state/archboard-implementation/task-549. Browser criterion 1 and complete-slice documentation closure remain open for the parent.
+
+Parent takes browser ownership after backend handoff b9f8de66b. Latest integration3a0efd30 includes completed .12 diagram modes. Merge resolution preserves the backend task record and completed criteria, both ADR sections, and both coverage entries. No backend work or retained architecture history is discarded. Browser state selection, lifecycle labels, comparison readings, mutable draft refresh, and visible acceptance remain to implement.
 <!-- SECTION:NOTES:END -->
