@@ -294,6 +294,8 @@ interface BodyProps {
 	groups: GroupControls;
 	/** The state that holds the subject: its relationships are read there. */
 	held: SemanticVariant | undefined;
+	/** The board read, whose variants a container is measured on side by side. */
+	board: SemanticBoard | undefined;
 	/** The level of the board drawn, which places the boards its parts open. */
 	level: string | undefined;
 	/** The board, variant and version on screen, which a part's history is read at. */
@@ -334,6 +336,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 				level={props.level}
 				on={props.on}
 				held={props.held}
+				board={props.board}
 			>
 				{standing}
 			</DetailsPanel>
@@ -357,6 +360,8 @@ interface Explanation {
 	readonly open: readonly ReconciliationIssue[];
 	/** The state that holds the subject, when one does. */
 	readonly held: SemanticVariant | undefined;
+	/** The board read, once it is. */
+	readonly board?: SemanticBoard | undefined;
 	/** The ids the selection stands for: every relationship a joined line joins, else the picked id. */
 	readonly ids: readonly string[];
 	/** The board's level, once it is read. */
@@ -467,6 +472,7 @@ function explain(
 		...compared,
 		subject: line ?? compared.subject,
 		ids,
+		board: reading.board,
 		level: reading.board.level,
 		open: openOn(shown, ids),
 		on: {
@@ -580,6 +586,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				open={explained.open}
 				code={code}
 				held={explained.held}
+				board={explained.board}
 				level={explained.level}
 				on={explained.on}
 				look={props.look}

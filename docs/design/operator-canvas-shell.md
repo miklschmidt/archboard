@@ -179,7 +179,12 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      Hidden parts has its count alone. Choosing a row picks the part out, and
      pointing at it lights the part. An entry point that passes one call on
      says so under its name, and a caller says which entry points it reaches.
-     If nothing outside reaches the part, Callers says so in words.
+     If nothing outside reaches the part, Callers says so in words. On each
+     variant then sets the five measures of the part on the current variant,
+     each draft and each shelved variant side by side (TASK-538.05), the
+     current one first. The variant on screen says so, a shelved one gives the
+     reason it was let go, and a variant where the part holds no parts or draws
+     no caller says that. Nothing ranks them.
   4. **What does its code expose?** Only for a bound part that holds parts,
      read from the server's memory of the last code pass (TASK-539.02). A pane
      never starts a pass. Exposed names gives how many names the module
