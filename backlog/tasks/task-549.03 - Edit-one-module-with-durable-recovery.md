@@ -1,9 +1,11 @@
 ---
 id: TASK-549.03
 title: Edit one module with durable recovery
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
+updated_date: '2026-10-26T10:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +58,15 @@ TASK-549.02
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Create TASK-549.03 draft proposals on Board persistence, Command interface, and Archboard server routes. Preserve every existing identity.
+2. Add subject claims and one description-edit operation at the approved public runtime seam. Keep the current read schema stable.
+3. Build signed preparation, checkout-local journal recovery, exact-byte guards, durable completion, retries, and public news in red/green slices with real files and Git.
+4. Connect the same contracts to CLI and HTTP. Document recovery, domain terms, and consumer examples.
+5. Simplify, run focused checks, merge latest integration, commit signed checkpoints, and hand off remaining browser criteria without closing the ticket.
+
+Affected drafts: Board persistence@TASK-549.03, Command interface@TASK-549.03, Archboard server routes@TASK-549.03. Browser proposals remain parent-owned. The public read signature stays synchronous and its success schema stays unchanged. Current reads block pending installs. Explicit recovery and a vault-scoped snapshot/news stream supply the browser integration.
+<!-- SECTION:PLAN:END -->
