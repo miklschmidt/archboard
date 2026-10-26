@@ -10,6 +10,7 @@ import {
 	archiveContext,
 	isArchiveAncestor,
 	archiveRecords,
+	settledValues,
 	type ArchiveContext,
 } from "#runtime/store/model-archive.ts";
 
@@ -70,14 +71,10 @@ async function resolveDestination(
 	destination: z.infer<typeof ArchitecturePublicationDestinationSchema>,
 ) {
 	try {
-		await git(context.root, ["check-ref-format", destination.ref]);
-		const fetchUrl = await git(context.root, ["remote", "get-url", "--all", destination.remote]);
-		const pushUrl = await git(context.root, [
-			"remote",
-			"get-url",
-			"--push",
-			"--all",
-			destination.remote,
+		const [, fetchUrl, pushUrl] = await settledValues([
+			git(context.root, ["check-ref-format", destination.ref]),
+			git(context.root, ["remote", "get-url", "--all", destination.remote]),
+			git(context.root, ["remote", "get-url", "--push", "--all", destination.remote]),
 		]);
 		const urls = [fetchUrl, pushUrl].map(singleRemoteUrl);
 		return {
@@ -312,9 +309,12 @@ async function requireCompleteArchive(
 	tip: string,
 	forPublication = false,
 ) {
-	await git(context.root, ["rev-list", "--objects", "--missing=error", tip], {
-		maxOutputBytes: Infinity,
-	});
+	const [, shallowPath] = await settledValues([
+		git(context.root, ["rev-list", "--objects", "--missing=error", tip], {
+			maxOutputBytes: Infinity,
+		}),
+		git(context.root, ["rev-parse", "--path-format=absolute", "--git-path", "shallow"]),
+	]);
 	const records = await archiveRecords(context, [tip]).catch((error: unknown) => {
 		throw new ArchiveError(
 			"ARCHIVE_UNREADABLE",
@@ -323,12 +323,7 @@ async function requireCompleteArchive(
 		);
 	});
 	if (forPublication) requirePortableRecords(records, tip);
-	const shallowPath = await git(context.root, [
-		"rev-parse",
-		"--path-format=absolute",
-		"--git-path",
-		"shallow",
-	]);
+
 	const boundaries = new Set(
 		shallowPath !== undefined && existsSync(shallowPath)
 			? readFileSync(shallowPath, "utf8").trim().split("\n")

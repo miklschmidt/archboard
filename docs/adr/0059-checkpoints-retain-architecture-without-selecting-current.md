@@ -48,7 +48,7 @@ The browser never creates checkpoints.
 
 This decision extends ADR 0060 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
-Private archives, proposal changes, and migration remain separate delivery slices.
+Proposal changes and migration remain separate delivery slices.
 
 ## Explicit archive publication
 
@@ -145,3 +145,28 @@ The query cache keeps the last coherent current reading during a failure.
 The browser marks that reading stale and shows the refusal.
 Historical failures never substitute current content.
 Human take-back ends the displayed subject claim without changing architecture.
+
+## Explicit private history
+
+TASK-549.17 extends the same archive engine to vaults outside source repositories.
+The owner explicitly initializes a bare repository in Archboard's machine state.
+Initialization returns its local directory for ordinary Git identity, signing, and named-remote configuration.
+That setup result is private machine information, never retained architectural meaning.
+
+The archive directory derives from the addressed vault location.
+Its checkpoint records use the fixed portable address `.archboard/vault` and an empty source-association list.
+The engine does not invent a source repository from an architecture remote or private path.
+The same retention, exact reading, signing, publication, and durable installation code serves both archive locations.
+A second history implementation is rejected because it duplicates recovery and publication behavior.
+
+Initialization refuses a source checkout or machine state inside one before creating even a transaction lease.
+Existing malformed archive storage remains unchanged and receives recovery diagnostics.
+A later source repository cannot silently replace private history.
+Private transaction lookup stays with that archive, so unfinished edits remain recoverable after the source repository is removed.
+Moving the vault requires explicit transfer and preserves the original location for pending recovery.
+
+Each untracked vault owns its private archive and recovery records.
+The archive remains local until an owner configures a destination and explicitly publishes history.
+Creating the archive or configuring a destination performs no network exchange.
+Private checkpoints use the same independent archive branch and actual Git ancestry as source-backed checkpoints.
+Export and migration remain separate delivery slices.

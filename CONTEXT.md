@@ -54,6 +54,10 @@ Archive publication:
 An explicit exchange that makes retained architecture available at a configured remote and archive ref.
 A source-code push does not establish this fact.
 
+Private archive:
+An explicitly initialized bare Git repository for one untracked vault.
+It uses the same history engine and stays outside source repositories.
+
 Publication evidence:
 The retained result of the last successful explicit archive exchange.
 It establishes observed availability, not permanent remote protection.
