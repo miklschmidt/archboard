@@ -1,9 +1,11 @@
 ---
 id: TASK-549.16
 title: Publish archive history and recover missing revisions
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-archive-backend'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T12:40:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,22 @@ TASK-549.02
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Confirm rebased ancestry and read the complete publication and recovery contracts.
+2. Create Board persistence@TASK-549.16, Command interface@TASK-549.16, and Archboard server routes@TASK-549.16 proposals before code.
+3. Publish a stable API/status contract outside the repository and implement one public-runtime TDD slice at a time with disposable signed repositories and bare remotes.
+4. Add explicit configured publication, durable private status, complete history fetching, signed ancestry joins, retention limitations, and CLI/server adapters. Preserve current files, index, source HEAD, and exact identities.
+5. Update consumer guidance, authored workflow examples, evaluation coverage, and ADR 0059. Run focused behavior owners and affected static gates.
+6. Merge latest feat/canonical-module-model, resolve affected contracts, record parent UI work, release claims, stop this server, and leave signed checkpoints.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend assignment only. Required base baf552fde042b363b79a41dfcfcbaca1ef3e81bd and main 6cae688bb are ancestors of the provided clean branch. TASK-549.03 is not integrated and will not be absorbed. Its private write journal and current-edit APIs remain outside this slice. Browser publication states remain parent-owned. No push, PR action, subagent, or real repository archive publication is authorized.
+
+Created task drafts on Board persistence, Command interface, and Archboard server routes before code. The early public contract is task-549.16-contract.md in the shared orchestration directory. First red test failed on the missing public status export. First green test passed through the public runtime with a signed disposable repository and local bare remote. Explicit publication persists evidence and preserves dirty index, current files, and source HEAD. Normal code publication does not create archive evidence.
+<!-- SECTION:NOTES:END -->

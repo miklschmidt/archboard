@@ -5,6 +5,14 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	ARCHIVE_NETWORK_FAILED:
+		"Restore access to the configured remote and retry the same explicit publish or fetch request. Local architecture remains retained.",
+	PUBLICATION_NOT_CONFIGURED:
+		"Configure an existing Git remote and a full archive ref before publishing or fetching history.",
+	PUBLICATION_DESTINATION_CHANGED:
+		"Read the intended remote configuration and explicitly configure the publication destination again.",
+	PUBLICATION_INVALID:
+		"Use one named Git remote with one fetch URL, one push URL, and a valid full archive branch ref.",
 	ARCHIVE_COMMIT_FAILED:
 		"Repair the configured Git identity and signing key or signer. Retry the same retention operation without disabling signing.",
 	ARCHIVE_IN_USE: "Switch the worktree away from archboard-history before retrying retention.",
@@ -74,9 +82,10 @@ async function historyResult<T>(
 function checkpointMetadata(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
+	publication: ArchitectureCheckpoint["publication"] = "saved-locally",
 ): ArchitectureCheckpoint {
 	const { schemaVersion: _version, kind: _kind, vault: _vault, ...metadata } = record;
-	return { ...metadata, id, publication: "saved-locally" };
+	return { ...metadata, id, publication };
 }
 
 export { archiveFailure, historyResult, checkpointMetadata };

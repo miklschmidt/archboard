@@ -24,6 +24,7 @@ import {
 	historyResult,
 	checkpointMetadata,
 } from "#runtime/operations/history/result.ts";
+import { checkpointPublication } from "#runtime/store/model-publication.ts";
 
 /**
  * Require an architectural checkpoint for the addressed vault.
@@ -120,7 +121,11 @@ async function exactReading(
 	return selectModule(
 		{
 			...model,
-			checkpoint: checkpointMetadata(checkpoint, record),
+			checkpoint: checkpointMetadata(
+				checkpoint,
+				record,
+				(await checkpointPublication(context, checkpoint)).publication,
+			),
 			sourceEvidence: await sourceEvidence(context, record.sources),
 		},
 		module,
@@ -163,10 +168,16 @@ async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureC
 		const records = await archiveRecords(context);
 		return {
 			success: true as const,
-			checkpoints: records.flatMap(({ id, record }) =>
-				record.kind === "checkpoint" && record.vault === context.vault
-					? [checkpointMetadata(id, record)]
-					: [],
+			checkpoints: await Promise.all(
+				records.flatMap(({ id, record }) =>
+					record.kind === "checkpoint" && record.vault === context.vault
+						? [
+								checkpointPublication(context, id).then(({ publication }) =>
+									checkpointMetadata(id, record, publication),
+								),
+							]
+						: [],
+				),
 			),
 		};
 	});
