@@ -1,4 +1,4 @@
-import { LOCK_WATCH_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import type { ArchitectureModelRead, ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureEvent } from "#shared/schemas/model-operations.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
@@ -80,7 +80,7 @@ function watchArchitectureModel(
 	}
 	const unsubscribe = onArchitectureNews(vault, refresh);
 	// Claims and foreign inputs share the existing disk-observation cadence.
-	const timer = setInterval(refresh, LOCK_WATCH_MS);
+	const timer = setInterval(refresh, BOARD_LOCK_MS.watch);
 	timer.unref();
 	return () => {
 		clearInterval(timer);

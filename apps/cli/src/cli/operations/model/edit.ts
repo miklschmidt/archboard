@@ -15,8 +15,8 @@ import {
 	readArchitectureClaimsOnServer,
 	releaseArchitectureClaimOnServer,
 	recoverArchitectureModelOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
-import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
+} from "#cli/clients/server/architecture-model.ts";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts";
 import { statedJson } from "#cli/operations/semantic/input/semantic-input.ts";
@@ -146,7 +146,7 @@ const modelEditContract = defineCommand({
 		);
 		return presented(
 			await editArchitectureModuleOnServer(
-				context.parse(ArchitectureModuleEditSchema, { ...request, doing: currentWriteDoing() }),
+				context.parse(ArchitectureModuleEditSchema, { ...request, doing: statedInvocation().doing }),
 			),
 		);
 	},

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/board/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/board/store-write";
-import { LOCK_LEASE_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 import {
 	fixture,
 	git,
@@ -58,7 +58,7 @@ async function interrupted(point: string) {
 		);
 	// Only the parent clock advances after the real process exits. Files, Git objects and refs remain real.
 	// This expires the dead owner's lease without paying its production wait at every interruption point.
-	if (point !== "cleanup") Date.now = () => actualNow() + LOCK_LEASE_MS;
+	if (point !== "cleanup") Date.now = () => actualNow() + BOARD_LOCK_MS.lease;
 	return { ...value, input };
 }
 
