@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
 import { ModelModeControls } from "#ui/components/architecture-model/ModelModeControls.tsx";
 import { projectFlow, flowSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
@@ -30,6 +31,7 @@ const LOADING_DIAGRAM = (
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
+	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
 	model: Model;
 	paneId: string;
@@ -134,6 +136,8 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				)}
 			</ModelSelectionBar>
 			<ModelReadingContent
+				vault={props.vault}
+				onCodeTargetNotice={props.onCodeTargetNotice}
 				model={model}
 				selection={selection}
 				scope={scope}
@@ -149,7 +153,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	);
 }
 
-interface ScopedModelReadingProps {
+interface ScopedModelReadingProps extends Pick<ModelReadingProps, "vault" | "onCodeTargetNotice"> {
 	model: Model;
 	selection: ModelSelection;
 	onReveal: () => void;

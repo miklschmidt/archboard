@@ -1,15 +1,18 @@
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
-import { useCallback, type JSX } from "react";
+import { useCallback, type ComponentProps, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
+import { ModuleNavigation } from "#ui/components/architecture-model/ModuleNavigation.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
 
 interface ModelSelectionDetailsProps {
+	vault: string;
+	onCodeTargetNotice: ComponentProps<typeof ModuleNavigation>["onNotice"];
 	model: Model;
 	scope: string | null;
 	projection: ReturnType<typeof projectModel>;
@@ -140,7 +143,7 @@ function SelectedModule(
 function SelectedModuleContent(
 	props: ModelSelectionDetailsProps & { module: Model["modules"][number]; removed: boolean },
 ): JSX.Element {
-	if (props.removed) return <ModuleDetails module={props.module} model={props.model} />;
+	if (props.removed) return <SelectedModuleDetails {...props} />;
 	if (props.module.id === props.scope)
 		return (
 			<>
@@ -153,7 +156,7 @@ function SelectedModuleContent(
 				<details className="text-body mt-6">
 					<summary>Module details</summary>
 					<div className="mt-4">
-						<ModuleDetails module={props.module} model={props.model} />
+						<SelectedModuleDetails {...props} />
 					</div>
 				</details>
 			</>
@@ -161,8 +164,28 @@ function SelectedModuleContent(
 	return (
 		<>
 			<OpenModule id={props.module.id} onOpen={props.onOpen} />
-			<ModuleDetails module={props.module} model={props.model} />
+			<SelectedModuleDetails {...props} />
 		</>
+	);
+}
+
+/**
+ * Source actions sit beside the module's authored evidence in every inspection mode.
+ * @param props The actual selected or removed module and its owning reading.
+ * @returns Authored details with the shared navigation controls.
+ */
+function SelectedModuleDetails(
+	props: ModelSelectionDetailsProps & { module: Model["modules"][number] },
+): JSX.Element {
+	return (
+		<ModuleDetails module={props.module} model={props.model}>
+			<ModuleNavigation
+				vault={props.vault}
+				model={props.model}
+				module={props.module}
+				onNotice={props.onCodeTargetNotice}
+			/>
+		</ModuleDetails>
 	);
 }
 

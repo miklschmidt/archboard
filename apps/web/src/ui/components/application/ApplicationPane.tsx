@@ -254,6 +254,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					vault={vault}
 					paneId={paneId}
 					reducedMotion={props.reducedMotion}
+					onCodeTargetNotice={callbacks.onCodeTargetNotice}
 				>
 					<NoBoard />
 				</ArchitectureModelStage>

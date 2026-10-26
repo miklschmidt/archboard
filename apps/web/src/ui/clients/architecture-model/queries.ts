@@ -11,6 +11,8 @@ import { inVault, strictReply, type ReplySchema } from "@archboard/server-reques
 
 type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null } & {
 	readonly compare?: boolean;
+	readonly module?: Extract<ArchitectureModelRead, { success: true }>["selectedModule"];
+	readonly code?: boolean;
 };
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
@@ -24,6 +26,8 @@ class ArchitectureReadError extends Error {
 		this.name = "ArchitectureReadError";
 	}
 }
+
+const READING_FIELDS = ["state", "against", "compare", "module", "code"] as const;
 
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
@@ -47,9 +51,7 @@ const architectureModelKeys = {
 			vault,
 			"reading",
 			checkpoint,
-			selection.state ?? null,
-			selection.against ?? null,
-			selection.compare ?? null,
+			...READING_FIELDS.map((field) => selection[field] ?? null),
 		] as const,
 	/**
 	 * Every mutable state and comparison follows completed model edits.

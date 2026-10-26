@@ -6,6 +6,7 @@ type Module = Model["modules"][number];
 interface ModuleDetailsProps {
 	module: Module;
 	model: Model;
+	children?: ReactNode;
 }
 
 /**
@@ -23,6 +24,7 @@ function ModuleDetails(props: ModuleDetailsProps): JSX.Element {
 		>
 			<ModuleIntroduction {...props} />
 			<ModuleEvidence {...props} />
+			{props.children}
 			<Connections {...props} />
 			<details className="text-body text-muted-foreground">
 				<summary>Definition</summary>
