@@ -1,5 +1,8 @@
 import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
+import { ModelModeControls } from "#ui/components/architecture-model/ModelModeControls.tsx";
+import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
@@ -37,9 +40,19 @@ interface ModelReadingProps {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
-	const { scope, open, focus, setFocus, filters, toggleFilter, reveal } = useModelLocation(
-		props.paneId,
-	);
+	const {
+		scope,
+		open,
+		focus,
+		setFocus,
+		filters,
+		toggleFilter,
+		reveal,
+		grammar,
+		flow,
+		selectGrammar,
+		selectFlow,
+	} = useModelLocation(props.paneId);
 	const { id } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(id, next), [id, open]);
 	const projection = useMemo(
@@ -48,6 +61,10 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	);
 	const selection = useModelSelection(projection);
 	const { clear } = selection;
+	const subjects = useMemo(() => {
+		if (selection.ids.size > 0) return selection.ids;
+		return new Set(focus ?? (scope === null ? [] : [scope]));
+	}, [selection.ids, focus, scope]);
 	const revealSelection = useCallback((): void => {
 		const kinds = model.relationships
 			.filter((edge) => selection.ids.has(edge.id))
@@ -74,6 +91,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			ref={attach}
 			data-slot="model-reading"
 			data-scope={scope ?? ""}
+			data-grammar={grammar}
 			className="flex min-h-0 flex-1 flex-col"
 		>
 			<ModelBreadcrumbs
@@ -82,27 +100,35 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				trail={projection.trail}
 				onOpen={onOpen}
 			/>
-			<ModelSelectionBar selection={selection} focus={focus} onFocus={setFocus}>
-				<ModelFilters model={model} filters={filters} onToggle={toggleFilter} />
-			</ModelSelectionBar>
-			<FocusAvailability missing={projection.missingFocus} />
-			{projection.missing ? (
-				<output data-slot="model-missing-scope" className="text-body p-8">
-					The requested module is absent from this reading: {scope}. Open the repository from the
-					path above.
-				</output>
-			) : (
-				<ScopedModelReading
-					key={scope ?? "root"}
+			<ModelSelectionBar
+				selection={selection}
+				focus={focus}
+				onFocus={setFocus}
+				architectural={grammar === "architecture"}
+			>
+				<ModelModeControls
 					model={model}
-					selection={selection}
-					onReveal={revealSelection}
-					scope={scope}
-					projection={projection}
-					reducedMotion={props.reducedMotion}
-					onOpen={onOpen}
+					subjects={subjects}
+					grammar={grammar}
+					flow={flow}
+					onGrammar={selectGrammar}
+					onFlow={selectFlow}
 				/>
-			)}
+				{grammar === "architecture" && (
+					<ModelFilters model={model} filters={filters} onToggle={toggleFilter} />
+				)}
+			</ModelSelectionBar>
+			<ModelReadingContent
+				model={model}
+				selection={selection}
+				scope={scope}
+				projection={projection}
+				reducedMotion={props.reducedMotion}
+				onOpen={onOpen}
+				onReveal={revealSelection}
+				grammar={grammar}
+				flow={flow}
+			/>
 		</div>
 	);
 }
@@ -118,11 +144,73 @@ interface ScopedModelReadingProps {
 }
 
 /**
+ * A behavioral reading requires its exact authored flow, independently of the structural scope.
+ * @param props The requested mode, flow, and underlying architecture reading.
+ * @returns A coherent diagram or explicit unavailable state.
+ */
+function ModelReadingContent(
+	props: ScopedModelReadingProps & { grammar: string; flow: string | null },
+): JSX.Element {
+	const parsed = DiagramGrammarSchema.safeParse(props.grammar);
+	if (!parsed.success)
+		return (
+			<output data-slot="model-mode-unavailable" className="text-body p-8">
+				The requested diagram mode is unavailable: {props.grammar}. Choose a supported mode.
+			</output>
+		);
+	if (parsed.data !== "architecture") return <BehavioralReading {...props} grammar={parsed.data} />;
+	if (props.projection.missing)
+		return (
+			<output data-slot="model-missing-scope" className="text-body p-8">
+				The requested module is absent from this reading: {props.scope}. Open the repository from
+				the path above.
+			</output>
+		);
+	return (
+		<>
+			<FocusAvailability missing={props.projection.missingFocus} />
+			<ScopedModelReading {...props} grammar={parsed.data} />
+		</>
+	);
+}
+
+/**
+ * Never replace a missing explicit flow with another exchange.
+ * @param props The complete model and exact requested flow identity.
+ * @returns The whole selected behavior or its recovery instruction.
+ */
+function BehavioralReading(
+	props: ScopedModelReadingProps & { grammar: DiagramGrammar; flow: string | null },
+): JSX.Element {
+	const selected = props.model.collections
+		.flatMap((collection) => collection.flows)
+		.find((entry) => entry.id === props.flow);
+	const projection = useMemo(
+		() => (selected === undefined ? null : projectFlow(props.projection, selected)),
+		[props.projection, selected],
+	);
+	if (projection === null)
+		return (
+			<output
+				data-slot={props.flow === null ? "model-flow-required" : "model-flow-missing"}
+				className="text-body p-8"
+			>
+				{props.flow === null
+					? "Choose an authored flow to read its behavior."
+					: `The selected flow is unavailable: ${props.flow}. Choose another flow or restore its architecture.`}
+			</output>
+		);
+	return <ScopedModelReading {...props} projection={projection} grammar={props.grammar} />;
+}
+
+/**
  * Only selection is local state; authored content remains the query snapshot.
  * @param props The coherent model and scope projection.
  * @returns Immediate children, nearby context, and authored details.
  */
-function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
+function ScopedModelReading(
+	props: ScopedModelReadingProps & { grammar: DiagramGrammar },
+): JSX.Element {
 	const { model } = props;
 	const { ids: selected, select } = props.selection;
 	const { children, context } = props.projection;
@@ -170,6 +258,7 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 			</nav>
 			<Suspense fallback={LOADING_DIAGRAM}>
 				<ModelDiagram
+					grammar={props.grammar}
 					model={model}
 					projection={props.projection}
 					selected={selected}

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T18:51:00Z'
+updated_date: '2026-10-26T19:03:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -76,4 +76,6 @@ TASK-549.05, TASK-549.11
 Parent frontend work starts in isolated checkout /home/msc/Projects/archboard.feat-module-diagram-modes from integrated5432fed897cd0b7bcbb8ada2c41dabd533305cca. Dependencies .05 and .11 are Done and integrated. Parent owns all frontend. The approved browser and public runtime seams remain unchanged. No model evaluation, dependency installation request, or scope expansion is required.
 
 Browser application@TASK-549.12 is draft at version172. The proposal describes per-pane grammar/flow addresses, complete behavioral projections, relevant explicit flow choices, and preservation of architecture scope/focus/filters. The existing renderer already supports all three grammars, so no renderer architecture or API addition is planned. Worktree server12686 is ready at PID1128291. Dependencies install successfully.
+
+First grammar slice passes its RED-to-GREEN browser owner: one case and seven assertions. The reader chooses among relevant flows, draws complete sequence and flowchart content outside the prior scope, preserves structural filters without removing messages, and restores architecture scope/focus/filter addresses. Source/frontend types and full lint pass. The browser owner waits until the menu option is the actual hit target before clicking. Missing-flow recovery, history/reload coverage, behavioral selection details, final documentation, visual inspection, architecture adoption, and closure remain incomplete.
 <!-- SECTION:NOTES:END -->
