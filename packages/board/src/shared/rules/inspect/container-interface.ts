@@ -79,6 +79,11 @@ interface ContainerInterface {
 	readonly onContainer: readonly SemanticEdge[];
 	/** The entry points that only pass one call on, a subset of `entryPoints`. */
 	readonly passThrough: readonly SemanticNode[];
+	/**
+	 * The five interface measures (ADR 0044): the lengths of the five lists
+	 * above. They are counts, never combined into one number and never a verdict.
+	 */
+	readonly measures: InterfaceMeasures;
 }
 
 /** What one node is as a container: an interface, or the fact that it has no parts. */
@@ -191,17 +196,27 @@ function inspectContainer(content: VariantContent, container: SemanticNode): Con
 		return edges.length === 0 ? [] : [{ node, edges, reaches }];
 	});
 	const parents = new Set(content.nodes.map((node) => node.parent));
+	const hiddenParts = children.filter((child) => !reached.has(child.id));
+	const outgoing = content.edges.filter((edge) => holders.has(edge.from) && !holders.has(edge.to));
+	const passThrough = entryPoints
+		.map((entry) => entry.node)
+		.filter((node) => !parents.has(node.id) && passesThrough(node, content.edges));
 	return {
 		container,
 		holdsParts: true,
 		entryPoints,
-		hiddenParts: children.filter((child) => !reached.has(child.id)),
+		hiddenParts,
 		callers,
-		outgoing: content.edges.filter((edge) => holders.has(edge.from) && !holders.has(edge.to)),
+		outgoing,
 		onContainer: entering.filter((edge) => edge.to === id),
-		passThrough: entryPoints
-			.map((entry) => entry.node)
-			.filter((node) => !parents.has(node.id) && passesThrough(node, content.edges)),
+		passThrough,
+		measures: {
+			entryPoints: entryPoints.length,
+			hiddenParts: hiddenParts.length,
+			callers: callers.length,
+			outgoing: outgoing.length,
+			passThrough: passThrough.length,
+		},
 	};
 }
 
@@ -219,22 +234,6 @@ function passThroughEntryPoints(content: VariantContent): readonly PassThrough[]
 	});
 }
 
-/**
- * The five interface measures of a container (ADR 0044). They are counts,
- * never combined into one number and never a verdict.
- * @param inspection A container with an interface.
- * @returns The counts.
- */
-function interfaceMeasures(inspection: ContainerInterface): InterfaceMeasures {
-	return {
-		entryPoints: inspection.entryPoints.length,
-		hiddenParts: inspection.hiddenParts.length,
-		callers: inspection.callers.length,
-		outgoing: inspection.outgoing.length,
-		passThrough: inspection.passThrough.length,
-	};
-}
-
 export {
 	type Caller,
 	type ContainerInspection,
@@ -243,6 +242,5 @@ export {
 	type InterfaceMeasures,
 	type PassThrough,
 	inspectContainer,
-	interfaceMeasures,
 	passThroughEntryPoints,
 };

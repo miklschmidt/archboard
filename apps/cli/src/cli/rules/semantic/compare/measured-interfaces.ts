@@ -3,14 +3,14 @@
 // answer, the section built from the shared derivation, and what is said about
 // it in words.
 //
-// Each count is read off one container on one variant by `inspectContainer`
-// and `interfaceMeasures`, the derivation every reader of an interface shares.
+// Each count is read off one container on one variant by `inspectContainer`,
+// the derivation every reader of an interface shares.
 // The section marks no change and sets no comparison status: it puts the
 // measures of each variant beside the others, combines them into no score and
 // ranks no variant. What changed between two of them is `interfaceChanges`.
 
 import { z } from "zod";
-import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import {
 	resolveVariant,
@@ -99,7 +99,7 @@ function measuredOn(variant: SemanticVariant, id: string): MeasuredOn {
 	return {
 		variant: variant.id,
 		holdsParts: true,
-		measures: interfaceMeasures(inspection),
+		measures: inspection.measures,
 		entryPoints: inspection.entryPoints.map((entry) => interfacePart(entry.node)),
 		passThrough: inspection.passThrough.map(interfacePart),
 	};

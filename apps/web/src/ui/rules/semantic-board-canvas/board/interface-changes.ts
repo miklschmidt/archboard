@@ -4,9 +4,12 @@
 // It sets no comparison status: a part a new caller now reaches keeps its own
 // standing.
 
-import { compareInterfaces, type InterfaceChange } from "@archboard/board/container-interface";
+import { compareInterfaces } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+
+/** How one container's interface moved between two variants. */
+type InterfaceChange = ReturnType<typeof compareInterfaces>["changed"][number];
 
 /** How a part moved, by the list of the change that holds it. */
 type InterfaceMove = Exclude<keyof InterfaceChange, "container" | "holdsParts">;
@@ -54,4 +57,4 @@ function movedParts(change: InterfaceChange): MovedPart[] {
 	return MOVES.flatMap((move) => change[move].map((part) => ({ part, move })));
 }
 
-export { type InterfaceMove, type MovedPart, interfaceChangesOf, movedParts };
+export { type InterfaceChange, type InterfaceMove, type MovedPart, interfaceChangesOf, movedParts };

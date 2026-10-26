@@ -3,15 +3,14 @@
 // then each draft and each shelved variant in the order the board states them.
 //
 // Each count is read off that variant's own content by the shared
-// `inspectContainer` and `interfaceMeasures`, the derivation `semantic compare
-// --beside` answers with, so the pane and the CLI cannot disagree. Nothing is
+// `inspectContainer`, the derivation `semantic compare --beside` answers with, so the pane and the CLI cannot disagree. Nothing is
 // combined into a score and no row is marked better: the variant on screen is
 // marked only as the one on screen, and a shelved variant keeps the reason it
 // was let go (ADR 0030).
 
 import { useMemo, type JSX } from "react";
 
-import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
 	SidebarRegion,
@@ -20,7 +19,10 @@ import {
 import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
 
 /** The five measures of a container's interface. */
-type InterfaceMeasures = ReturnType<typeof interfaceMeasures>;
+type InterfaceMeasures = Extract<
+	ReturnType<typeof inspectContainer>,
+	{ holdsParts: true }
+>["measures"];
 
 /** One variant, with the container measured on it. */
 interface MeasuredVariant {
@@ -69,7 +71,7 @@ function measuredVariants(board: SemanticBoard, id: string): MeasuredVariant[] {
 function measuresOn(variant: SemanticVariant, id: string): InterfaceMeasures | null {
 	const node = variant.content.nodes.find((one) => one.id === id);
 	const inspection = node === undefined ? undefined : inspectContainer(variant.content, node);
-	return inspection?.holdsParts === true ? interfaceMeasures(inspection) : null;
+	return inspection?.holdsParts === true ? inspection.measures : null;
 }
 
 /**

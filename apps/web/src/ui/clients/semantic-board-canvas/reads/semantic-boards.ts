@@ -17,7 +17,6 @@ import { z } from "zod";
 import {
 	RememberedExposureSchema,
 	RememberedFindingsSchema,
-	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
 import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema } from "@archboard/board/policy";
@@ -34,6 +33,8 @@ import {
 } from "@archboard/board/render-reply";
 import type { RenderedVariantSchema } from "@archboard/board/render-reply";
 
+/** What the server remembers of every pass since it started. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 /** What one container exposed in the last pass, with when it was read. */
 type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
 /** What one judged container exposes. */

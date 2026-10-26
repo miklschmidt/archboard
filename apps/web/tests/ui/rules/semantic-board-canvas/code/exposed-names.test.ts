@@ -7,12 +7,13 @@
 
 import { expect, test } from "bun:test";
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import { exposedNamesState } from "#ui/rules/semantic-board-canvas/code/exposed-names.ts";
 
 /** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
+type RememberedReading = z.infer<typeof RememberedFindingsSchema>["readings"][number];
 
 const BINDING = { repo: "github.com/acme/shop", path: "src/orders" };
 const ORDERS: SemanticNode = {

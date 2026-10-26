@@ -8,7 +8,6 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { InterfaceChange } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import {
@@ -23,6 +22,7 @@ import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import {
 	movedParts,
+	type InterfaceChange,
 	type InterfaceMove,
 } from "#ui/rules/semantic-board-canvas/board/interface-changes.ts";
 

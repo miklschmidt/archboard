@@ -9,7 +9,7 @@
 
 import type {
 	RememberedExposureSchema,
-	RememberedFindings,
+	RememberedFindingsSchema,
 } from "@archboard/code-intel/code-check";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import {
@@ -23,6 +23,8 @@ import {
 import type { VaultCheckSchema } from "@archboard/board/policy";
 import type { z } from "zod";
 
+/** What the server remembers of every pass since it started. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 /** What one container exposed in the last pass, with when it was read. */
 type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
 

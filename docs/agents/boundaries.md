@@ -285,8 +285,8 @@ schema, `ReturnType` of the operation or an indexed access (ADR 0058):
 - `./policy` is the semantic policy, its evidence and palette, and the vault check with the
   diagnostic helpers that read it.
 - `./comparison` compares two variants and draws the proposal against current.
-- `./container-interface` reads and compares what a container exposes to its callers, and finds
-  the entry points that only pass one call on.
+- `./container-interface` reads what a container exposes to its callers, with its five measures,
+  compares two such interfaces, and finds the entry points that only pass one call on.
 - `./design-questions` is the answer of the design questions route.
 - `./commands` is what an agent may say: create, edit, branch, adopt, rename, shelve and move.
 - `./render-reply` is what a render answers and the theme it draws with.
@@ -395,13 +395,14 @@ holds the one module-level value, the served vault, which the page learns once b
 The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
 the code facts of a checkout and the code check of a board's claims. It also holds the history lens
 over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 17 names, where code outside imported 7 module paths. It imports `board`,
+subpaths with 16 names, where code outside imported 7 module paths. It imports `board`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
-- `./code-check` is the answer of the code check and the answer of the route that remembers it:
-  `CodeCheckAnswer` and `RememberedFindings`, with their schemas. The schema is in
+- `./code-check` is the answer of the code check, `CodeCheckAnswer` with its schema, and the schemas of
+  the two routes that remember it: the findings of each reading and the names one container
+  exposes. A reader derives their types with `z.infer`. The schemas are in
   `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes,
   the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from
   `shared/protocol/`. It also gives the label of a commit's

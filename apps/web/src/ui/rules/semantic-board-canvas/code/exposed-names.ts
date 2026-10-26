@@ -8,11 +8,12 @@
 // reading. Once a pass read exactly that version, a container it neither judged
 // nor skipped has a binding that names no module, and shows nothing.
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 
 /** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
+type RememberedReading = z.infer<typeof RememberedFindingsSchema>["readings"][number];
 
 /** The counts a pass left for one judged container. */
 type ContainerCounts = RememberedReading["containers"][number];

@@ -25,10 +25,12 @@
 import type {
 	CodeCheckAnswer,
 	RememberedExposureSchema,
-	RememberedFindings,
+	RememberedFindingsSchema,
 } from "@archboard/code-intel/code-check";
 import type { z } from "zod";
 
+/** What the server remembers of every pass since it started. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 /** What the last pass found on one board at one variant. */
 type RememberedReading = RememberedFindings["readings"][number];
 /** What one judged container exposes. */

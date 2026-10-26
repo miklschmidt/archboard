@@ -75,9 +75,8 @@ import type {
 import { inspectContainer } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";
-import type { interfaceMeasures } from "@archboard/board/container-interface";
 
-type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
+type ContainerInterface = Extract<ReturnType<typeof inspectContainer>, { holdsParts: true }>;
 
 /** What judging the containers of one board needs. */
 interface InterfaceReading {

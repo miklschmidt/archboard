@@ -10,11 +10,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
 import { codeFindingsQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 
 /** What the last pass found on one board at one variant. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type RememberedReading = RememberedFindings["readings"][number];
 
 /** One board as it is on screen: its name, the variant drawn, by id, and the version drawn. */

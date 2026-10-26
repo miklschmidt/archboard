@@ -6,7 +6,6 @@
 import { describe, expect, test } from "bun:test";
 import {
 	inspectContainer,
-	interfaceMeasures,
 	passThroughEntryPoints,
 	type ContainerInterface,
 } from "#shared/rules/inspect/container-interface.ts";
@@ -128,7 +127,7 @@ describe("a container's interface", () => {
 		expect(found.callers[1]?.edges).toHaveLength(2);
 		expect(found.callers[1]?.reaches).toEqual(["index"]);
 		expect(ends(found.outgoing)).toEqual(["ledger>disk:data"]);
-		expect(interfaceMeasures(found)).toEqual({
+		expect(found.measures).toEqual({
 			entryPoints: 1,
 			hiddenParts: 2,
 			callers: 2,
@@ -148,7 +147,7 @@ describe("a container's interface", () => {
 				edge("ledger", "store"),
 			],
 		});
-		expect(interfaceMeasures(interfaceOf(wired, "store"))).toEqual(interfaceMeasures(before));
+		expect(interfaceOf(wired, "store").measures).toEqual(before.measures);
 	});
 
 	test("only relationships count: a flow step from outside makes no entry point", () => {
