@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T21:00:00Z'
+updated_date: '2026-10-26T22:57:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -330,4 +330,10 @@ Integrated TASK-549.06 from signed source 254f3e22d8783a711120484f5ed442eb0ecba2
 TASK-549.06 is Done. TASK-549 remains In Progress. Reused the signed source evidence because the merge tree is identical; no tests or checks were rerun. The handoff records nine proposal cases, 59 regression cases, and five adapter cases; an added base-revision/proposal/adapter rerun passes 11 cases / 83 assertions; legacy semantic comparison passes 37 cases / 109 assertions; final affected browser lane passes 16 cases / 116 assertions. Source/frontend types, full lint, formatting, and evaluation input validation pass; evaluations cover 21 scenarios, 21 fixtures, and 14 coverage parts, with no model evaluation. Semantics has zero diagnostics; four affected proposals have zero code warnings; ten unrelated warnings remain. Renderer stays 60/60 and known board width 245/188 remains under TASK-549.24, so no full-gate success is claimed. All four architecture proposals are adopted and their prior variant meanings remain intact.
 
 The newly ready frontier is TASK-549.07, TASK-549.13, and TASK-549.14. TASK-549.07 requires the integrated .06 base. TASK-549.15 remains In Progress for parent browser acceptance. No .15 checkout was inspected or changed.
+
+Integrated TASK-549.15 from signed source 056139e2c85ddb3825bae31305b9d7be98688bfb through signed no-fast-forward merge 13e6ee7fc617f0c8d01864a1088dc80b1b4a2f0a. Merge parents are integration 212ef722bd5b0b9d6ce976119231be8d6378abb8 and source 056139e2c85ddb3825bae31305b9d7be98688bfb. Merge tree f06586c412427f3c10e56f232cf1efa99d1f8ede exactly equals the validated source tree. Both checkouts were clean before merge; source, integration, and merge signatures verify with the configured SSH signer.
+
+TASK-549.15 is Done. TASK-549 remains In Progress. Reused source evidence because the merge tree matches; no tests or checks were rerun. The handoff records a final isolated public reference suite of nine cases / 34 assertions; 23 focused proposal, CLI/HTTP, and opener cases; ten focused browser cases; final reference browser check of one case / 14 assertions; and passing source/frontend types, full lint, and formatting. The combined runtime command still hits three unchanged five-second reference deadlines and cleanup errors; the isolated reference suite passes without timeout changes. Semantics has zero diagnostics; four affected code checks have zero warnings; ten unrelated warnings remain. The known board width 245/188 remains under TASK-549.24, so no full-gate success is claimed. The four combined proposals are adopted and preserve their original architecture histories.
+
+The recomputed ready frontier is TASK-549.07, TASK-549.13, TASK-549.14, and TASK-549.20. TASK-549.07 and .13 have backend work complete and await parent browser acceptance. The .14 backend delegate is already active through T3 and must not be re-dispatched. TASK-549.20 is newly ready after .15 completion. No .14 checkout was inspected or changed.
 <!-- SECTION:NOTES:END -->

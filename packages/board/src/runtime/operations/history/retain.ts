@@ -25,6 +25,7 @@ import {
 import { readArchitectureCheckpoint } from "#runtime/operations/history/read.ts";
 import { historyResult, checkpointMetadata } from "#runtime/operations/history/result.ts";
 import { checkpointPublication } from "#runtime/store/model-publication.ts";
+import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
 
 /**
  * Prepare an immutable checkpoint from exactly the revision the caller read.
@@ -58,7 +59,8 @@ async function prepareCheckpoint(
 		revision: captured.revision,
 		createdAt: new Date().toISOString(),
 		request,
-		sources: await captureSource(context),
+		sources: await captureSource(context, current, vault),
+		...(await captureReferencePins(vault, current)),
 	});
 	const inputs = new Map([...captured.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	inputs.set("record.json", Buffer.from(JSON.stringify(record)));

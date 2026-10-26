@@ -2,9 +2,20 @@ import { z } from "zod";
 
 import { NonemptyString } from "#shared/schemas/nonempty-string.ts";
 
-const CodeTargetOpenRequestSchema = z
-	.object({ board: NonemptyString, element: NonemptyString })
-	.strict();
+const CodeTargetOpenRequestSchema = z.union([
+	z.strictObject({ board: NonemptyString, element: NonemptyString }),
+	z
+		.strictObject({
+			model: NonemptyString,
+			subject: NonemptyString,
+			state: NonemptyString.optional(),
+			checkpoint: NonemptyString.optional(),
+		})
+		.refine(
+			(request) => request.state === undefined || request.checkpoint === undefined,
+			"Select either state or checkpoint.",
+		),
+]);
 type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 
 const CodeTargetFailureCodeSchema = z.enum([
@@ -13,6 +24,8 @@ const CodeTargetFailureCodeSchema = z.enum([
 	"BOARD_NOT_FOUND",
 	"ELEMENT_NOT_FOUND",
 	"BINDING_UNAVAILABLE",
+	"MODEL_UNAVAILABLE",
+	"SOURCE_UNAVAILABLE",
 	"CHECKOUT_UNAVAILABLE",
 	"CHECKOUT_IDENTITY_CHANGED",
 	"CHECKOUT_ON_OTHER_REF",

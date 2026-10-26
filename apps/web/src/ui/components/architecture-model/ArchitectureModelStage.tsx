@@ -1,5 +1,5 @@
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
-import { useCallback, useEffect, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
@@ -27,12 +27,13 @@ import { ModelPublication } from "#ui/components/architecture-model/ModelPublica
 import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
 
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { useModelVault } from "#ui/hooks/architecture-model/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
-interface ModelStageProps {
+interface ModelStageProps extends Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice"> {
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
@@ -45,8 +46,45 @@ interface ModelStageProps {
  * @returns A model reader, or the existing board surface.
  */
 function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
+	const reading = useModelVault(props.vault, props.paneId);
+	if (reading.vault !== null) return <LocatedModelStage {...props} vault={reading.vault} />;
+	return (
+		<section
+			data-slot="architecture-model-stage"
+			className="bg-background flex min-h-0 flex-1 flex-col"
+		>
+			<ModelHeader
+				name="Architecture"
+				refresh={reading.refresh}
+				refreshing={reading.query.isFetching}
+			>
+				{null}
+			</ModelHeader>
+			{reading.query.isPending ? (
+				<output className="text-body p-8">Locating repository…</output>
+			) : (
+				<ModelError
+					code="REFERENCE_UNAVAILABLE"
+					message={
+						reading.query.error?.message ??
+						reading.error ??
+						"Repository information is unavailable. Refresh to retry."
+					}
+				/>
+			)}
+		</section>
+	);
+}
+
+/**
+ * Explicit canonical intent stays canonical even when the target still holds legacy boards.
+ * @param props The resolved repository and requested pane.
+ * @returns Its canonical reader or the existing empty-board surface.
+ */
+function LocatedModelStage(props: ModelStageProps): JSX.Element {
 	const boards = useQuery(semanticBoardListQuery(props.vault));
-	if (boards.data?.boards.length !== 0) return <>{props.children}</>;
+	const { model } = useModelLocation(props.paneId);
+	if (model === null && boards.data?.boards.length !== 0) return <>{props.children}</>;
 	return <CanonicalModelReader {...props} />;
 }
 
@@ -60,6 +98,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		checkpoint,
 		state,
 		against,
+		subject,
 		selectState,
 		compareAgainst,
 		selectCheckpoint,
@@ -124,6 +163,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			</ModelHeader>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
 			<ModelResponse
+				subject={subject}
 				paneId={props.paneId}
 				vault={props.vault}
 				reducedMotion={props.reducedMotion}
@@ -131,6 +171,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				current={current}
 				stale={stale}
 				failure={feed.failure}
+				onCodeTargetNotice={props.onCodeTargetNotice}
 			/>
 		</section>
 	);
@@ -277,10 +318,11 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 	return stale ? "stale" : "ready";
 }
 
-interface ModelResponseProps {
-	vault: string;
-	paneId: string;
-	reducedMotion: boolean;
+interface ModelResponseProps extends Pick<
+	ModelStageProps,
+	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
+> {
+	subject: string | null;
 	query: ModelQuery;
 	current: boolean;
 	stale: boolean;
@@ -315,11 +357,13 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 					<ModelStateDetails model={model} />
 					<CheckpointEvidence model={model} />
 					<ModelReading
-						key={model.manifest.id}
+						key={JSON.stringify([model.manifest.id, props.subject])}
+						subject={props.subject}
 						vault={props.vault}
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
+						onCodeTargetNotice={props.onCodeTargetNotice}
 					/>
 				</>
 			)}

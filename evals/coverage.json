@@ -1142,6 +1142,13 @@
 					"owner": "packages/board/tests/runtime/operations/model-edit/flows.test.ts; structure-recovery.test.ts; tests/system/semantic-boards/model-flows.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical code bindings and explicit foreign model references",
+					"expectedUse": "Resolve source through existing checkout selection. Follow explicit model, subject and state references without changing ownership. Retain exact foreign pins and expose unavailable architecture or source without current substitutes.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts; tests/system/semantic-boards/model-references.test.ts; tests/system/code-targets/canonical-model.test.ts; visible controls and addresses: tests/system/browser/canonical-model-code.test.ts, canonical-model-references.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
 					"path": "canonical compact proposals: retained baselines, identity changes, draft metadata, siblings, named predecessors, planning roots, exact materialization, comparison defaults and safe predecessor refusal",
 					"expectedUse": "Create and edit a selected draft through the normal claimed batch. Keep current files unchanged and use selectedState lifecycle. Compare against current, retained predecessor, or an explicit coherent state. Preserve unsupported predecessor changes for later reconciliation.",
 					"scenarios": [],
