@@ -4,6 +4,7 @@ title: Make canonical models the default and retire live board paths
 status: To Do
 assignee: []
 created_date: '2026-10-26T05:26:00Z'
+updated_date: '2026-10-26T11:20:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -58,3 +59,9 @@ TASK-549.13, TASK-549.16, TASK-549.18, TASK-549.23
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Keep the interface-width ceilings introduced on main intact. Retire the superseded legacy public APIs during cutover so the completed migration fits the existing board ceiling. The temporary dual-model implementation currently adds 21 public names to board. Do not hide these names behind a namespace or raise the ceiling.
+<!-- SECTION:PLAN:END -->

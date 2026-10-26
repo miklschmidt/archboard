@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 160,
+	"version": 162,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T11:12:53.749Z",
+	"updatedAt": "2026-10-26T11:23:08.261Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -84538,7 +84538,7 @@
 		{
 			"id": "e5Hkqu5d",
 			"name": "TASK-549.19-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "b5XrsxTf",
 			"summary": "Combine retained checkpoints with explicit legacy inventory and mapping plans",
 			"documents": [
@@ -92155,7 +92155,7 @@
 		{
 			"id": "15rxj8Zj",
 			"name": "TASK-549-main-refactor-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "K60P8BZk",
 			"content": {
 				"nodes": [
@@ -94335,7 +94335,7 @@
 						"id": "ZglcNYUQ",
 						"order": 96000,
 						"from": "TsCise1I",
-						"to": "iIJ5MRhi",
+						"to": "yHgIapK7",
 						"kind": "call",
 						"emphasis": "normal",
 						"anchor": {
@@ -94393,7 +94393,7 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/clients/server/legacy-migration.ts",
-							"symbol": "currentWriteDoing"
+							"symbol": "statedInvocation"
 						}
 					}
 				],
@@ -99962,7 +99962,7 @@
 			}
 		}
 	],
-	"current": "e5Hkqu5d",
+	"current": "15rxj8Zj",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -100179,6 +100179,13 @@
 			"from": "b5XrsxTf",
 			"at": "2026-10-26T10:01:47.433Z",
 			"reason": "TASK-549.02 checkpoints and TASK-549.19 inventory are implemented together; both original adopted readings remain historical"
+		},
+		{
+			"variant": "15rxj8Zj",
+			"from": "e5Hkqu5d",
+			"at": "2026-10-26T11:23:08.261Z",
+			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass.",
+			"forced": true
 		}
 	],
 	"shelvings": [

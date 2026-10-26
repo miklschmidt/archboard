@@ -46,7 +46,7 @@ Separate cache keys prevent a current result from supplying a historical reading
 The retained identity and source-evidence availability remain visible beside its architecture.
 The browser never creates checkpoints.
 
-This decision extends ADR 0058 for retained canonical readings.
+This decision extends ADR 0060 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
 Publication, private archives, proposal changes, and migration remain separate delivery slices.
 
