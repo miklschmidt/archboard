@@ -95,10 +95,11 @@ the semantic facts. The combined model is derived from those files, so no
 separately authored aggregate board is needed. Repository-wide vocabulary and
 policy remain configuration concerns.
 
-Proposals, variant history, and walkthroughs still need an explicit storage
-design before migration. Retiring the board document must preserve those
-capabilities. Their placement is unresolved and does not establish another
-per-module board or variant tree.
+Proposals and variant history still need an explicit storage design before
+migration. Retiring the board document must preserve those capabilities.
+Their placement is unresolved and does not establish another per-module board
+or variant tree. Walkthroughs carry narrative and reading instructions in
+`[name].walkthrough.json`, as described below.
 
 ## Dynamic readings and selection
 
@@ -151,6 +152,26 @@ Sequence and flowchart readings need an appropriate flow. When that flow does
 not exist, an agent can investigate and explain it. The product must expose
 the missing information rather than invent an order. The exact interaction for
 choosing or requesting a flow remains open.
+
+## Dynamic walkthroughs
+
+A walkthrough references the architecture state that it explains. Each beat
+contains narrative and a reading: scope, selected subjects, filters, diagram
+mode, and a flow when the mode requires one. These references use stable
+identities. The walkthrough does not contain copies of modules or architecture
+snapshots.
+
+Playback can move from the repository overview into a module, focus several
+subjects, and then follow a flow. The viewer resolves each reading through the
+same navigation and rendering behavior that a reader uses directly. The renderer
+computes each scene, and the viewer handles camera movement and transitions.
+Authors do not record coordinates or require a named view for each beat.
+
+The narrative and reading instructions live in `[name].walkthrough.json`.
+Historical playback needs access to the referenced architecture state.
+The choice between a fixed revision and an explicitly evolving reading remains
+part of the revision design. Missing subjects or states must be reported,
+without silently substituting a different subject or revision.
 
 ## Explanations in the reading
 
@@ -281,7 +302,8 @@ The following choices remain unresolved:
 - The managed PostgreSQL provider and application account schema.
 - The identity provider, local sign-in flow, and authorization responsibilities.
 - The access policy and revision behavior of private viewer links.
-- The storage and revision model for proposals, variant history, and walkthroughs.
+- The storage and revision model for proposals and variant history.
+- Revision references for walkthroughs and recovery of missing historical states.
 - The role of Merkle structures in snapshots, comparisons, or synchronization.
 - The migration of overlapping board subjects and their historical identities.
 - The scope of editing claims and transactions after board ownership ends.
