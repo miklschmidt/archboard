@@ -19,9 +19,14 @@ const ready = loadLayoutEngine(async () => {
 	return [viz, AvoidLib.getInstance()];
 });
 let initFailure = false;
-void ready.catch(() => {
-	initFailure = true;
-});
+// The pool starts its next worker once this one says its engine is loaded.
+void ready.then(
+	// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
+	() => self.postMessage({ ready: true }),
+	() => {
+		initFailure = true;
+	},
+);
 let queue: Promise<void> = Promise.resolve();
 
 self.addEventListener("message", (event: MessageEvent<Request>) => {
@@ -29,7 +34,10 @@ self.addEventListener("message", (event: MessageEvent<Request>) => {
 	queue = queue.then(async () => {
 		try {
 			const solve = await ready;
-			const data = solve(request.graph, request.layoutOptions);
+			const data = solve(request.graph, request.layoutOptions, (told) =>
+				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
+				self.postMessage({ id: request.id, told }),
+			);
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
 			self.postMessage({ id: request.id, data });
 		} catch (error) {

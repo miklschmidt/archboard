@@ -1,11 +1,11 @@
 ---
 id: TASK-526.04
 title: render --track makes a tracked embed that its board lists
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T18:56:00Z'
+updated_date: '2026-10-24T23:58:00Z'
 labels:
   - cli
   - schema
@@ -29,12 +29,12 @@ A change in the vault repository can make an embed in another repository outdate
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 semantic render --out <file> --track adds { repo, path } to a board-level list, and semantic show returns the list
-- [ ] #2 --track takes the lease, needs --doing from an agent and raises the version, and does not move the last change that behind reads
-- [ ] #3 --track is refused when no registered checkout of the vault repository exists or the file is in no Git checkout
-- [ ] #4 In the vault repository, check embeds reports an outdated tracked embed of another repository as information
-- [ ] #5 --fix in the vault repository draws a tracked embed again only in a registered checkout, and names the others
-- [ ] #6 After a move, the target vault check names each tracked embed whose recipe names the old repository, and --fix rewrites the recipe
+- [x] #1 semantic render --out <file> --track adds { repo, path } to a board-level list, and semantic show returns the list
+- [x] #2 --track takes the lease, needs --doing from an agent and raises the version, and does not move the last change that behind reads
+- [x] #3 --track is refused when no registered checkout of the vault repository exists or the file is in no Git checkout
+- [x] #4 In the vault repository, check embeds reports an outdated tracked embed of another repository as information
+- [x] #5 --fix in the vault repository draws a tracked embed again only in a registered checkout, and names the others
+- [x] #6 After a move, the target vault check names each tracked embed whose recipe names the old repository, and --fix rewrites the recipe
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,4 +82,12 @@ Out of scope: check embeds in a docs repository without a vault is refused with 
 Code check diff (check code with and without --variant TASK-526.04). No finding added and none cleared, after the proposal drew Track embed route to Vault requirement.
 
 Footprint against 020258b51 (68d83be44^). Command interface: namedAndChanged Rasterize, Render, Embeds check, Tracked embed. changedNotNamed Vault check (vault.ts: the description of the embeds check and its listing relationship, metadata only; the board stays true) and Commands (the container of the named parts). namedNotChanged Request transport, named only by a relationship. Board persistence: namedAndChanged Track an embed. changedNotNamed Lifecycle transitions (transitions.ts: the doc comment of changesExistingBoard only). namedNotChanged Write under lease, named only by a relationship. Archboard server routes: namedAndChanged Board routes, Track embed route. namedNotChanged Board write routes and Vault requirement, named only by relationships.
+
+Closing evidence: tests/system/semantic-boards/tracked-embeds.test.ts (4 cases, pass) owns criteria 1 to 6; packages/board/tests/runtime/operations/embeds/track.test.ts owns the version and the lease; packages/code-intel/tests/runtime/operations/history-lens/behind.test.ts owns 'a tracked embed is no change'. The refusal for a file that Git ignores was never reached, because its directory did not exist; 85602127b makes it reachable, and the case fails with that refusal removed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+semantic render and rasterize take --track. The board gains a board-level trackedEmbeds list of {repo, path}, written through the board write boundary (lease, --doing, version), and the last change that behind reads does not move. --track is refused for a file in no Git checkout, a file that Git ignores, and a vault whose repository has no registered checkout. In the vault repository, check embeds reads each tracked embed: one in another repository is information, --fix draws it again only in a registered checkout and names the others (EMBED_TRACKED_UNREACHABLE), and after a move EMBED_VAULT_MOVED names each recipe of the old repository and --fix rewrites it. Gate: every lane passes except the timing bounds of wide-boards.test.ts, which another agent's load on this machine makes unmeasurable (see TASK-527).
+<!-- SECTION:FINAL_SUMMARY:END -->

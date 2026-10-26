@@ -2,10 +2,11 @@
 // side by side. Weighing it lays the block out both ways, and on the track
 // engine that is most of a board's solve. So the renderer may ask for two
 // solves, each laying the first block that could stack only one way and
-// telling what that way stood at (`Stood`); it then makes the choice where it
-// runs, by the same weighing, and keeps the solve that laid the way chosen
-// (`solves.ts`). Every later choice in either solve is made as before, so
-// the solve kept is the one laying both ways would give (TASK-377).
+// telling what that way stood at (`Stood`) as soon as it is laid; it then
+// makes the choice where it runs, by the same weighing, keeps the solve that
+// lays the way chosen and calls the other off (`solves.ts`). Every later
+// choice in either solve is made as before, so the solve kept is the one
+// laying both ways would give (TASK-377).
 import { z } from "zod";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { CardLayout } from "#shared/rules/blocks/cards/card-layout.ts";
@@ -20,9 +21,7 @@ import { scoreOf, takes, type Weighed } from "#shared/rules/track/scene/score.ts
 
 /** The root option laying a solve's first block that could stack only one way, `true` stacked (`solves.ts`). */
 const BLOCKS_STACKING = "archboard.blocks.stacking";
-/** The root option asking a solve to answer once that block is laid, `true` when asked. */
-const BLOCKS_UNTIL_STOOD = "archboard.blocks.until-stood";
-/** The root option a solve answers what that block stood at in, as JSON. */
+/** The root option a solve tells what that block stood at in, as JSON, once it is laid and when it answers. */
 const BLOCKS_STOOD = "archboard.blocks.stood";
 
 /** How near two scores or fits of a block are for the stacking choice's earlier weighing to call them tied. */
@@ -52,24 +51,13 @@ type Scored = z.infer<typeof ScoredSchema>;
 
 /**
  * The stacking choice of one solve: the way its first block that could
- * stack is laid, when only one way is, whether the solve answers once it is,
- * and what that way stood at once laid.
+ * stack is laid, when only one way is, what that way stood at once laid, and
+ * who is told it then, while the solve goes on.
  */
 interface Stacking {
 	way: boolean | undefined;
-	readonly until: boolean;
 	stood?: Stood;
-}
-
-/** What ends a solve that answers once its first block that could stack is laid: what that block stood at. */
-class StoodLaid extends Error {
-	/**
-	 * End the solve with what its first block that could stack stood at.
-	 * @param stood What the block stood at.
-	 */
-	constructor(readonly stood: Stood) {
-		super("The solve's first block that could stack is laid.");
-	}
+	readonly tell?: ((stood: Stood) => void) | undefined;
 }
 
 /**
@@ -154,8 +142,7 @@ function stacks(stacked: Stood, plain: Stood): boolean {
  * {@link stacks} chooses. Its titles are pulled onto their members where
  * that crosses and draws no more line. The first block of a solve that
  * could stack is laid only the way the solve's stacking names, when it
- * names one, and what that way stood at is kept on it; a solve that answers
- * once it is laid ends there ({@link StoodLaid}).
+ * names one, and what that way stood at is kept on it and told.
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
@@ -190,7 +177,7 @@ function stackedOrNot(
 		const laying = lay(way);
 		stacking.way = undefined;
 		stacking.stood = stoodOf(block, insets, laying);
-		if (stacking.until) throw new StoodLaid(stacking.stood);
+		stacking.tell?.(stacking.stood);
 		return { whole: settled(laying), stacked: way };
 	}
 	const [plain, stacked] = [lay(false), lay(true)];
@@ -201,8 +188,6 @@ function stackedOrNot(
 export {
 	BLOCKS_STACKING,
 	BLOCKS_STOOD,
-	BLOCKS_UNTIL_STOOD,
-	StoodLaid,
 	StoodSchema,
 	stackedOrNot,
 	stacks,

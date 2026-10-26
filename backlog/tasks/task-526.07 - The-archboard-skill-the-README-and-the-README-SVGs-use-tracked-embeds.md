@@ -1,11 +1,11 @@
 ---
 id: TASK-526.07
 title: The archboard skill, the README and the README SVGs use tracked embeds
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T20:34:00Z'
+updated_date: '2026-10-25T00:01:00Z'
 labels:
   - skill
   - docs
@@ -29,10 +29,10 @@ Agents embed diagrams in documentation, and they need to know to use --track and
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The archboard skill tells agents to embed a picture in documentation with render --out and --track, and to run archboard check after a change
-- [ ] #2 The README has a section on tracked embeds with the render command, what archboard check says after a code change, and check --fix
-- [ ] #3 The architecture, sequence and web-shop SVGs in docs/readme are tracked embeds, and archboard check reports them current
-- [ ] #4 The documentation says to keep the metadata element when a pipeline runs SVGO
+- [x] #1 The archboard skill tells agents to embed a picture in documentation with render --out and --track, and to run archboard check after a change
+- [x] #2 The README has a section on tracked embeds with the render command, what archboard check says after a code change, and check --fix
+- [x] #3 The architecture SVGs in docs/readme are tracked embeds, and archboard check reports them current
+- [x] #4 The documentation says to keep the metadata element when a pipeline runs SVGO
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,14 @@ No board proposal: no board draws the README kit or the skills. The Archboard bo
 Gate on worktree-agent-a79292b0539f5c66b (main merged with feat/check-export-artifacts): bun run check stopped at test:modules with 4924 pass and 2 fail, both the known timing case in packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts (first layout 3119 ms and 3113 ms against 3000 ms, Agent workbench and Archboard server routes; TASK-527 repairs it). Lint, fmt:check, type-check and build:frontend passed before it. The remaining lanes run on their own: test:system 281 pass 0 fail, test:repository 136 pass 0 fail, test:serial-browser 19 of 19 files, exit 0. archboard check embeds in this checkout lists docs/readme/architecture-light.svg and -dark.svg as embeds and as tracked embeds of Archboard, with no finding; archboard check semantics exit 0; readme:check lists architecture, sequence and web-shop as current.
 
 Review (2026-10-24): a reviewer fixed six findings in 82173775d (README caption showed a refused command; a rename is not current for a titled picture), f8a2dcd4b (--track only lists the file; when not to track), 2d3efd2cb (coverage row owners), f87fc3980 (edit.md line left to TASK-526.06, which names semantic delete; the earlier note that this task names it is superseded), cf4797374 (renderer changes now show as EMBED_RENDERER_CHANGED). Criterion 3 holds for the architecture SVGs only: sequence and web-shop come from examples/web-shop, which is no servable vault in this checkout, so the kit strips their recipe and its manifest hash owns their staleness. Moving the example into a repository of its own makes them tracked embeds; that is the owner decision. A person must attach the refreshed code-evidence clip (it types check code). readme:check lists 12 clips, banner and videos stale because the TASK-526 branch changed their sources; they need filming and attaching by a person.
+
+Criterion 3 is met for docs/readme/architecture-{dark,light}.svg: they carry recipes, the Archboard board lists them, and archboard check embeds reports no finding (exit 0, 2026-10-25). The sequence and web-shop SVGs come from examples/web-shop, which is no servable vault (the server serves only <dir>/.archboard/vault of a checkout), so the README kit strips their recipe. They become tracked embeds only if the example moves into a repository of its own, which is the owner's decision. The task stays open on that decision.
+
+2026-10-25: the owner narrowed criterion 3 to the architecture SVGs. archboard check embeds in this checkout: exit 0, embeds docs/readme/architecture-{dark,light}.svg, both tracked on Archboard (vKEsyHFk), no findings. ADR 0057's consequence now says that the sequence and web-shop SVGs carry no recipe.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The archboard skill tells agents to draw an embedded picture into its Git checkout with render --out and --track and to run archboard check after a change, and says to keep <metadata> when a pipeline runs SVGO (also in INSTALL.md). The README gained 'Diagrams that stay current in your docs' with the render command, the EMBED_OUTDATED warning and check --fix. The README kit draws the architecture SVGs from .archboard/vault in place with --track, so the Archboard board lists them and archboard check reports them current. The sequence and web-shop SVGs come from examples/web-shop, which is no vault in place, so the kit strips their recipe and the manifest hash says when they are stale.
+<!-- SECTION:FINAL_SUMMARY:END -->

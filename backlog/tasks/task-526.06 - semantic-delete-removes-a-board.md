@@ -1,11 +1,11 @@
 ---
 id: TASK-526.06
 title: semantic delete removes a board
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T19:40:00Z'
+updated_date: '2026-10-24T23:58:00Z'
 labels:
   - cli
 dependencies:
@@ -27,11 +27,11 @@ Archboard has no command that deletes a board, so a deletion happens by hand in 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard semantic delete <board> removes the whole note, with the lease, --doing from an agent and --expect-version
-- [ ] #2 The delete is refused while a node on another board opens the board, and the refusal names those boards
-- [ ] #3 The answer lists the tracked embeds of the deleted board
-- [ ] #4 After a delete, a new board can take the name and the former names
-- [ ] #5 The browser offers no delete
+- [x] #1 archboard semantic delete <board> removes the whole note, with the lease, --doing from an agent and --expect-version
+- [x] #2 The delete is refused while a node on another board opens the board, and the refusal names those boards
+- [x] #3 The answer lists the tracked embeds of the deleted board
+- [x] #4 After a delete, a new board can take the name and the former names
+- [x] #5 The browser offers no delete
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,4 +72,12 @@ Command interface is NOT branched (parallel work). Its TASK-526.06 proposal must
 - optionally relabel Record -> Board client (2CGrRQ78) unchanged; nothing else on that board moves. Then run the code check diff for its proposal name.
 
 Outside this task's fence: bun run lint fails on apps/cli/src/cli/operations/vault/embeds/tracked-embeds.ts:174 (complexity 8 > 6), from commit 686dd722e of the merged feat/check-export-artifacts; the parallel embeds-check work owns it. skills/archboard/references/edit.md says "discard the copy you do not want first" after a stopped move: semantic delete is now that command (TASK-526.07 owns the skill).
+
+Closing evidence: tests/system/cli/semantic-delete.test.ts (refusal exit statuses, BOARD_OPENED_BY naming the opener, the answer's trackedEmbeds) and packages/board/tests/runtime/operations/write/delete.test.ts (openers on current and draft variants refuse, the name and former names are free). Criterion 5: apps/web calls no discard or delete route for a board; it calls only board, locality, move, move-preview, render and take-back.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic delete <board> removes the whole note through the discard route, with the lease, --doing for an agent and --expect-version. It is refused with BOARD_OPENED_BY (exit 5), naming each node, while a current or draft variant of another board in the vault opens the board. The answer lists the board's tracked embeds, and the name and former names become free for a new board. The browser offers no delete.
+<!-- SECTION:FINAL_SUMMARY:END -->
