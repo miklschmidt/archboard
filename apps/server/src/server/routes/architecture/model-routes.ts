@@ -6,9 +6,7 @@ import {
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
-import {
-	ArchitectureCheckpointRequestSchema,
-	} from "@archboard/board/model";
+import { ArchitectureCheckpointRequestSchema } from "@archboard/board/model";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/routes/architecture/model-edit-routes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
@@ -29,7 +27,7 @@ const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
- mountArchitectureEditRoutes(app);
+	mountArchitectureEditRoutes(app);
 	app.get("/api/architecture/model", requireVault, async (req, res) => {
 		const query = QuerySchema.safeParse(req.query);
 		if (!query.success) {

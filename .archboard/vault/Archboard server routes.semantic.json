@@ -4,7 +4,7 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 120,
+	"version": 123,
 	"createdAt": "2026-10-11T14:01:48.941Z",
 	"updatedAt": "2026-10-26T11:12:55.370Z",
 	"views": [
@@ -336,6 +336,23 @@
 					"sVYH3JhL",
 					"nn1ec9Tw",
 					"r6IpmadI"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "tL3hGGwg",
+			"name": "Canonical durable writes",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"9zu5ryhZ",
+					"wQ63dmRZ",
+					"bB2IRV9I",
+					"fs2ehN0i",
+					"8vCjLQ0W"
 				],
 				"edges": [],
 				"flows": []
@@ -86328,6 +86345,35 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/migration-routes.ts"
 						}
+					},
+					{
+						"id": "9zu5ryhZ",
+						"order": 38000,
+						"name": "Canonical edit routes",
+						"kind": "module",
+						"responsibility": "Adapts description edits, claims, recovery and fresh current event streams",
+						"description": "Every call names a vault. Mutation work stays tracked through response loss and shutdown. Shared runtime contracts own claims, durable completion and recovery. The browser presentation remains parent-owned TASK-549.03 work.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts"
+						}
+					},
+					{
+						"id": "c5u3ETJ8",
+						"order": 39000,
+						"name": "Mutation work",
+						"kind": "module",
+						"responsibility": "Tracks accepted mutation work through response loss and server shutdown",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/middleware/mutation-work/mutation-work.ts"
+						}
 					}
 				],
 				"edges": [
@@ -87695,6 +87741,119 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/migration-routes.ts",
 							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "x9A8Wn5u",
+						"order": 108000,
+						"from": "nn1ec9Tw",
+						"to": "9zu5ryhZ",
+						"kind": "call",
+						"label": "mount canonical operations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
+							"symbol": "mountArchitectureEditRoutes"
+						}
+					},
+					{
+						"id": "DDgCzWpy",
+						"order": 109000,
+						"from": "9zu5ryhZ",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "shared operations and coherent subscriptions",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "editArchitectureModule"
+						}
+					},
+					{
+						"id": "ncTGv1jp",
+						"order": 110000,
+						"from": "9zu5ryhZ",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "explicit vault guard",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "GtwK4egT",
+						"order": 111000,
+						"from": "9zu5ryhZ",
+						"to": "c5u3ETJ8",
+						"kind": "call",
+						"label": "track accepted mutations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "asyncEndpoint"
+						}
+					},
+					{
+						"id": "idpOv420",
+						"order": 112000,
+						"from": "wQ63dmRZ",
+						"to": "9zu5ryhZ",
+						"kind": "http",
+						"label": "HTTP edits, claims and recovery",
+						"description": "The CLI model edit contract calls editArchitectureModuleOnServer, which posts the explicit path mounted here.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "mountArchitectureEditRoutes"
+						}
+					},
+					{
+						"id": "EJAnYLlO",
+						"order": 113000,
+						"from": "YWQbfysA",
+						"to": "c5u3ETJ8",
+						"kind": "call",
+						"label": "asyncEndpoint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+							"symbol": "asyncEndpoint"
+						}
+					},
+					{
+						"id": "dam6HfBG",
+						"order": 114000,
+						"from": "r6IpmadI",
+						"to": "c5u3ETJ8",
+						"kind": "call",
+						"label": "asyncEndpoint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
+							"symbol": "asyncEndpoint"
+						}
+					},
+					{
+						"id": "bldMN1ZH",
+						"order": 115000,
+						"from": "TW3uG9Uh",
+						"to": "c5u3ETJ8",
+						"kind": "call",
+						"label": "callerGone",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+							"symbol": "callerGone"
 						}
 					}
 				],

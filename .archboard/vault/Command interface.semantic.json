@@ -4,7 +4,7 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 159,
+	"version": 160,
 	"createdAt": "2026-09-12T22:28:19.474Z",
 	"updatedAt": "2026-10-26T11:12:53.749Z",
 	"views": [
@@ -96828,7 +96828,7 @@
 						"name": "Canonical model client",
 						"kind": "module",
 						"responsibility": "Preserves shared read, retain and list outcomes across HTTP, including structured refusals",
-						"description": "Preserves current reads and checkpoint results, and translates canonical description edits, claims and recovery without owning transaction rules.",
+						"description": "Preserves shared current reads, checkpoint results, edit outcomes, claims and recovery across HTTP, including structured domain refusals.",
 						"parent": "dHZeNcMs",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -96864,8 +96864,16 @@
 						"order": 58000,
 						"name": "Model edit commands",
 						"kind": "module",
-						"responsibility": "Addresses description edits, claims and recovery through shared canonical contracts",
-						"parent": "bLpk2XKU"
+						"responsibility": "Exposes canonical description edits, claims, release, claim lists and recovery",
+						"description": "JSON requests preserve explicit targets, subject identity, full read tokens and stable operation IDs. The shared runtime owns installation, recovery and retry rules.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/edit.ts"
+						}
 					}
 				],
 				"edges": [
@@ -98266,6 +98274,48 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/server-lifecycle/src/runtime/clients/legacy-migration-client.ts",
+							"symbol": "currentWriteDoing"
+						}
+					},
+					{
+						"id": "4PgjyVVt",
+						"order": 99000,
+						"from": "iIVu1bGE",
+						"to": "4jS9CVi6",
+						"kind": "call",
+						"label": "register model edit, claim and recovery",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "modelEditContract"
+						}
+					},
+					{
+						"id": "PmRXYBFT",
+						"order": 100000,
+						"from": "4jS9CVi6",
+						"to": "TsCise1I",
+						"kind": "call",
+						"label": "shared canonical operations",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/edit.ts",
+							"symbol": "editArchitectureModuleOnServer"
+						}
+					},
+					{
+						"id": "6JptLyJB",
+						"order": 101000,
+						"from": "4jS9CVi6",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "explicit doing line",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/edit.ts",
 							"symbol": "currentWriteDoing"
 						}
 					}

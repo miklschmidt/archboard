@@ -93,6 +93,7 @@ const ArchitectureEventSchema = z.discriminatedUnion("type", [
 			revision: ModelRevisionSchema,
 			subjects: z.array(QualifiedSubjectIdSchema),
 			reason: z.enum(["completed", "external"]),
+			operation: ArchitectureEditSuccessSchema.optional(),
 		})
 		.strict(),
 	z
