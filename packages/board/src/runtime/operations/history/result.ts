@@ -9,6 +9,10 @@ type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
 	REFERENCE_UNAVAILABLE:
 		"Restore the named foreign model and exact checkpoint. Retain its current reading first if needed, then retry the local operation. No foreign model is written.",
+	STATE_NOT_FOUND: "Read the proposal catalogue and use an existing stable state identity.",
+	STATE_AMBIGUOUS: "Use one stable state identity from the diagnostic.",
+	PREDECESSOR_CHANGED:
+		"Keep the immutable baseline and draft changes. Reconciliation belongs to TASK-549.07.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",
@@ -155,7 +159,22 @@ function editResult(
 		applied: true,
 		reconciliation: false,
 		operationId: request.operationId,
-		target: request.target,
+		target:
+			record.selection?.lifecycle === "draft"
+				? { model: record.model, state: record.selection.id }
+				: request.target,
+		...(record.selection?.lifecycle !== "draft"
+			? {}
+			: {
+					selectedState: {
+						id: record.selection.id,
+						name: record.selection.name,
+						formerNames: record.selection.formerNames,
+						summary: record.selection.summary,
+						documents: record.selection.documents,
+						lifecycle: "draft" as const,
+					},
+				}),
 		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,
 		after: record.revision,

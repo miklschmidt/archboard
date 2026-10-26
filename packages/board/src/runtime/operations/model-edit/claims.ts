@@ -15,7 +15,7 @@ import {
 } from "#shared/schemas/model-operations.ts";
 import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
 import { archiveFailure, historyResult } from "#runtime/operations/history/result.ts";
-import { ArchiveError } from "#runtime/store/model-archive.ts";
+import { archiveContext, ArchiveError } from "#runtime/store/model-archive.ts";
 import {
 	JournalSchema,
 	ClaimsStateSchema,
@@ -54,16 +54,35 @@ function readArchitectureClaims(vault: string): ArchitectureClaimList {
  * @param target The explicitly selected model and current state.
  * @returns The coherent selected state or a structured refusal.
  */
-function requireTarget(vault: string, target: ArchitectureClaim["target"]) {
+async function requireTarget(vault: string, target: ArchitectureClaim["target"]) {
 	const current = readCurrentModel(vault);
 	if (!current.success) return current;
-	if (current.manifest.id !== target.model || current.manifest.current?.id !== target.state)
+	if (current.manifest.id !== target.model)
 		throw new ArchiveError(
 			"TARGET_CHANGED",
-			"The selected model or current state changed. Read it again before writing.",
+			"The selected model changed. Read it again before writing.",
 		);
-	return current;
+	if (currentStateId(current.manifest) === target.state) return current;
+	const proposal = current.proposals.find((entry) => entry.id === target.state);
+	if (proposal === undefined)
+		throw new ArchiveError(
+			"TARGET_CHANGED",
+			"The selected state changed. Read it again and use its stable identity before writing.",
+		);
+	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
+	return resolveState(await archiveContext(vault), current, proposal.id);
 }
+/**
+ * Read the designated state without inventing one for a planning model.
+ * @param manifest The current manifest.
+ * @returns Its current identity or absence.
+ */
+function currentStateId(
+	manifest: Extract<ReturnType<typeof readCurrentModel>, { success: true }>["manifest"],
+) {
+	return manifest.current === null ? null : manifest.current.id;
+}
+
 /**
  * Extend only the same writer's exact explicit subject scope.
  * @param vault The explicitly addressed vault.
@@ -126,14 +145,15 @@ async function claimArchitectureSubjects(
 ): Promise<ArchitectureClaimResult> {
 	const request = ArchitectureClaimRequestSchema.parse(input);
 	const result = await historyResult("MODEL_WRITE_FAILED", () =>
-		withModelLock(vault, () => {
+		withModelLock(vault, async () => {
 			requireNoPending(vault);
-			const current = requireTarget(vault, request.target);
+			const current = await requireTarget(vault, request.target);
 			if (!current.success) return current;
 			if (
 				request.subjects.some(
 					(subject) =>
 						subject !== current.manifest.id &&
+						subject !== current.selectedState?.id &&
 						!current.modules.some((module) => module.id === subject) &&
 						!current.relationships.some((relationship) => relationship.id === subject) &&
 						!current.collections.some((collection) =>

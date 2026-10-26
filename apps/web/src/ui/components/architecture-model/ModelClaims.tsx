@@ -68,11 +68,13 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 		<div
 			data-slot="model-claim"
 			data-claim-id={claim.id}
+			data-target-state={claim.target.state ?? ""}
 			className="border-border bg-status-subtle text-status-foreground text-body flex shrink-0 items-center gap-3 border-b px-4 py-2"
 		>
 			<div className="min-w-0 flex-1">
 				<p className="truncate">
-					<span className="font-semibold">{claim.writer}</span> · {names.join(", ")}
+					<span className="font-semibold">{claim.writer}</span> · {claimedStateName(claim, model)} ·{" "}
+					{names.join(", ")}
 				</p>
 				<p className="truncate">{claim.reason}</p>
 			</div>
@@ -96,6 +98,19 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 			</Button>
 		</div>
 	);
+}
+
+/**
+ * Claims identify the state they affect, independently of the pane's selected state.
+ * @param claim The exact runtime claim.
+ * @param model The coherent catalogue available to this reader.
+ * @returns Its authored state name, or the explicit unresolved identity.
+ */
+function claimedStateName(claim: ArchitectureClaim, model: ModelClaimsProps["model"]): string {
+	const fallback = claim.target.state ?? "Planning model";
+	if (!model?.success) return fallback;
+	const states = [model.selectedState, model.manifest.current, ...model.proposals];
+	return states.find((state) => state?.id === claim.target.state)?.name ?? fallback;
 }
 
 export { ModelClaims };

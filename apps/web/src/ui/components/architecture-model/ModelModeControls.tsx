@@ -1,11 +1,12 @@
 import { useCallback, useMemo, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
 import { DiagramGrammarSchema } from "@archboard/board/views";
-import type { Model, ModelFlow } from "#ui/rules/architecture-model/projection.ts";
+import type { VariantContent } from "@archboard/board/content";
+import type { ModelFlow } from "#ui/rules/architecture-model/projection.ts";
 import { relevantFlows } from "#ui/rules/architecture-model/flow-reading.ts";
 
 interface ModelModeControlsProps {
-	model: Model;
+	content: VariantContent;
 	subjects: ReadonlySet<string>;
 	grammar: string;
 	flow: string | null;
@@ -51,17 +52,15 @@ function ModelModeControls(props: ModelModeControlsProps): JSX.Element {
  * @returns The selected flow and available explicit alternatives.
  */
 function FlowChoice(props: ModelModeControlsProps): JSX.Element {
-	const { model, subjects, flow, onFlow } = props;
-	const candidates = useMemo(() => relevantFlows(model, subjects), [model, subjects]);
+	const { content, subjects, flow, onFlow } = props;
+	const candidates = useMemo(() => relevantFlows(content, subjects), [content, subjects]);
 	const entries = new Map<string, ModelFlow | undefined>(
 		candidates.map((entry) => [entry.id, entry]),
 	);
 	if (flow !== null)
 		entries.set(
 			flow,
-			model.collections
-				.flatMap((collection) => collection.flows)
-				.find((entry) => entry.id === flow),
+			content.flows.find((entry) => entry.id === flow),
 		);
 	const choose = useCallback(
 		(value: string | null): void => {

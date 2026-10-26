@@ -1,5 +1,7 @@
 import { modelCodeTarget } from "#runtime/operations/read/model-code.ts";
-import { readArchitectureModel, failure } from "#runtime/operations/read/model-read.ts";
+import { failure } from "#runtime/operations/read/model-read.ts";
+import type { z } from "zod";
+import type { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import { readCheckpointModel } from "#runtime/operations/history/read.ts";
 import {
 	resolveModelReferences,
@@ -8,13 +10,13 @@ import {
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
 
-interface NavigationOptions {
+type NavigationOptions = z.input<typeof StateSelectionSchema> & {
 	code?: boolean | undefined;
 	references?: boolean | undefined;
 	reference?: number | undefined;
 	checkpoint?: string | undefined;
 	model?: string | undefined;
-}
+};
 
 /**
  * Build an actionable navigation refusal.
@@ -45,10 +47,15 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
+	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
+	const selection = { state: options.state, against: options.against, compare: options.compare };
 	const model =
 		options.checkpoint === undefined
-			? readArchitectureModel(vault, module, flow)
-			: await readCheckpointModel(vault, options.checkpoint, module, flow);
+			? await readSelectedState(vault, module, flow, selection)
+			: await readCheckpointModel(vault, options.checkpoint, module, flow, {
+					against: options.against,
+					compare: options.compare,
+				});
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
 	return options.model === model.manifest.id

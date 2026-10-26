@@ -1,3 +1,4 @@
+import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { type JSX } from "react";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 
@@ -7,6 +8,7 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
 type Connection = ReturnType<typeof projectModel>["connections"][number];
 interface ModelConnectionsProps {
 	model: Model;
+	reference: Model | undefined;
 	connections: readonly Connection[];
 	selected: ReadonlySet<string>;
 	onSelect: ModelSelection["select"];
@@ -54,7 +56,8 @@ function ConnectionChoice(
 				className="hover:bg-muted aria-pressed:bg-muted rounded-control w-full space-y-1 px-3 py-3 text-left"
 			>
 				<span className="text-control block">
-					{moduleName(model, line.from)} → {moduleName(model, line.to)}
+					{moduleName(model, line.from, props.reference)} →{" "}
+					{moduleName(model, line.to, props.reference)}
 				</span>
 				<span className="text-body text-muted-foreground block">
 					{model.policy.relationshipKinds[line.kind]?.name ?? line.kind}
@@ -69,15 +72,21 @@ function ConnectionChoice(
  * @param props The selected line and complete model.
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
+ * @param props.reference The coherent base for removed endpoints.
  * @returns The complete relationship details in authored order.
  */
-function ConnectionDetails(props: { connection: Connection; model: Model }): JSX.Element {
+function ConnectionDetails(props: {
+	connection: Connection;
+	model: Model;
+	reference: Model | undefined;
+}): JSX.Element {
 	const { connection, model } = props;
 	const labels = [...new Set(connection.joins.flatMap((edge) => edge.label ?? []))];
 	return (
 		<article data-slot="model-connection-details" className="space-y-6">
 			<h3 className="text-title font-semibold">
-				{moduleName(model, connection.line.from)} → {moduleName(model, connection.line.to)}
+				{moduleName(model, connection.line.from, props.reference)} →{" "}
+				{moduleName(model, connection.line.to, props.reference)}
 			</h3>
 			<ul data-slot="model-connection-labels" className="text-body space-y-1">
 				{labels.map((label) => (
@@ -88,7 +97,8 @@ function ConnectionDetails(props: { connection: Connection; model: Model }): JSX
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
 						<p>
-							{moduleName(model, edge.from)} → {moduleName(model, edge.to)}
+							{moduleName(model, edge.from, props.reference)} →{" "}
+							{moduleName(model, edge.to, props.reference)}
 						</p>
 						<p className="text-muted-foreground">
 							{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
@@ -96,6 +106,7 @@ function ConnectionDetails(props: { connection: Connection; model: Model }): JSX
 						{edge.label && <p>{edge.label}</p>}
 						{edge.description && <p className="whitespace-pre-wrap">{edge.description}</p>}
 						<code className="text-control break-all">{edge.id}</code>
+						<ModelSubjectStanding model={model} subject={edge.id} />
 					</li>
 				))}
 			</ol>
@@ -107,10 +118,15 @@ function ConnectionDetails(props: { connection: Connection; model: Model }): JSX
  * Resolve an authored identity without inventing a replacement endpoint.
  * @param model The complete model.
  * @param id The authored endpoint.
+ * @param reference The coherent base for a removed endpoint.
  * @returns Its name, or the exact unresolved identity.
  */
-function moduleName(model: Model, id: string): string {
-	return model.modules.find((module) => module.id === id)?.name ?? id;
+function moduleName(model: Model, id: string, reference: Model | undefined): string {
+	return (
+		model.modules.find((module) => module.id === id)?.name ??
+		reference?.modules.find((module) => module.id === id)?.name ??
+		id
+	);
 }
 
 export { ModelConnections, ConnectionDetails };

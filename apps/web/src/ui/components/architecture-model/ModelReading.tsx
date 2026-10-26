@@ -5,6 +5,8 @@ import { ModelModeControls } from "#ui/components/architecture-model/ModelModeCo
 import { projectFlow, flowSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
 import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
+import { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
+import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelSelectionDetails } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
@@ -28,6 +30,7 @@ const LOADING_DIAGRAM = (
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
+	vault: string;
 	model: Model;
 	paneId: string;
 	reducedMotion: boolean;
@@ -40,6 +43,7 @@ interface ModelReadingProps {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
+	const comparison = useModelComparison(props.vault, model);
 	const {
 		scope,
 		open,
@@ -57,19 +61,14 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { id: modelId } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(modelId, next), [modelId, open]);
 	const projection = useMemo(
-		() => projectModel(model, scope, focus, filters),
-		[model, scope, focus, filters],
+		() => projectModel(model, scope, focus, filters, comparison.reference),
+		[model, scope, focus, filters, comparison.reference],
 	);
 	const selection = useModelSelection(projection);
 	const { clear } = selection;
 	const behavioralIds = useMemo(
-		() =>
-			new Set(
-				flowSubjects(model.collections.flatMap((collection) => collection.flows)).map(
-					(subject) => subject.id,
-				),
-			),
-		[model.collections],
+		() => new Set(flowSubjects(projection.depicted.flows).map((subject) => subject.id)),
+		[projection.depicted.flows],
 	);
 	const canFocus = ![...selection.ids].some((id) => behavioralIds.has(id));
 	const subjects = useMemo(() => {
@@ -108,6 +107,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			data-grammar={grammar}
 			className="flex min-h-0 flex-1 flex-col"
 		>
+			<ModelComparisonNotice comparison={comparison} />
 			<ModelBreadcrumbs
 				name={model.manifest.name}
 				scope={scope}
@@ -122,7 +122,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				canFocus={canFocus}
 			>
 				<ModelModeControls
-					model={model}
+					content={projection.depicted}
 					subjects={subjects}
 					grammar={grammar}
 					flow={flow}
@@ -199,9 +199,7 @@ function ModelReadingContent(
 function BehavioralReading(
 	props: ScopedModelReadingProps & { grammar: DiagramGrammar; flow: string | null },
 ): JSX.Element {
-	const selected = props.model.collections
-		.flatMap((collection) => collection.flows)
-		.find((entry) => entry.id === props.flow);
+	const selected = props.projection.depicted.flows.find((entry) => entry.id === props.flow);
 	const projection = useMemo(
 		() => (selected === undefined ? null : projectFlow(props.projection, selected)),
 		[props.projection, selected],
@@ -278,6 +276,7 @@ function ScopedModelReading(
 				<ModelConnections
 					model={model}
 					connections={props.projection.connections}
+					reference={props.projection.reference}
 					selected={selected}
 					onSelect={select}
 				/>

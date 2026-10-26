@@ -1149,6 +1149,13 @@
 					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts; tests/system/semantic-boards/model-references.test.ts; tests/system/code-targets/canonical-model.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical compact proposals: retained baselines, identity changes, draft metadata, siblings, named predecessors, planning roots, exact materialization, comparison defaults and safe predecessor refusal",
+					"expectedUse": "Create and edit a selected draft through the normal claimed batch. Keep current files unchanged and use selectedState lifecycle. Compare against current, retained predecessor, or an explicit coherent state. Preserve unsupported predecessor changes for later reconciliation.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/proposals/; tests/system/semantic-boards/model-proposals.test.ts; visible state, comparison, and planning behavior: tests/system/browser/canonical-model-proposals.test.ts, canonical-model-comparison.test.ts, canonical-model-planning.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
 					"path": "canonical browser diagram modes and explicit flow identity",
 					"expectedUse": "Readers explicitly choose a relevant flow, read all participants and steps without structural filtering, and return to the preceding architecture reading. Hidden steps retain their exact authored flow.",
 					"scenarios": [],

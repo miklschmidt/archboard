@@ -96,9 +96,11 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				height: rectangle.height / pose.scale,
 			};
 			const known = new Set(
-				[...model.modules, ...model.relationships, ...projectionSteps(props.projection)].map(
-					(subject) => subject.id,
-				),
+				[
+					...props.projection.content.nodes,
+					...props.projection.content.edges,
+					...projectionSteps(props.projection),
+				].map((subject) => subject.id),
 			);
 			const boxes = { ...drawing.atlas.regions, ...drawing.atlas.nodes, ...drawing.atlas.edges };
 			const ids = Object.entries(boxes)
@@ -106,7 +108,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				.map(([id]) => id);
 			onSelectMany(ids, toggle);
 		},
-		[camera, drawing.atlas, model.modules, model.relationships, onSelectMany, props.projection],
+		[camera, drawing.atlas, onSelectMany, props.projection],
 	);
 	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,

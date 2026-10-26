@@ -114,18 +114,29 @@ not add imports or a second state path before that work.
   board in the repository the pane is in.
 
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
+  `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
+  Selecting a state clears the checkpoint. Selecting a checkpoint clears the state.
+  Either selection clears the prior explicit comparison.
   They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
   `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.
   Missing grammar means architecture. Missing flow in a behavioral mode requires a choice.
   Behavioral modes preserve the architecture fields so that returning restores the prior reading.
   These lists contain comma-separated canonical identities or vocabulary keys.
   An absent focus keeps recursive scope navigation. Absent filters show all configured features.
-  An absent scope means repository roots. An absent checkpoint means current inputs.
+  An absent scope means repository roots. With no checkpoint or state, the pane reads current inputs.
   These parameters remain router-owned reading intent, including explicit unavailable states.
   The canonical reader consumes them directly without opening a legacy board on the server.
   The workspace records actual pane presence and preserves each canonical reading during closure, reload, Back, and Forward.
   A mismatched model identity refuses the reading instead of substituting the vault's current model.
   Selection and the camera remain separate from the address.
+
+  Mutable state queries share the architecture event feed, with separate keys for state and comparison intent.
+  A current event snapshot populates only the default current query.
+  Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
+  The selected state metadata supplies lifecycle labels, including retained drafts.
+  The comparison reference must match the requested model, state, checkpoint, and base revision.
+  Only a coherent reference supplies removed subjects to the existing semantic comparison operation.
+  An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
 
   The address follows the note, which is the persisted content of the board.
   When a person opens a board, the open runs the command of the shell. Then the

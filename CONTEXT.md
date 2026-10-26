@@ -38,6 +38,18 @@ A step keeps its identity when its placement changes.
 A fingerprint of discovered architecture paths and their exact bytes.
 File moves and whitespace edits change this revision without replacing subject identities.
 
+Compact proposal:
+An active draft that stores identity changes against a retained immutable baseline.
+Its state identity, lasting names, summaries, and documents remain independent of current designation.
+
+Proposal baseline:
+The complete immutable predecessor reading retained through actual Git ancestry.
+The proposal materializes its changes against this reading.
+
+Selected state:
+The explicit state metadata and lifecycle of the returned reading.
+A selected draft remains draft even when its retained manifest names a current state.
+
 Subject claim:
 An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.

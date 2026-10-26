@@ -27,6 +27,10 @@ function openStructure(model: ArchitectureModel, paths: Iterable<string>) {
 
 		lookup: [...model.modules],
 		used: new Set([
+			...model.proposals.flatMap((proposal) => [
+				...proposal.changes.flatMap((change) => (change.type === "add" ? [change.subject] : [])),
+				...(proposal.retiredIds ?? []),
+			]),
 			...model.modules.map((module) => module.id),
 			...model.relationships.map((edge) => edge.id),
 			...model.collections.flatMap((collection) => [
