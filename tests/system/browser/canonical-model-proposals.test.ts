@@ -168,6 +168,16 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		},
 	});
 	if (!editClaim.body.success) throw new Error(JSON.stringify(editClaim.body));
+	const draftClaimId = editClaim.body.claim.id;
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-claim"][data-claim-id="${draftClaimId}"]')?.textContent ?? null`,
+			),
+		(text) => text?.includes("Queued delivery") === true,
+		"the claim naming its draft state",
+		WAIT,
+	);
 	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {
