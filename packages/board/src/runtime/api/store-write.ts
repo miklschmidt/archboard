@@ -29,3 +29,5 @@ export {
 	releaseArchitectureClaim,
 	takeBackArchitectureClaim,
 } from "#runtime/operations/model-edit/claims.ts";
+
+export { initializeArchitectureArchive } from "#runtime/operations/history/initialize.ts";

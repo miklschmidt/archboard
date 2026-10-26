@@ -57,7 +57,7 @@ An unrelated documentation file does not change the revision.
 ## Retain an exact local reading
 
 A checkpoint preserves one reading and its exact architecture inputs.
-Use a canonical vault inside a source Git repository.
+Use a canonical vault inside a source Git repository, or explicitly initialize private history as described below.
 Run `model read` and keep its `revision.digest` before retention.
 
 ```bash
@@ -95,6 +95,40 @@ Read [Publish and fetch history](#publish-and-fetch-history) before sharing a re
 A normal source-code push does not publish this archive.
 Linked worktrees share the archive through Git's common repository directory.
 Their current architecture remains separate.
+
+## Initialize private history
+
+For a vault outside a source repository, explicitly initialize its private archive before retention or edits.
+
+```bash
+archboard model archive-init -C <directory>
+```
+
+The result returns `archive`, the local bare Git directory.
+Use `git -C <archive> config` to configure its author identity and signer.
+The archive also reads the owner's global Git configuration.
+Keep required signing enabled.
+The runtime never creates `.git` inside the vault or its enclosing directory.
+Initialization refuses source repositories and machine state inside a source repository.
+Repeated initialization returns the same archive without replacing its content.
+
+The existing retain, read, claim, edit, and recover commands use this archive automatically after initialization.
+Private checkpoint metadata contains no invented source association or generated machine directory.
+Current architecture and private recovery records remain specific to the addressed vault.
+The archive lives in Archboard's machine state, so keep it in your backups.
+Moving a vault does not move its private archive or recovery records.
+Preserve the original location for pending recovery.
+Portable transfer belongs to the explicit export and migration workflows.
+
+History remains local until the owner explicitly configures a publication destination.
+For publication, add the intended named remote in the returned archive with `git -C <archive> remote add`.
+Then use the publication workflow below with that remote and independent archive ref.
+Initialization, remote creation, and destination configuration send no history.
+
+If a source repository appears around a vault with private history, archive operations refuse the ownership change.
+Restore the vault outside that source repository before recovery or further archive work.
+If private storage is damaged, preserve it and restore a complete archive from backup.
+Initialization never overwrites damaged storage.
 
 ## Publish and fetch history
 
@@ -159,7 +193,7 @@ Archive order never selects the checkout's current state.
 `ARCHIVE_NOT_PORTABLE` refuses publication of retained machine-local source repository paths.
 Immutable checkpoint metadata cannot be redacted during publication.
 Keep such checkpoints local and use portable source repository identities for future archives.
-Private archive initialization and portable export remain separate delivery slices.
+Portable export remains a separate delivery slice.
 
 The browser shows sharing status when the reader selects a retained checkpoint.
 The reader can set its destination, publish history, retry a failed exchange, or fetch missing history.
@@ -201,14 +235,14 @@ Switch that worktree to another branch before retrying retention.
 Preserve that branch and resolve its ownership before retrying.
 An unsuccessful operation keeps its structured JSON and exits with status 2.
 
-This delivery supports module structure and relationship edits, retained checkpoints, and explicit archive publication.
+This delivery supports module structure and relationship edits, retained checkpoints, private archives, and explicit archive publication.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
-Proposal changes, private archives, and cutover arrive through later TASK-549 slices.
+Proposal changes and cutover arrive through later TASK-549 slices.
 
 ## Edit one module description
 
-Use `model edit` for one current module description in a Git-backed canonical vault.
+Use `model edit` for one current module description with source-backed or initialized private history.
 Read the complete model before preparing the edit.
 Keep the entire `revision` object, including its file fingerprints.
 Use qualified subject IDs for claims and edits.
