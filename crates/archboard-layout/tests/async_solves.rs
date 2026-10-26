@@ -324,6 +324,33 @@ fn either_nesting_failure_returns_without_the_other_layout() {
     }
 }
 
+#[test]
+fn a_large_grouped_graph_asks_only_for_packed_solves_and_propagates_failure() {
+    let host = Host::default();
+    let (mut content, mut measured) = board(true);
+    let placing = &mut measured.groups.as_mut().unwrap().placing;
+    for index in 0..40 {
+        let mut card = content.nodes[0].clone();
+        card.id = format!("card-{index}");
+        let mut size = measured.nodes["card"].clone();
+        size.node = card.facts();
+        measured.nodes.insert(card.id.clone(), size);
+        placing.insert(card.id.clone(), "group".to_owned());
+        content.nodes.push(card);
+    }
+    let mut drawing = Box::pin(drawing(&host, &content, &measured));
+    let mut context = Context::from_waker(Waker::noop());
+    assert!(drawing.as_mut().poll(&mut context).is_pending());
+    assert!(
+        host.0
+            .borrow()
+            .iter()
+            .all(|asked| { asked.graph["layoutOptions"]["archboard.blocks.nesting"] == "groups" })
+    );
+    host.answer(0, Err(Unsolved::Failed("nesting failure".to_owned())));
+    host.fails(drawing.as_mut().poll(&mut context), "nesting failure");
+}
+
 /// Lay the stacking board out, its whole solves answering first in one
 /// order and its partial solves after them in the same order; answers the
 /// width drawn and whether the whole solve laid stacked was dropped.
