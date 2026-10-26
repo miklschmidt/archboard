@@ -81,7 +81,7 @@ function searchLabel(item: Extract<ActivityItem, { readonly media: "search" }>):
 const SHELLS: ReadonlySet<string> = new Set(["bash", "sh", "zsh"]);
 
 /** An option word of a shell that holds `c`, such as `-lc`: the next word is the script. */
-const SCRIPT_OPTION = /^-[a-z]*c[a-z]*$/u;
+const SCRIPT_OPTION = /^-[a-zA-Z]*c[a-zA-Z]*$/u;
 
 /**
  * Whether a newline separates commands rather than lines inside a quoted script.

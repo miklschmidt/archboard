@@ -121,6 +121,7 @@ test("a command that one shell call runs reads as its script, and any other comm
 	const sent = [
 		String.raw`/nix/store/10dx-bash-5.3p15/bin/bash -lc 'git status --short && echo "it'\''s done"'`,
 		"/bin/zsh -c 'ls -la $HOME'",
+		"bash -Eec 'echo hi'",
 		"cd /work && make",
 		"python3 -c 'print(1)'",
 	];
@@ -132,6 +133,7 @@ test("a command that one shell call runs reads as its script, and any other comm
 	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
 		`git status --short && echo "it's done"`,
 		"ls -la $HOME",
+		"echo hi",
 		"cd /work && make",
 		"python3 -c 'print(1)'",
 	]);
