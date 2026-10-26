@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 173,
+	"version": 174,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T15:44:48.673Z",
+	"updatedAt": "2026-10-26T15:59:03.662Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -107950,7 +107950,7 @@
 		{
 			"id": "HpNsFIlK",
 			"name": "TASK-549.16 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ULPMDsMd",
 			"content": {
 				"nodes": [
@@ -111988,7 +111988,7 @@
 		{
 			"id": "aDlLhB8W",
 			"name": "TASK-549.17",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "HpNsFIlK",
 			"summary": "Initialize private archives through the existing engine",
 			"content": {
@@ -116063,7 +116063,7 @@
 			}
 		}
 	],
-	"current": "HpNsFIlK",
+	"current": "aDlLhB8W",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -116299,6 +116299,12 @@
 			"from": "ULPMDsMd",
 			"at": "2026-10-26T14:32:25.732Z",
 			"reason": "Explicit history publication and browser recovery are implemented and tested"
+		},
+		{
+			"variant": "aDlLhB8W",
+			"from": "HpNsFIlK",
+			"at": "2026-10-26T15:59:03.662Z",
+			"reason": "TASK-549.17 private archive initialization is implemented and proven through the approved public runtime"
 		}
 	],
 	"shelvings": [

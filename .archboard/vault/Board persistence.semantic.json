@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 140,
+	"version": 142,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T15:47:58.505Z",
+	"updatedAt": "2026-10-26T15:59:02.475Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -347,6 +347,27 @@
 					"4P7YZdnj",
 					"qTv7HuBw",
 					"RfwX9gsx"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "QcLxs6GZ",
+			"name": "Private archive history",
+			"grammar": "architecture",
+			"summary": "Explicit private setup uses the same signed archive, durable edits and publication engine.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"Bd4GPG6d",
+					"nqi2h0Ku",
+					"ZRq51Ecz",
+					"RfwX9gsx",
+					"YREYrbYW",
+					"Zeo3aQWz",
+					"yEqHs86l",
+					"ffFYC0XR"
 				],
 				"edges": [],
 				"flows": []
@@ -105064,7 +105085,7 @@
 		{
 			"id": "hUKE5QOR",
 			"name": "TASK-549.16 archive overview",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "zI1EoPZE",
 			"documents": [
 				{
@@ -111196,7 +111217,7 @@
 		{
 			"id": "WvoxuxoB",
 			"name": "TASK-549.17",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "hUKE5QOR",
 			"summary": "Initialize private archives through the existing engine",
 			"documents": [
@@ -117475,7 +117496,7 @@
 			}
 		}
 	],
-	"current": "hUKE5QOR",
+	"current": "WvoxuxoB",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -117645,6 +117666,12 @@
 			"from": "zI1EoPZE",
 			"at": "2026-10-26T14:35:55.113Z",
 			"reason": "Keep publication storage within canonical architecture and expose it in the checkpoint view"
+		},
+		{
+			"variant": "WvoxuxoB",
+			"from": "hUKE5QOR",
+			"at": "2026-10-26T15:59:02.475Z",
+			"reason": "TASK-549.17 private archive initialization is implemented and proven through the approved public runtime"
 		}
 	],
 	"shelvings": [

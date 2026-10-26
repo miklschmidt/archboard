@@ -1,11 +1,11 @@
 ---
 id: TASK-549.17
 title: Keep local history for an untracked vault
-status: In Progress
+status: Done
 assignee:
   - '@codex-local-history'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-26T15:48:00Z'
+updated_date: '2026-10-26T16:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,15 +45,15 @@ TASK-549.03
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An owner explicitly initializes a private bare archive for a vault outside a source repository. Existing model operations then retain and reopen its history.
-- [ ] #2 Initialization never creates or changes a source repository. The vault remains local-only until an explicit publication destination exists.
-- [ ] #3 The same signing, recovery, and diagnostic contracts apply. Published architecture contains no private machine paths.
+- [x] #1 An owner explicitly initializes a private bare archive for a vault outside a source repository. Existing model operations then retain and reopen its history.
+- [x] #2 Initialization never creates or changes a source repository. The vault remains local-only until an explicit publication destination exists.
+- [x] #3 The same signing, recovery, and diagnostic contracts apply. Published architecture contains no private machine paths.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -75,4 +75,16 @@ Owner approved full graph and public runtime tests with real temporary files and
 Public runtime slices prove explicit bare initialization, source preservation, exact retention/reopen, signing refusal, signed private edits, explicit temporary-local publication/fetch, and interrupted edit recovery. Red evidence caught private journal lookup after a new source repository appeared; lookup now stays with private history. CLI/HTTP setup composition passes across restart. Three TASK-549.17 proposals exist, but their drawing edits are paused at parent direction after shared Git-owner fan-out. No further architecture CLI calls will run until the parent clears the pause. Shared runtime regressions and static gates are in progress.
 
 Sequential architecture CLI read with explicit server URL passed after process pressure subsided. All three proposals now describe delivered source. Lint and both type projects pass. Width remains 243/188 with exactly two new public names and no ceiling changes. One existing shallow-fetch case exceeded its 15-second timeout while the broad runtime group overlapped the code scan. It will rerun alone after that group finishes. Code evidence found two proposal issues, now corrected; ten unrelated baseline warnings remain outside the affected boards. S20 metadata errors remain at this baseline and are fixed in the separate .04 source awaiting integration.
+
+The corrected private initialization test passes. Its prior failure came from a Bun assertion matcher replacing the archive path in the test result. The unchanged shallow archive fetch case times out alone both on this source and an exact git-archive copy of b5be713977e7829f16b404314af9fd8f653f70be, with the original 15-second limit. No timing policy or test limit changed. The broad run has 45 passes, the corrected initialization supplies its missing pass, and the one baseline fetch timeout remains documented. Sixteen consumer/schema/link/CLI-contract cases pass. Signed implementation checkpoint c08120a20364bd9e05969f36b7a07c1f3480a8c0 is recorded.
+
+All three TASK-549.17 proposals are adopted after comparison and code evidence. Earlier variant contents, document references, decision history, and existing shared views remain exact. A new Private archive history view shows the one shared engine. Current semantics has zero diagnostics. The affected boards have zero code warnings; ten baseline warnings remain elsewhere. Static architecture pictures were rendered and inspected without frontend edits or browser tests. Synchronizing feat/canonical-module-model into this branch reports Already up to date at b5be713977e7829f16b404314af9fd8f653f70be. The final simplification returns setup information only from initialization, leaving publication evidence checkpoint-specific. No separate history or transaction implementation was added.
+
+All three task claims are released and the worktree server is stopped. Final status reports running:false. The implementation used no child agents, frontend edits, browser tests, review phase, source push, PR action, integration-branch merge, other ticket implementation, or real external archive publication. Disposable local Git remotes own all publication evidence. The parent owns the 198-worktree registry repair in .04; this task used a one-checkout isolated registry after the pressure incident and did not copy that source.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Explicit private bare archive initialization now supports untracked canonical vaults through the existing retention, edit, recovery, signing, and publication engine. The CLI and HTTP setup return the local archive directory for owner Git configuration. Initialization preserves source repositories and damaged storage. History remains local until an explicit configured exchange, and published fixture objects contain no generated private paths. Six focused runtime cases and the CLI/HTTP case pass. The shared regression run plus its corrected initialization case covers 46 passing runtime cases; one unchanged shallow-fetch case times out on both this source and the exact baseline. Sixteen consumer/contract cases, both type projects, lint with zero warnings, and formatting pass. The unchanged width ceiling reports 243/188 after two public additions and remains TASK-549.24 work. Existing S20 metadata errors remain at this baseline and the parent owns their separate .04 repair. ADR 0059, terminology, consumer guidance, example, evaluation coverage, and all affected proposals match the delivered behavior. No frontend handoff is required.
+<!-- SECTION:FINAL_SUMMARY:END -->
