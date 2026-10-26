@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T11:23:00Z'
+updated_date: '2026-10-26T11:26:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -276,4 +276,6 @@ Owner requested an immediate update onto origin/main after the large refactor. R
 The new main branch owns ADR 0058 for interface width. The canonical-read decision moves to ADR 0060, and its live references follow that path. The temporary board interface-width overage remains explicit on TASK-549.24. Its final cutover must remove superseded legacy exports without raising ceilings or hiding names behind objects.
 
 The rebased integration passes source/browser types, lint, 44 focused tests, three CLI/server process tests, seven request/refresh tests, and the four canonical/legacy browser cases. All four reconciliation proposals pass their affected code checks and are adopted. All original variant meanings remain intact. RequestFailure stays private, so server-requests meets its interface ceiling. Board currently has 209 public names against 188 during the dual-model transition; TASK-549.24 explicitly owns removal of superseded legacy APIs before completion. Parent UI checkpoint rebased cleanly to 097d2b1fc and passes types. Final current-vault validation and child branch synchronization remain.
+
+Main-refactor final evidence: current vault semantics pass with zero diagnostics. Current code checks report zero warnings on the four reconciled boards and 10 warnings elsewhere. Formatting passes. Provenance assertions retain every variant meaning, adoption, and shelving from both sources. Four shared views use upstream summaries or expanded selections. Their effective selections remain identical on every original historical variant. The parent recursive-viewer branch is rebased and synchronized; the backend delegate received the new base and transplant instructions. The draft PR remains unpublished at its previous head pending review of changed code. The interface-width ceiling is unchanged and remains a final-cutover gate.
 <!-- SECTION:NOTES:END -->
