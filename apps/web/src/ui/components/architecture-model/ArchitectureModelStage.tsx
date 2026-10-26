@@ -354,7 +354,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
 				<>
-					<ModelStateDetails model={model} />
+					<ModelStateDetails model={model} paneId={props.paneId} />
 					<CheckpointEvidence model={model} />
 					<ModelReading
 						key={JSON.stringify([model.manifest.id, props.subject])}

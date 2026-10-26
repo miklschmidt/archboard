@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync } from "node:fs";
+import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
 	ArchitectureModelRead,
@@ -225,39 +225,10 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the explicit current base",
 		WAIT,
 	);
-	const base = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!base.body.success) throw new Error(JSON.stringify(base.body));
-	const baseClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			writer: "fixture-agent",
-			reason: "Advancing the current comparison base",
-			subjects: ["Shop", "Shop#Worker"],
-		},
-	});
-	if (!baseClaim.body.success) throw new Error(JSON.stringify(baseClaim.body));
-	const advanced = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			expectedRevision: base.body.revision,
-			operationId: "advance-comparison-base",
-			writer: "fixture-agent",
-			doing: "Advancing the current comparison base",
-			claim: baseClaim.body.claim.id,
-			changes: [
-				{ type: "edit-module", subject: "Shop#Worker", set: { name: "Current worker revised" } },
-			],
-		},
-	});
-	await request("/api/architecture/claims/release", {
-		method: "POST",
-		body: { vault, claim: baseClaim.body.claim.id, writer: "fixture-agent" },
-	});
-	if (!advanced.body.success) throw new Error(JSON.stringify(advanced.body));
+	const workerPath = join(vault, "worker.module.json");
+	const worker = JSON.parse(readFileSync(workerPath, "utf8"));
+	worker.name = "Current worker revised";
+	writeFileSync(workerPath, JSON.stringify(worker));
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

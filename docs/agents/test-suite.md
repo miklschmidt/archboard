@@ -538,6 +538,10 @@ The recovery case uses the existing crash fixture after a real atomic file insta
 It proves that readers block until the exact family installation finishes.
 
 `tests/system/semantic-boards/model-proposals.test.ts` owns CLI and HTTP parity for standing, refusal status, and settlement.
-The parent browser slice owns visible acceptance.
-The backend handoff does not claim that browser evidence.
 No model evaluation runs as part of these tests.
+
+`canonical-model-reconciliation.test.ts` owns visible inherited content, unresolved values, blocked ancestry, agent settlement refresh, external predecessor refusal, and retained standing.
+It uses the existing browser adapter with real temporary files and Git through the shared public writer.
+The proposal and reconciliation owners share the same browser state selector helper.
+The reference owner also covers exact foreign pins across external reconciliation and settlement.
+The shared model-edit fixture names the repository used by its authored code bindings, so source capture does not inspect unrelated checkouts.

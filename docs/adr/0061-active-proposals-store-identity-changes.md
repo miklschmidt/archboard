@@ -115,6 +115,10 @@ The reader requires the original subject before it permits that continuing ident
 No new identity authority or history store exists.
 
 Shared readers expose standing on proposal catalogue entries and selected state metadata.
+The browser uses that standing for state choices, unresolved values, and blocked ancestry.
+Comparison differences never establish whether a proposal needs settlement.
+Readers can open the live blocking ancestor. Exact retained readings keep their original standing after a live settlement.
+Agents author settlements through the shared writer, and the browser reflects the durable family result.
 Write and recovery receipts report unsettled family states from the same signed record.
 CLI and HTTP interpret neither conflicts nor recovery progress.
 An explicit reconcile intent follows deliberate external predecessor edits.

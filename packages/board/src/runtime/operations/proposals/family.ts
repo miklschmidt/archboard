@@ -6,7 +6,6 @@ import {
 } from "#shared/schemas/model-proposals.ts";
 import { decodeModel } from "#runtime/operations/read/model-read.ts";
 import {
-	resolveState,
 	proposalBaseline,
 	decodeProposal,
 	decodeSubjects,
@@ -304,9 +303,11 @@ async function familyCandidate(
 ) {
 	const family = await openFamily(vault, request, candidate);
 	if (!("proposal" in request && request.proposal.type === "create")) {
-		const parent = requireModel(
-			await resolveState(family.context, family.model, request.target.state ?? "current"),
-		);
+		const parent = {
+			...candidate.model,
+			selectedState: candidate.selection ?? candidate.model.selectedState,
+			proposals: family.model.proposals,
+		};
 		await descend(family, parent);
 	}
 	requireSubjectClaim(vault, request, [...family.scopes]);
