@@ -42,7 +42,11 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 	if (checkpoint !== null) entries.set(checkpoint, entries.get(checkpoint));
 	return (
 		<Select value={checkpoint ?? "current"} onValueChange={choose} onOpenChange={opened}>
-			<Select.Trigger size="sm" data-slot="model-reading-selector" aria-label="Architecture reading">
+			<Select.Trigger
+				size="sm"
+				data-slot="model-reading-selector"
+				aria-label="Architecture reading"
+			>
 				<Select.Value>
 					{checkpoint === null ? "Current" : `Saved · ${checkpoint.slice(0, 8)}`}
 				</Select.Value>

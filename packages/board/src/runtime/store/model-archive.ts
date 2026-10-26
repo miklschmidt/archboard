@@ -1,7 +1,8 @@
 import { modelRevision } from "#runtime/store/model-files.ts";
 import { relative } from "node:path";
 import { z } from "zod";
-import { git, GitCommandError, repoRootOf, repoIdentityAt } from "@archboard/workspace/checkouts";
+import { git, GitCommandError } from "@archboard/process/git";
+import { repoRootOf, repoIdentityAt } from "@archboard/workspace/checkouts";
 import {
 	ArchitectureCheckpointSchema,
 	type ArchitectureCheckpoint,

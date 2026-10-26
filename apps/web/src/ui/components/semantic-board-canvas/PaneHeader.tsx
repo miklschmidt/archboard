@@ -32,9 +32,9 @@ import { useCallback, type JSX, type ReactNode } from "react";
 import { cn, DropdownMenu, RepositoryName, Tabs } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import {
- PaneHeaderRow as HeaderRow,
- PaneHeaderStart as HeaderStart,
- PaneHeaderEnd as HeaderEnd,
+	PaneHeaderRow as HeaderRow,
+	PaneHeaderStart as HeaderStart,
+	PaneHeaderEnd as HeaderEnd,
 } from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import { LevelMark } from "#ui/components/semantic-board-canvas/LevelMark.tsx";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
