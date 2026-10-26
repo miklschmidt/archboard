@@ -3,10 +3,11 @@ id: TASK-549
 title: >-
   Replace board documents with a canonical module model and compact proposal
   history
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T04:17:00Z'
+updated_date: '2026-10-26T05:30:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -240,3 +241,27 @@ Evidence and design context: [architecture discovery and interaction](../../docs
 - [ ] #13 Existing public read/write and browser seams own behavior coverage without redundant wording tests or arbitrary timing gates.
 - [ ] #14 Domain language, affected ADRs, consumer skill, CLI contracts, and architecture proposals reflect the delivered model before implementation is accepted.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Keep all delivery work on feat/canonical-module-model, based on current main and the signed specification commits.
+2. Dispatch unblocked TASK-549 children to gpt-6.1-sol implementers in separate worktrees. Follow implement-spec and tdd at the approved seams.
+3. Keep frontend implementation with the parent under AGENTS.md. Complete each mixed ticket before closing it.
+4. Merge completed ticket branches through merger subagents. Recompute the available work from native Backlog dependencies.
+5. Open one draft PR against main after the first implementation merge. Keep review evidence tied to exact commits.
+6. Run the final code-review phase against main and TASK-549. Resolve findings and complete the remaining acceptance evidence.
+7. Mark the integration PR ready, close proven Backlog work, and remove implementation worktrees. Do not merge the PR into main.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The owner approved all 24 delivery tickets and autonomous implementation on 2026-10-26. The owner requested one PR against main, without heavy stack splitting.
+
+The primary seam is the shared architecture read/write interface with real temporary files and Git repositories. The existing browser seam owns visible behavior. These seams already have owner approval.
+
+All 36 native dependency edges match the approved graph. The integration branch contains current origin/main. Main also added tracked render recipes and embeds, which existing workflows must retain through migration.
+
+Transient orchestration records live outside the repository at /home/msc/.local/state/archboard-implementation/task-549. Each ticket owns its detailed plan and evidence. The parent handles frontend work under AGENTS.md.
+<!-- SECTION:NOTES:END -->
