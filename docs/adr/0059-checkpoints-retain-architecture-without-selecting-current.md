@@ -102,5 +102,9 @@ Invalid or changing content refuses a coherent read and blocks new edits.
 
 A vault-scoped event stream starts each connection with a fresh reading and claim list.
 Later events identify durable completion, stable external content, claim changes, or an unavailable current reading.
-The browser owns the stale-scene indication and take-back control.
-Its visible acceptance evidence remains part of the mixed delivery ticket.
+One browser connection per vault and query cache supplies current updates.
+A fresh snapshot replaces current content only after older requests are canceled.
+The query cache keeps the last coherent current reading during a failure.
+The browser marks that reading stale and shows the refusal.
+Historical failures never substitute current content.
+Human take-back ends the displayed subject claim without changing architecture.

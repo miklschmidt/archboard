@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 164,
+	"version": 165,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T11:28:57.266Z",
+	"updatedAt": "2026-10-26T13:07:19.146Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -92155,7 +92155,7 @@
 		{
 			"id": "15rxj8Zj",
 			"name": "TASK-549-main-refactor-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "K60P8BZk",
 			"content": {
 				"nodes": [
@@ -99964,7 +99964,7 @@
 		{
 			"id": "ULPMDsMd",
 			"name": "TASK-549.03 integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "15rxj8Zj",
 			"summary": "Durable canonical edits on the adopted refactored architecture",
 			"content": {
@@ -103963,7 +103963,7 @@
 			}
 		}
 	],
-	"current": "15rxj8Zj",
+	"current": "ULPMDsMd",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -104187,6 +104187,12 @@
 			"at": "2026-10-26T11:23:08.261Z",
 			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass.",
 			"forced": true
+		},
+		{
+			"variant": "ULPMDsMd",
+			"from": "15rxj8Zj",
+			"at": "2026-10-26T13:07:19.146Z",
+			"reason": "Public runtime and browser tests prove durable claimed edits, recovery, visible take-back, external updates, stale scenes and fresh reconnection."
 		}
 	],
 	"shelvings": [

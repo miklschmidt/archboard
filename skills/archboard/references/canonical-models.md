@@ -31,9 +31,11 @@ An unsuccessful CLI read exits with status 2 and keeps its structured JSON resul
 When a pane opens an authored model vault, the browser lists its root modules.
 Select a module to read its responsibility, description, evidence, and connections.
 The browser keeps selection as presentation state and writes no architecture content.
-Use Refresh to read repaired or externally edited files.
-Opening the reading, returning to the tab, and reconnecting also refresh its content.
-Invalid input shows its source and recovery instructions instead of a partial model.
+The current reading follows completed edits and stable external changes automatically.
+Opening the reading, returning to the tab, and reconnecting obtain fresh content.
+If updates fail, the last coherent current reading remains visible with an explicit stale notice.
+Invalid input shows its source and recovery instructions.
+Use Refresh to retry a failed read.
 
 Open the Current menu in the model header to select a saved reading.
 The menu lists the state, retention time, agent intent, and abbreviated identity.
@@ -199,7 +201,9 @@ A historical selection continues to use its exact checkpoint cache.
 
 To release the scope, write `{ "claim": "<claim.id>", "writer": "architecture-agent" }` to `release.json`.
 Run `archboard model release --input release.json -C <directory>`.
-A reader can instead take the claim back through the public take-back operation.
+The current reading shows each agent claim with its writer, purpose, subjects, and start time.
+A reader can select Take back control beside that claim.
+This action ends ownership without changing architecture content.
 Its former writer then receives `CLAIM_REVOKED` and must stop that intent.
 
 The claim and edit commands accept JSON files or standard input.

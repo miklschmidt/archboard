@@ -48,9 +48,15 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 	const { vault, claim, model } = props;
 	const client = useQueryClient();
 	const takeBack = useMutation({
-		/** End the displayed claim as an explicit human action. @returns The remaining claims. */
+		/**
+		 * End the displayed claim as an explicit human action.
+		 * @returns The remaining claims.
+		 */
 		mutationFn: () => takeBackClaim(vault, claim.id),
-		/** Read ownership again after the mutation settles. @returns The fresh claim read. */
+		/**
+		 * Read ownership again after the mutation settles.
+		 * @returns The fresh claim read.
+		 */
 		onSuccess: () => client.invalidateQueries({ queryKey: architectureModelKeys.claims(vault) }),
 	});
 	const { mutate } = takeBack;
