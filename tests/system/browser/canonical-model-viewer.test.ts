@@ -5,6 +5,8 @@ import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureCheckpointList,
 	ArchitectureModelRead,
+	ArchitectureClaimResult,
+	ArchitectureClaimList,
 } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -123,6 +125,56 @@ test("canonical modules open their authored details without writing architecture
 		await browser.eval<boolean>(`document.querySelector('[data-slot="module-details"]') === null`),
 	).toBe(true);
 	await server.assertRunning();
+}, 30_000);
+
+test("canonical subject claims name the agent and let the reader take back control", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "claimed-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	initializeSource(root);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const model = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!model.body.success || !model.body.manifest.current) throw new Error("Missing fixture model");
+	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
+			writer: "Agent Ada",
+			reason: "Explain gateway responsibility",
+			subjects: ["Shop#Gateway"],
+		},
+	});
+	if (!claimed.body.success) throw new Error(claimed.body.error);
+	const claim = claimed.body.claim.id;
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	const claimVisible = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claim}"]') !== null`,
+		);
+	await pollUntil(claimVisible, Boolean, "the current subject claim", WAIT);
+	const notice = await browser.eval<string>(
+		`document.querySelector('[data-slot="model-claim"]').textContent`,
+	);
+	expect(notice).toContain("Agent Ada");
+	expect(notice).toContain("Explain gateway responsibility");
+	expect(notice).toContain("Gateway");
+	await browser.run(["click", '[data-slot="model-take-back"]']);
+	await pollUntil(claimVisible, (visible) => !visible, "the claim to end", WAIT);
+	const claims = await request<ArchitectureClaimList>("/api/architecture/claims");
+	if (!claims.body.success) throw new Error(claims.body.error);
+	expect(claims.body.claims).toEqual([]);
+	const after = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!after.body.success) throw new Error(after.body.error);
+	expect(after.body.revision).toEqual(model.body.revision);
 }, 30_000);
 
 function git(root: string, ...args: string[]): void {
