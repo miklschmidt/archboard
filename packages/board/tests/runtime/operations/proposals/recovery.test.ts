@@ -103,4 +103,12 @@ test("required signing failure and stale complete tokens install no proposal", a
 		applied: false,
 	});
 	expect(readArchitectureModel(vault)).toMatchObject({ success: true, proposals: [] });
+	const manifest = JSON.parse(readFileSync(join(vault, "model.json"), "utf8"));
+	manifest.current.id = "Other";
+	writeFileSync(join(vault, "model.json"), JSON.stringify(manifest));
+	expect(await editArchitectureModule(vault, request)).toMatchObject({
+		success: false,
+		code: "TARGET_CHANGED",
+		applied: false,
+	});
 }, 15_000);

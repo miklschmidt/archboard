@@ -70,7 +70,7 @@ async function proposalBaseline(
 	catalogue: ArchitectureModel,
 	proposal: Proposal,
 ) {
-	const baseline = await exactReading(context, proposal.baseline);
+	const baseline = await exactReading(context, proposal.baseline, undefined, undefined, false);
 	if (!baseline.success) return baseline;
 	if (
 		baseline.manifest.id !== catalogue.manifest.id ||
@@ -318,7 +318,6 @@ async function compareSelected(
 	if (reference === undefined) return selected;
 	const against = await requestedState(context, current, reference.selector);
 	if (!against.success) return against;
-	if (against.selectedState === null) return selected;
 	selected.comparison = {
 		reason: reference.reason,
 		against: against.selectedState,

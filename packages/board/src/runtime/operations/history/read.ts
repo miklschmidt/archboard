@@ -134,11 +134,36 @@ async function recordedSelection(
 	);
 }
 /**
+ * Read publication and source evidence only for externally returned checkpoints.
+ * @param context The archive owner.
+ * @param model The exact complete architecture.
+ * @param checkpoint The immutable checkpoint identity.
+ * @param record Its immutable metadata.
+ * @returns The complete public retained reading.
+ */
+async function retainedDetails(
+	context: ArchiveContext,
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	checkpoint: string,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+) {
+	return {
+		...model,
+		checkpoint: checkpointMetadata(
+			checkpoint,
+			record,
+			(await checkpointPublication(context, checkpoint)).publication,
+		),
+		sourceEvidence: await sourceEvidence(context, record.sources),
+	};
+}
+/**
  * Decode one exact architecture independently of current content.
  * @param context The caller's checkout.
  * @param checkpoint The immutable checkpoint identity.
  * @param module The optional module selector.
  * @param flow The optional explicit flow selector.
+ * @param details Whether the caller returns publication and source evidence.
  * @returns A coherent retained reading or model validation diagnostics.
  */
 async function exactReading(
@@ -146,6 +171,7 @@ async function exactReading(
 	checkpoint: string,
 	module?: string,
 	flow?: string,
+	details?: boolean,
 ): Promise<ArchitectureModelRead> {
 	const record = await checkpointRecord(context, checkpoint);
 	await requireDependencies(context, checkpoint, record, new Set());
@@ -162,21 +188,9 @@ async function exactReading(
 	if (!decoded.success) return decoded;
 	const model = await recordedSelection(context, decoded, record);
 	if (!model.success) return model;
-	return selectFlow(
-		selectModule(
-			{
-				...model,
-				checkpoint: checkpointMetadata(
-					checkpoint,
-					record,
-					(await checkpointPublication(context, checkpoint)).publication,
-				),
-				sourceEvidence: await sourceEvidence(context, record.sources),
-			},
-			module,
-		),
-		flow,
-	);
+	const enriched =
+		details === false ? model : await retainedDetails(context, model, checkpoint, record);
+	return selectFlow(selectModule(enriched, module), flow);
 }
 
 /**

@@ -60,7 +60,7 @@ const SelectedStateSchema = StateMetadataSchema.extend({
 }).strict();
 const ComparisonSchema = z.strictObject({
 	reason: z.enum(["explicit", "current", "predecessor"]),
-	against: SelectedStateSchema,
+	against: SelectedStateSchema.nullable(),
 	checkpoint: CheckpointIdSchema.optional(),
 	subjects: z.array(
 		z.strictObject({
