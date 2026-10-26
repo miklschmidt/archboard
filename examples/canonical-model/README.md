@@ -14,7 +14,7 @@ The fixture contains two root services and one child module.
 The Gateway calls the Worker and carries authored metadata for the details view.
 The public result identifies the roots as `Shop#Worker` and `Shop#Gateway`, in that order.
 
-The fixture exercises a read-only path.
+The initial walkthrough exercises a read-only path.
 It requires no migration, history archive, or model writer.
 
 ## Exact checkpoint workflow

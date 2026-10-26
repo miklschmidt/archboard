@@ -83,6 +83,15 @@ test.each([
 				? { success: true }
 				: { success: false, code: "RECOVERY_REQUIRED" },
 		);
+		if (point === "archive")
+			git(
+				root,
+				"worktree",
+				"add",
+				"--quiet",
+				join(root, "archive-inspection"),
+				"archboard-history",
+			);
 		const recovered = await recoverArchitectureModel(vault);
 		expect(recovered, point).toMatchObject({
 			success: true,

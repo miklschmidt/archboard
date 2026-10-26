@@ -126,8 +126,17 @@ async function editArchitectureModule(
 			return completed;
 		return withModelLock(vault, (guard) => applyEdit(vault, request, guard));
 	});
-	if (result.success) notifyArchitecture(vault, result);
-	return result;
+	if (result.success) {
+		notifyArchitecture(vault, result);
+		return result;
+	}
+	return {
+		...result,
+		diagnostics: result.diagnostics.map((diagnostic) => ({
+			...diagnostic,
+			subjects: diagnostic.subjects ?? [request.subject],
+		})),
+	};
 }
 /**
  * Resume the journal without creating another intent or lifecycle event.
