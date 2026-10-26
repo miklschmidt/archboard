@@ -7,7 +7,9 @@ import {
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
 	ArchitectureModelReadSchema,
+	ArchitecturePublicationSchema,
 } from "@archboard/board/model";
+import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -173,3 +175,115 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	});
 	expect(missingVault.status).toBe(400);
 });
+
+// This composed adapter workflow includes signed retention and a real bare remote.
+test("publication adapters preserve runtime status across a server restart", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	rmSync(join(vault, "bad.module.json"), { force: true });
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const retained = await retainArchitectureCheckpoint(vault, {
+		target: "current",
+		operationId: "surface-publication",
+		writer: "surface-agent",
+		doing: "retaining publication fixture",
+		expectedRevision: current.revision.digest,
+		dependencies: [],
+	});
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	const remote = join(home, "archive.git");
+	for (const args of [
+		["init", "--quiet", "--bare", remote],
+		["remote", "add", "archive", `file://${remote}`],
+	]) {
+		const git = Bun.spawnSync(["git", "-C", home, ...args]);
+		if (git.exitCode !== 0) throw new Error(git.stderr.toString());
+	}
+	const configured = runServerCli({
+		repoRoot,
+		server,
+		input: undefined,
+		args: [
+			"model",
+			"publication-configure",
+			"--remote",
+			"archive",
+			"--ref",
+			"refs/heads/archboard-history",
+		],
+	});
+	expect(configured.status, configured.stderr).toBe(0);
+	const published = runServerCli({
+		repoRoot,
+		server,
+		input: undefined,
+		args: [
+			"model",
+			"publish",
+			retained.checkpoint.id,
+			"--remote",
+			"archive",
+			"--ref",
+			"refs/heads/archboard-history",
+		],
+	});
+	expect(published.status, published.stderr).toBe(0);
+	await server.dispose();
+	server = await startOwnedServer({
+		serverPath: join(repoRoot, "apps/server/src/server.ts"),
+		vault,
+	});
+	const query = new URLSearchParams({ vault, checkpoint: retained.checkpoint.id });
+	const response = await fetch(`${server.base}/api/architecture/publication?${query}`);
+	expect(response.status).toBe(200);
+	expect(response.headers.get("cache-control")).toBe("no-store");
+	const status = ArchitecturePublicationSchema.parse(await response.json());
+	expect(status).toMatchObject({
+		success: true,
+		publication: "published",
+		checkpoint: retained.checkpoint.id,
+	});
+	const cli = runServerCli({
+		repoRoot,
+		server,
+		input: undefined,
+		args: ["model", "publication", retained.checkpoint.id],
+	});
+	expect(cli.status, cli.stderr).toBe(0);
+	const { vault: _addressed, ...result } = z
+		.record(z.string(), z.unknown())
+		.parse(JSON.parse(cli.stdout));
+	expect(ArchitecturePublicationSchema.parse(result)).toEqual(status);
+	const failed = runServerCli({
+		repoRoot,
+		server,
+		input: undefined,
+		args: [
+			"model",
+			"fetch",
+			"f".repeat(40),
+			"--remote",
+			"archive",
+			"--ref",
+			"refs/heads/archboard-history",
+		],
+	});
+	expect(failed.status).toBe(2);
+	expect(JSON.parse(failed.stdout)).toMatchObject({ success: false, publication: "unavailable" });
+	const missingVault = await fetch(`${server.base}/api/architecture/publication/configure`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ remote: "archive", ref: "refs/heads/archboard-history" }),
+	});
+	expect(missingVault.status).toBe(400);
+	const malformed = await fetch(
+		`${server.base}/api/architecture/publication/configure?vault=${encodeURIComponent(vault)}`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ remote: "archive", ref: "main" }),
+		},
+	);
+	expect(malformed.status).toBe(400);
+}, 45_000);

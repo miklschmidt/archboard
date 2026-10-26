@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-archive-backend'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T12:40:00Z'
+updated_date: '2026-10-26T12:54:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -74,4 +74,8 @@ TASK-549.02
 Backend assignment only. Required base baf552fde042b363b79a41dfcfcbaca1ef3e81bd and main 6cae688bb are ancestors of the provided clean branch. TASK-549.03 is not integrated and will not be absorbed. Its private write journal and current-edit APIs remain outside this slice. Browser publication states remain parent-owned. No push, PR action, subagent, or real repository archive publication is authorized.
 
 Created task drafts on Board persistence, Command interface, and Archboard server routes before code. The early public contract is task-549.16-contract.md in the shared orchestration directory. First red test failed on the missing public status export. First green test passed through the public runtime with a signed disposable repository and local bare remote. Explicit publication persists evidence and preserves dirty index, current files, and source HEAD. Normal code publication does not create archive evidence.
+
+Complete archive fetch passes for both a shallow source clone and an already truncated archive clone. Source HEAD, dirty index, authored current state, source fetch mapping, and the unrelated source shallow boundary remain unchanged. A red stale-push case became green through complete fetch plus a signed synchronization commit with both exact checkpoint parents. No force-push or semantic merge occurs. Initial source types identified one unused import, which was removed. The first composed shallow test exceeded the 15-second default because repeated exact reads duplicated Git probes; the runtime now reuses its returned reading and avoids those repeated probes.
+
+Signed checkpoint cc9abce77 saves explicit publication and durable local status. Subsequent runtime cases prove complete fetching, signed stale-archive joins, signing refusal, private common-directory ownership across linked worktrees, changed-URL refusal without blocking local reads, complete pending-baseline status, and missing-identity diagnostics. CLI/server configuration, publish, fetch, and status adapters pass through the shared schemas, including a server restart. Publication metadata uses a separate private sidecar and receipt refs. It does not reuse or replace TASK-549.03 current-edit recovery.
 <!-- SECTION:NOTES:END -->
