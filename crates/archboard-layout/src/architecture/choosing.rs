@@ -7,7 +7,10 @@
 //! Each solve tells, with its drawing, what the choices read of it
 //! (ADR 0039, ADR 0057).
 
+use std::future::{Future, poll_fn};
+use std::pin::{Pin, pin};
 use std::rc::Rc;
+use std::task::Poll;
 
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
@@ -272,11 +275,28 @@ async fn stacked_solved<S: Solver>(
         answered(solver, graph, nesting, &high, calling),
         answered(solver, graph, nesting, &low, calling),
     );
-    let mut partial = std::pin::pin!(partial);
-    // Poll the partial solves once so they are asked before the whole ones.
-    let early =
-        std::future::poll_fn(|context| std::task::Poll::Ready(partial.as_mut().poll(context)))
-            .await;
+    let mut partial = pin!(partial);
+    // Polling the partial solves asks for them. Every other solve the render
+    // is sure to need is then asked before the whole ones, which it may not.
+    let mut early = polled(partial.as_mut()).await;
+    if early.is_pending() {
+        once_more().await;
+        early = polled(partial.as_mut()).await;
+    }
+    if let Poll::Ready(answers) = early {
+        let (stacked, plain) = answers?;
+        let (Some(high), Some(low)) = (&stacked.stood, &plain.stood) else {
+            return Ok(drawing_of(plain)?);
+        };
+        return solved(
+            solver,
+            graph,
+            nesting,
+            wholly(stacks_of(high, low)?),
+            calling,
+        )
+        .await;
+    }
     let callings = [Calling::default(), Calling::default()];
     let off = callings.clone();
     calling.on_call_off(move || {
@@ -288,10 +308,7 @@ async fn stacked_solved<S: Solver>(
         Some(asked(solver, graph, nesting, &wholly(true), &callings[0])),
         Some(asked(solver, graph, nesting, &wholly(false), &callings[1])),
     ];
-    let (stacked, plain) = match early {
-        std::task::Poll::Ready(answers) => answers,
-        std::task::Poll::Pending => partial.await,
-    }?;
+    let (stacked, plain) = partial.await?;
     let chosen = match (&stacked.stood, &plain.stood) {
         (Some(high), Some(low)) => Some(usize::from(!stacks_of(high, low)?)),
         _ => None,
@@ -309,6 +326,26 @@ async fn stacked_solved<S: Solver>(
         .take()
         .expect("the whole solve chosen is still asked for");
     Ok(drawing_of(read(&whole.await?)?)?)
+}
+
+/// A future polled once: what it answered, or that it waits.
+async fn polled<F: Future>(mut future: Pin<&mut F>) -> Poll<F::Output> {
+    poll_fn(|context| Poll::Ready(future.as_mut().poll(context))).await
+}
+
+/// Wait once, so that whatever else the render polls now asks for its solves first.
+async fn once_more() {
+    let mut waited = false;
+    poll_fn(|context| {
+        if waited {
+            Poll::Ready(())
+        } else {
+            waited = true;
+            context.waker().wake_by_ref();
+            Poll::Pending
+        }
+    })
+    .await;
 }
 
 /// A board laid out with every join of lines to one card kept whole the way
