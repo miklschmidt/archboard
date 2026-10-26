@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T15:04:00Z'
+updated_date: '2026-10-26T16:19:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -71,6 +71,8 @@ TASK-549.01
 5. Use TDD through the existing browser adapter for navigation and inspection. Prove obsolete layout results cannot replace the selected reading and revision, without duplicating renderer algorithm tests.
 
 6. Update task-named architecture proposals, applicable decisions, consumer guidance and examples. Run focused checks, simplify, commit with signing, merge the integration tip, and hand the complete branch to a merger.
+
+7. Complete canonical URL ownership within the existing workspace router. Preserve requested model, scope, and checkpoint for each actual pane, including unavailable readings. Let the model reader consume that address directly. Keep legacy board opens on their existing server-confirmed path. Prove multi-pane reload and exact history through the existing browser owner.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
