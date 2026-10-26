@@ -89,15 +89,20 @@ const SCRIPT_OPTION = /^-[a-z]*c[a-z]*$/u;
  * @returns The words, or null for a command of more or fewer words, or with an operator.
  */
 function threeWords(command: string): readonly [string, string, string] | null {
-	// A variable stays as it is written: the row shows the script, not its expansion.
-	const words = parse(command, (name) => `$${name}`);
-	const [shell, option, script] = words;
-	return words.length === 3 &&
-		typeof shell === "string" &&
-		typeof option === "string" &&
-		typeof script === "string"
-		? [shell, option, script]
-		: null;
+	try {
+		// A variable stays as it is written: the row shows the script, not its expansion.
+		const words = parse(command, (name) => `$${name}`);
+		const [shell, option, script] = words;
+		return words.length === 3 &&
+			typeof shell === "string" &&
+			typeof option === "string" &&
+			typeof script === "string"
+			? [shell, option, script]
+			: null;
+	} catch {
+		// Commands outside the parser's grammar still have a readable row.
+		return null;
+	}
 }
 
 /**

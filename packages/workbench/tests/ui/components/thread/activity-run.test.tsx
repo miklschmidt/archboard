@@ -136,3 +136,9 @@ test("a command that one shell call runs reads as its script, and any other comm
 		"python3 -c 'print(1)'",
 	]);
 });
+
+test("a command outside the shell parser's grammar keeps its row", () => {
+	const line = "printf '%s\\n' \"$(printf '%s' '${')\"";
+	mount({ items: [command("unparsed", "completed", line)], ended: false, live: false });
+	expect(rows()[0]?.querySelector("span[title]")?.textContent).toBe(line);
+});
