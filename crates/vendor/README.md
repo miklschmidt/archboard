@@ -40,6 +40,10 @@ archboard changed three things:
      (`src/dotgen/mincross_rank.rs`). A pass of `mincross` stops running
      iterations once one leaves what an earlier one left, and plays the rest out
      on the recorded crossings (`src/dotgen/mincross_repeat.rs`).
+   - `src/common/routespl.rs`: `limit_boxes` finds each Bézier sample with
+     plain arithmetic first, and the fused one only where it decides a box.
+   - `graphviz-pure-geom/src/pathplan/triang.rs`: `ccw` reads the sign of its
+     fused multiply-add from the plain one where that sign is certain.
 
 ## Why they are not workspace members
 

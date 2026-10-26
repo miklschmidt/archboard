@@ -78,6 +78,25 @@ pub fn simple_spline_route(
     }
 }
 
+/// archboard: the point at `t` of a cubic Bézier curve, by de Casteljau's construction in
+/// `limit_boxes`'s order, with `lerp(a, b)` for `a += t * (b - a)`.
+fn de_casteljau(control: [Point; 4], lerp: impl Fn(f64, f64) -> f64) -> Point {
+    let mut sp = control;
+    sp[0].x = lerp(sp[0].x, sp[1].x);
+    sp[0].y = lerp(sp[0].y, sp[1].y);
+    sp[1].x = lerp(sp[1].x, sp[2].x);
+    sp[1].y = lerp(sp[1].y, sp[2].y);
+    sp[2].x = lerp(sp[2].x, sp[3].x);
+    sp[2].y = lerp(sp[2].y, sp[3].y);
+    sp[0].x = lerp(sp[0].x, sp[1].x);
+    sp[0].y = lerp(sp[0].y, sp[1].y);
+    sp[1].x = lerp(sp[1].x, sp[2].x);
+    sp[1].y = lerp(sp[1].y, sp[2].y);
+    sp[0].x = lerp(sp[0].x, sp[1].x);
+    sp[0].y = lerp(sp[0].y, sp[1].y);
+    sp[0]
+}
+
 /// `limitBoxes`: widen each box to the x-extent of the spline samples within it.
 fn limit_boxes(boxes: &mut [BoundingBox], pps: &[Point], delta: f64) {
     let boxn = boxes.len();
@@ -85,40 +104,119 @@ fn limit_boxes(boxes: &mut [BoundingBox], pps: &[Point], delta: f64) {
     let pn = pps.len();
     let mut splinepi = 0;
     while splinepi + 3 < pn {
-        let mut si = 0.0f64;
-        while si <= num_div {
-            let t = si / num_div;
-            let mut sp = [
-                pps[splinepi],
-                pps[splinepi + 1],
-                pps[splinepi + 2],
-                pps[splinepi + 3],
-            ];
-            // `a += t * (b - a)`, contracted to fma(t, b - a, a) by clang.
-            let lerp = |a: f64, b: f64| t.mul_add(b - a, a);
-            sp[0].x = lerp(sp[0].x, sp[1].x);
-            sp[0].y = lerp(sp[0].y, sp[1].y);
-            sp[1].x = lerp(sp[1].x, sp[2].x);
-            sp[1].y = lerp(sp[1].y, sp[2].y);
-            sp[2].x = lerp(sp[2].x, sp[3].x);
-            sp[2].y = lerp(sp[2].y, sp[3].y);
-            sp[0].x = lerp(sp[0].x, sp[1].x);
-            sp[0].y = lerp(sp[0].y, sp[1].y);
-            sp[1].x = lerp(sp[1].x, sp[2].x);
-            sp[1].y = lerp(sp[1].y, sp[2].y);
-            sp[0].x = lerp(sp[0].x, sp[1].x);
-            sp[0].y = lerp(sp[0].y, sp[1].y);
-            for b in boxes.iter_mut() {
-                // FUDGE .0001 (32-bit robustness in C).
-                if sp[0].y <= b.ur.y + 0.0001 && sp[0].y >= b.ll.y - 0.0001 {
-                    b.ll.x = b.ll.x.min(sp[0].x);
-                    b.ur.x = b.ur.x.max(sp[0].x);
+        let control = [
+            pps[splinepi],
+            pps[splinepi + 1],
+            pps[splinepi + 2],
+            pps[splinepi + 3],
+        ];
+        if !limit_boxes_by_extremes(boxes, control, num_div) {
+            let mut si = 0.0f64;
+            while si <= num_div {
+                let t = si / num_div;
+                // `a += t * (b - a)`, contracted to fma(t, b - a, a) by clang.
+                let sp = de_casteljau(control, |a, b| t.mul_add(b - a, a));
+                for b in boxes.iter_mut() {
+                    // FUDGE .0001 (32-bit robustness in C).
+                    if sp.y <= b.ur.y + 0.0001 && sp.y >= b.ll.y - 0.0001 {
+                        b.ll.x = b.ll.x.min(sp.x);
+                        b.ur.x = b.ur.x.max(sp.x);
+                    }
                 }
+                si += 1.0;
             }
-            si += 1.0;
         }
         splinepi += 3;
     }
+}
+
+/// archboard: not in C. `limit_boxes` for one Bézier segment, to the same boxes, with the
+/// fused samples (a software routine in WebAssembly) found only where they decide.
+///
+/// Each sample is first found with plain multiplies and adds. Every point of de
+/// Casteljau's construction is a convex combination of the control points, and three
+/// levels of rounding keep the plain sample within 200 units of 2^-53 of their largest
+/// coordinate of the fused one, well inside `margin`. So the plain sample decides whether
+/// the fused one lies in a box's rows, except near the rows' edges, and which samples can
+/// hold the box's least and greatest x. A box ends at the least and greatest x of the
+/// samples in it, whatever their order, so only those candidates are found fused.
+///
+/// Answers `false`, having changed nothing, where that does not hold: a sample that is not
+/// finite, or an extreme x of zero, whose sign `min` and `max` may take in order.
+fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_div: f64) -> bool {
+    let largest = control
+        .iter()
+        .fold(0.0f64, |m, p| m.max(p.x.abs()).max(p.y.abs()));
+    let margin = largest * 1e-12;
+    if !margin.is_finite() {
+        return false;
+    }
+    let mut ts = Vec::new();
+    let mut near = Vec::new();
+    let mut si = 0.0f64;
+    while si <= num_div {
+        let t = si / num_div;
+        let p = de_casteljau(control, |a, b| a + t * (b - a));
+        if !p.x.is_finite() || !p.y.is_finite() {
+            return false;
+        }
+        ts.push(t);
+        near.push(p);
+        si += 1.0;
+    }
+    let mut fused: Vec<Option<Point>> = vec![None; ts.len()];
+    let mut exact = |k: usize| {
+        *fused[k].get_or_insert_with(|| de_casteljau(control, |a, b| ts[k].mul_add(b - a, a)))
+    };
+    let mut extents: Vec<Option<(f64, f64)>> = Vec::with_capacity(boxes.len());
+    let mut members = Vec::new();
+    for b in boxes.iter() {
+        // FUDGE .0001 (32-bit robustness in C).
+        let (hi, lo) = (b.ur.y + 0.0001, b.ll.y - 0.0001);
+        members.clear();
+        for (k, p) in near.iter().enumerate() {
+            let inside = if p.y - hi > margin || lo - p.y > margin {
+                false
+            } else if hi - p.y > margin && p.y - lo > margin {
+                true
+            } else {
+                let sp = exact(k);
+                sp.y <= hi && sp.y >= lo
+            };
+            if inside {
+                members.push(k);
+            }
+        }
+        if members.is_empty() {
+            extents.push(None);
+            continue;
+        }
+        let least = members.iter().fold(f64::INFINITY, |m, &k| m.min(near[k].x));
+        let greatest = members
+            .iter()
+            .fold(f64::NEG_INFINITY, |m, &k| m.max(near[k].x));
+        let mut low = f64::INFINITY;
+        let mut high = f64::NEG_INFINITY;
+        for &k in &members {
+            if near[k].x - least <= 2.0 * margin {
+                low = low.min(exact(k).x);
+            }
+            if greatest - near[k].x <= 2.0 * margin {
+                high = high.max(exact(k).x);
+            }
+        }
+        if low == 0.0 || high == 0.0 || !low.is_finite() || !high.is_finite() {
+            return false;
+        }
+        extents.push(Some((low, high)));
+    }
+    for (b, extent) in boxes.iter_mut().zip(extents) {
+        if let Some((low, high)) = extent {
+            b.ll.x = b.ll.x.min(low);
+            b.ur.x = b.ur.x.max(high);
+        }
+    }
+    true
 }
 
 const INIT_DELTA: f64 = 10.0;

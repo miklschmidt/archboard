@@ -8,7 +8,22 @@ pub const ISON: i32 = 3;
 
 /// `ccw(p1, p2, p3)`.
 pub fn ccw(p1: Ppoint, p2: Ppoint, p3: Ppoint) -> i32 {
-    let d = (p1.y - p2.y).mul_add(p3.x - p2.x, -((p3.y - p2.y) * (p1.x - p2.x)));
+    let (a, b) = (p1.y - p2.y, p3.x - p2.x);
+    let r = -((p3.y - p2.y) * (p1.x - p2.x));
+    // archboard: only the sign of the fused `a * b + r` is read, and a correctly rounded
+    // result has the sign of the exact one. The rounded product `p` is within
+    // |p| * 2^-53 of the exact one, so where `p + r` (whose rounding keeps its sign) is
+    // further from zero than |p| * 2^-52, it has the exact sign, and the fused
+    // multiply-add, a software routine in WebAssembly, is not needed. NaNs and
+    // infinities fail the test and take the fused path, as before. A zero factor makes the
+    // product exact, and the sum then has the sign of the fused one too.
+    let p = a * b;
+    let sum = p + r;
+    let d = if sum.abs() > p.abs() * f64::EPSILON || ((a == 0.0 || b == 0.0) && p == 0.0) {
+        sum
+    } else {
+        a.mul_add(b, r)
+    };
     if d > 0.0 {
         ISCW
     } else if d < 0.0 {
