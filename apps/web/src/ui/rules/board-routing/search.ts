@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|focus|hideKinds|hideGroups|grammar|flow)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|focus|hideKinds|hideGroups|grammar|flow|state|against)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -210,6 +210,8 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		id,
 		scope: search[`scope${paneId}`] ?? null,
 		checkpoint: search[`checkpoint${paneId}`] ?? null,
+		state: search[`state${paneId}`],
+		against: search[`against${paneId}`],
 		grammar: search[`grammar${paneId}`],
 		flow: search[`flow${paneId}`],
 		focus: searchList(search[`focus${paneId}`]),
@@ -282,7 +284,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 		...(model.scope === null ? {} : { [`scope${pane.paneId}`]: model.scope }),
 		...(model.checkpoint === null ? {} : { [`checkpoint${pane.paneId}`]: model.checkpoint }),
 		...Object.fromEntries(
-			(["grammar", "flow"] as const).flatMap((field) => {
+			(["state", "against", "grammar", "flow"] as const).flatMap((field) => {
 				const value = model[field];
 				return value === undefined ? [] : [[`${field}${pane.paneId}`, value]];
 			}),

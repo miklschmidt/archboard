@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+import { hashKey, type QueryClient } from "@tanstack/react-query";
 import {
 	ArchitectureEventSchema,
 	type ArchitectureEvent,
@@ -49,6 +49,8 @@ function createFeed(client: QueryClient, vault: string) {
 	let generation = 0;
 	let claimsGeneration = 0;
 	const currentKey = architectureModelKeys.reading(vault, null);
+	const currentHash = hashKey(currentKey);
+	const mutableKey = architectureModelKeys.mutable(vault);
 	const claimsKey = architectureModelKeys.claims(vault);
 	/**
 	 * Publish transport state, without copying any model content.
@@ -89,12 +91,21 @@ function createFeed(client: QueryClient, vault: string) {
 		event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
 	): Promise<void> {
 		const accepted = ++generation;
-		await client.cancelQueries({ queryKey: currentKey, exact: true });
+		await client.cancelQueries({ queryKey: mutableKey });
 		if (!isCurrent(accepted)) return;
 		if (event.type === "architecture_snapshot" && event.reading.success) {
 			client.setQueryData(currentKey, event.reading);
+			await client.invalidateQueries({
+				queryKey: mutableKey,
+				/**
+				 * The snapshot replaces only the default current read; other states need their own result.
+				 * @param query A cached mutable reading.
+				 * @returns Whether its selected state or comparison requires a fresh read.
+				 */
+				predicate: (query) => query.queryHash !== currentHash,
+			});
 		} else {
-			await client.invalidateQueries({ queryKey: currentKey, exact: true });
+			await client.invalidateQueries({ queryKey: mutableKey });
 		}
 		if (isCurrent(accepted)) publish({ ...state, refreshing: false });
 	}

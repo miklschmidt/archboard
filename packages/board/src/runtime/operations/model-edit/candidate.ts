@@ -76,17 +76,33 @@ function changedFiles(before: Map<string, Buffer>, after: Map<string, Buffer>) {
 }
 
 /**
+ * Require an explicit proposal intent for non-current edits.
+ * @param model The selected target reading.
+ */
+function requireCurrentEdit(model: ArchitectureModel): void {
+	if (model.selectedState?.lifecycle !== "current")
+		throw new ArchiveError(
+			"TARGET_CHANGED",
+			"Draft edits require an explicit proposal intent. Lifecycle changes remain unavailable.",
+		);
+}
+/**
  * Capture one complete checked candidate and all affected claims.
  * @param vault The explicit vault.
  * @param request The original operation.
  * @returns The checked candidate or refusal.
  */
-function editCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const current = requireTarget(vault, request.target);
+async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
+	const current = await requireTarget(vault, request.target);
 	if (!current.success) return current;
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
 	const captured = captureRevision(vault, current.revision);
+	if ("proposal" in request) {
+		const { proposalCandidate } = await import("#runtime/operations/proposals/candidate.ts");
+		return proposalCandidate(vault, request, current, captured);
+	}
+	requireCurrentEdit(current);
 	const candidate = applyStructure(current, request, captured.inputs.keys());
 	const inputs = candidateInputs(captured, current, candidate);
 	const revision = modelRevision(inputs);
@@ -102,6 +118,8 @@ function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 		files: changedFiles(captured.inputs, inputs),
 		subjects: candidate.subjects,
 		scopes: candidate.scopes,
+		selection: undefined,
+		dependencies: [],
 	};
 }
-export { editCandidate };
+export { editCandidate, candidateInputs, changedFiles };

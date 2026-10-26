@@ -235,6 +235,13 @@ Historical code resolution requires the retained source commit and unchanged bou
 Missing source, uncommitted evidence, and another checked-out revision refuse opening while architecture remains readable.
 The opener never switches a checkout or copies source code into architecture history.
 
+## Compact proposal readings
+
+[ADR 0061](0061-active-proposals-store-identity-changes.md) extends this reader to compact active proposals.
+Current files and complete materialized drafts use the same decoder and shared runtime operations.
+Selected state metadata names the draft lifecycle explicitly.
+Legacy authority, recursive readings, independent flows, measured rendering, and explicit vault addressing remain in force.
+
 ## Behavioral browser readings
 
 Each pane stores its diagram grammar and explicit flow identity in the existing address.

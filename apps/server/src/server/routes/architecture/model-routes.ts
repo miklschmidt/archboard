@@ -28,10 +28,20 @@ const QuerySchema = z
 			.enum(["true", "false"])
 			.transform((value) => value === "true")
 			.optional(),
+		state: z.string().min(1).optional(),
+		against: z.string().min(1).optional(),
+		compare: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 	})
-	.strict();
+	.strict()
+	.refine(
+		(query) => query.checkpoint === undefined || query.state === undefined,
+		"Select either state or checkpoint.",
+	);
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
-const ListQuerySchema = QuerySchema.pick({ vault: true });
+const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 	vault: z.string().optional(),
 });
@@ -53,17 +63,21 @@ function mountArchitectureModelRoutes(app: Express): void {
 		}
 		respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
 	});
-	app.get("/api/architecture/model", requireVault, async (req, res) => {
-		const query = QuerySchema.safeParse(req.query);
-		if (!query.success) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
-			return;
-		}
-		const { vault: _vault, module, flow, ...navigation } = query.data;
-		respond(res, await readArchitectureModel(vaultOfRequest(req), module, flow, navigation));
-	});
+	app.get(
+		["/api/architecture/model", "/api/architecture/proposals"],
+		requireVault,
+		async (req, res) => {
+			const query = QuerySchema.safeParse(req.query);
+			if (!query.success) {
+				res
+					.status(400)
+					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
+				return;
+			}
+			const { vault: _vault, module, flow, ...navigation } = query.data;
+			respond(res, await readArchitectureModel(vaultOfRequest(req), module, flow, navigation));
+		},
+	);
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {
 		const query = ListQuerySchema.safeParse(req.query);
 		if (!query.success) {

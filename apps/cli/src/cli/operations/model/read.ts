@@ -44,6 +44,29 @@ const modelReadContract = defineCommand({
 		},
 		{
 			kind: "option",
+			key: "state",
+			spellings: ["--state"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Select current or a draft by stable identity or unique current or former name",
+		},
+		{
+			kind: "option",
+			key: "against",
+			spellings: ["--against"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Compare against one explicit state or complete checkpoint identity",
+		},
+		{
+			kind: "option",
+			key: "compare",
+			spellings: ["--compare"],
+			value: "none",
+			description: "Include the default whole-state semantic comparison",
+		},
+		{
+			kind: "option",
 			key: "flow",
 			spellings: ["--flow"],
 			value: "required",
@@ -68,6 +91,9 @@ const modelReadContract = defineCommand({
 	input: {
 		ingress: z.object({
 			module: z.string().optional(),
+			state: z.string().optional(),
+			against: z.string().optional(),
+			compare: z.boolean().optional(),
 			checkpoint: z.string().optional(),
 			flow: z.string().optional(),
 			references: z.boolean().optional(),
@@ -149,4 +175,16 @@ const modelContract = defineCommand({
 	input: { ingress: z.object({}) },
 });
 
-export { modelContract, modelReadContract };
+const modelProposalsContract = defineCommand({
+	...modelReadContract,
+	path: ["model", "proposals"],
+	summary: "List compact proposals and current state metadata",
+	parameters: [],
+	input: { ingress: z.object({}) },
+});
+const modelCompareContract = defineCommand({
+	...modelReadContract,
+	path: ["model", "compare"],
+	summary: "Compare coherent canonical architectural states",
+});
+export { modelContract, modelReadContract, modelProposalsContract, modelCompareContract };

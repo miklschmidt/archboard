@@ -1,0 +1,32 @@
+{
+	"proposal": {
+		"type": "create",
+		"name": "Queued dispatch",
+		"summary": "Queue accepted requests",
+		"documents": [{ "repo": "github.com/acme/shop", "path": "docs/queue.md" }]
+	},
+	"changes": [
+		{
+			"type": "edit-module",
+			"subject": "Shop#Gateway",
+			"set": { "description": "Queues accepted requests for the worker." }
+		},
+		{ "type": "add-collection", "name": "Queued behavior" },
+		{
+			"type": "add-flow",
+			"collection": "Queued behavior",
+			"flow": {
+				"name": "Queue request",
+				"participants": ["Shop#Gateway", "Shop#Worker"],
+				"steps": [
+					{
+						"from": "Shop#Gateway",
+						"to": "Shop#Worker",
+						"kind": "async",
+						"label": "Enqueue accepted request"
+					}
+				]
+			}
+		}
+	]
+}

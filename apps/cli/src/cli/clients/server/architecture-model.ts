@@ -49,22 +49,20 @@ async function architectureResult<T>(
  * @param module The optional module selector.
  * @param checkpoint The complete immutable checkpoint identity.
  * @param flow The optional explicit flow selector.
- * @param navigation The optional navigation and code actions.
+ * @param selection The optional state and comparison selectors.
  * @returns The coherent reading or structured refusal.
  */
 function readArchitectureModelOnServer(
 	module?: string,
 	checkpoint?: string,
 	flow?: string,
-	navigation: Pick<
-		Parameters<typeof readArchitectureModel>[3],
-		"references" | "reference" | "code" | "model"
-	> = {},
+	selection?: Parameters<typeof readArchitectureModel>[3],
 ) {
+	const values = { module, checkpoint, flow, ...selection };
 	const query = new URLSearchParams(
-		Object.entries({ ...navigation, module, flow, checkpoint }).flatMap(([key, value]) =>
-			value === undefined ? [] : [[key, String(value)]],
-		),
+		Object.entries(values)
+			.filter(([, value]) => value !== undefined)
+			.map(([key, value]) => [key, String(value)]),
 	);
 	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
 }
