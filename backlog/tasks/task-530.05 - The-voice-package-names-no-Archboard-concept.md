@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: Done
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-26T04:40:00Z'
+updated_date: '2026-10-26T05:46:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -119,6 +119,13 @@ Closing evidence (2026-10-25): git grep of packages/codex-realtime-voice for arc
 Follow-up fixes (2026-10-26), after the branch was rebased onto the signed upstream main: bee542ed4 checks the payload object the host passed, because the z.record copy left out an own __proto__ key (a case in announce.test.ts fails without it); 294d54ab6 keys browser-tabs.ts by browserId, which every caller passes; 65d4e0100 says the timing package also times the packages Archboard publishes; 2ae2d45fd renames the dynamic-tool context authority's paneId to linkKey (issueAndRevalidateLinkAuthority, executableLinkKeyFor), because it holds a thread link key while an approval binding's paneId is a real pane. Only the authority's token is stored, so no record changes.
 
 Follow-up review (gpt-6.1-sol, xhigh) of bee542ed4 through 2ae2d45fd: Spec found two gaps in the payload check, fixed in c16f06d79: an array subclass passed the class-instance rule, and values that only an array's iterator yields went unchecked. Three regression cases fail without the fix. Standards found the thread-link rename unfinished in four places, fixed in 73434c41f with no change in behaviour. The voice package 1145 pass, the workbench 390 pass, the packed-package test 1 pass; types, lint and format pass. A second review of the rebase onto the signed main found no merge defect; apps/cli 128 pass and the drawing-integrity tests 6 pass.
+
+Merge of main 5454f51bc (#4 to #10, #15) into PR #2, as baf4f06dd, with the format fix 519bfe312:
+- Main adopted TASK-526 proposals on Archboard server routes, Board persistence, Command dispatch and Command interface from the same parents as this branch's proposals. Each board keeps the branch's current variant, and main's change is restated on it as one proposal per board ("TASK-526 after TASK-532" and the like), adopted. Main's separate TASK-526.x variants are not carried as separate variants.
+- Board persistence: the merged overview drew 26 lines, over the budget of 25 (each side drew 25). Board move now sits inside Durable writes, because a move is a fixed order of durable writes in two vaults. The overview draws 20 lines.
+- Board rasterizer: edge eJdDQjo5 and step pGLHZ6HU cited requireFreshPlace in record.ts, which TASK-529.07 (ffe7d60bd) moved into freshTalkPlace. They now cite freshTalkPlace.
+- docs/readme/assets.json: explainer, pr-walkthrough and newcomer named packages/workbench/src/runtime/services/realtime, which this branch moved. They now name packages/codex-realtime-voice/src. The architecture embeds are drawn again and tracked. banner, sequence and web-shop came out byte-identical; only their hashes changed.
+- archboard check after the merge: 16 warnings, all older than the merge. propagateEdit (Board persistence JRnj6xbQ, Zdta8mrP) is missing on main and on the branch tip. Each RELATIONSHIP_UNDRAWN import exists on the branch tip, and main's boards draw none of those relationships either.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
