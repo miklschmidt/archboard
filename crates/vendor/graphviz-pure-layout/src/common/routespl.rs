@@ -151,8 +151,11 @@ fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_d
     if !margin.is_finite() {
         return false;
     }
-    let mut ts = Vec::new();
-    let mut near = Vec::new();
+    // archboard: the samples are counted ahead, and each box reads only the samples whose
+    // rows can reach it, found in an order of the samples by y (below).
+    let count = if num_div >= 0.0 { num_div as usize + 1 } else { 0 };
+    let mut ts = Vec::with_capacity(count);
+    let mut near = Vec::with_capacity(count);
     let mut si = 0.0f64;
     while si <= num_div {
         let t = si / num_div;
@@ -170,11 +173,19 @@ fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_d
     };
     let mut extents: Vec<Option<(f64, f64)>> = Vec::with_capacity(boxes.len());
     let mut members = Vec::new();
+    // Every sample is finite here. `p.y - hi` and `lo - p.y`, rounded, rise and fall with
+    // `p.y`, so the samples a box's test does not leave out at once are a run of them in
+    // this order.
+    let mut by_y: Vec<usize> = (0..near.len()).collect();
+    by_y.sort_unstable_by(|&a, &b| near[a].y.total_cmp(&near[b].y));
     for b in boxes.iter() {
         // FUDGE .0001 (32-bit robustness in C).
         let (hi, lo) = (b.ur.y + 0.0001, b.ll.y - 0.0001);
         members.clear();
-        for (k, p) in near.iter().enumerate() {
+        let first = by_y.partition_point(|&k| lo - near[k].y > margin);
+        let end = by_y.partition_point(|&k| !(near[k].y - hi > margin));
+        for &k in by_y.get(first..end).unwrap_or(&[]) {
+            let p = &near[k];
             let inside = if p.y - hi > margin || lo - p.y > margin {
                 false
             } else if hi - p.y > margin && p.y - lo > margin {
