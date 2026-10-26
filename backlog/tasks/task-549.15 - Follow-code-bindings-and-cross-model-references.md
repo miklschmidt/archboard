@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:25:00Z'
+updated_date: '2026-10-26T21:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -70,6 +70,8 @@ TASK-549.04, TASK-549.10
 6. Parent creates Browser application@TASK-549.15, then implements visible source availability, existing-opener activation, and explicit cross-model navigation through the existing query cache and pane router. Use real file/Git fixtures and the existing browser adapter. Keep historical pins and unavailable source/model intent explicit without ownership changes.
 
 7. Complete consumer and architecture descriptions, run affected runtime/browser/static evidence, inspect visible results, and simplify. Adopt accurate combined task proposals, release claims, stop the server, mark proven criteria Done, sign the source, and dispatch its required merger.
+
+8. Use TASK-549.15-integration on Board persistence, Command interface, Archboard server routes, and Browser application. Each derives from adopted TASK-549.06. Preserve the original backend task variants as shelved provenance, with every subject identity carried into the combined reading.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -88,4 +90,6 @@ The combined proposal/reference runtime case now passes after failing proposal c
 Foreign draft references now use the explicit selected state, preserve draft lifecycle, find an existing exact checkpoint for that state, and retain that pin for historical navigation. Proposal comparisons report references as an atomic field change. The corrected runtime regression failed on a foreign model/state mismatch, then passed1case/7assertions. Its fixture retains the current revision after foreign draft creation with a distinct operation identity. The combined references/proposals suite passes19cases/103assertions; source/frontend types and full lint pass. Explicit draft code activation and browser work remain pending.
 
 Canonical code opening now accepts an explicit state or exact checkpoint, with those selectors mutually exclusive. The shared reader resolves that selected binding before the existing opener runs. A real-process regression first received HTTP400 for a draft request, then opened src/planned.ts while current retained src/index.ts. Missing states return MODEL_UNAVAILABLE without substitution. The canonical owner passes2cases/8assertions, all code-target/opener owners pass163cases/405assertions, and types/lint pass. Server12813 now runs at PID2897352 for parent architecture and browser work.
+
+CLI-authored combined proposals now preserve both .06 and .15 architecture. Existing five navigation/source nodes and thirteen relationships are restored under their original IDs with explicit RESTORE_UNCONFIRMED authorization. The navigation call now targets selected-state reading, and compact proposal baselines explicitly capture foreign pins. The original backend variants are shelved with a reason and retain their content and ancestry. Browser application@TASK-549.15-integration adds module navigation to the existing reader, query access, code opener, and router. Backend claims are released; the parent holds Browser application for implementation. No current architecture is replaced or force-adopted.
 <!-- SECTION:NOTES:END -->
