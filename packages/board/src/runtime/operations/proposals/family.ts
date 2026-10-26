@@ -115,6 +115,7 @@ async function familyCandidate(
 				}
 			}
 			dependencies.add(proposal.baseline);
+			for (const proof of proposal.restorations ?? []) dependencies.add(proof.checkpoint);
 			const changed = !isDeepStrictEqual(ProposalSchema.strip().parse(existing), proposal);
 			if (changed) {
 				scopes.add(proposal.id);
