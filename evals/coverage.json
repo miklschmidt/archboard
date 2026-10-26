@@ -1079,11 +1079,39 @@
 					"owner": "packages/board/tests/runtime/operations/history/checkpoints.test.ts and tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical archive publication: explicit destination, durable publication states, complete shallow fetch, signed concurrent ancestry and retention limitation",
+					"expectedUse": "configure a named remote and independent archive ref; explicitly publish or fetch an exact checkpoint; retry pending publication without losing local work; report unprotected retention honestly",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/history/publication.test.ts, fetch-history.test.ts, concurrent-publication.test.ts and archive-boundary.test.ts; tests/system/semantic-boards/model-read.test.ts; visible destination choice, pending retry and exact recovery: tests/system/browser/canonical-model-publication.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
 					"path": "canonical description edit: subject claims, complete read tokens, signed preparation, durable recovery and idempotent completion",
 					"expectedUse": "claim qualified modules, edit one description with the complete observed token and explicit current target, retry the same operation after a lost response, preserve foreign bytes and restore checkout context before recovery",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/model-edit and tests/system/semantic-boards/model-read.test.ts; visible ownership, stale readings and reconnect: tests/system/browser/canonical-model-viewer.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical structure editing: module add/remove/rename/reparent and identity-preserving relationship transfer",
+					"expectedUse": "claim every affected subject and the model structure scope when allocating or retiring identities; submit one complete batch; preserve former names, authored order, unrelated bytes and retired identities; recover interrupted file transfers through the existing operation",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/structure.test.ts and structure-recovery.test.ts; tests/system/semantic-boards/model-read.test.ts; visible updates and pinned history: tests/system/browser/canonical-model-structure.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "model inventory: exact originals, source fingerprints, namespaces, aliases and evidence",
+					"expectedUse": "Preserve independent coverage and report possible duplicate definitions without automatic identity merges.",
+					"scenarios": ["S20"],
+					"evidence": "author-run",
+					"owner": "S20 grader; public runtime owner packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts"
+				},
+				{
+					"path": "model plan: explicit canonical mappings, definition/parent/order/relationship-owner/policy choices and stale refusal",
+					"expectedUse": "Save only the separate mapping plan. Keep active architecture unchanged.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts; guidance skills/archboard/references/legacy-migration.md"
 				}
 			]
 		},
@@ -1146,26 +1174,6 @@
 					"scenarios": ["S00", "S05", "S07", "S10", "S12", "S14"],
 					"evidence": "grader",
 					"owner": "visualStandingOf (packages/skills/tests/runtime/operations/runs/captures.test.ts); rubric.md What you can and cannot see"
-				}
-			]
-		},
-		{
-			"part": 15,
-			"title": "Legacy migration planning",
-			"entries": [
-				{
-					"path": "model inventory: exact originals, source fingerprints, namespaces, aliases and evidence",
-					"expectedUse": "Preserve independent coverage and report possible duplicate definitions without automatic identity merges.",
-					"scenarios": ["S20"],
-					"evidence": "author-run",
-					"owner": "S20 grader; public runtime owner packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts"
-				},
-				{
-					"path": "model plan: explicit canonical mappings, definition/parent/order/relationship-owner/policy choices and stale refusal",
-					"expectedUse": "Save only the separate mapping plan. Keep active architecture unchanged.",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts; guidance skills/archboard/references/legacy-migration.md"
 				}
 			]
 		}

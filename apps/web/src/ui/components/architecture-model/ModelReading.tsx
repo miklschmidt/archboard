@@ -125,7 +125,7 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 						<ModuleDetails module={module} model={model} />
 					</>
 				) : selected !== null ? (
-					<div className="text-body space-y-3">
+					<div data-slot="module-missing-selection" className="text-body space-y-3">
 						<output className="block">
 							The selected module is no longer available in this reading.
 						</output>

@@ -1,4 +1,4 @@
-# Read and edit a canonical model
+# Work with a canonical model
 
 Use this path when the addressed vault contains an authored `model.json` manifest.
 Existing `.semantic.json` boards retain authority until explicit migration.
@@ -90,10 +90,83 @@ The operation retains only recognized architecture inputs and checkpoint metadat
 It creates no source-code snapshot and publishes nothing.
 
 The result carries `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, and `sources`.
-Its `publication` remains `saved-locally`.
+Its `publication` reports explicit archive publication evidence.
+Read [Publish and fetch history](#publish-and-fetch-history) before sharing a retained reading.
 A normal source-code push does not publish this archive.
 Linked worktrees share the archive through Git's common repository directory.
 Their current architecture remains separate.
+
+## Publish and fetch history
+
+A source-code push does not establish archive publication.
+Configure an existing named Git remote and a complete independent archive branch ref.
+Configuration stays private beside shared Git objects.
+It applies to the portable vault address across linked worktrees.
+It changes no architecture inputs and sends no history.
+
+```bash
+archboard model publication-configure -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+archboard model publication <checkpoint.id> -C <directory>
+archboard model publish <checkpoint.id> -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+```
+
+Use the configured destination on every publication and recovery request.
+If the remote URL changes, explicitly configure that destination again.
+`PUBLICATION_DESTINATION_CHANGED` refuses use of the former authorization and publication evidence.
+Local retention and exact reads remain available.
+
+`saved-locally` means that the architecture exists locally without publication evidence for the selected destination.
+`publication-pending` means that a durable publication intent awaits a successful exchange.
+That intent includes the retained dependency closure.
+`published` means that an explicit push or fetch established remote availability for that checkpoint.
+`unavailable` means that the requested history cannot be opened or restored by that operation.
+
+Publication evidence persists across server restarts.
+It describes availability at the last successful explicit exchange.
+It does not promise that the remote still exists or keeps its retention policy.
+The result reports `retention.protected: false` and explains the enforceability limitation.
+The remote owner must deny ref rewrites and deletion through server policy and keep a backup.
+Generic Git transport cannot install or inspect those host controls.
+
+A stale push fetches complete named history and joins archive ancestry through a signed synchronization record.
+The record preserves both tips without merging model content.
+Publication preserves checkpoint identities and never force-pushes.
+Configured identity and signing apply to the join.
+If signing fails, repair the signer and retry the same explicit publication request.
+
+If the network fails, local architecture remains retained.
+Use `model publication` to read the saved status without contacting the remote.
+After access returns, repeat `model publish` with the same checkpoint and destination.
+An interrupted request remains pending until an explicit exchange proves publication.
+
+To recover a missing reading, configure the owner's named archive destination first.
+Then fetch that complete archive explicitly.
+
+```bash
+archboard model fetch <checkpoint.id> -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+archboard model read -C <directory> --checkpoint <checkpoint.id>
+```
+
+The fetch retains a named local reference and restores the referenced ancestry.
+An existing shallow archive triggers a deeper fetch of that archive ref.
+Current files, the index, source HEAD, and stored source fetch mappings remain unchanged.
+Fetched checkpoints appear in `model checkpoints`.
+Archive order never selects the checkout's current state.
+
+`ARCHIVE_NOT_PORTABLE` refuses publication of retained machine-local source repository paths.
+Immutable checkpoint metadata cannot be redacted during publication.
+Keep such checkpoints local and use portable source repository identities for future archives.
+Private archive initialization and portable export remain separate delivery slices.
+
+The browser shows sharing status when the reader selects a retained checkpoint.
+The reader can set its destination, publish history, retry a failed exchange, or fetch missing history.
+Configuration sends no history.
+Every network action uses the displayed checkpoint and destination.
+The reader keeps that checkpoint selected while recovery restores its content.
+The visible retention limitation states that a successful exchange does not establish remote protection.
 
 ## Reopen and recover
 
@@ -117,8 +190,9 @@ Architecture remains readable when source evidence is unavailable.
 
 `ARCHITECTURE_UNAVAILABLE` means that architecture inputs or a required baseline are missing.
 Restore the archive from its owner or backup.
-If the owner publishes history, explicitly fetch the named `archboard-history` branch with its required ancestry.
-This delivery performs no automatic fetch or publication.
+If the owner publishes history, use `model fetch` with the configured remote, archive ref, and exact checkpoint.
+The fetch restores complete archive ancestry, including required baselines in shallow clones.
+Exact reads perform no automatic network operation.
 Never substitute current content for missing history.
 
 `ARCHIVE_IN_USE` means that a worktree has `archboard-history` checked out.
@@ -127,10 +201,10 @@ Switch that worktree to another branch before retrying retention.
 Preserve that branch and resolve its ownership before retrying.
 An unsuccessful operation keeps its structured JSON and exits with status 2.
 
-This delivery supports manifest and module inputs plus local checkpoints.
+This delivery supports module structure and relationship edits, retained checkpoints, and explicit archive publication.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
-Module structure, proposal changes, publication, private archives, and cutover arrive through later TASK-549 slices.
+Proposal changes, private archives, and cutover arrive through later TASK-549 slices.
 
 ## Edit one module description
 
@@ -207,3 +281,84 @@ This action ends ownership without changing architecture content.
 Its former writer then receives `CLAIM_REVOKED` and must stop that intent.
 
 The claim and edit commands accept JSON files or standard input.
+
+## Author module structure and relationships
+
+Use the existing `model edit` command for a structural batch.
+A batch holds every change for one intent.
+Keep its complete revision, explicit current target, operation identity, writer, doing line, and claim.
+Replace the description request's `subject` and `description` with `changes`.
+The earlier description request remains supported.
+
+Use these change forms:
+
+```json
+[
+	{ "type": "add-module", "module": { "name": "Cache", "kind": "service", "order": 40 } },
+	{
+		"type": "edit-module",
+		"subject": "Shop#Gateway",
+		"set": { "name": "API", "parent": "Shop#Worker" },
+		"clear": ["description"]
+	},
+	{ "type": "remove-module", "subject": "Shop#Handler" },
+	{
+		"type": "add-relationship",
+		"source": "Shop#Gateway",
+		"relationship": { "to": "Shop#Worker", "kind": "call", "order": 20 }
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "Shop#Dispatch",
+		"source": "Shop#Worker",
+		"set": { "to": "Shop#Gateway" },
+		"clear": ["traffic"]
+	},
+	{ "type": "remove-relationship", "subject": "Shop#Dispatch" }
+]
+```
+
+These forms are separate examples, rather than one valid combined intent.
+State one edit per continuing subject.
+Use `set` for assigned fields and `clear` for optional fields to remove.
+Omitted fields remain unchanged, and null is invalid.
+A rename retains the old name as a former name.
+Use `set.parent` to reparent a module, or `clear:["parent"]` to make it a root.
+Use `edit-relationship.source` to transfer a relationship without replacing its identity.
+Keep its label, description, order, emphasis, traffic, and anchor unstated to preserve them.
+
+New identities come from Archboard in the model namespace.
+Do not supply an ID, schema version, former names, or outgoing array for an addition.
+The result's subjects and the next model read expose the allocated identities.
+New module files use those identities, rather than names.
+Unique current or former module names remain accepted.
+References to a module added in the same batch use its unique name.
+Relationship edits and removals use qualified IDs.
+
+Claim every affected existing subject before the operation.
+A relationship change includes its identity and former and new source and target modules.
+A containment change includes the moved descendants and former and new ancestor paths.
+For additions and removals, also claim the model ID, such as `Shop`.
+This structure scope protects identity allocation and retirement.
+It leaves unrelated module scopes available.
+For example, a transfer claim can name `["Shop#Gateway","Shop#Worker","Shop#Dispatch"]`.
+Refusals identify affected scopes so that you can release a partial claim and obtain the complete scope.
+
+Module removal also removes incident relationships unless the same batch explicitly repairs their endpoints.
+Reparent or remove every surviving child of a removed container in the same batch.
+Archboard never promotes an orphan automatically.
+Removed module and relationship IDs remain reserved in `model.json`.
+Existing proposal confirmation rules remain unchanged and apply when editing proposals.
+This delivery authors only the explicitly selected current state.
+
+The operation retains one checkpoint and announces one complete affected subject set.
+A retry returns the same allocated identities and result.
+A transfer or removal that stops during installation uses the existing `model recover` command.
+The recovery path preserves foreign bytes and refuses changed checkout context.
+Unrelated authored files remain byte-identical.
+
+The browser refreshes current module names, root membership, and connections after the complete operation.
+The selected module keeps its identity through a rename or reparent.
+Its details identify its parent when it has one.
+Removing that module leaves an explicit missing selection until the reader chooses another subject.
+Exact historical readings keep their original names, containment, and relationships.
