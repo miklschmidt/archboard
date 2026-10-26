@@ -27,22 +27,12 @@
 // answer and calls off what it no longer needs before a worker starts it.
 // The queue keeps its order.
 //
-// Graphviz's answer depends on its graph alone (ADR 0058), and the solves of
-// a render lay many of the same graphs out, as do later renders of a board
-// for the graphs an edit left as they were. Each worker's core remembers what
-// it laid out, and tells the pool with each answer; the pool remembers it too
-// and hands it at once to every other worker, and to each worker it starts. So a
-// solve sent after another's answer lays out no graph that one laid out, on
-// whichever worker (TASK-548.02). Solves that run at the same time cannot
-// share: a worker cannot wait for another while it solves.
+// The pool remembers each solve's answer by its graph, so a solve asked for
+// again, as every solve of a re-render after an edit that keeps every card's
+// size is, is answered at once and reaches no worker (TASK-548.02).
 //
-// The pool also remembers each solve's answer by its graph, so a solve asked
-// for again, as every solve of a re-render after an edit that keeps every
-// card's size is, is answered at once and reaches no worker.
-//
-// The workers accept `{ id, graph }` and `{ graphviz }`, and answer with
-// `{ id, data, graphviz }` or `{ id, error, fatal, graphviz }`, `graphviz`
-// holding Graphviz answers, graph then answer, pair after pair.
+// The workers accept `{ id, graph }` and answer with
+// `{ id, data }` or `{ id, error, fatal }`.
 
 import type { RendererHost } from "#shared/rules/render/host.ts";
 
@@ -56,18 +46,7 @@ interface EngineAnswer {
 	readonly error?: { readonly message?: string } | string;
 	/** Whether the worker can answer nothing more: its engine aborted or never started. */
 	readonly fatal?: boolean;
-	/** The graphs the solve laid out with Graphviz, each followed by its answer. */
-	readonly graphviz?: readonly string[];
 }
-
-/**
- * The most text the pool remembers of Graphviz answers, graphs and answers
- * together, in characters: 32 Mi, the bound each worker's core keeps too
- * (`crates/archboard-renderer-wasm/src/layout.rs`). Past it, the answers
- * remembered first are forgotten first; a forgotten graph is laid out again,
- * to the same answer.
- */
-const REMEMBERED_GRAPHVIZ = 32 * 1024 * 1024;
 
 /**
  * The most text the pool remembers of solves, graphs and answers together, in
@@ -163,11 +142,11 @@ function settle(pending: Pending, answer: EngineAnswer): void {
 }
 
 /**
- * Answers by the graphs they answer, oldest first, within a bound.
+ * Solve answers by their graphs, oldest first, within a bound.
  * @param bound The most characters they hold, graphs and answers together.
- * @returns Reading one answer, remembering new pairs, and every pair remembered.
+ * @returns Reading one answer, and remembering another.
  */
-function rememberedAnswers(bound: number) {
+function rememberedSolves(bound: number) {
 	const answers = new Map<string, string>();
 	let size = 0;
 	return {
@@ -180,34 +159,20 @@ function rememberedAnswers(bound: number) {
 			return answers.get(graph);
 		},
 		/**
-		 * Remember answers, forgetting the oldest past the bound.
-		 * @param pairs Graphs, each followed by its answer.
-		 * @returns The pairs not remembered before, in the same form.
+		 * Remember an answer, forgetting the oldest past the bound.
+		 * @param graph The graph.
+		 * @param answer Its answer.
 		 */
-		learn(pairs: readonly string[]): string[] {
-			const fresh: string[] = [];
-			for (let index = 0; index + 1 < pairs.length; index += 2) {
-				const graph = pairs[index]!;
-				const answer = pairs[index + 1]!;
-				const length = graph.length + answer.length;
-				if (answers.has(graph) || length > bound) continue;
-				for (const [oldest, forgotten] of answers) {
-					if (size + length <= bound) break;
-					answers.delete(oldest);
-					size -= oldest.length + forgotten.length;
-				}
-				answers.set(graph, answer);
-				size += length;
-				fresh.push(graph, answer);
+		remember(graph: string, answer: string): void {
+			const length = graph.length + answer.length;
+			if (answers.has(graph) || length > bound) return;
+			for (const [oldest, forgotten] of answers) {
+				if (size + length <= bound) break;
+				answers.delete(oldest);
+				size -= oldest.length + forgotten.length;
 			}
-			return fresh;
-		},
-		/**
-		 * Every pair remembered, to hand a worker that starts.
-		 * @returns Graphs, each followed by its answer, oldest first.
-		 */
-		all(): string[] {
-			return [...answers].flat();
+			answers.set(graph, answer);
+			size += length;
 		},
 	};
 }
@@ -224,24 +189,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	const queued: Pending[] = [];
 	let nextId = 0;
 	let handoff: MessageChannel | undefined;
-	const graphviz = rememberedAnswers(REMEMBERED_GRAPHVIZ);
-	const solved = rememberedAnswers(REMEMBERED_SOLVES);
-
-	/**
-	 * Remember the Graphviz answers one worker laid out, and hand the new ones
-	 * to every other worker before it is sent another solve.
-	 * @param source The worker that laid them out, which remembers them already.
-	 * @param pairs Graphs, each followed by its answer.
-	 */
-	function share(source: PooledEngine, pairs: readonly string[] | undefined): void {
-		if (pairs === undefined || pairs.length === 0) return;
-		const fresh = graphviz.learn(pairs);
-		if (fresh.length === 0) return;
-		for (const engine of engines) {
-			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
-			if (engine !== source) engine.worker.postMessage({ graphviz: fresh });
-		}
-	}
+	const solved = rememberedSolves(REMEMBERED_SOLVES);
 
 	/** Let a cancellable caller finish selecting before queued speculation starts. */
 	function handOff(): void {
@@ -312,7 +260,6 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		const solving = engine.solving;
 		if (solving?.id !== answer.id) return;
 		engine.answered = true;
-		share(engine, answer.graphviz);
 		if (answer.fatal === true) {
 			discard(engine, engineError(answer.error ?? "The layout worker stopped answering."));
 			return;
@@ -329,9 +276,6 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 */
 	function start(): PooledEngine {
 		const engine: PooledEngine = { worker: startWorker(), answered: false };
-		const remembered = graphviz.all();
-		// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
-		if (remembered.length > 0) engine.worker.postMessage({ graphviz: remembered });
 		engine.worker.addEventListener("message", (event) => {
 			if (isAnswer(event)) hear(engine, event.data);
 		});
@@ -434,7 +378,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 			 * @param answer The solved graph.
 			 */
 			const remember = (answer: string): void => {
-				solved.learn([graph, answer]);
+				solved.remember(graph, answer);
 				resolve(answer);
 			};
 			queued.push({ graph, signal, cancel, resolve: remember, reject, retried: false });

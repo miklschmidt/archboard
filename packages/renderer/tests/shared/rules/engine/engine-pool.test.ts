@@ -15,8 +15,6 @@ interface Sent {
 /** A worker that holds every solve until the test answers it. */
 class HeldWorker extends EventTarget {
 	readonly sent: Sent[] = [];
-	/** The Graphviz answers the pool handed this worker, one message each. */
-	readonly remembered: (readonly string[])[] = [];
 	terminated = false;
 	references = 0;
 
@@ -36,12 +34,11 @@ class HeldWorker extends EventTarget {
 	}
 
 	/**
-	 * Hold a solve, or keep the Graphviz answers it was handed.
-	 * @param message The solve or the answers.
+	 * Hold a solve.
+	 * @param message The solve.
 	 */
-	postMessage(message: Sent & { readonly graphviz?: readonly string[] }): void {
-		if (message.graphviz === undefined) this.sent.push(message);
-		else this.remembered.push(message.graphviz);
+	postMessage(message: Sent): void {
+		this.sent.push(message);
 	}
 
 	/**
@@ -51,12 +48,8 @@ class HeldWorker extends EventTarget {
 	 * @param reply.data The solved graph.
 	 * @param reply.error The engine's refusal.
 	 * @param reply.fatal Whether the worker cannot accept another solve.
-	 * @param reply.graphviz The graphs the solve laid out, each followed by its answer.
 	 */
-	answer(
-		index: number,
-		reply: { data?: string; error?: unknown; fatal?: boolean; graphviz?: string[] },
-	): void {
+	answer(index: number, reply: { data?: string; error?: unknown; fatal?: boolean }): void {
 		const message = this.sent[index]!;
 		this.dispatchEvent(new MessageEvent("message", { data: { id: message.id, ...reply } }));
 	}
@@ -431,21 +424,6 @@ test("a failed replacement constructor rejects all waiting solves and releases t
 	expect(sentTo(replacement)).toEqual(["next"]);
 	replacement.answer(0, { data: "next!" });
 	expect(await next).toBe("next!");
-});
-
-test("a graph one worker laid out is handed once to every other worker, and to each worker started later", async () => {
-	const { solve, workers } = heldPool(2);
-	const first = solve("first");
-	workers[0]!.answer(0, { data: "first!", graphviz: ["g1", "laid g1"] });
-	await first;
-	const second = solve("second");
-	const third = solve("third");
-	expect(workers[1]!.remembered).toEqual([["g1", "laid g1"]]);
-	workers[1]!.answer(0, { data: "third!", graphviz: ["g2", "laid g2", "g1", "laid g1"] });
-	await third;
-	expect(workers[0]!.remembered).toEqual([["g2", "laid g2"]]);
-	workers[0]!.answer(1, { data: "second!" });
-	expect(await second).toBe("second!");
 });
 
 test("a solve asked for again is answered from what the pool remembers, and reaches no worker", async () => {
