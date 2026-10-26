@@ -2,7 +2,11 @@ import type { ArchitectureEvent } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { readArchitectureModel, watchArchitectureModel } from "@archboard/board/store-read";
+import {
+	readArchitectureModel,
+	readArchitectureCheckpoint,
+	watchArchitectureModel,
+} from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import {
 	behaviorFixture,
@@ -144,3 +148,34 @@ test("sibling proposals mint separate additions and explicit comparison keeps bo
 		"Current",
 	]);
 }, 15_000);
+
+test("retained comparisons identify the live base revision independently of the retained draft", async () => {
+	const { vault } = behaviorFixture();
+	const intent = await structureIntent(vault, ["Shop", "Shop#Gateway"]);
+	const created = await editArchitectureModule(vault, {
+		...intent,
+		proposal: { type: "create", name: "Queued delivery" },
+		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued API" } }],
+	});
+	if (!created.success) throw new Error(JSON.stringify(created));
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const advanced = await editArchitectureModule(vault, {
+		...intent,
+		operationId: "advance-current-for-comparison",
+		expectedRevision: current.revision,
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { description: "Current architecture changed after retention." },
+			},
+		],
+	});
+	if (!advanced.success) throw new Error(JSON.stringify(advanced));
+	const retained = await readArchitectureCheckpoint(vault, created.checkpoint.id);
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	expect(retained.comparison?.revision).toEqual(advanced.after);
+	expect(retained.revision).toEqual(created.checkpoint.revision);
+	expect(retained.comparison?.revision.digest).not.toBe(retained.revision.digest);
+}, 20_000);

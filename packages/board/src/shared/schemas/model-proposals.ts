@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
+import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 const StateSelectionSchema = z.strictObject({
 	state: z.string().min(1).optional(),
@@ -61,6 +61,7 @@ const SelectedStateSchema = StateMetadataSchema.extend({
 const ComparisonSchema = z.strictObject({
 	reason: z.enum(["explicit", "current", "predecessor"]),
 	against: SelectedStateSchema.nullable(),
+	revision: ModelRevisionSchema,
 	checkpoint: CheckpointIdSchema.optional(),
 	subjects: z.array(
 		z.strictObject({

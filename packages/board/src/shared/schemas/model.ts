@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import {
 	StateMetadataSchema,
+	ModelRevisionSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 } from "#shared/schemas/model-definitions.ts";
@@ -46,12 +47,6 @@ const ArchitecturePublicationRequestSchema = ArchitecturePublicationDestinationS
 });
 const RetentionPolicySchema = z
 	.object({ protected: z.literal(false), limitation: z.string(), recovery: z.string() })
-	.strict();
-const ModelRevisionSchema = z
-	.object({
-		digest: z.string(),
-		files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
-	})
 	.strict();
 const ModelRecoverySchema = z
 	.object({

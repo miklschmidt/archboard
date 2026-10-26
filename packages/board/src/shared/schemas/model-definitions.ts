@@ -7,6 +7,13 @@ import {
 	DescriptionSchema,
 	QualifiedSubjectIdSchema,
 } from "#shared/schemas/primitives.ts";
+const ModelRevisionSchema = z
+	.object({
+		digest: z.string(),
+		files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
+	})
+	.strict();
+
 const StateMetadataSchema = z
 	.object({
 		id: SemanticIdSchema,
@@ -44,4 +51,9 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	outgoing: z.array(OwnedRelationshipSchema),
 });
 
-export { StateMetadataSchema, ArchitectureManifestSchema, ArchitectureModuleSchema };
+export {
+	ModelRevisionSchema,
+	StateMetadataSchema,
+	ArchitectureManifestSchema,
+	ArchitectureModuleSchema,
+};

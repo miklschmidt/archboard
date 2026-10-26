@@ -321,6 +321,7 @@ async function compareSelected(
 	selected.comparison = {
 		reason: reference.reason,
 		against: against.selectedState,
+		revision: against.revision,
 		subjects: comparisonOf(against, selected),
 		...(against.checkpoint === undefined ? {} : { checkpoint: against.checkpoint.id }),
 	};
