@@ -122062,7 +122062,7 @@
 		{
 			"id": "zNzcVKXg",
 			"name": "TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ExVvgeF6",
 			"summary": "Archboard HTTP and pane services composed with the voice agent through createVoiceAgent",
 			"documents": [

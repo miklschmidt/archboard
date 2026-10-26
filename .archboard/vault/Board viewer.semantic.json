@@ -57023,7 +57023,7 @@
 		{
 			"id": "kUIUiTmt",
 			"name": "TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "XhomNCU5",
 			"summary": "How a pane reads one board from the server, draws it in the page, keeps the camera and what somebody picked out, follows a card's drill-down and reads the board again when it changes. It owns presentation and holds board content only as a read-only cache.",
 			"content": {

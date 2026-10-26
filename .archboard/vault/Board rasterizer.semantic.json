@@ -24139,7 +24139,7 @@
 		{
 			"id": "LA43vys3",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4lZZiZuM",
 			"summary": "Bitmaps and videos drawn headlessly from a board, and the recipe a PNG carries",
 			"content": {
