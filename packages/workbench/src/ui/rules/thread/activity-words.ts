@@ -2,6 +2,8 @@
 // it took, what it changed. Pure, so the agent dock can say the same thing
 // about the live row as the conversation does.
 
+import { parse } from "shell-quote";
+
 import type { ActivityItem } from "#ui/rules/runtime/messages.ts";
 
 /**
@@ -75,6 +77,44 @@ function searchLabel(item: Extract<ActivityItem, { readonly media: "search" }>):
 	return item.query === null ? "Searched the web" : `Searched “${item.query}”`;
 }
 
+/** The shells whose script a row shows in place of the call that runs it. */
+const SHELLS: ReadonlySet<string> = new Set(["bash", "sh", "zsh"]);
+
+/** An option word of a shell that holds `c`, such as `-lc`: the next word is the script. */
+const SCRIPT_OPTION = /^-[a-z]*c[a-z]*$/u;
+
+/**
+ * The three words of a command, read as a shell reads them.
+ * @param command The command.
+ * @returns The words, or null for a command of more or fewer words, or with an operator.
+ */
+function threeWords(command: string): readonly [string, string, string] | null {
+	// A variable stays as it is written: the row shows the script, not its expansion.
+	const words = parse(command, (name) => `$${name}`);
+	const [shell, option, script] = words;
+	return words.length === 3 &&
+		typeof shell === "string" &&
+		typeof option === "string" &&
+		typeof script === "string"
+		? [shell, option, script]
+		: null;
+}
+
+/**
+ * A command's words on its row: the script of one shell call with `-c`, the way
+ * Codex runs each command of an agent (`/nix/store/…/bin/bash -lc '<script>'`),
+ * and any other command as Codex sent it.
+ * @param command The command as Codex sent it.
+ * @returns The words.
+ */
+function commandLabel(command: string): string {
+	const words = threeWords(command);
+	if (words === null) return command;
+	const [shell, option, script] = words;
+	const name = shell.slice(shell.lastIndexOf("/") + 1);
+	return SHELLS.has(name) && SCRIPT_OPTION.test(option) ? script : command;
+}
+
 /**
  * One row's words: what the work was.
  * @param item The item.
@@ -85,7 +125,7 @@ function activityLabel(item: ActivityItem): string {
 		case "reasoning":
 			return reasoningLabel(item.text);
 		case "command":
-			return item.command;
+			return commandLabel(item.command);
 		case "fileChange":
 			return filesLabel(item);
 		case "tool":

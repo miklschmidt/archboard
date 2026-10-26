@@ -26,13 +26,18 @@ afterAll(async () => {
  * A command step.
  * @param id Its id.
  * @param status Where it stands.
+ * @param line The command as Codex sent it.
  * @returns The step.
  */
-function command(id: string, status: "inProgress" | "completed" | "failed"): ActivityItem {
+function command(
+	id: string,
+	status: "inProgress" | "completed" | "failed",
+	line = `run ${id}`,
+): ActivityItem {
 	return {
 		media: "command",
 		itemId: decoder.adoptItemId(id),
-		command: `run ${id}`,
+		command: line,
 		status,
 		cwd: "/work",
 		exitCode: status === "failed" ? 1 : 0,
@@ -110,4 +115,24 @@ test("a step that fails while the run is on screen opens then, and the person's 
 	expect(button?.getAttribute("aria-expanded")).toBe("true");
 	act(() => button?.click());
 	expect(button?.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("a command that one shell call runs reads as its script, and any other command as Codex sent it", () => {
+	const sent = [
+		String.raw`/nix/store/10dx-bash-5.3p15/bin/bash -lc 'git status --short && echo "it'\''s done"'`,
+		"/bin/zsh -c 'ls -la $HOME'",
+		"cd /work && make",
+		"python3 -c 'print(1)'",
+	];
+	mount({
+		items: sent.map((line, index) => command(String(index), "completed", line)),
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
+		`git status --short && echo "it's done"`,
+		"ls -la $HOME",
+		"cd /work && make",
+		"python3 -c 'print(1)'",
+	]);
 });
