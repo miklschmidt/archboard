@@ -491,3 +491,11 @@ The slice adds no browser behavior.
   could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
+
+The canonical independent-flow owner is `packages/board/tests/runtime/operations/model-edit/flows.test.ts`.
+It crosses the public architecture read/write interface with real files and Git.
+It owns collection identity, nested placements, alternative renames, complete claims, and same-operation reference repair.
+The flow-repair case in `structure-recovery.test.ts` owns interrupted module and flow installation together.
+`tests/system/semantic-boards/model-flows.test.ts` owns CLI authoring, explicit flow selection, real SVG output, and refused output preservation.
+Existing renderer owners retain sequence and flowchart drawing rules.
+No browser owner is added for this backend delivery.

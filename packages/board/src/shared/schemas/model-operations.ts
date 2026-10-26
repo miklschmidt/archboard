@@ -1,3 +1,6 @@
+import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
+import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
+import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitives.ts";
 import {
@@ -9,6 +12,28 @@ import {
 	QualifiedSubjectIdSchema,
 } from "#shared/schemas/model.ts";
 
+const ArchitectureFlowRenderRequestSchema = z.strictObject({
+	flow: z.string().min(1).optional(),
+	grammar: DiagramGrammarSchema.exclude(["architecture"]),
+	checkpoint: z.string().min(1).optional(),
+	theme: StandaloneThemeSchema.optional(),
+});
+const ArchitectureFlowRenderResultSchema = z.discriminatedUnion("success", [
+	z.strictObject({
+		success: z.literal(true),
+		model: SemanticIdSchema,
+		flow: QualifiedSubjectIdSchema,
+		grammar: ArchitectureFlowRenderRequestSchema.shape.grammar,
+		revision: ModelRevisionSchema,
+		checkpoint: z.string().optional(),
+		svg: z.string(),
+		width: z.number(),
+		height: z.number(),
+		placed: z.array(z.string()),
+		atlas: DiagramAtlasSchema,
+	}),
+	ArchitectureModelFailureSchema,
+]);
 const ArchitectureTargetSchema = z
 	.object({ model: SemanticIdSchema, state: SemanticIdSchema })
 	.strict();
@@ -98,7 +123,7 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 const ArchitectureModuleEditSchema = z.union([
 	DescriptionEditSchema,
 	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({ changes: z.array(StructureChangeSchema).min(1) })
+		.extend({ changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1) })
 		.strict(),
 ]);
 const ArchitectureEditSuccessSchema = z
@@ -171,6 +196,8 @@ type ArchitectureClaimResult = z.infer<typeof ArchitectureClaimResultSchema>;
 type ArchitectureRecoveryResult = z.infer<typeof ArchitectureRecoveryResultSchema>;
 type ArchitectureEvent = z.infer<typeof ArchitectureEventSchema>;
 export {
+	ArchitectureFlowRenderRequestSchema,
+	ArchitectureFlowRenderResultSchema,
 	ArchitectureTargetSchema,
 	ArchitectureClaimSchema,
 	ArchitectureClaimRequestSchema,

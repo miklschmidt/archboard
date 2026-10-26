@@ -150,3 +150,37 @@ The query cache accepts only the scene key for the current reading revision.
 A late result for another key cannot replace that reading.
 File paths, formatting, evidence, and hidden descriptions do not require a new scene.
 The existing camera and selection owners remain independent of layout.
+
+## Independent flow authoring
+
+TASK-549.05 adds independent `.flows.json` collections to the complete canonical reading.
+A collection identity names an authoring group and differs from qualified flow and step identities.
+Its filename restricts no participant or module reference.
+Flows preserve authored participant order, nested step order, summaries, notes, repeat counts, and anchors.
+Return messages add no structural relationships.
+
+The existing edit batch adds, edits, transfers, or removes collections, flows, and steps.
+The existing identity authority allocates new subjects.
+A continuing step keeps its identity across flows, loops, and decision alternatives.
+A placement names its holder and optional following sibling by stable identity.
+A decision holder also names the exact alternative label.
+Changing alternative labels requires every affected direct child placement in the same operation.
+Missing holders, conflicting moves, cycles, and incompatible order refuse the entire candidate.
+The legacy tree assembler runs only after these placements pass validation, so its orphan fallback is unreachable.
+
+Claims cover former and new participants, affected flows, steps, subtrees, and holder paths.
+Collection metadata and identity allocation or retirement also require the model structure scope.
+Module removal repairs flow references in the same candidate and durable transaction as structural references.
+Messages with removed endpoints disappear unless explicit field repairs preserve them.
+Repairs remove the empty control steps and flows that they leave behind.
+Retired flow and step identities remain reserved.
+Unrelated module and collection files remain byte-identical.
+Exact retry, signing, recovery, source preservation, private archives, and publication keep their existing owners.
+
+Current and retained reads can explicitly select a flow identity or unique current or former name.
+Sequence and flowchart renders require an explicit selection, including when only one flow exists.
+The existing renderer operation accepts a grammar choice and keeps the same public export count.
+CLI and HTTP adapters preserve the complete behavioral reading without copying architecture into a board.
+The CLI installs an output artifact only for a successful command outcome.
+A refused render preserves any existing output file and returns structured diagnostics.
+Browser grammar switching remains TASK-549.12.

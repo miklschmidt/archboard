@@ -9,6 +9,8 @@ import {
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureModelReadSchema,
+	ArchitectureFlowRenderRequestSchema,
+	ArchitectureFlowRenderResultSchema,
 	ArchitecturePublicationSchema,
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
@@ -45,11 +47,13 @@ async function architectureResult<T>(
  * Read current inputs or one immutable checkpoint.
  * @param module The optional module selector.
  * @param checkpoint The complete immutable checkpoint identity.
+ * @param flow The optional explicit flow selector.
  * @returns The coherent reading or structured refusal.
  */
-function readArchitectureModelOnServer(module?: string, checkpoint?: string) {
+function readArchitectureModelOnServer(module?: string, checkpoint?: string, flow?: string) {
 	const query = new URLSearchParams({
 		...(module === undefined ? {} : { module }),
+		...(flow === undefined ? {} : { flow }),
 		...(checkpoint === undefined ? {} : { checkpoint }),
 	});
 	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
@@ -238,3 +242,21 @@ function initializeArchitectureArchiveOnServer() {
 	);
 }
 export { initializeArchitectureArchiveOnServer };
+
+/**
+ * Ask the server for an explicitly selected flow picture.
+ * @param input The explicit reading and standalone theme.
+ * @returns The SVG receipt or structured diagnostics.
+ */
+function renderArchitectureFlowOnServer(
+	input: z.infer<typeof ArchitectureFlowRenderRequestSchema>,
+) {
+	const query = new URLSearchParams(
+		Object.entries(input).filter((entry): entry is [string, string] => entry[1] !== undefined),
+	);
+	return architectureResult(
+		ArchitectureFlowRenderResultSchema,
+		`/api/architecture/render?${query}`,
+	);
+}
+export { renderArchitectureFlowOnServer };
