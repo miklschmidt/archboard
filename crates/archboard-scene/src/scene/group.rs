@@ -3,7 +3,7 @@
 //!
 //! A group names the subject it draws, when it draws one, and its role, so a
 //! painter can light, recede or pick out a part without reading the structure
-//! of the picture (ADR 0057). A role carries the facts that come with it: how
+//! of the picture (ADR 0059). A role carries the facts that come with it: how
 //! a part was drawn, which way the board it opens lies, where a view's words
 //! move to.
 

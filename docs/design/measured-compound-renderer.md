@@ -5,7 +5,7 @@
 > [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md). The
 > files it names under `lib/layout/` are gone. Track and Blocks now run in
 > `crates/archboard-layout`, as
-> [ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
+> [ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
 > describes.
 
 Architecture rendering has three owners: measurement, compound layout, and SVG

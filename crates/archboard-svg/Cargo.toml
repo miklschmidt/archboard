@@ -13,7 +13,7 @@ workspace = true
 archboard-scene = { path = "../archboard-scene" }
 # A picture's glyphs are drawn from the outlines of the core's own faces.
 archboard-text = { path = "../archboard-text" }
-# The deterministic software libm, as the scene's painter uses it (ADR 0057).
+# The deterministic software libm, as the scene's painter uses it (ADR 0059).
 libm = "0.2"
 serde = { version = "1", features = ["derive"] }
 # A picture's key is typed for the host from its Rust type (src/key.rs).

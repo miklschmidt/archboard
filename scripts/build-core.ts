@@ -1,4 +1,4 @@
-// Build the renderer core to WebAssembly (ADR 0057): cargo for wasm32, then
+// Build the renderer core to WebAssembly (ADR 0059): cargo for wasm32, then
 // wasm-bindgen into the renderer package, recording the hash of the sources
 // the build was made from, and beside it the TypeScript types of the core's
 // contract, generated from its Rust types, and the marks a pane draws beside a

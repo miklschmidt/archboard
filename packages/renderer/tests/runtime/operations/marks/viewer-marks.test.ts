@@ -1,6 +1,6 @@
 // A pane draws a picture's marks itself (`shared/rules/render/marks.ts`): its
 // key's line samples, a comparison's pins and a code finding's warnings. The
-// renderer core draws the same marks in the picture (ADR 0057).
+// renderer core draws the same marks in the picture (ADR 0059).
 //
 // What this catches: a key, a pin or a warning a pane draws differently from
 // the picture beside it, once the core and the pane's copy of a rule drift.

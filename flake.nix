@@ -60,7 +60,7 @@
         in
         {
           # The renderer core builds for wasm32-unknown-unknown with nixpkgs'
-          # rustc (ADR 0057).
+          # rustc (ADR 0059).
           default = pkgs.mkShell {
             packages = [
               bun

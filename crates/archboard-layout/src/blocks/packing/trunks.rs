@@ -1,5 +1,5 @@
 //! The trunks of a block of blocks, routed by the orthogonal router
-//! (`archboard-router`, ADR 0057) around the blocks it packs: each between two
+//! (`archboard-router`, ADR 0059) around the blocks it packs: each between two
 //! pins on its blocks' edges, or the block's own port or header, and how much
 //! room the routes spend running round the blocks.
 

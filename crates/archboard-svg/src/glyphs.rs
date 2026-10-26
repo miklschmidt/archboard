@@ -1,4 +1,4 @@
-//! A picture's words as the core shaped them (ADR 0057): each glyph a
+//! A picture's words as the core shaped them (ADR 0059): each glyph a
 //! document draws defined once, as a path in the units of its face, and each
 //! run of words written twice over. Its glyphs draw it, so the picture needs
 //! no font. Its words, in no ink and stretched over the glyphs, are what a

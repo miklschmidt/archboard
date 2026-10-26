@@ -1,4 +1,4 @@
-//! The renderer core's layout of architecture boards (ADR 0057): a board's
+//! The renderer core's layout of architecture boards (ADR 0059): a board's
 //! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
 //! drawing is chosen between the solves of one board, each a measured graph
 //! laid out one way ([`lay_out_board`]) and read for what the choice weighs;
@@ -35,7 +35,7 @@ pub use routes::LineLook;
 /// Graphviz: lay out one graph and answer its `json0` output, y inverted. The
 /// graph is a viz-js `Graph` object given as JSON, and the answer is what
 /// viz-js renders of it with `{ yInvert: true, format: "json0" }`. The core's
-/// is `archboard_graphviz::InCore` (ADR 0058).
+/// is `archboard_graphviz::InCore` (ADR 0060).
 pub trait Graphviz {
     /// Lay a graph out.
     ///

@@ -1,5 +1,5 @@
 // The marks a viewer draws beside or over a picture, drawn as the renderer core
-// draws them in the picture (ADR 0057): the key's line samples, the pin a
+// draws them in the picture (ADR 0059): the key's line samples, the pin a
 // subject of one standing wears, and the warning a code finding raises.
 //
 // A pane draws these itself, at once and without the core. Their inks, sizes

@@ -21,7 +21,7 @@ bun run build    # builds the renderer core and the browser bundle into dist/fro
 runs only that Codex, never one on your `PATH`. The install also generates the
 Codex app-server contract and the generated references of the skill. Bun runs
 the CLI and the server directly from TypeScript (ADR 0014). The renderer core is
-Rust, built to WebAssembly by `bun run build:core` (ADR 0057). A Bun process
+Rust, built to WebAssembly by `bun run build:core` (ADR 0059). A Bun process
 refuses a core built from other sources than the checkout holds, so after you
 change `crates/`, run `bun run build:core` before the next
 command. Lint, type checks and the frontend build run it first.

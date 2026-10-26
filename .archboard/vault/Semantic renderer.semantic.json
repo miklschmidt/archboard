@@ -23568,7 +23568,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057). It answers that hash so a host can refuse a build of other sources. Later steps of TASK-520 move routing, layout and painting into it.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059). It answers that hash so a host can refuse a build of other sources. Later steps of TASK-520 move routing, layout and painting into it.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/crates/wasm/src/lib.rs"
@@ -26222,7 +26222,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057). It answers that hash so a host can refuse a build of other sources. Later steps of TASK-520 move routing, layout and painting into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059). It answers that hash so a host can refuse a build of other sources. Later steps of TASK-520 move routing, layout and painting into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src/lib.rs"
@@ -28429,7 +28429,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -28805,7 +28805,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -28880,7 +28880,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build, and that paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. Later steps of TASK-520 move routing and layout into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. Later steps of TASK-520 move routing and layout into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -30995,7 +30995,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -31371,7 +31371,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -31446,7 +31446,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build, and that paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. Later steps of TASK-520 move routing and layout into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. Later steps of TASK-520 move routing and layout into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -33561,7 +33561,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -33938,7 +33938,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -34014,7 +34014,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build: it lays out every sequence and flowchart and paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. Later steps of TASK-520 move text, the track engine and the architecture layout into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. Later steps of TASK-520 move text, the track engine and the architecture layout into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -34101,7 +34101,7 @@
 						"name": "Flows hand-off",
 						"kind": "function",
 						"responsibility": "Hands a sequence or a flowchart to the core whole, and answers what the core's layout asks of this host: its text and the track engine",
-						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0057). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
+						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0059). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -36289,7 +36289,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -36666,7 +36666,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list: each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -36742,7 +36742,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build: it lays out every sequence, flowchart and Track solve and paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutTrack lays out one Track solve (crates/archboard-layout) and asks the host's Graphviz for each graph it ranks (GraphvizHost). Later steps of TASK-520 move text and the Blocks layout into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the drawing and the scene from their Rust types. It answers that hash so a host can refuse a build of other sources. paintDocument and paintScene take a paint request as JSON and measure text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutTrack lays out one Track solve (crates/archboard-layout) and asks the host's Graphviz for each graph it ranks (GraphvizHost). Later steps of TASK-520 move text and the Blocks layout into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -36829,7 +36829,7 @@
 						"name": "Flows hand-off",
 						"kind": "function",
 						"responsibility": "Hands a sequence or a flowchart to the core whole, and answers what the core's layout asks of this host: its text and the track engine",
-						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0057). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
+						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0059). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -39032,7 +39032,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -39170,7 +39170,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It writes the fonts, the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It writes the fonts, the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -39409,7 +39409,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -39485,7 +39485,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build: it lays out every sequence, flowchart and Track solve and paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed; it measures text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutTrack lays out one Track solve (crates/archboard-layout) and asks the host's Graphviz for each graph it ranks (GraphvizHost). Later steps of TASK-520 move text and the Blocks layout into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed; it measures text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutTrack lays out one Track solve (crates/archboard-layout) and asks the host's Graphviz for each graph it ranks (GraphvizHost). Later steps of TASK-520 move text and the Blocks layout into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -39572,7 +39572,7 @@
 						"name": "Flows hand-off",
 						"kind": "function",
 						"responsibility": "Hands a sequence or a flowchart to the core whole, and answers what the core's layout asks of this host: its text and the track engine",
-						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0057). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
+						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0059). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -41794,7 +41794,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -41932,7 +41932,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It writes the fonts, the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It writes the fonts, the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -42171,7 +42171,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -42247,7 +42247,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build: it lays out every sequence, flowchart and architecture solve, weighs the choices between solves, and paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed; it measures text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutBoard lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost). drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions weigh what solves told, where the renderer chooses between them. A later step of TASK-520 moves text into the Rust crates.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed; it measures text through the host's canvas. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutBoard lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost). drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions weigh what solves told, where the renderer chooses between them. A later step of TASK-520 moves text into the Rust crates.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -42334,7 +42334,7 @@
 						"name": "Flows hand-off",
 						"kind": "function",
 						"responsibility": "Hands a sequence or a flowchart to the core whole, and answers what the core's layout asks of this host: its text and the track engine",
-						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0057). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
+						"description": "drawSequence and drawFlowchart send the request to the core as JSON, with this host's text: widths on its canvas, and note and message lines broken as measurement.ts breaks them. A flowchart's host also measures its boxes and labels and lays the step graph out on the track engine, which the core awaits before it paints in the same call (ADR 0059). The text and the track engine stay the host's until the core holds them (TASK-520.07, TASK-520.04).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -44571,7 +44571,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				}
 			],
 			"content": {
@@ -44671,7 +44671,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. measure_board measures an architecture's cards, headers, labels and captions in one call, which the host's measureArchitecture (packages/renderer/src/shared/rules/render/measure.ts) makes through the core's measureBoard. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. measure_board measures an architecture's cards, headers, labels and captions in one call, which the host's measureArchitecture (packages/renderer/src/shared/rules/render/measure.ts) makes through the core's measureBoard. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -44709,7 +44709,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -44940,7 +44940,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -45016,7 +45016,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The Rust crate that Bun and the browser load as one WebAssembly build: it lays out every sequence, flowchart and architecture solve, weighs the choices between solves, and paints every picture",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed. measureBoard measures a board's cards, labels and captions before the layout places them, in the faces built into the core. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutBoard lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost). drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions weigh what solves told, where the renderer chooses between them.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the paint request, the scene and the painted document from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. paintDocument takes a paint request as JSON, paints it into a typed scene (crates/archboard-scene) and answers the SVG document that crates/archboard-svg writes of it, with its size, atlas and what it placed. measureBoard measures a board's cards, labels and captions before the layout places them, in the faces built into the core. drawSequence and drawFlowchart lay a board's flows out (crates/archboard-flows) and paint them in the same call; drawFlowchart awaits the host's track engine. layOutBoard lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost). drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions weigh what solves told, where the renderer chooses between them.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -45103,7 +45103,7 @@
 						"name": "Flows hand-off",
 						"kind": "function",
 						"responsibility": "Hands a sequence or a flowchart to the core whole, and answers what the core's flowchart layout asks of this host: the track engine",
-						"description": "drawSequence and drawFlowchart send the request to the core as JSON, and the core measures every word itself. A flowchart's host lays the step graph the core measured out on the track engine, which the core awaits before it paints in the same call (ADR 0057). The track engine stays the host's until the core holds it (TASK-520.04).",
+						"description": "drawSequence and drawFlowchart send the request to the core as JSON, and the core measures every word itself. A flowchart's host lays the step graph the core measured out on the track engine, which the core awaits before it paints in the same call (ADR 0059). The track engine stays the host's until the core holds it (TASK-520.04).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -47252,7 +47252,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -47285,7 +47285,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -47357,7 +47357,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -47395,7 +47395,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -47627,7 +47627,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -47691,7 +47691,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, graphviz) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost).",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, graphviz) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -49805,7 +49805,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -49838,7 +49838,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -49910,7 +49910,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -49948,7 +49948,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -50179,7 +50179,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -50243,7 +50243,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, graphviz) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost).",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, graphviz) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and asks the host's Graphviz for each graph it ranks (GraphvizHost).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -52640,7 +52640,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -52673,7 +52673,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -52745,7 +52745,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -52783,7 +52783,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -53014,7 +53014,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -53078,7 +53078,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0058). Its answer depends on the graph alone.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0060). Its answer depends on the graph alone.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -55475,7 +55475,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -55508,7 +55508,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -55580,7 +55580,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -55618,7 +55618,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -55849,7 +55849,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -55913,7 +55913,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, learned) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0058), pushing each graph it laid out and its answer onto learned. The instance remembers those answers within a bound, and rememberGraphvizAnswers hands it the ones other workers laid out, so a graph laid out once is not laid out again. Its answer depends on the graph alone.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph, learned) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0060), pushing each graph it laid out and its answer onto learned. The instance remembers those answers within a bound, and rememberGraphvizAnswers hands it the ones other workers laid out, so a graph laid out once is not laid out again. Its answer depends on the graph alone.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -58310,7 +58310,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -58343,7 +58343,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -58415,7 +58415,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -58453,7 +58453,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -58684,7 +58684,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -58748,7 +58748,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0058). Its answer depends on the graph alone.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0060). Its answer depends on the graph alone.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -63744,7 +63744,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -63777,7 +63777,7 @@
 						"name": "View dispatcher",
 						"kind": "module",
 						"responsibility": "Draws one reading in the grammar its view asks for, lays each distinct content out once, and answers the document with its atlas, each subject's look and the key",
-						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0057). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
+						"description": "Renderer::render, the core's one call (crates/archboard-render, ADR 0059). It picks architecture, sequence or flowchart. Where a board draws an exchange and no relationships, an architecture draws each message as a line of its own. It measures every word, gives each subject the look the vault's policy gives it, reads each container's entry points off the whole variant, and has Layout engines lay the reading out. A picture without its comparison leaves out what the variant's own reading does not hold, and every subject it keeps stands where it stood. The last 64 layouts are remembered by everything they are laid out from, and a layout under way is shared, so a repeated render or a theme switch does not lay out again. The painted scene is written as one document, and each subject's look and the key are read off the same scene. It asks its host only for solves and icons (Host). Every variant is laid out fresh (ADR 0032).",
 						"parent": "JK2EHDyY",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -63849,7 +63849,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Measures every card, note and label in the faces the core carries",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059): it shapes and breaks words with archboard-text and the faces built into the core, and never asks the place that draws. The View dispatcher measures an architecture's cards, headers, labels and captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The core's sequence and flowchart layouts and its painters ask it for every other width and line break, so a word is the same width wherever a picture is drawn.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -63887,7 +63887,7 @@
 						"name": "SVG document",
 						"kind": "module",
 						"responsibility": "Writes a typed scene as one self-contained SVG document, and is the one place that spells it in SVG and CSS",
-						"description": "crates/archboard-svg (ADR 0057, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
+						"description": "crates/archboard-svg (ADR 0059, docs/design/typed-scene.md). It chooses each element and the order of its attributes by the shape's purpose, spells path data from path steps and each colour as the CSS expression of its tokens and operations, and names markers, gradients, masks and clips from scene values. It defines each glyph a picture draws once, as a path in the units of its face, and writes each run of words as uses of those glyphs, then its words over them in no ink, stretched to the run's width: the document needs no font, and a search, a copy or a screen reader finds the words. It writes the theme tokens and the near/far stylesheet. Traffic, data in the scene, is written here as SMIL. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap. Its export-marks program prints the marks a viewer draws beside a picture as TypeScript constants, which bun run build:core writes beside the WebAssembly build.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -64118,7 +64118,7 @@
 						"name": "Painting",
 						"kind": "module",
 						"responsibility": "Turns a settled drawing into a scene and writes the scene as one SVG document, in the renderer core's Rust crates",
-						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0057). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
+						"description": "crates/archboard-scene holds the drawing contract, the scene and the painter; crates/archboard-svg writes a scene as SVG (ADR 0059). The scene is an ordered, positioned list of typed values, with no SVG or CSS in it (TASK-520.10): each group names its subject and role, traffic is data, and it holds no interaction state. Every byte of every picture is what the TypeScript painter wrote before it (TASK-520.03)."
 					},
 					{
 						"id": "eXWJ2qtq",
@@ -64182,7 +64182,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0057) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0058). Its answer depends on the graph alone.",
+						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0060). Its answer depends on the graph alone.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"

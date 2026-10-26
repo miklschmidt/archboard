@@ -1,5 +1,5 @@
 // The sources the renderer core is built from, and where its WebAssembly build
-// lands (ADR 0057). A build records the hash of these sources, so a host can
+// lands (ADR 0059). A build records the hash of these sources, so a host can
 // tell a build of the sources in its checkout from a build of older ones.
 
 import { createHash } from "node:crypto";

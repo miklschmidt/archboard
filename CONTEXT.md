@@ -174,7 +174,7 @@ _Avoid_: tracked render, subscription, registered embed
 
 **Renderer core**:
 The Rust crate that measures, lays out and paints a Board. Bun and the browser
-load it as WebAssembly, and a native frontend links it (ADR 0057).
+load it as WebAssembly, and a native frontend links it (ADR 0059).
 _Avoid_: engine (that is a layout engine), WASM module
 
 **Scene**:

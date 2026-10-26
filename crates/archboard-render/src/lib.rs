@@ -1,4 +1,4 @@
-//! The renderer core's one call (ADR 0057): a board's reading, the vault's
+//! The renderer core's one call (ADR 0059): a board's reading, the vault's
 //! policy and the render's choices in; the picture, as one SVG document with
 //! its atlas, and the key a pane lists beside it out.
 //!
@@ -60,7 +60,7 @@ pub struct Drawn {
     /// What the picture's key lists, or null when it draws no subject of a kind.
     pub key: Option<PictureKey>,
     /// The picture as the painter described it, for a frontend that paints
-    /// it itself (ADR 0057). A host that shows the document needs none of it.
+    /// it itself (ADR 0059). A host that shows the document needs none of it.
     #[serde(skip)]
     #[ts(skip)]
     pub scene: Scene,

@@ -11422,7 +11422,7 @@
 						"name": "Track layout",
 						"kind": "module",
 						"responsibility": "Lays out every Track solve in the renderer core: ranks each block's cards with the host's Graphviz, routes their lines on tracks, then wraps, folds, stacks and assembles the drawing",
-						"description": "crates/archboard-layout, linked into the renderer core; its wasm binding exports it as layOutTrack (crates/archboard-renderer-wasm/src/layout.rs). Its interface is one function, lay_out_track, which takes the measured graph as the JSON of an ELK node and answers the root of the drawing, and one trait, Graphviz, which the binding satisfies with the host's viz-js. Every module is private. It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md section 53). The Blocks solve stays in TypeScript until TASK-520.05.",
+						"description": "crates/archboard-layout, linked into the renderer core; its wasm binding exports it as layOutTrack (crates/archboard-renderer-wasm/src/layout.rs). Its interface is one function, lay_out_track, which takes the measured graph as the JSON of an ELK node and answers the root of the drawing, and one trait, Graphviz, which the binding satisfies with the host's viz-js. Every module is private. It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md section 53). The Blocks solve stays in TypeScript until TASK-520.05.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -12934,7 +12934,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Lays out every Track and Blocks solve in the renderer core: ranks cards with the host's Graphviz, routes lines on tracks, packs blocks and routes their trunks, and assembles the drawing",
-						"description": "crates/archboard-layout, linked into the renderer core. Its interface is one function, lay_out_board(graph, &mut dyn Graphviz), which takes the measured graph as the JSON of an ELK node, its root options naming how the containers and group regions are drawn (blocks, inline or groups), and answers the root of the drawing; the pure choice functions draws_better, reads_better_packed, stacks_of, joining_of and has_regions, which weigh what solves told where the renderer chooses between them; and one trait, Graphviz, which the binding satisfies with the host's viz-js. The wasm binding exports them as layOutBoard, drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Its interface is one function, lay_out_board(graph, &mut dyn Graphviz), which takes the measured graph as the JSON of an ELK node, its root options naming how the containers and group regions are drawn (blocks, inline or groups), and answers the root of the drawing; the pure choice functions draws_better, reads_better_packed, stacks_of, joining_of and has_regions, which weigh what solves told where the renderer chooses between them; and one trait, Graphviz, which the binding satisfies with the host's viz-js. The wasm binding exports them as layOutBoard, drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -14136,7 +14136,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). measure_board measures a board's cards, container headers, relationship labels and group captions in one call, which the host's measureArchitecture (packages/renderer/src/shared/rules/render/measure.ts) makes through the core's measureBoard, giving each measure back its node. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). measure_board measures a board's cards, container headers, relationship labels and group captions in one call, which the host's measureArchitecture (packages/renderer/src/shared/rules/render/measure.ts) makes through the core's measureBoard, giving each measure back its node. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -14272,7 +14272,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Lays out every Track and Blocks solve in the renderer core: ranks cards with the host's Graphviz, routes lines on tracks, packs blocks and routes their trunks, and assembles the drawing",
-						"description": "crates/archboard-layout, linked into the renderer core. Its interface is one function, lay_out_board(graph, &mut dyn Graphviz), which takes the measured graph as the JSON of an ELK node, its root options naming how the containers and group regions are drawn (blocks, inline or groups), and answers the root of the drawing; the pure choice functions draws_better, reads_better_packed, stacks_of, joining_of and has_regions, which weigh what solves told where the renderer chooses between them; and one trait, Graphviz, which the binding satisfies with the host's viz-js. The wasm binding exports them as layOutBoard, drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Its interface is one function, lay_out_board(graph, &mut dyn Graphviz), which takes the measured graph as the JSON of an ELK node, its root options naming how the containers and group regions are drawn (blocks, inline or groups), and answers the root of the drawing; the pure choice functions draws_better, reads_better_packed, stacks_of, joining_of and has_regions, which weigh what solves told where the renderer chooses between them; and one trait, Graphviz, which the binding satisfies with the host's viz-js. The wasm binding exports them as layOutBoard, drawsBetter, readsBetterPacked, stacksOf, joiningOf and hasRegions (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -15405,7 +15405,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -15439,7 +15439,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -15498,7 +15498,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0059). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -15566,7 +15566,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with the host's Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with the host's viz-js (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with the host's viz-js (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -16713,7 +16713,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -16747,7 +16747,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -16806,7 +16806,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0059). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -16874,7 +16874,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with the host's Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with the host's viz-js (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with the host's viz-js (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -18035,7 +18035,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -18069,7 +18069,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -18107,7 +18107,7 @@
 						"name": "Layout engine",
 						"kind": "function",
 						"responsibility": "Lays one solve out inside a layout worker, through the renderer core",
-						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0058); the solve's root options say how it is laid out. An answer depends on its graph alone, so no worker puts state back between solves. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0060); the solve's root options say how it is laid out. An answer depends on its graph alone, so no worker puts state back between solves. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -18120,7 +18120,7 @@
 						"name": "Graphviz",
 						"kind": "external",
 						"responsibility": "Ranks and orders the cards of a block",
-						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0058).",
+						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0060).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/vendor/graphviz-pure"
@@ -18132,7 +18132,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0059). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -18200,7 +18200,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz::InCore (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz::InCore (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -19387,7 +19387,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -19421,7 +19421,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -19459,7 +19459,7 @@
 						"name": "Layout engine",
 						"kind": "function",
 						"responsibility": "Lays one solve out inside a layout worker, through the renderer core",
-						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0058); the solve's root options say how it is laid out. The core remembers every Graphviz answer it laid out or was handed, within a bound, and the worker tells the pool each graph a solve laid out and remembers what the pool hands it from other workers. An answer depends on its graph alone, so neither which worker answers a solve nor what it remembers changes a drawing. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0060); the solve's root options say how it is laid out. The core remembers every Graphviz answer it laid out or was handed, within a bound, and the worker tells the pool each graph a solve laid out and remembers what the pool hands it from other workers. An answer depends on its graph alone, so neither which worker answers a solve nor what it remembers changes a drawing. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -19472,7 +19472,7 @@
 						"name": "Graphviz",
 						"kind": "external",
 						"responsibility": "Ranks and orders the cards of a block",
-						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0058).",
+						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0060).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/vendor/graphviz-pure"
@@ -19484,7 +19484,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0059). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -19552,7 +19552,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz, answering a graph the instance laid out or was handed before from what it remembers (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz, answering a graph the instance laid out or was handed before from what it remembers (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -20739,7 +20739,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -20773,7 +20773,7 @@
 						"name": "Measured text",
 						"kind": "module",
 						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
-						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0059). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20811,7 +20811,7 @@
 						"name": "Layout engine",
 						"kind": "function",
 						"responsibility": "Lays one solve out inside a layout worker, through the renderer core",
-						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0058); the solve's root options say how it is laid out. An answer depends on its graph alone, so no worker puts state back between solves. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0060); the solve's root options say how it is laid out. An answer depends on its graph alone, so no worker puts state back between solves. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
 						"parent": "e10t6gst",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20824,7 +20824,7 @@
 						"name": "Graphviz",
 						"kind": "external",
 						"responsibility": "Ranks and orders the cards of a block",
-						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0058).",
+						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0060).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/vendor/graphviz-pure"
@@ -20836,7 +20836,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0059). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -20904,7 +20904,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz::InCore (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz::InCore (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0059, docs/design/layout-rules.md).",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"

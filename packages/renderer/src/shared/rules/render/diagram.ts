@@ -1,5 +1,5 @@
 // A semantic reading in, one self-contained SVG with its geometry and its key
-// out: the hand-off to the renderer core (ADR 0057).
+// out: the hand-off to the renderer core (ADR 0059).
 //
 // The renderer began as an in-repository fork of both grammars of the PR
 // Lens SVG renderer (MIT, Coldtea AI), pinned to revision

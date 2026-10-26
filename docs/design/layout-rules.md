@@ -11,7 +11,7 @@ removal of predecessor geometry constraints under ADR 0032.
 
 The painter is no longer TypeScript. Since TASK-520.03 (2026-10-24) the renderer
 core in Rust paints the drawing that layout answers, bridges and all
-([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
 so where a rule below says it runs in the painter, it runs in
 `crates/archboard-scene/src/paint/`. Since TASK-520.04 (2026-10-25) the core also
 lays out every Track solve (section 54), so where a rule below says Track runs it in
@@ -2802,7 +2802,7 @@ solve finishes, and the pool remembers its answer.
 
 The renderer core routes the trunks of Blocks with its own orthogonal router
 (`crates/archboard-router`), in place of libavoid
-([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
 The router is written from the published papers that its module cites. It
 searches a grid of the obstacles' buffer edges with A*, and charges each turn
 and each crossing of a route found before it. It then nudges the routes on
@@ -2858,7 +2858,7 @@ test budget of their own: Board viewer, the slowest, takes about 5 s.
 
 The renderer core lays out every message sequence and every flowchart
 (`crates/archboard-flows`,
-[ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+[ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
 The rules are the TypeScript rules they replace, ported in the same order of
 floating-point operations, so what each rule is for is what the sections above
 say. They now live here, in `crates/archboard-flows/src/`:
@@ -2915,7 +2915,7 @@ The renderer core answers every Track solve. The crate
 `crates/archboard-layout` holds the solve: the block tree, each block of
 cards ranked by Graphviz and routed on tracks, wraps, folds, stacking, port
 settling, the sides each line crosses and the assembly
-([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
 Its interface is one function, `lay_out_track`, which takes the measured graph
 as the JSON of an ELK node and answers the root of the drawing. Graphviz stays
 a capability of the host: the crate asks for each graph through the trait
@@ -2994,7 +2994,7 @@ takes the reading to draw, the vault's policy and the render's choices, and
 answers the document, its atlas, each subject's appearance and the picture's
 key. It keeps the scene for a frontend that paints it itself. The host gives
 it the durations and theme colours in the request, and runs the layout's
-solves and gives icon paths through a port (ADR 0057). The choices between
+solves and gives icon paths through a port (ADR 0059). The choices between
 the solves of a board moved into the core as async Rust over the `Solver`
 port, and the crossing pass moved with them.
 
@@ -3065,7 +3065,7 @@ holds each rule.
 The core lays out every graph a solve ranks with graphviz-pure 0.2.1, a
 pure-Rust port of Graphviz 16.1.0, vendored under `crates/vendor` with its
 `qsort` changed to sort ties as musl's does
-([ADR 0058](../adr/0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
+([ADR 0060](../adr/0060-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
 `crates/archboard-graphviz` replays the cgraph calls viz-js made of the
 layout's graph object and answers `dot`'s `json0`, y inverted. Before, the
 host's viz-js answered through `GraphvizHost`.

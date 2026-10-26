@@ -1,7 +1,7 @@
 // What the page has to say before and after the shot: that it is the SVG,
 // paused at its first frame, and that the bitmap it answered is exactly the
 // size the diagram asks for. The SVG draws its words in glyphs it defines
-// (ADR 0057), so there is no face to wait for.
+// (ADR 0059), so there is no face to wait for.
 
 import { bitmapSizeOf, type RasterBounds } from "#runtime/operations/rasterizer/bounds.ts";
 import { isJsonRecord } from "#runtime/clients/headless-chromium/devtools.ts";

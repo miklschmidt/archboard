@@ -2,7 +2,7 @@
 
 This note records the retired TypeScript renderer. TASK-520.07 replaced this
 adapter with `crates/archboard-text`, as
-[ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
+[ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
 describes. The renderer no longer uses Pretext or its patch. Subtitles still
 use the unpatched Pretext package.
 

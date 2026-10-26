@@ -1,5 +1,5 @@
 //! The drawing: the geometry that layout answers, which is the input contract
-//! of the core (ADR 0057). Measurement and placement meet here; the painter
+//! of the core (ADR 0059). Measurement and placement meet here; the painter
 //! consumes these values unchanged.
 //!
 //! A drawing of an architecture is generic over what each card and each line

@@ -3,7 +3,7 @@
 // The point of this file is that it takes the SVG at its word. A run's face is
 // the face its glyphs are drawn from, and its width is the advance its words
 // are stretched over, both as the document writes them, not anything the
-// renderer told the test (ADR 0057).
+// renderer told the test (ADR 0059).
 
 import type { DiagramBox } from "@archboard/board/render-reply";
 import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";

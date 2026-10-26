@@ -1,6 +1,6 @@
 //! The arithmetic and the spelling of ECMAScript that the pictures were first
 //! drawn with. The SVG a picture writes is compared byte for byte with the one
-//! the TypeScript painter wrote (ADR 0057), so a number is rounded and spelt
+//! the TypeScript painter wrote (ADR 0059), so a number is rounded and spelt
 //! here exactly as JavaScript rounds and spells it.
 
 /// `Math.round`, as JavaScriptCore computes it: the nearest integer, a half

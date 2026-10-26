@@ -4,7 +4,7 @@
 //!
 //! `packages/renderer/tests/runtime/support/capture-render-requests.ts` writes
 //! the render request of each board `timing.ts` times. This draws each one
-//! again with a native build of the core and its own Graphviz (ADR 0058). Each
+//! again with a native build of the core and its own Graphviz (ADR 0060). Each
 //! solve is laid out when it is asked, timed, and its Graphviz calls timed
 //! apart. A solve answers on a clock that starts when it is asked and runs for
 //! as long as it took, and the render goes on as it would when the earliest

@@ -1,4 +1,4 @@
-//! The SVG painter (ADR 0057): a scene written as one standalone SVG document,
+//! The SVG painter (ADR 0059): a scene written as one standalone SVG document,
 //! its words drawn as the glyphs the core shaped, so it needs no font, with
 //! the stylesheet that carries what a viewer toggles, and with every train of
 //! pulses drawn as a beam of light.

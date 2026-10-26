@@ -1,6 +1,6 @@
 //! Print the TypeScript types of the core's contract: what a render answers,
 //! the theme colours a host gives it and the frame an export asks for, with
-//! every type they name (ADR 0057). `scripts/build-core.ts` writes them beside
+//! every type they name (ADR 0059). `scripts/build-core.ts` writes them beside
 //! the WebAssembly build, so the TypeScript side never holds a copy of its own.
 //!
 //! Every field is read-only, and every optional field may hold `undefined`, as

@@ -1,4 +1,4 @@
-//! The layout's Graphviz, run in the core (ADR 0058): the vendored
+//! The layout's Graphviz, run in the core (ADR 0060): the vendored
 //! graphviz-pure, a pure-Rust port of Graphviz 16.1.0 that sorts as musl's
 //! `qsort` does (`crates/vendor/README.md`), lays out each graph a solve ranks.
 //!
@@ -14,7 +14,7 @@
 //! did. Graphviz then lays out the graph viz-js built.
 //!
 //! An answer depends on its graph alone: graphviz-pure keeps no state from
-//! one call to the next that changes what it answers (ADR 0058).
+//! one call to the next that changes what it answers (ADR 0060).
 
 mod cgraph;
 mod dot;

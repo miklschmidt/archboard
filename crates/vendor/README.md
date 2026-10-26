@@ -7,7 +7,7 @@ archboard needs. Each folder keeps its upstream licence, notice and README.
 
 [graphviz-pure](https://github.com/graphviz-pure/graphviz-pure) is a pure-Rust
 port of Graphviz 16.1.0. The core lays out the graphs of a solve with it
-([ADR 0058](../../docs/adr/0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
+([ADR 0060](../../docs/adr/0060-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
 
 - Crates: `graphviz-pure`, `graphviz-pure-core`, `graphviz-pure-geom`,
   `graphviz-pure-layout`, `graphviz-pure-parser`, `graphviz-pure-render`.

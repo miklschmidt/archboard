@@ -1,4 +1,4 @@
-//! The renderer core's text (ADR 0057): the faces a picture's words are set
+//! The renderer core's text (ADR 0059): the faces a picture's words are set
 //! in, carried in the build; a run of words shaped into glyphs with `harfrust`;
 //! a paragraph broken into lines at a width; and each glyph's outline, drawn
 //! by Skrifa.
