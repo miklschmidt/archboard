@@ -45,9 +45,9 @@ function presented<
 const modelClaimContract = defineCommand({
 	path: ["model", "claim"],
 	shared: ["url", "directory"],
-	summary: "Claim explicit canonical module identities",
+	summary: "Claim canonical subjects and proposal states",
 	description:
-		"Reads target, writer, reason and subjects from JSON. A standing subject claim leaves the installation lock free between operations.",
+		"Reads target, writer, reason and subjects from JSON. Include the affected descendant states and existing subjects. A claim leaves the installation lock free between operations.",
 	examples: ["archboard model claim --input claim.json -C /tmp/shop"],
 	parameters: [
 		{
@@ -117,7 +117,7 @@ const modelEditContract = defineCommand({
 	shared: ["url", "directory", "doing"],
 	summary: "Edit canonical modules and independent flow behavior durably",
 	description:
-		"Reads the explicit target, complete expectedRevision, operationId, writer, claim and changes from JSON. Changes add, edit or remove modules, relationships, collections, flows and steps. Placements preserve continuing step identities. Description requests remain supported. The doing line comes from --doing. Retry the exact request after a lost response.",
+		"Reads a target, complete expectedRevision, operationId, writer, claim and changes from JSON. Proposal intents create, edit, reconcile or settle a draft family. Claims cover affected descendants. Supply the doing line through --doing. Retry the exact request after a lost response.",
 	examples: [
 		'archboard model edit --input edit.json --doing "explaining request routing" -C /tmp/shop',
 	],

@@ -3,14 +3,17 @@ import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
 import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
+import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
 
 /**
  * The selected state, not its retained manifest, decides whether a reading is implemented.
  * @param props The coherent materialized reading.
  * @param props.model Its state metadata and semantic comparison.
+ * @param props.paneId The pane that owns deliberate ancestor navigation.
  * @returns Explicit lifecycle and comparison context above the diagram.
  */
-function ModelStateDetails({ model }: { model: Model }): JSX.Element {
+function ModelStateDetails({ model, paneId }: { model: Model; paneId: string }): JSX.Element {
 	const state = model.selectedState;
 	if (state === null)
 		return (
@@ -18,6 +21,7 @@ function ModelStateDetails({ model }: { model: Model }): JSX.Element {
 				data-slot="model-state-details"
 				data-selected-state=""
 				data-lifecycle="none"
+				data-standing="unavailable"
 				className="border-border shrink-0 space-y-2 border-b px-6 py-3"
 			>
 				<p className="text-control font-semibold">No implemented state</p>
@@ -29,6 +33,7 @@ function ModelStateDetails({ model }: { model: Model }): JSX.Element {
 			data-slot="model-state-details"
 			data-selected-state={state.id}
 			data-lifecycle={state.lifecycle}
+			data-standing={proposalStanding(state)}
 			className="border-border shrink-0 space-y-2 border-b px-6 py-3"
 		>
 			<p className="text-control font-semibold">
@@ -36,6 +41,7 @@ function ModelStateDetails({ model }: { model: Model }): JSX.Element {
 			</p>
 			{state.summary && <p className="text-body">{state.summary}</p>}
 			{model.comparison && <ComparisonSummary comparison={model.comparison} />}
+			<ModelReconciliation model={model} paneId={paneId} />
 		</section>
 	);
 }
@@ -140,7 +146,9 @@ function ModelSubjectStanding({
 			moved: change.fields.map(({ field, before, after }) => ({ field, before, after })),
 		};
 	}, [model.comparison, subject]);
-	return <Standing against={against} open={NO_ISSUES} code={null} />;
+	const open =
+		model.selectedState?.standing?.issues.filter((issue) => issue.subject === subject) ?? NO_ISSUES;
+	return <Standing against={against} open={open} code={null} />;
 }
 
 export { ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };

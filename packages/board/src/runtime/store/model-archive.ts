@@ -1,3 +1,4 @@
+import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
 	archiveContext,
@@ -7,6 +8,12 @@ import {
 import { z } from "zod";
 import { git, GitCommandError } from "@archboard/process/git";
 import { repoIdentityAt } from "@archboard/workspace/checkouts";
+import { join } from "node:path";
+import {
+	resolveRegisteredCheckout,
+	snapshotCheckoutAccess,
+	type CheckoutSnapshot,
+} from "@archboard/code-binding/resolution";
 import {
 	ArchitectureCheckpointSchema,
 	QualifiedSubjectIdSchema,
@@ -15,6 +22,7 @@ import {
 } from "#shared/schemas/model.ts";
 
 import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
+import { captureBoundSources } from "#runtime/store/model-source.ts";
 
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
 	.extend({
@@ -22,6 +30,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		kind: z.literal("checkpoint"),
 		vault: z.string(),
 		edit: ArchitectureModuleEditSchema.optional(),
+		reconciliations: FamilyStandingSchema.optional(),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict();
@@ -143,9 +152,9 @@ async function readRecord(context: ArchiveContext, id: string) {
 /**
  * Capture source association without retaining code or refreshing the index.
  * @param context The caller's checkout.
- * @returns The source identity, revision and uncommitted-code status.
+ * @returns The source identities, revisions and uncommitted-code status.
  */
-async function captureSource(context: ArchiveContext) {
+async function captureOwnSource(context: ArchiveContext) {
 	if (context.sourceRoot === undefined) return [];
 	const repo = await repoIdentityAt(context.root);
 	const commit = await optionalValue(context, ["rev-parse", "--verify", "--quiet", "HEAD"]);
@@ -158,6 +167,17 @@ async function captureSource(context: ArchiveContext) {
 		`:(exclude)${context.vault}`,
 	]);
 	return [{ repo, commit: commit ?? null, uncommitted: dirty !== undefined }];
+}
+
+/**
+ * Preserve source associations separately from architecture and foreign references.
+ * @param context The caller's archive checkout.
+ * @param model The complete architecture candidate.
+ * @param vault The explicitly addressed vault.
+ * @returns Existing source evidence plus bound foreign repository associations.
+ */
+async function captureSource(context: ArchiveContext, model: ArchitectureModel, vault: string) {
+	return captureBoundSources(vault, model, await captureOwnSource(context));
 }
 
 /**
@@ -373,24 +393,37 @@ async function commitCheckpointAppend(
 
 /**
  * Determine whether a recorded source commit remains available.
- * @param context The caller's checkout.
+ * @param root The chosen source checkout, when available.
  * @param source The retained source association.
- * @param ownIdentity The identity of the caller's source repository.
  * @returns Whether the recorded commit is locally readable.
  */
 async function sourceAvailable(
-	context: ArchiveContext,
+	root: string | undefined,
 	source: ArchitectureCheckpoint["sources"][number],
-	ownIdentity: string,
 ): Promise<boolean> {
-	if (source.repo !== ownIdentity || source.commit === null) return false;
+	if (root === undefined || source.commit === null) return false;
 	try {
-		await git(context.root, ["cat-file", "-e", `${source.commit}^{commit}`]);
+		await git(root, ["cat-file", "-e", `${source.commit}^{commit}`]);
 		return true;
 	} catch (error) {
 		if (!(error instanceof GitCommandError) || error.failure !== "exit") throw error;
 		return false;
 	}
+}
+
+/**
+ * Resolve foreign evidence through the existing operation-local checkout snapshot.
+ * @param source The retained source association.
+ * @param snapshot The foreign checkout evidence, when needed.
+ * @returns Its chosen source root, when available.
+ */
+function foreignSourceRoot(
+	source: ArchitectureCheckpoint["sources"][number],
+	snapshot: CheckoutSnapshot | undefined,
+) {
+	if (snapshot === undefined) return undefined;
+	const checkout = resolveRegisteredCheckout(source.repo, snapshot);
+	return checkout.ok ? checkout.root : undefined;
 }
 
 /**
@@ -403,11 +436,18 @@ async function sourceEvidence(
 	context: ArchiveContext,
 	sources: ArchitectureCheckpoint["sources"],
 ): Promise<NonNullable<ArchitectureModel["sourceEvidence"]>> {
+	if (sources.length === 0) return [];
 	const ownIdentity =
 		context.sourceRoot === undefined ? "" : await repoIdentityAt(context.sourceRoot);
+	const vault = context.sourceRoot === undefined ? null : join(context.sourceRoot, context.vault);
+	const snapshot = sources.some((source) => source.repo !== ownIdentity)
+		? await snapshotCheckoutAccess({ vault })
+		: undefined;
 	return settledValues(
 		sources.map(async (source) => {
-			if (!(await sourceAvailable(context, source, ownIdentity)))
+			const root =
+				source.repo === ownIdentity ? context.sourceRoot : foreignSourceRoot(source, snapshot);
+			if (!(await sourceAvailable(root, source)))
 				return {
 					...source,
 					status: "unavailable" as const,

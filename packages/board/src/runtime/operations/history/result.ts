@@ -7,10 +7,13 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	REFERENCE_UNAVAILABLE:
+		"Restore the named foreign model and exact checkpoint. Retain its current reading first if needed, then retry the local operation. No foreign model is written.",
 	STATE_NOT_FOUND: "Read the proposal catalogue and use an existing stable state identity.",
 	STATE_AMBIGUOUS: "Use one stable state identity from the diagnostic.",
 	PREDECESSOR_CHANGED:
-		"Keep the immutable baseline and draft changes. Reconciliation belongs to TASK-549.07.",
+		"Read current inputs, claim the following family, and submit an explicit reconcile intent against its predecessor.",
+	PROPOSAL_BLOCKED: "Settle the named ancestor before editing or settling this descendant.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",
@@ -130,11 +133,36 @@ function checkpointMetadata(
 		vault: _vault,
 		edit: _edit,
 		subjects: _subjects,
+		reconciliations: _reconciliations,
 		...metadata
 	} = record;
 	return { ...metadata, id, publication };
 }
 
+/**
+ * Expose selected draft metadata from its durable operation record.
+ * @param record The immutable operation record.
+ * @returns Its selected target and draft metadata, when present.
+ */
+function selectedEdit(record: ReturnType<typeof CheckpointRecordSchema.parse>) {
+	const selection = record.selection;
+	if (selection?.lifecycle !== "draft") return {};
+	return {
+		target: { model: record.model, state: selection.id },
+		selectedState: { ...selection, lifecycle: "draft" as const },
+	};
+}
+/**
+ * Report unresolved standing from either the target or its following family.
+ * @param record The immutable operation record.
+ * @returns Whether settlement remains.
+ */
+function standingRemains(record: ReturnType<typeof CheckpointRecordSchema.parse>): boolean {
+	return (
+		record.selection?.standing !== undefined ||
+		(record.reconciliations ?? []).some((entry) => entry.standing !== undefined)
+	);
+}
 /**
  * Derive the durable result from its signed operation record.
  * @param id The retained checkpoint or claim identity.
@@ -155,24 +183,11 @@ function editResult(
 	return {
 		success: true,
 		applied: true,
-		reconciliation: false,
+		reconciliation: standingRemains(record),
+		reconciliations: record.reconciliations,
 		operationId: request.operationId,
-		target:
-			record.selection?.lifecycle === "draft"
-				? { model: record.model, state: record.selection.id }
-				: request.target,
-		...(record.selection?.lifecycle !== "draft"
-			? {}
-			: {
-					selectedState: {
-						id: record.selection.id,
-						name: record.selection.name,
-						formerNames: record.selection.formerNames,
-						summary: record.selection.summary,
-						documents: record.selection.documents,
-						lifecycle: "draft" as const,
-					},
-				}),
+		target: request.target,
+		...selectedEdit(record),
 		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,
 		after: record.revision,

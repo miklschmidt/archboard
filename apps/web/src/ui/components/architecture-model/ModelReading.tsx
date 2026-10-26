@@ -1,8 +1,14 @@
 import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
 import { ModelModeControls } from "#ui/components/architecture-model/ModelModeControls.tsx";
-import { projectFlow, flowSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
+import {
+	projectFlow,
+	flowSubjects,
+	collectionSubjects,
+	withCollectionFlows,
+} from "#ui/rules/architecture-model/flow-reading.ts";
 import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
 import { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
@@ -30,6 +36,8 @@ const LOADING_DIAGRAM = (
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
+	subject: string | null;
+	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
 	model: Model;
 	paneId: string;
@@ -64,17 +72,25 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		() => projectModel(model, scope, focus, filters, comparison.reference),
 		[model, scope, focus, filters, comparison.reference],
 	);
-	const selection = useModelSelection(projection);
+	const selection = useModelSelection(projection, props.subject);
 	const { clear } = selection;
-	const behavioralIds = useMemo(
-		() => new Set(flowSubjects(projection.depicted.flows).map((subject) => subject.id)),
-		[projection.depicted.flows],
-	);
+	const behavioralIds = useMemo(() => {
+		const collections = [model, comparison.reference].flatMap((reading) =>
+			reading === undefined ? [] : collectionSubjects(reading),
+		);
+		return new Set(
+			[...flowSubjects(projection.depicted.flows), ...collections].map((subject) => subject.id),
+		);
+	}, [model, projection.depicted.flows, comparison.reference]);
 	const canFocus = ![...selection.ids].some((id) => behavioralIds.has(id));
 	const subjects = useMemo(() => {
-		if (selection.ids.size > 0) return selection.ids;
-		return new Set(focus ?? (scope === null ? [] : [scope]));
-	}, [selection.ids, focus, scope]);
+		const selected =
+			selection.ids.size > 0 ? selection.ids : new Set(focus ?? (scope === null ? [] : [scope]));
+		const expanded = withCollectionFlows(model, selected);
+		return comparison.reference === undefined
+			? expanded
+			: withCollectionFlows(comparison.reference, expanded);
+	}, [selection.ids, focus, scope, model, comparison.reference]);
 	const revealSelection = useCallback((): void => {
 		const kinds = model.relationships
 			.filter((edge) => selection.ids.has(edge.id))
@@ -134,6 +150,9 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				)}
 			</ModelSelectionBar>
 			<ModelReadingContent
+				paneId={props.paneId}
+				vault={props.vault}
+				onCodeTargetNotice={props.onCodeTargetNotice}
 				model={model}
 				selection={selection}
 				scope={scope}
@@ -149,7 +168,10 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	);
 }
 
-interface ScopedModelReadingProps {
+interface ScopedModelReadingProps extends Pick<
+	ModelReadingProps,
+	"vault" | "paneId" | "onCodeTargetNotice"
+> {
 	model: Model;
 	selection: ModelSelection;
 	onReveal: () => void;

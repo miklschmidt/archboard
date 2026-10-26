@@ -90,18 +90,16 @@ function requireCurrentEdit(model: ArchitectureModel): void {
  * Capture one complete checked candidate and all affected claims.
  * @param vault The explicit vault.
  * @param request The original operation.
+ * @param current The complete coherent starting reading.
+ * @param captured The exact starting files.
  * @returns The checked candidate or refusal.
  */
-async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const current = await requireTarget(vault, request.target);
-	if (!current.success) return current;
-	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
-		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
-	const captured = captureRevision(vault, current.revision);
-	if ("proposal" in request) {
-		const { proposalCandidate } = await import("#runtime/operations/proposals/candidate.ts");
-		return proposalCandidate(vault, request, current, captured);
-	}
+function currentCandidate(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
 	requireCurrentEdit(current);
 	const candidate = applyStructure(current, request, captured.inputs.keys());
 	const inputs = candidateInputs(captured, current, candidate);
@@ -112,6 +110,7 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 	return {
 		success: true as const,
 		current,
+		model: checked,
 		inputs,
 		revision,
 		files: changedFiles(captured.inputs, inputs),
@@ -121,4 +120,55 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 		dependencies: [],
 	};
 }
-export { editCandidate, candidateInputs, changedFiles };
+/**
+ * Reject a descendant that waits on an unsettled ancestor.
+ * @param current The explicitly selected reading.
+ */
+function requireWritableTarget(current: ArchitectureModel): void {
+	const ancestor = current.selectedState?.standing?.blockedBy;
+	if (ancestor !== undefined)
+		throw new ArchiveError(
+			"PROPOSAL_BLOCKED",
+			"Settle the ancestor before editing this descendant.",
+			"model.json",
+			[ancestor],
+		);
+}
+/**
+ * Capture one checked predecessor candidate before family reconciliation.
+ * @param vault The explicit vault.
+ * @param request The complete original intent.
+ * @returns The predecessor candidate or its refusal.
+ */
+async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
+	const current = await requireTarget(vault, request.target);
+	if (!current.success) return current;
+	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
+		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
+	const captured = captureRevision(vault, current.revision);
+	requireWritableTarget(current);
+	if ("proposal" in request) {
+		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
+		return proposalIntentCandidate(vault, request, current, captured);
+	}
+	return currentCandidate(vault, request, current, captured);
+}
+
+/**
+ * Add all dependent results to the same durable candidate.
+ * @param vault The explicitly addressed vault.
+ * @param request The complete architectural intent.
+ * @returns The checked family or its refusal.
+ */
+async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
+	const candidate = await initialCandidate(vault, request);
+	if (!candidate.success) return candidate;
+	const { familyCandidate } = await import("#runtime/operations/proposals/family.ts");
+	return familyCandidate(
+		vault,
+		request,
+		captureRevision(vault, request.expectedRevision),
+		candidate,
+	);
+}
+export { initialCandidate, editCandidate, candidateInputs, changedFiles };

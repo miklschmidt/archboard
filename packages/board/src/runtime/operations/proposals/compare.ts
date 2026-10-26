@@ -12,17 +12,15 @@ type Comparison = NonNullable<ArchitectureModel["comparison"]>["subjects"][numbe
 function contentOf(model: ArchitectureModel): VariantContent {
 	return {
 		nodes: model.modules.map(
-			({
-				schemaVersion: _version,
-				outgoing: _outgoing,
-				file: _file,
-				formerNames: _former,
-				documents: _documents,
-				...module
-			}) => module,
+			({ schemaVersion: _version, outgoing: _outgoing, file: _file, ...module }) => module,
 		),
 		edges: model.relationships,
-		flows: model.collections.flatMap((collection) => collection.flows),
+		flows: model.collections.flatMap((collection) =>
+			collection.flows.map((flow) => ({
+				...flow,
+				collection: `${model.manifest.id}#${collection.id}`,
+			})),
+		),
 		walkthroughs: [],
 	};
 }
@@ -93,7 +91,10 @@ function withMetadata(
 	before: Subject | undefined,
 	after: Subject | undefined,
 ): Comparison {
-	const fields = [...standing.fields, ...fieldChanges(before, after, ["formerNames", "documents"])];
+	const fields = [
+		...standing.fields,
+		...fieldChanges(before, after, ["formerNames", "documents", "references"]),
+	];
 	if (standing.subjectKind === "flow") fields.push(...collectionChange(before, after));
 	const kind = standing.kind === "unchanged" && fields.length > 0 ? "changed" : standing.kind;
 	return { ...standing, kind, fields };
@@ -132,4 +133,4 @@ function comparisonOf(before: ArchitectureModel, after: ArchitectureModel): Comp
 		...collections,
 	];
 }
-export { comparisonOf };
+export { comparisonOf, contentOf };

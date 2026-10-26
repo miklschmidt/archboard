@@ -304,7 +304,7 @@ archboard model edit --input edit.json -C <directory> \
 
 The result names the before and after revisions, affected subjects, and retained checkpoint.
 `applied: true` identifies durable completion.
-`reconciliation: false` means that this narrow edit requires no proposal reconciliation.
+`reconciliation: false` means that the affected family has no unresolved decisions.
 A `cleanup: pending` result remains applied.
 Repeat the exact request to finish its remaining cleanup.
 If a response is lost, repeat the same request and operation identity.
@@ -510,6 +510,88 @@ Retired flow and step IDs stay reserved in the manifest.
 The existing signed transaction, exact retry, recovery, and publication contracts apply to these files.
 Unrelated files keep their exact bytes.
 
+## Follow code and foreign references
+
+In the browser, select a module and use Open code beside its authored binding.
+The action follows the selected current state, draft, or exact saved reading.
+If source is unavailable, the architecture remains readable and the disabled action states the reason.
+Use Open architecture beside a module reference to follow its explicit model, state, and subject.
+The address preserves the repository and destination through reload and browser history.
+Unavailable targets keep their authored reference and recovery instructions.
+Saved readings follow captured foreign checkpoints even when current foreign files are unavailable.
+A relationship reference selects that exact relationship within an aggregate.
+A collection offers its authored flows, and flow or step references open their containing flow.
+
+Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
+A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
+
+A module binding names source code, independently of its architecture owner.
+Use `model read <module> --code` to resolve that binding through the existing checkout selection.
+The vault uses its own checkout for its repository and the chosen checkout for each other repository.
+The result reports `codeTarget` and the effective `codeBinding`.
+Unavailable source includes a structured failure and recovery action without hiding readable architecture.
+
+An explicit reference names another model, its subject, and its state.
+The subject can be a module, relationship, collection, flow, or step.
+Author `references` through the existing `edit-module.set` field.
+Use `edit-module.clear:["references"]` to remove that list.
+Omission preserves the list.
+
+```json
+{
+	"type": "edit-module",
+	"subject": "Shop#Gateway",
+	"set": {
+		"references": [
+			{
+				"repo": "github.com/acme/ledger",
+				"model": "Ledger",
+				"subject": "Ledger#Gateway",
+				"state": "current"
+			}
+		]
+	}
+}
+```
+
+`current` explicitly follows the foreign current designation.
+A stable state ID requires that exact state.
+An active draft reference names its stable `state` ID.
+For an exact retained state, include its complete `checkpoint` identity beside that ID.
+Draft navigation preserves the selected lifecycle and reports reference changes in proposal comparisons.
+A pinned reference cannot use `state:"current"`.
+References create no containment, relationship, claim, or ownership transfer.
+
+```bash
+archboard model read 'Shop#Gateway' --references
+archboard model read 'Shop#Gateway' --reference 0
+archboard model read 'Shop#Gateway' --reference 0 --code
+archboard model read 'Shop#Gateway' --model Shop --code
+```
+
+`--reference` selects a zero-based index in the module's authored list.
+`resolvedReferences` reports each target address or its unavailable diagnostics.
+Available entries include the authored subject, model, and state names from that exact reading.
+The browser uses those names for reference actions and keeps unavailable destinations visible.
+A successful follow returns the foreign reading and its `location` address.
+`selectedSubject` preserves the exact subject identity.
+A module also sets `selectedModule`.
+A flow or step also sets its containing `selectedFlow`.
+The address names the target vault, model, subject, state, and any exact checkpoint.
+Unavailable models never resolve against another model with a similar name.
+These commands change neither model.
+
+Before a local edit or retention, retain each referenced foreign reading through its own separate operation.
+Archboard requires an existing exact foreign checkpoint that matches the selected reading.
+The local checkpoint records those pins without writing a foreign vault or archive.
+Historical navigation uses those pins even when foreign current files change or disappear.
+Missing pins or checkpoint objects remain unavailable and never select foreign current content.
+Restore the foreign archive through its existing history recovery commands, then retry the exact reading.
+
+For historical code, Archboard uses retained source associations and refuses changed working files or another source revision.
+An uncommitted source association does not retain those source bytes.
+Recover that source separately before opening it.
+
 ## Render a selected flow
 
 Use `model read --flow <id>` to resolve an explicit flow selection.
@@ -599,7 +681,8 @@ Use `proposal.set` for its name, summary, or documents.
 Use `proposal.clear:["summary","documents"]` for explicit metadata removal.
 A rename preserves the previous name.
 A metadata-only edit uses `changes:[]`.
-Every edit keeps the original immutable baseline.
+An ordinary draft edit keeps its immutable baseline.
+A settled reconciliation retains the updated predecessor as its new baseline.
 
 Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
 Agents continue to submit the normal module and flow operations.
@@ -623,10 +706,10 @@ Presentation order and emphasis retain the existing semantic comparison rules.
 
 `PREDECESSOR_CHANGED` means that the proposal's starting state changed after baseline retention.
 Preserve the baseline and proposal changes.
-Ordinary reads and edits refuse until the reconciliation delivery exists.
+Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
-Reconciliation, adoption, and shelving remain later delivery slices.
+Adoption and shelving remain separate lifecycle actions.
 
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
@@ -646,13 +729,14 @@ It never substitutes current definitions for another requested base.
 
 Active draft readings follow accepted edits through the architecture change feed.
 Saved draft readings keep their original content and draft identity.
-If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
+If an external file edit changes a predecessor, the browser preserves the requested state and shows the refusal.
 Select an available saved reading to inspect the retained proposal.
 
 ## Temporary explanations
 
 An explanation capture preserves the architecture reading that a local agent answers.
 Reading intent names the scope, focus, relationship filters, group visibility, grammar, and optional flow.
+`reading.groups` accepts exact visible group IDs, or `true` and `false` for all and no groups.
 The capture includes stable subjects, the complete revision, and the selected state or exact checkpoint.
 A proposal capture also preserves its actual comparison base and that base's separate revision.
 Later navigation cannot change the capture.
@@ -724,3 +808,77 @@ Read again until the provider reports the final outcome.
 An explanation writes no architecture and takes no subject claim.
 Answers remain temporary within the local agent generation and tab lifetime.
 An explicit request to save an answer uses the ordinary claimed edit with a fresh complete revision.
+
+## Reconcile dependent proposals
+
+A standing is a durable record of unresolved issues.
+Read `selectedState.standing` and each proposal catalogue entry before editing a family.
+An absent standing means that the state is settled.
+Each issue names its subject, kind, disputed field, both values, and repair action.
+A blocked descendant names its unsettled ancestor through `standing.blockedBy`.
+Its last coherent architecture remains readable.
+A child created from an unsettled proposal starts blocked.
+
+Claim the affected descendant state IDs beside the existing subjects and model structure scope.
+Use the complete vault revision from the current read.
+Submit the predecessor edit through `model edit`.
+Archboard reconciles parents before children through the same durable installation.
+Safe changes reach following proposals together.
+Disputed subjects keep the proposal side, and unsettled ancestors block their descendants.
+The baseline that established each conflict remains retained until settlement.
+
+If external files change a predecessor, ordinary reads return `PREDECESSOR_CHANGED`.
+Read the current catalogue and claim the affected family.
+Target the changed predecessor and submit this intent through `model edit`:
+
+```json
+{ "proposal": { "type": "reconcile" }, "changes": [] }
+```
+
+Reconciliation changes following proposals without another predecessor edit.
+It preserves the existing current designation.
+A saved checkpoint remains an exact reading of its retained content and standing.
+The browser identifies unresolved and blocked proposals in the state picker and selected reading.
+Open the decision disclosure to read both values and the repair instructions.
+A blocked reading links to its live ancestor. A saved reading keeps its original standing until the reader leaves it.
+Agents settle decisions through the shared writer. The browser reflects the completed family result without authoring a settlement.
+
+To settle a proposal, read its issues and claim its state and affected family subjects.
+Use its stable identity as `target.state`.
+Submit one choice for every issue in the same request:
+
+```json
+{
+	"proposal": {
+		"type": "settle",
+		"resolutions": [{ "subject": "Shop#Gateway", "field": "description", "take": "mine" }]
+	},
+	"changes": []
+}
+```
+
+`mine` explicitly accepts the proposal side.
+`theirs` takes the predecessor side.
+`edited` accepts the accompanying ordinary batch as a third answer.
+A resolution without `field` covers every issue of that subject.
+Give each issue exactly one choice.
+For order issues under one holder, use the same choice throughout.
+Use `edited` with an ordinary movement batch for a third order.
+Incomplete or overlapping choices refuse with `MODEL_INVALID` and install nothing.
+Ordinary edits preserve standing until an explicit settlement clears it.
+A blocked draft refuses edits and settlement with `PROPOSAL_BLOCKED`.
+Settle its named ancestor first.
+
+A complete settlement reconciles following drafts in the same transaction.
+A continuing subject that the predecessor deleted keeps its original qualified identity.
+Archboard retains proof of that subject in the existing archive.
+This proof never permits a fresh allocation from retired identities.
+Agents author through operations and leave proof storage to Archboard.
+
+The receipt reports `applied:true` and `reconciliation` as a boolean.
+True means that affected family states still need settlement.
+`reconciliations` identifies those changed states and their standing when present.
+The selected proposal also exposes its standing through `selectedState`.
+Retry an identical request with the same operation ID after a lost response.
+If installation stops, use `model recover` in the original checkout.
+Recovery completes the same family and returns its retained receipt.

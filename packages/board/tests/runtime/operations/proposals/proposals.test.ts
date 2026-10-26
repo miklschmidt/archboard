@@ -1,3 +1,4 @@
+import { request as familyRequest } from "#tests/runtime/operations/proposals/fixture.ts";
 import type { ArchitectureEvent } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
@@ -169,7 +170,7 @@ test("retained comparisons identify the live base revision independently of the 
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
 	const advanced = await editArchitectureModule(vault, {
-		...intent,
+		...(await familyRequest(vault)),
 		operationId: "advance-current-for-comparison",
 		expectedRevision: current.revision,
 		changes: [

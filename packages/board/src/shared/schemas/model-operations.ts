@@ -1,3 +1,4 @@
+import { FamilyStandingSchema, SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
@@ -116,13 +117,34 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 			set: ModuleFieldsSchema.partial().optional(),
 			clear: z
 				.array(
-					z.enum(["responsibility", "description", "parent", "groups", "binding", "documents"]),
+					z.enum([
+						"responsibility",
+						"description",
+						"parent",
+						"groups",
+						"binding",
+						"documents",
+						"references",
+					]),
 				)
 				.optional(),
 		})
 		.strict(),
 ]);
 const ProposalIntentSchema = z.discriminatedUnion("type", [
+	z.strictObject({ type: z.literal("reconcile") }),
+	z.strictObject({
+		type: z.literal("settle"),
+		resolutions: z
+			.array(
+				z.strictObject({
+					subject: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
+					field: z.string().optional(),
+					take: z.enum(["mine", "theirs", "edited"]),
+				}),
+			)
+			.min(1),
+	}),
 	z.strictObject({
 		type: z.literal("create"),
 		...StateMetadataSchema.omit({ id: true, formerNames: true }).shape,
@@ -149,14 +171,15 @@ const ArchitectureEditSuccessSchema = z
 	.object({
 		success: z.literal(true),
 		applied: z.literal(true),
-		reconciliation: z.literal(false),
+		reconciliation: z.boolean(),
+		reconciliations: FamilyStandingSchema.optional(),
 		operationId: z.string(),
 		target: ArchitectureTargetSchema,
 		subjects: z.array(QualifiedSubjectIdSchema),
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema,
-		selectedState: StateMetadataSchema.extend({ lifecycle: z.literal("draft") }).optional(),
+		selectedState: SelectedStateSchema.extend({ lifecycle: z.literal("draft") }).optional(),
 		cleanup: z.enum(["complete", "pending"]),
 	})
 	.strict();

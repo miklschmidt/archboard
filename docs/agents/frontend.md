@@ -115,6 +115,8 @@ not add imports or a second state path before that work.
 
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
+  `subjectX` names an explicit reference destination and seeds selection when that reading opens.
+  Later pointer selection stays temporary and does not rewrite that destination.
   Selecting a state clears the checkpoint. Selecting a checkpoint clears the state.
   Either selection clears the prior explicit comparison.
   They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
@@ -126,6 +128,8 @@ not add imports or a second state path before that work.
   An absent scope means repository roots. With no checkpoint or state, the pane reads current inputs.
   These parameters remain router-owned reading intent, including explicit unavailable states.
   The canonical reader consumes them directly without opening a legacy board on the server.
+  An explicit `repoX` resolves through the existing repository query to its chosen checkout's vault.
+  An unavailable repository stays explicit and never falls back to the pane's initial vault.
   The workspace records actual pane presence and preserves each canonical reading during closure, reload, Back, and Forward.
   A mismatched model identity refuses the reading instead of substituting the vault's current model.
   Selection and the camera remain separate from the address.
@@ -134,8 +138,16 @@ not add imports or a second state path before that work.
   A current event snapshot populates only the default current query.
   Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
   The selected state metadata supplies lifecycle labels, including retained drafts.
+  It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
+  The state picker and selected reading expose that standing. The shared issue component shows both values and repair instructions.
+  A blocked reading can open its live ancestor through the same router.
+  Exact checkpoints preserve their original standing after live settlement. The browser authors no settlement.
   The comparison reference must match the requested model, state, checkpoint, and base revision.
   Only a coherent reference supplies removed subjects to the existing semantic comparison operation.
+  Code and foreign navigation details use the same cache with module and action selectors.
+  Their state, checkpoint, and revision must match the inspected architecture.
+  A foreign activation requires the returned address to match the resolved link the reader selected.
+  A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
 
   The address follows the note, which is the persisted content of the board.

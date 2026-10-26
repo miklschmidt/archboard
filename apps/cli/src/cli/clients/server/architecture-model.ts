@@ -2,8 +2,8 @@ import {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,
 } from "@archboard/workbench/browser-contract";
-import type { readArchitectureModel } from "@archboard/board/store-read";
 import type { z } from "zod";
+import type { readArchitectureModel } from "@archboard/board/store-read";
 import {
 	ArchitectureArchiveInitializationSchema,
 	ArchitectureModuleEditSchema,
@@ -62,14 +62,8 @@ function readArchitectureModelOnServer(
 	flow?: string,
 	selection?: Parameters<typeof readArchitectureModel>[3],
 ) {
-	const values = {
-		module,
-		checkpoint,
-		flow,
-		state: selection?.state,
-		against: selection?.against,
-		compare: selection?.compare,
-	};
+	const { explain: _explain, ...reading } = selection ?? {};
+	const values = { module, checkpoint, flow, ...reading };
 	const query = new URLSearchParams(
 		Object.entries(values)
 			.filter(([, value]) => value !== undefined)

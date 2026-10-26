@@ -6,8 +6,12 @@ import {
 	ArchitectureModelReadSchema,
 	ArchitectureModuleEditResultSchema,
 } from "@archboard/board/model";
-import { claimArchitectureSubjects } from "@archboard/board/store-write";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import {
+	claimArchitectureSubjects,
+	releaseArchitectureClaim,
+	editArchitectureModule,
+} from "@archboard/board/store-write";
+import { readArchitectureModel, readArchitectureClaims } from "@archboard/board/store-read";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -128,3 +132,120 @@ test("normal CLI and server create list select and compare explicit compact draf
 		proposals: listed.proposals,
 	});
 }, 20_000);
+
+test("CLI and HTTP preserve family standing, blocked refusal and complete settlement", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	const initial = readArchitectureModel(vault);
+	if (!initial.success) throw new Error(JSON.stringify(initial));
+	const draft = initial.proposals[0]!;
+	async function claim(state: string, subjects: string[]) {
+		const claims = readArchitectureClaims(vault);
+		if (!claims.success) throw new Error(JSON.stringify(claims));
+		for (const value of claims.claims)
+			await releaseArchitectureClaim(vault, { claim: value.id, writer: value.writer });
+		const target = { model: "Shop", state };
+		const result = await claimArchitectureSubjects(vault, {
+			target,
+			writer: "agent",
+			reason: "adapter family contract",
+			subjects,
+		});
+		if (!result.success) throw new Error(JSON.stringify(result));
+		const model = readArchitectureModel(vault);
+		if (!model.success) throw new Error(JSON.stringify(model));
+		return {
+			target,
+			writer: "agent",
+			claim: result.claim.id,
+			operationId: crypto.randomUUID(),
+			expectedRevision: model.revision,
+		};
+	}
+	const child = await editArchitectureModule(vault, {
+		...(await claim(draft.id, ["Shop", draft.id])),
+		doing: "create dependent draft",
+		proposal: { type: "create", name: "Child" },
+		changes: [],
+	});
+	if (!child.success || child.target.state === null) throw new Error(JSON.stringify(child));
+	const edited = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "edit", "--doing", "advance predecessor"],
+		input: JSON.stringify({
+			...(await claim("Current", ["Shop", "Shop#Gateway", draft.id, child.target.state])),
+			changes: [
+				{
+					type: "edit-module",
+					subject: "Shop#Gateway",
+					set: { description: "Dispatches immediately." },
+				},
+			],
+		}),
+	});
+	expect(edited.status, edited.stderr).toBe(0);
+	const { vault: _address, ...rawReceipt } = JSON.parse(edited.stdout);
+	expect(ArchitectureModuleEditResultSchema.parse(rawReceipt)).toMatchObject({
+		success: true,
+		reconciliation: true,
+	});
+	const query = new URLSearchParams({ vault, state: draft.id });
+	const read = await fetch(`${server.base}/api/architecture/model?${query}`);
+	expect(read.status).toBe(200);
+	expect(ArchitectureModelReadSchema.parse(await read.json())).toMatchObject({
+		success: true,
+		selectedState: {
+			id: draft.id,
+			standing: {
+				issues: expect.arrayContaining([expect.objectContaining({ kind: "competing-field" })]),
+			},
+		},
+	});
+	const pending = {
+		...(await claim(draft.id, ["Shop", "Shop#Gateway", draft.id, child.target.state])),
+		proposal: { type: "edit" },
+		changes: [],
+		doing: "edit blocked child",
+		target: { model: "Shop", state: child.target.state },
+	};
+	const blocked = await fetch(`${server.base}/api/architecture/module`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ ...pending, vault }),
+	});
+	expect(blocked.status).toBe(409);
+	expect(await blocked.json()).toMatchObject({
+		success: false,
+		code: "PROPOSAL_BLOCKED",
+		applied: false,
+	});
+	const { doing: _doing, ...cliPending } = pending;
+	const refused = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "edit", "--doing", "edit blocked child"],
+		input: JSON.stringify(cliPending),
+	});
+	expect(refused.status).toBe(2);
+	expect(JSON.parse(refused.stdout)).toMatchObject({ success: false, code: "PROPOSAL_BLOCKED" });
+	const settled = await fetch(`${server.base}/api/architecture/module`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			...pending,
+			vault,
+			target: { model: "Shop", state: draft.id },
+			operationId: "surface-settle",
+			doing: "settle complete proposal",
+			proposal: {
+				type: "settle",
+				resolutions: [{ subject: "Shop#Gateway", field: "description", take: "theirs" }],
+			},
+		}),
+	});
+	expect(settled.status).toBe(200);
+	expect(ArchitectureModuleEditResultSchema.parse(await settled.json())).toMatchObject({
+		success: true,
+		reconciliation: false,
+	});
+});
