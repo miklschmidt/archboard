@@ -37,6 +37,21 @@ If updates fail, the last coherent current reading remains visible with an expli
 Invalid input shows its source and recovery instructions.
 Use Refresh to retry a failed read.
 
+Drag from empty diagram space to select several subjects.
+Use Ctrl/Cmd-click to toggle a subject, or focus its list button and press Ctrl/Cmd+Enter.
+Press Escape to clear selection.
+Hold Space while dragging, or drag with the middle mouse button, to pan.
+
+Select Focus to show the selected subjects and their required containment paths.
+The reading preserves selected ancestors and descendants together.
+Select Clear focus to return to the underlying scope.
+Use Filters to control relationship kinds and group regions.
+These controls change the reading without changing architecture files.
+The inspector keeps hidden selections and offers Reveal selection.
+Missing subjects remain explicit until their architecture returns or the reader changes focus.
+Focus and filters survive reload and browser history navigation.
+Selection itself stays temporary and does not add history.
+
 Open the Current menu in the model header to select a saved reading.
 The menu lists the state, retention time, agent intent, and abbreviated identity.
 The selected reading shows its complete checkpoint identity and source evidence.

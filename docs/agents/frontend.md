@@ -114,6 +114,9 @@ not add imports or a second state path before that work.
   board in the repository the pane is in.
 
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
+  They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
+  These lists contain comma-separated canonical identities or vocabulary keys.
+  An absent focus keeps recursive scope navigation. Absent filters show all configured features.
   An absent scope means repository roots. An absent checkpoint means current inputs.
   These parameters remain router-owned reading intent, including explicit unavailable states.
   The canonical reader consumes them directly without opening a legacy board on the server.
