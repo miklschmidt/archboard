@@ -10,9 +10,16 @@ import {
 	type ArchitectureModelRead,
 } from "#shared/schemas/model.ts";
 
+import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
+
 const ARCHIVE_REF = "refs/heads/archboard-history";
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
-	.extend({ schemaVersion: z.literal(1), kind: z.literal("checkpoint"), vault: z.string() })
+	.extend({
+		schemaVersion: z.literal(1),
+		kind: z.literal("checkpoint"),
+		vault: z.string(),
+		edit: ArchitectureModuleEditSchema.optional(),
+	})
 	.strict();
 const ArchiveRecordSchema = z.discriminatedUnion("kind", [
 	CheckpointRecordSchema,

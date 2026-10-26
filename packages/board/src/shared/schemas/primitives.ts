@@ -117,6 +117,7 @@ function persistedGroupIds(ids: readonly string[] | undefined): string[] | undef
 const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION);
 
 export {
+	SingleLineTextSchema,
 	SemanticIdSchema,
 	StatedIdSchema,
 	DisplayNameSchema,

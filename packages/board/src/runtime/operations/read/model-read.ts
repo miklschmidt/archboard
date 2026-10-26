@@ -11,6 +11,8 @@ import { SemanticBoardConfigurationSchema } from "#runtime/store/configuration.t
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/rules/coherence/model.ts";
 
+import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
+
 type CapturedModel = ReturnType<typeof readModelFiles>;
 
 /**
@@ -189,7 +191,7 @@ function selectModule(
  * @param module A qualified module id or a unique current or former name.
  * @returns One model and its exact input revision, or structured diagnostics.
  */
-function readArchitectureModel(vault: string, module?: string): ArchitectureModelRead {
+function readCurrentModel(vault: string, module?: string): ArchitectureModelRead {
 	const captured = readModelFiles(vault);
 	const refusal = discoveryFailure(captured);
 	if (refusal !== undefined) return refusal;
@@ -226,4 +228,19 @@ function failure(
 	};
 }
 
-export { readArchitectureModel, decodeModel, discoveryFailure, selectModule, failure };
+/** Read current inputs only outside a pending installation. */
+function readArchitectureModel(vault: string, module?: string): ArchitectureModelRead {
+	const blocked = modelBoundaryFailure(vault);
+	if (blocked !== undefined) return blocked;
+	const reading = readCurrentModel(vault, module);
+	return modelBoundaryFailure(vault) ?? reading;
+}
+
+export {
+	readCurrentModel,
+	readArchitectureModel,
+	decodeModel,
+	discoveryFailure,
+	selectModule,
+	failure,
+};

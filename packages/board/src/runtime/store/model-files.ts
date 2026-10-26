@@ -66,6 +66,7 @@ function readModelFiles(vault: string): {
 		);
 		for (const entry of entries) {
 			const file = directory === "" ? entry.name : `${directory}/${entry.name}`;
+			if (file === ".archboard/runtime" && entry.isDirectory()) continue;
 			if (entry.isSymbolicLink()) {
 				diagnostics.push({
 					code: "UNSAFE_PATH",

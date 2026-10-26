@@ -75,7 +75,7 @@ function checkpointMetadata(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
 ): ArchitectureCheckpoint {
-	const { schemaVersion: _version, kind: _kind, vault: _vault, ...metadata } = record;
+	const { schemaVersion: _version, kind: _kind, vault: _vault, edit: _edit, ...metadata } = record;
 	return { ...metadata, id, publication: "saved-locally" };
 }
 
