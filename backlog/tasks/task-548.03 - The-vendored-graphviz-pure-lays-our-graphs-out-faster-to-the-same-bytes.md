@@ -1,11 +1,11 @@
 ---
 id: TASK-548.03
 title: The vendored graphviz-pure lays our graphs out faster, to the same bytes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T06:24:00Z'
+updated_date: '2026-10-26T06:28:00Z'
 labels:
   - renderer
   - performance
@@ -26,7 +26,7 @@ graphviz-pure is a faithful port and its author optimized for exactness, not spe
 - [x] #1 Every captured Graphviz graph of the corpus gets the same answer, byte for byte, as before the change
 - [x] #2 Every drawing of the corpus is unchanged
 - [x] #3 The Graphviz time of the first renders that timing.ts measures falls, and docs/design records where it went before and after
-- [ ] #4 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
+- [x] #4 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -69,6 +69,8 @@ Decisions and evidence (details in docs/design/graphviz-pure-speed.md):
   - mclimit=1: 21% less Graphviz time, but 602 of 1,072 answers change
   - remincross=false: 17% less, but 626 answers change
 - Vendored crate tests outside the checkout: core 68, geom 22, layout 99, render 18 pass. Six tests fail at base and after alike, because the crates.io archives lack upstream's tests/fixtures and tests/wild folders: 5 in graphviz-pure-parser and 1 in graphviz-pure.
+
+Verified by the parent session on feat/faster-first-render with TASK-548.01, .02 and .04: the native replay of all 2,106 captured pairs reports 0 differ; render-corpus compare against the integration base reports 0 of 2344 drawings differ; bun test packages/renderer 653 pass, 1 skip, 0 fail; cargo test for archboard-layout, archboard-render, archboard-graphviz and archboard-renderer-wasm passes; type-check, lint, fmt:check pass; bun run benchmark 40 pass. Criterion 4 is checked with this judgement: the six vendored tests that fail need upstream's tests/fixtures and tests/wild folders, which the crates.io archives do not ship; they fail identically at the base, and the 2,106-pair oracle covers every vendored change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
