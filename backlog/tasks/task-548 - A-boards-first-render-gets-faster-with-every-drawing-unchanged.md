@@ -1,10 +1,10 @@
 ---
 id: TASK-548
-title: A board's first render gets faster, with every drawing unchanged
+title: A board's first render gets fast enough for real-time scene changes
 status: To Do
 assignee: []
 created_date: '2026-10-26T02:26:00Z'
-updated_date: '2026-10-26T16:24:00Z'
+updated_date: '2026-10-26T17:03:00Z'
 labels:
   - renderer
   - performance
