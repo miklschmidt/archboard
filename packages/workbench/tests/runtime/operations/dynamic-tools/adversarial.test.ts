@@ -240,7 +240,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		expect(fixture.epoch.stages).toHaveLength(0);
 	});
 
-	test("rejects a pane authority that changes identity during post-approval revalidation", async () => {
+	test("rejects a thread-link authority that changes identity during post-approval revalidation", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);
 		const initialAuthority = await fixture.options.context.issueAndRevalidateLinkAuthority({

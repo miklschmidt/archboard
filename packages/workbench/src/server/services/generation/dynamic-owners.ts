@@ -53,7 +53,7 @@ interface DynamicOwners {
 }
 
 /**
- * Build this generation's effect authority: how a dynamic caller's pane, link
+ * Build this generation's effect authority: how a dynamic caller's thread link
  * and operation become the canonical context an effect runs under.
  * @param context What the generation provides.
  * @param created What the graph has built so far.
