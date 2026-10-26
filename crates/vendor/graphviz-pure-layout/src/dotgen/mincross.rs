@@ -4,6 +4,8 @@
 //! cluster rank arrays are windows of the root arrays, see [`super::types::Rank`].
 
 use super::Dot;
+use super::mincross_rank::RankCopy;
+use super::mincross_repeat::Repeats;
 use super::qsort::qsort;
 use super::types::*;
 use super::utils::*;
@@ -505,6 +507,7 @@ impl Dot<'_> {
                 cur_cross = best_cross;
             }
             let mut trying = 0;
+            let mut repeats = Repeats::default();
             for iter in 0..maxthispass {
                 graphviz_pure_core::verbose_msg!(
                     "mincross: pass {pass} iter {iter} trying {trying} cur_cross {cur_cross} \
@@ -526,6 +529,38 @@ impl Dot<'_> {
                         trying = 0;
                     }
                     best_cross = cur_cross;
+                }
+                // archboard: the iterations after one that repeats an earlier one are played
+                // out on the crossings recorded (`mincross_repeat`).
+                if let Some(j) = self.repeated(&mut repeats, g, iter, cur_cross) {
+                    let (j, period) = (j as i32, iter - j as i32);
+                    let mut last = iter as usize;
+                    let mut saved = None;
+                    for later in iter + 1..maxthispass {
+                        let t = trying;
+                        trying += 1;
+                        if t >= self.min_quit {
+                            break;
+                        }
+                        if cur_cross == 0 {
+                            break;
+                        }
+                        let h = (j + (later - j) % period) as usize;
+                        cur_cross = repeats.left[h].cross;
+                        if cur_cross <= best_cross {
+                            saved = Some(h);
+                            if (cur_cross as f64) < CONVERGENCE * best_cross as f64 {
+                                trying = 0;
+                            }
+                            best_cross = cur_cross;
+                        }
+                        last = h;
+                    }
+                    if let Some(h) = saved {
+                        self.save_as_best(&repeats.left[h]);
+                    }
+                    self.put_back(g, &repeats.left[last]);
+                    break;
                 }
             }
             if cur_cross == 0 {
@@ -1269,14 +1304,22 @@ impl Dot<'_> {
     }
 
     fn reorder(&mut self, g: G, r: i32, reverse: bool, hasfixed: bool) {
+        // archboard: the passes read the rank from a copy and exchange places in `at`, the
+        // place each node started at (`mincross_rank`); the rank is written back once.
+        let rank = RankCopy::of(self, g, r);
+        let mut at: Vec<usize> = (0..rank.nodes.len()).collect();
         let mut changed = 0;
-        let n = self.rank_n(g, r);
-        let mut ep = n;
+        let n = rank.nodes.len() as i32;
+        let mut ep = n as usize;
         let mut nelt = n - 1;
         while nelt >= 0 {
+            // archboard: a pass that exchanges nothing leaves the rank as it was, and every
+            // later pass compares the same pairs, or a prefix of them as `ep` falls, so it
+            // exchanges nothing either. C runs them all; the port stops here.
+            let changed_before = changed;
             let mut lp = 0;
             while lp < ep {
-                while lp < ep && self.nodes[self.rv(g, r, lp).unwrap()].mval < 0.0 {
+                while lp < ep && rank.mval[at[lp]] < 0.0 {
                     lp += 1;
                 }
                 if lp >= ep {
@@ -1284,22 +1327,22 @@ impl Dot<'_> {
                 }
                 let mut sawclust = false;
                 let mut muststay = false;
-                let lpn = self.rv(g, r, lp).unwrap();
+                let lpn = at[lp];
                 let mut rp = lp + 1;
                 while rp < ep {
-                    let rpn = self.rv(g, r, rp).unwrap();
-                    if sawclust && self.nodes[rpn].clust.is_some() {
+                    let rpn = at[rp];
+                    if sawclust && rank.clust[rpn].is_some() {
                         rp += 1;
                         continue;
                     }
-                    if self.left2right(g, lpn, rpn) {
+                    if rank.left2right(lpn, rpn) {
                         muststay = true;
                         break;
                     }
-                    if self.nodes[rpn].mval >= 0.0 {
+                    if rank.mval[rpn] >= 0.0 {
                         break;
                     }
-                    if self.nodes[rpn].clust.is_some() {
+                    if rank.clust[rpn].is_some() {
                         sawclust = true;
                     }
                     rp += 1;
@@ -1308,22 +1351,27 @@ impl Dot<'_> {
                     break;
                 }
                 if !muststay {
-                    let rpn = self.rv(g, r, rp).unwrap();
-                    let p1 = self.nodes[lpn].mval;
-                    let p2 = self.nodes[rpn].mval;
+                    let rpn = at[rp];
+                    let p1 = rank.mval[lpn];
+                    let p2 = rank.mval[rpn];
                     if p1 > p2 || (p1 >= p2 && reverse) {
-                        self.exchange(lpn, rpn);
+                        at.swap(lp, rp);
                         changed += 1;
                     }
                 }
                 lp = rp;
+            }
+            if changed == changed_before {
+                break;
             }
             if !hasfixed && !reverse {
                 ep -= 1;
             }
             nelt -= 1;
         }
+        let (nodes, orders) = rank.into_places();
         if changed != 0 {
+            self.write_rank(g, r, &nodes, &orders, &at);
             self.rk_mut(0, r).valid = false;
             if r > 0 {
                 self.rk_mut(0, r - 1).valid = false;

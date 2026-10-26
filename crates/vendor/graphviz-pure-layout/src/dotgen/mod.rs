@@ -21,6 +21,8 @@ pub mod fastgr;
 pub mod flat;
 pub mod init;
 pub mod mincross;
+mod mincross_rank;
+mod mincross_repeat;
 pub mod ns;
 pub mod output;
 pub mod pack;

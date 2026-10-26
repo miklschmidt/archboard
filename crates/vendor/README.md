@@ -19,7 +19,7 @@ port of Graphviz 16.1.0. The core lays out the graphs of a solve with it
   names Graphviz's authors and the MIT-licensed code inside
   (`graphviz-pure-core/LICENSES`, `graphviz-pure-geom/LICENSES`).
 
-archboard changed two things:
+archboard changed three things:
 
 1. Each `Cargo.toml` names its sibling crates by `path` as well as version.
 2. `graphviz-pure-layout` sorts as musl's `qsort` does. Graphviz sorts with
@@ -32,6 +32,14 @@ archboard changed two things:
    `tests/data/qsort_expected.txt` were recorded again from musl's own
    `qsort.c`, compiled natively, on the same inputs. Every comment that the
    change touches says `archboard:`.
+3. `graphviz-pure-layout` lays a graph out faster, to the same answer byte for
+   byte (TASK-548.03). Each change keeps the order of every decision, every tie
+   and every floating-point operation, and says `archboard:` where it is:
+   - `src/dotgen/mincross.rs`: `reorder` stops at the first pass that exchanges
+     nothing, and runs its passes on a copy of the rank
+     (`src/dotgen/mincross_rank.rs`). A pass of `mincross` stops running
+     iterations once one leaves what an earlier one left, and plays the rest out
+     on the recorded crossings (`src/dotgen/mincross_repeat.rs`).
 
 ## Why they are not workspace members
 
@@ -50,7 +58,7 @@ build lands in the checkout.
 ## Updating
 
 Take the crates.io archives of the new version, replace each folder's files
-with theirs, and apply the two changes again. The `qsort` vectors must come
+with theirs, and apply the three changes again. The `qsort` vectors must come
 from musl's `qsort.c`. Then render the corpus before and after
 (`bun scripts/render-corpus.ts`): every drawing must be unchanged, or each
 change must be one the update means to make.
