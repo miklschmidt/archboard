@@ -1,4 +1,7 @@
-import {behaviorFixture,allBehaviorSubjects} from "#tests/runtime/operations/model-edit/flow-fixture.ts";
+import {
+	behaviorFixture,
+	allBehaviorSubjects,
+} from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -32,7 +35,7 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 			"Shop#Gateway",
 			"Shop#Worker",
 			"Shop#Dispatch",
- ...(kind === "flow-repair" ? allBehaviorSubjects : []),
+			...(kind === "flow-repair" ? allBehaviorSubjects : []),
 		]);
 		const changes: Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"] =
 			kind === "transfer"
@@ -44,10 +47,12 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 							set: { to: "Shop#Gateway" },
 						},
 					]
-				: kind === "flow-repair" ? [{type:"remove-module",subject:"Shop#Worker"}] : [
-						{ type: "remove-module", subject: "Shop#Worker" },
-						{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },
-					];
+				: kind === "flow-repair"
+					? [{ type: "remove-module", subject: "Shop#Worker" }]
+					: [
+							{ type: "remove-module", subject: "Shop#Worker" },
+							{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },
+						];
 		const input = { ...base, changes };
 		const request = join(root, "request.json");
 		writeFileSync(request, JSON.stringify(input));
@@ -62,7 +67,10 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 				request,
 			],
 			{
-				env: { ...process.env, ARCHBOARD_EDIT_CRASH: kind === "remove-and-add" ? "removed" : "file" },
+				env: {
+					...process.env,
+					ARCHBOARD_EDIT_CRASH: kind === "remove-and-add" ? "removed" : "file",
+				},
 				stdout: "pipe",
 				stderr: "pipe",
 			},
@@ -100,7 +108,7 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 			success: true,
 			modules: retained.modules,
 			relationships: retained.relationships,
- collections:retained.collections,
+			collections: retained.collections,
 			revision: retained.revision,
 		});
 		expect(await editArchitectureModule(vault, input)).toEqual(recovered.operation);

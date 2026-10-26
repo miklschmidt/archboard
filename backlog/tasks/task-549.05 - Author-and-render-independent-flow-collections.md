@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T17:29:00Z'
+updated_date: '2026-10-26T17:44:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -75,4 +75,6 @@ Confirmed clean source and integration base 62853e30f78aa52473ed1ef69d9481920e16
 Early contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.05-contract.md. Proposals: Board persistence@TASK-549.05, Command interface@TASK-549.05, Archboard server routes@TASK-549.05, Semantic renderer@TASK-549.05. Saved nested flow meaning stays behind the existing edit candidate and durable transaction. Public runtime tests own identity, claims, placement, reference repairs, and real Git behavior; actual CLI SVG output owns transport and rendering evidence.
 
 Runtime slices now prove collection creation, cross-module nested flow preservation, stable step moves, atomic alternative renames, explicit placement/order refusals, and same-operation module-removal repairs. Public read and retained reads expose explicit selectedFlow. CLI rendering reuses renderArchitecture with a grammar choice and keeps renderer exports at 60. A real missing-flow CLI refusal exposed unconditional artifact installation before nonzero outcome presentation; the existing execution operation now skips artifact installation for a declared failure.
+
+Signed implementation checkpoint ea4deb3ea records the initial delivery. Simplification shares module/collection serialization and field assignment, and keeps placement and reference repair private to the existing candidate. Focused runtime/adapter/execution evidence passes 39 cases with 187 assertions. Real CLI evidence in task-549.05-evidence includes signed source and architecture commits, creation and editing, sequence.svg, flowchart.svg, exact retained-sequence.svg, stable retry, preserved source index, preserved refused output, and released fixture claims. Added Command dispatch@TASK-549.05 for the successful-artifact contract. Renderer width remains 60/60; the known board retirement gate is now 245/188 without any ceiling change.
 <!-- SECTION:NOTES:END -->

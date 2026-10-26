@@ -424,8 +424,8 @@ The collection has a separate local identity.
 Read the complete model with `archboard model read`.
 Claim the model ID, participants, and every affected existing flow, step, and holder.
 Use the existing `model edit` request with `changes` for one complete intent.
-See [the flow example](../../../examples/canonical-model/independent-flow.changes.json) for the changes array.
-The example uses the modules in the canonical model example.
+The Archboard source checkout contains `examples/canonical-model/independent-flow.changes.json`.
+That complete example uses the modules in the canonical model example.
 Supply the target, complete expectedRevision, operationId, writer, and claim from your current reading.
 Supply the doing line through `--doing`.
 
@@ -434,6 +434,9 @@ Supply the doing line through `--doing`.
 Archboard allocates every new identity.
 Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their existing semantic fields.
 Returns remain messages and never create reverse structural relationships.
+Use qualified module IDs or unique current or former module names for participant and message references.
+A flow can reference a module that the same batch adds by its unique name.
+Only qualified identities persist.
 
 `edit-flow` takes its qualified identity or unique current or former name.
 Its `set` assigns name, summary, or participants.
@@ -454,13 +457,13 @@ Without `before`, the step appends to the destination.
 
 ```json
 {
-  "type": "move-step",
-  "subject": "Shop#Response",
-  "placement": {
-    "holder": "Shop#Decision",
-    "alternative": "accepted",
-    "before": "Shop#Next"
-  }
+	"type": "move-step",
+	"subject": "Shop#Response",
+	"placement": {
+		"holder": "Shop#Decision",
+		"alternative": "accepted",
+		"before": "Shop#Next"
+	}
 }
 ```
 

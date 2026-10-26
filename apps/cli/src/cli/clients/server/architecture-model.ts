@@ -47,6 +47,7 @@ async function architectureResult<T>(
  * Read current inputs or one immutable checkpoint.
  * @param module The optional module selector.
  * @param checkpoint The complete immutable checkpoint identity.
+ * @param flow The optional explicit flow selector.
  * @returns The coherent reading or structured refusal.
  */
 function readArchitectureModelOnServer(module?: string, checkpoint?: string, flow?: string) {
@@ -242,7 +243,11 @@ function initializeArchitectureArchiveOnServer() {
 }
 export { initializeArchitectureArchiveOnServer };
 
-/** Ask the server for an explicitly selected flow picture. */
+/**
+ * Ask the server for an explicitly selected flow picture.
+ * @param input The explicit reading and standalone theme.
+ * @returns The SVG receipt or structured diagnostics.
+ */
 function renderArchitectureFlowOnServer(
 	input: z.infer<typeof ArchitectureFlowRenderRequestSchema>,
 ) {

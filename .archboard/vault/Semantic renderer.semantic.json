@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 94,
+	"version": 95,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-26T17:16:01.850Z",
+	"updatedAt": "2026-10-26T17:41:33.817Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -31081,8 +31081,8 @@
 						"order": 12000,
 						"name": "Bun renderer",
 						"kind": "module",
-						"responsibility": "Install the Bun host and render semantic architecture, explicitly selected canonical flows, and legacy board readings through existing operations",
-						"description": "The public Bun rendering entry calls the shared renderer with the host installed. Host installation and measurement are separate implementation parts below it.",
+						"responsibility": "Installs the Bun host, then renders architecture or an explicitly requested sequence or flowchart",
+						"description": "The existing renderArchitecture operation accepts an optional grammar. Its default remains architecture. Public callers derive request and result types from operations. The interface remains 60 exports with its unchanged ceiling.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/operations/render.ts"

@@ -195,7 +195,12 @@ function selectModule(
 	]);
 }
 
-/** Resolve one explicitly selected flow without inferring execution order. */
+/**
+ * Resolve an explicit flow without inferring execution order.
+ * @param model The coherent model or an earlier refusal.
+ * @param selector The optional explicit flow selector.
+ * @returns The selected reading or actionable diagnostics.
+ */
 function selectFlow(model: ArchitectureModelRead, selector?: string): ArchitectureModelRead {
 	if (!model.success || selector === undefined) return model;
 	const flows = model.collections.flatMap((collection) => collection.flows);
@@ -221,6 +226,7 @@ function selectFlow(model: ArchitectureModelRead, selector?: string): Architectu
  * Read authored canonical modules without changing any architecture input.
  * @param vault The explicitly addressed vault.
  * @param module A qualified module id or a unique current or former name.
+ * @param flow The optional explicit flow selector.
  * @returns One model and its exact input revision, or structured diagnostics.
  */
 function readCurrentModel(vault: string, module?: string, flow?: string): ArchitectureModelRead {
@@ -263,7 +269,8 @@ function failure(
 /**
  * Read current inputs only outside a pending installation.
  * @param vault The explicitly addressed vault.
- * @param module The module value.
+ * @param module The module selector.
+ * @param flow The optional explicit flow selector.
  * @returns The operation result.
  */
 function readArchitectureModel(

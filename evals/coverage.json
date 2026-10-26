@@ -8,22 +8,14 @@
 				{
 					"path": "board.name, board.level (configured)",
 					"expectedUse": "one board named as asked at the configured level",
-					"scenarios": [
-						"S00",
-						"S07",
-						"S08",
-						"S14"
-					],
+					"scenarios": ["S00", "S07", "S08", "S14"],
 					"evidence": "harness-check",
 					"owner": "board-level, board-count"
 				},
 				{
 					"path": "create.variant, create.summary (initial variant name/summary)",
 					"expectedUse": "fixtures name the initial variant; an author may",
-					"scenarios": [
-						"S02",
-						"S06"
-					],
+					"scenarios": ["S02", "S06"],
 					"evidence": "harness-check",
 					"owner": "variant-exists on the fixture-named variant; packages/board/tests/runtime"
 				},
@@ -44,36 +36,21 @@
 				{
 					"path": "node.name, node.kind, node.responsibility, node.description",
 					"expectedUse": "configured kind, clear short responsibility grounded in source and readable over two or three rendered lines when useful; optional explicit newlines; longer detail in description",
-					"scenarios": [
-						"S00",
-						"S01",
-						"S14"
-					],
+					"scenarios": ["S00", "S01", "S14"],
 					"evidence": "author-run",
 					"owner": "grader feature node.kind, node.responsibility; harness node-kind"
 				},
 				{
 					"path": "optional field preservation or intentional clearing on restate",
 					"expectedUse": "a restated node keeps responsibility and binding unless the change is about them",
-					"scenarios": [
-						"S01",
-						"S03",
-						"S10"
-					],
+					"scenarios": ["S01", "S03", "S10"],
 					"evidence": "harness-check",
 					"owner": "node-field-retained, edge-ids-retained"
 				},
 				{
 					"path": "semantic rasterize: the saved board as a native-scale PNG, same selectors as render",
 					"expectedUse": "an author renders SVG to read; the harness captures every requested board, view and variant as a PNG; a bitmap is never authored or supplied by the author",
-					"scenarios": [
-						"S00",
-						"S02",
-						"S05",
-						"S07",
-						"S09",
-						"S12"
-					],
+					"scenarios": ["S00", "S02", "S05", "S07", "S09", "S12"],
 					"evidence": "harness-check",
 					"owner": "captures declared per scenario, taken after every run; packages/renderer/tests/runtime/services/rasterizer and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
 				},
@@ -191,12 +168,7 @@
 				{
 					"path": "node.parent (single, optional, nested)",
 					"expectedUse": "truthful containment; nested where the source nests",
-					"scenarios": [
-						"S00",
-						"S03",
-						"S05",
-						"S12"
-					],
+					"scenarios": ["S00", "S03", "S05", "S12"],
 					"evidence": "harness-check",
 					"owner": "container-has-children, node-parent"
 				},
@@ -210,51 +182,35 @@
 				{
 					"path": "edge.from/to at a module's edge: callers outside the container, entry points and hidden parts inside it",
 					"expectedUse": "a module the board describes is a container with its callers outside it; a call from outside lands on the entry point the caller names, never on the container or a helper behind it; the calls behind that entry point land inside the container on the part whose body runs",
-					"scenarios": [
-						"S00",
-						"S05",
-						"S14"
-					],
+					"scenarios": ["S00", "S05", "S14"],
 					"evidence": "harness-check",
 					"owner": "no-edge-to-container-with-children; grader edge.actual-receiver"
 				},
 				{
 					"path": "whole-module endpoints where appropriate",
 					"expectedUse": "a leaf module is a fine endpoint; a relationship that ends on a container makes no entry point and is only for a dependency on the whole module",
-					"scenarios": [
-						"S01",
-						"S02",
-						"S13"
-					],
+					"scenarios": ["S01", "S02", "S13"],
 					"evidence": "author-run",
 					"owner": "grader edge.actual-receiver"
 				},
 				{
 					"path": "edge.kind (configured), edge.label, edge.description",
 					"expectedUse": "configured kinds; label says what is carried",
-					"scenarios": [
-						"S01",
-						"S08",
-						"S10"
-					],
+					"scenarios": ["S01", "S08", "S10"],
 					"evidence": "harness-check",
 					"owner": "edge-between with kind; fixtures S10 carry description"
 				},
 				{
 					"path": "edge.emphasis normal (default) | hero | muted",
 					"expectedUse": "presentation intent, excluded from semantic change badges",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; packages/board/tests compare (emphasis not a change)"
 				},
 				{
 					"path": "semantic inspect --container: entry points, hidden parts, callers, outgoing relationships, pass-through entry points",
 					"expectedUse": "answer which parts of a module its callers reach, from the CLI",
-					"scenarios": [
-						"S16"
-					],
+					"scenarios": ["S16"],
 					"evidence": "grader",
 					"owner": "grader inspect.container; packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				},
@@ -268,18 +224,14 @@
 				{
 					"path": "semantic compare reports each container's interface changes before the other changes: entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost, and no comparison status",
 					"expectedUse": "report the interface changes of a proposal first, naming the callers each one costs",
-					"scenarios": [
-						"S17"
-					],
+					"scenarios": ["S17"],
 					"evidence": "grader",
 					"owner": "grader compare.interface-changes; packages/board/tests/shared/rules/compare/interfaces.test.ts; apps/cli/tests/cli/operations/semantic/compare/comparison-answer.test.ts"
 				},
 				{
 					"path": "semantic compare interfaceMeasures and --beside: the five interface measures of each container on the variant, the one it is read against and each competing proposal, side by side, with the entry points and pass-through entry points named",
 					"expectedUse": "design it twice: put the measures of competing drafts side by side in one answer and report them unranked, with no score and no deep or shallow verdict",
-					"scenarios": [
-						"S17"
-					],
+					"scenarios": ["S17"],
 					"evidence": "grader",
 					"owner": "grader compare.measures-side-by-side, measures.unranked; apps/cli/tests/cli/operations/semantic/compare/interface-measures.test.ts; apps/cli/tests/cli/rules/commander/parameters.test.ts (an appending option)"
 				}
@@ -292,27 +244,21 @@
 				{
 					"path": "edge.traffic omitted (off)",
 					"expectedUse": "turning traffic off is omitting it",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "edge-traffic off"
 				},
 				{
 					"path": "edge.traffic {} (defaults)",
 					"expectedUse": "enable with defaults",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "edge-traffic default"
 				},
 				{
 					"path": "edge.traffic.speed, edge.traffic.volume (positive finite)",
 					"expectedUse": "stated values where justified",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "edge-traffic custom; grader traffic.custom"
 				},
@@ -326,9 +272,7 @@
 				{
 					"path": "illustration is not telemetry",
 					"expectedUse": "the answer says the animation illustrates flow",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "grader",
 					"owner": "grader feature traffic.illustrative; rubric"
 				}
@@ -341,41 +285,28 @@
 				{
 					"path": "node.binding absent (planned/unbound node)",
 					"expectedUse": "a part with no code stays unbound",
-					"scenarios": [
-						"S00",
-						"S05"
-					],
+					"scenarios": ["S00", "S05"],
 					"evidence": "author-run",
 					"owner": "grader binding.repo-path (WSGI server, View function unbound)"
 				},
 				{
 					"path": "node.binding.repo (registered identity), node.binding.path (repo-relative)",
 					"expectedUse": "repo add, then bind through the identity",
-					"scenarios": [
-						"S00",
-						"S01",
-						"S03",
-						"S14"
-					],
+					"scenarios": ["S00", "S01", "S03", "S14"],
 					"evidence": "harness-check",
 					"owner": "node-binding, binding-count-at-least"
 				},
 				{
 					"path": "node.binding.symbol (definition or infrastructure address at the path)",
 					"expectedUse": "a part that is one definition among others in its file names it; a changed symbol is a changed binding",
-					"scenarios": [
-						"S00"
-					],
+					"scenarios": ["S00"],
 					"evidence": "author-run",
 					"owner": "grader binding.symbol; packages/board/tests/shared/rules/compare/comparison.test.ts (a changed symbol is a changed binding)"
 				},
 				{
 					"path": "edge.anchor, step.anchor {repo, path, symbol}",
 					"expectedUse": "every relationship and step carries its line of evidence; restating one without it drops it with ANCHOR_DROPPED; comparison ignores it",
-					"scenarios": [
-						"S00",
-						"S07"
-					],
+					"scenarios": ["S00", "S07"],
 					"evidence": "author-run",
 					"owner": "grader edge.anchor, step.anchor; packages/board/tests/runtime/operations/edit/anchors.test.ts; packages/board/tests/shared/rules/compare/comparison.test.ts and reconciliation.test.ts"
 				},
@@ -417,18 +348,14 @@
 				{
 					"path": "node.drillDown.board + variant {kind: current}",
 					"expectedUse": "link to the detail board's designation",
-					"scenarios": [
-						"S04"
-					],
+					"scenarios": ["S04"],
 					"evidence": "harness-check",
 					"owner": "node-drilldown current"
 				},
 				{
 					"path": "node.drillDown.variant {kind: named, name}",
 					"expectedUse": "link to a named variant; never falls back to current",
-					"scenarios": [
-						"S04"
-					],
+					"scenarios": ["S04"],
 					"evidence": "harness-check",
 					"owner": "node-drilldown named; apps/web/tests/ui/components/semantic-board-canvas drill address (missing named target refused)"
 				},
@@ -449,18 +376,14 @@
 				{
 					"path": "detail boards separate from proposals",
 					"expectedUse": "the existing detail board is reused, not recreated",
-					"scenarios": [
-						"S04"
-					],
+					"scenarios": ["S04"],
 					"evidence": "harness-check",
 					"owner": "board-count 2"
 				},
 				{
 					"path": "semantic locality: the hotspots of a board, its parts ranked by the commits that changed their bound files in a period, and its change coupling, the pairs of parts that changed together past fixed thresholds with the pairs nothing on the board joins marked, with large commits left out and counted and unread parts listed with the reason",
 					"expectedUse": "answer which parts of a board change most often and which change together from the CLI, report parts that share a file as one list of commits and never as a coupled pair, report an unjoined pair as a question, and name a part that was not read as not read",
-					"scenarios": [
-						"S18"
-					],
+					"scenarios": ["S18"],
 					"evidence": "grader",
 					"owner": "grader locality.hotspots, locality.shared-files, locality.skipped, locality.coupling; packages/code-intel/tests/runtime/operations/history-lens/locality.test.ts; packages/code-intel/tests/runtime/operations/history-lens/coupling.test.ts (thresholds, unjoined); apps/cli/tests/cli/operations/semantic/history/locality.test.ts; apps/server/tests/server/routes/locality/locality-route.test.ts. No pair passes the thresholds on Flask 3.0.0, so locality.coupling grades an empty list and no shared file reported as coupled; no run reports an unjoined pair, and nothing grades that reading"
 				}
@@ -473,39 +396,28 @@
 				{
 					"path": "flow.name, flow.summary, flow.participants (identity and column order)",
 					"expectedUse": "participants in reading order",
-					"scenarios": [
-						"S05",
-						"S07"
-					],
+					"scenarios": ["S05", "S07"],
 					"evidence": "harness-check",
 					"owner": "flow-with-steps; grader flow.participants-and-steps"
 				},
 				{
 					"path": "step.from/to/label, step identity",
 					"expectedUse": "steps in order with what they carry",
-					"scenarios": [
-						"S05",
-						"S07"
-					],
+					"scenarios": ["S05", "S07"],
 					"evidence": "harness-check",
 					"owner": "flow-with-steps"
 				},
 				{
 					"path": "step.kind sync (default) | async | return | self",
 					"expectedUse": "as the source justifies; self exactly when both ends are one node",
-					"scenarios": [
-						"S05",
-						"S07"
-					],
+					"scenarios": ["S05", "S07"],
 					"evidence": "harness-check",
 					"owner": "flow-with-steps kinds [sync, return, self]; grader flow.message-kinds"
 				},
 				{
 					"path": "step.note, step.repeat >= 2",
 					"expectedUse": "annotated, repeated attempts",
-					"scenarios": [
-						"S07"
-					],
+					"scenarios": ["S07"],
 					"evidence": "harness-check",
 					"owner": "flow-step-repeat withNote"
 				},
@@ -532,46 +444,35 @@
 				{
 					"path": "view.name, view.summary, view.grammar architecture | sequence",
 					"expectedUse": "a sequence view over a flow; architecture views over regions",
-					"scenarios": [
-						"S05",
-						"S12"
-					],
+					"scenarios": ["S05", "S12"],
 					"evidence": "harness-check",
 					"owner": "view-exists grammar"
 				},
 				{
 					"path": "view.scope {kind: all}",
 					"expectedUse": "the whole board",
-					"scenarios": [
-						"S02"
-					],
+					"scenarios": ["S02"],
 					"evidence": "harness-check",
 					"owner": "fixture S02 Contexts view; render-ok through it"
 				},
 				{
 					"path": "view.scope selection.nodes with no edges (node region: every relationship among them)",
 					"expectedUse": "a region view",
-					"scenarios": [
-						"S12"
-					],
+					"scenarios": ["S12"],
 					"evidence": "harness-check",
 					"owner": "view-exists edgesSelected 0 with three parts selected; grader view.node-region"
 				},
 				{
 					"path": "view.scope selection.edges (explicit edge isolation)",
 					"expectedUse": "one relationship isolated by id or handle",
-					"scenarios": [
-						"S12"
-					],
+					"scenarios": ["S12"],
 					"evidence": "harness-check",
 					"owner": "view-exists edgesSelected 1 with process_response selected and its save_session call hidden; grader view.edge-isolation"
 				},
 				{
 					"path": "view.scope selection.flows",
 					"expectedUse": "a sequence view scoped to a flow",
-					"scenarios": [
-						"S05"
-					],
+					"scenarios": ["S05"],
 					"evidence": "author-run",
 					"owner": "grader view.sequence; packages/board/tests scope"
 				},
@@ -585,18 +486,14 @@
 				{
 					"path": "board-owned view edits across variants",
 					"expectedUse": "a view added once applies to both variants",
-					"scenarios": [
-						"S12"
-					],
+					"scenarios": ["S12"],
 					"evidence": "harness-check",
 					"owner": "render-ok of the draft through Session path"
 				},
 				{
 					"path": "selected subject removed on one comparison side",
 					"expectedUse": "the removal stays visible through the view",
-					"scenarios": [
-						"S12"
-					],
+					"scenarios": ["S12"],
 					"evidence": "harness-check",
 					"owner": "comparison-standing removedNodes 1 + render-ok; packages/board/tests compare withRemoved"
 				},
@@ -610,12 +507,7 @@
 				{
 					"path": "a declared view captured as itself, never the whole variant in its place",
 					"expectedUse": "a sequence scenario's sequence view and a comparison's shared view are captured by name; a view the author never made is a failed capture",
-					"scenarios": [
-						"S02",
-						"S05",
-						"S07",
-						"S12"
-					],
+					"scenarios": ["S02", "S05", "S07", "S12"],
 					"evidence": "harness-check",
 					"owner": "captureFromReceipt refuses a receipt without the declared view or grammar; packages/skills/tests/runtime/operations/runs/captures.test.ts"
 				}
@@ -628,38 +520,28 @@
 				{
 					"path": "walkthrough.name, walkthrough.summary, beats ordered with heading and body",
 					"expectedUse": "an explanation in beats",
-					"scenarios": [
-						"S05",
-						"S13"
-					],
+					"scenarios": ["S05", "S13"],
 					"evidence": "harness-check",
 					"owner": "walkthrough-beat-references, walkthrough-beats-retained"
 				},
 				{
 					"path": "beat.subjects referencing node | edge | flow | step",
 					"expectedUse": "each allowed class",
-					"scenarios": [
-						"S05",
-						"S13"
-					],
+					"scenarios": ["S05", "S13"],
 					"evidence": "harness-check",
 					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (a relationship or step brings the parts at its ends, and several named cards bring the relationships between them)"
 				},
 				{
 					"path": "introductory beat with no subjects",
 					"expectedUse": "an opening beat about the whole picture",
-					"scenarios": [
-						"S13"
-					],
+					"scenarios": ["S13"],
 					"evidence": "harness-check",
 					"owner": "fixture S13 beat 1; walkthrough-beats-retained"
 				},
 				{
 					"path": "beat.view stated versus omitted",
 					"expectedUse": "every beat names its view explicitly, including consecutive beats that use the same view",
-					"scenarios": [
-						"S05"
-					],
+					"scenarios": ["S05"],
 					"evidence": "author-run",
 					"owner": "grader walkthrough.beat-subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (omitted view keeps the presentation)"
 				},
@@ -673,27 +555,21 @@
 				{
 					"path": "stable beat identity across reword/reorder/add/remove",
 					"expectedUse": "ids kept in order when a body is reworded",
-					"scenarios": [
-						"S13"
-					],
+					"scenarios": ["S13"],
 					"evidence": "harness-check",
 					"owner": "walkthrough-beats-retained"
 				},
 				{
 					"path": "repair when referenced subjects change",
 					"expectedUse": "the beat about a removed part is pointed at its successor",
-					"scenarios": [
-						"S13"
-					],
+					"scenarios": ["S13"],
 					"evidence": "harness-check",
 					"owner": "walkthrough-beat-references subjectNames [Jinja environment]"
 				},
 				{
 					"path": "semantic replay <talk> --out <file> [--theme]: a kept talk rendered again with no voice session",
 					"expectedUse": "the talk a recording kept is rendered again in the palette asked for, to the file asked for, whose extension chooses MP4 or WebM; nothing is recorded again and no board is written",
-					"scenarios": [
-						"S15"
-					],
+					"scenarios": ["S15"],
 					"evidence": "harness-check",
 					"owner": "video-rendered (the file is there, is the container its extension names, and the last replay receipt for it names the kept talk, the theme asked for, the talk's frame count and the file's size); grader replay.kept-talk, replay.receipt; tests/system/server-state/walkthrough-replay.test.ts owns identical frames, one per 1/30 s of the talk, and the other theme's picture"
 				},
@@ -714,9 +590,7 @@
 				{
 					"path": "semantic footprint <board> --base <ref>: the parts whose bound files the commits from the merge base of the ref and HEAD changed, with each part's commits, large commits marked, and the parts it could not read listed with the reason and in no list",
 					"expectedUse": "a pull request's recording takes the parts its steps are about from the footprint, reads a large commit's subject before making a beat of it, and takes a part it could not read from the diff",
-					"scenarios": [
-						"S19"
-					],
+					"scenarios": ["S19"],
 					"evidence": "grader",
 					"owner": "grader footprint.changed-parts, footprint.unchanged-and-skipped; packages/code-intel/tests/runtime/operations/history-lens/footprint.test.ts; apps/server/tests/server/routes/footprint/footprint-route.test.ts; apps/cli/tests/cli/operations/semantic/history/footprint.test.ts"
 				},
@@ -736,52 +610,35 @@
 				{
 					"path": "references by existing id and by name",
 					"expectedUse": "restate by id; refer by name",
-					"scenarios": [
-						"S01",
-						"S03",
-						"S11"
-					],
+					"scenarios": ["S01", "S03", "S11"],
 					"evidence": "harness-check",
 					"owner": "node-id-retained"
 				},
 				{
 					"path": "missing ids minted by the product",
 					"expectedUse": "new subjects leave id out",
-					"scenarios": [
-						"S00",
-						"S01"
-					],
+					"scenarios": ["S00", "S01"],
 					"evidence": "harness-check",
 					"owner": "nodes-named after creation; grader edge.replacement-rule"
 				},
 				{
 					"path": "same-write `as` handles on node/edge/flow/step and their consumers",
 					"expectedUse": "a beat references a step created in the same write",
-					"scenarios": [
-						"S05",
-						"S12"
-					],
+					"scenarios": ["S05", "S12"],
 					"evidence": "author-run",
 					"owner": "grader authoring.handles, view.edge-isolation; packages/board/tests/runtime handles"
 				},
 				{
 					"path": "one batched edit; full-definition replacement with field preservation",
 					"expectedUse": "one semantic edit for a related change",
-					"scenarios": [
-						"S01",
-						"S03"
-					],
+					"scenarios": ["S01", "S03"],
 					"evidence": "harness-check",
 					"owner": "version-advanced-by max 1; node-field-retained"
 				},
 				{
 					"path": "removeNodes, removeEdges, removeFlows, removeViews, removeWalkthroughs",
 					"expectedUse": "each collection",
-					"scenarios": [
-						"S01",
-						"S02",
-						"S13"
-					],
+					"scenarios": ["S01", "S02", "S13"],
 					"evidence": "harness-check",
 					"owner": "no-edge-between (removeEdges), nodes-absent (removeNodes); removeFlows/removeViews/removeWalkthroughs owned by packages/board/tests/runtime"
 				},
@@ -795,19 +652,14 @@
 				{
 					"path": "untouched subjects remain untouched",
 					"expectedUse": "an edit changes only what it states",
-					"scenarios": [
-						"S10",
-						"S13"
-					],
+					"scenarios": ["S10", "S13"],
 					"evidence": "harness-check",
 					"owner": "edge-ids-retained, walkthrough-beats-retained"
 				},
 				{
 					"path": "same-batch forward parent references and handles",
 					"expectedUse": "a child names a parent created in the same write",
-					"scenarios": [
-						"S00"
-					],
+					"scenarios": ["S00"],
 					"evidence": "harness-check",
 					"owner": "container-has-children after one semantic new"
 				}
@@ -820,21 +672,14 @@
 				{
 					"path": "initial current variant",
 					"expectedUse": "the first variant is current",
-					"scenarios": [
-						"S00",
-						"S07"
-					],
+					"scenarios": ["S00", "S07"],
 					"evidence": "harness-check",
 					"owner": "board-level implies a current variant; runtime tests"
 				},
 				{
 					"path": "branch from current and from a named predecessor (--from)",
 					"expectedUse": "a proposal derived from a stated variant",
-					"scenarios": [
-						"S02",
-						"S04",
-						"S12"
-					],
+					"scenarios": ["S02", "S04", "S12"],
 					"evidence": "harness-check",
 					"owner": "variant-exists draft; --from owned by packages/board/tests/runtime"
 				},
@@ -848,10 +693,7 @@
 				{
 					"path": "proposal summary",
 					"expectedUse": "one line saying what the proposal is for",
-					"scenarios": [
-						"S04",
-						"S06"
-					],
+					"scenarios": ["S04", "S06"],
 					"evidence": "harness-check",
 					"owner": "fixtures carry --summary; variant-exists"
 				},
@@ -872,36 +714,28 @@
 				{
 					"path": "lifecycle draft | current | historical",
 					"expectedUse": "adoption moves current and leaves historical",
-					"scenarios": [
-						"S06"
-					],
+					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "current-variant, variant-exists historical"
 				},
 				{
 					"path": "lifecycle shelved, with its reason",
 					"expectedUse": "shelve, when asked, each competing draft not kept, with the reason it lost; the kept draft stays a draft",
-					"scenarios": [
-						"S17"
-					],
+					"scenarios": ["S17"],
 					"evidence": "harness-check",
 					"owner": "variant-exists shelved and draft; grader variant.shelve"
 				},
 				{
 					"path": "current designation versus lasting identity",
 					"expectedUse": "adoption renames nothing",
-					"scenarios": [
-						"S06"
-					],
+					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "variant-exists by fixture name after adoption"
 				},
 				{
 					"path": "adoption with reason and history",
 					"expectedUse": "adopt --reason recorded",
-					"scenarios": [
-						"S06"
-					],
+					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "adoptions-count withReason"
 				},
@@ -915,10 +749,7 @@
 				{
 					"path": "comparison against the current variant (on a board nobody has built, the direct predecessor): added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
 					"expectedUse": "a proposal reads as its real delta",
-					"scenarios": [
-						"S02",
-						"S12"
-					],
+					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
 					"owner": "comparison-standing; grader compare.reading; packages/board/tests compare"
 				},
@@ -988,10 +819,7 @@
 				{
 					"path": "continuing relationship identity across multiple changed fields or an endpoint",
 					"expectedUse": "restate a continuing relationship by id; explicit removal plus an idless addition declares replacement",
-					"scenarios": [
-						"S01",
-						"S10"
-					],
+					"scenarios": ["S01", "S10"],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/edit/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
 				},
@@ -1005,10 +833,7 @@
 				{
 					"path": "consistent shared-view comparison",
 					"expectedUse": "both states through one view",
-					"scenarios": [
-						"S02",
-						"S12"
-					],
+					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
 					"owner": "render-ok of both variants through the same view"
 				}
@@ -1021,27 +846,21 @@
 				{
 					"path": "noncompeting inheritance and agreement",
 					"expectedUse": "a parent edit reaches a draft that did not touch the subject",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "harness-check",
 					"owner": "fixture S11 (helpers edge untouched by both); reconciliation-settled"
 				},
 				{
 					"path": "issue kind competing-field",
 					"expectedUse": "two answers to one field, settled mine/theirs",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "harness-check",
 					"owner": "nodes-named JSON helper functions (theirs), node-field-equals responsibility (mine)"
 				},
 				{
 					"path": "issue kind deleted-and-changed",
 					"expectedUse": "settled by a third answer: an ordinary edit restoring the id",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "harness-check",
 					"owner": "node-id-retained Tagged JSON on the draft"
 				},
@@ -1062,18 +881,14 @@
 				{
 					"path": "choices with subject and optional field; partial resolution leaving outstanding issues",
 					"expectedUse": "answer part, report the rest",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "author-run",
 					"owner": "grader resolve.partial"
 				},
 				{
 					"path": "adoption only after settlement",
 					"expectedUse": "adopt refused while disagreements are open",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "harness-check",
 					"owner": "variant-exists draft (not adopted); runtime tests refuse adoption"
 				}
@@ -1086,29 +901,21 @@
 				{
 					"path": "config.levels",
 					"expectedUse": "boards at configured levels",
-					"scenarios": [
-						"S00",
-						"S07",
-						"S14"
-					],
+					"scenarios": ["S00", "S07", "S14"],
 					"evidence": "harness-check",
 					"owner": "board-level"
 				},
 				{
 					"path": "config.nodeKinds.<key>.name/icon/color",
 					"expectedUse": "a new kind with a real RemixIcon; palette color optional",
-					"scenarios": [
-						"S08"
-					],
+					"scenarios": ["S08"],
 					"evidence": "harness-check",
 					"owner": "config-has nodeKinds extension; vault-config.schema.json icon enum"
 				},
 				{
 					"path": "config.relationshipKinds.<key>.name/color/dash solid|dashed|dotted/arrowhead filled|open|none",
 					"expectedUse": "a new kind with a stated dash and arrowhead",
-					"scenarios": [
-						"S08"
-					],
+					"scenarios": ["S08"],
 					"evidence": "harness-check",
 					"owner": "config-has relationshipKinds signal (dashed, open); dotted/none owned by packages/renderer/tests/runtime policy"
 				},
@@ -1129,18 +936,14 @@
 				{
 					"path": "consumer-defined vocabularies, not a closed list",
 					"expectedUse": "extend rather than invent",
-					"scenarios": [
-						"S08"
-					],
+					"scenarios": ["S08"],
 					"evidence": "author-run",
 					"owner": "grader config.vocabulary"
 				},
 				{
 					"path": "missing/invalid config warnings; unknown new references refused; removed definitions readable; repair",
 					"expectedUse": "read the refusal, configure, retry",
-					"scenarios": [
-						"S08"
-					],
+					"scenarios": ["S08"],
 					"evidence": "author-run",
 					"owner": "grader config.before-board; the refusal itself: packages/board/tests/runtime policy (unknown kind rejected)"
 				}
@@ -1153,30 +956,21 @@
 				{
 					"path": "config.groups.<id>.name and required .color; empty default",
 					"expectedUse": "stable ids configured; display names free to change",
-					"scenarios": [
-						"S03",
-						"S08",
-						"S09"
-					],
+					"scenarios": ["S03", "S08", "S09"],
 					"evidence": "harness-check",
 					"owner": "config-has configuredGroups; fixtures S03/S09 policy"
 				},
 				{
 					"path": "node.groups explicit set memberships, overlapping across containers",
 					"expectedUse": "Dispatch in two groups, Request context push and Run command in one each, across three containers",
-					"scenarios": [
-						"S03",
-						"S09"
-					],
+					"scenarios": ["S03", "S09"],
 					"evidence": "harness-check",
 					"owner": "node-groups"
 				},
 				{
 					"path": "no inherited membership",
 					"expectedUse": "containers gain nothing",
-					"scenarios": [
-						"S03"
-					],
+					"scenarios": ["S03"],
 					"evidence": "harness-check",
 					"owner": "node-groups [] on Flask app and CLI"
 				},
@@ -1197,9 +991,7 @@
 				{
 					"path": "semantic inspect --group: members, internal edges, directed boundary edges, immediate neighbours",
 					"expectedUse": "answer a membership question from the CLI",
-					"scenarios": [
-						"S09"
-					],
+					"scenarios": ["S09"],
 					"evidence": "harness-check",
 					"owner": "inspect-group; tests/system/semantic-boards/groups.test.ts"
 				},
@@ -1213,9 +1005,7 @@
 				{
 					"path": "hidden/collapsed members versus contextual ancestors",
 					"expectedUse": "the answer names a member the view does not draw",
-					"scenarios": [
-						"S09"
-					],
+					"scenarios": ["S09"],
 					"evidence": "grader",
 					"owner": "grader inspect.hidden-members; apps/web/tests/ui/components/semantic-board-canvas/semantic-board-groups.test.tsx"
 				},
@@ -1229,9 +1019,7 @@
 				{
 					"path": "legacy singular group field refused",
 					"expectedUse": "never written",
-					"scenarios": [
-						"S03"
-					],
+					"scenarios": ["S03"],
 					"evidence": "harness-check",
 					"owner": "check-clean (legacy group is unreadable); packages/board/tests/runtime grouping"
 				}
@@ -1244,38 +1032,28 @@
 				{
 					"path": "schemaVersion, kind, board id, version, createdAt, updatedAt",
 					"expectedUse": "outcomes of writes, never authored",
-					"scenarios": [
-						"S00",
-						"S01"
-					],
+					"scenarios": ["S00", "S01"],
 					"evidence": "harness-check",
 					"owner": "version-advanced-by; check-clean; packages/board/tests aggregate"
 				},
 				{
 					"path": "variant ids, parent, current, lifecycle",
 					"expectedUse": "outcomes of branch and adopt",
-					"scenarios": [
-						"S02",
-						"S06"
-					],
+					"scenarios": ["S02", "S06"],
 					"evidence": "harness-check",
 					"owner": "variant-exists, current-variant"
 				},
 				{
 					"path": "adoptions[].variant/from/at/reason/forced",
 					"expectedUse": "recorded by adopt",
-					"scenarios": [
-						"S06"
-					],
+					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "adoptions-count"
 				},
 				{
 					"path": "reconciliation.against/atVersion/base/issues/blockedBy",
 					"expectedUse": "recorded by the store on a parent edit",
-					"scenarios": [
-						"S11"
-					],
+					"scenarios": ["S11"],
 					"evidence": "harness-check",
 					"owner": "reconciliation-settled; packages/board/tests reconcile-standing"
 				},
@@ -1331,9 +1109,7 @@
 				{
 					"path": "model inventory: exact originals, source fingerprints, namespaces, aliases and evidence",
 					"expectedUse": "Preserve independent coverage and report possible duplicate definitions without automatic identity merges.",
-					"scenarios": [
-						"S20"
-					],
+					"scenarios": ["S20"],
 					"evidence": "author-run",
 					"owner": "S20 grader; public runtime owner packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts"
 				},
@@ -1395,42 +1171,28 @@
 				{
 					"path": "interpret a refusal and repair meaning",
 					"expectedUse": "configure the vocabulary the request asked for rather than bend the board",
-					"scenarios": [
-						"S08"
-					],
+					"scenarios": ["S08"],
 					"evidence": "author-run",
 					"owner": "grader config.before-board (configure first, or repair a refusal by configuring; never bend the meaning); the refusal itself: packages/board/tests/runtime policy"
 				},
 				{
 					"path": "default versus explicit values; partial traffic overrides",
 					"expectedUse": "one of each, no matrix",
-					"scenarios": [
-						"S10"
-					],
+					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "edge-traffic default and custom"
 				},
 				{
 					"path": "named view versus omitted view never conflated with the first view",
 					"expectedUse": "render --view names a view; absent draws the variant",
-					"scenarios": [
-						"S02",
-						"S12"
-					],
+					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
 					"owner": "render-ok with and without --view; packages/renderer/tests/runtime"
 				},
 				{
 					"path": "visual verification by looking: readability, clipping, overlap, endpoints, sequence order",
 					"expectedUse": "the grader opens every capture as an image and names what it opened; a pass without every capture opened is downgraded to incomplete; a still proves no animation",
-					"scenarios": [
-						"S00",
-						"S05",
-						"S07",
-						"S10",
-						"S12",
-						"S14"
-					],
+					"scenarios": ["S00", "S05", "S07", "S10", "S12", "S14"],
 					"evidence": "grader",
 					"owner": "visualStandingOf (packages/skills/tests/runtime/operations/runs/captures.test.ts); rubric.md What you can and cannot see"
 				}

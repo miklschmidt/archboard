@@ -21,6 +21,19 @@ Its outgoing relationships belong to its definition.
 A stable origin namespace and a short local subject ID.
 The namespace records provenance and owns no diagram or containment.
 
+Flow collection:
+An authoring group of independent flows with its own identity.
+The group places no ownership limit on participants.
+
+Canonical flow:
+An ordered exchange across modules, with its own qualified identity.
+Its participant order and nested messages, decisions, and loops remain authored meaning.
+
+Step placement:
+The holder and relative sibling order of a continuing step.
+A decision holder also identifies one exact alternative label.
+A step keeps its identity when its placement changes.
+
 **Input revision**:
 A fingerprint of discovered architecture paths and their exact bytes.
 File moves and whitespace edits change this revision without replacing subject identities.

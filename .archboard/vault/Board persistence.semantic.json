@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 158,
+	"version": 161,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T17:15:53.119Z",
+	"updatedAt": "2026-10-26T17:48:43.594Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -136732,7 +136732,7 @@
 						"order": 42000,
 						"name": "Canonical model contracts",
 						"kind": "module",
-						"responsibility": "Defines canonical inputs, exact revisions, checkpoint metadata and shared outcomes",
+						"responsibility": "Defines canonical modules, independent collections, exact revisions, checkpoint metadata and shared outcomes",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -136813,7 +136813,7 @@
 						"order": 51000,
 						"name": "Canonical edit operations",
 						"kind": "module",
-						"responsibility": "Applies module structure and relationship batches or returns their signed durable result",
+						"responsibility": "Applies module, relationship and independent flow batches or returns their signed durable result",
 						"description": "Same-operation retries can read completion without the installation lease or current inputs. New edits and recovery use the shared checkout-private transaction boundary.",
 						"parent": "1VHRyajb",
 						"groups": [
@@ -136967,8 +136967,8 @@
 						"order": 53500,
 						"name": "Canonical structure candidate",
 						"kind": "module",
-						"responsibility": "Prepare one complete module and independent flow candidate with stable identities, nested placements, affected claims, and reference repairs",
-						"description": "Uses structure.ts and containment.ts to allocate through the identity authority, preserve former names and order, transfer outgoing relationships, repair removals and retain unrelated input bytes.",
+						"responsibility": "Builds one module and independent flow candidate with complete claims, identity-preserving edits and reference repairs",
+						"description": "Uses the existing structure and flow operations to preserve authored order, continuing identities, exact unrelated bytes and the one durable transaction.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -136986,6 +136986,42 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-archive-location.ts"
+						}
+					},
+					{
+						"id": "yNZEhzyc",
+						"order": 63000,
+						"name": "Canonical flow candidate",
+						"kind": "module",
+						"responsibility": "Applies stable flow and step edits, exact nested placements, affected claims and module reference repairs",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/flows.ts"
+						}
+					},
+					{
+						"id": "O4jP5DrF",
+						"order": 64000,
+						"name": "Canonical flow contracts",
+						"kind": "module",
+						"responsibility": "Derives qualified flow and step schemas and explicit edit statements from the existing semantic contracts",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/model-flows.ts"
+						}
+					},
+					{
+						"id": "llmZ5fau",
+						"order": 65000,
+						"name": "Module structure edits",
+						"kind": "module",
+						"responsibility": "Applies module and relationship statements and includes the independent flow candidate in one complete edit",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/structure.ts"
 						}
 					}
 				],
@@ -139488,6 +139524,104 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
 							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "UHKlormM",
+						"order": 182000,
+						"from": "llmZ5fau",
+						"to": "yNZEhzyc",
+						"kind": "call",
+						"label": "applyFlowChanges",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+							"symbol": "applyStructure"
+						}
+					},
+					{
+						"id": "nanqex2o",
+						"order": 183000,
+						"from": "e0GTqv1k",
+						"to": "llmZ5fau",
+						"kind": "call",
+						"label": "applyStructure",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "editCandidate"
+						}
+					},
+					{
+						"id": "txWnt33L",
+						"order": 184000,
+						"from": "4P7YZdnj",
+						"to": "W6wFcSQz",
+						"kind": "call",
+						"label": "ArchitectureFlowRenderRequestSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+							"symbol": "flowPicture"
+						}
+					},
+					{
+						"id": "yUvd87du",
+						"order": 185000,
+						"from": "yNZEhzyc",
+						"to": "O4jP5DrF",
+						"kind": "call",
+						"label": "FlowChangeSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/flows.ts",
+							"symbol": "applyFlowChanges"
+						}
+					},
+					{
+						"id": "DbjpaJZI",
+						"order": 186000,
+						"from": "ZLJy8ivl",
+						"to": "O4jP5DrF",
+						"kind": "call",
+						"label": "FlowCollectionSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/model.ts",
+							"symbol": "ArchitectureModelSchema"
+						}
+					},
+					{
+						"id": "erkB0gWt",
+						"order": 187000,
+						"from": "llmZ5fau",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "selectModule",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+							"symbol": "selectedId"
+						}
+					},
+					{
+						"id": "Idigw8VU",
+						"order": 188000,
+						"from": "llmZ5fau",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+							"symbol": "selectedId"
 						}
 					}
 				],

@@ -191,14 +191,14 @@ test("discovery refuses legacy authority, unsupported authored formats and linke
 	writeFileSync(legacy, "{}");
 	expect(readArchitectureModel(vault)).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 	rmSync(legacy);
-	const future = join(vault, "future.flows.json");
+	const future = join(vault, "future.walkthrough.json");
 	writeFileSync(future, '{"schemaVersion":1}');
 	const unsupported = readArchitectureModel(vault);
 	if (unsupported.success) throw new Error("An unsupported authored collection was ignored");
 	expect(unsupported.diagnostics).toContainEqual(
 		expect.objectContaining({
 			code: "UNSUPPORTED_FORMAT",
-			file: "future.flows.json",
+			file: "future.walkthrough.json",
 		}),
 	);
 	rmSync(future);

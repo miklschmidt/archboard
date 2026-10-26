@@ -103,6 +103,7 @@ async function requireDependencies(
  * @param context The caller's checkout.
  * @param checkpoint The immutable checkpoint identity.
  * @param module The optional module selector.
+ * @param flow The optional explicit flow selector.
  * @returns A coherent retained reading or model validation diagnostics.
  */
 async function exactReading(
@@ -146,6 +147,7 @@ async function exactReading(
  * @param vault The explicitly addressed vault.
  * @param checkpoint A complete immutable Git commit identity.
  * @param module A qualified module identity or unique retained name.
+ * @param flow A qualified flow identity or unique retained name.
  * @returns One retained architecture or actionable diagnostics.
  */
 async function readArchitectureCheckpoint(
