@@ -1,11 +1,11 @@
 ---
 id: TASK-549.01
 title: Read one canonical module model
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T05:46:00Z'
+updated_date: '2026-10-26T07:00:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -47,7 +47,7 @@ None. This ticket can start immediately.
 - [x] #1 Deliver a coherent read of an authored model vault through the public runtime, CLI, and server. Readers can inspect its root modules and relationships.
 - [x] #2 Include the manifest, qualified identities, module definitions, source-owned relationships, policy, and strict file discovery. Preserve ordering, groups, evidence, bindings, and document references.
 - [x] #3 Names resolve only when unique. Filename changes preserve identity. Duplicate definitions, invalid containment, unsupported formats, and missing local targets produce structured diagnostics.
-- [ ] #4 The returned revision covers discovered paths and exact bytes. The browser lists root modules and opens their authored details.
+- [x] #4 The returned revision covers discovered paths and exact bytes. The browser lists root modules and opens their authored details.
 <!-- AC:END -->
 
 ## Definition of Done
@@ -59,11 +59,12 @@ None. This ticket can start immediately.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Extend the existing board runtime and shared schemas with an explicit, read-only canonical model path. Existing legacy files retain authority.
-2. Use red/green slices at the approved public architecture read seam with real temporary files and Git repositories. Cover authored metadata, identity, discovery, strict diagnostics, unique names, and exact path/byte revisions.
-3. Expose the same result through GET /api/architecture/model and archboard model read [module], with explicit vault addressing. Leave frontend and browser tests for the parent.
-4. Keep Board persistence@TASK-549.01, Command interface@TASK-549.01, and Archboard server routes@TASK-549.01 as drafts. Update relevant ADR and consumer instructions.
-5. Run focused behavioral and structural gates, simplify the resulting design, commit with signing, merge the latest integration tip, and rerun affected checks. Record backend evidence without closing the frontend criterion.
+1. Deliver one strict canonical model read through the shared runtime, with stable identities, metadata preservation, and exact input revisions.
+2. Expose that same read through the CLI and server, with explicit vault addressing and structured refusals.
+3. Add the browser root list and authored details through the existing pane and shared query cache. Keep content read-only and selection local.
+4. Prove the workflow through the approved runtime and browser seams. Include invalid input, repair, empty content, unchanged persisted inputs, and legacy pane regression coverage.
+5. Update the decision, consumer guidance, and affected architecture. Adopt the four TASK-549.01 proposals after validation and correct their overview grouping.
+6. Commit with signing, merge the latest integration tip, and hand the completed ticket branch to the merger agent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -76,4 +77,22 @@ The authored fixture is examples/canonical-model/.archboard/vault. Copy it into 
 Focused runtime and real HTTP/CLI tests cover metadata, source ownership, unique names, duplicate definitions, containment cycles, missing local targets, strict versions and files, policy errors, retired identities, dependency cycles, empty architecture, and exact path/byte revisions. The reader captures inputs twice and refuses changing sets. It never writes architecture inputs.
 Verification: 603 package and command-contract regression tests pass. Four surface owners pass 14 tests, including existing tracked embeds and render recipes. The focused canonical owners pass 13 tests. Type checking, full lint, formatting, and deterministic skill evaluation input checks pass. No model evaluations ran. Architecture semantic checks pass. The affected draft proposals have no code-check warnings after their inherited stale evidence is repaired. The full vault code check exits 1 for 12 existing warnings on other boards; see the handoff evidence.
 AC 4 remains unchecked because the browser root listing and authored details belong to the parent. The browser consumes roots as qualified IDs, finds details in modules, and uses selectedModule for a requested module. Incoming relationships derive from relationships filtered by to. Keep the task In Progress and all three TASK-549.01 proposals as drafts until the parent completes the browser criterion. This is only the backend implementation handoff.
+
+The browser portion is complete. The real-browser regression first failed because no canonical model surface existed. It now passes for root ordering, authored details, a connected pane, unchanged architecture revision, invalid input recovery, and an empty model.
+
+Validation: three browser cases pass, including legacy board rendering and traffic. Seven isolated UI owners pass all 32 tests. Package API and dependency contracts pass all 72 tests. Source and frontend type checks, full lint, formatting, and git diff --check pass. Light and dark captures were inspected locally and remain outside the repository.
+
+The initial combined Bun command shared incompatible DOM lifecycles between test files. The same owners pass in separate processes, as the UI test contract requires.
+
+The final simplification moves the shared pane header frame into the UI kit. Both model and legacy panes use it. The canonical query also participates in the existing refresh and reconnect invalidation.
+
+Board persistence, Command interface, Archboard server routes, and Browser application now adopt TASK-549.01. The semantic check has no diagnostics. Their code checks have no warnings. The complete vault code check still reports 12 existing warnings on other boards. The frontend build retains its existing large-chunk warning.
+
+Evidence and handoff files are under /home/msc/.local/state/archboard-implementation/task-549. No push or PR occurred in this ticket checkout. The integration merger and PR review remain parent work.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented one canonical model read across the runtime, CLI, server, and browser. Root modules open their authored details without writing architecture or creating boards. Stable identities, strict diagnostics, exact input revisions, recovery, and legacy behavior pass focused tests. The affected architecture and consumer guidance match this delivery. Canonical writes, history, and recursive diagram navigation remain assigned to later TASK-549 tickets.
+<!-- SECTION:FINAL_SUMMARY:END -->

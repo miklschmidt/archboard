@@ -1,3 +1,4 @@
+import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
 // What makes this tab read a board again, and in what order (ADR 0023).
 //
 // Callers report what happened: a board changed, boards of a vault were

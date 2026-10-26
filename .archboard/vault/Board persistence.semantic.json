@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 101,
+	"version": 103,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T05:44:26.702Z",
+	"updatedAt": "2026-10-26T06:49:44.202Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -275,6 +275,23 @@
 				"flows": [
 					"b178TWBR"
 				]
+			}
+		},
+		{
+			"id": "5wOfHKS9",
+			"name": "Canonical reads",
+			"grammar": "architecture",
+			"summary": "The read interface, its canonical contracts, and the vault policy that constrains them.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"4P7YZdnj",
+					"cNaEpWjJ",
+					"ZLJy8ivl",
+					"AJGft3Pe"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -39835,7 +39852,7 @@
 		{
 			"id": "6IsBkqSN",
 			"name": "TASK-526 after TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Hp8NOOeR",
 			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
@@ -53548,7 +53565,7 @@
 		{
 			"id": "luWuDR18",
 			"name": "TASK-549.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "5jMVnOIW",
 			"summary": "Read authored canonical model files through the existing runtime",
 			"documents": [
@@ -54105,6 +54122,7 @@
 						"name": "Canonical model contracts",
 						"kind": "module",
 						"responsibility": "Defines versioned manifests, modules, qualified identities and read outcomes",
+						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/shared/schemas/model.ts"
@@ -57990,7 +58008,7 @@
 			}
 		}
 	],
-	"current": "6IsBkqSN",
+	"current": "luWuDR18",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -58089,6 +58107,18 @@
 			"reason": "Historical content corrections now reconcile inheriting drafts in the same checked write"
 		},
 		{
+			"variant": "JY01vdHt",
+			"from": "IcCJumNs",
+			"at": "2026-10-24T19:19:28.641Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "5jMVnOIW",
+			"from": "JY01vdHt",
+			"at": "2026-10-24T20:14:23.918Z",
+			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
+		},
+		{
 			"variant": "Hp8NOOeR",
 			"from": "IcCJumNs",
 			"at": "2026-10-25T05:14:19.582Z",
@@ -58099,6 +58129,12 @@
 			"from": "Hp8NOOeR",
 			"at": "2026-10-26T05:37:14.167Z",
 			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+		},
+		{
+			"variant": "luWuDR18",
+			"from": "5jMVnOIW",
+			"at": "2026-10-26T06:38:00.124Z",
+			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
 		}
 	],
 	"shelvings": [

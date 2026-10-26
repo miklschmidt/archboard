@@ -4,52 +4,45 @@ status: accepted
 
 # Canonical model reads keep legacy authority explicit
 
-TASK-549.01 introduces an explicit read path for authored canonical module models.
-It extends the existing `@archboard/board` runtime and shared Zod contracts.
-The CLI and server return that runtime result without assembling another graph.
+Overlapping boards can give one module several definitions.
+TASK-549 replaces that ownership with one canonical model per vault.
+Readers need the new model without losing legacy proposals, decisions, or history.
 
-Each vault contains one `model.json` manifest and recursively discovered `.module.json` files.
-Every document declares `schemaVersion: 1`.
-The manifest holds the model identity, current-state metadata, and optional retired identities.
+Automatic conversion during a read is rejected.
+Independent boards require deliberate identity and history choices before they can form one model.
+Legacy boards remain authoritative until explicit migration.
+A canonical read refuses a vault that still contains legacy boards.
+
+Agents and readers use one coherent model contract.
+A manifest identifies the model and its current state.
 Each module owns its definition and outgoing relationships.
-Incoming relationships come from the complete returned relationship list.
+Incoming relationships derive from those definitions.
+Containment forms a forest, while dependencies can cycle.
 
-A qualified identity uses `model[/original-board]#local-id`.
-Each segment follows the existing short ID authority.
-The optional original board identifies imported provenance, without owning architecture or navigation.
-The manifest model ID supplies the default namespace for fresh subjects.
-Names and filenames never establish identity.
-Name lookup succeeds only when exactly one module matches its current or former name.
-An exact qualified ID takes precedence over a matching name.
+Subject identities include their original namespace and short local identity.
+Imported board provenance establishes identity, without owning navigation or architecture.
+Names and file locations never establish identity.
+A current or former name resolves only when it identifies one subject.
 
-The reader validates the complete module forest and all local relationship targets.
-Dependencies can cycle.
-Modules and outgoing relationships follow authored `order`, with qualified IDs as deterministic tie breakers.
-The reader preserves groups, bindings, evidence anchors, descriptions, traffic, and document references through their existing schemas.
-The existing `.archboard/config.yaml` remains the policy authority inside the addressed vault.
-Canonical reads require valid policy instead of the legacy reader's fallback defaults.
+The reader preserves authored order, responsibilities, descriptions, groups, bindings, evidence, traffic, and document references.
+It refuses duplicate definitions, missing local targets, unsupported formats, and invalid policy.
+It never returns a partial model as a coherent reading.
 
-The revision lists normalized relative input paths and SHA-256 hashes of exact bytes.
-Its digest hashes the UTF-8 JSON encoding of that ordered list.
-A second discovery and capture must agree before the reader returns a coherent model.
-Changes during observation produce a structured refusal with a recovery action.
-This detects changing inputs without promising atomic visibility to arbitrary external file readers.
-Reads write no timestamps, counters, migrations, or derived files.
+A read token identifies the observed inputs.
+It covers recognized paths and exact bytes, including policy.
+Archboard refuses inputs that change while it reads them.
+This detection does not promise atomic visibility to arbitrary filesystem readers.
+Reads create no history, timestamps, counters, or derived authority.
 
-Legacy `.semantic.json` files remain authoritative until explicit migration.
-Their presence refuses a canonical read, even when a manifest also exists.
-Later authored collections also refuse the read until their supported reader exists.
-This avoids silently dropping required architecture.
-The delivery adds no canonical writer, archive, proposal patches, or migration.
+A pane lists root modules and opens their authored details.
+The browser keeps the selected identity as presentation state.
+One cached server reading supplies both the list and those details.
+Refresh, returning to the tab, and reconnecting obtain a fresh reading.
+Invalid inputs expose their diagnostic and recovery action.
+An empty model remains readable.
+A removed selection never silently selects another subject.
 
-For authored canonical models, this decision replaces the independent board ownership described in ADR 0015 and ADR 0023.
-It also replaces the fixed board-level navigation described in ADR 0029.
-Canonical containment describes architecture without fixed levels or drill-down boards.
+For canonical models, this replaces the board ownership in ADR 0015 and ADR 0023.
+It replaces the fixed board-level navigation in ADR 0029.
 Those earlier contracts still govern legacy vaults.
 Agents author meaning, browsers own presentation, and every request names its vault.
-
-The public runtime operation is `readArchitectureModel(vault, module?)` through `@archboard/board/store-read`.
-The shared result is `ArchitectureModelRead` through `@archboard/board/model`.
-The server exposes `GET /api/architecture/model?vault=<directory>&module=<selector>`.
-The CLI exposes `archboard model read [module] -C <directory>`.
-An unsuccessful CLI read returns structured JSON and exit status 2.
