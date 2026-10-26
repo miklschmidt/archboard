@@ -66,6 +66,13 @@ const ModelDiagnosticSchema = z
 	})
 	.strict();
 
+const ModelRevisionSchema = z
+	.object({
+		digest: z.string(),
+		files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
+	})
+	.strict();
+
 const ArchitectureModelSchema = z
 	.object({
 		success: z.literal(true),
@@ -75,12 +82,7 @@ const ArchitectureModelSchema = z
 		relationships: z.array(OwnedRelationshipSchema.extend({ from: QualifiedSubjectIdSchema })),
 		roots: z.array(QualifiedSubjectIdSchema),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
-		revision: z
-			.object({
-				digest: z.string(),
-				files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
-			})
-			.strict(),
+		revision: ModelRevisionSchema,
 	})
 	.strict();
 const ArchitectureModelFailureSchema = z
@@ -108,6 +110,9 @@ type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
 type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
 
 export {
+	QualifiedSubjectIdSchema,
+	ModelDiagnosticSchema,
+	ModelRevisionSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 	ArchitectureModelReadSchema,

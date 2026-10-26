@@ -1,9 +1,11 @@
 ---
 id: TASK-549.19
 title: Inventory legacy boards and record identity choices
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:26:00Z'
+updated_date: '2026-10-26T08:59:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +55,21 @@ None. This ticket can start immediately.
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Confirm the integration ancestor and read migration and identity contracts.
+2. Create TASK-549.19 proposals for Board persistence, Command interface, and Archboard server routes before architecture changes.
+3. Use red/green tests through the shared public runtime with real temporary files and Git. Inventory exact legacy inputs and record explicit identity choices without active writes.
+4. Add thin CLI/server transport, consumer guidance, domain/ADR updates, example, and evaluation coverage.
+5. Simplify, prove criteria with focused tests and applicable gates, adopt proposals, release claims, merge integration, and commit signed work.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Integration ancestor f1b91c9a9 confirmed. Proposals created before implementation: Board persistence@TASK-549.19, Command interface@TASK-549.19, Archboard server routes@TASK-549.19. Tests use the approved public runtime seam with real files and disposable Git.
+
+Implemented public readLegacyInventory and saveLegacyMappingPlan through shared schema-derived contracts. Red failures precede inventory, evidence, saved choices, conflict categories, and duplicate-namespace behavior. Six focused migration cases pass with real files and Git. Current-only conflict analysis preserves separate historical coverage. Thin CLI model inventory/model plan and GET/PUT architecture migration routes are implemented. lint, both TypeScript projects, and 27 focused runtime/CLI contract cases pass. No frontend changes or target writer.
+<!-- SECTION:NOTES:END -->

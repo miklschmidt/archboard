@@ -42,4 +42,5 @@ An unrelated documentation file does not change the revision.
 
 This delivery supports reading authored manifest and module files only.
 Use existing board commands for legacy vaults.
-Canonical authoring, history, proposals, and explicit migration arrive through later TASK-549 slices.
+For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
+Canonical composition, authoring, history, proposals, and cutover arrive through later TASK-549 slices.

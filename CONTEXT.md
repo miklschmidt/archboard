@@ -25,6 +25,14 @@ The namespace records provenance and owns no diagram or containment.
 A fingerprint of discovered architecture paths and their exact bytes.
 File moves and whitespace edits change this revision without replacing subject identities.
 
+Migration inventory:
+A read-only account of original legacy meaning and identity evidence.
+Each original state keeps its own coverage.
+
+Mapping plan:
+An owner's explicit identity mappings and conflict decisions for migration.
+The plan changes no active architecture.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording
