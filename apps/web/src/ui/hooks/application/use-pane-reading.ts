@@ -17,7 +17,10 @@
 // that the person changed it (ADR 0034), because only that pane marks it. They
 // share a view the person chooses as well (TASK-538.03), while the other pane
 // reads the board it was opened on. A restore reads each pane through the view
-// its address names, one pane at a time, and never across the link.
+// its address names, one pane at a time, and never across the link. A board
+// opened beside reads through the view of the pane it was opened from
+// (TASK-538.04): the pane is told before it is shown the board, and reads the
+// view once it has it.
 
 import { useCallback, useMemo, useState } from "react";
 
@@ -31,6 +34,14 @@ type PickedSubject = SemanticSubjectRef;
 
 /** A value held per pane, by pane id. */
 type ByPane<Value> = Readonly<Record<string, Value>>;
+
+/** The view a pane is to read a board through once it is shown it. */
+interface Arrival {
+	/** The board's name. */
+	readonly board: string;
+	/** The view's id, or null for the overview. */
+	readonly view: string | null;
+}
 
 /** What each pane is reading, and how that changes. */
 interface PaneReadings {
@@ -72,6 +83,13 @@ interface PaneReadings {
 	 * @param paneId The pane.
 	 */
 	readonly leave: (paneId: string) => void;
+	/**
+	 * A pane is about to be shown a board, and is to read it through a view once it is.
+	 * Its next adoption reads that view when the board has that name, and forgets it either way.
+	 * @param paneId The pane.
+	 * @param arrival The board's name and the view, or null when the board will not come.
+	 */
+	readonly arriveThrough: (paneId: string, arrival: Arrival | null) => void;
 	/**
 	 * A pane moved: clear its selection, retaining the view within one board.
 	 * @param paneId The pane.
@@ -121,6 +139,52 @@ function viewedAs(current: ByPane<string>, paneId: string, view: string | null):
 }
 
 /**
+ * Whether a pane that adopted a board stays on the board it left.
+ * @param boardKey The board key it adopted.
+ * @param previousKey The board key it left, or null on first adoption.
+ * @returns True when both name one board.
+ */
+function staysOnBoard(boardKey: string, previousKey: string | null): boolean {
+	const board = boardAddressOf(boardKey);
+	const previous = boardAddressOf(previousKey);
+	return board !== null && previous !== null && sameBoardName(board.board, previous.board);
+}
+
+/**
+ * Whether a pane adopted the board it was told it would be shown.
+ * @param arrival What it was told.
+ * @param boardKey The board key it adopted.
+ * @returns True when the board has the name it was told.
+ */
+function arrivesOn(arrival: Arrival, boardKey: string): boolean {
+	const board = boardAddressOf(boardKey);
+	return board !== null && sameBoardName(arrival.board, board.board);
+}
+
+/**
+ * One pane's view once it adopted a board: the view it was told to arrive with
+ * on that board, the view it read on the same board, else the overview.
+ * @param current What the panes hold now.
+ * @param paneId The pane.
+ * @param moved The board key it adopted, and the one it left.
+ * @param moved.boardKey The board key it adopted.
+ * @param moved.previousKey The board key it left, or null on first adoption.
+ * @param arrival The view it was told to arrive with, if any.
+ * @returns The record.
+ */
+function viewOnArrival(
+	current: ByPane<string>,
+	paneId: string,
+	moved: { readonly boardKey: string; readonly previousKey: string | null },
+	arrival: Arrival | undefined,
+): ByPane<string> {
+	if (arrival !== undefined && arrivesOn(arrival, moved.boardKey)) {
+		return viewedAs(current, paneId, arrival.view);
+	}
+	return staysOnBoard(moved.boardKey, moved.previousKey) ? current : cleared(current, paneId);
+}
+
+/**
  * The record with one pane's pick set, or let go.
  * @param current What the panes hold now.
  * @param paneId The pane.
@@ -143,6 +207,8 @@ function pickedAs(
 function usePaneReadings(links: PaneLinks): PaneReadings {
 	const [views, setViews] = useState<ByPane<string>>(NONE);
 	const [picked, setPicked] = useState<ByPane<PickedSubject>>(NONE);
+	// What a pane is told before it is shown a board: nothing draws it, so it is no render state.
+	const [arrivals] = useState(() => new Map<string, Arrival>());
 	const showView = useCallback((paneId: string, view: string | null): void => {
 		setViews((current) => viewedAs(current, paneId, view));
 	}, []);
@@ -168,16 +234,24 @@ function usePaneReadings(links: PaneLinks): PaneReadings {
 	const leave = useCallback((paneId: string): void => {
 		setPicked((current) => cleared(current, paneId));
 	}, []);
+	const arriveThrough = useCallback(
+		(paneId: string, arrival: Arrival | null): void => {
+			if (arrival === null) {
+				arrivals.delete(paneId);
+				return;
+			}
+			arrivals.set(paneId, arrival);
+		},
+		[arrivals],
+	);
 	const boardChanged = useCallback(
 		(paneId: string, boardKey: string, previousKey: string | null): void => {
-			const board = boardAddressOf(boardKey);
-			const previous = boardAddressOf(previousKey);
-			if (board === null || previous === null || !sameBoardName(board.board, previous.board)) {
-				setViews((current) => cleared(current, paneId));
-			}
+			const arrival = arrivals.get(paneId);
+			arrivals.delete(paneId);
+			setViews((current) => viewOnArrival(current, paneId, { boardKey, previousKey }, arrival));
 			setPicked((current) => cleared(current, paneId));
 		},
-		[],
+		[arrivals],
 	);
 	const viewOf = useCallback((paneId: string): string | null => views[paneId] ?? null, [views]);
 	const pickedIn = useCallback(
@@ -185,9 +259,9 @@ function usePaneReadings(links: PaneLinks): PaneReadings {
 		[picked],
 	);
 	return useMemo(
-		() => ({ viewOf, showView, chooseView, pickedIn, pick, leave, boardChanged }),
-		[viewOf, showView, chooseView, pickedIn, pick, leave, boardChanged],
+		() => ({ viewOf, showView, chooseView, pickedIn, pick, leave, arriveThrough, boardChanged }),
+		[viewOf, showView, chooseView, pickedIn, pick, leave, arriveThrough, boardChanged],
 	);
 }
 
-export { usePaneReadings, type ByPane, type PaneReadings, type PickedSubject };
+export { usePaneReadings, type Arrival, type ByPane, type PaneReadings, type PickedSubject };

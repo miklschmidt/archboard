@@ -121,6 +121,10 @@ const NO_READINGS: PaneReadings = Object.freeze({
 	leave: (): void => {
 		// A caller with no readings has no pick to let go of.
 	},
+	/** Nothing to arrive with. */
+	arriveThrough: (): void => {
+		// A caller with no readings has no view to arrive with.
+	},
 	/** Nothing to forget. */
 	boardChanged: (): void => {
 		// A caller with no readings has nothing held against a board.

@@ -178,6 +178,12 @@ interface SemanticBoardStageProps {
 	 */
 	onDive?: Dive | undefined;
 	/**
+	 * Show a variant of the board on screen in the pane beside this one, read
+	 * through this pane's view. Without it, the About page offers none.
+	 * @param key The board key.
+	 */
+	onOpenBeside?: ((key: string) => void) | undefined;
+	/**
 	 * Whether the person asked for reduced motion.
 	 *
 	 * Passed in rather than read here: the shell owns that preference through

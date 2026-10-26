@@ -4,7 +4,7 @@
 // tab is open, and the sidebar beside the reading.
 
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { JSX, ReactNode } from "react";
+import { useMemo, type JSX, type ReactNode } from "react";
 
 import type {
 	SemanticRender,
@@ -39,6 +39,7 @@ import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { PagePlace } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import type { AppliedAppearance } from "@archboard/renderer/picture";
+import { boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type {
 	ChosenQuestion,
@@ -293,6 +294,15 @@ function SemanticStageView(view: RenderView): JSX.Element {
  */
 function PaneAboutPage(props: { readonly view: RenderView }): JSX.Element {
 	const { view } = props;
+	const { onOpenBeside } = view;
+	const board = view.drill.board;
+	const onBeside = useMemo(
+		() =>
+			onOpenBeside === undefined
+				? undefined
+				: (variant: string): void => onOpenBeside(boardKeyFor(board, variant)),
+		[board, onOpenBeside],
+	);
 	return (
 		<AboutPage
 			board={view.render.data?.board ?? view.drill.board}
@@ -303,6 +313,7 @@ function PaneAboutPage(props: { readonly view: RenderView }): JSX.Element {
 			onPick={view.onPick}
 			onShow={view.onShow}
 			onVariant={view.level.onVariant}
+			onBeside={onBeside}
 			onPresent={view.onReadBeat}
 			narration={view.narration}
 			reducedMotion={view.reducedMotion ?? false}

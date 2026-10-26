@@ -421,7 +421,11 @@ to show is absent from the page and from the outline.
 4. The variants, on one timeline with branches, as the navigator draws them.
    Each variant has its mark, its name, where it stands and the reason in its
    record. A variant whose record gives no reason shows its summary. The one
-   on screen is marked, and choosing another reads it in the pane.
+   on screen is marked, and choosing another reads it in the pane. While the
+   pane reads the variant that the board's name opens, a draft or a shelved
+   variant ends its row with Open beside. It opens that variant in the pane
+   beside, through the view on screen. With one pane the second pane opens,
+   and with two the pane beside changes.
 
 Choosing a row or a chip picks its subject in the pane, and the page stays. The
 sidebar explains the subject, and the picture marks it when the diagram comes
@@ -506,7 +510,9 @@ filter that finds variants by name (dark).
   sets its name in semibold.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
   order, dims the boards a match sits under, marks the matched letters, and
-  counts what it found. Enter opens, Alt opens beside, Escape clears.
+  counts what it found. Enter opens, Alt opens beside, Escape clears. A board
+  opened beside the board that the active pane shows, such as a proposal
+  beside the current variant, is read through the view of that pane.
 - **The tree is one tab stop** with the keys of a tree: Right opens a closed
   row, then steps in. Left closes an open row, then steps out. If the person
   is not in the navigator and a pane moves, the navigator reveals the row it

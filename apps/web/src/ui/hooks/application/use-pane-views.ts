@@ -69,6 +69,12 @@ interface PaneViewSources {
 	 * @returns Whether the pane shows it now.
 	 */
 	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
+	/**
+	 * Show a board in the pane beside one pane, read through that pane's view.
+	 * @param key The board key, in the repository of the pane.
+	 * @param paneId The pane it is beside.
+	 */
+	readonly openBeside: (key: string, paneId: string) => void;
 }
 
 /** What a recording page gives its pane. */
@@ -125,6 +131,13 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function openBoardHere(key: string, repository?: string): Promise<boolean> {
 		return sources.openBoard(key, paneId, repository);
 	}
+	/**
+	 * Show a board in the pane beside this one.
+	 * @param key The board key.
+	 */
+	function openBesideHere(key: string): void {
+		sources.openBeside(key, paneId);
+	}
 	const { ask } = sources;
 	return createElement(ApplicationPane, {
 		key: paneId,
@@ -145,6 +158,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		reducedMotion: sources.reducedMotion,
 		openingVault: servedVault(),
 		onOpenBoard: openBoardHere,
+		onOpenBeside: openBesideHere,
 		ask: ask === null ? null : (text: string): void => ask(paneId, text),
 	});
 }
@@ -204,6 +218,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		ask,
 		recording,
 		openBoard,
+		openBeside,
 	} = sources;
 	const { list, callbacks, handles } = panes;
 	return useMemo(() => {
@@ -222,6 +237,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					ask,
 					recording,
 					openBoard,
+					openBeside,
 				},
 				entry.paneId,
 				index,
@@ -242,6 +258,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		ask,
 		recording,
 		openBoard,
+		openBeside,
 	]);
 }
 

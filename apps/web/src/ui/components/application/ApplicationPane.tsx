@@ -108,6 +108,11 @@ interface ApplicationPaneProps {
 	 * @returns Whether the pane shows it now.
 	 */
 	onOpenBoard: (key: string, repository?: string) => Promise<boolean>;
+	/**
+	 * Show a board in the pane beside this one, read through this pane's view.
+	 * @param key The board key, in this pane's repository.
+	 */
+	onOpenBeside?: (key: string) => void;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
 	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
@@ -429,6 +434,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 				search={search}
 				placeOf={placeOf}
 				onDive={dive}
+				onOpenBeside={props.onOpenBeside}
 			/>
 		</RepositoryPlacesContext>
 	);

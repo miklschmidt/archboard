@@ -135,12 +135,14 @@ interface ShellActions {
 	 */
 	selectBoard(key: string, paneId?: string, repository?: string): Promise<boolean>;
 	/**
-	 * Show a board beside the one being read: in the pane that is not active,
-	 * adding the second pane when there is only one.
+	 * Show a board beside the one being read: in the other pane, adding the
+	 * second pane when there is only one. A board of the name on screen in the
+	 * pane it is beside is read through that pane's view.
 	 * @param key The board key.
-	 * @param repository The repository the board is in.
+	 * @param repository The repository the board is in; that of the pane it is beside when none is named.
+	 * @param from The pane it is beside; the active one when none is named.
 	 */
-	openBeside(key: string, repository: string): void;
+	openBeside(key: string, repository?: string, from?: string): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).

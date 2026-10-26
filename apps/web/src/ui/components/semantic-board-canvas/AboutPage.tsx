@@ -72,6 +72,8 @@ interface AboutPageProps {
 	readonly onShow: (id: string) => void;
 	/** Read another variant in the pane, or the current one with null; undefined when the pane cannot. */
 	readonly onVariant: ((variant: string | null) => void) | undefined;
+	/** Open a variant, by its id, in the pane beside; undefined when the pane cannot. */
+	readonly onBeside?: ((variant: string) => void) | undefined;
 	/**
 	 * Present a walkthrough from one of its steps.
 	 * @param walkthrough The walkthrough's id.
@@ -434,7 +436,9 @@ function SectionBody(props: SectionBodyProps): JSX.Element {
 			<AboutVariants
 				timeline={props.timeline}
 				showing={reading.variant?.id ?? null}
+				opens={reading.opens}
 				onChoose={props.onVariant}
+				onBeside={props.onBeside}
 			/>
 		);
 	}

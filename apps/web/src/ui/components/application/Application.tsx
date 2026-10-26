@@ -377,7 +377,7 @@ function ApplicationBody(): JSX.Element {
 			}),
 		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings, activate],
 	);
-	const openBeside = useBesideOpening(panes, livePanes, composed);
+	const openBeside = useBesideOpening(panes, livePanes, composed, paneReadings);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
@@ -415,6 +415,10 @@ function ApplicationBody(): JSX.Element {
 		(paneId: string): void => actionsNow.read().selectPane(paneId),
 		[actionsNow],
 	);
+	const openBesidePane = useCallback(
+		(key: string, paneId: string): void => actionsNow.read().openBeside(key, undefined, paneId),
+		[actionsNow],
+	);
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay({
 		workbench,
@@ -433,6 +437,7 @@ function ApplicationBody(): JSX.Element {
 		reducedMotion,
 		onVariantChange,
 		openBoard: selectBoard,
+		openBeside: openBesidePane,
 		...recorded,
 	});
 	const view = useShellView({
