@@ -141,6 +141,12 @@ test("a foreign draft reference follows its explicit state and retains that draf
 		references: true,
 	});
 	if (!selected.success) throw new Error(JSON.stringify(selected));
+	expect(selected.resolvedReferences?.[0]).toMatchObject({
+		name: "Planned ledger",
+		modelName: "Ledger architecture",
+		stateName: "Foreign plan",
+		lifecycle: "draft",
+	});
 	expect(
 		selected.comparison?.subjects.find((subject) => subject.id === "Shop#Gateway"),
 	).toMatchObject({

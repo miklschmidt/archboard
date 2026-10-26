@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 180,
+	"version": 183,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T21:28:51.858Z",
+	"updatedAt": "2026-10-26T22:48:58.944Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -245,7 +245,10 @@
 					"n2ONtqdt",
 					"AIp6YN1P",
 					"IgYndyJd",
-					"hDWpDois"
+					"hDWpDois",
+					"0IYZeQvF",
+					"w46oCRoH",
+					"4LDuKQvq"
 				],
 				"edges": [],
 				"flows": []
@@ -75736,7 +75739,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "backlog/tasks/task-549.06 - Create-and-compare-compact-proposals.md"
+					"path": "backlog/tasks/task-549.15 - Follow-code-bindings-and-cross-model-references.md"
 				}
 			],
 			"content": {
@@ -76561,10 +76564,25 @@
 						"name": "Module navigation",
 						"kind": "module",
 						"responsibility": "Opens selected code and explicit foreign subjects with visible availability and exact history",
+						"description": "Uses the selected model, state, checkpoint, and revision to read code and reference availability through the existing query cache. The code action uses the existing opener and shell notices. Reference actions show authored destination names and require the returned address to match the selected link. Leaving the source cancels pending navigation. The pane router preserves the foreign repository, model, state, checkpoint, and subject. Relationships open their endpoint paths. Collections offer their member flows. Flow and step destinations open the complete containing flow. Missing source or architecture remains visible without ownership changes.",
 						"parent": "n2ONtqdt",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx"
+						}
+					},
+					{
+						"id": "w46oCRoH",
+						"order": 63000,
+						"name": "Model address",
+						"kind": "module",
+						"responsibility": "Preserves canonical reading intent and deliberate navigation in the shared router",
+						"description": "The existing useModelLocation hook owns scope, focus, filters, grammar, flow, state, comparison, checkpoint, and explicit foreign subject addresses. It updates the same router as legacy workspace restoration. Foreign navigation replaces source filters and preserves other panes. Reload and browser history restore the requested reading. Pointer selection and camera remain temporary.",
+						"parent": "HCghQa6I",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/architecture-model/use-model-location.ts",
+							"symbol": "useModelLocation"
 						}
 					}
 				],
@@ -77652,7 +77670,12 @@
 						"to": "0IYZeQvF",
 						"kind": "call",
 						"label": "selected subject actions",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/architecture-model/ModelSelectionDetails.tsx",
+							"symbol": "SelectedModuleDetails"
+						}
 					},
 					{
 						"id": "F6bCh9SD",
@@ -77670,15 +77693,29 @@
 						"to": "4LDuKQvq",
 						"kind": "call",
 						"label": "activate selected code",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx",
+							"symbol": "BoundCode"
+						}
 					},
 					{
 						"id": "lE0UE0im",
 						"order": 80000,
 						"from": "0IYZeQvF",
-						"to": "HCghQa6I",
+						"to": "w46oCRoH",
 						"kind": "call",
 						"label": "follow explicit foreign subject",
+						"emphasis": "normal"
+					},
+					{
+						"id": "DTvtRXMv",
+						"order": 81000,
+						"from": "n2ONtqdt",
+						"to": "w46oCRoH",
+						"kind": "call",
+						"label": "change the canonical reading address",
 						"emphasis": "normal"
 					}
 				],

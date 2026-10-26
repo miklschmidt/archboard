@@ -74,6 +74,7 @@ interface ReferenceRowProps {
  */
 function ReferenceRow(props: ReferenceRowProps): JSX.Element {
 	const { resolved, action } = props;
+	const name = resolved?.name ?? props.reference.subject;
 	const { follow: activate } = action;
 	const follow = useCallback((): void => {
 		if (resolved !== undefined) void activate(resolved);
@@ -85,16 +86,14 @@ function ReferenceRow(props: ReferenceRowProps): JSX.Element {
 			data-status={referenceStatus(props)}
 			className="text-body space-y-2"
 		>
-			<p>
-				{props.reference.model} · {props.reference.subject}
-			</p>
-			<p className="text-muted-foreground break-all">
-				{props.reference.repo} · {props.reference.state}
-			</p>
+			<p className="font-medium">{name}</p>
+			<ReferenceState {...props} />
+			<p className="text-muted-foreground break-all">{props.reference.repo}</p>
 			<Button
 				variant="outline"
 				size="sm"
 				data-slot="module-follow-reference"
+				aria-label={`Open ${name}`}
 				disabled={resolved?.status !== "available" || action.pending !== null}
 				onClick={follow}
 			>
@@ -103,6 +102,34 @@ function ReferenceRow(props: ReferenceRowProps): JSX.Element {
 			<ReferenceAvailability {...props} />
 		</li>
 	);
+}
+
+/**
+ * Destination labels come from the selected foreign reading, with authored IDs as fallbacks.
+ * @param props The authored reference and its resolved reading metadata.
+ * @param props.reference The authored destination identity.
+ * @param props.resolved The exact destination metadata, when available.
+ * @returns Its model, state, and saved or proposed status.
+ */
+function ReferenceState({ reference, resolved }: ReferenceRowProps): JSX.Element {
+	return (
+		<p className="text-muted-foreground">
+			{resolved?.modelName ?? reference.model} · {resolved?.stateName ?? reference.state}
+			{referenceLifecycle(resolved)}
+		</p>
+	);
+}
+
+/**
+ * A retained destination and a live proposal remain distinguishable before navigation.
+ * @param resolved The resolved destination metadata, when available.
+ * @returns Its brief lifecycle suffix.
+ */
+function referenceLifecycle(resolved: Resolution | undefined): string {
+	if (resolved === undefined) return "";
+	const saved = resolved.address?.checkpoint === undefined ? "" : " · saved";
+	const state = resolved.lifecycle;
+	return state === "draft" || state === "shelved" ? ` (${state})${saved}` : saved;
 }
 
 /**

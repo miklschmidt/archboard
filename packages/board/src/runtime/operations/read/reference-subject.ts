@@ -1,6 +1,38 @@
-import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
-import { everyStep } from "#shared/rules/flow-steps.ts";
+import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
+import { everyStep, stepWords } from "#shared/rules/flow-steps.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
+
+/**
+ * Read a destination's authored name from the addressed architecture.
+ * @param model The coherent foreign reading.
+ * @param subject The exact subject identity.
+ * @returns Its readable name, or its identity when no name exists.
+ */
+function referenceSubjectName(model: ArchitectureModel, subject: string): string {
+	const module = model.modules.find((candidate) => candidate.id === subject);
+	if (module !== undefined) return module.name;
+	const relationship = model.relationships.find((candidate) => candidate.id === subject);
+	if (relationship !== undefined) return relationship.label || subject;
+	return behaviorSubjectName(model, subject);
+}
+
+/**
+ * Flow collections and nested steps retain their own authored labels.
+ * @param model The coherent foreign reading.
+ * @param subject The exact behavior identity.
+ * @returns Its authored label, or its identity when absent.
+ */
+function behaviorSubjectName(model: ArchitectureModel, subject: string): string {
+	for (const collection of model.collections) {
+		if (`${model.manifest.id}#${collection.id}` === subject) return collection.name;
+		for (const flow of collection.flows) {
+			if (flow.id === subject) return flow.name;
+			const step = everyStep(flow.steps).find((candidate) => candidate.id === subject);
+			if (step !== undefined) return stepWords(step);
+		}
+	}
+	return subject;
+}
 
 /**
  * Select an explicit canonical subject without changing its kind or ownership.
@@ -40,4 +72,4 @@ function selectReferenceSubject(
 	]);
 }
 
-export { selectReferenceSubject };
+export { selectReferenceSubject, referenceSubjectName };
