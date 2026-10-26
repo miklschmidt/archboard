@@ -101,7 +101,7 @@ impl Relay {
         track: &Track<'_>,
         stations: &[StationId],
         xs: &[f64],
-        masks: &[Vec<bool>],
+        masks: &[&[bool]],
         traffic: &Map<usize, Traffic>,
     ) -> Option<Vec<f64>> {
         let (upper, lower) = (stations[0], *stations.last().expect("a station"));
@@ -122,7 +122,7 @@ impl Relay {
                 traffic[&(band - 1)].across.as_slice(),
                 traffic[&band].across.as_slice(),
             );
-            cross_at(&mut cost, &masks[index], crossed);
+            cross_at(&mut cost, masks[index], crossed);
         }
         let mut totals = from_reach(
             xs,

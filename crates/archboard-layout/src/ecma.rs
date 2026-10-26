@@ -70,6 +70,22 @@ pub(crate) fn unique(values: &[f64]) -> Vec<f64> {
         .collect()
 }
 
+/// `[...new Set(values)].sort((a, b) => a - b)`, without hashing: a stable
+/// sort keeps the first of equal values first, so keeping the first of each
+/// run keeps the value the set keeps. Only for numbers that are finite, which
+/// the comparator orders; others go the set's way.
+pub(crate) fn sorted_unique(values: &[f64]) -> Vec<f64> {
+    if !values.iter().all(|value| value.is_finite()) {
+        let mut set = unique(values);
+        sort_by(&mut set, |one, other| one - other);
+        return set;
+    }
+    let mut sorted = values.to_vec();
+    sort_by(&mut sorted, |one, other| one - other);
+    sorted.dedup_by(|later, first| later == first);
+    sorted
+}
+
 /// `Number(text)` for the decimals a layout spells: white space trimmed, the
 /// empty text zero, anything else not a number.
 pub(crate) fn number_of(text: &str) -> f64 {
@@ -118,5 +134,25 @@ mod tests {
     fn keeps_numbers_as_a_set_does() {
         assert_eq!(unique(&[0.0, -0.0, 1.0, 1.0, 2.0]), vec![0.0, 1.0, 2.0]);
         assert_eq!(number_key(-0.0), number_key(0.0));
+    }
+
+    #[test]
+    fn sorts_a_set_of_numbers_as_sorting_the_set_does() {
+        for values in [
+            vec![3.0, -0.0, 1.0, 0.0, 3.0, -2.5, 1.0],
+            vec![0.0, -0.0, 2.0],
+            vec![f64::INFINITY, 1.0, f64::NEG_INFINITY, 1.0],
+        ] {
+            let mut set = unique(&values);
+            sort_by(&mut set, |one, other| one - other);
+            let sorted = sorted_unique(&values);
+            assert_eq!(
+                sorted
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                set.iter().map(|value| value.to_bits()).collect::<Vec<_>>()
+            );
+        }
     }
 }
