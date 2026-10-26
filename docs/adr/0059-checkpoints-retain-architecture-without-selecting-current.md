@@ -48,4 +48,63 @@ The browser never creates checkpoints.
 
 This decision extends ADR 0060 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
-Publication, private archives, proposal changes, migration, and recoverable current-file installation remain separate delivery slices.
+Publication, private archives, proposal changes, and migration remain separate delivery slices.
+
+## Canonical description installation
+
+TASK-549.03 adds one claimed description edit through the shared runtime.
+The operation names the model, current state, complete read token, subject, writer, doing line, claim, and operation identity.
+The complete token covers discovered paths, exact bytes, and policy.
+Only the affected module file changes.
+
+The runtime uses one short cross-process installation lease per vault.
+Standing subject claims remain separate from that lease.
+A reader can take a claim back, which refuses its former writer's next intent.
+Reserved installation locks produce no legacy board activity.
+
+Preparation validates the complete candidate and creates its checkpoint under configured Git signing.
+A signing refusal changes no current input.
+A private journal records the checkout, branch, HEAD, exact images, fingerprints, checkpoint, and progress.
+The journal and a temporary transaction ref exist before installation starts.
+Git worktrees keep their journals and claims in their separate administrative directories.
+Those private records never enter authored architecture or portable checkpoints.
+
+Each file replacement uses the existing durable atomic writer.
+The runtime rechecks the complete input set and checkout context before each file operation.
+It then proves the final fingerprints and records installed progress.
+Archive synchronization signing also precedes installation.
+A conditional append retains the prepared checkpoint or synchronization in archive ancestry.
+If another writer advances the archive afterward, recovery prepares a new join before any further file operations.
+A completed-operation ref retains the signed request and its deterministic result.
+The runtime records completion before cleanup and news.
+The same request reads that result without requiring a current read or installation lease.
+If its completed journal remains, a retry takes the lease to finish cleanup.
+If another process holds that lease, the retry returns the durable success with pending cleanup.
+Another request with the same operation identity is refused.
+Operation identities belong to the addressed checkout and vault.
+
+An interrupted journal with before or after images resumes the logged installation.
+Foreign values and changed branch context block replay while preserving all bytes.
+The caller receives recovery instructions and restores a logged image or original branch before retrying.
+The refusal identifies the operation, retained checkpoint, progress, fingerprints, and original branch and HEAD.
+It exposes no private directory or logged input bytes.
+An edit refusal states `applied: false` before installation or `applied: "unknown"` when application remains uncertain.
+The caller resolves an uncertain result through recovery or the original request.
+A completed installation stays applied when cleanup fails.
+Its current architecture remains readable, and a retry finishes cleanup without another checkpoint.
+
+Current reads refuse a pending installation instead of assembling mixed inputs.
+The synchronous reader leaves replay to the explicit recovery operation.
+Exact checkpoint reads remain independent of current installation and current files.
+External writers must remain idle during installation because filesystem replacement has no atomic compare-and-replace guarantee.
+Stable valid external content becomes observed current architecture without an adoption event.
+Invalid or changing content refuses a coherent read and blocks new edits.
+
+A vault-scoped event stream starts each connection with a fresh reading and claim list.
+Later events identify durable completion, stable external content, claim changes, or an unavailable current reading.
+One browser connection per vault and query cache supplies current updates.
+A fresh snapshot replaces current content only after older requests are canceled.
+The query cache keeps the last coherent current reading during a failure.
+The browser marks that reading stale and shows the refusal.
+Historical failures never substitute current content.
+Human take-back ends the displayed subject claim without changing architecture.
