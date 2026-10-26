@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import {
+	ArchitectureArchiveInitializationSchema,
 	ArchitectureModuleEditSchema,
 	ArchitectureModuleEditResultSchema,
 	ArchitectureRecoveryResultSchema,
@@ -224,3 +225,16 @@ export {
 	publishArchitectureHistoryOnServer,
 	fetchArchitectureHistoryOnServer,
 };
+
+/**
+ * Explicitly initialize local history for an untracked vault.
+ * @returns The shared setup outcome and local archive directory.
+ */
+function initializeArchitectureArchiveOnServer() {
+	return architectureResult(
+		ArchitectureArchiveInitializationSchema,
+		"/api/architecture/archive/init",
+		jsonPost({}),
+	);
+}
+export { initializeArchitectureArchiveOnServer };

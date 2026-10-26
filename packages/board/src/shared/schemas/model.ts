@@ -219,6 +219,15 @@ const ArchitectureCheckpointListSchema = z.discriminatedUnion("success", [
 		.strict(),
 	ArchitectureModelFailureSchema,
 ]);
+const ArchitectureArchiveInitializationSchema = z.discriminatedUnion("success", [
+	z
+		.object({
+			success: z.literal(true),
+			archive: z.string().min(1),
+		})
+		.strict(),
+	ArchitectureModelFailureSchema,
+]);
 const ArchitecturePublicationSchema = z.discriminatedUnion("success", [
 	z
 		.object({
@@ -241,6 +250,7 @@ type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
 type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
 
 export {
+	ArchitectureArchiveInitializationSchema,
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
 	ArchitecturePublicationSchema,

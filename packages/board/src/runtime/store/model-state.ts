@@ -1,3 +1,4 @@
+import { privateArchivePath } from "#runtime/store/model-archive-location.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { isDeepStrictEqual } from "node:util";
 import { createHash } from "node:crypto";
@@ -123,6 +124,8 @@ function gitStateDirectory(root: string, marker: string): string {
  * @returns The checkout-private state path.
  */
 function modelStatePath(vault: string, file: string): string {
+	const fallback = join(stateDir(), MODEL_STATE, operationKey(resolve(vault)), file);
+	if (existsSync(privateArchivePath(vault))) return fallback;
 	let root = resolve(vault);
 	for (;;) {
 		const marker = join(root, ".git");
@@ -131,7 +134,7 @@ function modelStatePath(vault: string, file: string): string {
 			return join(directory, MODEL_STATE, operationKey(resolve(vault)), file);
 		}
 		const parent = dirname(root);
-		if (parent === root) return join(stateDir(), MODEL_STATE, operationKey(resolve(vault)), file);
+		if (parent === root) return fallback;
 		root = parent;
 	}
 }

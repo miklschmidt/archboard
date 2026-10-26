@@ -443,6 +443,17 @@ their exhaustive state and failure matrices.
   `packages/*` and `apps/*`.
 - Cleanup always removes each fixture project, including after an assertion failure.
 
+## Untracked canonical history
+
+`packages/board/tests/runtime/operations/history/private-archive.test.ts` owns private archive setup through the public architecture interface.
+It uses real files, signed Git checkpoints, and a disposable local remote.
+It proves source preservation, local-only publication, portable metadata, exact reopening, damaged-storage refusal, and independent vault ownership.
+`packages/board/tests/runtime/operations/model-edit/private-recovery.test.ts` owns an interrupted private edit through that same interface.
+It reuses the existing crash process and proves foreign-content preservation, source-context refusal, recovery, retry, and retention after collection.
+The existing source-backed owners keep the shared archive and transaction behavior matrices.
+`tests/system/semantic-boards/private-archive.test.ts` proves CLI and HTTP setup agreement and persistence after a server restart.
+The slice adds no browser behavior.
+
 ## Wire and lock checks
 
 - The command-contract owners under `apps/cli/tests/cli/` and

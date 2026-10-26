@@ -169,3 +169,53 @@ Stable external edits refresh the reading automatically.
 Invalid input or disconnected updates leave the last coherent reading visible with a stale notice.
 Repairing the files or reconnecting restores a fresh reading without changing the selected subject.
 Exact checkpoint readings remain independent of current updates.
+
+## Private local history
+
+Run this example from this Archboard checkout.
+The temporary vault stays outside a source repository.
+The setup result supplies the private bare archive directory.
+Configure that archive with your Git author identity and required signer before retention.
+
+```bash
+private_fixture_dir=$(mktemp -d)
+cp -R examples/canonical-model/.archboard "$private_fixture_dir/.archboard"
+archboard model archive-init -C "$private_fixture_dir" > "$private_fixture_dir/archive.json"
+private_archive_dir=$(bun -e '
+const result = await Bun.file(process.argv[1]).json();
+if (!result.success) process.exit(1);
+console.log(result.archive);
+' "$private_fixture_dir/archive.json")
+git -C "$private_archive_dir" config user.name "Architecture Author"
+git -C "$private_archive_dir" config user.email "author@example.test"
+archboard model read -C "$private_fixture_dir" > "$private_fixture_dir/reading.json"
+private_revision=$(bun -e '
+const result = await Bun.file(process.argv[1]).json();
+if (!result.success) process.exit(1);
+console.log(result.revision.digest);
+' "$private_fixture_dir/reading.json")
+archboard model retain -C "$private_fixture_dir" \
+  --operation-id private-first --writer fixture-agent \
+  --expect-revision "$private_revision" --doing "retaining local architecture" \
+  > "$private_fixture_dir/retained.json"
+private_checkpoint=$(bun -e '
+const result = await Bun.file(process.argv[1]).json();
+if (!result.success) process.exit(1);
+console.log(result.checkpoint.id);
+' "$private_fixture_dir/retained.json")
+archboard model read -C "$private_fixture_dir" --checkpoint "$private_checkpoint"
+archboard model checkpoints -C "$private_fixture_dir"
+```
+
+No command creates a source `.git` directory.
+Retention reports `saved-locally` and an empty source-association list.
+The existing claim, edit, and recover workflow also uses this private archive.
+Repeated initialization preserves its directory and history.
+The owner must back up both the authored vault and its private archive.
+Preserve the original vault location while an interrupted edit needs recovery.
+
+For publication, add the intended named remote in `private_archive_dir` first.
+Then configure that remote and an independent archive ref through `model publication-configure`.
+Only an explicit `model publish` sends history.
+The runtime publication test uses a temporary local bare remote and proves that published objects contain no generated machine paths.
+Portable export remains a separate delivery slice.
