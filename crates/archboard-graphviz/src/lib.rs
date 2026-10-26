@@ -8,10 +8,10 @@
 //! (`src/wrapper.js` and `backend/viz.c` of viz-js), and its default
 //! attributes are not DOT's: each is set on every object of the graph that has
 //! no value for it yet, and a graph's defaults reach only the graph and its
-//! direct subgraphs. `cgraph` replays those calls, and `dot` writes DOT
-//! that states every object's final value, so the parser's own rules for
-//! defaults spread no value further than viz-js did. Graphviz then lays out
-//! the graph viz-js built.
+//! direct subgraphs. `cgraph` replays those calls, and `dot` states every
+//! object's final value, to graphviz-pure's parser actions or as DOT text, so
+//! the parser's own rules for defaults spread no value further than viz-js
+//! did. Graphviz then lays out the graph viz-js built.
 //!
 //! An answer depends on its graph alone: graphviz-pure keeps no state from
 //! one call to the next that changes what it answers (ADR 0058).

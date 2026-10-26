@@ -47,9 +47,13 @@ pub fn render_dot(dot_source: &str, engine: &str, format: &str) -> Result<String
 /// which is the graph [`render_dot`] reads from the DOT text of those statements, so the
 /// text is neither written nor read.
 pub fn render_made(graph: Graph, engine: &str, format: &str) -> Result<String> {
-    decoded::render_made(graph, &charset::from_text(engine), &charset::from_text(format))
-        .map(text)
-        .map_err(error_text)
+    decoded::render_made(
+        graph,
+        &charset::from_text(engine),
+        &charset::from_text(format),
+    )
+    .map(text)
+    .map_err(error_text)
 }
 
 /// Renders every graph in `dot_source`, applying `globals` (`-G`/`-N`/`-E`) before each graph body.

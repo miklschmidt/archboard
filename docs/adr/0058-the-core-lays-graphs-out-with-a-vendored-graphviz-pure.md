@@ -97,9 +97,11 @@ and 10,649 ms in all, against 10,273 ms and 10,062 ms before, and the slowest
 first render, Agent workbench, took 1,703 ms and 1,674 ms against 1,754 ms
 and 1,702 ms. Drawing the whole corpus on one job took 22.4 s against 24.4 s.
 graphviz-pure is a port written for exactness, not speed. TASK-548.03 makes
-it faster to the same bytes,
-and TASK-548.02 shares answers between workers, which is exact only now that
-an answer depends on its graph alone.
+it faster to the same bytes
+([graphviz-pure-speed.md](../design/graphviz-pure-speed.md)), and hands it
+the statements of a graph without DOT text unless a name or value holds a
+backslash or a raw-byte character. TASK-548.02 shares answers between
+workers, which is exact only now that an answer depends on its graph alone.
 
 graphviz-pure is under the Eclipse Public License 2.0, a weak copyleft
 licence. The vendored files keep it, with their notices, and
@@ -107,4 +109,5 @@ licence. The vendored files keep it, with their notices, and
 with them under the same licence.
 
 A new graphviz-pure release is taken by replacing the vendored files and
-applying the two changes again, with the corpus as the oracle.
+applying the changes `crates/vendor/README.md` lists again, with the corpus
+as the oracle.
