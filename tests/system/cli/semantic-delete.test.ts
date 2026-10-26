@@ -108,7 +108,26 @@ test("a refused delete exits with the status its refusal declares and removes no
 			kind: "service",
 			drillDown: { board: "Ledger", variant: { kind: "current" } },
 		},
+		{
+			name: "Journal",
+			kind: "service",
+			drillDown: { board: "Ledger", variant: { kind: "current" } },
+		},
 	]);
+	const treasury = await made("Treasury", [
+		{
+			name: "Accounts",
+			kind: "service",
+			drillDown: { board: "Ledger", variant: { kind: "current" } },
+		},
+	]);
+	const openers = [payments, treasury].flatMap((board) =>
+		board.variants.flatMap((variant) =>
+			variant.content.nodes
+				.filter((node) => node.drillDown !== undefined)
+				.map((node) => ({ board: board.name, variant: variant.id, node: node.id })),
+		),
+	);
 	const doing = ["--doing", "deleting the ledger board"];
 
 	const statuses = [
@@ -123,11 +142,26 @@ test("a refused delete exits with the status its refusal declares and removes no
 
 	const opened = cli(deleting("Ledger", "--expect-version", "1", ...doing));
 	expect(opened.status).toBe(5);
-	// The refusal names the board whose node opens it, and the node.
-	const opener = payments.variants[0]?.content.nodes.find((node) => node.name === "Books");
-	if (opener === undefined) throw new Error("Payments was made without its Books node");
-	expect(opened.stderr).toContain('"Payments"');
-	expect(opened.stderr).toContain(opener.id);
+	// Every opener reaches stderr through the store's message, including several
+	// nodes on one board and nodes on different boards.
+	for (const opener of openers) {
+		expect(opened.stderr).toContain(opener.board);
+		expect(opened.stderr).toContain(opener.variant);
+		expect(opened.stderr).toContain(opener.node);
+	}
+	// Removing the CLI's refusal parser must keep the machine-readable list on
+	// the server's response for other callers.
+	const refused = await createRequester({ ...server, vault })(
+		"/api/semantic-boards/discard?expectVersion=1",
+		{ method: "POST", body: { board: "Ledger" } },
+	);
+	expect(refused.status).toBe(422);
+	expect(refused.body).toMatchObject({
+		success: false,
+		code: "BOARD_OPENED_BY",
+		version: 1,
+		openedBy: openers,
+	});
 	expect(holds("Ledger")).toBeTrue();
 }, 120_000);
 
