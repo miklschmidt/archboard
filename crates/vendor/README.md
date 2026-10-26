@@ -41,7 +41,9 @@ archboard changed three things:
      iterations once one leaves what an earlier one left, and plays the rest out
      on the recorded crossings (`src/dotgen/mincross_repeat.rs`).
    - `src/common/routespl.rs`: `limit_boxes` finds each Bézier sample with
-     plain arithmetic first, and the fused one only where it decides a box.
+     plain arithmetic first, and the fused one only where it decides a box;
+     `routesplines_` writes a spline's ends for its `-v` messages only
+     under `-v`.
    - `graphviz-pure-geom/src/pathplan/triang.rs`: `ccw` reads the sign of its
      fused multiply-add from the plain one where that sign is certain.
    - `graphviz-pure-core/src/diag.rs`: `fmt_g` prints a number in fixed
