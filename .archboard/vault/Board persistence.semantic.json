@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 176,
+	"version": 177,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T23:04:19.614Z",
+	"updatedAt": "2026-10-26T23:30:32.895Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -173567,20 +173567,6 @@
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
-							"symbol": "captureReferencePins"
-						}
-					},
-					{
-						"id": "e0O9TV5d",
-						"order": 208000,
-						"from": "Bd4GPG6d",
-						"to": "QDE2xctM",
-						"kind": "call",
-						"label": "captureReferencePins",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/history/retain.ts",
 							"symbol": "captureReferencePins"
 						}
 					},

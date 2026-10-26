@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 186,
+	"version": 187,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T23:03:02.781Z",
+	"updatedAt": "2026-10-26T23:30:32.057Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -81364,20 +81364,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
 							"symbol": "prepareContentHere"
-						}
-					},
-					{
-						"id": "NK919srh",
-						"order": 77000,
-						"from": "n2ONtqdt",
-						"to": "0IYZeQvF",
-						"kind": "call",
-						"label": "selected subject actions",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/components/architecture-model/ModelSelectionDetails.tsx",
-							"symbol": "SelectedModuleDetails"
 						}
 					},
 					{

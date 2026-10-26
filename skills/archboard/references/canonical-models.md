@@ -304,7 +304,7 @@ archboard model edit --input edit.json -C <directory> \
 
 The result names the before and after revisions, affected subjects, and retained checkpoint.
 `applied: true` identifies durable completion.
-`reconciliation: false` means that this narrow edit requires no proposal reconciliation.
+`reconciliation: false` means that the affected family has no unresolved decisions.
 A `cleanup: pending` result remains applied.
 Repeat the exact request to finish its remaining cleanup.
 If a response is lost, repeat the same request and operation identity.
@@ -761,6 +761,10 @@ Target the changed predecessor and submit this intent through `model edit`:
 Reconciliation changes following proposals without another predecessor edit.
 It preserves the existing current designation.
 A saved checkpoint remains an exact reading of its retained content and standing.
+The browser identifies unresolved and blocked proposals in the state picker and selected reading.
+Open the decision disclosure to read both values and the repair instructions.
+A blocked reading links to its live ancestor. A saved reading keeps its original standing until the reader leaves it.
+Agents settle decisions through the shared writer. The browser reflects the completed family result without authoring a settlement.
 
 To settle a proposal, read its issues and claim its state and affected family subjects.
 Use its stable identity as `target.state`.
