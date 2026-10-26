@@ -3048,3 +3048,21 @@ Workspace packages improved on every measure: crossings 46 to 42, route
 length 83,854 to 65,397, page area 12.37 to 9.91 megapixels.
 `wide-boards.test.ts` holds both boards whole, and a Rust test in each file
 holds each rule.
+
+## 57. The core runs Graphviz itself (2026-10-26, TASK-548.01)
+
+The core lays out every graph a solve ranks with graphviz-pure 0.2.1, a
+pure-Rust port of Graphviz 16.1.0, vendored under `crates/vendor` with its
+`qsort` changed to sort ties as musl's does
+([ADR 0058](../adr/0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
+`crates/archboard-graphviz` replays the cgraph calls viz-js made of the
+layout's graph object and answers `dot`'s `json0`, y inverted. Before, the
+host's viz-js answered through `GraphvizHost`.
+
+None of the 2,344 current drawings changed. Natively, all 222 graphs captured
+from the corpus get viz-js's geometry; with upstream's Apple `qsort`, 98 did
+not. Drawn on one job, the corpus took 22.4 s in place of 24.4 s. On the same
+machine, alternating with the commit before, two runs of `timing.ts 7` took
+10,729 ms and 10,649 ms of first renders in all, against 10,273 ms and
+10,062 ms, and the slowest first render, Agent workbench, took 1,703 ms and
+1,674 ms against 1,754 ms and 1,702 ms.

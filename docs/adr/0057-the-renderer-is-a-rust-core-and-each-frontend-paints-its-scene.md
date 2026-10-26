@@ -124,6 +124,10 @@ equality with the route of libavoid.
 
 ### Graphviz stays with the host for now
 
+[ADR 0058](0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)
+replaces this section: the core lays graphs out with a vendored
+graphviz-pure, and no worker puts Graphviz back before a solve.
+
 Graphviz places cards in Track and Blocks. During the port it is a capability
 that the host gives the core. The WASM core calls `@viz-js/viz` through an
 import, and a native build links Graphviz. Whether the core replaces Graphviz
