@@ -18,7 +18,7 @@ import {
 	type SubjectStanding,
 } from "@archboard/renderer/picture";
 import { cn } from "@archboard/ui-kit/components";
-import type { AppliedAppearance } from "@archboard/board/render-reply";
+import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 
 /** How high every line sample is drawn, and where its line runs. */

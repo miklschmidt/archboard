@@ -25,7 +25,10 @@ import {
 	SidebarRow,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import type { AppliedAppearance, PictureKey } from "@archboard/board/render-reply";
+import type {
+	AppliedAppearance,
+	PictureKey,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { LINE_MARKS, type LineMark } from "@archboard/renderer/picture";
 
 /** How wide every sample of the legend is, so its labels start on one line. */

@@ -8,7 +8,10 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type {
+	PictureKey,
+	SemanticRender,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	SemanticBoardPanel,
 	type SemanticBoardPanelProps,
@@ -21,7 +24,6 @@ import {
 	SidebarPanel,
 } from "#ui/components/semantic-board-canvas/SemanticSidebar.tsx";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
-import type { PictureKey } from "@archboard/board/render-reply";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";

@@ -7,6 +7,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX, ReactNode } from "react";
 
 import type {
+	PictureKey,
 	SemanticRender,
 	SemanticWaiting,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -38,7 +39,6 @@ import type { PresentationPosition } from "#ui/hooks/semantic-board-canvas/use-p
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { PagePlace } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
-import type { PictureKey } from "@archboard/board/render-reply";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice, GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";

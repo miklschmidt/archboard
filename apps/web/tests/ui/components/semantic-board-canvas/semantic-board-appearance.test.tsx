@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import type { AppliedAppearance } from "@archboard/board/render-reply";
+import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { HEAD_LENGTH } from "@archboard/renderer/picture";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import { pressKey } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";

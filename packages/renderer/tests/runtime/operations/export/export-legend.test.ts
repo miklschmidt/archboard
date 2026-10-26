@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
-import type { AppliedAppearance, DrawnBoard } from "@archboard/board/render-reply";
+import type { DrawnBoard } from "@archboard/board/render-reply";
 import { exported } from "#tests/runtime/support/export-board.ts";
 
 // A render answers each subject's appearance and the picture's key beside the
@@ -10,6 +10,9 @@ import { exported } from "#tests/runtime/support/export-board.ts";
 // of its subject groups finds. An exported picture can carry the legend of what
 // it draws, under it or beside it, or be the legend alone (TASK-468), and the
 // legend lists what the page's key lists for the same picture.
+
+/** How the picture drew one subject. */
+type AppliedAppearance = DrawnBoard["appearances"][number];
 
 /** One entry of an exported legend: what it keys, its words and its count. */
 interface Listed {

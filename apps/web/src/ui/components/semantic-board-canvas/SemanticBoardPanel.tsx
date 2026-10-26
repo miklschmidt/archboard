@@ -23,7 +23,10 @@
 
 import type { JSX, ReactNode } from "react";
 
-import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type {
+	PictureKey,
+	SemanticRender,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { SemanticChanges } from "#ui/components/semantic-board-canvas/SemanticChanges.tsx";
 import { SemanticEngineBar } from "#ui/components/semantic-board-canvas/SemanticEngineBar.tsx";
 import { SemanticGroupList } from "#ui/components/semantic-board-canvas/SemanticGroupList.tsx";
@@ -35,7 +38,6 @@ import {
 import { SemanticViewBar } from "#ui/components/semantic-board-canvas/SemanticViewBar.tsx";
 import { SemanticWalkthroughBar } from "#ui/components/semantic-board-canvas/SemanticWalkthroughBar.tsx";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
-import type { PictureKey } from "@archboard/board/render-reply";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
