@@ -31,6 +31,7 @@ const LOADING_DIAGRAM = (
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
+	subject: string | null;
 	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
 	model: Model;
@@ -66,7 +67,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		() => projectModel(model, scope, focus, filters, comparison.reference),
 		[model, scope, focus, filters, comparison.reference],
 	);
-	const selection = useModelSelection(projection);
+	const selection = useModelSelection(projection, props.subject);
 	const { clear } = selection;
 	const behavioralIds = useMemo(
 		() => new Set(flowSubjects(projection.depicted.flows).map((subject) => subject.id)),
@@ -136,6 +137,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				)}
 			</ModelSelectionBar>
 			<ModelReadingContent
+				paneId={props.paneId}
 				vault={props.vault}
 				onCodeTargetNotice={props.onCodeTargetNotice}
 				model={model}
@@ -153,7 +155,10 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	);
 }
 
-interface ScopedModelReadingProps extends Pick<ModelReadingProps, "vault" | "onCodeTargetNotice"> {
+interface ScopedModelReadingProps extends Pick<
+	ModelReadingProps,
+	"vault" | "paneId" | "onCodeTargetNotice"
+> {
 	model: Model;
 	selection: ModelSelection;
 	onReveal: () => void;
