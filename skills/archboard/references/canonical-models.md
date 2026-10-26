@@ -413,3 +413,91 @@ A connection to the module itself never names an invented child.
 
 A missing scope or checkpoint stays unavailable until the reader changes the address or restores the missing history.
 Navigation never copies modules, creates a board, or changes architecture files.
+
+## Author independent flows
+
+A collection groups flows for authoring.
+Its filename gives no module ownership.
+Each flow and step keeps a qualified subject identity.
+The collection has a separate local identity.
+
+Read the complete model with `archboard model read`.
+Claim the model ID, participants, and every affected existing flow, step, and holder.
+Use the existing `model edit` request with `changes` for one complete intent.
+The Archboard source checkout contains `examples/canonical-model/independent-flow.changes.json`.
+That complete example uses the modules in the canonical model example.
+Supply the target, complete expectedRevision, operationId, writer, and claim from your current reading.
+Supply the doing line through `--doing`.
+
+`add-collection` takes a name.
+`add-flow` takes a collection identity or unique name and a flow with ordered participants and nested steps.
+Archboard allocates every new identity.
+Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their existing semantic fields.
+Returns remain messages and never create reverse structural relationships.
+Use qualified module IDs or unique current or former module names for participant and message references.
+A flow can reference a module that the same batch adds by its unique name.
+Only qualified identities persist.
+
+`edit-flow` takes its qualified identity or unique current or former name.
+Its `set` assigns name, summary, or participants.
+Its `clear:["summary"]` removes the summary.
+Its optional `collection` transfers the continuing flow between collections.
+`edit-collection` changes a collection name without changing its identity or file.
+`remove-flow` and `remove-collection` remove their remaining subjects.
+A flow transferred out of a removed collection survives in its destination.
+
+`edit-step` takes a continuing step identity and uses `set` and `clear` for its fields.
+Use `add-step` with a new nested step and its placement.
+Use `remove-step` to remove a subtree.
+Use `move-step` to preserve a subtree and every identity across holders or flows.
+A placement names `holder` and an optional `before` sibling identity.
+A flow or loop is a holder.
+A decision holder also requires the exact `alternative` label.
+Without `before`, the step appends to the destination.
+
+```json
+{
+	"type": "move-step",
+	"subject": "Shop#Response",
+	"placement": {
+		"holder": "Shop#Decision",
+		"alternative": "accepted",
+		"before": "Shop#Next"
+	}
+}
+```
+
+To rename alternatives, assign the complete label array through `edit-step.set.alternatives`.
+Move every direct child of a renamed or removed alternative in the same batch.
+Missing holders, orphaned children, conflicting moves, containment cycles, and incompatible relative order refuse the complete operation.
+Archboard never promotes an orphaned step to a root.
+The destination flow must explicitly include every message endpoint in its participants.
+
+Module removal repairs participant lists and removes messages with removed endpoints in the same operation.
+It also removes the empty loops, decisions, and flows that those repairs leave behind.
+Explicit message repairs can preserve a message by assigning surviving endpoints.
+Claim both former and new participants, affected flows, steps, and holders.
+The refusal names any missing claim scope.
+Retired flow and step IDs stay reserved in the manifest.
+The existing signed transaction, exact retry, recovery, and publication contracts apply to these files.
+Unrelated files keep their exact bytes.
+
+## Render a selected flow
+
+Use `model read --flow <id>` to resolve an explicit flow selection.
+Use the qualified flow identity from that reading when names are ambiguous.
+A missing selection never invents an exchange from structural relationships.
+
+```bash
+archboard model render --flow 'Shop#Checkout' --grammar sequence --out request.svg
+archboard model render --flow 'Shop#Checkout' --grammar flowchart --out logic.svg
+archboard model render --flow 'Shop#Checkout' --grammar sequence --checkpoint <exact-checkpoint-id> --out retained.svg
+```
+
+Each command writes a self-contained SVG and returns its reading revision, dimensions, and placed identities.
+The sequence draws ordered participants and messages.
+The flowchart draws control steps and their branches.
+Both readings use the existing renderer and include the complete selected flow.
+Structural scope and relationship filters cannot remove its participants or messages.
+These commands do not require a board or named view.
+The browser grammar controls belong to a later delivery.

@@ -1126,6 +1126,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/browser/canonical-model-navigation.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical independent collections, flow/step identity, nested placements, alternative renames, affected claims, reference repair and explicit behavioral rendering",
+					"expectedUse": "Author cross-module behavior through one durable batch. Preserve continuing identities and explicit order. Render only an explicitly selected flow. Never derive reverse relationships from returns.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/flows.test.ts; structure-recovery.test.ts; tests/system/semantic-boards/model-flows.test.ts; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

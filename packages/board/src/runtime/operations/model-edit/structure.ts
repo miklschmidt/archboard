@@ -1,3 +1,6 @@
+import { assignFields } from "#runtime/operations/model-edit/fields.ts";
+import { everyStep } from "#shared/rules/flow-steps.ts";
+import { applyFlowChanges } from "#runtime/operations/model-edit/flows.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
@@ -21,10 +24,18 @@ function openStructure(model: ArchitectureModel, paths: Iterable<string>) {
 	return {
 		before: model,
 		modules: structuredClone(model.modules),
+
 		lookup: [...model.modules],
 		used: new Set([
 			...model.modules.map((module) => module.id),
 			...model.relationships.map((edge) => edge.id),
+			...model.collections.flatMap((collection) => [
+				`${model.manifest.id}#${collection.id}`,
+				...collection.flows.flatMap((flow) => [
+					flow.id,
+					...everyStep(flow.steps).map((step) => step.id),
+				]),
+			]),
 			...(model.manifest.retiredIds ?? []),
 		]),
 		paths: new Set(paths),
@@ -93,12 +104,15 @@ function freshIdentity(state: Structure): string {
 		 */
 		has(id) {
 			return (
-				state.used.has(`${state.before.manifest.id}#${id}`) || state.paths.has(`${id}.module.json`)
+				state.used.has(`${state.before.manifest.id}#${id}`) ||
+				state.paths.has(`${id}.module.json`) ||
+				state.paths.has(`${id}.flows.json`)
 			);
 		},
 	});
 	const id = `${state.before.manifest.id}#${local}`;
 	state.used.add(id);
+	state.structural = true;
 	return id;
 }
 
@@ -116,27 +130,6 @@ function requireSingleEdit(state: Structure, id: string): void {
 			[id],
 		);
 	state.edited.add(id);
-}
-
-/**
- * Assign schema-checked fields and explicitly clear optional fields.
- * @param value The continuing subject.
- * @param set The explicitly assigned values.
- * @param clear The optional fields to remove.
- */
-function assignFields<T extends object>(
-	value: T,
-	set: object | undefined,
-	clear: ReadonlyArray<keyof T> | undefined,
-): void {
-	const overlap = clear?.find((field) => set !== undefined && Object.hasOwn(set, field));
-	if (overlap !== undefined)
-		throw new ArchiveError(
-			"MODEL_INVALID",
-			`Field ${String(overlap)} is both assigned and cleared.`,
-		);
-	Object.assign(value, set);
-	for (const field of clear ?? []) delete value[field];
 }
 
 /**
@@ -350,6 +343,23 @@ function candidateManifest(state: Structure) {
 }
 
 /**
+ * Include collection metadata and retired subjects in the shared structure scope.
+ * @param changes The complete batch.
+ * @param retired The resulting identity reservations.
+ * @param model The coherent starting model.
+ * @returns Whether these flow changes require the structure scope.
+ */
+function changesStructure(
+	changes: Change[],
+	retired: Set<string>,
+	model: ArchitectureModel,
+): boolean {
+	return (
+		changes.some((change) => change.type.endsWith("collection")) ||
+		retired.size !== (model.manifest.retiredIds?.length ?? 0)
+	);
+}
+/**
  * Produce one complete graph change behind the existing write interface.
  * @param model The coherent starting model.
  * @param request The original intent.
@@ -363,18 +373,35 @@ function applyStructure(
 ) {
 	const state = openStructure(model, paths);
 	const changes = statements(request);
-	for (const change of changes) if (change.type === "add-module") addModule(state, change);
+	for (const change of changes.filter((statement) => statement.type === "add-module"))
+		addModule(state, change);
 	planRemovals(state, changes);
 	for (const change of changes) applyChange(state, change);
 	finishRemovals(state);
+	const collections = applyFlowChanges(
+		model,
+		changes,
+		() => freshIdentity(state),
+		state.subjects,
+		state.retired,
+		state.removedModules,
+		state.modules,
+	);
+	state.structural ||= changesStructure(changes, state.retired, model);
 	includeContainment(model.modules, state.modules, state.subjects);
 	const known = new Set([
 		...model.modules.map((module) => module.id),
 		...model.relationships.map((edge) => edge.id),
+		...model.collections.flatMap((collection) =>
+			collection.flows.flatMap((flow) => [
+				flow.id,
+				...everyStep(flow.steps).map((step) => step.id),
+			]),
+		),
 	]);
 	const scopes = [...state.subjects].filter((id) => known.has(id));
 	if (state.structural) scopes.push(model.manifest.id);
 	const manifest = candidateManifest(state);
-	return { modules: state.modules, manifest, subjects: [...state.subjects], scopes };
+	return { modules: state.modules, collections, manifest, subjects: [...state.subjects], scopes };
 }
 export { applyStructure };
