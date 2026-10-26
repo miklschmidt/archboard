@@ -73,7 +73,7 @@ function targetKey(target: FitTarget): string {
 	if (target.kind === "whole") {
 		return "whole";
 	}
-	const { x, y, width, height } = target.rect;
+	const { x, y, width, height } = target.kind === "focus" ? target.rect : target.subject;
 	return `${x},${y},${width},${height}`;
 }
 
