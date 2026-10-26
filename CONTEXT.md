@@ -25,6 +25,19 @@ The namespace records provenance and owns no diagram or containment.
 A fingerprint of discovered architecture paths and their exact bytes.
 File moves and whitespace edits change this revision without replacing subject identities.
 
+Subject claim:
+An agent's exclusive scope of named architecture subjects.
+The claim identifies its writer, purpose, and start time.
+A reader can take it back without undoing completed work.
+
+Model operation:
+One stated architectural intent with a stable retry identity.
+The operation names its target state and complete observed input revision.
+
+Recovery boundary:
+The point where Archboard refuses an incomplete installation.
+A reader receives either one coherent revision or an explicit recovery block.
+
 **Checkpoint**:
 An immutable retained architectural reading with its exact inputs and source associations.
 It remains independent of the current architecture in any checkout.

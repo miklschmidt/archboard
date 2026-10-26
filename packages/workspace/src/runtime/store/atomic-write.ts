@@ -149,14 +149,16 @@ function keepCommitOrThrow(
  * @param data The bytes.
  * @param options Whether to refuse a file that is there already (`exclusive`, with EEXIST)
  * instead of replacing it.
+ * @param options.createParents Create and persist parent directories before the write.
  * @param options.exclusive True to keep an existing destination and fail.
  * @throws {unknown} Whatever the underlying write threw.
  */
 function writeFileAtomic(
 	file: string,
 	data: string | Buffer,
-	options: { readonly exclusive?: boolean } = {},
+	options: { readonly exclusive?: boolean; readonly createParents?: boolean } = {},
 ): void {
+	if (options.createParents === true) mkdirDurably(path.dirname(file));
 	if (options.exclusive === true) {
 		writeFileAtomicExclusive(file, data);
 		return;
@@ -274,6 +276,22 @@ function fsyncDir(dir: string): void {
 			} catch {
 				/* ignore */
 			}
+		}
+	}
+}
+
+/**
+ * Create private state directories and persist their directory entries.
+ * @param directory The complete directory path.
+ */
+function mkdirDurably(directory: string): void {
+	const first = fs.mkdirSync(directory, { recursive: true });
+	if (first === undefined) return;
+	for (let at = path.resolve(directory); ; at = path.dirname(at)) {
+		fsyncDir(at);
+		if (at === path.resolve(first)) {
+			fsyncDir(path.dirname(at));
+			return;
 		}
 	}
 }
