@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 107,
+	"version": 109,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T07:49:07.937Z",
+	"updatedAt": "2026-10-26T08:23:09.446Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -62885,6 +62885,10 @@
 					"repo": "github.com/miklschmidt/archboard",
 					"commit": "f1b91c9a98537a29238ac1575f45d2fcfd5d3259",
 					"path": "docs/design/canonical-module-tickets.md"
+				},
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0059-checkpoints-retain-architecture-without-selecting-current.md"
 				}
 			],
 			"content": {
@@ -63288,7 +63292,7 @@
 						"order": 30000,
 						"name": "Reads and server health",
 						"kind": "module",
-						"responsibility": "Answers the calls that change nothing: a board's family and drawn view, the page, and the health of the server. Holds every call to the vault it names."
+						"responsibility": "Routes reads, server health and checkpoint retention without changing current architecture"
 					},
 					{
 						"id": "KovkhwZi",
@@ -63335,10 +63339,10 @@
 					{
 						"id": "nn1ec9Tw",
 						"order": 35000,
-						"name": "Model read route",
+						"name": "Canonical model routes",
 						"kind": "module",
-						"responsibility": "Exposes a coherent model read in the explicitly named vault",
-						"description": "Exposes shared current and exact checkpoint reads plus local retain and list operations in an explicitly named vault. The runtime owns history and evidence interpretation.",
+						"responsibility": "Reads current or exact architecture and retains or lists local checkpoints",
+						"description": "Every request names its vault. The shared runtime owns retention, dependency and evidence semantics. Browser checkpoint selection remains part of this draft until the parent supplies its visible workflow.",
 						"parent": "ETrslazw",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

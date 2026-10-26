@@ -1,4 +1,4 @@
-# Read a canonical model
+# Read and retain a canonical model
 
 Use this path when the addressed vault contains an authored `model.json` manifest.
 Existing `.semantic.json` boards retain authority until explicit migration.
@@ -40,6 +40,79 @@ A file rename changes the revision and preserves identity.
 A whitespace edit changes the revision and preserves meaning.
 An unrelated documentation file does not change the revision.
 
-This delivery supports reading authored manifest and module files only.
+## Retain an exact local reading
+
+A checkpoint preserves one reading and its exact architecture inputs.
+Use a canonical vault inside a source Git repository.
+Run `model read` and keep its `revision.digest` before retention.
+
+```bash
+archboard model retain -C <directory> \
+  --operation-id capture-1 --writer <agent-name> \
+  --expect-revision <revision.digest> \
+  --doing "retaining the reviewed architecture"
+archboard model checkpoints -C <directory>
+archboard model read -C <directory> --checkpoint <checkpoint.id>
+archboard model read 'Shop#Gateway' -C <directory> --checkpoint <checkpoint.id>
+```
+
+The writer, doing line, operation identity, and expected revision are required.
+Use a new operation identity for a new retention intent.
+If a response is lost, repeat the same identity and request.
+The retry returns the same checkpoint, even after current files change.
+A reused identity with different input returns `OPERATION_REUSED`.
+
+If the reading requires an earlier baseline, add `--dependency <checkpoint.id>`.
+Repeat the flag for several required checkpoints.
+Dependencies use complete immutable checkpoint identities.
+Retention refuses a missing dependency before creating its new checkpoint.
+Actual Git parents preserve dependencies, including after garbage collection.
+
+Retention honors configured Git identity and signing.
+It preserves the index, HEAD, checkout, and current architecture files.
+If signing fails, repair the configured identity, key, or signer before retrying.
+Keep signing enabled when the repository requires it.
+The operation retains only recognized architecture inputs and checkpoint metadata.
+It creates no source-code snapshot and publishes nothing.
+
+The result carries `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, and `sources`.
+Its `publication` remains `saved-locally`.
+A normal source-code push does not publish this archive.
+Linked worktrees share the archive through Git's common repository directory.
+Their current architecture remains separate.
+
+## Reopen and recover
+
+Exact reads require the complete `checkpoint.id`, rather than a branch name or abbreviated hash.
+Module selectors resolve against that retained reading alone.
+Its modules, relationships, manifest, policy, and revision come from retained objects.
+Changed, missing, or malformed current files never supply historical content.
+
+`model checkpoints` lists saved checkpoint metadata without reading current architecture.
+Synchronization records are omitted.
+Archive traversal order establishes neither current architecture nor proposal ancestry.
+Select the intended checkpoint explicitly.
+
+An exact read adds `checkpoint` and `sourceEvidence` to the common model result.
+Each source evidence entry carries its repository, commit, uncommitted status, and current availability.
+`available` means that the committed source revision remains local.
+`uncommitted` means that the recorded base exists but exact uncommitted code needs separate recovery.
+`unavailable` means that the recorded source revision is absent or no source commit existed.
+Evidence recovery instructions accompany the latter two states.
+Architecture remains readable when source evidence is unavailable.
+
+`ARCHITECTURE_UNAVAILABLE` means that architecture inputs or a required baseline are missing.
+Restore the archive from its owner or backup.
+If the owner publishes history, explicitly fetch the named `archboard-history` branch with its required ancestry.
+This delivery performs no automatic fetch or publication.
+Never substitute current content for missing history.
+
+`ARCHIVE_IN_USE` means that a worktree has `archboard-history` checked out.
+Switch that worktree to another branch before retrying retention.
+`ARCHIVE_UNREADABLE` identifies a damaged archive or an unrelated branch using the reserved name.
+Preserve that branch and resolve its ownership before retrying.
+An unsuccessful operation keeps its structured JSON and exits with status 2.
+
+This delivery supports manifest and module inputs plus local checkpoints.
 Use existing board commands for legacy vaults.
-Canonical authoring, history, proposals, and explicit migration arrive through later TASK-549 slices.
+Canonical authoring, proposal changes, publication, private archives, and explicit migration arrive through later TASK-549 slices.

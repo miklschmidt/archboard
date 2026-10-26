@@ -34,6 +34,9 @@ Archboard refuses inputs that change while it reads them.
 This detection does not promise atomic visibility to arbitrary filesystem readers.
 Reads create no history, timestamps, counters, or derived authority.
 
+[ADR 0059](0059-checkpoints-retain-architecture-without-selecting-current.md) extends this contract with immutable local checkpoints.
+Their historical inputs remain independent of current files.
+
 A pane lists root modules and opens their authored details.
 The browser keeps the selected identity as presentation state.
 One cached server reading supplies both the list and those details.

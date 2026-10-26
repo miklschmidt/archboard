@@ -1070,6 +1070,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/read/model-read.test.ts and tests/system/semantic-boards/model-read.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical checkpoint retention: exact local inputs, dependency ancestry, configured signing, concurrent worktrees and evidence recovery",
+					"expectedUse": "retain the observed revision with a stable operation identity; reopen a complete checkpoint without current-file fallback; distinguish missing architecture from unavailable source evidence",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/history/checkpoints.test.ts and tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

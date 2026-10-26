@@ -1,3 +1,4 @@
+import { modelRevision } from "#runtime/store/model-files.ts";
 import { relative } from "node:path";
 import { z } from "zod";
 import { git, GitCommandError, repoRootOf, repoIdentityAt } from "@archboard/workspace/checkouts";
@@ -409,7 +410,90 @@ async function sourceEvidence(
 	);
 }
 
+/**
+ * Read a regular checkpoint input from one tree entry.
+ * @param context The caller's checkout.
+ * @param entry One NUL-delimited Git tree entry.
+ * @returns Its relative path and exact authored bytes.
+ */
+async function checkpointInput(context: ArchiveContext, entry: string): Promise<[string, Buffer]> {
+	const tab = entry.indexOf("\t");
+	const [mode, kind, object] = entry.slice(0, tab).split(" ");
+	if (mode !== "100644" || kind !== "blob" || object === undefined)
+		throw new ArchiveError("CHECKPOINT_INVALID", "A checkpoint input is not a regular blob.");
+	return [
+		entry.slice(tab + 1).slice("inputs/".length),
+		Buffer.from(await readBlob(context, object)),
+	];
+}
+
+/**
+ * Capture checkpoint inputs from Git objects without reading the current vault.
+ * @param context The caller's checkout.
+ * @param checkpoint The immutable checkpoint identity.
+ * @returns Exact bytes, input fingerprints and empty discovery diagnostics.
+ */
+async function readCheckpointInputs(context: ArchiveContext, checkpoint: string) {
+	const listing = await git(context.root, ["ls-tree", "-r", "-z", checkpoint, "--", "inputs"], {
+		trimOutput: false,
+		maxOutputBytes: Infinity,
+	});
+	const entries = (listing ?? "").split("\0").filter(Boolean);
+	const inputs = new Map(
+		await settledValues(entries.map((entry) => checkpointInput(context, entry))),
+	);
+	return { inputs, revision: modelRevision(inputs), diagnostics: [] };
+}
+
+/**
+ * Keep one durable checkpoint per operation identity, including racing retries.
+ * @param context The caller's checkout.
+ * @param operationRef The retention ref for this operation.
+ * @param checkpoint The prepared immutable checkpoint.
+ * @returns The operation's single retained checkpoint identity.
+ */
+async function retainOperation(
+	context: ArchiveContext,
+	operationRef: string,
+	checkpoint: string,
+): Promise<string> {
+	try {
+		await git(context.root, [
+			"update-ref",
+			operationRef,
+			checkpoint,
+			"0".repeat(checkpoint.length),
+		]);
+		return checkpoint;
+	} catch (error) {
+		if (!(error instanceof GitCommandError) || error.failure !== "exit") throw error;
+		const winner = await archiveTip(context, operationRef);
+		if (winner === undefined) throw error;
+		return winner;
+	}
+}
+
+/**
+ * Read archive records in traversal order without assigning architectural meaning.
+ * @param context The caller's checkout.
+ * @returns The retained record identities and metadata.
+ */
+async function archiveRecords(context: ArchiveContext) {
+	const tip = await archiveTip(context);
+	if (tip === undefined) return [];
+	const history = await git(context.root, ["rev-list", tip], { maxOutputBytes: Infinity });
+	return settledValues(
+		(history ?? "")
+			.split("\n")
+			.filter(Boolean)
+			.map(async (id) => ({ id, record: await readRecord(context, id) })),
+	);
+}
+
 export {
+	readCheckpointInputs,
+	archiveRecords,
+	retainOperation,
 	ARCHIVE_REF,
 	ArchiveError,
 	CheckpointRecordSchema,

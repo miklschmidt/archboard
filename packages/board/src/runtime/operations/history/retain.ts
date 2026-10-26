@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { git, GitCommandError } from "@archboard/workspace/checkouts";
 import {
 	ArchitectureCheckpointRequestSchema,
 	type ArchitectureCheckpointRequest,
@@ -13,6 +12,7 @@ import {
 	CheckpointRecordSchema,
 	archiveContext,
 	archiveTip,
+	retainOperation,
 	assertArchiveWritable,
 	appendCheckpoint,
 	archiveCommit,
@@ -68,34 +68,6 @@ async function prepareCheckpoint(
 		[...new Set([...(tip === undefined ? [] : [tip]), ...request.dependencies])],
 		"archboard: retain architecture checkpoint",
 	);
-}
-
-/**
- * Keep one durable checkpoint per operation identity, including racing retries.
- * @param context The caller's checkout.
- * @param operationRef The retention ref for this operation.
- * @param checkpoint The prepared immutable checkpoint.
- * @returns The operation's single retained checkpoint identity.
- */
-async function retainOperation(
-	context: ArchiveContext,
-	operationRef: string,
-	checkpoint: string,
-): Promise<string> {
-	try {
-		await git(context.root, [
-			"update-ref",
-			operationRef,
-			checkpoint,
-			"0".repeat(checkpoint.length),
-		]);
-		return checkpoint;
-	} catch (error) {
-		if (!(error instanceof GitCommandError) || error.failure !== "exit") throw error;
-		const winner = await archiveTip(context, operationRef);
-		if (winner === undefined) throw error;
-		return winner;
-	}
 }
 
 /**
