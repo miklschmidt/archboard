@@ -140,10 +140,10 @@ async function editArchitectureModule(
 	const request = ArchitectureModuleEditSchema.parse(input);
 	const result = await historyResult("MODEL_WRITE_FAILED", async () => {
 		const completed = await recordedEdit(vault, request);
-		const pending = completed === undefined ? undefined : activeJournal(vault);
-		if (completed !== undefined && pending?.request.operationId !== request.operationId)
-			return completed;
-		return serializedEdit(vault, request, pending?.phase === "completed" ? completed : undefined);
+		if (completed === undefined) return serializedEdit(vault, request);
+		const pending = activeJournal(vault);
+		if (pending?.request.operationId !== request.operationId) return completed;
+		return serializedEdit(vault, request, pending.phase === "completed" ? completed : undefined);
 	});
 	if (result.success) {
 		notifyArchitecture(vault, result);
