@@ -3,7 +3,7 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
-[ADR 0057](../adr/0057-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
+[ADR 0058](../adr/0058-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
 The app migration history is in `docs/design/apps-migration.md`.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
@@ -103,7 +103,7 @@ split by behavior.
   `@archboard/<name>/<subpath>` for a subpath that `exports` names. TypeScript, Bun and Vite resolve
   it through the workspace link, so no path alias exists for a package. A file that `exports` does
   not name is private.
-- **An interface is the few operations its callers need** (ADR 0057). Design it from the jobs that
+- **An interface is the few operations its callers need** (ADR 0058). Design it from the jobs that
   callers do. Measure it by everything a caller must learn: names, types, invariants, ordering,
   error modes and configuration. A public name needs a caller outside the package, but a caller is
   not enough. When callers import pieces of a package and connect them, move that assembly into the
@@ -274,7 +274,7 @@ The thirteen files of `shared/api/` are the whole browser-safe interface. Each c
 names that code outside the package imports. A name sits in the file of its meaning, not of the
 private file that defines it. A type that only restates an exported schema, an operation's result
 or a field of another exported shape is not exported: the caller derives it, with `z.infer` of the
-schema, `ReturnType` of the operation or an indexed access (ADR 0057):
+schema, `ReturnType` of the operation or an indexed access (ADR 0058):
 
 - `./document` is the board aggregate, the variant address and lifecycle, how a variant is found,
   the draft references and `parseSemanticBoard`.

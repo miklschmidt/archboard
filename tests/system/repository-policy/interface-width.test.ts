@@ -10,7 +10,7 @@ import { ownersIn, resolveSource, type Owner } from "./support/package-sources.t
 const here = path.dirname(fileURLToPath(import.meta.url));
 const packagesRoot = path.resolve(here, "../../../packages");
 
-// The width of an interface is the number of names its public entries export (ADR 0057). Each
+// The width of an interface is the number of names its public entries export (ADR 0058). Each
 // package has a recorded ceiling, and a package that exports more names fails. Lower a ceiling
 // when a package gets narrower. Never raise one: design a deeper operation instead.
 const CEILINGS = JSON.parse(
@@ -78,7 +78,7 @@ describe("interface width", () => {
 			return width > ceiling
 				? [
 						`${owner.id} exports ${width} names, over its ceiling of ${ceiling}. ` +
-							"Design a deeper operation that callers need instead of raising the ceiling (ADR 0057).",
+							"Design a deeper operation that callers need instead of raising the ceiling (ADR 0058).",
 					]
 				: [];
 		});

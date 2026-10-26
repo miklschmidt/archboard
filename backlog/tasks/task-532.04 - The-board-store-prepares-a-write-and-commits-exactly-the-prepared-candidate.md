@@ -5,13 +5,13 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:40:00Z'
-updated_date: '2026-10-25T05:44:00Z'
+updated_date: '2026-10-26T05:55:00Z'
 labels: []
 dependencies: []
 references:
   - docs/adr/0016-one-writer-at-a-time-per-board.md
   - docs/adr/0023-semantic-boards-own-meaning-renderers-own-presentation.md
-  - docs/adr/0057-an-interface-is-the-few-operations-its-callers-need.md
+  - docs/adr/0058-an-interface-is-the-few-operations-its-callers-need.md
 parent_task_id: TASK-532
 ordinal: 955000
 ---

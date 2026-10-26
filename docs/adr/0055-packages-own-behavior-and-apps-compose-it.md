@@ -4,7 +4,7 @@ status: accepted
 
 # Packages own behavior and apps compose it
 
-Amended by [ADR 0057](0057-an-interface-is-the-few-operations-its-callers-need.md)
+Amended by [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md)
 (2026-10-25). An outside caller is necessary for a public name, but it is not sufficient.
 An interface is the few operations its callers need, and a repository check holds each package
 to a recorded ceiling on the names it exports. Everything else stands.

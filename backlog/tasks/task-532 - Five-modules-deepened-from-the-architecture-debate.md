@@ -5,12 +5,12 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-25T02:39:00Z'
-updated_date: '2026-10-25T06:00:00Z'
+updated_date: '2026-10-26T05:55:00Z'
 labels: []
 dependencies: []
 references:
   - docs/adr/0055-packages-own-behavior-and-apps-compose-it.md
-  - docs/adr/0057-an-interface-is-the-few-operations-its-callers-need.md
+  - docs/adr/0058-an-interface-is-the-few-operations-its-callers-need.md
 priority: high
 ordinal: 951000
 ---
