@@ -1140,6 +1140,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/model-edit/flows.test.ts; structure-recovery.test.ts; tests/system/semantic-boards/model-flows.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical browser diagram modes and explicit flow identity",
+					"expectedUse": "Readers explicitly choose a relevant flow, read all participants and steps without structural filtering, and return to the preceding architecture reading. Hidden steps retain their exact authored flow.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

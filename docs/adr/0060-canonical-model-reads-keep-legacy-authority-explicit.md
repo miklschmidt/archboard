@@ -204,3 +204,23 @@ CLI and HTTP adapters preserve the complete behavioral reading without copying a
 The CLI installs an output artifact only for a successful command outcome.
 A refused render preserves any existing output file and returns structured diagnostics.
 Browser grammar switching remains TASK-549.12.
+
+## Behavioral browser readings
+
+Each pane stores its diagram grammar and explicit flow identity in the existing address.
+Architecture scope, focus, and filters remain present while a behavioral diagram is open.
+Returning to architecture restores those values.
+A grammar change does not derive execution order from structural relationships.
+
+The flow selector offers authored exchanges that involve the current subjects or their contained modules.
+A reader always chooses a flow explicitly, including when only one matches.
+A selected flow remains explicit when its relevance changes or its definition becomes unavailable.
+The reader never substitutes a different flow.
+Sequence and flowchart use the complete selected flow, including participants outside the prior architecture scope.
+Structural relationship filters never remove messages or control steps.
+
+Selection keeps stable identities across diagram modes.
+A hidden flow step remains a known subject with an explicit action to open its authored flow.
+Several selected flows remain separate choices, because one behavioral diagram explains one flow.
+Structural Focus applies to modules and relationships.
+The existing renderer, camera, bounds, and keyboard controls remain the implementation owners.

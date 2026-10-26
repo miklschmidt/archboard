@@ -1,3 +1,4 @@
+import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
@@ -125,9 +126,7 @@ function SelectedSubjects(props: {
 	title: string;
 	slot: "model-selected-subjects" | "model-focused-subjects";
 }): JSX.Element {
-	const subjects = [...props.model.modules, ...props.model.relationships].filter((subject) =>
-		props.selected.has(subject.id),
-	);
+	const subjects = modelSubjects(props.model).filter((subject) => props.selected.has(subject.id));
 	return (
 		<section className="space-y-4">
 			<h3 className="text-title font-semibold">{props.title}</h3>
@@ -139,7 +138,7 @@ function SelectedSubjects(props: {
 			<ul data-slot={props.slot} className="text-body space-y-3">
 				{subjects.map((subject) => (
 					<li key={subject.id} data-subject-id={subject.id}>
-						{"name" in subject ? subject.name : (subject.label ?? subject.id)}
+						{subjectName(subject)}
 					</li>
 				))}
 			</ul>

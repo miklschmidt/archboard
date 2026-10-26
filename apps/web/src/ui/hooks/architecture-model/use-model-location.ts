@@ -122,7 +122,14 @@ function useModelLocation(paneId: string) {
 		},
 		[flow, navigate],
 	);
+	const openFlow = useCallback(
+		(id: string): void => {
+			navigate({ flow: id, grammar: grammar === "flowchart" ? "flowchart" : "sequence" });
+		},
+		[grammar, navigate],
+	);
 	return {
+		openFlow,
 		grammar,
 		flow,
 		selectGrammar,
