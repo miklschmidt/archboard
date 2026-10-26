@@ -22,7 +22,7 @@ import {
 	type ModelJournal,
 } from "#runtime/store/model-state.ts";
 import { activeJournal, installJournal } from "#runtime/store/model-install.ts";
-import { notifyArchitecture } from "#runtime/store/model-news.ts";
+import { notifyArchitecture, type Completion } from "#runtime/store/model-news.ts";
 
 /**
  * Preserve the exact request for completed and interrupted operation retries.
@@ -108,6 +108,26 @@ async function applyEdit(vault: string, request: ArchitectureModuleEdit, guard: 
 	return resumeEdit(vault, prepared, guard);
 }
 /**
+ * Finish cleanup under the lease while preserving a known durable result when another cleaner holds it.
+ * @param vault The explicitly addressed vault.
+ * @param request The original operation intent.
+ * @param completed The result whose durable completion journal permits cleanup only.
+ * @returns The installed result or its remaining cleanup status.
+ */
+async function serializedEdit(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	completed?: Completion,
+) {
+	try {
+		return await withModelLock(vault, (guard) => applyEdit(vault, request, guard));
+	} catch (error) {
+		if (completed !== undefined && error instanceof ArchiveError && error.code === "MODEL_BUSY")
+			return { ...completed, cleanup: "pending" as const };
+		throw error;
+	}
+}
+/**
  * Apply one explicit description intent, or return its immutable recorded outcome.
  * @param vault The explicitly addressed vault.
  * @param input The complete caller input.
@@ -120,12 +140,10 @@ async function editArchitectureModule(
 	const request = ArchitectureModuleEditSchema.parse(input);
 	const result = await historyResult("MODEL_WRITE_FAILED", async () => {
 		const completed = await recordedEdit(vault, request);
-		if (
-			completed !== undefined &&
-			activeJournal(vault)?.request.operationId !== request.operationId
-		)
+		const pending = completed === undefined ? undefined : activeJournal(vault);
+		if (completed !== undefined && pending?.request.operationId !== request.operationId)
 			return completed;
-		return withModelLock(vault, (guard) => applyEdit(vault, request, guard));
+		return serializedEdit(vault, request, pending?.phase === "completed" ? completed : undefined);
 	});
 	if (result.success) {
 		notifyArchitecture(vault, result);

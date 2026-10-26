@@ -77,7 +77,9 @@ A conditional append retains the prepared checkpoint or synchronization in archi
 If another writer advances the archive afterward, recovery prepares a new join before any further file operations.
 A completed-operation ref retains the signed request and its deterministic result.
 The runtime records completion before cleanup and news.
-The same request returns that result without requiring a current read or installation lease.
+The same request reads that result without requiring a current read or installation lease.
+If its completed journal remains, a retry takes the lease to finish cleanup.
+If another process holds that lease, the retry returns the durable success with pending cleanup.
 Another request with the same operation identity is refused.
 Operation identities belong to the addressed checkout and vault.
 
