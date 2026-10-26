@@ -1,9 +1,11 @@
 ---
 id: TASK-549.12
 title: Switch between architecture, sequence, and flowchart readings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T18:51:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,24 @@ TASK-549.05, TASK-549.11
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Keep grammar and explicit flow selection in the existing per-pane router address. Preserve architecture scope, focus, and filters when switching modes.
+2. Reuse the complete canonical read and existing browser renderer. Offer flows that touch current selected subjects or scope, including descendants and relationship endpoints. Always require an explicit flow choice and preserve unavailable identities.
+3. Draw the complete selected flow with every required participant and step. Structural relationship and group filters remain architecture presentation and do not remove behavioral content.
+4. Add visible mode and flow controls, accessible selection and details, and explicit empty, missing, loading, failure, and recovery states. Keep selection and camera independent of rendering.
+5. Use short TDD slices through the approved browser seam with real files and the public runtime. Cover relevant-flow choice, both behavioral grammars, all participants, architecture restoration, history, and unavailable flows.
+6. Maintain Browser application@TASK-549.12 and any further affected proposals. Update ADR0060, consumer guidance, frontend contracts, coverage, and test ownership. The common agent investigation contract remains TASK-549.13.
+7. Run focused browser regressions, types, lint, formatting, architecture checks, and existing contract owners as needed. Inspect the rendered workflow and simplify ownership.
+8. Merge latest integration, adopt accurate proposals, release claims, stop the server, close proven criteria, and provide a signed source to the required merger.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Parent frontend work starts in isolated checkout /home/msc/Projects/archboard.feat-module-diagram-modes from integrated5432fed897cd0b7bcbb8ada2c41dabd533305cca. Dependencies .05 and .11 are Done and integrated. Parent owns all frontend. The approved browser and public runtime seams remain unchanged. No model evaluation, dependency installation request, or scope expansion is required.
+
+Browser application@TASK-549.12 is draft at version172. The proposal describes per-pane grammar/flow addresses, complete behavioral projections, relevant explicit flow choices, and preservation of architecture scope/focus/filters. The existing renderer already supports all three grammars, so no renderer architecture or API addition is planned. Worktree server12686 is ready at PID1128291. Dependencies install successfully.
+<!-- SECTION:NOTES:END -->
