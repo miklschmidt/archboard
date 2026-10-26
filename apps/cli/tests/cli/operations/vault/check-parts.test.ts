@@ -370,31 +370,33 @@ test("--variant, --every-draft and --plan reach the code check of check, check a
 	}
 });
 
+const exposure = (container: string): NonNullable<CodeCheckAnswer["exposures"]>[number] => ({
+	board: "Orders",
+	variant: "v1",
+	container,
+	module: `src/${container.toLowerCase()}`,
+	rootFiles: [`src/${container.toLowerCase()}/index.ts`],
+	exposed: 2,
+	usedOutside: 1,
+	names: [
+		{
+			name: "place",
+			path: "src/shipping/place.ts",
+			line: 4,
+			via: [],
+			users: 1,
+			usedBy: [{ path: "src/api.ts", line: 9, parts: ["pA"] }],
+		},
+		{ name: "cancel", path: "src/shipping/cancel.ts", line: 2, via: [], users: 0, usedBy: [] },
+	],
+});
+
+const exposedLines = (stderr: string): string[] =>
+	stderr.split("\n").filter((line) => line.startsWith("exposed: "));
+
 test("--exposed asks the code check for the exposed names and prints one line for each container, and without it the answer carries none", async () => {
 	plain = clean;
-	const exposure = (container: string): NonNullable<CodeCheckAnswer["exposures"]>[number] => ({
-		board: "Orders",
-		variant: "v1",
-		container,
-		module: `src/${container.toLowerCase()}`,
-		rootFiles: [`src/${container.toLowerCase()}/index.ts`],
-		exposed: 2,
-		usedOutside: 1,
-		names: [
-			{
-				name: "place",
-				path: "src/shipping/place.ts",
-				line: 4,
-				via: [],
-				users: 1,
-				usedBy: [{ path: "src/api.ts", line: 9, parts: ["pA"] }],
-			},
-			{ name: "cancel", path: "src/shipping/cancel.ts", line: 2, via: [], users: 0, usedBy: [] },
-		],
-	});
 	const exposures = [exposure("Shipping"), exposure("Billing")];
-	const exposedLines = (stderr: string): string[] =>
-		stderr.split("\n").filter((line) => line.startsWith("exposed: "));
 	try {
 		answered = { ...codeCheck, exposures };
 		asked.length = 0;
