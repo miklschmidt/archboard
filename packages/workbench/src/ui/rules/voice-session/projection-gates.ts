@@ -2,15 +2,15 @@
 // state machine: the transport, the media owner, and the server's coordinator
 // and voice projections.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchMediaState } from "#ui/state/surfaces/voice-parts.ts";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,
 	VoiceSessionProjectionInput,
 } from "#ui/state/voice-session/contract.ts";
 import { presentedFailure } from "#ui/rules/voice-session/failure.ts";
-import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
 
 type MediaUnavailable = Extract<BrowserWorkbenchMediaState, { readonly state: "unavailable" }>;
 

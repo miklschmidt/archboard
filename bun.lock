@@ -88,6 +88,10 @@
       "name": "@archboard-app/web",
       "version": "0.0.0",
     },
+    "apps/workbench-example": {
+      "name": "@archboard-app/workbench-example",
+      "version": "0.0.0",
+    },
     "packages/board": {
       "name": "@archboard/board",
       "version": "0.0.0",
@@ -106,6 +110,10 @@
     },
     "packages/codex-app-server": {
       "name": "@archboard/codex-app-server",
+      "version": "0.0.0",
+    },
+    "packages/codex-realtime-voice": {
+      "name": "@archboard/codex-realtime-voice",
       "version": "0.0.0",
     },
     "packages/diagnostics": {
@@ -164,6 +172,8 @@
 
     "@archboard-app/web": ["@archboard-app/web@workspace:apps/web"],
 
+    "@archboard-app/workbench-example": ["@archboard-app/workbench-example@workspace:apps/workbench-example"],
+
     "@archboard/board": ["@archboard/board@workspace:packages/board"],
 
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
@@ -173,6 +183,8 @@
     "@archboard/code-opener": ["@archboard/code-opener@workspace:packages/code-opener"],
 
     "@archboard/codex-app-server": ["@archboard/codex-app-server@workspace:packages/codex-app-server"],
+
+    "@archboard/codex-realtime-voice": ["@archboard/codex-realtime-voice@workspace:packages/codex-realtime-voice"],
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
 

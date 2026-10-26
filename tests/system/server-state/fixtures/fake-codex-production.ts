@@ -14,11 +14,17 @@ import {
 	unsetThreadFields,
 	workhorsePlan,
 	workhorseTokenUsage,
+	interruptFixtureTurn,
+	ordinaryApproval,
+	type FixtureThread,
 } from "./fake-codex-production-data.ts";
 const logPath = "__ARCHBOARD_TEST_CODEX_LOG__";
 const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
-let signedIn =
-	(JSON.parse(readFileSync(controlPath, "utf8")) as { signedOut?: boolean }).signedOut !== true;
+const initialControl = JSON.parse(readFileSync(controlPath, "utf8")) as {
+	signedOut?: boolean;
+	ordinaryOnly?: boolean;
+};
+let signedIn = initialControl.signedOut !== true;
 let pendingLogin = false;
 
 const record = (value: unknown): void => appendFileSync(logPath, `${JSON.stringify(value)}\n`);
@@ -70,11 +76,6 @@ type WireFrame = {
 	readonly params?: Record<string, unknown>;
 	readonly result?: unknown;
 	readonly error?: unknown;
-};
-type FixtureThread = Record<string, unknown> & {
-	id: string;
-	status: { type: string; activeFlags?: string[] };
-	turns: Record<string, unknown>[];
 };
 
 const threads = new Map<string, FixtureThread>();
@@ -131,7 +132,7 @@ const buildThread = (
 		cliVersion: "0.160.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
-		threadSource: "archboard",
+		threadSource: params["threadSource"],
 		...unsetThreadFields,
 		turns: [],
 	}) satisfies FixtureThread;
@@ -196,24 +197,13 @@ const emitReverseRequests = (): void => {
 		return;
 	}
 	reverseRequestsSent = true;
-	request("ordinary-request-1", "item/commandExecution/requestApproval", {
-		threadId: workhorseThreadId,
-		turnId: "turn-1",
-		itemId: "approval-item-1",
-		kind: "command",
-		startedAtMs: Date.now(),
-		approvalId: "ordinary-approval-1",
-		environmentId: null,
-		reason: "Prove the production approval route.",
-		networkApprovalContext: null,
-		command: "bun test",
-		cwd: process.cwd(),
-		commandActions: null,
-		additionalPermissions: null,
-		proposedExecpolicyAmendment: null,
-		proposedNetworkPolicyAmendments: null,
-		availableDecisions: ["accept", "decline", "cancel"],
-	});
+	request(
+		"ordinary-request-1",
+		"item/commandExecution/requestApproval",
+		ordinaryApproval(workhorseThreadId),
+	);
+	// An independent host exercises ordinary approvals without application-specific tools.
+	if (initialControl.ordinaryOnly === true) return;
 	request("dynamic-request-1", "item/tool/call", {
 		threadId: workhorseThreadId,
 		turnId: "turn-1",
@@ -361,7 +351,8 @@ const handle = (frame: WireFrame): void => {
 			const prompt = promptItem(`${id}-prompt`, params["input"]);
 			const turn = {
 				id,
-				items: isWorkhorse ? [prompt, dynamicItem] : [prompt],
+				items:
+					isWorkhorse && initialControl.ordinaryOnly !== true ? [prompt, dynamicItem] : [prompt],
 				itemsView: "full",
 				status: isWorkhorse ? "inProgress" : "completed",
 				error: null,
@@ -383,9 +374,14 @@ const handle = (frame: WireFrame): void => {
 			return;
 		}
 		case "thread/inject_items":
-			record({ kind: "semantic_injection", params });
+			record({ kind: "context_injection", params });
 			respond(frame as never, {});
 			return;
+		case "turn/interrupt": {
+			respond(frame as never, {});
+			interruptFixtureTurn(threads.get(String(params["threadId"])), params["turnId"], notify);
+			return;
+		}
 		case "thread/realtime/start": {
 			const threadId = String(params["threadId"]);
 			if (!coordinatorThreads.has(threadId)) {

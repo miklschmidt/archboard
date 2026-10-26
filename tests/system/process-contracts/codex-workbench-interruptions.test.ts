@@ -224,7 +224,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 						kind: "browser_command",
 						command: "dynamicApprovalRespond",
 						commandId: staleBinding["commandId"],
-						paneId: staleBinding["paneId"],
+						chatId: staleBinding["chatId"],
 						...(staleBinding["capturedLink"] as Record<string, unknown>),
 						capturedLink: staleBinding["capturedLink"],
 						identity: approval.dynamic["identity"],

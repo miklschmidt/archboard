@@ -2,17 +2,18 @@ import type { Stats } from "node:fs";
 import path from "node:path";
 
 import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
-import { type CodeTargetFailureCode } from "#shared/schemas/code-target-open.ts";
-import type { CheckoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
+import type { checkoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
 
-type ResolutionFailureCode = Extract<
-	CodeTargetFailureCode,
+/** What a checkout has out: the branch it is on and the commit at HEAD. */
+type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
+
+/** Why a binding resolves to no code here; the code opener answers each as a failure of the open. */
+type ResolutionFailureCode =
 	| "BINDING_UNAVAILABLE"
 	| "CHECKOUT_UNAVAILABLE"
 	| "CHECKOUT_IDENTITY_CHANGED"
 	| "TARGET_UNAVAILABLE"
-	| "TARGET_OUTSIDE_CHECKOUT"
->;
+	| "TARGET_OUTSIDE_CHECKOUT";
 interface ResolutionFailure {
 	ok: false;
 	code: ResolutionFailureCode;
@@ -201,9 +202,9 @@ function locateTarget(
  * Resolves a binding's path inside its checkout, refusing anything that is
  * absolute, escapes the checkout lexically or through links, or is neither a
  * file nor a directory. The target is the file or directory the binding names,
- * whatever its `symbol`: the line where a symbol is defined is the opener's to
- * find in that file (`packages/code-opener/src/server/projections/symbol-line.ts`, TASK-367.25), and no other reader
- * of a resolved target needs it.
+ * whatever its `symbol`: the opener finds the line where a symbol is defined in
+ * that file (`symbolLine` in `packages/code-intel/src/runtime/operations/code-facts/symbol-line.ts`,
+ * TASK-367.25), and no other reader of a resolved target needs it.
  * @param binding - The validated binding.
  * @param checkout - The resolved checkout, or its failure to pass through.
  * @param dependencies - The filesystem view to resolve with.

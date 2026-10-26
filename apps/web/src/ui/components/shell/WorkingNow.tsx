@@ -8,11 +8,11 @@
 
 import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
-import { SHELL_AGE_TICK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "@archboard/timing";
 import { ActivityLamp } from "#ui/components/shell/ActivityLamp.tsx";
 import { PaneChips } from "#ui/components/shell/PaneChips.tsx";
-import { useClock, shortAge } from "@archboard/ui-kit/time";
-import { RepositoryName } from "@archboard/ui-kit/repository-name";
+import { RepositoryName } from "@archboard/ui-kit/components";
+import { shortAge, useClock } from "@archboard/ui-kit/time";
 import {
 	FACTS_GAP,
 	FACTS_INSET,
@@ -100,7 +100,7 @@ function useArrivalOrder(entries: readonly WorkingEntry[]): WorkingEntry[] {
  */
 function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 	const ordered = useArrivalOrder(props.entries);
-	const now = useClock(SHELL_AGE_TICK_MS, ordered.length > 0);
+	const now = useClock(SHELL_CLOCK_MS.ageTick, ordered.length > 0);
 	if (ordered.length === 0) return null;
 	return (
 		<section

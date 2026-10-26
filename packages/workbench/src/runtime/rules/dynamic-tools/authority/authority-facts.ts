@@ -1,10 +1,10 @@
+import type { ThreadLinkClassification } from "#runtime/protocol/voice/extension.ts";
 import { CodexDynamicToolsError } from "#runtime/rules/dynamic-tools/errors.ts";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicCallerAuthority,
 	DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
 import type { DynamicRefusalReason } from "#runtime/rules/dynamic-tools/vocabulary.ts";
 import { isNonEmptyString } from "#runtime/rules/dynamic-tools/value-shape.ts";
 

@@ -1,9 +1,9 @@
-// Where a drill-down into another repository leads, and the trail it leaves.
+// The trail a drill-down into another repository leaves. Where the link leads
+// is read by `use-drill-target.ts`, and `drill-target.test.tsx` owns it.
 //
-// What these catch: a link to the pane's own repository read as another one,
-// a link to a repository this machine cannot read opened anyway, a dive that
-// forgets the boards the reader came through once the pane arrives, and a
-// trail kept after somebody else pointed the pane somewhere else.
+// What these catch: a dive that forgets the boards the reader came through once
+// the pane arrives, and a trail kept after somebody else pointed the pane
+// somewhere else.
 
 import { describe, expect, test } from "bun:test";
 
@@ -16,61 +16,9 @@ import {
 	stopsOf,
 	type DrillStop,
 } from "#ui/state/semantic-board-canvas/drill-trail.ts";
-import {
-	drillPlace,
-	type RepositoryPlaces,
-} from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
 
 const OWN = "github.com/acme/shop";
 const OTHER = "github.com/acme/payments";
-const LISTED = new Map([
-	[OTHER, { vault: "/payments/.archboard/vault", state: "ready" as const }],
-	["github.com/acme/gone", { vault: null, state: "gone" as const }],
-]);
-/**
- * The repositories this machine lists, by identity.
- * @param identity The repository identity.
- * @returns Its chosen checkout's vault and state, or undefined when it is not listed.
- */
-const PLACES: RepositoryPlaces = (identity) => LISTED.get(identity);
-
-describe("drillPlace", () => {
-	test("a link without a repository, or to the vault's own, is read in that vault", () => {
-		expect(drillPlace({ board: "cart", variant: { kind: "current" } }, OWN, PLACES)).toEqual({
-			kind: "readable",
-			there: undefined,
-		});
-		expect(
-			drillPlace({ board: "cart", variant: { kind: "current" }, repo: OWN }, OWN, PLACES),
-		).toEqual({
-			kind: "readable",
-			there: undefined,
-		});
-	});
-
-	test("another repository is read in its chosen checkout's vault", () => {
-		expect(
-			drillPlace({ board: "ledger", variant: { kind: "current" }, repo: OTHER }, OWN, PLACES),
-		).toEqual({
-			kind: "readable",
-			there: { vault: "/payments/.archboard/vault", repository: OTHER },
-		});
-	});
-
-	test("a repository this machine does not list, or cannot read, opens nothing", () => {
-		const unknown = "github.com/acme/unknown";
-		expect(
-			drillPlace({ board: "x", variant: { kind: "current" }, repo: unknown }, OWN, PLACES).kind,
-		).toBe("unregistered");
-		expect(
-			drillPlace(
-				{ board: "x", variant: { kind: "current" }, repo: "github.com/acme/gone" },
-				OWN,
-				PLACES,
-			),
-		).toEqual({ kind: "unreachable", repo: "github.com/acme/gone", state: "gone" });
-	});
-});
 
 const SHOP: DrillStop = { board: "shop", variant: undefined, vault: "/shop", repository: OWN };
 const CART: DrillStop = { board: "cart", variant: "v1", vault: "/shop", repository: OWN };

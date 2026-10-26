@@ -1,0 +1,181 @@
+import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
+import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
+
+/** The chats on screen by tab, and when each tab that has none left ends. */
+interface TabSessions {
+	/** Remember which tab a chat belongs to, as its authoritative socket named it. */
+	readonly note: (browserId: string, tabSessionId: TabSessionId | null) => void;
+	/** The tab a chat belongs to, or null while its socket named none. */
+	readonly of: (browserId: string) => TabSessionId | null;
+	/** Forget the tab of a chat whose socket has gone; its tab's grace starts if it was the last. */
+	readonly forget: (browserId: string) => void;
+	/** Forget every chat and every grace, because the server is stopping. Nothing ends. */
+	readonly forgetAll: () => void;
+	/** Hear each tab session that ended, once the grace passed with no chat of it back. */
+	readonly onEnded: (listener: (tabSessionId: TabSessionId) => void) => () => void;
+	/**
+	 * The checkout whose conversation a tab shows. A tab that shows none yet is pinned to the
+	 * checkout the asker names.
+	 */
+	readonly shown: (tabSessionId: TabSessionId, pin: () => string) => string;
+	/** The checkout whose conversation a tab shows, or null before anything read it. */
+	readonly current: (tabSessionId: TabSessionId) => string | null;
+	/** Show a checkout's conversation in a tab, as the person activated it; true when it changed. */
+	readonly show: (tabSessionId: TabSessionId, checkout: string) => boolean;
+	/** Hear each tab whose shown conversation changed. */
+	readonly onShownChange: (listener: (tabSessionId: TabSessionId) => void) => () => void;
+}
+
+/**
+ * Add a listener to a set, and say how to take it out again.
+ * @param listeners The set.
+ * @param listener The listener.
+ * @returns How to stop listening.
+ */
+function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () => void {
+	listeners.add(listener);
+	return () => {
+		listeners.delete(listener);
+	};
+}
+
+/**
+ * The chats on screen by tab, and the grace each tab with no chat left has to come back in.
+ * @param graceMs How long a tab with no chat left still holds its conversation.
+ * @returns The tab sessions.
+ */
+function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions {
+	const byBrowser = new Map<string, TabSessionId>();
+	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
+	const listeners = new Set<(tabSessionId: TabSessionId) => void>();
+	const shownByTab = new Map<TabSessionId, string>();
+	const shownListeners = new Set<(tabSessionId: TabSessionId) => void>();
+
+	/**
+	 * Whether any chat on screen belongs to a tab.
+	 * @param tabSessionId The tab.
+	 * @returns True while one does.
+	 */
+	const present = (tabSessionId: TabSessionId): boolean =>
+		[...byBrowser.values()].includes(tabSessionId);
+
+	/**
+	 * Start a tab's grace once its last chat has gone.
+	 * @param tabSessionId The tab a chat just left.
+	 */
+	const left = (tabSessionId: TabSessionId): void => {
+		if (present(tabSessionId) || graces.has(tabSessionId)) {
+			return;
+		}
+		const grace = setTimeout(() => {
+			graces.delete(tabSessionId);
+			shownByTab.delete(tabSessionId);
+			for (const listener of listeners) listener(tabSessionId);
+		}, graceMs);
+		grace.unref();
+		graces.set(tabSessionId, grace);
+	};
+
+	/**
+	 * A chat of a tab is on screen: the tab is not ending.
+	 * @param tabSessionId The tab.
+	 */
+	const arrived = (tabSessionId: TabSessionId): void => {
+		clearTimeout(graces.get(tabSessionId));
+		graces.delete(tabSessionId);
+	};
+
+	return Object.freeze({
+		/**
+		 * Remember which tab a chat belongs to; a chat that moved tabs leaves the old one.
+		 * @param browserId The browser identity the host gave the chat's socket.
+		 * @param tabSessionId The tab its socket named, or null.
+		 */
+		note: (browserId, tabSessionId) => {
+			const previous = byBrowser.get(browserId);
+			if (tabSessionId === null) {
+				byBrowser.delete(browserId);
+			} else {
+				byBrowser.set(browserId, tabSessionId);
+				arrived(tabSessionId);
+			}
+			if (previous !== undefined && previous !== tabSessionId) {
+				left(previous);
+			}
+		},
+		/**
+		 * The tab a chat belongs to.
+		 * @param browserId The browser identity the host gave the chat's socket.
+		 * @returns Its tab session, or null.
+		 */
+		of: (browserId) => byBrowser.get(browserId) ?? null,
+		/**
+		 * Forget a chat whose socket has gone.
+		 * @param browserId The browser identity the host gave the chat's socket.
+		 */
+		forget: (browserId) => {
+			const previous = byBrowser.get(browserId);
+			byBrowser.delete(browserId);
+			if (previous !== undefined) {
+				left(previous);
+			}
+		},
+		/** Forget every chat and every grace, ending nothing. */
+		forgetAll: () => {
+			byBrowser.clear();
+			for (const grace of graces.values()) clearTimeout(grace);
+			graces.clear();
+			shownByTab.clear();
+		},
+		/**
+		 * Hear each tab session that ended.
+		 * @param listener Told the session's id.
+		 * @returns How to stop listening.
+		 */
+		onEnded: (listener) => subscribe(listeners, listener),
+		/**
+		 * The checkout whose conversation a tab shows, pinned on the first read.
+		 * @param tabSessionId The tab.
+		 * @param pin The checkout to pin a tab that shows none yet to.
+		 * @returns The shown checkout.
+		 */
+		shown: (tabSessionId, pin) => {
+			const shown = shownByTab.get(tabSessionId);
+			if (shown !== undefined) {
+				return shown;
+			}
+			const pinned = pin();
+			shownByTab.set(tabSessionId, pinned);
+			return pinned;
+		},
+		/**
+		 * The checkout whose conversation a tab shows.
+		 * @param tabSessionId The tab.
+		 * @returns It, or null before anything read it.
+		 */
+		current: (tabSessionId) => shownByTab.get(tabSessionId) ?? null,
+		/**
+		 * Show a checkout's conversation in a tab, telling every listener when that changed it.
+		 * @param tabSessionId The tab.
+		 * @param checkout The checkout.
+		 * @returns True when the tab showed another one before.
+		 */
+		show: (tabSessionId, checkout) => {
+			if (shownByTab.get(tabSessionId) === checkout) {
+				return false;
+			}
+			shownByTab.set(tabSessionId, checkout);
+			for (const listener of shownListeners) listener(tabSessionId);
+			return true;
+		},
+		/**
+		 * Hear each tab whose shown conversation changed.
+		 * @param listener Told the tab's id.
+		 * @returns How to stop listening.
+		 */
+		onShownChange: (listener) => subscribe(shownListeners, listener),
+	} satisfies TabSessions);
+}
+
+export { createTabSessions };
+export type { TabSessions };

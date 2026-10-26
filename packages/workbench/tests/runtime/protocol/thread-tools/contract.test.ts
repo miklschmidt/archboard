@@ -20,7 +20,7 @@ import {
 } from "#runtime/protocol/thread-tools/results.ts";
 import { WAIT_THREADS_TIMEOUT_MAX_MS } from "#runtime/protocol/thread-tools/limits.ts";
 import { parseToolArguments } from "#runtime/protocol/thread-tools/arguments.ts";
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import {
 	APPROVAL_REQUIRED_ENVELOPE,
 	OUTCOME_UNKNOWN_ENVELOPE,
@@ -33,7 +33,7 @@ import {
 
 const EXPECTED_MANIFEST_SHA256 = "5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860";
 const EXPECTED_WORKHORSE_SHA256 =
-	"4c2856242c43436035c77bc933243eea5ee7cca553501b8de4d0bca903f55d03";
+	"2b0005b5c90d0d5b8480b7a94532eaa42ede2e2b02433d994ae68e564e6833d4";
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {
@@ -152,7 +152,7 @@ describe("strict six-tool argument boundary", () => {
 
 	test("keeps wait timeout and target count at the reviewed boundaries", () => {
 		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBe(120_000);
-		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(CODEX_BROWSER_COMMAND_LEASE_MS);
+		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(CODEX_APPROVAL_MS.browserCommandLease);
 		expect(parseToolArguments("wait_threads", { threadIds: ["t"], timeoutMs: 0 })).toBeTruthy();
 		expect(
 			parseToolArguments("wait_threads", {

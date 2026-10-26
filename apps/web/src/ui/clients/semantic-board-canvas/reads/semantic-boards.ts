@@ -19,13 +19,9 @@ import {
 	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
 import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
-import { VaultCheckSchema, type VaultCheck } from "@archboard/board/policy";
+import { VaultCheckSchema } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
-import {
-	BoardListingSchema,
-	type BoardListing,
-	type ListedBoard,
-} from "@archboard/board/board-listing";
+import { BoardListingSchema } from "@archboard/board/board-listing";
 import {
 	SemanticRenderReplySchema,
 	type DiagramAtlas,
@@ -34,8 +30,14 @@ import {
 	type LayoutEngineName,
 	type NothingDrawn,
 	type OfferedView,
-	type RenderedVariant,
 } from "@archboard/board/render-reply";
+import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+
+type ListedBoard = z.infer<typeof BoardListingSchema>["boards"][number];
+
+type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
+type BoardListing = z.infer<typeof BoardListingSchema>;
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 // The render contract itself is not described here. It is one external protocol
 // with three consumers — the canvas that serves it, the command that writes a

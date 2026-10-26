@@ -139,16 +139,28 @@ function keepCommitOrThrow(
 }
 
 /**
- * Write `data` to `file` atomically: temp file, fsync, rename.
+ * Write `data` to `file` atomically: temp file, fsync, rename. With `exclusive`,
+ * the commit is a hard link instead of the rename (`writeFileAtomicExclusive`).
  *
  * Throws what the underlying write threw, having removed the temp file first,
  * so a failure leaves the destination exactly as it was and the directory no
  * untidier than it found it.
  * @param file Where the bytes go.
  * @param data The bytes.
+ * @param options Whether to refuse a file that is there already (`exclusive`, with EEXIST)
+ * instead of replacing it.
+ * @param options.exclusive True to keep an existing destination and fail.
  * @throws {unknown} Whatever the underlying write threw.
  */
-function writeFileAtomic(file: string, data: string | Buffer): void {
+function writeFileAtomic(
+	file: string,
+	data: string | Buffer,
+	options: { readonly exclusive?: boolean } = {},
+): void {
+	if (options.exclusive === true) {
+		writeFileAtomicExclusive(file, data);
+		return;
+	}
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
 	try {
@@ -266,4 +278,4 @@ function fsyncDir(dir: string): void {
 	}
 }
 
-export { moveFileDurably, tempPathFor, unlinkDurably, writeFileAtomic, writeFileAtomicExclusive };
+export { moveFileDurably, tempPathFor, unlinkDurably, writeFileAtomic };

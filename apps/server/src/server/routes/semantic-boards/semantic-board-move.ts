@@ -24,11 +24,7 @@ import type { z } from "zod";
 import { parseBoardKey, semanticBoardAddress } from "@archboard/board/address";
 import { forgetDoing } from "@archboard/board/doing";
 import { BoardMoveInputSchema } from "@archboard/board/commands";
-import {
-	moveSemanticBoard,
-	type SemanticMoveResult,
-	previewSemanticMove,
-} from "@archboard/board/store-move";
+import { moveSemanticBoard, previewSemanticMove } from "@archboard/board/store-move";
 import { announceDoing } from "#server/projections/board-announcements/board-announcements.ts";
 import {
 	aggregateOf,
@@ -56,6 +52,8 @@ import {
 	usableBoard,
 	type WriteEnvelopeSchema,
 } from "#server/protocol/semantic-write/semantic-write-requests.ts";
+
+type SemanticMoveResult = Awaited<ReturnType<typeof moveSemanticBoard>>;
 
 /** A move that wrote something: the whole move, or the part before it stopped. */
 type Wrote = Exclude<SemanticMoveResult, { outcome: "rejected" }>;

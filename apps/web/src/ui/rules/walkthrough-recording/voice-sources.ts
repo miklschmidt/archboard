@@ -4,13 +4,15 @@
 // here holds state of its own.
 
 import type { AgentPhase, AgentSetup } from "@archboard/workbench/agent";
-import {
-	type VoiceSession,
-	type VoiceSessionStatus,
-	type VoiceSessionView,
-	VOICE_OUTPUT_SPEAKING_LEVEL,
+import type {
+	VoiceSession,
+	VoiceSessionStatus,
+	VoiceSessionView,
 } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import {
+	type BrowserWorkbenchTransport,
+	VOICE_OUTPUT_SPEAKING_LEVEL,
+} from "@archboard/codex-realtime-voice/controllers";
 
 import type { SpokenLine, VoiceStanding } from "#ui/rules/walkthrough-recording/pacing.ts";
 

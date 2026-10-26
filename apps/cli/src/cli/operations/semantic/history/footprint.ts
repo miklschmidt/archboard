@@ -10,14 +10,19 @@
 import {
 	historyAttributionLabel,
 	FootprintReplySchema,
-	type FootprintAnswer,
-	type FootprintPart,
+	HistoryRefusalCode,
 } from "@archboard/code-intel/history";
 import { z } from "zod";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { SelectorSchema } from "#cli/operations/semantic/input/semantic-input.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
+
+/** A footprint, as the server answers it. */
+type FootprintAnswer = z.infer<typeof FootprintReplySchema>;
+
+/** One part a footprint names, changed or not. */
+type FootprintPart = Extract<FootprintAnswer, { proposal: null }>["changed"][number];
 
 const FootprintInputSchema = z.object({
 	name: z.string(),
@@ -28,7 +33,7 @@ const FootprintInputSchema = z.object({
 });
 
 const headUnresolvedRefusal = {
-	code: "HEAD_UNRESOLVED",
+	code: HistoryRefusalCode.HEAD_UNRESOLVED,
 	exit: 2,
 	stream: "stderr" as const,
 	description:
@@ -36,7 +41,7 @@ const headUnresolvedRefusal = {
 		"read and nothing is reported as unchanged.",
 };
 const noCurrentVariantRefusal = {
-	code: "NO_CURRENT_VARIANT",
+	code: HistoryRefusalCode.NO_CURRENT_VARIANT,
 	exit: 2,
 	stream: "stderr" as const,
 	description:
@@ -44,7 +49,7 @@ const noCurrentVariantRefusal = {
 		"describes is built and there is no code to read a footprint against.",
 };
 const againstNotLiveRefusal = {
-	code: "AGAINST_NOT_LIVE",
+	code: HistoryRefusalCode.AGAINST_NOT_LIVE,
 	exit: 2,
 	stream: "stderr" as const,
 	description:
@@ -52,13 +57,13 @@ const againstNotLiveRefusal = {
 		"parent, is shelved or historical. Name a current variant or a draft with --against.",
 };
 const unknownVariantRefusal = {
-	code: "UNKNOWN_VARIANT",
+	code: HistoryRefusalCode.UNKNOWN_VARIANT,
 	exit: 2,
 	stream: "stderr" as const,
 	description: "--variant names no variant of the board.",
 };
 const nothingToCompareRefusal = {
-	code: "NOTHING_TO_COMPARE",
+	code: HistoryRefusalCode.NOTHING_TO_COMPARE,
 	exit: 2,
 	stream: "stderr" as const,
 	description:
@@ -66,7 +71,7 @@ const nothingToCompareRefusal = {
 		"or leave --variant out.",
 };
 const notADraftRefusal = {
-	code: "NOT_A_DRAFT",
+	code: HistoryRefusalCode.NOT_A_DRAFT,
 	exit: 2,
 	stream: "stderr" as const,
 	description:

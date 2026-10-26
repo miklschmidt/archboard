@@ -1,0 +1,108 @@
+import type { BrowserDto } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	BrowserDynamicApprovalResponse,
+	DynamicApprovalState,
+} from "#shared/schemas/dynamic-approval/approval.ts";
+
+type Assert<T extends true> = T;
+type Equal<A, B> = [A, B] extends [B, A] ? true : false;
+
+function exhaustiveBrowserDto(dto: BrowserDto): string {
+	switch (dto.kind) {
+		case "snapshot":
+		case "readiness":
+		case "account":
+		case "login":
+		case "thread_link":
+		case "timeline":
+		case "queue":
+		case "settings":
+		case "approval":
+		case "text_command":
+		case "context_delivery":
+		case "coordinator":
+		case "voice":
+		case "spoken_approval":
+		case "command_lease":
+		case "operation_outcome":
+		case "dynamic_approval":
+			return dto.kind;
+		default: {
+			const neverDto: never = dto;
+			return neverDto;
+		}
+	}
+}
+
+function exhaustiveDynamicApprovalState(state: DynamicApprovalState): string {
+	switch (state) {
+		case "pending":
+		case "approved":
+		case "declined":
+		case "expired":
+		case "cancelled":
+		case "disconnected":
+		case "stale":
+		case "delivered":
+		case "not_delivered":
+		case "outcome_unknown":
+			return state;
+		default: {
+			const neverState: never = state;
+			return neverState;
+		}
+	}
+}
+
+function dynamicApprovalResponseDecision(
+	response: BrowserDynamicApprovalResponse,
+): "approve" | "decline" {
+	return response.decision;
+}
+
+type _DynamicApprovalStatesAreClosed = Assert<
+	Equal<
+		DynamicApprovalState,
+		| "pending"
+		| "approved"
+		| "declined"
+		| "expired"
+		| "cancelled"
+		| "disconnected"
+		| "stale"
+		| "delivered"
+		| "not_delivered"
+		| "outcome_unknown"
+	>
+>;
+
+type _BrowserDtoIsClosed = Assert<
+	Equal<
+		BrowserDto["kind"],
+		| "snapshot"
+		| "readiness"
+		| "account"
+		| "login"
+		| "thread_link"
+		| "timeline"
+		| "queue"
+		| "settings"
+		| "approval"
+		| "text_command"
+		| "context_delivery"
+		| "coordinator"
+		| "voice"
+		| "spoken_approval"
+		| "command_lease"
+		| "operation_outcome"
+		| "dynamic_approval"
+	>
+>;
+
+export {
+	exhaustiveBrowserDto,
+	exhaustiveDynamicApprovalState,
+	dynamicApprovalResponseDecision,
+	type _DynamicApprovalStatesAreClosed,
+	type _BrowserDtoIsClosed,
+};

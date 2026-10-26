@@ -14,7 +14,14 @@ import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
 import { messagesOf } from "@archboard/board/flow";
 import type { SemanticNode } from "@archboard/board/content";
-import type { DiagnosticSubject, EvidenceKind, VaultDiagnostic } from "@archboard/board/policy";
+import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import type { describeSubject } from "@archboard/board/policy";
+
+type DiagnosticSubject = Parameters<typeof describeSubject>[0];
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 
 /** Where a claim sits: the board, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & {

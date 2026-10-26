@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import type { VaultCheck } from "@archboard/board/policy";
-import {
-	semanticBoardKeys,
-	vaultCheckQuery,
-} from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import { policyChanged } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
+import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /**
  * Read the shared checker; disk edits become visible without reopening the vault.
@@ -34,9 +35,7 @@ function useVaultPolicyRefresh(vault: string): void {
 		if (data === undefined) return;
 		// A picture may have loaded before this first check, using an older policy.
 		if (previous.current?.vault !== vault || previous.current.fingerprint !== data.fingerprint) {
-			// An initial request has no cached data, so invalidation alone reuses it.
-			const queryKey = semanticBoardKeys.rendersIn(vault);
-			void client.cancelQueries({ queryKey }).then(() => client.invalidateQueries({ queryKey }));
+			void policyChanged(client, vault);
 		}
 		previous.current = { vault, fingerprint: data.fingerprint };
 	}, [data, client, vault]);

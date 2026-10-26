@@ -7,5 +7,4 @@ export {
 	parseBoardKey,
 	statedVariant,
 } from "#runtime/store/address.ts";
-export type { BoardIdentity } from "#runtime/store/address.ts";
 export { locateSemanticBoard, semanticBoardAddress } from "#runtime/store/location.ts";

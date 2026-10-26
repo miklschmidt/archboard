@@ -25,9 +25,7 @@ export type {
 	NothingDrawn,
 	NothingDrawnReason,
 	OfferedView,
-	PictureMarks,
 	RenderedChanges,
-	RenderedVariant,
 	SemanticRenderReply,
 	StandaloneTheme,
 } from "#shared/protocol/render-reply.ts";

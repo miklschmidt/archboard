@@ -1,21 +1,20 @@
 // The contract of deleting a whole board (ADR 0057, TASK-526.06): what the
-// delete answers, and what its refusal for a board that another board opens
-// carries. The store's result is built from these types, the route answers
+// delete answers, and each node its refusal for a board that another board
+// opens names. The store's result is built from these types, the route answers
 // with them, and the client parses them, so the three cannot drift apart.
 
 import { z } from "zod";
 import { TrackedEmbedSchema } from "#shared/schemas/board-document.ts";
 
 /** One node on another board of the vault whose drill-down opens the board. */
-const BoardOpenerSchema = z.object({
+interface BoardOpener {
 	/** The name of the board that carries the node. */
-	board: z.string(),
+	readonly board: string;
 	/** The id of the variant that carries it. */
-	variant: z.string(),
+	readonly variant: string;
 	/** The id of the node. */
-	node: z.string(),
-});
-type BoardOpener = z.infer<typeof BoardOpenerSchema>;
+	readonly node: string;
+}
 
 /**
  * What a delete answers with: the board that went, the version it was at, and
@@ -30,10 +29,4 @@ const BoardDiscardAnswerSchema = z.object({
 	}),
 });
 
-/** What a delete refused because other boards open the board says beside its reason. */
-const BoardOpenedByAnswerSchema = z.object({
-	code: z.literal("BOARD_OPENED_BY"),
-	openedBy: z.array(BoardOpenerSchema),
-});
-
-export { BoardDiscardAnswerSchema, BoardOpenedByAnswerSchema, type BoardOpener };
+export { BoardDiscardAnswerSchema, type BoardOpener };

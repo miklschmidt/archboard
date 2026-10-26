@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 98,
+	"version": 101,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-24T20:14:23.918Z",
+	"updatedAt": "2026-10-26T05:41:45.670Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -80,13 +80,16 @@
 			"id": "ViLVYZA5",
 			"name": "Durable writes",
 			"grammar": "architecture",
-			"summary": "What a write takes before a board file changes",
+			"summary": "The one write, the candidate it checks, a write prepared before it is committed, and the rename and discard that follow it",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"1gdbsn6M",
 					"uZ8BMtTA",
-					"QPkSSQP8"
+					"QPkSSQP8",
+					"FBhApaqP",
+					"97vUnmOx",
+					"TDMg7DFU"
 				],
 				"edges": [],
 				"flows": []
@@ -257,6 +260,20 @@
 				"edges": [],
 				"flows": [
 					"HBfoxhwH"
+				]
+			}
+		},
+		{
+			"id": "ceqE6i3h",
+			"name": "A correction is prepared, then committed",
+			"grammar": "sequence",
+			"summary": "A historical correction is prepared with no lease, its code read, and exactly that candidate committed",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"b178TWBR"
 				]
 			}
 		}
@@ -34902,11 +34919,11 @@
 			}
 		},
 		{
-			"id": "JY01vdHt",
-			"name": "TASK-526.04",
+			"id": "Hp8NOOeR",
+			"name": "TASK-532",
 			"lifecycle": "historical",
 			"parent": "IcCJumNs",
-			"summary": "render --track makes a tracked embed that its board lists",
+			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -35041,7 +35058,7 @@
 						"name": "Write under lease",
 						"kind": "function",
 						"responsibility": "Commits one durable version",
-						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once. boardBefore reads the board through a reader its caller may choose: under the lease, which persists a migration the board awaits, unless the caller holds none and writes nothing.",
+						"description": "writeSemanticBoard locates the target, takes the board-wide lease under the writer's claim or an identity minted for the write, runs Check a candidate on the board it reads under that lease, and persists the candidate once, at the next version. writeSemanticBoardAt stamps the write at an instant a caller states, which is how a prepared candidate lands as the board that was prepared.",
 						"parent": "0z23E66v",
 						"groups": [
 							"writes"
@@ -35212,7 +35229,7 @@
 						"name": "Board lease",
 						"kind": "function",
 						"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
-						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board.",
+						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board. A person's take-back (takeBackBoard) holds the lease with the claim revoked and gives it straight back, and answers the claim that stood. The claims, the lock watch and the lines agents said they were doing are process memory, and forgetBoardMemory drops all of it when a server stops, leaving the leases in each vault as they are.",
 						"groups": [
 							"writes"
 						],
@@ -35269,7 +35286,7 @@
 						"order": 23000,
 						"name": "History lens",
 						"kind": "module",
-						"responsibility": "Reads historical board bytes from Git without changing the vault",
+						"responsibility": "Reads Git history through a board's bindings without changing the vault: footprints and hotspots take a board and variants by name and choose the variants they read",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/code-intel/src/runtime/operations/history-lens"
@@ -35306,7 +35323,7 @@
 						"name": "Move",
 						"kind": "function",
 						"responsibility": "Moves a whole board, every variant, former name and id, into another repository's vault: the target note first, then each rewritten drill-down, the source note deleted last",
-						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. move-checks.ts refuses a same repository, a taken name and a link needing an untracked identity; move-drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, reading the board through the reader its caller gives it (under the lease by default), and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
+						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. checks.ts refuses a same repository, a taken name and a link needing an untracked identity; drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, reading the board through the reader its caller gives it (under the lease by default), and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
 						"parent": "IbkA2Se8",
 						"groups": [
 							"writes"
@@ -35408,19 +35425,64 @@
 						}
 					},
 					{
-						"id": "11RbhEB0",
+						"id": "FBhApaqP",
 						"order": 36000,
-						"name": "Track an embed",
+						"name": "Check a candidate",
 						"kind": "function",
-						"responsibility": "A pure transition that lists one tracked embed on the board, once, and changes no variant, so it needs no stated version",
-						"description": "ADR 0057. The list is the board's, so behind's last change does not move for it, and a move carries it with the note.",
-						"parent": "VCoMuJnP",
+						"responsibility": "What every write passes before a file changes: the board read, the stated version checked, the change applied and the candidate admitted",
+						"description": "checkedCandidate reads the board through a reader its caller chooses, refuses a change that states no version or the wrong one, applies the transition, finds where the name puts the file, and admits the result under the vault's vocabulary and the board's own address. It takes no lease and writes nothing. The write pass runs it under the lease, a prepared write runs it with a read that holds none, and a discard and a move use boardBefore for the same version check.",
+						"parent": "0z23E66v",
 						"groups": [
 							"writes"
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/embeds/track.ts"
+							"path": "packages/board/src/runtime/operations/write/candidate.ts"
+						}
+					},
+					{
+						"id": "97vUnmOx",
+						"order": 37000,
+						"name": "Prepare a write",
+						"kind": "function",
+						"responsibility": "Makes the candidate a write would land with no lease held, and commits exactly that candidate afterwards",
+						"description": "prepareSemanticBoardWrite reads the board as its lease would, applies a stated transition or a historical correction, and admits the candidate by the rules a write itself uses. Its answer carries a commit bound to that candidate: the commit writes the prepared board at the prepared instant under the lease and refuses BOARD_VERSION_CONFLICT when the board has moved since, so the subject ids a caller read evidence about are the ids written. A change to a board that does not exist is refused BOARD_MISSING.",
+						"parent": "0z23E66v",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts"
+						}
+					},
+					{
+						"id": "TDMg7DFU",
+						"order": 38000,
+						"name": "Carry a rename",
+						"kind": "function",
+						"responsibility": "Writes a rename, then carries this server's claim and the lines agents wrote to the board's new name",
+						"description": "renameSemanticBoard states the rename as a transition and writes it. When the write moved the board to a new name, the lines agents wrote about the board stay with it and this server's claim follows, for the reason it was taken. A claim that could not follow adds a CLAIM_NOT_CARRIED warning to the answer. The server only points its panes at the new name.",
+						"parent": "0z23E66v",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts"
+						}
+					},
+					{
+						"id": "R84q0IT2",
+						"order": 39000,
+						"name": "Read a variant",
+						"kind": "function",
+						"responsibility": "Reads a board by name and opens the variant an address states",
+						"description": "readBoardVariant reads the board by its name or a former name, then opens the variant the address states: an id, a name or current. A bare name, an empty variant and current all open what the bare name opens. When the address opens no variant the answer carries the board it read and says whether the variant is missing or the name chooses none.",
+						"parent": "ZqkmwupZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/variant.ts"
 						}
 					}
 				],
@@ -35554,28 +35616,28 @@
 					{
 						"id": "9O4o9jcE",
 						"order": 10000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read under lease",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "readSemanticBoardAtUnderLease"
 						}
 					},
 					{
 						"id": "VWo4vJh0",
 						"order": 11000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "apply transition",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "apply"
 						}
 					},
@@ -35793,14 +35855,14 @@
 						"id": "wyTy54Ob",
 						"order": 27000,
 						"from": "4P7YZdnj",
-						"to": "GWg2Fads",
+						"to": "TDMg7DFU",
 						"kind": "call",
-						"label": "rename transition",
+						"label": "rename a board, and carry what follows it",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
-							"symbol": "renameTransition"
+							"symbol": "renameSemanticBoard"
 						}
 					},
 					{
@@ -35823,7 +35885,7 @@
 						"from": "QPkSSQP8",
 						"to": "1gdbsn6M",
 						"kind": "call",
-						"label": "the same lease and version check",
+						"label": "the same lease a write takes",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -35904,14 +35966,14 @@
 					{
 						"id": "pbX3QKug",
 						"order": 35000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "AJGft3Pe",
 						"kind": "call",
 						"label": "refuse a new unknown key",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -36159,12 +36221,13 @@
 						"from": "4P7YZdnj",
 						"to": "ON3C5Z6t",
 						"kind": "call",
+						"label": "read a footprint or hotspots by name",
 						"description": "Reads how far board content is behind its code",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/server/src/server/routes/code-check/code-check-route.ts",
-							"symbol": "createBehindReading"
+							"path": "apps/server/src/server/routes/footprint/footprint-route.ts",
+							"symbol": "readFootprint"
 						}
 					},
 					{
@@ -36271,12 +36334,12 @@
 						"from": "3HNevPSf",
 						"to": "1gdbsn6M",
 						"kind": "call",
-						"label": "the admission and version check a write takes",
+						"label": "the admission a write takes",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/move/move.ts",
-							"symbol": "boardBefore"
+							"symbol": "admit"
 						}
 					},
 					{
@@ -36450,15 +36513,15 @@
 					{
 						"id": "W1XFvhja",
 						"order": 75000,
-						"from": "1gdbsn6M",
+						"from": "TDMg7DFU",
 						"to": "GWg2Fads",
 						"kind": "call",
-						"label": "apply the rename",
+						"label": "state the rename as a transition",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
-							"symbol": "apply"
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "renameTransition"
 						}
 					},
 					{
@@ -36521,13 +36584,14 @@
 						"id": "tovZfxLM",
 						"order": 80000,
 						"from": "4P7YZdnj",
-						"to": "iBeGsio7",
+						"to": "97vUnmOx",
 						"kind": "call",
+						"label": "prepare a correction, then commit it",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
-							"symbol": "correctHistoricalTransition"
+							"symbol": "prepareSemanticBoardWrite"
 						}
 					},
 					{
@@ -36544,31 +36608,255 @@
 						}
 					},
 					{
-						"id": "rTR0ChQj",
+						"id": "kht8iTkH",
 						"order": 82000,
-						"from": "4P7YZdnj",
-						"to": "11RbhEB0",
-						"kind": "call",
-						"label": "track an embed",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-track.ts",
-							"symbol": "trackEmbedTransition"
-						}
-					},
-					{
-						"id": "jEFjyKNG",
-						"order": 83000,
 						"from": "1gdbsn6M",
-						"to": "11RbhEB0",
+						"to": "FBhApaqP",
 						"kind": "call",
-						"label": "apply the track",
+						"label": "check the candidate before it is written",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/write/write.ts",
-							"symbol": "apply"
+							"symbol": "checkedCandidate"
+						}
+					},
+					{
+						"id": "bkVmmmZk",
+						"order": 83000,
+						"from": "FBhApaqP",
+						"to": "uZ8BMtTA",
+						"kind": "call",
+						"label": "where the name puts the file",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
+							"symbol": "relocation"
+						}
+					},
+					{
+						"id": "sdPR22Ti",
+						"order": 84000,
+						"from": "FBhApaqP",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "a board answers to the address it is at",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
+							"symbol": "semanticBoardAddress"
+						}
+					},
+					{
+						"id": "ZYDmDsmF",
+						"order": 85000,
+						"from": "97vUnmOx",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the same checks, with a read that holds no lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "checkedCandidate"
+						}
+					},
+					{
+						"id": "LHrsm5k4",
+						"order": 86000,
+						"from": "97vUnmOx",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read as the lease would, persisting nothing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "readSemanticBoardAtAsLeased"
+						}
+					},
+					{
+						"id": "Z5F9FdCS",
+						"order": 87000,
+						"from": "97vUnmOx",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "commit exactly the prepared candidate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "writeSemanticBoardAt"
+						}
+					},
+					{
+						"id": "Q9S0lddK",
+						"order": 88000,
+						"from": "97vUnmOx",
+						"to": "iBeGsio7",
+						"kind": "call",
+						"label": "a correction as a transition",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "correctHistoricalTransition"
+						}
+					},
+					{
+						"id": "8hz4OfpS",
+						"order": 89000,
+						"from": "97vUnmOx",
+						"to": "lkf45vPe",
+						"kind": "call",
+						"label": "the board the name answers to",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "resolveSemanticBoard"
+						}
+					},
+					{
+						"id": "9gqokaFZ",
+						"order": 90000,
+						"from": "97vUnmOx",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "where the board lives",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "locateSemanticBoard"
+						}
+					},
+					{
+						"id": "64uivDPd",
+						"order": 91000,
+						"from": "TDMg7DFU",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "write the rename",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "P3ZaxJ1C",
+						"order": 92000,
+						"from": "TDMg7DFU",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "carry the claim to the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "CKknbKgQ",
+						"order": 93000,
+						"from": "QPkSSQP8",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the same version check a write takes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/discard.ts",
+							"symbol": "boardBefore"
+						}
+					},
+					{
+						"id": "OFq3QNB7",
+						"order": 94000,
+						"from": "3HNevPSf",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the version check a write takes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
+							"symbol": "boardBefore"
+						}
+					},
+					{
+						"id": "5NcKdpPu",
+						"order": 95000,
+						"from": "4P7YZdnj",
+						"to": "R84q0IT2",
+						"kind": "call",
+						"label": "the variant a pane is shown",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "readBoardVariant"
+						}
+					},
+					{
+						"id": "NXfFLlou",
+						"order": 96000,
+						"from": "R84q0IT2",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board by its name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/variant.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "2ZOQJz4c",
+						"order": 97000,
+						"from": "4P7YZdnj",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "a person takes a claimed board back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+							"symbol": "takeBackBoard"
+						}
+					},
+					{
+						"id": "VgEZTrmE",
+						"order": 100000,
+						"from": "ON3C5Z6t",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board a request names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/history-lens/admission.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "K2ivZcXH",
+						"order": 101000,
+						"from": "1gdbsn6M",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board under the lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"symbol": "readSemanticBoardAtUnderLease"
 						}
 					}
 				],
@@ -36580,6 +36868,7 @@
 							"4P7YZdnj",
 							"i2CrY6Xj",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"UFO3ulXp",
 							"tcwsrSQv",
 							"uZ8BMtTA",
@@ -36709,21 +36998,33 @@
 																}
 															},
 															{
-																"id": "kzWNr8Vx",
+																"id": "LnEPLDZq",
 																"from": "1gdbsn6M",
+																"to": "FBhApaqP",
+																"label": "checkedCandidate: read, check, apply, admit",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "checkedCandidate"
+																}
+															},
+															{
+																"id": "kzWNr8Vx",
+																"from": "FBhApaqP",
 																"to": "tcwsrSQv",
 																"label": "read under the lease",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																	"symbol": "readSemanticBoardAtUnderLease"
 																}
 															},
 															{
 																"id": "6K80OWsK",
 																"from": "tcwsrSQv",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the board and its version",
 																"kind": "return",
 																"anchor": {
@@ -36742,13 +37043,13 @@
 																		"steps": [
 																			{
 																				"id": "da8O9Hfg",
-																				"from": "1gdbsn6M",
+																				"from": "FBhApaqP",
 																				"to": "4P7YZdnj",
 																				"label": "EXPECT_VERSION_REQUIRED, UNREADABLE or VERSION_CONFLICT",
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/board/src/runtime/operations/write/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																					"symbol": "boardBefore"
 																				}
 																			}
@@ -36759,20 +37060,20 @@
 																		"steps": [
 																			{
 																				"id": "KYTTAvtj",
-																				"from": "1gdbsn6M",
+																				"from": "FBhApaqP",
 																				"to": "i2CrY6Xj",
 																				"label": "apply the transition",
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/board/src/runtime/operations/write/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																					"symbol": "apply"
 																				}
 																			},
 																			{
 																				"id": "AsvlY7aV",
 																				"from": "i2CrY6Xj",
-																				"to": "1gdbsn6M",
+																				"to": "FBhApaqP",
 																				"label": "the candidate board",
 																				"kind": "return",
 																				"anchor": {
@@ -36791,13 +37092,13 @@
 																						"steps": [
 																							{
 																								"id": "VEkn9cEE",
-																								"from": "1gdbsn6M",
+																								"from": "FBhApaqP",
 																								"to": "4P7YZdnj",
 																								"label": "the transition's refusal",
 																								"kind": "return",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "packages/board/src/runtime/operations/write/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																									"symbol": "rejected"
 																								}
 																							}
@@ -36808,13 +37109,13 @@
 																						"steps": [
 																							{
 																								"id": "M84nDkrd",
-																								"from": "1gdbsn6M",
-																								"to": "1gdbsn6M",
+																								"from": "FBhApaqP",
+																								"to": "FBhApaqP",
 																								"label": "check the candidate against the vault's vocabulary",
 																								"kind": "self",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "packages/board/src/runtime/operations/write/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																									"symbol": "acceptable"
 																								}
 																							},
@@ -36828,13 +37129,13 @@
 																										"steps": [
 																											{
 																												"id": "x6GekCKj",
-																												"from": "1gdbsn6M",
+																												"from": "FBhApaqP",
 																												"to": "4P7YZdnj",
 																												"label": "INVALID_CONTENT or BOARD_MISADDRESSED",
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "packages/board/src/runtime/operations/write/write.ts",
+																													"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																													"symbol": "misaddressedRefusal"
 																												}
 																											}
@@ -36843,6 +37144,18 @@
 																									{
 																										"label": "valid",
 																										"steps": [
+																											{
+																												"id": "GLmb5FYB",
+																												"from": "FBhApaqP",
+																												"to": "1gdbsn6M",
+																												"label": "the checked candidate, and where it goes",
+																												"kind": "return",
+																												"anchor": {
+																													"repo": "github.com/miklschmidt/archboard",
+																													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+																													"symbol": "checkedCandidate"
+																												}
+																											},
 																											{
 																												"id": "1XxPd9PI",
 																												"from": "1gdbsn6M",
@@ -36931,8 +37244,10 @@
 						"name": "A rename moves the file",
 						"participants": [
 							"4P7YZdnj",
+							"TDMg7DFU",
 							"GWg2Fads",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"lkf45vPe",
 							"uZ8BMtTA",
 							"UFO3ulXp",
@@ -36940,21 +37255,33 @@
 						],
 						"steps": [
 							{
-								"id": "2QIR0Obl",
+								"id": "zJdwg8wU",
 								"from": "4P7YZdnj",
+								"to": "TDMg7DFU",
+								"label": "renameSemanticBoard",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"symbol": "renameSemanticBoard"
+								}
+							},
+							{
+								"id": "2QIR0Obl",
+								"from": "TDMg7DFU",
 								"to": "GWg2Fads",
 								"label": "renameTransition",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
 									"symbol": "renameTransition"
 								}
 							},
 							{
 								"id": "lT26tyhA",
 								"from": "GWg2Fads",
-								"to": "4P7YZdnj",
+								"to": "TDMg7DFU",
 								"label": "a pure transition",
 								"kind": "return",
 								"anchor": {
@@ -36965,13 +37292,13 @@
 							},
 							{
 								"id": "EZmDOkgi",
-								"from": "4P7YZdnj",
+								"from": "TDMg7DFU",
 								"to": "1gdbsn6M",
 								"label": "writeSemanticBoard",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
 									"symbol": "writeSemanticBoard"
 								}
 							},
@@ -37012,14 +37339,26 @@
 								}
 							},
 							{
-								"id": "cVLkTCam",
+								"id": "OsgvuTzT",
 								"from": "1gdbsn6M",
+								"to": "FBhApaqP",
+								"label": "checkedCandidate",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "cVLkTCam",
+								"from": "FBhApaqP",
 								"to": "GWg2Fads",
 								"label": "apply the rename",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "apply"
 								}
 							},
@@ -37038,7 +37377,7 @@
 							{
 								"id": "4bK6RAAh",
 								"from": "GWg2Fads",
-								"to": "1gdbsn6M",
+								"to": "FBhApaqP",
 								"label": "the candidate board",
 								"kind": "return",
 								"anchor": {
@@ -37049,14 +37388,38 @@
 							},
 							{
 								"id": "oQXLhMTq",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "uZ8BMtTA",
 								"label": "where does the new name put the file",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "relocation"
+								}
+							},
+							{
+								"id": "dHgGYk42",
+								"from": "FBhApaqP",
+								"to": "1gdbsn6M",
+								"label": "the checked candidate, and where it goes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "E5ZyuSk3",
+								"from": "1gdbsn6M",
+								"to": "uZ8BMtTA",
+								"label": "writeBoardFile: move the file, then write the board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"symbol": "writeBoardFile"
 								}
 							},
 							{
@@ -37270,13 +37633,77 @@
 							{
 								"id": "HGnaWFvZ",
 								"from": "1gdbsn6M",
-								"to": "4P7YZdnj",
+								"to": "TDMg7DFU",
 								"label": "applied, from the old name",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "persisted"
+								}
+							},
+							{
+								"id": "dirfMO6U",
+								"from": "TDMg7DFU",
+								"to": "TDMg7DFU",
+								"label": "keep the lines agents wrote with the board",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
+									"symbol": "carryDoing"
+								}
+							},
+							{
+								"id": "xbMFHKoX",
+								"kind": "decision",
+								"question": "Did this server hold a claim on the board?",
+								"alternatives": [
+									{
+										"label": "claimed",
+										"steps": [
+											{
+												"id": "t0aONlj3",
+												"from": "TDMg7DFU",
+												"to": "UFO3ulXp",
+												"label": "releaseClaim, then claimBoard under the new name",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/rename/carry.ts",
+													"symbol": "claimBoard"
+												}
+											},
+											{
+												"id": "jnFBvBru",
+												"from": "UFO3ulXp",
+												"to": "TDMg7DFU",
+												"label": "the claim, or why it could not follow",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/rename/carry.ts",
+													"symbol": "carryClaim"
+												}
+											}
+										]
+									},
+									{
+										"label": "unclaimed",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "ZHaWa1ub",
+								"from": "TDMg7DFU",
+								"to": "4P7YZdnj",
+								"label": "applied, with a warning when the claim could not follow",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
+									"symbol": "renameSemanticBoard"
 								}
 							}
 						]
@@ -37721,6 +38148,7 @@
 							"4P7YZdnj",
 							"QPkSSQP8",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"UFO3ulXp",
 							"qTv7HuBw"
 						],
@@ -37764,7 +38192,7 @@
 							{
 								"id": "90NyPVCW",
 								"from": "QPkSSQP8",
-								"to": "1gdbsn6M",
+								"to": "FBhApaqP",
 								"label": "boardBefore: the version check a write takes",
 								"kind": "sync",
 								"anchor": {
@@ -37775,13 +38203,13 @@
 							},
 							{
 								"id": "POZQCewD",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "QPkSSQP8",
 								"label": "the board and its version",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "boardBefore"
 								}
 							},
@@ -37884,7 +38312,7 @@
 						"id": "MdShMOek",
 						"name": "An edit reaches the drafts under it",
 						"participants": [
-							"1gdbsn6M",
+							"FBhApaqP",
 							"i2CrY6Xj",
 							"xoapCJNG",
 							"CxaaWj4x",
@@ -37894,13 +38322,13 @@
 						"steps": [
 							{
 								"id": "A5lVG1E2",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "i2CrY6Xj",
 								"label": "apply the edit transition",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "apply"
 								}
 							},
@@ -37915,7 +38343,7 @@
 											{
 												"id": "BT66Enk8",
 												"from": "i2CrY6Xj",
-												"to": "1gdbsn6M",
+												"to": "FBhApaqP",
 												"label": "VARIANT_HISTORICAL or VARIANT_SHELVED",
 												"kind": "return",
 												"anchor": {
@@ -37976,7 +38404,7 @@
 															{
 																"id": "fKkWaWOW",
 																"from": "i2CrY6Xj",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the refusal",
 																"kind": "return",
 																"anchor": {
@@ -38187,7 +38615,7 @@
 															{
 																"id": "Sl6fy9ZT",
 																"from": "i2CrY6Xj",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the candidate board, with what each draft did",
 																"kind": "return",
 																"anchor": {
@@ -38491,7 +38919,7 @@
 							"3HNevPSf",
 							"klNuMiwC",
 							"UFO3ulXp",
-							"1gdbsn6M",
+							"FBhApaqP",
 							"uZ8BMtTA",
 							"qTv7HuBw"
 						],
@@ -38633,8 +39061,8 @@
 															{
 																"id": "LchEfPpZ",
 																"from": "3HNevPSf",
-																"to": "1gdbsn6M",
-																"label": "boardBefore: the admission and version check a write takes",
+																"to": "FBhApaqP",
+																"label": "boardBefore: the version check a write takes",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
@@ -38644,13 +39072,13 @@
 															},
 															{
 																"id": "4jeaUoFg",
-																"from": "1gdbsn6M",
+																"from": "FBhApaqP",
 																"to": "3HNevPSf",
 																"label": "the board and its version",
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																	"symbol": "boardBefore"
 																}
 															},
@@ -39073,6 +39501,247 @@
 								]
 							}
 						]
+					},
+					{
+						"id": "b178TWBR",
+						"name": "A correction is prepared, then committed",
+						"participants": [
+							"4P7YZdnj",
+							"97vUnmOx",
+							"tcwsrSQv",
+							"iBeGsio7",
+							"FBhApaqP",
+							"1gdbsn6M",
+							"uZ8BMtTA"
+						],
+						"steps": [
+							{
+								"id": "eB0l3Bhr",
+								"from": "4P7YZdnj",
+								"to": "97vUnmOx",
+								"label": "prepareSemanticBoardWrite",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+									"symbol": "prepareSemanticBoardWrite"
+								}
+							},
+							{
+								"id": "MHoHAjki",
+								"from": "97vUnmOx",
+								"to": "tcwsrSQv",
+								"label": "readSemanticBoardAtAsLeased: no lease, nothing persisted",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "readSemanticBoardAtAsLeased"
+								}
+							},
+							{
+								"id": "cbSybf3m",
+								"from": "tcwsrSQv",
+								"to": "97vUnmOx",
+								"label": "the board as the commit would find it",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
+									"symbol": "readSemanticBoardAtAsLeased"
+								}
+							},
+							{
+								"id": "Bn2aClGX",
+								"from": "97vUnmOx",
+								"to": "iBeGsio7",
+								"label": "correctHistoricalTransition",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "correctHistoricalTransition"
+								}
+							},
+							{
+								"id": "rONIXjr6",
+								"from": "iBeGsio7",
+								"to": "97vUnmOx",
+								"label": "a pure transition",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/correction.ts",
+									"symbol": "correctHistoricalTransition"
+								}
+							},
+							{
+								"id": "bY2Pk558",
+								"from": "97vUnmOx",
+								"to": "FBhApaqP",
+								"label": "checkedCandidate: version, apply, admit",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "PqDn0u1f",
+								"kind": "decision",
+								"question": "Would the store write this candidate?",
+								"alternatives": [
+									{
+										"label": "refused",
+										"steps": [
+											{
+												"id": "0JTsDCJ9",
+												"from": "FBhApaqP",
+												"to": "4P7YZdnj",
+												"label": "BOARD_VERSION_CONFLICT, INVALID_CONTENT or a refusal",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+													"symbol": "rejected"
+												}
+											}
+										]
+									},
+									{
+										"label": "prepared",
+										"steps": [
+											{
+												"id": "OYoP4h49",
+												"from": "FBhApaqP",
+												"to": "97vUnmOx",
+												"label": "the checked candidate",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+													"symbol": "checkedCandidate"
+												}
+											},
+											{
+												"id": "Yi7SUnGB",
+												"from": "97vUnmOx",
+												"to": "4P7YZdnj",
+												"label": "the candidate, and the commit bound to it",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/prepare.ts",
+													"symbol": "prepareSemanticBoardWrite"
+												}
+											},
+											{
+												"id": "wRfJbF0W",
+												"from": "4P7YZdnj",
+												"to": "4P7YZdnj",
+												"label": "read the code at the cited revisions, holding no lease",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+													"symbol": "correct"
+												}
+											},
+											{
+												"id": "d9KPrigm",
+												"from": "4P7YZdnj",
+												"to": "97vUnmOx",
+												"label": "commit: write exactly the prepared candidate",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+													"symbol": "commit"
+												}
+											},
+											{
+												"id": "MCT6goGb",
+												"from": "97vUnmOx",
+												"to": "1gdbsn6M",
+												"label": "writeSemanticBoardAt, at the prepared instant",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/prepare.ts",
+													"symbol": "writeSemanticBoardAt"
+												}
+											},
+											{
+												"id": "ASkp9NEP",
+												"from": "1gdbsn6M",
+												"to": "FBhApaqP",
+												"label": "checkedCandidate again, under the lease",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/write.ts",
+													"symbol": "checkedCandidate"
+												}
+											},
+											{
+												"id": "IUoRaodU",
+												"kind": "decision",
+												"question": "Is the board still at the version it was prepared from?",
+												"alternatives": [
+													{
+														"label": "moved",
+														"steps": [
+															{
+																"id": "O4DhosPe",
+																"from": "FBhApaqP",
+																"to": "4P7YZdnj",
+																"label": "BOARD_VERSION_CONFLICT: read the board again",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
+																	"symbol": "versionRefusal"
+																}
+															}
+														]
+													},
+													{
+														"label": "unchanged",
+														"steps": [
+															{
+																"id": "xDWHgYSp",
+																"from": "1gdbsn6M",
+																"to": "uZ8BMtTA",
+																"label": "writeBoardFile: the prepared board",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "writeBoardFile"
+																}
+															},
+															{
+																"id": "uE0q4vvf",
+																"from": "1gdbsn6M",
+																"to": "4P7YZdnj",
+																"label": "applied, at the next version",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "persisted"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
 					}
 				],
 				"walkthroughs": [
@@ -39083,7 +39752,7 @@
 							{
 								"id": "xaTiUHzJ",
 								"heading": "Callers state a transition",
-								"body": "The server constructs a pure transition from a create, edit, branch, settle, adopt, shelve or rename request, and hands it to the one write boundary.",
+								"body": "The server constructs a pure transition from a create, edit, branch, settle, adopt or shelve request and hands it to the one write boundary. A rename goes to the board package, which states the transition itself and carries the claim and the lines agents wrote to the new name. The server only points its panes.",
 								"subjects": [
 									"oY68rZP2",
 									"1mt5K7rs"
@@ -39145,6 +39814,18 @@
 									"qTv7HuBw"
 								],
 								"view": "VSoiCgpE"
+							},
+							{
+								"id": "3sUhHvoz",
+								"heading": "A candidate can be read before it lands",
+								"body": "A historical correction must read the code at the revisions it cites before it may land, and reading Git must not hold the board. So the store prepares the candidate with no lease, by the checks a write passes, and commits exactly that candidate later under the lease. The commit reads the board again and refuses the write when the version moved, so the subject ids the evidence was read for are the ids written.",
+								"subjects": [
+									"97vUnmOx",
+									"FBhApaqP",
+									"1gdbsn6M",
+									"iBeGsio7"
+								],
+								"view": "jLQUM0Qo"
 							}
 						]
 					}
@@ -39152,11 +39833,11 @@
 			}
 		},
 		{
-			"id": "5jMVnOIW",
-			"name": "TASK-526.06",
+			"id": "6IsBkqSN",
+			"name": "TASK-526 after TASK-532",
 			"lifecycle": "current",
-			"parent": "JY01vdHt",
-			"summary": "semantic delete removes a board",
+			"parent": "Hp8NOOeR",
+			"summary": "Board reads, transitions, durable writes and historical corrections",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -39291,7 +39972,7 @@
 						"name": "Write under lease",
 						"kind": "function",
 						"responsibility": "Commits one durable version",
-						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once. boardBefore reads the board through a reader its caller may choose: under the lease, which persists a migration the board awaits, unless the caller holds none and writes nothing.",
+						"description": "writeSemanticBoard locates the target, takes the board-wide lease under the writer's claim or an identity minted for the write, runs Check a candidate on the board it reads under that lease, and persists the candidate once, at the next version. writeSemanticBoardAt stamps the write at an instant a caller states, which is how a prepared candidate lands as the board that was prepared.",
 						"parent": "0z23E66v",
 						"groups": [
 							"writes"
@@ -39462,7 +40143,7 @@
 						"name": "Board lease",
 						"kind": "function",
 						"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
-						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board.",
+						"description": "ADR 0016. The lease lives in the vault, so every server on the vault sees the same exclusion; a dead holder costs one lease rather than wedging the board. A person's take-back (takeBackBoard) holds the lease with the claim revoked and gives it straight back, and answers the claim that stood. The claims, the lock watch and the lines agents said they were doing are process memory, and forgetBoardMemory drops all of it when a server stops, leaving the leases in each vault as they are.",
 						"groups": [
 							"writes"
 						],
@@ -39519,7 +40200,7 @@
 						"order": 23000,
 						"name": "History lens",
 						"kind": "module",
-						"responsibility": "Reads historical board bytes from Git without changing the vault",
+						"responsibility": "Reads Git history through a board's bindings without changing the vault: footprints and hotspots take a board and variants by name and choose the variants they read",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/code-intel/src/runtime/operations/history-lens"
@@ -39556,7 +40237,7 @@
 						"name": "Move",
 						"kind": "function",
 						"responsibility": "Moves a whole board, every variant, former name and id, into another repository's vault: the target note first, then each rewritten drill-down, the source note deleted last",
-						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. move-checks.ts refuses a same repository, a taken name and a link needing an untracked identity; move-drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, reading the board through the reader its caller gives it (under the lease by default), and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
+						"description": "ADR 0051, TASK-472.15. Holds the board's lease in the source vault, then its name's lease in the target without waiting. checks.ts refuses a same repository, a taken name and a link needing an untracked identity; drill-downs.ts rewrites the links in both vaults. checkedMove runs those checks and rewrites in memory, reading the board through the reader its caller gives it (under the lease by default), and the move writes what it found; Move preview runs it alone. A move that stopped part way leaves the board in both vaults, and running it again finishes it. It gives back the claim it ran under.",
 						"parent": "IbkA2Se8",
 						"groups": [
 							"writes"
@@ -39598,7 +40279,7 @@
 						"order": 30000,
 						"name": "Durable writes",
 						"kind": "module",
-						"responsibility": "Commits a board change or a discard under the lease of the board and version check, and writes the file where its name puts it"
+						"responsibility": "Commits a board change, a discard or a move under the lease and version check of each board it writes, and writes each file where its name puts it"
 					},
 					{
 						"id": "zYwmlbj8",
@@ -39612,7 +40293,8 @@
 						"order": 32000,
 						"name": "Board move",
 						"kind": "module",
-						"responsibility": "Moves a whole board to another repository's vault in a fixed order, and previews what the move would rewrite without writing"
+						"responsibility": "Moves a whole board to another repository's vault in a fixed order, and previews what the move would rewrite without writing",
+						"parent": "0z23E66v"
 					},
 					{
 						"id": "nSTHru5x",
@@ -39658,8 +40340,69 @@
 						}
 					},
 					{
-						"id": "11RbhEB0",
+						"id": "FBhApaqP",
 						"order": 36000,
+						"name": "Check a candidate",
+						"kind": "function",
+						"responsibility": "What every write passes before a file changes: the board read, the stated version checked, the change applied and the candidate admitted",
+						"description": "checkedCandidate reads the board through a reader its caller chooses, refuses a change that states no version or the wrong one, applies the transition, finds where the name puts the file, and admits the result under the vault's vocabulary and the board's own address. It takes no lease and writes nothing. The write pass runs it under the lease, a prepared write runs it with a read that holds none, and a discard and a move use boardBefore for the same version check.",
+						"parent": "0z23E66v",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts"
+						}
+					},
+					{
+						"id": "97vUnmOx",
+						"order": 37000,
+						"name": "Prepare a write",
+						"kind": "function",
+						"responsibility": "Makes the candidate a write would land with no lease held, and commits exactly that candidate afterwards",
+						"description": "prepareSemanticBoardWrite reads the board as its lease would, applies a stated transition or a historical correction, and admits the candidate by the rules a write itself uses. Its answer carries a commit bound to that candidate: the commit writes the prepared board at the prepared instant under the lease and refuses BOARD_VERSION_CONFLICT when the board has moved since, so the subject ids a caller read evidence about are the ids written. A change to a board that does not exist is refused BOARD_MISSING.",
+						"parent": "0z23E66v",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts"
+						}
+					},
+					{
+						"id": "TDMg7DFU",
+						"order": 38000,
+						"name": "Carry a rename",
+						"kind": "function",
+						"responsibility": "Writes a rename, then carries this server's claim and the lines agents wrote to the board's new name",
+						"description": "renameSemanticBoard states the rename as a transition and writes it. When the write moved the board to a new name, the lines agents wrote about the board stay with it and this server's claim follows, for the reason it was taken. A claim that could not follow adds a CLAIM_NOT_CARRIED warning to the answer. The server only points its panes at the new name.",
+						"parent": "0z23E66v",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts"
+						}
+					},
+					{
+						"id": "R84q0IT2",
+						"order": 39000,
+						"name": "Read a variant",
+						"kind": "function",
+						"responsibility": "Reads a board by name and opens the variant an address states",
+						"description": "readBoardVariant reads the board by its name or a former name, then opens the variant the address states: an id, a name or current. A bare name, an empty variant and current all open what the bare name opens. When the address opens no variant the answer carries the board it read and says whether the variant is missing or the name chooses none.",
+						"parent": "ZqkmwupZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/variant.ts"
+						}
+					},
+					{
+						"id": "umBb2VAo",
+						"order": 40000,
 						"name": "Track an embed",
 						"kind": "function",
 						"responsibility": "A pure transition that lists one tracked embed on the board, once, and changes no variant, so it needs no stated version",
@@ -39674,8 +40417,8 @@
 						}
 					},
 					{
-						"id": "hrdY53mb",
-						"order": 37000,
+						"id": "FKOLK94r",
+						"order": 41000,
 						"name": "Move checks",
 						"kind": "function",
 						"responsibility": "Asks the vaults of a move which names are taken and which drill-downs open the board, as they are on disk; a delete asks it which drill-downs open the board",
@@ -39819,28 +40562,28 @@
 					{
 						"id": "9O4o9jcE",
 						"order": 10000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "tcwsrSQv",
 						"kind": "call",
 						"label": "read under lease",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "readSemanticBoardAtUnderLease"
 						}
 					},
 					{
 						"id": "VWo4vJh0",
 						"order": 11000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "i2CrY6Xj",
 						"kind": "call",
 						"label": "apply transition",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "apply"
 						}
 					},
@@ -40058,14 +40801,14 @@
 						"id": "wyTy54Ob",
 						"order": 27000,
 						"from": "4P7YZdnj",
-						"to": "GWg2Fads",
+						"to": "TDMg7DFU",
 						"kind": "call",
-						"label": "rename transition",
+						"label": "rename a board, and carry what follows it",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
-							"symbol": "renameTransition"
+							"symbol": "renameSemanticBoard"
 						}
 					},
 					{
@@ -40088,7 +40831,7 @@
 						"from": "QPkSSQP8",
 						"to": "1gdbsn6M",
 						"kind": "call",
-						"label": "the same lease and version check",
+						"label": "the same lease a write takes",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -40169,14 +40912,14 @@
 					{
 						"id": "pbX3QKug",
 						"order": 35000,
-						"from": "1gdbsn6M",
+						"from": "FBhApaqP",
 						"to": "AJGft3Pe",
 						"kind": "call",
 						"label": "refuse a new unknown key",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "readSemanticBoardConfiguration"
 						}
 					},
@@ -40424,12 +41167,13 @@
 						"from": "4P7YZdnj",
 						"to": "ON3C5Z6t",
 						"kind": "call",
+						"label": "read a footprint or hotspots by name",
 						"description": "Reads how far board content is behind its code",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/server/src/server/routes/code-check/code-check-route.ts",
-							"symbol": "createBehindReading"
+							"path": "apps/server/src/server/routes/footprint/footprint-route.ts",
+							"symbol": "readFootprint"
 						}
 					},
 					{
@@ -40536,12 +41280,12 @@
 						"from": "3HNevPSf",
 						"to": "1gdbsn6M",
 						"kind": "call",
-						"label": "the admission and version check a write takes",
+						"label": "the admission a write takes",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/move/move.ts",
-							"symbol": "boardBefore"
+							"symbol": "admit"
 						}
 					},
 					{
@@ -40715,15 +41459,15 @@
 					{
 						"id": "W1XFvhja",
 						"order": 75000,
-						"from": "1gdbsn6M",
+						"from": "TDMg7DFU",
 						"to": "GWg2Fads",
 						"kind": "call",
-						"label": "apply the rename",
+						"label": "state the rename as a transition",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
-							"symbol": "apply"
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "renameTransition"
 						}
 					},
 					{
@@ -40786,13 +41530,14 @@
 						"id": "tovZfxLM",
 						"order": 80000,
 						"from": "4P7YZdnj",
-						"to": "iBeGsio7",
+						"to": "97vUnmOx",
 						"kind": "call",
+						"label": "prepare a correction, then commit it",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
-							"symbol": "correctHistoricalTransition"
+							"symbol": "prepareSemanticBoardWrite"
 						}
 					},
 					{
@@ -40809,10 +41554,262 @@
 						}
 					},
 					{
-						"id": "rTR0ChQj",
+						"id": "kht8iTkH",
 						"order": 82000,
+						"from": "1gdbsn6M",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "check the candidate before it is written",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"symbol": "checkedCandidate"
+						}
+					},
+					{
+						"id": "bkVmmmZk",
+						"order": 83000,
+						"from": "FBhApaqP",
+						"to": "uZ8BMtTA",
+						"kind": "call",
+						"label": "where the name puts the file",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
+							"symbol": "relocation"
+						}
+					},
+					{
+						"id": "sdPR22Ti",
+						"order": 84000,
+						"from": "FBhApaqP",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "a board answers to the address it is at",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
+							"symbol": "semanticBoardAddress"
+						}
+					},
+					{
+						"id": "ZYDmDsmF",
+						"order": 85000,
+						"from": "97vUnmOx",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the same checks, with a read that holds no lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "checkedCandidate"
+						}
+					},
+					{
+						"id": "LHrsm5k4",
+						"order": 86000,
+						"from": "97vUnmOx",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read as the lease would, persisting nothing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "readSemanticBoardAtAsLeased"
+						}
+					},
+					{
+						"id": "Z5F9FdCS",
+						"order": 87000,
+						"from": "97vUnmOx",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "commit exactly the prepared candidate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "writeSemanticBoardAt"
+						}
+					},
+					{
+						"id": "Q9S0lddK",
+						"order": 88000,
+						"from": "97vUnmOx",
+						"to": "iBeGsio7",
+						"kind": "call",
+						"label": "a correction as a transition",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "correctHistoricalTransition"
+						}
+					},
+					{
+						"id": "8hz4OfpS",
+						"order": 89000,
+						"from": "97vUnmOx",
+						"to": "lkf45vPe",
+						"kind": "call",
+						"label": "the board the name answers to",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "resolveSemanticBoard"
+						}
+					},
+					{
+						"id": "9gqokaFZ",
+						"order": 90000,
+						"from": "97vUnmOx",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "where the board lives",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/prepare.ts",
+							"symbol": "locateSemanticBoard"
+						}
+					},
+					{
+						"id": "64uivDPd",
+						"order": 91000,
+						"from": "TDMg7DFU",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "write the rename",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "P3ZaxJ1C",
+						"order": 92000,
+						"from": "TDMg7DFU",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "carry the claim to the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/rename/carry.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "CKknbKgQ",
+						"order": 93000,
+						"from": "QPkSSQP8",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the same version check a write takes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/discard.ts",
+							"symbol": "boardBefore"
+						}
+					},
+					{
+						"id": "OFq3QNB7",
+						"order": 94000,
+						"from": "3HNevPSf",
+						"to": "FBhApaqP",
+						"kind": "call",
+						"label": "the version check a write takes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/move/move.ts",
+							"symbol": "boardBefore"
+						}
+					},
+					{
+						"id": "5NcKdpPu",
+						"order": 95000,
 						"from": "4P7YZdnj",
-						"to": "11RbhEB0",
+						"to": "R84q0IT2",
+						"kind": "call",
+						"label": "the variant a pane is shown",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "readBoardVariant"
+						}
+					},
+					{
+						"id": "NXfFLlou",
+						"order": 96000,
+						"from": "R84q0IT2",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board by its name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/variant.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "2ZOQJz4c",
+						"order": 97000,
+						"from": "4P7YZdnj",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "a person takes a claimed board back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+							"symbol": "takeBackBoard"
+						}
+					},
+					{
+						"id": "VgEZTrmE",
+						"order": 100000,
+						"from": "ON3C5Z6t",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board a request names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-intel/src/runtime/operations/history-lens/admission.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "K2ivZcXH",
+						"order": 101000,
+						"from": "1gdbsn6M",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read the board under the lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"symbol": "readSemanticBoardAtUnderLease"
+						}
+					},
+					{
+						"id": "ywC33JWE",
+						"order": 102000,
+						"from": "4P7YZdnj",
+						"to": "umBb2VAo",
 						"kind": "call",
 						"label": "track an embed",
 						"emphasis": "normal",
@@ -40823,24 +41820,24 @@
 						}
 					},
 					{
-						"id": "jEFjyKNG",
-						"order": 83000,
-						"from": "1gdbsn6M",
-						"to": "11RbhEB0",
+						"id": "dHhYOJDN",
+						"order": 103000,
+						"from": "FBhApaqP",
+						"to": "umBb2VAo",
 						"kind": "call",
 						"label": "apply the track",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"path": "packages/board/src/runtime/operations/write/candidate.ts",
 							"symbol": "apply"
 						}
 					},
 					{
-						"id": "3FjRW8N5",
-						"order": 84000,
+						"id": "bkiduZjD",
+						"order": 104000,
 						"from": "QPkSSQP8",
-						"to": "hrdY53mb",
+						"to": "FKOLK94r",
 						"kind": "call",
 						"label": "which drill-downs of the vault open it",
 						"emphasis": "normal",
@@ -40851,10 +41848,10 @@
 						}
 					},
 					{
-						"id": "4mIjYYZK",
-						"order": 85000,
+						"id": "1L1jcFo2",
+						"order": 105000,
 						"from": "3HNevPSf",
-						"to": "hrdY53mb",
+						"to": "FKOLK94r",
 						"kind": "call",
 						"label": "the checks, and the boards it relinks",
 						"emphasis": "normal",
@@ -40865,10 +41862,10 @@
 						}
 					},
 					{
-						"id": "xkOwgpoN",
-						"order": 86000,
+						"id": "IwELB7v0",
+						"order": 106000,
 						"from": "CwGKphz4",
-						"to": "hrdY53mb",
+						"to": "FKOLK94r",
 						"kind": "call",
 						"label": "a same repository, and each board as it is on disk",
 						"emphasis": "muted",
@@ -40879,9 +41876,9 @@
 						}
 					},
 					{
-						"id": "pWCV2mco",
-						"order": 87000,
-						"from": "hrdY53mb",
+						"id": "KKbfZzsg",
+						"order": 107000,
+						"from": "FKOLK94r",
 						"to": "lkf45vPe",
 						"kind": "call",
 						"label": "which board a drill-down's name opens",
@@ -40893,9 +41890,9 @@
 						}
 					},
 					{
-						"id": "M0xaQTA6",
-						"order": 88000,
-						"from": "hrdY53mb",
+						"id": "kszywnmH",
+						"order": 108000,
+						"from": "FKOLK94r",
 						"to": "NM28UA5U",
 						"kind": "call",
 						"label": "every board of a vault",
@@ -40907,9 +41904,9 @@
 						}
 					},
 					{
-						"id": "lam44Qpv",
-						"order": 89000,
-						"from": "hrdY53mb",
+						"id": "YwClcz9f",
+						"order": 109000,
+						"from": "FKOLK94r",
 						"to": "R3ldC44x",
 						"kind": "call",
 						"label": "read each board without a lease or a write",
@@ -40921,9 +41918,9 @@
 						}
 					},
 					{
-						"id": "2k7GAOrT",
-						"order": 90000,
-						"from": "hrdY53mb",
+						"id": "0E19fp3d",
+						"order": 110000,
+						"from": "FKOLK94r",
 						"to": "klNuMiwC",
 						"kind": "call",
 						"label": "the vault's own repository identity",
@@ -40935,10 +41932,10 @@
 						}
 					},
 					{
-						"id": "BOOc1Juc",
-						"order": 91000,
-						"from": "hrdY53mb",
-						"to": "1gdbsn6M",
+						"id": "LxIxIFZT",
+						"order": 111000,
+						"from": "FKOLK94r",
+						"to": "FBhApaqP",
 						"kind": "call",
 						"label": "a refusal in a write's shape",
 						"emphasis": "muted",
@@ -40957,6 +41954,7 @@
 							"4P7YZdnj",
 							"i2CrY6Xj",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"UFO3ulXp",
 							"tcwsrSQv",
 							"uZ8BMtTA",
@@ -41086,21 +42084,33 @@
 																}
 															},
 															{
-																"id": "kzWNr8Vx",
+																"id": "LnEPLDZq",
 																"from": "1gdbsn6M",
+																"to": "FBhApaqP",
+																"label": "checkedCandidate: read, check, apply, admit",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "checkedCandidate"
+																}
+															},
+															{
+																"id": "kzWNr8Vx",
+																"from": "FBhApaqP",
 																"to": "tcwsrSQv",
 																"label": "read under the lease",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																	"symbol": "readSemanticBoardAtUnderLease"
 																}
 															},
 															{
 																"id": "6K80OWsK",
 																"from": "tcwsrSQv",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the board and its version",
 																"kind": "return",
 																"anchor": {
@@ -41119,13 +42129,13 @@
 																		"steps": [
 																			{
 																				"id": "da8O9Hfg",
-																				"from": "1gdbsn6M",
+																				"from": "FBhApaqP",
 																				"to": "4P7YZdnj",
 																				"label": "EXPECT_VERSION_REQUIRED, UNREADABLE or VERSION_CONFLICT",
 																				"kind": "return",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/board/src/runtime/operations/write/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																					"symbol": "boardBefore"
 																				}
 																			}
@@ -41136,20 +42146,20 @@
 																		"steps": [
 																			{
 																				"id": "KYTTAvtj",
-																				"from": "1gdbsn6M",
+																				"from": "FBhApaqP",
 																				"to": "i2CrY6Xj",
 																				"label": "apply the transition",
 																				"kind": "sync",
 																				"anchor": {
 																					"repo": "github.com/miklschmidt/archboard",
-																					"path": "packages/board/src/runtime/operations/write/write.ts",
+																					"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																					"symbol": "apply"
 																				}
 																			},
 																			{
 																				"id": "AsvlY7aV",
 																				"from": "i2CrY6Xj",
-																				"to": "1gdbsn6M",
+																				"to": "FBhApaqP",
 																				"label": "the candidate board",
 																				"kind": "return",
 																				"anchor": {
@@ -41168,13 +42178,13 @@
 																						"steps": [
 																							{
 																								"id": "VEkn9cEE",
-																								"from": "1gdbsn6M",
+																								"from": "FBhApaqP",
 																								"to": "4P7YZdnj",
 																								"label": "the transition's refusal",
 																								"kind": "return",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "packages/board/src/runtime/operations/write/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																									"symbol": "rejected"
 																								}
 																							}
@@ -41185,13 +42195,13 @@
 																						"steps": [
 																							{
 																								"id": "M84nDkrd",
-																								"from": "1gdbsn6M",
-																								"to": "1gdbsn6M",
+																								"from": "FBhApaqP",
+																								"to": "FBhApaqP",
 																								"label": "check the candidate against the vault's vocabulary",
 																								"kind": "self",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
-																									"path": "packages/board/src/runtime/operations/write/write.ts",
+																									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																									"symbol": "acceptable"
 																								}
 																							},
@@ -41205,13 +42215,13 @@
 																										"steps": [
 																											{
 																												"id": "x6GekCKj",
-																												"from": "1gdbsn6M",
+																												"from": "FBhApaqP",
 																												"to": "4P7YZdnj",
 																												"label": "INVALID_CONTENT or BOARD_MISADDRESSED",
 																												"kind": "return",
 																												"anchor": {
 																													"repo": "github.com/miklschmidt/archboard",
-																													"path": "packages/board/src/runtime/operations/write/write.ts",
+																													"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																													"symbol": "misaddressedRefusal"
 																												}
 																											}
@@ -41220,6 +42230,18 @@
 																									{
 																										"label": "valid",
 																										"steps": [
+																											{
+																												"id": "GLmb5FYB",
+																												"from": "FBhApaqP",
+																												"to": "1gdbsn6M",
+																												"label": "the checked candidate, and where it goes",
+																												"kind": "return",
+																												"anchor": {
+																													"repo": "github.com/miklschmidt/archboard",
+																													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+																													"symbol": "checkedCandidate"
+																												}
+																											},
 																											{
 																												"id": "1XxPd9PI",
 																												"from": "1gdbsn6M",
@@ -41308,8 +42330,10 @@
 						"name": "A rename moves the file",
 						"participants": [
 							"4P7YZdnj",
+							"TDMg7DFU",
 							"GWg2Fads",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"lkf45vPe",
 							"uZ8BMtTA",
 							"UFO3ulXp",
@@ -41317,21 +42341,33 @@
 						],
 						"steps": [
 							{
-								"id": "2QIR0Obl",
+								"id": "zJdwg8wU",
 								"from": "4P7YZdnj",
+								"to": "TDMg7DFU",
+								"label": "renameSemanticBoard",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"symbol": "renameSemanticBoard"
+								}
+							},
+							{
+								"id": "2QIR0Obl",
+								"from": "TDMg7DFU",
 								"to": "GWg2Fads",
 								"label": "renameTransition",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
 									"symbol": "renameTransition"
 								}
 							},
 							{
 								"id": "lT26tyhA",
 								"from": "GWg2Fads",
-								"to": "4P7YZdnj",
+								"to": "TDMg7DFU",
 								"label": "a pure transition",
 								"kind": "return",
 								"anchor": {
@@ -41342,13 +42378,13 @@
 							},
 							{
 								"id": "EZmDOkgi",
-								"from": "4P7YZdnj",
+								"from": "TDMg7DFU",
 								"to": "1gdbsn6M",
 								"label": "writeSemanticBoard",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
 									"symbol": "writeSemanticBoard"
 								}
 							},
@@ -41389,14 +42425,26 @@
 								}
 							},
 							{
-								"id": "cVLkTCam",
+								"id": "OsgvuTzT",
 								"from": "1gdbsn6M",
+								"to": "FBhApaqP",
+								"label": "checkedCandidate",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "cVLkTCam",
+								"from": "FBhApaqP",
 								"to": "GWg2Fads",
 								"label": "apply the rename",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "apply"
 								}
 							},
@@ -41415,7 +42463,7 @@
 							{
 								"id": "4bK6RAAh",
 								"from": "GWg2Fads",
-								"to": "1gdbsn6M",
+								"to": "FBhApaqP",
 								"label": "the candidate board",
 								"kind": "return",
 								"anchor": {
@@ -41426,14 +42474,38 @@
 							},
 							{
 								"id": "oQXLhMTq",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "uZ8BMtTA",
 								"label": "where does the new name put the file",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "relocation"
+								}
+							},
+							{
+								"id": "dHgGYk42",
+								"from": "FBhApaqP",
+								"to": "1gdbsn6M",
+								"label": "the checked candidate, and where it goes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "E5ZyuSk3",
+								"from": "1gdbsn6M",
+								"to": "uZ8BMtTA",
+								"label": "writeBoardFile: move the file, then write the board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"symbol": "writeBoardFile"
 								}
 							},
 							{
@@ -41647,13 +42719,77 @@
 							{
 								"id": "HGnaWFvZ",
 								"from": "1gdbsn6M",
-								"to": "4P7YZdnj",
+								"to": "TDMg7DFU",
 								"label": "applied, from the old name",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "packages/board/src/runtime/operations/write/write.ts",
 									"symbol": "persisted"
+								}
+							},
+							{
+								"id": "dirfMO6U",
+								"from": "TDMg7DFU",
+								"to": "TDMg7DFU",
+								"label": "keep the lines agents wrote with the board",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
+									"symbol": "carryDoing"
+								}
+							},
+							{
+								"id": "xbMFHKoX",
+								"kind": "decision",
+								"question": "Did this server hold a claim on the board?",
+								"alternatives": [
+									{
+										"label": "claimed",
+										"steps": [
+											{
+												"id": "t0aONlj3",
+												"from": "TDMg7DFU",
+												"to": "UFO3ulXp",
+												"label": "releaseClaim, then claimBoard under the new name",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/rename/carry.ts",
+													"symbol": "claimBoard"
+												}
+											},
+											{
+												"id": "jnFBvBru",
+												"from": "UFO3ulXp",
+												"to": "TDMg7DFU",
+												"label": "the claim, or why it could not follow",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/rename/carry.ts",
+													"symbol": "carryClaim"
+												}
+											}
+										]
+									},
+									{
+										"label": "unclaimed",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "ZHaWa1ub",
+								"from": "TDMg7DFU",
+								"to": "4P7YZdnj",
+								"label": "applied, with a warning when the claim could not follow",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/rename/carry.ts",
+									"symbol": "renameSemanticBoard"
 								}
 							}
 						]
@@ -42098,6 +43234,7 @@
 							"4P7YZdnj",
 							"QPkSSQP8",
 							"1gdbsn6M",
+							"FBhApaqP",
 							"UFO3ulXp",
 							"qTv7HuBw"
 						],
@@ -42141,7 +43278,7 @@
 							{
 								"id": "90NyPVCW",
 								"from": "QPkSSQP8",
-								"to": "1gdbsn6M",
+								"to": "FBhApaqP",
 								"label": "boardBefore: the version check a write takes",
 								"kind": "sync",
 								"anchor": {
@@ -42152,13 +43289,13 @@
 							},
 							{
 								"id": "POZQCewD",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "QPkSSQP8",
 								"label": "the board and its version",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "boardBefore"
 								}
 							},
@@ -42261,7 +43398,7 @@
 						"id": "MdShMOek",
 						"name": "An edit reaches the drafts under it",
 						"participants": [
-							"1gdbsn6M",
+							"FBhApaqP",
 							"i2CrY6Xj",
 							"xoapCJNG",
 							"CxaaWj4x",
@@ -42271,13 +43408,13 @@
 						"steps": [
 							{
 								"id": "A5lVG1E2",
-								"from": "1gdbsn6M",
+								"from": "FBhApaqP",
 								"to": "i2CrY6Xj",
 								"label": "apply the edit transition",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
-									"path": "packages/board/src/runtime/operations/write/write.ts",
+									"path": "packages/board/src/runtime/operations/write/candidate.ts",
 									"symbol": "apply"
 								}
 							},
@@ -42292,7 +43429,7 @@
 											{
 												"id": "BT66Enk8",
 												"from": "i2CrY6Xj",
-												"to": "1gdbsn6M",
+												"to": "FBhApaqP",
 												"label": "VARIANT_HISTORICAL or VARIANT_SHELVED",
 												"kind": "return",
 												"anchor": {
@@ -42353,7 +43490,7 @@
 															{
 																"id": "fKkWaWOW",
 																"from": "i2CrY6Xj",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the refusal",
 																"kind": "return",
 																"anchor": {
@@ -42564,7 +43701,7 @@
 															{
 																"id": "Sl6fy9ZT",
 																"from": "i2CrY6Xj",
-																"to": "1gdbsn6M",
+																"to": "FBhApaqP",
 																"label": "the candidate board, with what each draft did",
 																"kind": "return",
 																"anchor": {
@@ -42868,7 +44005,7 @@
 							"3HNevPSf",
 							"klNuMiwC",
 							"UFO3ulXp",
-							"1gdbsn6M",
+							"FBhApaqP",
 							"uZ8BMtTA",
 							"qTv7HuBw"
 						],
@@ -43010,8 +44147,8 @@
 															{
 																"id": "LchEfPpZ",
 																"from": "3HNevPSf",
-																"to": "1gdbsn6M",
-																"label": "boardBefore: the admission and version check a write takes",
+																"to": "FBhApaqP",
+																"label": "boardBefore: the version check a write takes",
 																"kind": "sync",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
@@ -43021,13 +44158,13 @@
 															},
 															{
 																"id": "4jeaUoFg",
-																"from": "1gdbsn6M",
+																"from": "FBhApaqP",
 																"to": "3HNevPSf",
 																"label": "the board and its version",
 																"kind": "return",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
-																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
 																	"symbol": "boardBefore"
 																}
 															},
@@ -43450,6 +44587,247 @@
 								]
 							}
 						]
+					},
+					{
+						"id": "b178TWBR",
+						"name": "A correction is prepared, then committed",
+						"participants": [
+							"4P7YZdnj",
+							"97vUnmOx",
+							"tcwsrSQv",
+							"iBeGsio7",
+							"FBhApaqP",
+							"1gdbsn6M",
+							"uZ8BMtTA"
+						],
+						"steps": [
+							{
+								"id": "eB0l3Bhr",
+								"from": "4P7YZdnj",
+								"to": "97vUnmOx",
+								"label": "prepareSemanticBoardWrite",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+									"symbol": "prepareSemanticBoardWrite"
+								}
+							},
+							{
+								"id": "MHoHAjki",
+								"from": "97vUnmOx",
+								"to": "tcwsrSQv",
+								"label": "readSemanticBoardAtAsLeased: no lease, nothing persisted",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "readSemanticBoardAtAsLeased"
+								}
+							},
+							{
+								"id": "cbSybf3m",
+								"from": "tcwsrSQv",
+								"to": "97vUnmOx",
+								"label": "the board as the commit would find it",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/read/read.ts",
+									"symbol": "readSemanticBoardAtAsLeased"
+								}
+							},
+							{
+								"id": "Bn2aClGX",
+								"from": "97vUnmOx",
+								"to": "iBeGsio7",
+								"label": "correctHistoricalTransition",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "correctHistoricalTransition"
+								}
+							},
+							{
+								"id": "rONIXjr6",
+								"from": "iBeGsio7",
+								"to": "97vUnmOx",
+								"label": "a pure transition",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/correction.ts",
+									"symbol": "correctHistoricalTransition"
+								}
+							},
+							{
+								"id": "bY2Pk558",
+								"from": "97vUnmOx",
+								"to": "FBhApaqP",
+								"label": "checkedCandidate: version, apply, admit",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/board/src/runtime/operations/write/prepare.ts",
+									"symbol": "checkedCandidate"
+								}
+							},
+							{
+								"id": "PqDn0u1f",
+								"kind": "decision",
+								"question": "Would the store write this candidate?",
+								"alternatives": [
+									{
+										"label": "refused",
+										"steps": [
+											{
+												"id": "0JTsDCJ9",
+												"from": "FBhApaqP",
+												"to": "4P7YZdnj",
+												"label": "BOARD_VERSION_CONFLICT, INVALID_CONTENT or a refusal",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+													"symbol": "rejected"
+												}
+											}
+										]
+									},
+									{
+										"label": "prepared",
+										"steps": [
+											{
+												"id": "OYoP4h49",
+												"from": "FBhApaqP",
+												"to": "97vUnmOx",
+												"label": "the checked candidate",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/candidate.ts",
+													"symbol": "checkedCandidate"
+												}
+											},
+											{
+												"id": "Yi7SUnGB",
+												"from": "97vUnmOx",
+												"to": "4P7YZdnj",
+												"label": "the candidate, and the commit bound to it",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/prepare.ts",
+													"symbol": "prepareSemanticBoardWrite"
+												}
+											},
+											{
+												"id": "wRfJbF0W",
+												"from": "4P7YZdnj",
+												"to": "4P7YZdnj",
+												"label": "read the code at the cited revisions, holding no lease",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+													"symbol": "correct"
+												}
+											},
+											{
+												"id": "d9KPrigm",
+												"from": "4P7YZdnj",
+												"to": "97vUnmOx",
+												"label": "commit: write exactly the prepared candidate",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+													"symbol": "commit"
+												}
+											},
+											{
+												"id": "MCT6goGb",
+												"from": "97vUnmOx",
+												"to": "1gdbsn6M",
+												"label": "writeSemanticBoardAt, at the prepared instant",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/prepare.ts",
+													"symbol": "writeSemanticBoardAt"
+												}
+											},
+											{
+												"id": "ASkp9NEP",
+												"from": "1gdbsn6M",
+												"to": "FBhApaqP",
+												"label": "checkedCandidate again, under the lease",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/board/src/runtime/operations/write/write.ts",
+													"symbol": "checkedCandidate"
+												}
+											},
+											{
+												"id": "IUoRaodU",
+												"kind": "decision",
+												"question": "Is the board still at the version it was prepared from?",
+												"alternatives": [
+													{
+														"label": "moved",
+														"steps": [
+															{
+																"id": "O4DhosPe",
+																"from": "FBhApaqP",
+																"to": "4P7YZdnj",
+																"label": "BOARD_VERSION_CONFLICT: read the board again",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/candidate.ts",
+																	"symbol": "versionRefusal"
+																}
+															}
+														]
+													},
+													{
+														"label": "unchanged",
+														"steps": [
+															{
+																"id": "xDWHgYSp",
+																"from": "1gdbsn6M",
+																"to": "uZ8BMtTA",
+																"label": "writeBoardFile: the prepared board",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "writeBoardFile"
+																}
+															},
+															{
+																"id": "uE0q4vvf",
+																"from": "1gdbsn6M",
+																"to": "4P7YZdnj",
+																"label": "applied, at the next version",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/board/src/runtime/operations/write/write.ts",
+																	"symbol": "persisted"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
 					}
 				],
 				"walkthroughs": [
@@ -43460,7 +44838,7 @@
 							{
 								"id": "xaTiUHzJ",
 								"heading": "Callers state a transition",
-								"body": "The server constructs a pure transition from a create, edit, branch, settle, adopt, shelve or rename request, and hands it to the one write boundary.",
+								"body": "The server constructs a pure transition from a create, edit, branch, settle, adopt or shelve request and hands it to the one write boundary. A rename goes to the board package, which states the transition itself and carries the claim and the lines agents wrote to the new name. The server only points its panes.",
 								"subjects": [
 									"oY68rZP2",
 									"1mt5K7rs"
@@ -43522,6 +44900,18 @@
 									"qTv7HuBw"
 								],
 								"view": "VSoiCgpE"
+							},
+							{
+								"id": "3sUhHvoz",
+								"heading": "A candidate can be read before it lands",
+								"body": "A historical correction must read the code at the revisions it cites before it may land, and reading Git must not hold the board. So the store prepares the candidate with no lease, by the checks a write passes, and commits exactly that candidate later under the lease. The commit reads the board again and refuses the write when the version moved, so the subject ids the evidence was read for are the ids written.",
+								"subjects": [
+									"97vUnmOx",
+									"FBhApaqP",
+									"1gdbsn6M",
+									"iBeGsio7"
+								],
+								"view": "jLQUM0Qo"
 							}
 						]
 					}
@@ -43529,7 +44919,7 @@
 			}
 		}
 	],
-	"current": "5jMVnOIW",
+	"current": "6IsBkqSN",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -43628,16 +45018,16 @@
 			"reason": "Historical content corrections now reconcile inheriting drafts in the same checked write"
 		},
 		{
-			"variant": "JY01vdHt",
+			"variant": "Hp8NOOeR",
 			"from": "IcCJumNs",
-			"at": "2026-10-24T19:19:28.641Z",
-			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+			"at": "2026-10-25T05:14:19.582Z",
+			"reason": "A write is prepared and committed as the same candidate, every write passes one candidate check, a rename carries the claim and the doing lines, and the variant read and the take-back are board operations (TASK-529.01, TASK-532.04)"
 		},
 		{
-			"variant": "5jMVnOIW",
-			"from": "JY01vdHt",
-			"at": "2026-10-24T20:14:23.918Z",
-			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
+			"variant": "6IsBkqSN",
+			"from": "Hp8NOOeR",
+			"at": "2026-10-26T05:37:14.167Z",
+			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
 		}
 	],
 	"shelvings": [

@@ -39,7 +39,7 @@ type ThreadAuthorityPortKeys = Assert<
 type ContextPortKeys = Assert<
 	Equal<
 		keyof DynamicContextPort,
-		"issueAndRevalidatePaneLinkAuthority" | "readOneFreshArchboardContext"
+		"issueAndRevalidateLinkAuthority" | "readOneFreshArchboardContext"
 	>
 >;
 type OperationPortKeys = Assert<

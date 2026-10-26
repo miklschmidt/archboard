@@ -1,5 +1,5 @@
+import type { EpochTransaction } from "#runtime/protocol/voice/extension.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
-import type { EpochTransaction } from "#runtime/store/epoch/contract.ts";
 import type { SessionThread, SessionTurn } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
@@ -55,7 +55,7 @@ import {
  * @param prepared The prepared mutation.
  * @param request The server request.
  * @param caller The caller's authority.
- * @param contextAuthority The pane-link authority the effect runs under.
+ * @param contextAuthority The thread-link authority the effect runs under.
  * @param options The dynamic tools options.
  * @param operationSettlement How the call's operation identities are settled.
  * @returns What the mutation did.
@@ -189,7 +189,7 @@ function forkPromptOf(prepared: PreparedDynamicMutation): string {
  * be read.
  * @param prepared The prepared mutation.
  * @param caller The caller's authority.
- * @param contextAuthority The pane-link authority the effect runs under.
+ * @param contextAuthority The thread-link authority the effect runs under.
  * @param options The dynamic tools options.
  * @returns The context, or the refusal.
  */
@@ -307,7 +307,7 @@ async function forkThread(input: ForkThreadInput): Promise<ForkThreadResult> {
  * @param prepared The prepared mutation.
  * @param request The server request.
  * @param caller The caller's authority.
- * @param contextAuthority The pane-link authority the effect runs under.
+ * @param contextAuthority The thread-link authority the effect runs under.
  * @param target The thread being forked.
  * @param relation How the caller stands to that thread.
  * @param options The dynamic tools options.
@@ -403,7 +403,7 @@ function sendPromptOf(prepared: PreparedDynamicMutation): string {
  * @param prepared The prepared mutation.
  * @param request The server request.
  * @param caller The caller's authority.
- * @param contextAuthority The pane-link authority the effect runs under.
+ * @param contextAuthority The thread-link authority the effect runs under.
  * @param target The thread being written to.
  * @param options The dynamic tools options.
  * @param operationSettlement How the call's operation identities are settled.

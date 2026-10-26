@@ -9,7 +9,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -107,7 +107,7 @@ beforeAll(async () => {
 			{ repo: SHOP, root: shop, source: "declared", addedAt: "2026-09-27T00:00:00.000Z" },
 		]),
 	);
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {
@@ -124,7 +124,7 @@ afterAll(() => {
  */
 async function read(value: ReturnType<typeof board>, proposal?: string) {
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readFootprint({
+		await lens.readVariantFootprint({
 			vault: scratch,
 			board: value,
 			against: currentVariant(value),

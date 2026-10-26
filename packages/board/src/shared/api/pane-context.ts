@@ -5,11 +5,3 @@ export {
 	SemanticPaneContextSchema,
 	SemanticSubjectKindSchema,
 } from "#shared/protocol/pane-context.ts";
-export type {
-	PanePresentRequest,
-	SemanticPaneContext,
-	SemanticPanePart,
-	SemanticPanePresentation,
-	SemanticSubjectKind,
-	SemanticSubjectRef,
-} from "#shared/protocol/pane-context.ts";

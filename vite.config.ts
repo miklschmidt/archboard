@@ -185,6 +185,23 @@ export default defineConfig({
 				command: "vp build",
 				cache: { input: [{ auto: true }, ...FRONTEND_INPUT_GLOBS] },
 			},
+			"workbench-example": {
+				command: "bun scripts/build-workbench-example.ts",
+				cache: {
+					input: analysisCache.input,
+					env: analysisCache.env,
+					output: ["dist/workbench-example/**"],
+				},
+			},
+			"voice-package": {
+				dependsOn: ["contracts"],
+				command: "bun scripts/pack-codex-realtime-voice.ts",
+				cache: {
+					input: analysisCache.input,
+					env: analysisCache.env,
+					output: ["dist/codex-realtime-voice/**"],
+				},
+			},
 			types: {
 				dependsOn: ["contracts"],
 				command:
@@ -231,6 +248,7 @@ export default defineConfig({
 				command: [
 					"vp run types",
 					"vp run frontend",
+					"vp run workbench-example",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:repository",
@@ -284,7 +302,6 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/store",
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
-					"packages/workspace/tests/runtime/clients/git-async.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
 					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
 					"packages/board/tests/runtime/store/policy.test.ts",

@@ -172,7 +172,7 @@ export function decodeClientRequestParams<Method extends ClientRequestMethod>(
 	params: unknown,
 ): ClientRequestParams<Method>;
 /**
- * Decodes the params of a request Archboard is about to send, so nothing leaves the process
+ * Decodes the params of a request the client is about to send, so nothing leaves the process
  * that the bound protocol version would not accept.
  * @param method - The client request method.
  * @param params - The candidate params.
@@ -221,7 +221,7 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 }
 
 /**
- * Decodes login params and refuses the two ChatGPT variants Archboard does not implement.
+ * Decodes login params and refuses the two ChatGPT variants the client does not implement.
  * @param value - The candidate login params.
  * @returns The decoded, supported login params.
  */
@@ -236,7 +236,7 @@ export function decodeLoginAccountParams(value: unknown) {
 		throw new ProtocolDecodeError({
 			method: "account/login/start",
 			direction: "client-request",
-			issues: [{ path: ["type"], message: `${decoded.type} is not supported by Archboard` }],
+			issues: [{ path: ["type"], message: `${decoded.type} is not supported by this client` }],
 			recoveryAction:
 				"use hosted ChatGPT login, an API key, or explicit Bedrock credentials through the visual login flow",
 		});
@@ -257,7 +257,7 @@ export type DecodedClientNotification = z.infer<
 >;
 
 /**
- * Decodes a notification Archboard is about to send.
+ * Decodes a notification the client is about to send.
  * @param value - The candidate notification envelope.
  * @returns The decoded notification.
  */
@@ -316,7 +316,7 @@ export type DecodedServerRequest = {
 }[ServerRequestMethod];
 
 /**
- * Refuses the two server requests whose capability Archboard explicitly disabled at
+ * Refuses the two server requests whose capability the client explicitly disabled at
  * initialize, naming the JSON-RPC reply the caller must send instead.
  * @param method - The decoded server request method.
  */
@@ -325,7 +325,7 @@ function assertServerRequestCapability(method: ServerRequestMethod): void {
 		throw new ProtocolDecodeError({
 			method,
 			direction: "server-request",
-			issues: [{ path: ["method"], message: "capability was explicitly disabled by Archboard" }],
+			issues: [{ path: ["method"], message: "capability was explicitly disabled by this client" }],
 			recoveryAction:
 				method === "attestation/generate"
 					? "reply with JSON-RPC -32601 Attestation is not supported by this client"
@@ -412,7 +412,7 @@ export function isSupportedResponseMethod(method: string): method is ResponseMet
 }
 
 /**
- * Narrows a method name to the requests Archboard may send.
+ * Narrows a method name to the requests the client may send.
  * @param method - Any method name.
  * @returns Whether the request is part of the bound contract.
  */
@@ -421,7 +421,7 @@ export function isSupportedClientRequestMethod(method: string): method is Client
 }
 
 /**
- * Narrows a method name to the requests the server may send to Archboard.
+ * Narrows a method name to the requests the server may send to the client.
  * @param method - Any method name.
  * @returns Whether a server request decoder exists for it.
  */
@@ -430,7 +430,7 @@ export function isSupportedServerRequestMethod(method: string): method is Server
 }
 
 /**
- * Narrows a method name to the notifications Archboard may send.
+ * Narrows a method name to the notifications the client may send.
  * @param method - Any method name.
  * @returns Whether the notification is part of the bound contract.
  */

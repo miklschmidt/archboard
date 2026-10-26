@@ -117,14 +117,14 @@ function writeConfigAtomically(
 }
 
 /**
- * What every thread in the home runs under unless the config already says otherwise (TASK-314):
+ * What every thread in the home runs under unless the config already says otherwise:
  * Codex's auto-review mode, where the sandbox is the workspace and whatever it refuses goes to a
  * reviewer subagent that approves or denies it instead of asking the user (Codex 0.160.0
  * `approvals_reviewer`, paired as its TUI pairs it with on-request approvals and the
- * workspace-write profile), and network access, because every archboard command an agent runs
- * reaches the server over localhost. A setting somebody already made is theirs and is kept. Each
- * default is one top-level line, so it can go at the head of any config that lacks it; the
- * sandbox one is a dotted key, which a config that already has a `[sandbox_workspace_write]`
+ * workspace-write profile), and network access, because the host commands an agent runs, such as
+ * a command-line client of the host's server, reach it over localhost. A setting somebody already made is theirs and
+ * is kept. Each default is one top-level line, so it can go at the head of any config that lacks
+ * it; the sandbox one is a dotted key, which a config that already has a `[sandbox_workspace_write]`
  * table cannot also carry, so that table's presence counts as the setting made.
  */
 const DEFAULT_SETTINGS: readonly { readonly key: string; readonly line: string }[] = [
@@ -135,7 +135,7 @@ const DEFAULT_SETTINGS: readonly { readonly key: string; readonly line: string }
 ];
 
 /**
- * The line that pins the sqlite home, which is all the config held before TASK-314.
+ * The line that pins the sqlite home.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @returns The line.
  */
@@ -144,7 +144,7 @@ function sqliteHomeLine(sqliteHome: string): string {
 }
 
 /**
- * The config archboard writes where there is none: the sqlite home and every default.
+ * The config the client writes where there is none: the sqlite home and every default.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
  * @returns The config text.
  */
@@ -261,14 +261,14 @@ function existingConfig(
 }
 
 /**
- * A config that names another sqlite home can only be taken over when it is archboard's own line
+ * A config that names another sqlite home can only be taken over when it is the client's own line
  * naming a home that no longer exists: what is left when the state directory holding both homes
  * was moved, since the config records the sqlite home as an absolute path. Any other sqlite home
  * is a second store, and the config is refused.
  * @param existing - The config on disk.
  * @param named - The sqlite home it names.
  * @param fileSystem - The file-system seam.
- * @returns True when its first line is archboard's and names a home that is gone.
+ * @returns True when its first line is the client's and names a home that is gone.
  */
 function namesMovedSqliteHome(
 	existing: string,
@@ -286,7 +286,7 @@ function namesMovedSqliteHome(
 }
 
 /**
- * The config with archboard's sqlite home in it: kept when it names it already, given the line
+ * The config with the client's sqlite home in it: kept when it names it already, given the line
  * when it names none, or with a moved home's line replaced.
  * @param existing - The config on disk.
  * @param named - The sqlite home it names, when it names one.
@@ -316,8 +316,8 @@ function withSqliteHome(
 }
 
 /**
- * The config with what archboard needs added and nothing else changed: its sqlite home, and each
- * default the config does not already set (TASK-314). What Codex writes into it by itself, such as
+ * The config with what the client needs added and nothing else changed: its sqlite home, and each
+ * default the config does not already set. What Codex writes into it by itself, such as
  * the trust it records for a checkout, and whatever a person set, stays as it is.
  * @param existing - The config on disk.
  * @param sqliteHome - The canonical CODEX_SQLITE_HOME.
@@ -391,7 +391,7 @@ function parsedString(quoted: string): string | undefined {
 }
 
 /**
- * Ensure a config archboard can run Codex with is on disk: keep one that has what archboard needs,
+ * Ensure a config the client can run Codex with is on disk: keep one that has what it needs,
  * complete one that lacks some of it, refuse one that keeps Codex's store elsewhere or is not TOML,
  * and write one where there is none.
  * @param configPath - The config path.

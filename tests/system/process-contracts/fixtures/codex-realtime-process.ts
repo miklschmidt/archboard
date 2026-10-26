@@ -16,7 +16,7 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
-} from "@archboard/workbench/runtime";
+} from "@archboard/codex-realtime-voice/runtime";
 import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
 import {
 	createCodexTransport,
@@ -24,13 +24,19 @@ import {
 	type CodexTransportChild,
 } from "@archboard/codex-app-server/transport";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
+	createIdentityLedger,
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
-import type { RealtimeSemanticEvent } from "@archboard/workbench/browser-contract";
+import type { RealtimeSemanticEvent } from "@archboard/codex-realtime-voice/realtime";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
+/**
+ * The record prefix this harness passes as its host, as Archboard passes its own. It is neither
+ * Archboard's nor a package default, so an id under it was minted by this harness's ledger.
+ */
+const HOST_RECORD_PREFIX = "realtime-host";
 const DEFAULTS = {
 	startEvents: [
 		{ method: "thread/realtime/sdp", params: { threadId: "$THREAD", sdp: "answer-sdp" } },
@@ -210,7 +216,6 @@ async function createHarness(
 		),
 		workingDirectory: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
-		archboardServer: { url: "http://127.0.0.1:3000", binDirectory: "/opt/archboard/bin" },
 	});
 	const generations: Generation[] = [];
 	const events: RealtimeSemanticEvent[] = [];
@@ -229,7 +234,7 @@ async function createHarness(
 	const unsubscribeChild = owner.onChild((child) => {
 		bridge = new PublicChildBridge(child);
 		bridgeExitForwarded = false;
-		const identity = createIdentityAuthority();
+		const identity = createIdentityAuthorities(createIdentityLedger(HOST_RECORD_PREFIX)).identity;
 		const binding = makeBinding(identity);
 		writeControl(
 			controlPath,
@@ -262,13 +267,19 @@ async function createHarness(
 			readyState,
 		} as Generation;
 		adapter = createCodexRealtimeAdapter({
+			voice: {
+				start: () => ({
+					prompt: "Test voice.",
+					delegationAckFiller: true,
+					suppressCoordinatorSpeech: false,
+				}),
+			},
 			session,
 			identity,
-			boardCatalogue: {
+			coordinatorContext: {
 				read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
 				subscribe: () => () => {},
 			},
-			freshSemanticBrief: () => '{"source":"fresh-process-brief","board":"Architecture"}',
 			currentBinding: () => (current === generation && !closed ? binding : null),
 		});
 		Object.assign(generation, { adapter });
@@ -429,6 +440,7 @@ async function waitForGenerations(harness: RealtimeHarness, count: number): Prom
 }
 
 export {
+	HOST_RECORD_PREFIX,
 	type FixtureControl,
 	type Generation,
 	type RealtimeHarness,

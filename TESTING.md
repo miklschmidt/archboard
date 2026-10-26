@@ -209,7 +209,7 @@ Three facts decide whether the gate can run to its end:
 - The checks run one after the other and stop at the first failure. If the gate
   stops early, run the remaining checks and every unrun normal lane separately,
   using the Vite+ tasks in `vite.config.ts`. Include
-  `test:modules` if it has not run, and build the frontend before browser owners.
+  `test:modules` if it has not run. Run `frontend` and `workbench-example` before browser owners.
   Only then call a failure the only one.
 - `bun install` supplies the pinned `agent-browser` CLI. The browser lane resolves it from this checkout.
   A missing prerequisite ends the lane with code 2.

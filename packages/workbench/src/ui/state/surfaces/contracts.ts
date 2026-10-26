@@ -2,36 +2,19 @@
 // dock and the conversation panel read one `AgentView` and act through one
 // `AgentActions`; the application composes both from the workbench owners.
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import type { DYNAMIC_APPROVAL_DECISIONS } from "#shared/schemas/dynamic-approval/effects.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
-import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+	BrowserSnapshot,
+} from "@archboard/codex-realtime-voice/contract";
+import type { VoiceSignIn } from "@archboard/codex-realtime-voice/browser";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type {
+	DynamicApprovalVerdict,
+	WorkbenchQueueActions,
+} from "#ui/state/surfaces/voice-parts.ts";
 import type { AgentSetupSnapshot } from "#ui/state/agent-setup/setup.ts";
-import type { ThreadLinkLoginParams } from "#ui/state/thread-link/transport-port.ts";
 import type { Conversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
-
-/** A verdict on a dynamic coordination approval, as the shared model spells it. */
-type DynamicApprovalVerdict = (typeof DYNAMIC_APPROVAL_DECISIONS)[number];
-
-/**
- * A decision on one approval, as the model defines it. The runtime encodes
- * the wire response; the card only offers what the approval allows.
- */
-type ApprovalChoice =
-	| { kind: "command_decision"; decision: CodexCommandExecutionApprovalDecision }
-	| { kind: "file_change_decision"; decision: "accept" | "acceptForSession" | "decline" | "cancel" }
-	| { kind: "answer"; questionId: string; answer: string }
-	| { kind: "approve" }
-	| { kind: "decline" };
-
-/** Queue actions, each naming the submission it acts on. */
-interface WorkbenchQueueActions {
-	moveUp: (submissionId: string) => void;
-	moveDown: (submissionId: string) => void;
-	remove: (submissionId: string) => void;
-	sendNow: (submissionId: string) => void;
-}
 
 /** Where live voice stands, as the Talk control shows it. */
 type VoiceStage =
@@ -118,7 +101,7 @@ interface AgentActions {
 	 * Sign in to Archboard's own Codex.
 	 * @param login The provider and its credentials.
 	 */
-	readonly signIn: (login: ThreadLinkLoginParams) => void;
+	readonly signIn: (login: VoiceSignIn) => void;
 	readonly cancelSignIn: () => void;
 	readonly signOut: () => void;
 	readonly newConversation: () => void;
@@ -147,14 +130,4 @@ interface AgentActions {
 	readonly showConversation: (checkout: string) => void;
 }
 
-export type {
-	AgentActions,
-	AgentContext,
-	AgentView,
-	AgentVoiceView,
-	ApprovalChoice,
-	DynamicApprovalVerdict,
-	VoiceLevel,
-	VoiceStage,
-	WorkbenchQueueActions,
-};
+export type { AgentActions, AgentContext, AgentView, AgentVoiceView, VoiceLevel, VoiceStage };

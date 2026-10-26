@@ -3,14 +3,18 @@
 // and the one thing the person can do about it. Only the first rule that
 // applies speaks, so the line never says two things at once. Pure.
 
-import { AGENT_QUIET_MS } from "@archboard/timing";
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import { SHELL_CLOCK_MS } from "@archboard/timing";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/codex-realtime-voice/contract";
+
 import type { AgentPhase } from "#ui/rules/agent-setup/phase.ts";
 import type { AgentView } from "#ui/state/surfaces/contracts.ts";
 import { activityLabel, runSummary } from "#ui/rules/thread/activity-words.ts";
 import type { ActivityItem } from "#ui/rules/runtime/messages.ts";
-import type { ConversationItem, ConversationTurn } from "#ui/state/timeline/contract.ts";
+import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationItem } from "#ui/state/surfaces/voice-parts.ts";
 
 /** How the line is lit. */
 type StatusTone = "quiet" | "working" | "attention" | "failed";
@@ -205,7 +209,7 @@ function working(view: AgentView, turn: ConversationTurn, now: number): AgentSta
 		sinceMs: turn.startedAtMs,
 		progress: progressOf(turn),
 		queued: view.snapshot?.queue.entries.length ?? 0,
-		quiet: quietSince !== null && now - quietSince > AGENT_QUIET_MS,
+		quiet: quietSince !== null && now - quietSince > SHELL_CLOCK_MS.quiet,
 		action: "stop",
 	};
 }

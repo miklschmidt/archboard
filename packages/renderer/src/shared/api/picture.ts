@@ -15,12 +15,7 @@ export {
 	pictureAppearances,
 	sampleKey,
 } from "#shared/rules/render/picture-key.ts";
-export type {
-	AppliedAppearance,
-	LineMark,
-	MarkCount,
-	PictureKey,
-} from "#shared/rules/render/picture-key.ts";
+export type { AppliedAppearance, PictureKey } from "#shared/rules/render/picture-key.ts";
 export { drillDirection } from "#shared/rules/svg/parts/drill-mark.ts";
 export type { DrillDirection } from "#shared/rules/svg/parts/drill-mark.ts";
 export { cornerWarning, lineWarning } from "#shared/rules/svg/parts/standing.ts";

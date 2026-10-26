@@ -1,191 +1,84 @@
-// The two reviewed developer documents, one per Codex role, verified byte for byte at load.
-//
-// The workhorse thread is started with the workhorse document and the coordinator thread with
-// the coordinator document; neither contains the other, and the voice model is given neither
-// (TASK-297). Each document's digest is a reviewed constant, so a drifted document fails the
-// process before any thread is started with it.
-
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-
-const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"4c2856242c43436035c77bc933243eea5ee7cca553501b8de4d0bca903f55d03" as const;
-const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"b9aa33ffc2e568670150aad919979b79de7e4a9136c5ed6aa8c37a1fd7eaea47" as const;
-
+import {
+	composeWorkbenchRoleInstructions,
+	assertWorkbenchInstructionBytes,
+	readWorkbenchInstructionDocument,
+} from "@archboard/codex-realtime-voice/runtime";
+import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+type AuthoredInstructionName = keyof VoiceAgentOptions["instructions"];
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;
 	readonly coordinatorSha256: string;
 }
-
-type AuthoredInstructionName = "workhorse" | "coordinator";
-
-interface AuthoredDocument {
-	readonly fileName: string;
-	readonly label: string;
-	readonly expected: string;
-}
-
-/** Each reviewed document: where it lives, how an error names it, and its reviewed digest. */
-const AUTHORED_DOCUMENTS: Readonly<Record<AuthoredInstructionName, AuthoredDocument>> =
-	Object.freeze({
-		workhorse: {
-			fileName: "workhorse-developer-instructions.txt",
-			label: "Workhorse developer instructions",
-			expected: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-		},
-		coordinator: {
-			fileName: "coordinator-developer-instructions.txt",
-			label: "Coordinator developer instructions",
-			expected: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
-		},
-	});
-
+const DOMAIN_DOCUMENTS = Object.freeze({
+	workhorse: "ab89886ecb7015bad9fe81a726aa6d9711d416920f02817a0a49dee4a659b0a7",
+	coordinator: "4d593ba77d22b958deda261dadc4d71ad83c796638d12957055cf016d2b44e2b",
+});
 /**
- * Hex SHA-256 of a byte sequence, the digest form every reviewed instruction constant records.
- * @param bytes - The exact bytes to digest.
- * @returns The lowercase hex digest.
+ * Read the domain document with its independently reviewed byte digest.
+ * @param name The role whose domain document is read.
+ * @returns The domain instruction bytes.
  */
-function sha256(bytes: Uint8Array): string {
-	return createHash("sha256").update(bytes).digest("hex");
-}
-
-/**
- * Refuse text whose line conventions could change bytes on a round trip: carriage returns or
- * anything other than exactly one terminal LF.
- * @param text - The decoded document text.
- * @param label - Names the document in the thrown error.
- */
-function requireLfConventions(text: string, label: string): void {
-	if (text.includes("\r")) {
-		throw new TypeError(`${label} must use LF line endings.`);
-	}
-	if (!text.endsWith("\n") || text.endsWith("\n\n")) {
-		throw new TypeError(`${label} must end in exactly one terminal LF.`);
-	}
-}
-
-/**
- * Decode reviewed instruction bytes as canonical UTF-8, refusing every encoding that would let
- * two byte sequences carry the same reviewed text (BOM, invalid UTF-8, CRLF, non-round-tripping
- * bytes), so a digest is a digest of the text and nothing else.
- * @param bytes - The raw document bytes.
- * @param label - Names the document in the thrown error.
- * @returns The decoded text.
- */
-function decodeCanonicalBytes(bytes: Buffer, label: string): string {
-	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
-		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
-	}
-	let text: string;
-	try {
-		text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-	} catch (error) {
-		throw new TypeError(`${label} is not valid UTF-8.`, { cause: error });
-	}
-	requireLfConventions(text, label);
-	if (!Buffer.from(text, "utf8").equals(bytes)) {
-		throw new TypeError(`${label} contains bytes that do not round-trip as UTF-8.`);
-	}
-	return text;
-}
-
-/**
- * Read one tracked instruction document beside this module and decode it canonically.
- * @param document - Which document.
- * @returns The raw bytes and their decoded text.
- */
-function readCanonicalDocument(document: AuthoredDocument): { bytes: Buffer; text: string } {
-	const bytes = readFileSync(
-		new URL(import.meta.resolve(`#runtime/rules/instructions/${document.fileName}`)),
+function domainInstructions(name: AuthoredInstructionName): string {
+	return readWorkbenchInstructionDocument(
+		new URL(import.meta.resolve(`#runtime/rules/instructions/${name}-developer-instructions.txt`)),
+		`${name} Archboard instructions`,
+		DOMAIN_DOCUMENTS[name],
 	);
-	return { bytes, text: decodeCanonicalBytes(bytes, document.label) };
 }
-
+const WORKHORSE_DOMAIN_INSTRUCTIONS = domainInstructions("workhorse");
+const COORDINATOR_DOMAIN_INSTRUCTIONS = domainInstructions("coordinator");
+const workhorse = composeWorkbenchRoleInstructions("workhorse", WORKHORSE_DOMAIN_INSTRUCTIONS);
+const coordinator = composeWorkbenchRoleInstructions(
+	"coordinator",
+	COORDINATOR_DOMAIN_INSTRUCTIONS,
+);
+const WORKHORSE_DEVELOPER_INSTRUCTIONS = workhorse.text;
+const COORDINATOR_DEVELOPER_INSTRUCTIONS = coordinator.text;
+const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 = workhorse.sha256;
+const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 = coordinator.sha256;
+const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
+	workhorse: workhorse.sha256,
+	coordinator: coordinator.sha256,
+});
 /**
- * Compare bytes against a reviewed digest; drift means a human must re-review the text before
- * the constant is updated.
- * @param label - Names the document in the thrown error.
- * @param bytes - The candidate bytes.
- * @param expected - The reviewed hex digest.
- * @returns The actual digest, which equals the expected one.
- */
-function assertDigest(label: string, bytes: Uint8Array, expected: string): string {
-	const actual = sha256(bytes);
-	if (actual !== expected) {
-		throw new TypeError(
-			`${label} hash drifted. Expected SHA-256 ${expected}, received ${actual}. Human re-review is required before updating this digest.`,
-		);
-	}
-	return actual;
-}
-
-/**
- * Normalise a candidate to a Buffer, whichever form the caller holds.
- * @param candidate - Text or bytes.
- * @returns The candidate as UTF-8 bytes.
- */
-function candidateBytes(candidate: string | Uint8Array): Buffer {
-	return typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
-}
-
-/**
- * Validate a candidate against a fixed reviewed instruction digest.
- * @param name - Which reviewed document the candidate claims to be.
- * @param candidate - The text or bytes to check.
+ * Refuse a complete role document whose composed bytes changed.
+ * @param name The role.
+ * @param candidate The candidate complete role document.
  */
 function assertCanonicalInstructionBytes(
 	name: AuthoredInstructionName,
 	candidate: string | Uint8Array,
 ): void {
-	const document = AUTHORED_DOCUMENTS[name];
-	const bytes = candidateBytes(candidate);
-	decodeCanonicalBytes(bytes, document.label);
-	assertDigest(document.label, bytes, document.expected);
+	assertWorkbenchInstructionBytes(
+		candidate,
+		`${name} developer instructions`,
+		AUTHORED_INSTRUCTION_DIGESTS[name],
+	);
 }
-
 /**
- * Read one document and verify its reviewed digest.
- * @param name - Which document.
- * @returns The verified text.
- */
-function loadVerified(name: AuthoredInstructionName): string {
-	const read = readCanonicalDocument(AUTHORED_DOCUMENTS[name]);
-	assertCanonicalInstructionBytes(name, read.bytes);
-	return read.text;
-}
-
-const WORKHORSE_DEVELOPER_INSTRUCTIONS = loadVerified("workhorse");
-const COORDINATOR_DEVELOPER_INSTRUCTIONS = loadVerified("coordinator");
-
-const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
-	workhorse: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	coordinator: COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
-});
-
-/**
- * Re-read both tracked documents and verify every reviewed byte digest.
- * @returns The digests actually observed on disk.
+ * Read and compose both domain documents through the same core instruction owner.
+ * @returns The complete role instruction digests.
  */
 function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegrity {
-	const workhorse = readCanonicalDocument(AUTHORED_DOCUMENTS.workhorse);
-	const coordinator = readCanonicalDocument(AUTHORED_DOCUMENTS.coordinator);
-	assertCanonicalInstructionBytes("workhorse", workhorse.bytes);
-	assertCanonicalInstructionBytes("coordinator", coordinator.bytes);
 	return Object.freeze({
-		workhorseSha256: sha256(workhorse.bytes),
-		coordinatorSha256: sha256(coordinator.bytes),
+		workhorseSha256: composeWorkbenchRoleInstructions("workhorse", domainInstructions("workhorse"))
+			.sha256,
+		coordinatorSha256: composeWorkbenchRoleInstructions(
+			"coordinator",
+			domainInstructions("coordinator"),
+		).sha256,
 	});
 }
-
 export {
-	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
-	type AuthoredInstructionIntegrity,
-	type AuthoredInstructionName,
-	assertCanonicalInstructionBytes,
+	WORKHORSE_DOMAIN_INSTRUCTIONS,
+	COORDINATOR_DOMAIN_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	COORDINATOR_DEVELOPER_INSTRUCTIONS,
+	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
+	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 	AUTHORED_INSTRUCTION_DIGESTS,
+	assertCanonicalInstructionBytes,
 	verifyAuthoredInstructionIntegrity,
+	type AuthoredInstructionName,
+	type AuthoredInstructionIntegrity,
 };

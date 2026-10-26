@@ -28,7 +28,7 @@ import { type SemanticTransition } from "#runtime/operations/write/transitions.t
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
 import { BoardCreateInputSchema } from "#shared/protocol/board-input.ts";
-import { LOCK_POLL_MS, LOCK_STEAL_GUARD_MS } from "@archboard/timing";
+import { BOARD_LOCK_MS } from "@archboard/timing";
 
 const META = "github.com/acme/meta";
 const PRODUCT = "github.com/acme/product";
@@ -44,10 +44,10 @@ const vaults = {
 };
 
 async function advanceLockTime(ms: number): Promise<void> {
-	for (let elapsed = 0; elapsed < ms; elapsed += LOCK_POLL_MS) {
+	for (let elapsed = 0; elapsed < ms; elapsed += BOARD_LOCK_MS.poll) {
 		await Promise.resolve();
 		await Promise.resolve();
-		jest.advanceTimersByTime(Math.min(LOCK_POLL_MS, ms - elapsed));
+		jest.advanceTimersByTime(Math.min(BOARD_LOCK_MS.poll, ms - elapsed));
 		await Promise.resolve();
 		await Promise.resolve();
 	}
@@ -330,10 +330,10 @@ test("a move waiting for the board holds nothing in the target vault", async () 
 	jest.useFakeTimers();
 	try {
 		const moving = move("Rates", vaults.meta, vaults.product);
-		await advanceLockTime(LOCK_POLL_MS);
+		await advanceLockTime(BOARD_LOCK_MS.poll);
 		expect(boardLockState(vaults.product, "rates")).toBeNull();
 		releaseHold(vaults.meta, "rates", writing.id);
-		await advanceLockTime(LOCK_POLL_MS);
+		await advanceLockTime(BOARD_LOCK_MS.poll);
 		expect((await moving).outcome).toBe("moved");
 	} finally {
 		releaseHold(vaults.meta, "rates", writing.id);
@@ -380,9 +380,9 @@ test("a lease that a stopped writer left on a board the move rewrites does not s
 	jest.useFakeTimers();
 	try {
 		await holdBoard({ vault: vaults.meta, board: "shelf", holder: stopped, leaseMs: 1 });
-		await advanceLockTime(LOCK_POLL_MS);
+		await advanceLockTime(BOARD_LOCK_MS.poll);
 		const moving = move("Stock", vaults.meta, vaults.product);
-		await advanceLockTime(LOCK_POLL_MS * 3 + LOCK_STEAL_GUARD_MS);
+		await advanceLockTime(BOARD_LOCK_MS.poll * 3 + BOARD_LOCK_MS.stealGuard);
 		expect((await moving).outcome).toBe("moved");
 		expect(drillOf(vaults.meta, "Shelf", "Open")?.repo).toBe(PRODUCT);
 	} finally {

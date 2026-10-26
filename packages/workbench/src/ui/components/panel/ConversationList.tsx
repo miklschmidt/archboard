@@ -6,8 +6,8 @@
 
 import { useCallback, useMemo, type JSX } from "react";
 
-import type { BrowserWorkhorses } from "#shared/schemas/browser/snapshot.ts";
-import { ToggleGroup, ToggleGroupItem } from "@archboard/ui-kit/controls";
+import type { BrowserWorkhorses } from "@archboard/codex-realtime-voice/contract";
+import { ToggleGroup } from "@archboard/ui-kit/components";
 
 /** One workhorse as the list draws it. */
 type Workhorse = BrowserWorkhorses["entries"][number];
@@ -48,14 +48,14 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 				className="w-full"
 			>
 				{workhorses.entries.map((entry) => (
-					<ToggleGroupItem
+					<ToggleGroup.Item
 						key={entry.checkout}
 						value={entry.checkout}
 						title={entry.checkout}
 						className="h-auto justify-start py-1 text-left"
 					>
 						<WorkhorseLabel workhorse={entry} />
-					</ToggleGroupItem>
+					</ToggleGroup.Item>
 				))}
 			</ToggleGroup>
 		</div>
@@ -63,8 +63,8 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 }
 
 /**
- * One workhorse: its repository, then what tells it apart and what it waits on. The directory of
- * its checkout tells two checkouts of one repository apart; it is left out where it is the name.
+ * One workhorse: its label, then what tells it apart and what it waits on. The directory of its
+ * checkout tells two checkouts of one repository apart; it is left out where it is the label.
  * @param props The workhorse.
  * @param props.workhorse The workhorse, as the server lists it.
  * @returns Its words.
@@ -72,7 +72,7 @@ function ConversationList(props: ConversationListProps): JSX.Element | null {
 function WorkhorseLabel(props: { readonly workhorse: Workhorse }): JSX.Element {
 	const { workhorse } = props;
 	const place = directoryName(workhorse.checkout);
-	const name = workhorse.repository ?? place;
+	const name = workhorse.label;
 	const detail = [name === place ? null : place, stateOf(workhorse)].filter(
 		(part) => part !== null,
 	);

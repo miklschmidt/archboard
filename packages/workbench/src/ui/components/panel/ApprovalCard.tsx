@@ -5,16 +5,20 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import { Button } from "@archboard/ui-kit/controls";
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+} from "@archboard/codex-realtime-voice/contract";
+
+import { Button } from "@archboard/ui-kit/components";
 import {
 	projectApproval,
 	projectDynamicApproval,
 	type ApprovalCard as Card,
 	type ApprovalDecisionOption,
 } from "#ui/rules/dock/approval-projection.ts";
-import type { AgentActions, ApprovalChoice } from "#ui/state/surfaces/contracts.ts";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type { AgentActions } from "#ui/state/surfaces/contracts.ts";
 
 /** Inputs for a card. */
 interface ApprovalCardProps {

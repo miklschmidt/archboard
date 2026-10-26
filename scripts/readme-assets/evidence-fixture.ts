@@ -5,12 +5,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { currentVariant } from "@archboard/board/document";
-import type {
-	BoardCreateInput,
-	SemanticEdgeInput,
-	SemanticNodeInput,
-	VariantEditInput,
-} from "@archboard/board/commands";
+import type { SemanticEdgeInput, SemanticNodeInput } from "@archboard/board/commands";
 
 import {
 	inOrder,
@@ -20,6 +15,12 @@ import {
 	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
+import type { BoardCreateInputSchema } from "@archboard/board/commands";
+import type { z } from "zod";
+import type { VariantEditInputSchema } from "@archboard/board/commands";
+
+type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
+type BoardCreateInput = z.infer<typeof BoardCreateInputSchema>;
 
 const BOARD = "Checkout and orders";
 const REPO = "example.invalid/archboard/readme-checkout";

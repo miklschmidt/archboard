@@ -18,16 +18,14 @@ import {
 } from "#cli/operations/vault/check-help.ts";
 import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
-import { checkSemanticVaultOnServer } from "@archboard/server-lifecycle/semantic-board-client";
-import {
-	CheckTimingSchema,
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CheckTiming,
-} from "@archboard/code-intel/code-check";
+import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+
+/** How long one check took. */
+type CheckTiming = CodeCheckAnswer["timings"][number];
 
 const output = {
 	cases: [
@@ -120,7 +118,9 @@ function timingLine(timing: CheckTiming): string {
 }
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
-const SemanticsPartSchema = VaultCheckSchema.extend({ timings: z.array(CheckTimingSchema) });
+const SemanticsPartSchema = VaultCheckSchema.extend({
+	timings: CodeCheckAnswerSchema.shape.timings,
+});
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
 
 /**

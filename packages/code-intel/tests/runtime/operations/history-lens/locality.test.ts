@@ -12,7 +12,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -173,7 +173,7 @@ const built = board(1);
  */
 async function hotspots(since?: Date, variant = "v1"): Promise<LocalityAnswer> {
 	return LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, built, variantOf(built, variant), since),
+		await lens.createVariantLocality().read(scratch, built, variantOf(built, variant), since),
 	);
 }
 
@@ -251,7 +251,7 @@ beforeAll(async () => {
 	commit(shop, 0, "a last");
 	write(tiny, edit("t.ts", 0));
 	commit(tiny, 0, "tiny");
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {
@@ -353,7 +353,7 @@ test("a board with no part in a registered repository answers an empty ranking, 
 		],
 	});
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(scratch, lonely, variantOf(lonely, "v1"), undefined),
+		await lens.createVariantLocality().read(scratch, lonely, variantOf(lonely, "v1"), undefined),
 	);
 	expect(answer.hotspots).toEqual([]);
 	expect(answer.periods).toEqual([]);
@@ -377,7 +377,7 @@ const small = (version: number): SemanticBoard =>
 	});
 
 test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
-	const reading = lens.createLocalityReading();
+	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);

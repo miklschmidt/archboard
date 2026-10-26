@@ -12,7 +12,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { z } from "zod";
 
-import { SemanticPaneContextSchema, type SemanticPaneContext } from "@archboard/board/pane-context";
+import { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import {
 	SERVED,
 	FakeSocket,
@@ -25,6 +25,8 @@ import {
 	settle,
 	settleUntil,
 } from "#tests/ui/support/application/application-page.ts";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** One board of the vault: its one part, and the board that part drills down to. */
 interface Board {

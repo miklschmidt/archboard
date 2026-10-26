@@ -4,4 +4,3 @@ export {
 	BoardListingSchema,
 	listedBoard,
 } from "#shared/protocol/board-listing.ts";
-export type { BoardListing, ListedBoard } from "#shared/protocol/board-listing.ts";

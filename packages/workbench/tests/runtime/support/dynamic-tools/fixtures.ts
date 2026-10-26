@@ -1,6 +1,9 @@
+import type {
+	EpochExecutionProof,
+	EpochOperationRecord,
+	ThreadLinkClassification,
+} from "#runtime/protocol/voice/extension.ts";
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
-import type { EpochExecutionProof } from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type {
 	SessionThread,
@@ -25,7 +28,6 @@ import type {
 	DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { DynamicToolName } from "#runtime/rules/dynamic-tools/vocabulary.ts";
-import type { ThreadLinkClassification } from "#runtime/rules/thread-link/contract.ts";
 
 export const CHECKOUT_ROOT = "/workspace/archboard";
 export const CALLER_WIRE_ID = "caller-thread";

@@ -24,11 +24,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import {
-	FETCH_INCOMING_STALE_MS,
-	GIT_COMMAND_TIMEOUT_MS,
-	VAULT_FETCH_TIMEOUT_MS,
-} from "@archboard/timing";
+import { CHECK_MS, GIT_MS } from "@archboard/timing";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import { gitEnvironment } from "#cli/clients/git/git-environment.ts";
@@ -164,7 +160,7 @@ async function defaultBranchCommit(
 	url: string,
 	signal: AbortSignal,
 ): Promise<{ commit: string } | { failure: string }> {
-	const run = await runGit(cache, ["ls-remote", url, "HEAD"], signal, VAULT_FETCH_TIMEOUT_MS);
+	const run = await runGit(cache, ["ls-remote", url, "HEAD"], signal, CHECK_MS.vaultFetch);
 	if (!run.ok) return { failure: run.failure };
 	const commit = run.stdout.split(/\s/u)[0] ?? "";
 	return COMMIT_NAME.test(commit) ? { commit } : { failure: `${url} names no default branch` };
@@ -183,8 +179,8 @@ function fetchSteps(
 	incoming: string,
 	url: string,
 ): { cwd: string; timeoutMs: number; args: string[] }[] {
-	const network = VAULT_FETCH_TIMEOUT_MS;
-	const local = GIT_COMMAND_TIMEOUT_MS;
+	const network = CHECK_MS.vaultFetch;
+	const local = GIT_MS.command;
 	return [
 		// A symbolic link that the remote commits is checked out as a file that
 		// holds its target, so no file of the vault leads out of the cache.
@@ -298,7 +294,9 @@ function removeKilledFetches(cache: string, now: number): void {
 	for (const name of fs.readdirSync(cache).filter((one) => one.startsWith(INCOMING_PREFIX))) {
 		const left = path.join(cache, name);
 		const changed = fs.statSync(left, { throwIfNoEntry: false })?.mtimeMs ?? now;
-		if (now - changed > FETCH_INCOMING_STALE_MS) fs.rmSync(left, { recursive: true, force: true });
+		if (now - changed > CHECK_MS.fetchIncomingStale) {
+			fs.rmSync(left, { recursive: true, force: true });
+		}
 	}
 }
 

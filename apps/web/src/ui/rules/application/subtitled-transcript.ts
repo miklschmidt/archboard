@@ -3,14 +3,14 @@
 // The transcript is server truth the transport publishes, a word at a time as the voice speaks.
 // Subtitles show it only while a session carries audio. A recording's words are subtitled only on
 // the page that records it. That page is a tab session of its own (TASK-373), so no other page is
-// shown its voice.
+// shown its voice. The voice says a recording's session is unattended: nobody listens to it live.
 
-import type { BrowserSnapshot } from "@archboard/workbench/browser-contract";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SubtitleSource } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */
-type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "recording"> & {
+type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "unattended"> & {
 	readonly transcript: readonly SubtitleSource[];
 };
 
@@ -38,7 +38,7 @@ function subtitledTranscript(
 		return NOTHING_SAID;
 	}
 	const audible = voice.state === "active" || voice.state === "recovering";
-	return audible && (voice.recording === true) === recording ? voice.transcript : NOTHING_SAID;
+	return audible && (voice.unattended === true) === recording ? voice.transcript : NOTHING_SAID;
 }
 
 /**

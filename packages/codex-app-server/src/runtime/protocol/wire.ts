@@ -430,7 +430,7 @@ export function protocolErrorFrame(wireId: WireId, code: number, message: string
 }
 
 /**
- * Whether a decode failure is the decoder's own refusal of a capability Archboard disabled,
+ * Whether a decode failure is the decoder's own refusal of a capability the client disabled,
  * which the router answers with a method-not-found error instead of treating as malformed.
  * @param error The decode failure.
  * @returns True for the disabled-capability refusal.
@@ -443,7 +443,7 @@ export function isDisabledCapabilityError(error: unknown): error is ProtocolDeco
 			Array.isArray(issue["path"]) &&
 			issue["path"].length === 1 &&
 			issue["path"][0] === "method" &&
-			issue["message"] === "capability was explicitly disabled by Archboard",
+			issue["message"] === "capability was explicitly disabled by this client",
 	);
 }
 

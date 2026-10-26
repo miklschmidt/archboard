@@ -1,9 +1,5 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import {
-	CODEX_GROUP_FREEZE_MS,
-	CODEX_TERM_GRACE_MS,
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "@archboard/timing";
+import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -295,14 +291,17 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Stop every member of the group so none can fork, waiting for two agreeing censuses
-	 * (TASK-470). A freeze that fails or runs out of its own bound only leaves the group
+	 * Stop every member of the group so none can fork, waiting for two agreeing censuses.
+	 * A freeze that fails or runs out of its own bound only leaves the group
 	 * unfrozen: the KILL that follows is the cleanup, and it is sent either way, with the
 	 * rest of the composed deadline left to prove the group gone.
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
-		const freezeDeadlineAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_GROUP_FREEZE_MS);
+		const freezeDeadlineAtMs = Math.min(
+			input.deadlineAtMs,
+			clock.now() + CODEX_PROCESS_MS.groupFreeze,
+		);
 		try {
 			await awaitFrozenGroup(
 				{
@@ -367,7 +366,7 @@ function createProcessGroupCleanup(
 	 * @returns False when the group is already quiescent, so nothing needs escalating.
 	 */
 	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_TERM_GRACE_MS);
+		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_PROCESS_MS.termGrace);
 		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
 		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
 		if (firstEvent === "closed" && clock.now() < termAtMs) {

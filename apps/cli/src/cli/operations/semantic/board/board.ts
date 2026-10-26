@@ -28,23 +28,24 @@ import {
 	listSemanticBoardsOnServer,
 	SemanticBoardEntrySchema,
 	readSemanticBoardAnswerOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
-import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
+} from "#cli/clients/server/semantic-boards.ts";
+import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
 	SemanticBoardReadSchema,
-	SemanticBoardResultSchema,
-	writeResult,
-	describedWrite,
 	editedVersion,
 	expectVersionRefusal,
-	failStated,
 	named,
 	SelectorSchema,
 	statedJson,
-	targetedVariant,
+	readVariantChange,
 	UNNAMED_VARIANT,
 } from "#cli/operations/semantic/input/semantic-input.ts";
 import { BRANCH_HELP, EDIT_HELP } from "#cli/operations/semantic/board/board-help.ts";
+import {
+	SemanticBoardResultSchema,
+	writeResult,
+	describedWrite,
+} from "#cli/operations/semantic/input/write-answer.ts";
 import {
 	boardHeldRefusal,
 	boardVersionRefusal,
@@ -277,25 +278,11 @@ const semanticEditContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic edit");
-		editedVersion(input.name);
-		const stated = await statedJson(input, context);
-		if (stated === undefined) {
-			throw new CliUsageError(
-				"semantic edit needs a stated change: give it --input <file.json> or JSON on standard input",
-			);
-		}
-		if (typeof stated !== "object" || stated === null || Array.isArray(stated)) {
-			failStated(stated);
-		}
-		const targeted = targetedVariant(stated, input.variant);
-		// Said here rather than carried out with the answer: a flag that overrode
-		// the stated variant is most worth hearing about when the write it aimed
-		// at does not come back, and an answer's diagnostics are only presented
-		// when there is an answer.
-		for (const line of targeted.diagnostics) {
-			context.diagnostic(line);
-		}
-		const edit = context.parse(VariantEditInputSchema, confirmed(targeted.stated, input));
+		const stated = await readVariantChange(input, context, {
+			command: "semantic edit",
+			needs: "a stated change",
+		});
+		const edit = context.parse(VariantEditInputSchema, confirmed(stated, input));
 		const written = await editSemanticBoardOnServer(input.name, edit);
 		return {
 			result: writeResult(written),
@@ -561,8 +548,4 @@ export {
 	semanticEditContract,
 	semanticBranchContract,
 	semanticShowContract,
-	// Where a write lands is this command's rule, kept with the rest of what a
-	// person types in `semantic/input/semantic-input`, and settled by `semantic resolve` the
-	// same way. Named here because a module's tests reach it through a root file.
-	targetedVariant,
 };

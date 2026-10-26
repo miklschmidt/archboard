@@ -2,7 +2,7 @@
 // output level source the media owner currently holds. Sources come and go
 // with realtime sessions; subscribers here never notice the swap.
 
-import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
+import type { VoiceOutputLevelSource } from "@archboard/codex-realtime-voice/controllers";
 
 /**
  * Does nothing; the release of a source that was never followed.

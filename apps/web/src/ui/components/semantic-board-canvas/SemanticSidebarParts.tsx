@@ -11,8 +11,7 @@
 
 import { Children, type ComponentProps, type JSX, type ReactNode } from "react";
 
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
+import { Button, cn } from "@archboard/ui-kit/components";
 
 /**
  * A section's heading: the body size, semibold and quiet, so it is scanned

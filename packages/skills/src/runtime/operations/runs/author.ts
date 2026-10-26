@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_AUTHOR_TIMEOUT_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "@archboard/timing";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { CliContext } from "#runtime/processes/archboard.ts";
 import {
@@ -197,7 +197,7 @@ async function runAuthorProcess(
 			argv,
 			cwd: world.paths.flask,
 			env: world.cli.env,
-			timeoutMs: SKILL_EVAL_AUTHOR_TIMEOUT_MS,
+			timeoutMs: SKILL_EVAL_MS.author,
 			signal: job.signal,
 			/**
 			 * Retains the stream as it arrives.

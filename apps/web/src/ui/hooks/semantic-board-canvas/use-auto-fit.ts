@@ -20,7 +20,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 
-import { PICTURE_TRANSITION_MS, PRESENTATION_STEP_MS } from "@archboard/timing";
+import { PICTURE_MS, PRESENTATION_MS } from "@archboard/timing";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
@@ -77,7 +77,7 @@ function stepDuration(reading: FitReading, pictureChanged: boolean): number {
 	if (reading.reducedMotion) {
 		return 0;
 	}
-	return pictureChanged ? PICTURE_TRANSITION_MS : PRESENTATION_STEP_MS;
+	return pictureChanged ? PICTURE_MS.transition : PRESENTATION_MS.step;
 }
 
 /**

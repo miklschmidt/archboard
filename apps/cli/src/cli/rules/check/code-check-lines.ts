@@ -3,13 +3,17 @@
 // check skipped, one line for each reason with a count, and how far each board
 // is behind its code, per board and per part (ADR 0045, ADR 0046).
 
-import type {
-	BoardBehind,
-	CodeCheckAnswer,
-	CodeCheckSkip,
-	CodeFinding,
-} from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/board/policy";
+
+/** How far one board is behind its code. */
+type BoardBehind = CodeCheckAnswer["behind"][number];
+
+/** One subject the code check skipped, and why. */
+type CodeCheckSkip = CodeCheckAnswer["skipped"][number];
+
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
 
 /**
  * Count entries by a key, in the order each key first appears.

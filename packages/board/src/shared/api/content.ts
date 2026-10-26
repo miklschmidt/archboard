@@ -6,7 +6,6 @@ export {
 	isMemberOf,
 	placingGroups,
 } from "#shared/rules/inspect/groups.ts";
-export type { GroupInspection } from "#shared/rules/inspect/groups.ts";
 export {
 	DEFAULT_TRAFFIC_SPEED,
 	EdgeTrafficSchema,
@@ -16,7 +15,6 @@ export {
 	VariantContentSchema,
 } from "#shared/schemas/content.ts";
 export type {
-	DrillDown,
 	SemanticEdge,
 	SemanticNode,
 	SubjectKind,
@@ -24,4 +22,3 @@ export type {
 } from "#shared/schemas/content.ts";
 export type { EdgeEmphasis } from "#shared/schemas/vocabulary.ts";
 export { WalkthroughBeatSchema } from "#shared/schemas/walkthrough.ts";
-export type { SemanticWalkthrough, WalkthroughBeat } from "#shared/schemas/walkthrough.ts";

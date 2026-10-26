@@ -11,19 +11,15 @@
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
 import { z } from "zod";
-import {
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CodeFinding,
-	CheckTimingSchema,
-} from "@archboard/code-intel/code-check";
-import {
-	DEFAULT_SEMANTIC_POLICY,
-	VaultCheckSchema,
-	type VaultCheck,
-} from "@archboard/board/policy";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
 import type { CliRegistryEntry } from "#cli/protocol/routing/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
+
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -123,9 +119,8 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { cliContractRegistry, runCli }] = await Promise.all([
+const [config, { cliContractRegistry, runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
 ]);
 if (config.ARCHBOARD_URL !== url) {
@@ -133,7 +128,7 @@ if (config.ARCHBOARD_URL !== url) {
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);
 }
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {
@@ -178,7 +173,7 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).optional(),
+	semantics: VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings }).optional(),
 	code: CodeCheckAnswerSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });

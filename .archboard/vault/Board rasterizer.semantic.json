@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 77,
+	"version": 80,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-24T17:14:14.281Z",
+	"updatedAt": "2026-10-26T06:05:45.877Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -22737,12 +22737,12 @@
 						"to": "XtzfRQkG",
 						"kind": "call",
 						"label": "where the talk is kept, proven free first",
-						"description": "The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children.",
+						"description": "The caller imports the walkthrough-recorder root, which re-exports readTalk, freshTalkPlace and renderTalk from these implementing children. freshTalkPlace chooses the place and refuses one that is not free before anything starts.",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
-							"symbol": "requireFreshPlace"
+							"symbol": "freshTalkPlace"
 						}
 					},
 					{
@@ -23383,7 +23383,7 @@
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
-									"symbol": "requireFreshPlace"
+									"symbol": "freshTalkPlace"
 								}
 							},
 							{

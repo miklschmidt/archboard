@@ -17,9 +17,8 @@ import {
 	VaultCheckSchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
-	type VaultDiagnostic,
 } from "@archboard/board/policy";
-import { askedTalkPlace, writeTalk } from "@archboard/walkthrough/recorder";
+import { keepTalk } from "@archboard/walkthrough/recorder";
 import { archboard, archboardOk, type CliContext } from "#runtime/processes/archboard.ts";
 import type { InspectionRequest, RenderRequest } from "#runtime/rules/outcomes/outcomes.ts";
 import { sequentially } from "#runtime/processes/process.ts";
@@ -32,6 +31,8 @@ import {
 	type RawFixtureStep,
 	type TalkFixture,
 } from "#runtime/schemas/fixture.ts";
+
+type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 const FIXTURE_DOING = "laying the evaluation fixture";
 const PLACEHOLDER = /^\$node\((.+)\)$/u;
@@ -454,9 +455,9 @@ async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promis
 	const policy = z
 		.object({ semantics: VaultCheckSchema })
 		.parse((await archboard(cli, ["check", "semantics"])).json).semantics;
-	writeTalk({
+	keepTalk({
 		...talkOfFixture(talk, board, policy),
-		place: askedTalkPlace(inHome(home, talk.directory)),
+		directory: inHome(home, talk.directory),
 	});
 }
 

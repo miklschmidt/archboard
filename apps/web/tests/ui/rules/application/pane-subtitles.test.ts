@@ -10,7 +10,7 @@ import { subtitledTranscript } from "#ui/rules/application/subtitled-transcript.
 
 /**
  * A live voice that has said one line.
- * @param recording Whether the live session is a recording's.
+ * @param recording Whether the live session is a recording's, which nobody listens to live.
  * @returns The voice.
  */
 function saying(recording: boolean): Parameters<typeof subtitledTranscript>[0] {
@@ -20,7 +20,7 @@ function saying(recording: boolean): Parameters<typeof subtitledTranscript>[0] {
 		text: "The front door",
 		final: false,
 	} as const;
-	return { state: "active", recording, transcript: [line] };
+	return { state: "active", unattended: recording, transcript: [line] };
 }
 
 test("the voice's words are subtitled, and a recording's only on the page that records it", () => {

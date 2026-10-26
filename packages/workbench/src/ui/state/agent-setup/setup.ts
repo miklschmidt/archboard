@@ -7,11 +7,11 @@
 // waits and says what it waits on; a failure stays on the message with the
 // reason, and nothing is retried behind the person's back.
 
-import type { BrowserVoicePresentation } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
 import type { LoginId } from "@archboard/codex-app-server/identity";
-import type { WorkbenchComposerSubmissionResult } from "#ui/state/composer/contract.ts";
-import type { ThreadLinkLoginParams } from "#ui/state/thread-link/transport-port.ts";
-import type { BrowserWorkbenchState } from "#ui/state/transport/contract.ts";
+import type { WorkbenchComposerSubmissionResult } from "#ui/state/surfaces/voice-parts.ts";
+import type { VoiceSignIn as ThreadLinkLoginParams } from "@archboard/codex-realtime-voice/browser";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
 import {
 	arrivedAfterAll,

@@ -1,21 +1,16 @@
-import type {
-	BrowserDynamicApproval,
-	BrowserDynamicApprovalEffect,
-} from "#shared/schemas/dynamic-approval/approval.ts";
-import type { BrowserSchemas } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserDynamicApprovalEffect } from "@archboard/codex-realtime-voice/schemas";
+import type { BrowserSchemas } from "@archboard/codex-realtime-voice/schemas";
 import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,
 	type TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { DynamicApprovalOwnerView } from "#server/protocol/projection/projection-contract.ts";
+import type { DynamicApprovalOwnerView } from "#server/protocol/projection/domain-approval-contract.ts";
 
 type DynamicProjectionModel = Pick<
 	BrowserSchemas,
-	| "BrowserDynamicApprovalEffectSchema"
-	| "BrowserDynamicApprovalSchema"
-	| "BrowserSnapshotSchema"
-	| "BrowserSpokenApprovalSchema"
+	"BrowserDynamicApprovalEffectSchema" | "BrowserDynamicApprovalSchema"
 >;
 
 type DynamicProjectionIdentity = Pick<
@@ -138,7 +133,7 @@ export function projectDynamicApproval(
 		toolResult: null,
 		binding: {
 			commandId: binding.commandId,
-			paneId: binding.paneId,
+			chatId: binding.paneId,
 			capturedLink: {
 				threadId: binding.capturedLink.threadId,
 				childId: binding.capturedLink.childId,
@@ -148,5 +143,3 @@ export function projectDynamicApproval(
 		resumable: false,
 	});
 }
-
-export type { DynamicProjectionIdentity, DynamicProjectionModel };

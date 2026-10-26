@@ -11,10 +11,7 @@ import type {
 	ServerStartupProtocolEvent,
 	ServerStartupProtocolRecord,
 } from "#runtime/protocol/server-startup-terminal.ts";
-import type {
-	CodexProcessGroupInspection,
-	CodexProcessGroupSignal,
-} from "@archboard/process/codex-group";
+import type { CodexProcessGroupOperations } from "@archboard/process/codex-group";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import type {
 	ServerStartupProtocolReader,
@@ -26,6 +23,11 @@ import {
 	failedServerCleanupTiming,
 	validateTiming,
 } from "#runtime/protocol/server-startup-protocol.ts";
+
+/** What an inspection of a Codex process group found. */
+type CodexProcessGroupInspection = ReturnType<CodexProcessGroupOperations["inspect"]>;
+/** A signal a Codex process group can be sent. */
+type CodexProcessGroupSignal = Parameters<CodexProcessGroupOperations["signal"]>[1];
 
 interface FailedServerCleanupOperations {
 	readonly now: () => number;

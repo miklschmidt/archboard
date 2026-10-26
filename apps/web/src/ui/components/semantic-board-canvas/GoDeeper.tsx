@@ -25,31 +25,26 @@ import {
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { DrillDown } from "@archboard/board/content";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import { Button } from "@archboard/ui-kit/controls";
-import { cn } from "@archboard/ui-kit/class-names";
+import { Button, cn } from "@archboard/ui-kit/components";
 import {
 	drillWay,
 	drillWayWords,
 	type DrillWay,
 } from "#ui/rules/semantic-board-canvas/drilling/drill-way.ts";
-import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts";
 import {
-	drillDownAsked,
-	drillTargetName,
-	resolveDrillDown,
-	type DrillPlace,
-	type DrillResolution,
-	type OtherRepository,
-} from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
-import { useDrillPlace } from "#ui/hooks/semantic-board-canvas/use-drill-place.ts";
-import {
-	semanticBoardDocumentQuery,
-	vaultCheckQuery,
-} from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+	useDrillTarget,
+	type DrillTarget,
+} from "#ui/hooks/semantic-board-canvas/use-drill-target.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
-import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
+import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import type {
+	OpenDown,
+	OtherRepository,
+} from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
+import type { SemanticNode } from "@archboard/board/content";
+
+type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
 /** Inputs for one way to go deeper. */
 interface GoProps {
@@ -114,21 +109,12 @@ function Go(props: GoProps): JSX.Element {
 }
 
 /**
- * Why a target cannot be opened, in words that name the thing that is missing.
- * @param resolution What the target board answered.
- * @param target What the drill-down names.
- * @returns The sentence, or null when there is nothing wrong.
+ * How a drill-down's variant is spelled in the words a person reads.
+ * @param target What the node's drill-down names.
+ * @returns The variant as it was asked for.
  */
-function refusalWords(resolution: DrillResolution, target: DrillDown): string | null {
-	if (resolution.kind === "no-variant") {
-		return `${target.board} has no variant called "${resolution.asked}". Nothing was opened in its place.`;
-	}
-	if (resolution.kind === "no-current") {
-		return `${target.board} has no current variant, and this link asks for whichever one is.`;
-	}
-	return resolution.kind === "unreadable"
-		? `${target.board} could not be read. ${resolution.problem}`
-		: null;
+function drillDownAsked(target: DrillDown): string {
+	return target.variant.kind === "current" ? "whichever variant is current" : target.variant.name;
 }
 
 /** The mark of each way, as the card on the picture draws it. */
@@ -235,9 +221,12 @@ interface WayDownProps {
 	readonly onOpen: OpenDown;
 }
 
+/** Why a drill-down leads nowhere, or not yet. */
+type Unresolved = Exclude<DrillTarget, { readonly kind: "ready" }>;
+
 /** What the way down says when the board is in a repository this machine cannot read. */
 const UNREACHABLE_WORDS: Readonly<
-	Record<Extract<DrillPlace, { readonly kind: "unreachable" }>["state"], string>
+	Record<Extract<Unresolved, { readonly kind: "unreachable" }>["state"], string>
 > = {
 	gone: "whose chosen checkout is gone",
 	"no-vault": "whose chosen checkout has no vault",
@@ -245,94 +234,77 @@ const UNREACHABLE_WORDS: Readonly<
 };
 
 /**
- * Why a board of another repository cannot be read here, and what to do.
- * @param place Where the link lies, when it cannot be read.
+ * Why a target cannot be opened, in words that name the thing that is missing
+ * and, where there is one, what to do.
+ * @param unresolved Why the drill-down leads nowhere, or not yet.
  * @param board The board the link names.
- * @returns The sentence, and the slot it is drawn in.
+ * @returns The sentence.
  */
-function placeRefusal(
-	place: Extract<DrillPlace, { readonly kind: "unregistered" | "unreachable" }>,
-	board: string,
-): { readonly slot: string; readonly words: string } {
-	if (place.kind === "unregistered") {
-		return {
-			slot: "semantic-drill-unregistered",
-			words: `${board} is a board of ${place.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`,
-		};
+function unresolvedWords(unresolved: Unresolved, board: string): string {
+	if (unresolved.kind === "listing-failed") {
+		return `The link to ${board} names a repository, and this vault could not be listed to tell whether that is its own. ${unresolved.problem}`;
 	}
-	return {
-		slot: "semantic-drill-unreachable",
-		words: `${board} is a board of ${place.repo}, ${UNREACHABLE_WORDS[place.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`,
-	};
+	if (unresolved.kind === "unregistered") {
+		return `${board} is a board of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;
+	}
+	if (unresolved.kind === "unreachable") {
+		return `${board} is a board of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`;
+	}
+	return boardWords(unresolved, board);
+}
+
+/**
+ * Why the target board, read in its vault, opens nothing, or not yet.
+ * @param unresolved What reading the board answered.
+ * @param board The board the link names.
+ * @returns The sentence.
+ */
+function boardWords(
+	unresolved: Exclude<
+		Unresolved,
+		{ readonly kind: "listing-failed" | "unregistered" | "unreachable" }
+	>,
+	board: string,
+): string {
+	if (unresolved.kind === "reading") return `Reading ${board}…`;
+	if (unresolved.kind === "unreadable") return `${board} could not be read. ${unresolved.problem}`;
+	if (unresolved.kind === "no-variant") {
+		return `${board} has no variant called "${unresolved.asked}". Nothing was opened in its place.`;
+	}
+	return `${board} has no current variant, and this link asks for whichever one is.`;
 }
 
 /**
  * The way down, or the reason there is none. A target that cannot be opened
  * says why, in its place: it is never swapped for a state the link did not ask
  * for (ADR 0023). A board of another repository is read in that repository's
- * vault (ADR 0050).
+ * vault (ADR 0050). Which way it lies is measured in the levels of the vault the
+ * part is drawn in, as the card on the picture measures it.
  * @param props The target and how to open it.
  * @returns The way down, or the reason there is none.
  */
 function WayDown(props: WayDownProps): JSX.Element {
-	const place = useDrillPlace(props.target);
-	const vault = usePaneVault();
-	if (place === undefined) {
-		return <p className="text-muted-foreground text-body">Reading {props.target.board}…</p>;
-	}
-	if (place.kind !== "readable") {
-		const refusal = placeRefusal(place, props.target.board);
+	const { target, kind, here, onOpen } = props;
+	const reached = useDrillTarget(target);
+	if (reached.kind !== "ready") {
 		return (
-			<p data-slot={refusal.slot} className="text-body">
-				{refusal.words}
+			<p
+				data-slot={`semantic-drill-${reached.kind}`}
+				className={cn("text-body", reached.kind === "reading" && "text-muted-foreground")}
+			>
+				{unresolvedWords(reached, target.board)}
 			</p>
 		);
-	}
-	return <WayDownIn {...props} vault={place.there?.vault ?? vault} there={place.there} />;
-}
-
-/**
- * The way down to a board read in its own vault, or the reason there is none.
- * Only the target is read there: which way it lies is measured in the levels of
- * the vault the part is drawn in, as the card on the picture measures it.
- * @param props The target, how to open it, the vault it is in, and the other repository, if any.
- * @returns The way down, or the reason there is none.
- */
-function WayDownIn(
-	props: WayDownProps & {
-		readonly vault: string;
-		readonly there: OtherRepository | undefined;
-	},
-): JSX.Element {
-	const { target, onOpen, kind, here, there, vault } = props;
-	const document = useQuery(semanticBoardDocumentQuery(vault, target.board));
-	const name = drillTargetName(target, document.data);
-	// Heard under the name the board goes by now, so a state superseded since the
-	// link was written is never opened as though it were current.
-	useSemanticBoardChanges(vault, target.board, name);
-	if (document.error !== null) {
-		return (
-			<p className="text-body">
-				{target.board} could not be opened. {document.error.message}
-			</p>
-		);
-	}
-	if (document.data === undefined) {
-		return <p className="text-muted-foreground text-body">Reading {target.board}…</p>;
-	}
-	const resolution = resolveDrillDown(target, document.data);
-	if (resolution.kind !== "ready") {
-		return <p className="text-body">{refusalWords(resolution, target)}</p>;
 	}
 	return (
 		<OpenBoard
 			target={target}
-			board={resolution.board}
-			variant={resolution.variant}
+			board={reached.board}
+			variant={reached.variant}
 			kind={kind}
 			here={here}
 			onOpen={onOpen}
-			there={there}
+			there={reached.there}
 		/>
 	);
 }

@@ -20,8 +20,8 @@ import {
 	adoptSemanticBoardOnServer,
 	resolveSemanticBoardOnServer,
 	shelveSemanticBoardOnServer,
-} from "@archboard/server-lifecycle/semantic-board-client";
-import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
+} from "#cli/clients/server/semantic-boards.ts";
+import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
 	boardHeldRefusal,
 	boardVersionRefusal,
@@ -30,17 +30,17 @@ import {
 	serverRefusal,
 } from "#cli/protocol/contract/refusals.ts";
 import {
-	describedWrite,
 	editedVersion,
 	expectVersionRefusal,
-	failStated,
 	SelectorSchema,
-	SemanticBoardResultSchema,
-	targetedVariant,
 	UNNAMED_VARIANT,
-	writeResult,
-	statedJson,
+	readVariantChange,
 } from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	describedWrite,
+	SemanticBoardResultSchema,
+	writeResult,
+} from "#cli/operations/semantic/input/write-answer.ts";
 
 const ResolveInputSchema = z.object({
 	name: z.string(),
@@ -139,24 +139,11 @@ const semanticResolveContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic resolve");
-		editedVersion(input.name);
-		const stated = await statedJson(input, context);
-		if (stated === undefined) {
-			throw new CliUsageError(
-				"semantic resolve needs an answer: give it --input <file.json> or JSON on standard input",
-			);
-		}
-		if (typeof stated !== "object" || stated === null || Array.isArray(stated)) {
-			failStated(stated);
-		}
-		const targeted = targetedVariant(stated, input.variant);
-		// Said here rather than carried out with the answer, for the reason
-		// `semantic edit` says it here: a settle that is refused still overrode
-		// the stated variant, and the author has to be able to see that.
-		for (const line of targeted.diagnostics) {
-			context.diagnostic(line);
-		}
-		const resolution = context.parse(ResolutionInputSchema, targeted.stated);
+		const stated = await readVariantChange(input, context, {
+			command: "semantic resolve",
+			needs: "an answer",
+		});
+		const resolution = context.parse(ResolutionInputSchema, stated);
 		const written = await resolveSemanticBoardOnServer(input.name, resolution);
 		return {
 			result: writeResult(written),

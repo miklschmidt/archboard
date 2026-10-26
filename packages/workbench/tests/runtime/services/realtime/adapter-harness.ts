@@ -1,9 +1,11 @@
+import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
 import { expect } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
-} from "#shared/protocol/realtime-contract.ts";
+} from "@archboard/codex-realtime-voice/realtime";
 import {
 	createIdentityAuthority,
 	type ChildEpoch,
@@ -17,12 +19,12 @@ import {
 } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
+import { createCodexRealtimeAdapter } from "@archboard/codex-realtime-voice/runtime";
 import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeAdapterOptions,
 	type CodexRealtimeBinding,
-} from "#runtime/services/realtime/contract.ts";
+} from "@archboard/codex-realtime-voice/runtime";
 import { recordReducerCheckedEvents } from "#tests/runtime/services/realtime/state-test-support.ts";
 
 type TimelinePage = Awaited<ReturnType<CodexRealtimeAdapterOptions["session"]["timelineListPage"]>>;
@@ -117,11 +119,13 @@ const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
 
 const transitionFailures: string[] = [];
 function harness(
-	boardCatalogue: CodexRealtimeAdapterOptions["boardCatalogue"] = {
-		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+	coordinatorContext: CodexRealtimeAdapterOptions["coordinatorContext"] = {
+		read: startBrief,
 		subscribe: () => () => {},
 	},
-	presentationChanges?: CodexRealtimeAdapterOptions["presentationChanges"],
+	presentationChanges?: {
+		readonly subscribe: (listener: (change: RealtimePresentationChange) => void) => () => void;
+	},
 ): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -145,9 +149,8 @@ function harness(
 	const adapter = createCodexRealtimeAdapter({
 		session: session.port,
 		identity,
-		boardCatalogue,
-		...(presentationChanges === undefined ? {} : { presentationChanges }),
-		freshSemanticBrief: () => semanticBrief(),
+		coordinatorContext,
+		voice: createArchboardVoicePolicy(presentationChanges?.subscribe),
 		currentBinding: () => bindingState.binding,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
@@ -169,8 +172,12 @@ function harness(
 	};
 }
 
-function semanticBrief(): string {
-	return '{"source":"fresh_brief","board":"Architecture"}';
+/**
+ * What the coordinator is told about the host page by default, which a voice session starts with.
+ * @returns The catalogue text.
+ */
+function startBrief(): string {
+	return '{"type":"archboard_board_catalogue","boards":[],"omitted":0}';
 }
 
 function notificationEvent(
@@ -198,14 +205,14 @@ function correlation(suffix = "") {
 async function started(
 	h: Harness,
 	suffix = "",
-	presentation: Parameters<Harness["adapter"]["createOffer"]>[1] = null,
+	narrative: Parameters<Harness["adapter"]["createOffer"]>[1] = null,
 ): Promise<{
 	readonly wireSessionId: string;
 	readonly correlation: ReturnType<typeof correlation>;
 }> {
 	const browser = correlation(suffix);
 	const startIndex = h.session.starts.length;
-	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, presentation);
+	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, narrative);
 	await Promise.resolve();
 	const start = h.session.starts[startIndex];
 	if (!start?.realtimeSessionId) {
@@ -233,7 +240,7 @@ export {
 	COORDINATOR_WIRE_THREAD_ID,
 	transitionFailures,
 	harness,
-	semanticBrief,
+	startBrief,
 	notificationEvent,
 	notify,
 	correlation,

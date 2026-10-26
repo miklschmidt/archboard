@@ -11,7 +11,8 @@
 // before. It keeps clear of the lines itself, though: it stands in the corner no
 // route runs down through, and from far away it grows only as far as the
 // nearest route.
-import type { PaletteColor, SemanticPolicy } from "@archboard/board/policy";
+import type { SemanticPolicy } from "@archboard/board/policy";
+import type { PaletteColor } from "#shared/rules/render/semantic-appearance.ts";
 import { BAND_RADIUS } from "#shared/constants/design.ts";
 import type { DrawingRegion, TextRun } from "#shared/rules/render/drawing.ts";
 import { coord, type Box } from "#shared/rules/geometry.ts";

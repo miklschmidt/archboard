@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_GIT_TIMEOUT_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "@archboard/timing";
 import { runProcess, sequentially } from "#runtime/processes/process.ts";
 
 const GIT_ENV = { PATH: process.env["PATH"] ?? "", HOME: process.env["HOME"] ?? "" };
@@ -22,7 +22,7 @@ async function git(args: readonly string[], cwd: string, signal?: AbortSignal): 
 		argv: ["git", ...args],
 		cwd,
 		env: GIT_ENV,
-		timeoutMs: SKILL_EVAL_GIT_TIMEOUT_MS,
+		timeoutMs: SKILL_EVAL_MS.git,
 		signal,
 	});
 	if (result.exitCode !== 0)
@@ -43,7 +43,7 @@ async function holds(cache: string, commit: string): Promise<boolean> {
 		argv: ["git", "cat-file", "-e", `${commit}^{commit}`],
 		cwd: cache,
 		env: GIT_ENV,
-		timeoutMs: SKILL_EVAL_GIT_TIMEOUT_MS,
+		timeoutMs: SKILL_EVAL_MS.git,
 	});
 	return result.exitCode === 0;
 }

@@ -3,11 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import {
-	readRenderRecipe,
-	recipeRenderRequest,
-	type RenderRecipe,
-} from "@archboard/renderer/recipe";
+import { readRenderRecipe, recipeRenderRequest } from "@archboard/renderer/recipe";
 import { vaultUrl } from "../support/http.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -22,6 +18,9 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // walkthrough edit or a rename moves nothing that an untitled render of the current
 // variant draws. The rasterize owner holds the PNG's recipe; the renderer's
 // owner holds the file format.
+
+/** A board render's recipe, as a file carries it. */
+type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-render-recipe-"));

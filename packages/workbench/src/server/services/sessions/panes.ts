@@ -2,12 +2,14 @@
 // (ADR 0050). A tab session presents through one of its open panes, hears the boards of the vaults
 // its panes are in, and tells each workhorse the changes of its own checkout.
 
+import type { CodexWorkbenchWorkhorse } from "#runtime/protocol/voice/extension.ts";
+import type {
+	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
+	CodexWorkbenchTabSession,
+} from "#runtime/protocol/voice/extension.ts";
 import { panesInOrder } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { CodexWorkbenchTabSession } from "#server/protocol/generation/session-contract.ts";
-import type { CodexWorkbenchWorkhorse } from "#server/services/sessions/workhorses.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { presentingPane } from "#server/rules/pane/presenting-pane.ts";
 import type {
 	ContextPane,
@@ -16,6 +18,11 @@ import type {
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { panes, paneVaults } from "#server/services/panes/registry.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
+
+const presentingBySession = new WeakMap<
+	CodexWorkbenchTabSession,
+	{ readonly paneId: string; readonly vault: string }
+>();
 
 /**
  * The checkout of the vault a pane is in now: the directory that holds the vault.
@@ -76,8 +83,8 @@ function presentingPaneOf(
 	if (open.length === 0) {
 		return null;
 	}
-	const pane = presentingPane(session.state.presenting?.paneId ?? null, open);
-	session.state.presenting = { paneId: pane.paneId, vault: pane.vault };
+	const pane = presentingPane(presentingBySession.get(session)?.paneId ?? null, open);
+	presentingBySession.set(session, { paneId: pane.paneId, vault: pane.vault });
 	return pane;
 }
 
@@ -92,7 +99,7 @@ function presentingPaneOf(
 function hearsVault(session: CodexWorkbenchTabSession, vault: string): boolean {
 	const open = panesOfTabSession(session.id);
 	if (open.length === 0) {
-		return session.state.presenting?.vault === vault;
+		return presentingBySession.get(session)?.vault === vault;
 	}
 	// Remember the presenting pane's vault now, for while none of the panes is open.
 	presentingPaneOf(session, open);
@@ -141,7 +148,7 @@ function operationPane(
  * @returns True once its delivery is bound.
  */
 function deliveryBound(workhorse: CodexWorkbenchWorkhorse): boolean {
-	return workhorse.components.semanticDelivery.snapshot().binding !== null;
+	return workhorse.components.contextDelivery.snapshot().binding !== null;
 }
 
 /**
@@ -217,16 +224,16 @@ function changePane(session: CodexWorkbenchTabSession): ContextPane {
 	if (open !== null) {
 		return { paneId: open.paneId, clientId: open.clientId };
 	}
-	if (session.state.presenting === null) {
+	const remembered = presentingBySession.get(session);
+	if (remembered === undefined) {
 		throw new Error("No pane of this browser tab was ever open to file its context under.");
 	}
-	return { paneId: session.state.presenting.paneId, clientId: null };
+	return { paneId: remembered.paneId, clientId: null };
 }
 
 export {
 	boundSessionOf,
 	changePane,
-	deliveryBound,
 	hearsVault,
 	openPaneOf,
 	operationPane,

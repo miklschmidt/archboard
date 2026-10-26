@@ -204,12 +204,12 @@ describe.serial("actual production Codex composition", () => {
 				readonly focus: { readonly paneId: string | null };
 				readonly semantic: { readonly brief: string };
 			};
-			const semanticBrief = JSON.parse(archboardContext.semantic.brief) as {
+			const turnBrief = JSON.parse(archboardContext.semantic.brief) as {
 				readonly pane: { readonly paneId: string; readonly focused: boolean };
 			};
 			expect(archboardContext.paneId).toBe("bound-pane");
 			expect(archboardContext.focus.paneId).toBeNull();
-			expect(semanticBrief.pane).toEqual({ paneId: "bound-pane", focused: false });
+			expect(turnBrief.pane).toEqual({ paneId: "bound-pane", focused: false });
 
 			// Whether a settled change reaches the workhorse, and whose change is
 			// worth telling it about, is the semantic delivery gate's own question

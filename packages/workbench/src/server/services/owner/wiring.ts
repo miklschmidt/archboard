@@ -1,27 +1,35 @@
+import { basename } from "node:path";
+import type {
+	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
+	CodexWorkbenchTabSession,
+} from "#runtime/protocol/voice/extension.ts";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
+import { createVoiceAgent, type VoiceAgent } from "@archboard/codex-realtime-voice/server";
+import { createArchboardAnnouncements } from "#server/services/host/archboard-announcements.ts";
+import { ARCHBOARD_VOICE_PRESENTATION } from "#server/services/host/archboard-presentation.ts";
+import { createArchboardDomainTools } from "#server/services/generation/domain.ts";
+import { isArchboardRecording } from "#runtime/services/host/archboard-voice.ts";
+import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/services/host/archboard.ts";
+import { createArchboardVoicePolicy } from "#runtime/services/host/archboard-voice.ts";
+import { checkoutNamedBy } from "#server/services/host/archboard-checkouts.ts";
+import { createArchboardCoordinatorContextSource } from "#server/services/host/archboard-context-source.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { codexWiring, resetCodexWorkbenchWiring } from "#server/services/owner/wiring-hooks.ts";
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import { workbenchFeedFor } from "#server/services/sessions/feed.ts";
-
-import type { SettledChangeSourceEvent } from "@archboard/codex-app-server/semantic-context";
-import {
-	serverStartupOwnershipRecord,
-	writeServerStartupProtocolRecord,
-} from "@archboard/server-lifecycle/startup-terminal";
-import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { CodexWorkbenchTabSession } from "#server/protocol/generation/session-contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import { createServerCodexBrowserSocketOwner } from "#server/services/browser-socket/socket.ts";
-import type { createServerCodexWorkbenchApplication } from "#server/services/owner/application.ts";
-import type { CodexWorkbenchServer } from "#server/services/owner/production.ts";
+import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
+import { reportStartupOwnership } from "@archboard/server-lifecycle/server-host";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
+import { createServerCodexBrowserSocketOwner } from "@archboard/codex-realtime-voice/server";
+import type { ArchboardWorkbenchServer } from "#server/services/owner/production.ts";
 import {
 	canonicalContextFromBrief,
 	fullInputFor,
 	semanticInputFor,
 } from "#server/projections/semantic-context/semantic-input.ts";
 import { waitForTargetsWith } from "#server/services/dynamic-tools/target-wait.ts";
-import { liveWorkhorseCheckouts } from "#server/projections/browser-state/workhorse-list.ts";
+import { liveWorkhorseCheckouts } from "@archboard/codex-realtime-voice/server";
 import { checkoutRoot as sourceRoot } from "#server/services/host/module-paths.ts";
 import { narrationChangesOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
 import { canvasOf } from "#server/projections/semantic-context/tab-canvas.ts";
@@ -33,7 +41,6 @@ import {
 } from "#server/services/panes/registry.ts";
 import {
 	currentShownCheckout,
-	endTabSessionsOnceGone,
 	onShownChange,
 	shownCheckoutOf,
 	tabSessionOf,
@@ -42,7 +49,6 @@ import { repositoryOfVault, vaultIn } from "@archboard/workspace/repository-list
 import {
 	boundSessionOf,
 	changePane,
-	deliveryBound,
 	hearsVault,
 	openPaneOf,
 	operationPane,
@@ -51,12 +57,10 @@ import {
 	requireWorkhorse,
 	semanticOwners,
 } from "#server/services/sessions/panes.ts";
-
-type OperationAuthority = Parameters<CodexWorkbenchServer["contextForOperation"]>[0];
+type OperationAuthority = Parameters<ArchboardWorkbenchServer["contextForOperation"]>[0];
 
 /**
- * Whether a pane's thread link still names exactly the authority an
- * operation was leased under.
+ * Whether a pane's thread link still names the operation's exact leased authority.
  * @param binding The pane's current binding.
  * @param authority The leased authority.
  * @returns True when nothing has changed.
@@ -78,14 +82,12 @@ function bindingMatchesAuthority(
 }
 
 /**
- * Install the workbench gateway's browser hooks over every socket currently
- * presenting a pane, and return the remover. A tab's conversation opens as its
- * first pane connects.
+ * Attach the gateway to current pane sockets and open each tab's conversation on its first connection.
  * @param components The gateway, and the tab sessions it serves.
  * @returns Removes the hooks and disposes the socket owner.
  */
 function installBrowserGateway(
-	components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
+	components: Parameters<ArchboardWorkbenchServer["installBrowserGateway"]>[0],
 ): () => void {
 	const socketOwner = createServerCodexBrowserSocketOwner({
 		gateway: components.gateway,
@@ -94,12 +96,7 @@ function installBrowserGateway(
 		 * @param browserId The browser's client id.
 		 * @returns The pane id, or null while it has no registration.
 		 */
-		paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
-		/**
-		 * The tab session a browser id's socket named.
-		 * @param browserId The browser's client id.
-		 * @returns The tab session, or null while it named none.
-		 */
+		chatForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 		tabSessionForBrowser: tabSessionOf,
 		/**
 		 * Open a connecting tab's conversation, or find it open.
@@ -142,51 +139,19 @@ function installBrowserGateway(
 }
 
 /**
- * The server the Codex workbench installation runs against: how it reads the
- * server (panes, boards, selection, locks) and how it wires itself into the
- * server's sockets.
+ * Build the Archboard context and socket integration for the Codex workbench.
  * @returns The server.
  */
-function createCodexWorkbenchServer(): CodexWorkbenchServer {
+function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
-	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
-
-	/**
-	 * The live generation and one of its tab sessions.
-	 * @param tabSessionId The tab session.
-	 * @returns Both.
-	 * @throws {Error} While no generation is installed, or the session is not live in it.
-	 */
-	const liveSession = (
-		tabSessionId: TabSessionId,
-	): {
-		readonly components: CodexWorkbenchComponents;
-		readonly session: CodexWorkbenchTabSession;
-	} => {
-		if (active === null) {
-			throw new Error("The Codex workbench context is not ready.");
-		}
-		return { components: active, session: active.sessions.require(tabSessionId) };
-	};
-
-	return {
-		sourceRoot,
+	const announcements = createArchboardAnnouncements({
 		/**
-		 * Record which process group the Codex app-server runs in, for the startup protocol.
-		 * @param codexGroup The process group identity.
-		 */
-		onCodexProcessGroupOwned: (codexGroup) => {
-			writeServerStartupProtocolRecord(
-				serverStartupOwnershipRecord({ serverPid: process.pid, codexGroup }),
-			);
-		},
-		/**
-		 * Where one tab session's voice context is published from: what the session's panes show,
-		 * told as the workhorse voice is bound to is.
+		 * Publish what this tab hears: the changes of the boards of its panes' vaults, each built
+		 * for the workhorse of the board's checkout, and the reports of its panes.
 		 * @param tabSessionId The tab session.
 		 * @returns The publisher options.
 		 */
-		semanticPublisherFor: (tabSessionId) => ({
+		publisherOptions: (tabSessionId) => ({
 			feed: workbenchFeedFor((vault) => {
 				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
 				return session !== undefined && hearsVault(session, vault);
@@ -204,60 +169,14 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				},
 			},
 			/**
-			 * The semantic input for a settled change, as the session's voice is shown it.
+			 * The semantic input for a settled change, under the identity of the workhorse of the
+			 * board's checkout, which is the one told it.
 			 * @param event The settled change.
 			 * @returns The input, at the change's cursor.
 			 */
 			contextForChange: (event: SettledChangeSourceEvent) => {
 				const { components, session } = liveSession(tabSessionId);
-				return semanticInputFor(
-					semanticOwners(components, session, session.voiceWorkhorse()),
-					event.vault,
-					event.board,
-					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					changePane(session),
-				);
-			},
-		}),
-		/**
-		 * Where one workhorse's board news is published from: the changes of its checkout's boards
-		 * that its tab session hears, told as that workhorse is.
-		 * @param tabSessionId The workhorse's tab session.
-		 * @param checkout The checkout it works in.
-		 * @returns The publisher options.
-		 */
-		workhorsePublisherFor: (tabSessionId, checkout) => ({
-			feed: workbenchFeedFor((vault) => {
-				const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
-				return (
-					session !== undefined && checkoutOfVault(vault) === checkout && hearsVault(session, vault)
-				);
-			}),
-			feedId: semanticChangeFeed.feedId,
-			fresh: {
-				/**
-				 * A fresh semantic input for the board of the pane the session presents through, told
-				 * as this workhorse is.
-				 * @returns The input.
-				 */
-				read: () => {
-					const { components, session } = liveSession(tabSessionId);
-					const owners = semanticOwners(components, session, requireWorkhorse(session, checkout));
-					return fullInputFor(owners, openPaneOf(session));
-				},
-			},
-			/**
-			 * The semantic input for a settled change, as this workhorse is shown it.
-			 * @param event The settled change.
-			 * @returns The input, at the change's cursor.
-			 * @throws {Error} When the workhorse has no delivery bound.
-			 */
-			contextForChange: (event: SettledChangeSourceEvent) => {
-				const { components, session } = liveSession(tabSessionId);
-				const workhorse = requireWorkhorse(session, checkout);
-				if (!deliveryBound(workhorse)) {
-					throw new Error("The Codex semantic publisher has no current thread-context binding.");
-				}
+				const workhorse = session.workhorses.get(checkoutOfVault(event.vault)) ?? null;
 				return semanticInputFor(
 					semanticOwners(components, session, workhorse),
 					event.vault,
@@ -268,8 +187,153 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			},
 		}),
 		/**
-		 * The checkout whose conversation a browser pane's tab shows, pinned the first time it is
-		 * read to the checkout of the tab's focused pane, else of the asking pane.
+		 * This session's canvas, with no narration while a recording holds the voice.
+		 * @param id The tab session.
+		 * @returns The canvas.
+		 */
+		canvas: (id) => {
+			const canvas = canvasOf(id);
+			const recording = isArchboardRecording(
+				active?.sessions
+					.list()
+					.find((session) => session.id === id)
+					?.components.realtime.narrative(),
+			);
+			return recording ? { ...canvas, narrated: null } : canvas;
+		},
+		/**
+		 * Announce one change through the voice agent.
+		 * @param change The change.
+		 * @returns Its receipts.
+		 */
+		announce: async (change) => {
+			if (codexApplication === null) throw new Error("The Codex workbench has not been created.");
+			return codexApplication.announce(change);
+		},
+		/**
+		 * Log a change that could not be announced.
+		 * @param error Why.
+		 */
+		onError: (error) => {
+			logger.error("Cannot announce an Archboard context change:", error);
+		},
+	});
+	/**
+	 * The live generation and one of its tab sessions.
+	 * @param tabSessionId The tab session.
+	 * @returns Both.
+	 * @throws {Error} While no generation is installed, or the session is not live in it.
+	 */
+	const liveSession = (
+		tabSessionId: TabSessionId,
+	): {
+		readonly components: CodexWorkbenchComponents;
+		readonly session: CodexWorkbenchTabSession;
+	} => {
+		if (active === null) {
+			throw new Error("The Codex workbench context is not ready.");
+		}
+		return { components: active, session: active.sessions.require(tabSessionId) };
+	};
+	const integration: ArchboardWorkbenchServer = {
+		host: {
+			contextCodec: ARCHBOARD_CONTEXT_CODEC,
+			resolveCheckout: checkoutNamedBy,
+			/**
+			 * Name a checkout by the repository of the vault it holds, else by its directory.
+			 * @param checkout The checkout directory.
+			 * @returns The registered repository's name, or the checkout directory's name.
+			 */
+			checkoutLabel: (checkout) => {
+				const vault = vaultIn(checkout);
+				return (vault === null ? null : repositoryOfVault(vault)) ?? basename(checkout);
+			},
+			narrative: ARCHBOARD_VOICE_PRESENTATION,
+			domainTools: {
+				registrations: [
+					{ namespace: "archboard_app", manifestHash: ARCHBOARD_APP_MANIFEST_SHA256 },
+				],
+				/**
+				 * Install Archboard domain tools under the current generation's capabilities.
+				 * @param scope The capabilities that the core grants to Archboard.
+				 * @returns The Archboard domain and its cleanup hooks.
+				 */
+				install: (scope) => createArchboardDomainTools(integration).install(scope),
+			},
+			/**
+			 * Attach Archboard lifecycle signals to this generation.
+			 * @param scope The generation capabilities.
+			 * @returns The lifecycle cleanup.
+			 */
+			onGeneration: (scope) => integration.installLifecycleSignals(scope),
+			/**
+			 * Attach Archboard browser sockets to the core gateway.
+			 * @param scope The gateway and sessions that serve the sockets.
+			 * @returns The browser gateway cleanup.
+			 */
+			onBrowserGateway: (scope) => integration.installBrowserGateway(scope),
+			/**
+			 * Report an unrecoverable core fault through the Archboard logger.
+			 * @param error The reported fault.
+			 * @returns Nothing after the fault is reported.
+			 */
+			onFatal: (error) => integration.onFatal(error),
+			/**
+			 * Read context for the exact operation and execution authority supplied by the core.
+			 * @param authority The core-owned operation authority.
+			 * @param operation The pending operation identity.
+			 * @returns The canonical context of this exact operation.
+			 */
+			contextForOperation: (authority, operation) =>
+				workbenchContextOf(integration.contextForOperation(authority, operation)),
+			/**
+			 * Build this tab session’s Archboard voice policy.
+			 * @param tabSessionId The tab session that owns this policy.
+			 * @returns The Archboard voice policy for this session.
+			 */
+			voiceFor: (tabSessionId) => createArchboardVoicePolicy(narrationChangesOf(tabSessionId)),
+			/**
+			 * Publish complete domain snapshots for this tab session.
+			 * @param tabSessionId The tab session that owns this policy.
+			 * @returns The context source for this session.
+			 */
+			coordinatorContextFor: (tabSessionId) =>
+				createArchboardCoordinatorContextSource({
+					/**
+					 * Read the vault of the pane that presents this session.
+					 * @returns The presenting vault, or null with no open pane.
+					 */
+					vault: () => {
+						const session = active?.sessions.list().find(({ id }) => id === tabSessionId);
+						return session === undefined ? null : (presentingPaneOf(session)?.vault ?? null);
+					},
+					/**
+					 * Subscribe to host context changes and return the subscription cleanup.
+					 * @param listener Receives domain changes.
+					 * @returns The cleanup that ends the subscriptions.
+					 */
+					subscribe: (listener) => {
+						const publisher = announcements.publisherFor(tabSessionId);
+						const stops = [
+							publisher.subscribePaneFocus(listener),
+							publisher.subscribePaneSelection(listener),
+						];
+						return () => {
+							for (const stop of stops) stop();
+						};
+					},
+				}),
+		},
+		sourceRoot,
+		/**
+		 * Record which process group the Codex app-server runs in, for the startup protocol.
+		 * @param codexGroup The process group identity.
+		 */
+		onCodexProcessGroupOwned: (codexGroup) => {
+			reportStartupOwnership(codexGroup);
+		},
+		/**
+		 * Read the tab's shown checkout and pin its first value from the focused pane, else the asking pane.
 		 * @param browserId The browser's client id.
 		 * @returns The checkout.
 		 */
@@ -281,17 +345,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns How to stop listening.
 		 */
 		onShownChange: (listener) => onShownChange(() => listener()),
-		/**
-		 * The repository a checkout is listed under: that of the vault it holds.
-		 * @param checkout The checkout.
-		 * @returns The repository's name, or null when no registered directory holds it.
-		 */
-		repositoryOfCheckout: (checkout) => {
-			const vault = vaultIn(checkout);
-			return vault === null ? null : repositoryOfVault(vault);
-		},
 		narrationChangesFor: narrationChangesOf,
-		canvasFor: canvasOf,
 		/**
 		 * The vault of the pane a tab session presents through.
 		 * @param tabSessionId The tab session.
@@ -300,22 +354,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		presentingVaultFor: (tabSessionId) =>
 			presentingPaneOf(liveSession(tabSessionId).session)?.vault ?? null,
 		/**
-		 * The canonical context of a settled event, filed under the pane it presents.
-		 * @param event The settled event.
-		 * @param operation The operation in flight, if any.
-		 * @returns The context.
-		 */
-		contextForEvent: (event, operation) =>
-			canonicalContextFromBrief(
-				event,
-				event.pane.paneId,
-				operation === undefined
-					? { id: null, kind: null, rpc: null, outcome: null }
-					: { ...operation, outcome: null },
-			),
-		/**
-		 * The canonical context of an operation leased under one tab session's link,
-		 * refusing when that link has changed since the lease.
+		 * Capture canonical operation context and refuse a tab session link that changed since the lease.
 		 * @param authority The leased authority.
 		 * @param operation The operation.
 		 * @returns The context.
@@ -329,7 +368,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			}
 			const exactInput = fullInputFor(semanticOwners(components, session, workhorse), pane);
 			return canonicalContextFromBrief(
-				session.components.semanticPublisher.freshBriefFor(exactInput),
+				announcements.publisherFor(session.id).freshBriefFor(exactInput),
 				pane.paneId,
 				{ ...operation, outcome: null },
 			);
@@ -348,25 +387,22 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		},
 		browserLeaseLedger,
 		/**
-		 * Remember the identity decoders the next graph must match.
-		 * @param identity The decoders.
-		 */
-		installIdentityDecoders: (identity) => {
-			installedIdentity = identity;
-		},
-		/**
 		 * Make a graph the active one, end its tab sessions once gone, and return the remover.
 		 * @param components The graph.
 		 * @returns Deactivates that graph, if it is still the active one.
 		 */
 		installLifecycleSignals: (components) => {
-			if (installedIdentity !== components.identity) {
-				throw new Error("The installed identity decoders do not match the active graph.");
-			}
 			active = components;
+			/** Give every tab session of the graph its publisher, and dispose of the rest. */
+			const reconcile = (): void => {
+				const ids = components.sessions.list().map(({ id }) => id);
+				for (const id of ids) announcements.publisherFor(id);
+				announcements.keepOnly(ids);
+			};
+			reconcile();
+			const stopReconciling = components.sessions.onChange(reconcile);
 			/**
-			 * Publish fresh context when a pane changes focus or selection, to its own tab's
-			 * conversation once that has one to tell: another tab's hand is not its news.
+			 * Publish fresh focus or selection context only to the pane's own tab conversation.
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
 			 * @param userChanged What of it the user changed by hand; empty when nothing was.
@@ -376,7 +412,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				const pane = panes.get(clientId);
 				const session = boundSessionOf(components, clientId);
 				if (pane === undefined || session === null) return;
-				const { semanticPublisher } = session.components;
+				const semanticPublisher = announcements.publisherFor(session.id);
 				try {
 					const owners = semanticOwners(components, session, session.voiceWorkhorse());
 					const read = fullInputFor(owners, pane);
@@ -397,9 +433,9 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				const session = components.sessions.list().find(({ id }) => id === tabSessionId);
 				return session === undefined ? [] : liveWorkhorseCheckouts(session);
 			};
-			const stopEnding = endTabSessionsOnceGone(components);
 			return () => {
-				stopEnding();
+				stopReconciling();
+				announcements.dispose();
 				if (active === components) {
 					active = null;
 					codexWiring.codex.publishPaneContext = null;
@@ -409,12 +445,6 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		},
 		installBrowserGateway,
 		/**
-		 * Dispose the browser gateway.
-		 * @param gateway The gateway.
-		 * @returns Whatever disposal returns; the hook contract passes it through.
-		 */
-		stopBrowser: (gateway) => gateway.dispose(),
-		/**
 		 * Log a fault the workbench cannot recover from.
 		 * @param error The fault.
 		 */
@@ -422,13 +452,11 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			logger.error("Fatal Codex workbench fault:", error);
 		},
 	};
+	return integration;
 }
+let codexApplication: VoiceAgent | null = null;
 
-let codexApplication: ReturnType<typeof createServerCodexWorkbenchApplication> | null = null;
-
-/**
- * Shut the Codex workbench application down and forget its wiring.
- */
+/** Shut the Codex workbench application down and forget its wiring. */
 async function stopCodexWorkbench(): Promise<void> {
 	const application = codexApplication;
 	if (application === null) {
@@ -441,30 +469,18 @@ async function stopCodexWorkbench(): Promise<void> {
 	}
 	resetCodexWorkbenchWiring();
 }
-
 /**
- * Load and prepare the Codex workbench application, shutting it down again
- * if startup is cancelled meanwhile.
+ * Prepare the Codex workbench application and shut it down if startup is canceled.
  * @param signal Cancels the preparation.
  */
 async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
-	const [applicationModule, generationModule, productionModule] = await Promise.all([
-		import("#server/services/owner/application.ts"),
-		import("#server/services/generation/workbench.ts"),
-		import("#server/services/owner/production.ts"),
-	]);
+	const productionModule = await import("#server/services/owner/production.ts");
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
 	}
-	const application = applicationModule.createServerCodexWorkbenchApplication({
-		module: generationModule,
-		/**
-		 * Build the installation against this server.
-		 * @returns The installation.
-		 */
-		installation: () =>
-			productionModule.createServerCodexWorkbenchInstallation(createCodexWorkbenchServer()),
-	});
+	const application = createVoiceAgent(
+		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer()),
+	);
 	codexApplication = application;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */
 	const cancel = (): void => {
@@ -472,10 +488,9 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	};
 	signal.addEventListener("abort", cancel, { once: true });
 	try {
-		await application.prepare();
+		await application.start();
 	} finally {
 		signal.removeEventListener("abort", cancel);
 	}
 }
-
 export { prepareCodexWorkbench, stopCodexWorkbench };

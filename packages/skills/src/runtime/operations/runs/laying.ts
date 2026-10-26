@@ -6,13 +6,12 @@
 // lay is refused here, at `eval:skill check`, rather than hours into a batch.
 
 import {
-	acceptedBoard,
+	acceptedTransition,
 	adoptVariantTransition,
 	branchVariantTransition,
 	createBoardTransition,
 	editVariantTransition,
 	settleVariantTransition,
-	type SemanticTransition,
 } from "@archboard/board/store-write";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { VariantContent } from "@archboard/board/content";
@@ -28,6 +27,9 @@ import {
 	resolvePlaceholders,
 	targetVariant,
 } from "#runtime/operations/runs/vault.ts";
+import type { writeSemanticBoard } from "@archboard/board/store-write";
+
+type SemanticTransition = Parameters<typeof writeSemanticBoard>[0]["transition"];
 
 /**
  * The one relationship kind that may end on a part with children.
@@ -147,12 +149,15 @@ function layStep(
 			variant: targetVariant(step),
 		}),
 	);
-	const applied = transitionOf(resolved).apply(before, LAID_AT);
-	if (!applied.ok) throw new Error(applied.problem);
-	// The store refuses the same boards on its write, so a fixture it would
-	// refuse in a batch is refused here.
-	const accepted = acceptedBoard(before, applied.board, LAID_AT, fixturePolicy(fixture.policy));
-	if ("problem" in accepted) throw new Error(accepted.problem);
+	// The store admits a change by the same rules on its write, so a fixture it
+	// would refuse in a batch is refused here.
+	const accepted = acceptedTransition(
+		before,
+		transitionOf(resolved),
+		LAID_AT,
+		fixturePolicy(fixture.policy),
+	);
+	if (!accepted.ok) throw new Error(accepted.problem);
 	return accepted.board;
 }
 

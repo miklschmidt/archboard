@@ -1,0 +1,64 @@
+import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
+import type {
+	AnswerSdp,
+	RealtimeCorrelationId,
+	RealtimeSessionId as BrowserRealtimeSessionId,
+	RealtimeState,
+	RealtimeTranscriptRecord,
+	RealtimeTranscriptRole,
+} from "#shared/protocol/realtime-contract.ts";
+import type {
+	ItemId,
+	RealtimeSessionId as WireRealtimeSessionId,
+} from "@archboard/codex-app-server/identity";
+import type {
+	CodexRealtimeBinding,
+	CodexRealtimeGeneration,
+} from "#runtime/services/realtime/contract.ts";
+
+interface RealtimeTranscriptEntry {
+	readonly itemId: ItemId;
+	role: RealtimeTranscriptRole;
+	status: RealtimeTranscriptRecord["status"];
+	text: string;
+	order: number;
+}
+
+interface ActiveRealtimeSession {
+	readonly binding: CodexRealtimeBinding;
+	readonly browserSessionId: BrowserRealtimeSessionId;
+	readonly correlationId: RealtimeCorrelationId;
+	readonly wireSessionId: WireRealtimeSessionId;
+	readonly startBrief: string;
+	/** The narrative this session was started to present, or null for an ordinary session. */
+	readonly narrative: VoiceNarrative | null;
+	readonly answer: Promise<AnswerSdp>;
+	readonly resolveAnswer: (answer: AnswerSdp) => void;
+	readonly rejectAnswer: (error: Error) => void;
+	readonly entries: Map<ItemId, RealtimeTranscriptEntry>;
+	state: RealtimeState;
+	startReturned: boolean;
+	started: boolean;
+	answerSdp: string | null;
+	answerSettled: boolean;
+	nextLiveOrder: number;
+	stopContextInputs: (() => void) | null;
+}
+
+/**
+ * The frozen identity of one realtime start, everything a later delivery must match to be
+ * counted as belonging to this session.
+ * @param session - The live session.
+ * @returns The session's generation record.
+ */
+function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
+	return Object.freeze({
+		...session.binding,
+		browserSessionId: session.browserSessionId,
+		browserCorrelationId: session.correlationId,
+		wireSessionId: session.wireSessionId,
+		startBrief: session.startBrief,
+	});
+}
+
+export { type RealtimeTranscriptEntry, type ActiveRealtimeSession, realtimeGeneration };

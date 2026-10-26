@@ -11,11 +11,11 @@
 
 import type { MessageStatus, ThreadMessageLike } from "@assistant-ui/react";
 
-import type {
-	ConversationItem,
-	ConversationPlan,
-	ConversationTurn,
-} from "#ui/state/timeline/contract.ts";
+import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationItem } from "#ui/state/surfaces/voice-parts.ts";
+
+/** The plan Codex published for a turn. */
+type ConversationPlan = NonNullable<ConversationTurn["plan"]>;
 
 type MessagePart = Exclude<ThreadMessageLike["content"], string>[number];
 

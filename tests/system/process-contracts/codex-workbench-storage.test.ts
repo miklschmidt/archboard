@@ -38,9 +38,7 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 			(error: unknown) => ({ server: null, error }),
 		);
 		if (startup.server === null) {
-			expect(String(startup.error), mode).toContain(
-				"The production Codex workbench did not become ready.",
-			);
+			expect(String(startup.error), mode).toContain("Codex did not become ready.");
 			const initialization = records(fixture.logPath).find(
 				(entry) => entry.kind === "response" && entry.method === "initialize",
 			) as FixtureRecord & { readonly result?: Record<string, unknown> };

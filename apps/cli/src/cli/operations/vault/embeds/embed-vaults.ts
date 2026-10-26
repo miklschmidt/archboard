@@ -10,7 +10,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { listSemanticBoardsOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { listSemanticBoardsOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import { normalizeBoardKey } from "@archboard/board/address";
 import type { checkoutsReadFrom } from "@archboard/code-binding/resolution";

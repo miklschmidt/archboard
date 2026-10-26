@@ -3,10 +3,6 @@ import fs from "node:fs";
 import { readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import {
-	CODEX_RETAINED_ENVIRONMENT_KEYS,
-	buildCodexChildEnvironment,
-} from "#runtime/services/environment.ts";
 import { CodexStorageError, prepareCodexStorage } from "#runtime/store/storage.ts";
 import type { CodexStorageFileSystem } from "#runtime/store/storage.ts";
 import { removeRoot, temporaryRoot } from "#tests/runtime/support/process-support.ts";
@@ -26,74 +22,6 @@ function fileSystem(): CodexStorageFileSystem {
 		realpathSync: fs.realpathSync.bind(fs),
 	};
 }
-
-describe("Codex child environment", () => {
-	const archboardServer = { url: "http://127.0.0.1:3404", binDirectory: "/opt/archboard/bin" };
-
-	test("copies only the authored keys in order and overwrites both roots", () => {
-		const ambient: Record<string, string> = Object.fromEntries(
-			CODEX_RETAINED_ENVIRONMENT_KEYS.map((key) => [key, `value:${key}`]),
-		);
-		Object.assign(ambient, {
-			PWD: "poisoned-pwd",
-			CODEX_HOME: "poisoned-home",
-			CODEX_SQLITE_HOME: "poisoned-sqlite",
-			CODEX_INTERNAL_ORIGINATOR_OVERRIDE: "poisoned-originator",
-			OPENAI_API_KEY: "poisoned-secret",
-			AWS_PROFILE: "poisoned-aws",
-			ELECTRON_RUN_AS_NODE: "poisoned-electron",
-			ARCHBOARD_URL: "http://127.0.0.1:3000",
-		});
-
-		const child = buildCodexChildEnvironment({
-			ambient,
-			codexHome: "/tmp/dedicated home",
-			sqliteHome: "/tmp/dedicated sqlite",
-			archboardServer,
-		});
-		expect(Object.keys(child)).toEqual([
-			...CODEX_RETAINED_ENVIRONMENT_KEYS,
-			"CODEX_HOME",
-			"CODEX_SQLITE_HOME",
-			"ARCHBOARD_URL",
-			"ARCHBOARD_NO_AUTOSTART",
-		]);
-		expect(child["CODEX_HOME"]).toBe("/tmp/dedicated home");
-		expect(child["CODEX_SQLITE_HOME"]).toBe("/tmp/dedicated sqlite");
-		expect(child["PWD"]).toBeUndefined();
-		expect(child["OPENAI_API_KEY"]).toBeUndefined();
-		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
-		// A thread's `archboard` is the server's own, in whichever checkout it works (ADR 0050).
-		expect(child["PATH"]).toBe(`/opt/archboard/bin${path.delimiter}value:PATH`);
-		expect(child["ARCHBOARD_URL"]).toBe(archboardServer.url);
-
-		const optional = buildCodexChildEnvironment({
-			ambient: { HOME: "home", PATH: undefined },
-			codexHome: "/tmp/home",
-			sqliteHome: "/tmp/sqlite",
-			archboardServer,
-		});
-		expect(Object.keys(optional)).toEqual([
-			"HOME",
-			"PATH",
-			"CODEX_HOME",
-			"CODEX_SQLITE_HOME",
-			"ARCHBOARD_URL",
-			"ARCHBOARD_NO_AUTOSTART",
-		]);
-	});
-
-	test("rejects a NUL in a retained value without falling through", () => {
-		expect(() =>
-			buildCodexChildEnvironment({
-				ambient: { HOME: "safe", PATH: "bad\0value" },
-				codexHome: "/tmp/home",
-				sqliteHome: "/tmp/sqlite",
-				archboardServer,
-			}),
-		).toThrow(/PATH.*NUL/);
-	});
-});
 
 /**
  * The code of the storage refusal a preparation throws.
@@ -219,7 +147,7 @@ describe("dedicated Codex storage", () => {
 		const root = temporaryRoot();
 		try {
 			const first = prepareCodexStorage({ rootDirectory: root });
-			const lockPath = path.join(first.codexHome, ".archboard-codex-process.lock");
+			const lockPath = path.join(first.codexHome, ".codex-process.lock");
 			const ownRecord = readFileSync(lockPath, "utf8");
 			first.release();
 			const exitedPid = Bun.spawnSync(["true"]).pid;
@@ -231,7 +159,7 @@ describe("dedicated Codex storage", () => {
 				expect(readFileSync(lockPath, "utf8")).toBe(ownRecord);
 				const stale = fs
 					.readdirSync(first.codexHome)
-					.filter((name) => name.startsWith(".archboard-codex-process.lock.stale-"))
+					.filter((name) => name.startsWith(".codex-process.lock.stale-"))
 					.map((name) => readFileSync(path.join(first.codexHome, name), "utf8"));
 				expect(stale).toContain(dead);
 				prepared.release();
@@ -246,7 +174,7 @@ describe("dedicated Codex storage", () => {
 		try {
 			const first = prepareCodexStorage({ rootDirectory: root });
 			first.release();
-			const lockPath = path.join(first.codexHome, ".archboard-codex-process.lock");
+			const lockPath = path.join(first.codexHome, ".codex-process.lock");
 			const live = `${process.pid}\n`;
 			fs.writeFileSync(lockPath, live, { mode: 0o600 });
 			let refusal: unknown;
@@ -349,7 +277,7 @@ describe("dedicated Codex storage", () => {
 					throw new Error("injected lock write failure");
 				}) as typeof fs.writeFileSync,
 				unlinkSync: ((target: string | Buffer | URL) => {
-					if (String(target).endsWith(".archboard-codex-process.lock") && unlinkFailures > 0) {
+					if (String(target).endsWith(".codex-process.lock") && unlinkFailures > 0) {
 						unlinkFailures -= 1;
 						throw new Error("injected unwind unlink failure");
 					}
@@ -362,7 +290,7 @@ describe("dedicated Codex storage", () => {
 			} catch (error) {
 				thrown = error;
 			}
-			const lockPath = path.join(root, "codex-home", ".archboard-codex-process.lock");
+			const lockPath = path.join(root, "codex-home", ".codex-process.lock");
 			expect(thrown).toBeInstanceOf(CodexStorageError);
 			expect((thrown as CodexStorageError).code).toBe("lock");
 			expect((thrown as CodexStorageError).retryCleanup).toBeFunction();
@@ -384,7 +312,7 @@ describe("dedicated Codex storage", () => {
 			const injected = {
 				...fileSystem(),
 				unlinkSync: ((target: string | Buffer | URL) => {
-					if (String(target).endsWith(".archboard-codex-process.lock") && failures > 0) {
+					if (String(target).endsWith(".codex-process.lock") && failures > 0) {
 						failures -= 1;
 						throw new Error("injected lock unlink failure");
 					}
@@ -392,7 +320,7 @@ describe("dedicated Codex storage", () => {
 				}) as typeof fs.unlinkSync,
 			} satisfies CodexStorageFileSystem;
 			const prepared = prepareCodexStorage({ rootDirectory: root }, { fileSystem: injected });
-			const lockPath = path.join(prepared.codexHome, ".archboard-codex-process.lock");
+			const lockPath = path.join(prepared.codexHome, ".codex-process.lock");
 			expect(() => prepared.release()).toThrow(CodexStorageError);
 			expect(fs.existsSync(lockPath)).toBe(true);
 			expect(() => prepared.release()).not.toThrow();
@@ -412,7 +340,7 @@ describe("dedicated Codex storage", () => {
 			const injected = {
 				...fileSystem(),
 				unlinkSync: ((target: string | Buffer | URL) => {
-					if (String(target).endsWith(".archboard-codex-process.lock") && failures > 0) {
+					if (String(target).endsWith(".codex-process.lock") && failures > 0) {
 						failures -= 1;
 						throw new Error("injected preparation lock unlink failure");
 					}

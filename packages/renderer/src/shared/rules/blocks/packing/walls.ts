@@ -1,11 +1,13 @@
 // A block's lines to and from its side walls: which wall a line leaves or
 // enters by, the lines drawn straight from a card's side to its wall,
-// running such a line onto the wall once routed, and the points the block's
-// parent must route around.
+// running such a line onto the wall once routed, the points the block's
+// parent must route around, and where a block of blocks stands its own
+// ports on its walls.
 import type { Box, Point } from "#shared/rules/geometry.ts";
 import { walledPoints } from "#shared/rules/blocks/cards/card-graph.ts";
 import { PORT } from "#shared/rules/blocks/folds/leaves.ts";
-import type { Block, BlockTree, Line } from "#shared/rules/blocks/tree/tree.ts";
+import type { Block, BlockTree, Line, Side } from "#shared/rules/blocks/tree/tree.ts";
+import { spreadAlong } from "#shared/rules/track/channels/channels.ts";
 import { LANE } from "#shared/rules/track/routes/chains.ts";
 import type { Item, Scene } from "#shared/rules/track/scene/scene.ts";
 
@@ -115,6 +117,76 @@ function wallReached(block: Block, item: string): "left" | "right" | undefined {
 	}
 	const [wall] = sides;
 	return sides.size === 1 ? wall : undefined;
+}
+
+/** What placing a block of blocks' own ports on its walls reads of its layout (`pack.ts`). */
+interface Packed {
+	readonly block: Block;
+	readonly tree: BlockTree;
+	/** Where the block put its items, header and own ports. */
+	readonly boxes: Map<string, Box>;
+	/** Where a pin stands in the block, and the edge of its own block it is on. */
+	pinAt(end: string): Point & { side: Side };
+}
+
+/**
+ * Place a block of blocks' own ports on its side walls, within the block:
+ * each level with the pins its lines reach ({@link levelOf}), and a lane from
+ * the others on its wall. Ports of two kinds that reach one block want one
+ * place: on one point they drew the two lines as one, and libavoid finds no
+ * route to the later of two pins on one point of a block, so on Codex
+ * realtime voice (Blocks) three trunks out of Workhorses took a dogleg
+ * through Chat conversations and its Workhorse list (`trunks.ts`).
+ * @param packed The block's layout; its ports' boxes are set.
+ * @param width The block's width.
+ * @param span Where the packed items start and end.
+ * @param span.top Where they start.
+ * @param span.bottom Where they end.
+ */
+function placeWallPorts(
+	packed: Packed,
+	width: number,
+	span: { top: number; bottom: number },
+): void {
+	for (const side of ["left", "right"] as const) {
+		const wanted = [...packed.block.ports]
+			.filter(([, at]) => at === side)
+			.map(([port]) => ({ port, y: levelOf(packed, port, side) }))
+			.toSorted((one, other) => one.y - other.y);
+		const ys = spreadAlong(
+			[span.top, span.bottom],
+			wanted.map(({ y }) => y),
+		);
+		const x = side === "left" ? 0 : width;
+		for (const [index, { port }] of wanted.entries())
+			packed.boxes.set(port, {
+				x: x - PORT / 2,
+				y: ys[index]! - PORT / 2,
+				width: PORT,
+				height: PORT,
+			});
+	}
+}
+
+/**
+ * Where one of a block of blocks' own ports on a side wall wants to stand:
+ * level with the pins its lines reach on that wall of their blocks, else
+ * with their blocks' middle.
+ * @param packed The block's layout.
+ * @param port The port.
+ * @param side The wall it stands on.
+ * @returns Its y.
+ */
+function levelOf(packed: Packed, port: string, side: "left" | "right"): number {
+	const reached = [...packed.block.lines.values()]
+		.flatMap((line) => (line.to === port ? [line.from] : line.from === port ? [line.to] : []))
+		.flatMap((end) => {
+			const owner = packed.boxes.get(packed.tree.pins.get(end)?.block.id ?? "");
+			if (owner === undefined) return [];
+			const at = packed.pinAt(end);
+			return [at.side === side ? at.y : owner.y + owner.height / 2];
+		});
+	return reached.reduce((sum, y) => sum + y, 0) / Math.max(1, reached.length);
 }
 
 /** Where an item that reaches one wall stands in the order Graphviz meets a block's items. */
@@ -317,6 +389,7 @@ export {
 	itemsOf,
 	labelledOut,
 	markBesides,
+	placeWallPorts,
 	ranks,
 	wallLines,
 	wallOf,

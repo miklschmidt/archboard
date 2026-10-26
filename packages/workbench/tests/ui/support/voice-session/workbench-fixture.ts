@@ -6,10 +6,13 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
-import type { CodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import {
+	BROWSER_IDLE_SPOKEN_APPROVAL,
+	createCodexBrowserModel,
+} from "@archboard/codex-realtime-voice/schemas";
+
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import type { CodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 type Coordinator = BrowserSnapshot["coordinator"];
 type Voice = BrowserSnapshot["voice"];
@@ -169,7 +172,7 @@ function snapshotIn(target: FixtureWorld, overrides: SnapshotOverrides): Browser
 		settings: [],
 		approvals: [],
 		dynamicApprovals: [],
-		semantic: null,
+		contextDelivery: null,
 		coordinator: overrides.coordinator ?? coordinatorIn(target),
 		voice: overrides.voice ?? voice(),
 		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,

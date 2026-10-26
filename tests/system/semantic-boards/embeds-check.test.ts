@@ -8,7 +8,6 @@ import {
 	embedRecipeInPng,
 	readRenderRecipe,
 	replaceRenderRecipe,
-	type RenderRecipe,
 } from "@archboard/renderer/recipe";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -24,6 +23,9 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // again, re-points the one that can follow the name, leaves a PNG it cannot
 // draw without Chromium reported, and with Chromium leaves nothing to fix.
 // Inline SVG pages, ignored files and files without a recipe are no embeds.
+
+/** A board render's recipe, as a file carries it. */
+type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-embeds-")));

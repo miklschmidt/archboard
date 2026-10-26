@@ -3,7 +3,8 @@ import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { SemanticRasterReceipt } from "@archboard/renderer/rasterizer";
+import type { z } from "zod";
+import type { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
 import { executeRun, type RunJob } from "#runtime/operations/runs/author.ts";
 import { loadSuite } from "#runtime/schemas/suite.ts";
 import { type RunBundle } from "#runtime/operations/grading/blind.ts";
@@ -32,7 +33,7 @@ const CAPTURE_RECEIPT = {
 		facesLoaded: 4,
 		motion: "paused-at-start",
 	},
-} satisfies Omit<SemanticRasterReceipt, "board" | "file">;
+} satisfies Omit<z.infer<typeof SemanticRasterReceiptSchema>, "board" | "file">;
 
 /** A job that cannot run a model, using a scenario with two declared captures. */
 function jobAt(root: string, signal = new AbortController().signal): RunJob {

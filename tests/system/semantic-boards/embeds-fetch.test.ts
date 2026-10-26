@@ -3,11 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-	readRenderRecipe,
-	replaceRenderRecipe,
-	type RenderRecipe,
-} from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
@@ -351,7 +347,7 @@ describe("check embeds with a vault of an unregistered repository", () => {
 			const bytes = fs.readFileSync(path.join(docs, "docs", "orders.svg"));
 			const read = readRenderRecipe(bytes);
 			if (read.kind !== "recipe") throw new Error("orders.svg carries no recipe");
-			const recipe: RenderRecipe = { ...read.recipe, vault: { repo: "github.com/example/linked" } };
+			const recipe = { ...read.recipe, vault: { repo: "github.com/example/linked" } };
 			fs.writeFileSync(path.join(docs, "docs", "linked.svg"), replaceRenderRecipe(bytes, recipe));
 			git(docs, "add", "docs/linked.svg");
 			const { part } = checkEmbeds(online, 1);

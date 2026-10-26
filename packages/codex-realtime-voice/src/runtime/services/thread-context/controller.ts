@@ -1,0 +1,494 @@
+import { sameThreadLinkIdentity } from "#runtime/rules/thread-link/binding.ts";
+import {
+	type ThreadLinkBindingSnapshot,
+	type ThreadLinkSnapshot,
+} from "#runtime/rules/thread-link/contract.ts";
+import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
+import {
+	CodexThreadContextControllerError,
+	type CodexThreadContextBinding,
+	type CodexThreadContextBindingSnapshot,
+	type CodexThreadContextBindingToken,
+	type CodexThreadContextController,
+	type CodexThreadContextControllerOptions,
+	type CodexThreadContextDelivery,
+	type CodexThreadContextDeliveryOutcome,
+	type CodexThreadContextEventId,
+	type CodexThreadContextTarget,
+	type WorkhorseContextEvent,
+} from "#runtime/services/thread-context/contract.ts";
+import { createCodexThreadContextDelivery } from "#runtime/services/thread-context/delivery.ts";
+import { eventId, eventKey } from "#runtime/services/thread-context/event-identity.ts";
+
+interface ActiveBinding {
+	readonly revision: number;
+	readonly binding: CodexThreadContextBinding;
+	readonly delivery: CodexThreadContextDelivery;
+}
+
+/**
+ * Whether two CAS tokens prove the same link key, thread and child generation.
+ * @param left - One CAS token.
+ * @param right - The other CAS token.
+ * @returns True when every proven field agrees.
+ */
+function sameCas(
+	left: ThreadLinkBindingSnapshot["cas"],
+	right: ThreadLinkBindingSnapshot["cas"],
+): boolean {
+	return (
+		left.revision === right.revision &&
+		left.linkKey === right.linkKey &&
+		left.threadId === right.threadId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch
+	);
+}
+
+/**
+ * Whether two link bindings are the same revision with the same CAS proof and
+ * link identity, which is what makes captured CAS evidence still current.
+ * @param left - One link binding.
+ * @param right - The other link binding.
+ * @returns True when the bindings are interchangeable as authority.
+ */
+function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
+	return (
+		left.linkKey === right.linkKey &&
+		left.revision === right.revision &&
+		sameCas(left.cas, right.cas) &&
+		sameThreadLinkIdentity(left.link, right.link)
+	);
+}
+
+/**
+ * Deep-freezes a binding so a later caller cannot mutate captured authority.
+ * @param binding - The binding supplied by the target-selection action.
+ * @returns A frozen copy.
+ */
+function freezeBinding(binding: CodexThreadContextBinding): CodexThreadContextBinding {
+	return Object.freeze({
+		linkKey: binding.linkKey,
+		target: Object.freeze({ ...binding.target }),
+		link: Object.freeze({
+			...binding.link,
+			link: Object.freeze({ ...binding.link.link }),
+			cas: Object.freeze({ ...binding.link.cas }),
+		}),
+	});
+}
+
+/**
+ * Whether two delivery targets name the same thread, generation and operation.
+ * @param left - One target.
+ * @param right - The other target.
+ * @returns True when all four identities agree.
+ */
+function sameTarget(left: CodexThreadContextTarget, right: CodexThreadContextTarget): boolean {
+	return (
+		left.threadId === right.threadId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch &&
+		left.operationId === right.operationId
+	);
+}
+
+/**
+ * Whether a binding transition changes nothing, which the controller refuses
+ * as a duplicate rather than silently re-creating a delivery port.
+ * @param left - The current binding, if any.
+ * @param right - The proposed binding, if any.
+ * @returns True when both are absent or both carry the same authority.
+ */
+function sameBinding(
+	left: CodexThreadContextBinding | null,
+	right: CodexThreadContextBinding | null,
+): boolean {
+	if (left === null || right === null) {
+		return left === right;
+	}
+	return (
+		left.linkKey === right.linkKey &&
+		sameTarget(left.target, right.target) &&
+		sameLink(left.link, right.link)
+	);
+}
+
+/**
+ * The outcome for a change seen while no binding was active.
+ * @param event - The announced change.
+ * @param reason - Whether there was no binding or the controller was disposed.
+ * @returns The frozen `not_delivered` outcome with no target.
+ */
+function unboundOutcome(
+	event: WorkhorseContextEvent,
+	reason: "unbound" | "disposed",
+): CodexThreadContextDeliveryOutcome {
+	return Object.freeze({
+		kind: "thread_context_delivery",
+		event: eventId(event),
+		linkKey: null,
+		targetThreadId: null,
+		targetChildId: null,
+		targetEpoch: null,
+		targetOperationId: null,
+		attempted: false,
+		outcome: "not_delivered",
+		reason,
+		freshness: Object.freeze({
+			capturedAtMs: event.capturedAtMs,
+			freshUntilMs: event.freshUntilMs,
+		}),
+		payload: null,
+	});
+}
+
+/**
+ * Whether a captured link is executable for exactly the given target.
+ * @param link - The captured link snapshot.
+ * @param target - The delivery target.
+ * @returns True when the link's thread and generation are the target's.
+ */
+function linkNamesTarget(link: ThreadLinkSnapshot, target: CodexThreadContextTarget): boolean {
+	return (
+		link.state === "executable" &&
+		link.threadId === target.threadId &&
+		link.childId === target.childId &&
+		link.epoch === target.epoch
+	);
+}
+
+/**
+ * Whether a captured CAS token proves the given link key and target.
+ * @param cas - The captured CAS token.
+ * @param linkKey - The link key the binding names.
+ * @param target - The delivery target.
+ * @returns True when the token names the link key, thread and generation.
+ */
+function casNamesTarget(
+	cas: ThreadLinkBindingSnapshot["cas"],
+	linkKey: string,
+	target: CodexThreadContextTarget,
+): boolean {
+	return (
+		cas.linkKey === linkKey &&
+		cas.threadId === target.threadId &&
+		cas.childId === target.childId &&
+		cas.epoch === target.epoch
+	);
+}
+
+/**
+ * Refuses a binding whose captured link key, link and CAS proof do not all name
+ * the exact delivery target with durable operation authority.
+ * @param binding - The proposed binding.
+ */
+function validateCapturedLink(binding: CodexThreadContextBinding): void {
+	const { link, linkKey, target } = binding;
+	if (linkKey.length === 0 || link.linkKey !== linkKey) {
+		throw new CodexThreadContextControllerError(
+			"invalid_binding",
+			"The thread-context binding does not name its captured link key.",
+		);
+	}
+	if (!linkNamesTarget(link.link, target) || !casNamesTarget(link.cas, linkKey, target)) {
+		throw new CodexThreadContextControllerError(
+			"invalid_binding",
+			"The captured thread-link CAS proof does not match the exact delivery target.",
+		);
+	}
+	if (!hasOperationAuthority(target)) {
+		throw new CodexThreadContextControllerError(
+			"invalid_binding",
+			"The thread-context target has no durable operation authority.",
+		);
+	}
+}
+
+/**
+ * Whether a target carries a non-empty operation id; the target arrives from
+ * an action boundary, so the runtime shape is checked and not only the type.
+ * @param target - The delivery target.
+ * @returns True when the operation id is a non-empty string.
+ */
+function hasOperationAuthority(target: CodexThreadContextTarget): boolean {
+	return typeof target.operationId === "string" && target.operationId.length > 0;
+}
+
+/**
+ * Checks a proposed binding against live authority: the identity validator,
+ * the durable epoch store and the current link.
+ * @param options - The controller options carrying those authorities.
+ * @param next - The proposed binding.
+ */
+function assertCurrentAuthority(
+	options: CodexThreadContextControllerOptions,
+	next: CodexThreadContextBinding,
+): void {
+	validateCapturedLink(next);
+	try {
+		options.identity.validator.assertCurrentEpoch(next.target.childId, next.target.epoch);
+		options.epoch.assertCurrent({
+			childId: next.target.childId,
+			epoch: next.target.epoch,
+			operationId: next.target.operationId,
+			threadId: next.target.threadId,
+		});
+		const currentLink = options.threadLink.read(next.linkKey);
+		if (!sameLink(currentLink, next.link)) {
+			throw new Error("The captured thread-link CAS proof is stale.");
+		}
+	} catch (error) {
+		throw new CodexThreadContextControllerError(
+			"invalid_binding",
+			"The thread-context binding is not current durable authority.",
+			error,
+		);
+	}
+}
+
+/**
+ * The threads one session writes as.
+ *
+ * The workhorse the binding names, and the coordinator paired with it when the
+ * server knows of one: a person talking to the pair is talking to one session, so
+ * neither is told about the other's writes. Deduplicated, because a server that
+ * reports the same thread twice must not turn one identity into two.
+ * @param binding - The active binding.
+ * @param paired - The coordinator thread, when there is one.
+ * @returns The thread identities, in no particular order.
+ */
+function sessionThreadsOf(
+	binding: CodexThreadContextBinding,
+	paired: string | null,
+): readonly string[] {
+	const threads = new Set<string>([binding.target.threadId]);
+	if (paired !== null) {
+		threads.add(paired);
+	}
+	return [...threads];
+}
+
+/**
+ * One process-lifetime ledger of announced changes over replaceable exact
+ * bindings: changes always settle here, through the active binding's own
+ * delivery port when one exists.
+ * @param options - The controller options.
+ * @returns The controller.
+ */
+export function createCodexThreadContextController(
+	options: CodexThreadContextControllerOptions,
+): CodexThreadContextController {
+	let revision = 0;
+	let active: ActiveBinding | null = null;
+	let executionAvailable = true;
+	let disposed = false;
+	const pending = new Map<string, Promise<CodexThreadContextDeliveryOutcome>>();
+	const settled = new Map<string, CodexThreadContextDeliveryOutcome>();
+	const order: string[] = [];
+
+	/**
+	 * The current binding revision as an opaque token.
+	 * @returns The frozen token.
+	 */
+	const token = (): CodexThreadContextBindingToken => Object.freeze({ revision });
+	/**
+	 * The current token and binding.
+	 * @returns The frozen snapshot.
+	 */
+	const snapshot = (): CodexThreadContextBindingSnapshot =>
+		Object.freeze({ token: token(), binding: active?.binding ?? null });
+
+	/**
+	 * Delivers a change once through whichever binding is active at that moment.
+	 * @param event - The announced change.
+	 * @returns The outcome promise shared by every caller for this identity.
+	 */
+	const deliver = (event: WorkhorseContextEvent): Promise<CodexThreadContextDeliveryOutcome> => {
+		const key = eventKey(eventId(event));
+		const inFlight = pending.get(key);
+		if (inFlight !== undefined) {
+			return inFlight;
+		}
+		const previous = settled.get(key);
+		if (previous !== undefined) {
+			return Promise.resolve(previous);
+		}
+		order.push(key);
+		const captured = active;
+		const operation =
+			disposed || captured === null
+				? Promise.resolve(unboundOutcome(event, disposed ? "disposed" : "unbound"))
+				: captured.delivery.deliver(event);
+		const result = operation.then((outcome) => {
+			pending.delete(key);
+			settled.set(key, outcome);
+			return outcome;
+		});
+		pending.set(key, result);
+		return result;
+	};
+
+	/**
+	 * Refuses a transition the ledger cannot accept: a disposed controller, a
+	 * stale token, or a transition that changes no authority.
+	 * @param expected - The token the caller believes is current.
+	 * @param next - The proposed binding.
+	 */
+	const assertTransitionAllowed = (
+		expected: CodexThreadContextBindingToken,
+		next: CodexThreadContextBinding | null,
+	): void => {
+		if (disposed) {
+			throw new CodexThreadContextControllerError(
+				"disposed",
+				"The thread-context controller is disposed.",
+			);
+		}
+		if (!Number.isSafeInteger(expected.revision) || expected.revision !== revision) {
+			throw new CodexThreadContextControllerError(
+				"stale_binding",
+				`Thread-context binding revision ${expected.revision} is stale; current revision is ${revision}.`,
+			);
+		}
+		if (sameBinding(snapshot().binding, next)) {
+			throw new CodexThreadContextControllerError(
+				"duplicate_binding",
+				"The thread-context binding transition does not change authority.",
+			);
+		}
+	};
+
+	/**
+	 * Creates the delivery port for a newly activated binding; its child
+	 * capability is only readable while that binding revision stays active.
+	 * @param binding - The frozen binding being activated.
+	 * @param bindingRevision - The revision assigned to it.
+	 * @returns The delivery port.
+	 */
+	const deliveryFor = (
+		binding: CodexThreadContextBinding,
+		bindingRevision: number,
+	): CodexThreadContextDelivery =>
+		createCodexThreadContextDelivery({
+			session: options.session,
+			threadLink: options.threadLink,
+			identity: options.identity,
+			epoch: options.epoch,
+			now: options.now,
+			contextCodec: options.contextCodec,
+			linkKey: binding.linkKey,
+			target: binding.target,
+			// The threads whose changes are this session's own: the workhorse
+			// this binding names, and the coordinator paired with it when there is
+			// one. A thread is the session — it goes on being the same thread across
+			// turns, and New conversation makes a new one — so this is the identity a write
+			// states and the only thing a change is skipped for. Asked per event,
+			// because a coordinator comes and goes inside one workhorse's life.
+			/**
+			 * The threads this session writes as, right now.
+			 * @returns The workhorse and its coordinator, whichever are there.
+			 */
+			sessionAuthors: () => sessionThreadsOf(binding, options.pairedThreadId?.() ?? null),
+			/**
+			 * The child capability, or null once execution was withdrawn or the
+			 * binding was replaced.
+			 * @returns The current execution, or null.
+			 */
+			currentExecution: () =>
+				executionAvailable && active?.revision === bindingRevision
+					? options.currentExecution()
+					: null,
+		});
+
+	/**
+	 * Replaces the active binding under an exact token, validating any new
+	 * binding against live authority before it can receive events.
+	 * @param transition - The expected token and the next binding.
+	 * @param transition.expected - The token the caller believes is current.
+	 * @param transition.next - The next binding, or null to clear.
+	 * @returns The snapshot after the transition.
+	 */
+	const compareAndSwap: CodexThreadContextController["compareAndSwap"] = ({ expected, next }) => {
+		assertTransitionAllowed(expected, next);
+		if (next !== null) {
+			assertCurrentAuthority(options, next);
+		}
+
+		active?.delivery.dispose();
+		revision += 1;
+		executionAvailable = true;
+		if (next === null) {
+			active = null;
+			return snapshot();
+		}
+		const bindingRevision = revision;
+		const capturedBinding = freezeBinding(next);
+		const delivery = deliveryFor(capturedBinding, bindingRevision);
+		active = Object.freeze({ revision: bindingRevision, binding: capturedBinding, delivery });
+		return snapshot();
+	};
+
+	/**
+	 * Retires the controller: no further transitions, and later events settle
+	 * as `disposed`.
+	 */
+	const dispose = (): void => {
+		if (disposed) {
+			return;
+		}
+		disposed = true;
+		executionAvailable = false;
+		const retiring = active;
+		active = null;
+		revision += 1;
+		retiring?.delivery.dispose();
+	};
+
+	return Object.freeze({
+		deliver,
+		/**
+		 * Settled outcomes in first-seen order.
+		 * @returns The frozen list of outcomes.
+		 */
+		inspect: () =>
+			Object.freeze(
+				order.flatMap((key) => {
+					const outcome = settled.get(key);
+					return outcome === undefined ? [] : [outcome];
+				}),
+			),
+		/**
+		 * Looks up the settled outcome for one event identity.
+		 * @param event - The event identity.
+		 * @returns The outcome, or undefined while pending or never seen.
+		 */
+		get: (event: CodexThreadContextEventId) => settled.get(eventKey(event)),
+		snapshot,
+		compareAndSwap,
+		/**
+		 * Handles the bound child's exit: execution is withdrawn first, the
+		 * binding is cleared, the epoch is retired, and the controller disposed.
+		 * @param child - The child that exited.
+		 * @param epoch - Its epoch.
+		 */
+		async childExit(child: ChildId, epoch: ChildEpoch) {
+			if (
+				active === null ||
+				active.binding.target.childId !== child ||
+				active.binding.target.epoch !== epoch
+			) {
+				return;
+			}
+			executionAvailable = false;
+			const current = token();
+			compareAndSwap({ expected: current, next: null });
+			try {
+				await options.retireEpoch(child, epoch);
+			} finally {
+				dispose();
+			}
+		},
+		dispose,
+	});
+}

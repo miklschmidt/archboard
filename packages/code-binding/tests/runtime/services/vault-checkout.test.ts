@@ -4,15 +4,11 @@
 // only the rule can get wrong; the CLI and opener owners prove the readers use it.
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import {
-	declareDirectory,
-	GitCommandError,
-	setLanguageServer,
-} from "@archboard/workspace/checkouts";
-import { checkoutsReadFrom, vaultRepositoryIdentity } from "#runtime/services/vault-checkout.ts";
+import { declareDirectory, setLanguageServer } from "@archboard/workspace/checkouts";
+import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
@@ -164,20 +160,3 @@ function withGitKilledAt(subcommand: string, body: () => void): void {
 		process.env["PATH"] = path;
 	}
 }
-
-test("the repository a vault is in is null only when it is in no Git repository", () => {
-	expect(vaultRepositoryIdentity(join(holder, ".archboard", "vault"))).toBe(fixture.repository);
-	const untracked = join(fixture.root, "untracked", ".archboard", "vault");
-	mkdirSync(untracked, { recursive: true });
-	expect(vaultRepositoryIdentity(untracked)).toBeNull();
-});
-
-test("a Git that does not answer is no answer for the repository a vault is in, never null", () => {
-	const vault = join(holder, ".archboard", "vault");
-	for (const subcommand of ["rev-parse", "remote"]) {
-		withGitKilledAt(subcommand, () => {
-			expect(() => vaultRepositoryIdentity(vault)).toThrow(GitCommandError);
-		});
-		rmSync(join(fixture.root, "bin"), { recursive: true });
-	}
-});

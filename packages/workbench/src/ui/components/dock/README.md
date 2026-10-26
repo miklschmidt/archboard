@@ -2,10 +2,10 @@
 
 The agent's surfaces in the shell. They all read one `AgentView` and act through one
 `AgentActions` (`state/surfaces/contracts.ts`). The application composes both from the workbench
-owners. The owners are the runtime, thread, composer and transport, and the queue, approvals and
-voice session (`state/queue`, `state/approvals` and `state/voice-session`), all in
-`packages/workbench/src/ui`. The components under `components/dock`, `components/panel` and
-`components/voice` draw them.
+owners. The thread link, composer, queue, approvals and transport come from
+`@archboard/codex-realtime-voice/controllers`. The runtime and the voice session
+(`state/voice-session`) are in `packages/workbench/src/ui`. The components under
+`components/dock`, `components/panel` and `components/voice` draw them.
 
 - `components/dock/AgentDock.tsx`: the dock at the foot of the navigator. While voice is off it
   is calm: what the agent is on, its plan under it, and at the foot a key to talk and a key

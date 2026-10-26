@@ -8,13 +8,16 @@
 
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import type { VaultCheck } from "@archboard/board/policy";
 import {
 	fetchCodeFindings,
 	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchVaultCheck,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** Where boards are read from. */
 interface BoardReads {

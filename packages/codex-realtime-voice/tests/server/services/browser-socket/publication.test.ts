@@ -1,0 +1,396 @@
+import { describe, expect, test } from "bun:test";
+import { WebSocket } from "ws";
+
+import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+import {
+	type BrowserGatewayMessage,
+	type BrowserGatewaySnapshotMessage,
+} from "#shared/protocol/gateway-envelope.ts";
+import { type BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import {
+	type BrowserWorkbenchConnection,
+	type CodexWorkbenchGateway,
+} from "#server/protocol/gateway/contract.ts";
+import {
+	createServerCodexBrowserSocketOwner,
+	createServerCodexBrowserSocketSend,
+} from "#server/services/browser-socket/socket.ts";
+
+async function rejectedSend(error: Error): Promise<void> {
+	throw error;
+}
+
+describe("server Codex publication boundary", () => {
+	test("the production socket adapter takes a null callback error as a completed write", async () => {
+		const adapter = createServerCodexBrowserSocketSend({
+			readyState: WebSocket.OPEN,
+			send: (_data, callback) => queueMicrotask(() => callback(null)),
+		});
+		await expect(adapter.send({ written: true })).resolves.toBeUndefined();
+	});
+
+	test("the production socket adapter rejects closing and callback-failed sends", async () => {
+		let attempts = 0;
+		const closing = createServerCodexBrowserSocketSend({
+			readyState: WebSocket.CLOSING,
+			send: () => {
+				attempts += 1;
+			},
+		});
+		await expect(closing.send({ closing: true })).rejects.toThrow("not open");
+		expect(attempts).toBe(0);
+
+		let failWrite!: (error: Error) => void;
+		const callbackReady = Promise.withResolvers<void>();
+		let settled = false;
+		const callbackFailure = createServerCodexBrowserSocketSend({
+			readyState: WebSocket.OPEN,
+			send: (_data, callback) => {
+				attempts += 1;
+				failWrite = (error) => callback(error);
+				callbackReady.resolve();
+			},
+		});
+		const sending = callbackFailure.send({ callback: true });
+		void sending.then(
+			() => void (settled = true),
+			() => void (settled = true),
+		);
+		await callbackReady.promise;
+		expect(settled).toBeFalse();
+		failWrite(new Error("write callback failed"));
+		await expect(sending).rejects.toThrow("write callback failed");
+		expect(settled).toBeTrue();
+		expect(attempts).toBe(1);
+	});
+
+	test("an asynchronous result-send failure cannot confirm its snapshot", async () => {
+		const instance = Object.freeze({ socket: "publication" });
+		let confirmations = 0;
+		const connection = {
+			browserId: "browser-publication",
+			chatId: "chat-publication",
+			tabSessionId: parseTabSessionId("tab-one")!,
+			instance,
+			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
+			confirmPublished: () => {
+				confirmations += 1;
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			chatForBrowser: () => "chat-publication",
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
+		});
+		const messages: unknown[] = [];
+		try {
+			await owner.handle(
+				instance,
+				"browser-publication",
+				{ type: "codex_workbench_request", requestId: "failed", action: "snapshot" },
+				{
+					send: (message) => {
+						if ((message as { ok?: unknown }).ok === true) {
+							return rejectedSend(new Error("asynchronous socket send failed"));
+						}
+						messages.push(message);
+						return Promise.resolve();
+					},
+				},
+			);
+
+			expect(confirmations).toBe(0);
+			expect(messages).toContainEqual(expect.objectContaining({ requestId: "failed", ok: false }));
+		} finally {
+			owner.dispose();
+		}
+	});
+
+	test("a successful event remains published when the following media result send fails", async () => {
+		const instance = Object.freeze({ socket: "media-event" });
+		const event = {
+			kind: "delta",
+			sequence: 1,
+			delta: {},
+		} satisfies BrowserGatewayMessage;
+		const result = {
+			kind: "snapshot",
+			sequence: 2,
+			snapshot: { approvals: [{ requestId: "terminal-from-result" }] },
+		} as never;
+		const published: unknown[] = [];
+		let listener: ((message: BrowserGatewayMessage) => void) | null = null;
+		const connection = {
+			browserId: "browser-media-event",
+			chatId: "chat-media-event",
+			tabSessionId: parseTabSessionId("tab-one")!,
+			instance,
+			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
+			confirmPublished: (payload: unknown) => void published.push(payload),
+			setMediaReady: () => {
+				listener?.(event);
+				return result;
+			},
+			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
+				listener = next;
+				return () => {
+					listener = null;
+				};
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			chatForBrowser: () => connection.chatId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
+		});
+		const messages: unknown[] = [];
+		const transport = {
+			send: (message: unknown) => {
+				if (
+					(message as { type?: unknown }).type === "codex_workbench_result" &&
+					(message as { action?: unknown }).action === "mediaReady" &&
+					(message as { ok?: unknown }).ok === true
+				) {
+					return rejectedSend(new Error("media result send failed"));
+				}
+				messages.push(message);
+				return Promise.resolve();
+			},
+		};
+		try {
+			await owner.handle(
+				instance,
+				connection.browserId,
+				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
+				transport,
+			);
+			published.length = 0;
+			messages.length = 0;
+
+			await owner.handle(
+				instance,
+				connection.browserId,
+				{
+					type: "codex_workbench_request",
+					requestId: "media",
+					action: "mediaReady",
+					ready: true,
+				},
+				transport,
+			);
+			await owner.drain();
+
+			expect(messages).toContainEqual(expect.objectContaining({ requestId: "media", ok: false }));
+			expect(published).toEqual([event]);
+		} finally {
+			owner.dispose();
+		}
+	});
+
+	test("a failed event send is reported once and a later snapshot republishes it", async () => {
+		const instance = Object.freeze({ socket: "event-recovery" });
+		const browserId = "browser-event-recovery";
+		const chatId = "chat-event-recovery";
+		const terminal = { requestId: "terminal-event-recovery" };
+		const event = {
+			kind: "delta",
+			sequence: 4,
+			delta: { approvals: [terminal] },
+		} as unknown as BrowserGatewayMessage;
+		const recovered: BrowserGatewaySnapshotMessage = {
+			kind: "snapshot",
+			sequence: 5,
+			snapshot: { approvals: [terminal] } as unknown as BrowserSnapshot,
+		};
+		const empty: BrowserGatewaySnapshotMessage = {
+			kind: "snapshot",
+			sequence: 3,
+			snapshot: { approvals: [] } as unknown as BrowserSnapshot,
+		};
+		let terminalPending = false;
+		const listeners = new Set<(message: BrowserGatewayMessage) => void>();
+		const confirmed: unknown[] = [];
+		const connection = {
+			browserId,
+			chatId,
+			instance,
+			snapshot: () => (terminalPending ? recovered : empty),
+			refreshProjection: async () => undefined,
+			confirmPublished: (payload: unknown) => {
+				confirmed.push(payload);
+				if (payload === recovered.snapshot) {
+					terminalPending = false;
+				}
+			},
+			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
+				listeners.add(next);
+				return () => listeners.delete(next);
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			chatForBrowser: () => chatId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
+		});
+		const eventSendFailure = new Error("event write callback failed");
+		const transport = createServerCodexBrowserSocketSend({
+			readyState: WebSocket.OPEN,
+			send: (raw, callback) => {
+				const message = JSON.parse(raw) as { type?: unknown };
+				queueMicrotask(() =>
+					message.type === "codex_workbench_event" ? callback(eventSendFailure) : callback(),
+				);
+			},
+		});
+		try {
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
+				transport,
+			);
+			confirmed.length = 0;
+			terminalPending = true;
+			for (const next of listeners) {
+				next(event);
+			}
+
+			let drainFailure: unknown = null;
+			try {
+				await owner.drain();
+			} catch (error) {
+				drainFailure = error;
+			}
+			expect(drainFailure).toBeInstanceOf(AggregateError);
+			expect(drainFailure).toMatchObject({
+				message: expect.stringContaining("Codex browser drain failed"),
+			});
+			const failures = (drainFailure as AggregateError).errors;
+			expect(failures).toHaveLength(1);
+			expect(failures[0]).toBeInstanceOf(Error);
+			const publicationFailure = failures[0] as Error;
+			expect(publicationFailure.cause).toBe(eventSendFailure);
+			expect(publicationFailure.message).toContain(browserId);
+			expect(publicationFailure.message).toContain(chatId);
+			expect(publicationFailure.message).toContain("delta");
+			expect(publicationFailure.message).toMatch(/\bsequence\s+4\b/);
+			expect(publicationFailure.message).toContain(eventSendFailure.message);
+			expect(confirmed).toEqual([]);
+			expect(terminalPending).toBeTrue();
+			await owner.drain();
+
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "recover", action: "snapshot" },
+				transport,
+			);
+			expect(confirmed).toEqual([recovered.snapshot]);
+			expect(terminalPending).toBeFalse();
+		} finally {
+			owner.dispose();
+		}
+	});
+
+	test("drain combines a close failure with only the first event failure and clears both", async () => {
+		const instance = Object.freeze({ socket: "combined-drain" });
+		const browserId = "browser-combined-drain";
+		const chatId = "chat-combined-drain";
+		const firstEvent = { kind: "delta", sequence: 6, delta: {} } satisfies BrowserGatewayMessage;
+		const laterEvent = { kind: "delta", sequence: 7, delta: {} } satisfies BrowserGatewayMessage;
+		const firstEventFailure = new Error("first event send failed");
+		const laterEventFailure = new Error("later event send failed");
+		const closeFailure = new Error("connection close failed");
+		const listeners = new Set<(message: BrowserGatewayMessage) => void>();
+		const connection = {
+			browserId,
+			chatId,
+			instance,
+			snapshot: () =>
+				({
+					kind: "snapshot",
+					sequence: 5,
+					snapshot: { approvals: [] } as unknown as BrowserSnapshot,
+				}) satisfies BrowserGatewaySnapshotMessage,
+			confirmPublished: () => undefined,
+			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
+				listeners.add(next);
+				return () => listeners.delete(next);
+			},
+			close: async () => {
+				throw closeFailure;
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			chatForBrowser: () => chatId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
+		});
+		const eventFailures = [firstEventFailure, laterEventFailure];
+		let eventSend = 0;
+		const transport = {
+			send: (message: unknown) => {
+				if ((message as { type?: unknown }).type !== "codex_workbench_event") {
+					return Promise.resolve();
+				}
+				const error = eventFailures[eventSend++];
+				if (error === undefined) {
+					throw new Error("unexpected event send");
+				}
+				return rejectedSend(error);
+			},
+		};
+		try {
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
+				transport,
+			);
+			for (const event of [firstEvent, laterEvent]) {
+				for (const next of listeners) {
+					next(event);
+				}
+			}
+			void owner.close(instance, browserId);
+
+			let drainFailure: unknown = null;
+			try {
+				await owner.drain();
+			} catch (error) {
+				drainFailure = error;
+			}
+			expect(eventSend).toBe(2);
+			expect(drainFailure).toBeInstanceOf(AggregateError);
+			const failures = (drainFailure as AggregateError).errors;
+			expect(failures).toHaveLength(2);
+			expect(failures[0]).toBe(closeFailure);
+			expect(failures[1]).toBeInstanceOf(Error);
+			const publicationFailure = failures[1] as Error;
+			expect(publicationFailure.cause).toBe(firstEventFailure);
+			expect(publicationFailure.message).toContain(browserId);
+			expect(publicationFailure.message).toContain(chatId);
+			expect(publicationFailure.message).toContain("delta");
+			expect(publicationFailure.message).toMatch(/\bsequence\s+6\b/);
+			expect(publicationFailure.message).toContain(firstEventFailure.message);
+			expect(
+				failures.some(
+					(error) =>
+						error === laterEventFailure ||
+						(error instanceof Error && error.cause === laterEventFailure),
+				),
+			).toBeFalse();
+			await owner.drain();
+		} finally {
+			owner.dispose();
+		}
+	});
+});

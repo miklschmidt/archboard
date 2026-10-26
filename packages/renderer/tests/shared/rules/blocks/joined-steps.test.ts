@@ -3,10 +3,11 @@
 // and on, or doubles back, where one turn would do, alone or on a trunk; and
 // a slide that takes a step out by moving part of a trunk, by carrying a
 // trunk's line the long way round, by moving a line's end run or its run
-// through its label, or by running a new stretch into a card or past it
-// nearer than the router keeps lines, a title band, a wall it did not cross,
-// along a wall, onto another line's axis, beside it, across it where it did
-// not cross or where that line turns, or into a jog too short for its bends,
+// through its label, by turning the line within a bend of its label, or by
+// running a new stretch into a card or past it nearer than the router keeps
+// lines, a title band, a wall it did not cross, along a wall, onto another
+// line's axis, beside it, across it where it did not cross or where that
+// line turns, or into a jog too short for its bends,
 // or that leaves the last run too short for its bend and its arrowhead;
 // and a step left in place because a line that slides away later stood in
 // its way.
@@ -87,6 +88,15 @@ test("a step stays where the slide leaves the last run too short for its bend an
 test("a step stays where it is the line's run through its label", () => {
 	const label = { x: 130, y: 140, width: 40, height: 20 };
 	expect(unstepped([{ points: DOUBLING, label }], NOTHING)[0]).toEqual(DOUBLING);
+});
+
+test("a step stays where the slide would turn the line within a bend of its label", () => {
+	// Reduced from Codex workhorse under blocks (TASK-536): the slide kept the
+	// run through the label but turned it 7.5 units short of the label, so the
+	// rounded bend ran under the label's end.
+	const step = line([300, 20], [250, 20], [250, 0], [0, 0], [0, 120]);
+	const label = { x: -20, y: 26, width: 40, height: 46 };
+	expect(unstepped([{ points: step, label }], NOTHING)[0]).toEqual(step);
 });
 
 test("a step another line held is taken out once that line has slid away", () => {

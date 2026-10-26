@@ -1,8 +1,8 @@
-// Writing a board: the one write, the transitions it applies, a discarded or accepted board, a rename, tracking an embed and the propagation to drill-downs.
-export { renameTransition } from "#runtime/operations/rename/rename.ts";
-export type { DescendantOutcome } from "#runtime/operations/variant/propagate.ts";
-export { acceptedBoard } from "#runtime/operations/write/accepted.ts";
+// Writing a board: the one write, a write prepared before it is committed, the transitions it applies, a transition accepted in memory, a discard, a rename, tracking an embed and the propagation to drill-downs.
+export { renameSemanticBoard } from "#runtime/operations/rename/carry.ts";
+export { acceptedTransition } from "#runtime/operations/write/accepted.ts";
 export { discardSemanticBoard } from "#runtime/operations/write/discard.ts";
+export { prepareSemanticBoardWrite } from "#runtime/operations/write/prepare.ts";
 export {
 	adoptVariantTransition,
 	branchVariantTransition,
@@ -11,8 +11,5 @@ export {
 	settleVariantTransition,
 	shelveVariantTransition,
 } from "#runtime/operations/write/transitions.ts";
-export type { SemanticTransition } from "#runtime/operations/write/transitions.ts";
 export { writeSemanticBoard } from "#runtime/operations/write/write.ts";
-export type { SemanticWriteResult } from "#runtime/operations/write/write.ts";
-export { correctHistoricalTransition } from "#runtime/operations/write/correction.ts";
 export { trackEmbedTransition } from "#runtime/operations/embeds/track.ts";

@@ -9,11 +9,13 @@ import { z } from "zod";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
-	type DiagnosticSubject,
 	type SharedSymbol,
-	type VaultCheck,
 } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
+import type { describeSubject } from "@archboard/board/policy";
+
+type DiagnosticSubject = Parameters<typeof describeSubject>[0];
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
 const sharedSymbol: SharedSymbol = {
@@ -79,9 +81,8 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { runCli }] = await Promise.all([
+const [config, { runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
 ]);
 if (config.ARCHBOARD_URL !== url) {
@@ -89,7 +90,7 @@ if (config.ARCHBOARD_URL !== url) {
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);
 }
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {

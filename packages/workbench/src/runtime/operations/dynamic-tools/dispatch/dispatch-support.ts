@@ -15,10 +15,10 @@ import { encodeDynamicCursor, unwrapDynamicCursor } from "#runtime/rules/dynamic
 /** The longest refusal message a dynamic response carries. */
 const FAILURE_MESSAGE_MAX_UTF8_BYTES = 512;
 
-/** The fields a pane-link authority carries. */
+/** The fields a thread-link authority carries. */
 const CONTEXT_AUTHORITY_KEYS = [
 	"token",
-	"paneId",
+	"linkKey",
 	"childId",
 	"epoch",
 	"threadId",
@@ -90,7 +90,7 @@ function freezeDynamicRequest(request: DynamicServerRequest): DynamicServerReque
 }
 
 /**
- * Whether a pane-link authority carries exactly its own fields, each a nonempty string.
+ * Whether a thread-link authority carries exactly its own fields, each a nonempty string.
  * @param authority What the context port returned.
  * @returns Whether the shape reads.
  */
@@ -108,7 +108,7 @@ function contextAuthorityShaped(authority: Readonly<Record<string, unknown>>): b
 }
 
 /**
- * Whether a pane-link authority names the caller that is executing right now.
+ * Whether a thread-link authority names the caller that is executing right now.
  * @param authority The authority.
  * @param caller The caller's authority.
  * @returns Whether the two agree.
@@ -124,7 +124,7 @@ function contextAuthorityMatchesCaller(
 }
 
 /**
- * Refuse a pane-link authority that is not the executing caller's own. The authority is read
+ * Refuse a thread-link authority that is not the executing caller's own. The authority is read
  * through its own fields rather than through the shape the contract type claims, so a context
  * port that returns something else is refused rather than believed.
  * @param authority What the context port returned.
@@ -140,7 +140,7 @@ function assertContextAuthority(
 	if (!shaped || !contextAuthorityMatchesCaller(authority, caller)) {
 		throw new CodexDynamicToolsError(
 			"unknown_provenance",
-			"The pane-link authority does not match the executing caller.",
+			"The thread-link authority does not match the executing caller.",
 		);
 	}
 	return Object.freeze({ ...authority });

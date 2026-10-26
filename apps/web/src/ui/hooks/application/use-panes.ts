@@ -5,12 +5,16 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-binding/opening";
-import type { BrowserWorkbenchMediaOwnerOptions } from "@archboard/workbench/voice";
+import type { CodeTargetNotice } from "@archboard/code-opener/opening";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
 import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
-import { PaneHandles, type PaneSession } from "#ui/state/application/pane-handles.ts";
+import {
+	PaneHandles,
+	type BrowserWorkbenchMediaOwnerOptions,
+	type PaneSession,
+} from "#ui/state/application/pane-handles.ts";
 import {
 	dropRecord,
 	patchRecord,
@@ -24,7 +28,6 @@ import type {
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {

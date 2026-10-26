@@ -10,7 +10,7 @@ import {
 	LayoutEngineSchema,
 	type DrawnBoard,
 } from "@archboard/board/render-reply";
-import { renderSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { renderSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import {
 	RASTER_MAX_SCALE,
 	RASTER_MIN_SCALE,
@@ -19,7 +19,7 @@ import {
 	type Capture,
 } from "@archboard/renderer/rasterizer";
 import { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
-import { embedRecipeInPng, type RenderRecipe } from "@archboard/renderer/recipe";
+import { embedRecipeInPng } from "@archboard/renderer/recipe";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
 import { refuseNothingDrawn, viewEmptyRefusal } from "#cli/rules/semantic/draw/nothing-drawn.ts";
@@ -57,6 +57,7 @@ import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
 import {
 	recipeOfPicture,
 	vaultRepositoryUnknownRefusal,
+	type RenderRecipe,
 } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import {
 	plannedFile,

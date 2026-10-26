@@ -6,10 +6,22 @@
 
 **Owner:** TASK-143.01.17
 
-This document freezes the authored inputs that an implementation worker must
-not invent. Source modules load, hash, validate, and dispatch these contracts.
-Changing prose, order, schemas, limits, or result tags is a product/agent-policy
-change and requires a new review.
+This document records the reviewed inputs for TASK-143.01.17 and later policy changes.
+Source modules load, hash, validate, and dispatch the current contracts.
+The source files are the authority for their exact bytes.
+
+TASK-517 splits the shared protocol from Archboard policy.
+The shared role instructions and tools live in `packages/codex-realtime-voice/src/runtime/rules/host`.
+Archboard supplies its domain instructions through `packages/workbench/src/runtime/services/host/archboard.ts`.
+The shared factory captures both inputs and hashes the exact composed instruction text and tool array.
+Hosts cannot replace the core role instructions or reserved tools.
+The literal profiles below record the earlier Archboard composition, rather than a separate implementation path.
+
+TASK-517 also makes the Codex process environment an explicit host input.
+The SDK copies its ambient allowlist, then applies `hostEnvironment` and `pathPrefixes`.
+It assigns the protected Codex storage roots last.
+Archboard supplies its server URL, autostart refusal, and CLI directory through those inputs.
+The independent example supplies none of them.
 
 ## Byte rules
 
@@ -311,20 +323,20 @@ page contract stated below.
 
 All values are milliseconds:
 
-| Constant                         |   Value | Required relationship                                      |
-| -------------------------------- | ------: | ---------------------------------------------------------- |
-| `CODEX_PROCESS_RESTART_BASE_MS`  |   1,000 | first retry delay                                          |
-| `CODEX_PROCESS_RESTART_MAX_MS`   |  30,000 | at least request settlement; exponential backoff caps here |
-| `CODEX_REQUEST_SETTLEMENT_MS`    |  30,000 | lost non-idempotent response becomes `outcome_unknown`     |
-| `CODEX_BROWSER_COMMAND_LEASE_MS` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
-| `CODEX_APPROVAL_EXPIRY_MS`       |  90,000 | shorter than browser lease                                 |
-| `CODEX_SPOKEN_GATE_EXPIRY_MS`    |  60,000 | no longer than approval expiry                             |
-| `CODEX_SEMANTIC_FRESHNESS_MS`    |  30,000 | shorter than realtime recovery                             |
-| `CODEX_REALTIME_START_MS`        |  15,000 | bounds permission-independent SDP/start readiness          |
-| `CODEX_REALTIME_STOP_MS`         |   3,000 | completes before TERM grace                                |
-| `CODEX_REALTIME_RECOVERY_MS`     |  45,000 | longer than semantic freshness                             |
-| `CODEX_TERM_GRACE_MS`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
-| `CODEX_COMPOSED_SHUTDOWN_MS`     |  10,000 | greater than realtime stop plus TERM grace                 |
+| Duration                                |   Value | Required relationship                                      |
+| --------------------------------------- | ------: | ---------------------------------------------------------- |
+| `CODEX_PROCESS_MS.restartBase`          |   1,000 | first retry delay                                          |
+| `CODEX_PROCESS_MS.restartMax`           |  30,000 | at least request settlement; exponential backoff caps here |
+| `CODEX_SESSION_MS.requestSettlement`    |  30,000 | lost non-idempotent response becomes `outcome_unknown`     |
+| `CODEX_APPROVAL_MS.browserCommandLease` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
+| `CODEX_APPROVAL_MS.expiry`              |  90,000 | shorter than browser lease                                 |
+| `CODEX_APPROVAL_MS.spokenGate`          |  60,000 | no longer than approval expiry                             |
+| `CODEX_REALTIME_MS.contextFreshness`    |  30,000 | shorter than realtime recovery                             |
+| `CODEX_REALTIME_MS.start`               |  15,000 | bounds permission-independent SDP/start readiness          |
+| `CODEX_REALTIME_MS.stop`                |   3,000 | completes before TERM grace                                |
+| `CODEX_REALTIME_MS.recovery`            |  45,000 | longer than context freshness                              |
+| `CODEX_PROCESS_MS.termGrace`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
+| `CODEX_PROCESS_MS.composedShutdown`     |  10,000 | greater than realtime stop plus TERM grace                 |
 
 Expiry never proves a remote mutation failed. Restart delay doubles from base
 to max and resets only after one account-ready session. Shutdown stops
@@ -639,7 +651,7 @@ operation producers, tuple states, lifecycle, and exclusions:
 		"excludedBoundaries": [
 			"interrupt",
 			"queue",
-			"semantic_injection",
+			"context_injection",
 			"callback_injection",
 			"realtime_transport"
 		],
@@ -1210,12 +1222,12 @@ Operation and pagination semantics are exact:
 ## `archboard_coordinator` manifest
 
 The workhorse is started with a second namespace beside `archboard_app`,
-`packages/workbench/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
+`packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/archboard-coordinator.json`, which the
 Archboard server loads and pins by its digest (TASK-321). It has one tool,
 `tell_coordinator`, that takes one `message` of 1 to 2048 characters. The
-manifest hash that a workhorse start records is the SHA-256 of the compact JSON
-`{"app":"<archboard_app digest>","coordinator":"<archboard_coordinator digest>"}`.
-A change to either manifest therefore changes it.
+manifest hash that a workhorse start records is the SHA-256 of its exact composed tool array.
+The host profile supplies the domain tools, and the core adds the coordinator namespace.
+A change to either input changes the manifest hash.
 
 A call is answered with one `inputText` item in plain prose. An invalid call
 answers `success: false` and sends nothing. Every other answer is
@@ -1343,7 +1355,7 @@ contracts:
 		},
 		"expiry": {
 			"durationMs": 90000,
-			"source": "CODEX_APPROVAL_EXPIRY_MS",
+			"source": "CODEX_APPROVAL_MS.expiry",
 			"expiresAtMs": "createdAtMs + durationMs",
 			"expiredWhen": "nowMs >= expiresAtMs",
 			"extendable": false

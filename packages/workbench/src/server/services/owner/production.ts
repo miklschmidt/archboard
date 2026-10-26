@@ -1,21 +1,15 @@
+import { pinnedCheckoutOf } from "#server/services/sessions/panes.ts";
+import { installWorkbenchTabSessions } from "#server/services/panes/tab-sessions.ts";
+import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+import { ARCHBOARD_AGENT } from "#runtime/services/host/archboard.ts";
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
-import {
-	resolveProjectCodexExecutable,
-	verifyCodexExecutable,
-} from "@archboard/codex-app-server/process";
-import { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
+import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "#server/services/host/listener-address.ts";
-import type { InstallProductionCodexWorkbenchOptions } from "#server/services/generation/workbench.ts";
-import { createProductionBindings } from "#server/services/generation/bindings.ts";
-import { createGenerationOwnerStore } from "#server/services/generation/owners.ts";
-import { createProductionHooks } from "#server/services/generation/hooks.ts";
-import type {
-	CodexWorkbenchServer,
-	CodexWorkbenchStorage,
-} from "#server/protocol/generation/host.ts";
+import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 
 /**
  * Make the coordinators' directory, holding the archboard skill the server ships as
@@ -53,73 +47,62 @@ function prepareCoordinatorDirectory(directory: string, sourceRoot: string): voi
  * written by one process, and a second server's child would make this one's
  * stale. The directory the coordinators work in is the server's too.
  * @param sourceRoot The checkout whose source the server runs, whose skill the coordinators read.
- * @returns Where each part of it lives.
+ * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(sourceRoot: string): CodexWorkbenchStorage {
+function createWorkbenchStorage(sourceRoot: string): VoiceAgentOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
 	const ownerDirectory = path.join(root, "canvases", String(PORT));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
 	prepareCoordinatorDirectory(coordinatorDirectory, sourceRoot);
-	const codexHome = path.join(root, "codex-home");
 	return {
-		root,
-		codexHome,
-		sqliteHome: path.join(root, "sqlite-home"),
+		directory: root,
 		ownerDirectory,
-		coordinatorDirectory,
-		epochRoot: path.join(ownerDirectory, "epoch"),
-		configPath: path.join(codexHome, "config.toml"),
 	};
 }
 
 /**
- * Build the one mandatory real production installation used by the server
- * application: the proven executable, the storage under it, and the bindings
- * and hooks each generation is built from.
+ * Build the one mandatory real production voice agent options used by the
+ * server application: the proven executable, the storage under it, Archboard's
+ * identity, instructions and tools, and the extensions each generation uses.
  * @param server What the server provides the workbench.
- * @returns The installation options.
+ * @returns The voice agent options.
  */
-export function createServerCodexWorkbenchInstallation(
-	server: CodexWorkbenchServer,
-): InstallProductionCodexWorkbenchOptions {
+export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer): VoiceAgentOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
-	const executablePath = verifyCodexExecutable(resolveProjectCodexExecutable()).executablePath;
+	const executablePath = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
 	const storage = createWorkbenchStorage(server.sourceRoot);
-	const waitGraph = createCodexWaitGraph();
-	const generations = createGenerationOwnerStore();
 
 	return {
-		process: {
+		storage,
+		checkouts: server.host.resolveCheckout,
+		identity: ARCHBOARD_AGENT.identity,
+		instructions: ARCHBOARD_AGENT.instructions,
+		onFatal: server.host.onFatal,
+		extensions: {
+			tools: ARCHBOARD_AGENT.tools,
+			contextCodec: server.host.contextCodec,
+			coordinatorContextFor: server.host.coordinatorContextFor,
+			voiceFor: server.host.voiceFor,
+			contextForOperation: server.host.contextForOperation,
+			checkoutLabel: server.host.checkoutLabel,
+			...(server.host.narrative ? { narrative: server.host.narrative } : {}),
+			...(server.host.domainTools ? { domainTools: server.host.domainTools } : {}),
+			...(server.host.onGeneration ? { onGeneration: server.host.onGeneration } : {}),
+			...(server.host.onBrowserGateway ? { onBrowserGateway: server.host.onBrowserGateway } : {}),
+			browserCheckoutOf: pinnedCheckoutOf,
+			installBrowserSessions: installWorkbenchTabSessions,
+			browserLeaseLedger: server.browserLeaseLedger,
+		},
+		codex: {
 			executablePath,
-			workingDirectory: storage.coordinatorDirectory,
-			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
-			archboardServer: { url: serverUrl(), binDirectory: path.join(server.sourceRoot, "bin") },
+			hostEnvironment: { ARCHBOARD_URL: serverUrl(), ARCHBOARD_NO_AUTOSTART: "1" },
+			pathPrefixes: [path.join(server.sourceRoot, "bin")],
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
-		/**
-		 * Everything one generation is built from.
-		 * @param input The generation's input.
-		 * @returns Its bindings.
-		 */
-		bindings: (input) =>
-			createProductionBindings({
-				server,
-				storage,
-				waitGraph,
-				input,
-				owners: generations.for(input),
-			}),
-		/**
-		 * The lifecycle hooks one generation runs under.
-		 * @param input The generation's input.
-		 * @returns Its hooks.
-		 */
-		hooks: (input) =>
-			createProductionHooks({ server, storage, input, owners: generations.for(input) }),
 	};
 }
 
-export type { CodexWorkbenchServer } from "#server/protocol/generation/host.ts";
+export type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";

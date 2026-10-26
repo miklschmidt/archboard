@@ -39,11 +39,10 @@ process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 process.env["ARCHBOARD_REPOS"] = registry;
 // Imported only now, because the CLI reads where its server is as it loads.
-const [client, { cliContractRegistry, runCli }] = await Promise.all([
-	import("@archboard/server-lifecycle/server-client"),
+const [{ cliContractRegistry, runCli }] = await Promise.all([
 	import("#cli/operations/invocation/run.ts"),
 ]);
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {

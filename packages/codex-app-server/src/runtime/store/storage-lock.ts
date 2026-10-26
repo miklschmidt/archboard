@@ -173,7 +173,7 @@ export function acquireLock(
 	ownerDirectory: string,
 	fileSystem: CodexStorageFileSystem,
 ): () => void {
-	const lockPath = path.join(ownerDirectory, ".archboard-codex-process.lock");
+	const lockPath = path.join(ownerDirectory, ".codex-process.lock");
 	const attempt = createOrTakeOverLock(lockPath, fileSystem);
 	if (attempt.cause !== undefined) throw lockRefusal(ownerDirectory, lockPath, attempt, fileSystem);
 	let released = false;

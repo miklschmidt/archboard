@@ -6,7 +6,7 @@
 
 import type { JSX, ReactNode } from "react";
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 
 /** The usage Codex last reported for the conversation. */
 type BrowserTimelineUsage = NonNullable<NonNullable<BrowserSnapshot["timeline"]>["usage"]>;
@@ -45,7 +45,7 @@ function accountWords(snapshot: BrowserSnapshot | null): string {
 function leaseWords(snapshot: BrowserSnapshot | null): string | null {
 	const lease = snapshot?.lease ?? null;
 	if (lease === null) return null;
-	return `${lease.state} · pane ${lease.paneId} · until ${clockTime(lease.expiresAtMs)}`;
+	return `${lease.state} · pane ${lease.chatId} · until ${clockTime(lease.expiresAtMs)}`;
 }
 
 /**

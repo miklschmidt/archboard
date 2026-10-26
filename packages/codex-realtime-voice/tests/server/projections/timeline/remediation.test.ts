@@ -1,0 +1,485 @@
+import { expect, test } from "bun:test";
+
+import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import type {
+	CodexSession,
+	SessionThreadTurnPageResult,
+} from "@archboard/codex-app-server/session";
+import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import {
+	createIdentityAuthorities,
+	type IdentityAuthorities,
+	type ThreadId,
+} from "@archboard/codex-app-server/identity";
+import {
+	BROWSER_SNAPSHOT_MAX_BYTES,
+	BROWSER_SNAPSHOT_MIN_BYTES,
+} from "#server/rules/snapshot/snapshot-bounds.ts";
+import { createServerBrowserProjectionBudget } from "#server/projections/timeline/budget.ts";
+import { createServerTimelineOwner } from "#server/projections/timeline/timeline.ts";
+import {
+	agentMessageItem,
+	commandExecutionItem,
+	fileChangeItem,
+	turnFixture,
+	userMessageItem,
+} from "#tests/server/support/timeline/timeline-fixture.ts";
+
+function link(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
+	return {
+		kind: "thread_link",
+		state: "executable",
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		threadId,
+		source: "appServer",
+		status: "idle",
+		loaded: true,
+		canAcceptDirectInput: true,
+		reason: null,
+	};
+}
+
+function event(authorities: IdentityAuthorities, threadId: ThreadId): TransportServerNotification {
+	return {
+		correlation: {
+			child: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			requestId: null,
+		},
+		notification: decodeServerNotification({
+			method: "turn/completed",
+			params: {
+				threadId,
+				turn: {
+					id: "notification-turn",
+					items: [],
+					itemsView: "full",
+					status: "completed",
+					error: null,
+					startedAt: 1,
+					completedAt: 2,
+					durationMs: 1,
+				},
+			},
+		}),
+	};
+}
+
+async function flush(): Promise<void> {
+	for (let index = 0; index < 8; index += 1) {
+		await Promise.resolve();
+	}
+}
+
+test("retiring a closed chat drops its refresh and notification eligibility", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("retired-thread");
+	const connection = {};
+	let calls = 0;
+	let changes = 0;
+	const session = {
+		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => {
+			calls += 1;
+			return {
+				data: [turnFixture(authorities, "retired-turn", [])],
+				nextCursor: null,
+				backwardsCursor: null,
+			} satisfies SessionThreadTurnPageResult;
+		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => {
+			changes += 1;
+		},
+	});
+	owner.read("chat-retired", 1, link(authorities, threadId), true, connection);
+	await flush();
+	expect(changes).toBe(1);
+	owner.retire("chat-retired", connection);
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 1, changes: 1 });
+	owner.dispose();
+});
+
+test("same-chat connections load independently and only the live pair recovers", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("shared-chat-thread");
+	const firstConnection = {};
+	const secondConnection = {};
+	let calls = 0;
+	let changes = 0;
+	let failNext = false;
+	const session = {
+		threadTurnsListPage: async (
+			_params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => {
+			calls += 1;
+			if (failNext) {
+				failNext = false;
+				throw new Error("recoverable timeline read");
+			}
+			return {
+				data: [turnFixture(authorities, `shared-chat-turn-${calls}`, [])],
+				nextCursor: null,
+				backwardsCursor: null,
+			};
+		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => {
+			changes += 1;
+		},
+	});
+	const timelineLink = link(authorities, threadId);
+	owner.read("chat-shared", 1, timelineLink, true, firstConnection);
+	owner.read("chat-shared", 1, timelineLink, true, secondConnection);
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 2, changes: 2 });
+	expect(owner.read("chat-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-chat-turn-1"),
+	);
+	expect(
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-2"));
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 4, changes: 4 });
+	expect(owner.read("chat-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-chat-turn-3"),
+	);
+	expect(
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-4"));
+	owner.retire("chat-shared", firstConnection);
+	failNext = true;
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 5, changes: 4 });
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 6, changes: 5 });
+	expect(
+		owner.read("chat-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-chat-turn-6"));
+	owner.dispose();
+});
+
+test("ingests bounded source items and takes the cursor from timeline/list", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("bounded-ingest-thread");
+	const user = userMessageItem(authorities, "bounded-user", {
+		type: "userMessage",
+		clientId: null,
+		content: [{ type: "text", text: "hello", text_elements: [] }],
+	});
+	const agent = agentMessageItem(authorities, "bounded-agent", {
+		type: "agentMessage",
+		text: "answer",
+		phase: null,
+		memoryCitation: null,
+		delivery: null,
+		questions: null,
+	});
+	// The oldest item is the one beyond the ingestion limit: the newest are kept.
+	const sourceItems = [user, user, agent];
+	Object.defineProperty(sourceItems, 0, {
+		get: () => {
+			throw new Error("the item beyond the ingestion limit was inspected");
+		},
+		configurable: true,
+	});
+	const session = {
+		threadTurnsListPage: async (
+			_params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => ({
+			data: [turnFixture(authorities, "bounded-turn", sourceItems)],
+			nextCursor: null,
+			backwardsCursor: null,
+		}),
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: "timeline-cursor",
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+		budget: createServerBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 2 }),
+	});
+	const connection = {};
+	const timelineLink = link(authorities, threadId);
+	owner.read("chat-bounded", 1, timelineLink, true, connection);
+	await flush();
+	const projection = owner.read("chat-bounded", 1, timelineLink, true, connection);
+	if (projection === null) {
+		throw new Error("bounded timeline was not loaded");
+	}
+	expect(projection.cursor).toBe("timeline-cursor");
+	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
+		"user_message",
+		"agent_message",
+	]);
+	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
+	owner.dispose();
+});
+
+test("caps final item chronology after matching and unmatched approvals", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("approval-cap-thread");
+	const turnId = authorities.identity.decoder.adoptTurnId("approval-cap-turn");
+	const commandId = authorities.identity.decoder.adoptItemId("approval-command");
+	const unmatchedId = authorities.identity.decoder.adoptItemId("approval-unmatched");
+	const approvals = [
+		{
+			snapshot: {
+				threadId,
+				turnId,
+				itemId: commandId,
+				approvalId: authorities.identity.decoder.adoptApprovalId("approval-matched"),
+				state: "pending" as const,
+			},
+		},
+		{
+			snapshot: {
+				threadId,
+				turnId,
+				itemId: unmatchedId,
+				approvalId: authorities.identity.decoder.adoptApprovalId("approval-unmatched"),
+				state: "pending" as const,
+			},
+		},
+	];
+	const session = {
+		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => ({
+			data: [
+				turnFixture(authorities, "approval-cap-turn", [
+					commandExecutionItem(authorities, "approval-command", {
+						type: "commandExecution",
+						pluginId: null,
+						scriptPath: null,
+						command: "bun test",
+						cwd: "/repo",
+						processId: null,
+						status: "completed",
+						commandActions: [],
+						aggregatedOutput: "output",
+						source: "agent",
+						exitCode: 0,
+						durationMs: 1,
+					}),
+					fileChangeItem(authorities, "approval-file", {
+						type: "fileChange",
+						changes: [],
+						status: "completed",
+					}),
+				]),
+			],
+			nextCursor: null,
+			backwardsCursor: null,
+		}),
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => approvals },
+		onChange: () => undefined,
+		budget: createServerBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 3 }),
+	});
+	const connection = {};
+	const timelineLink = link(authorities, threadId);
+	owner.read("chat-approval-cap", 1, timelineLink, true, connection);
+	await flush();
+	const projection = owner.read("chat-approval-cap", 1, timelineLink, true, connection);
+	if (projection === null) {
+		throw new Error("approval timeline was not loaded");
+	}
+	// The cap keeps the newest items in order: the oldest, the command, goes.
+	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
+		"approval_request",
+		"file_change",
+		"approval_request",
+	]);
+	expect(projection.turns[0]?.items.at(-1)).toEqual(
+		expect.objectContaining({ identity: expect.objectContaining({ itemId: unmatchedId }) }),
+	);
+	expect(projection.turns[0]?.presentation.outputs).toEqual({ included: true, truncated: true });
+	owner.dispose();
+});
+
+test("marks a user summary truncated when text appears beyond its bounded scan", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("delayed-user-text-thread");
+	const content = [
+		...Array.from({ length: 32 }, (_, index) => ({
+			type: "image" as const,
+			url: `https://example.invalid/${index}`,
+		})),
+		{ type: "text" as const, text: "delayed text", text_elements: [] },
+	];
+	const session = {
+		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => ({
+			data: [
+				turnFixture(authorities, "delayed-user-text-turn", [
+					userMessageItem(authorities, "delayed-user-text", {
+						type: "userMessage",
+						clientId: null,
+						content,
+					}),
+				]),
+			],
+			nextCursor: null,
+			backwardsCursor: null,
+		}),
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+	});
+	const connection = {};
+	const timelineLink = link(authorities, threadId);
+	owner.read("chat-delayed-user", 1, timelineLink, true, connection);
+	await flush();
+	const projection = owner.read("chat-delayed-user", 1, timelineLink, true, connection);
+	if (projection === null) {
+		throw new Error("delayed user timeline was not loaded");
+	}
+	expect(projection.turns[0]?.presentation.summary).toContain("user: [media]");
+	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
+	owner.dispose();
+});
+
+test("accepts exact snapshot budget boundaries and rejects every supplied invalid value", () => {
+	expect(createServerBrowserProjectionBudget().maxBytes).toBe(768 * 1024);
+	expect(
+		createServerBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MIN_BYTES }).maxBytes,
+	).toBe(BROWSER_SNAPSHOT_MIN_BYTES);
+	expect(
+		createServerBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MAX_BYTES }).maxBytes,
+	).toBe(BROWSER_SNAPSHOT_MAX_BYTES);
+	for (const maxBytes of [
+		0,
+		-1,
+		BROWSER_SNAPSHOT_MIN_BYTES - 1,
+		BROWSER_SNAPSHOT_MAX_BYTES + 1,
+		BROWSER_SNAPSHOT_MIN_BYTES + 0.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+	]) {
+		expect(() => createServerBrowserProjectionBudget({ maxBytes })).toThrow(
+			"browser snapshot budget must be between",
+		);
+	}
+});
+
+test("a budget cut drops the oldest turns and keeps the newest in-progress turn", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("truncating-thread");
+	// The thread reads newest-first, so page one carries the running turn and the
+	// older history follows behind it.
+	const pages = [
+		[
+			turnFixture(
+				authorities,
+				"turn-running",
+				[
+					agentMessageItem(authorities, "running-agent", {
+						type: "agentMessage",
+						text: "still working",
+						phase: null,
+						memoryCitation: null,
+						delivery: null,
+						questions: null,
+					}),
+				],
+				"inProgress",
+			),
+		],
+		[turnFixture(authorities, "turn-older", [])],
+		[turnFixture(authorities, "turn-oldest", [])],
+	];
+	const requests: Parameters<CodexSession["threadTurnsListPage"]>[0][] = [];
+	const session = {
+		threadTurnsListPage: async (
+			params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => {
+			requests.push(params);
+			const index = requests.length - 1;
+			return {
+				data: pages[index] ?? [],
+				nextCursor: index + 1 < pages.length ? `page-${String(index + 1)}` : null,
+				backwardsCursor: null,
+			};
+		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createServerTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+		// Two turns fit; the third is history the browser never needed.
+		budget: createServerBrowserProjectionBudget({ maxTurns: 2 }),
+	});
+	const connection = {};
+	const timelineLink = link(authorities, threadId);
+	owner.read("chat-truncating", 1, timelineLink, true, connection);
+	await flush();
+	const projection = owner.read("chat-truncating", 1, timelineLink, true, connection);
+	if (projection === null) {
+		throw new Error("truncating timeline was not loaded");
+	}
+
+	// Newest-first paging is what makes the cut safe.
+	expect(requests.map((request) => request.sortDirection)).toEqual(["desc", "desc"]);
+	// Published chronologically, oldest retained first.
+	expect(projection.turns.map(({ turn }) => ({ id: turn.id, status: turn.status }))).toEqual([
+		{ id: authorities.identity.decoder.adoptTurnId("turn-older"), status: "completed" },
+		{ id: authorities.identity.decoder.adoptTurnId("turn-running"), status: "inProgress" },
+	]);
+	// The composer reads idle-versus-running from this projection, so the running
+	// turn surviving the cut is the whole point.
+	expect(projection.turns.at(-1)?.turn.status).toBe("inProgress");
+	// The oldest retained turn carries the mark, because that is where the
+	// history was cut.
+	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
+	expect(projection.turns[1]?.presentation.outputs.truncated).toBeFalse();
+	owner.dispose();
+});

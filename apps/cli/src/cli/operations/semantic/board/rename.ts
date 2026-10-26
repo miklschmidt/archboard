@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { BoardRenameInputSchema } from "@archboard/board/commands";
-import { renameSemanticBoardOnServer } from "@archboard/server-lifecycle/semantic-board-client";
+import { renameSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
 	boardHeldRefusal,
@@ -17,13 +17,15 @@ import {
 	serverRefusal,
 } from "#cli/protocol/contract/refusals.ts";
 import {
-	describedWrite,
 	editedVersion,
 	expectVersionRefusal,
 	SelectorSchema,
+} from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	describedWrite,
 	SemanticBoardResultSchema,
 	writeResult,
-} from "#cli/operations/semantic/input/semantic-input.ts";
+} from "#cli/operations/semantic/input/write-answer.ts";
 
 const RenameInputSchema = z.object({
 	name: z.string(),

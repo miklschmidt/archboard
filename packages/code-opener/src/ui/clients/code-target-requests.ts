@@ -1,7 +1,7 @@
 // The code-target and opener endpoints, as the browser calls them.
 //
 // Every one of these replies is parsed strictly against the shared schema in
-// `@archboard/code-binding/opening`, which is the contract both sides hold: this is the
+// this package's `shared/schemas/`, which is the contract both sides hold: this is the
 // one surface where the browser asks the machine to run something, so a reply
 // it did not understand is a refusal rather than a guess.
 
@@ -11,6 +11,8 @@ import {
 	type CodeTargetOpenFailure,
 	type CodeTargetOpenReply,
 	type CodeTargetOpenRequest,
+} from "#shared/schemas/code-target-open.ts";
+import {
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
 	OpenerTestReplySchema,
@@ -18,8 +20,8 @@ import {
 	type OpenerSelectionReply,
 	type OpenerSettingsReply,
 	type OpenerTestReply,
-} from "@archboard/code-binding/opening";
-import { mutation, strictReply, type ReplySchema } from "@archboard/server-requests";
+} from "#shared/schemas/opener-settings.ts";
+import { strictReply, type ReplySchema } from "@archboard/server-requests";
 
 /**
  * The failure reported when the server's reply matches no schema.
@@ -44,7 +46,7 @@ function invalidReply(error?: unknown): CodeTargetOpenFailure {
  */
 function codeTargetReply<T>(
 	url: string,
-	init: RequestInit | undefined,
+	init: Parameters<typeof strictReply>[1],
 	successSchema: ReplySchema<T>,
 ): Promise<T | CodeTargetOpenFailure> {
 	return strictReply(url, init, successSchema, CodeTargetOpenFailureSchema, invalidReply);
@@ -63,7 +65,7 @@ function openCodeTarget(
 	// The route takes no query, so the vault rides in the body (ADR 0049).
 	return codeTargetReply(
 		"/api/code-targets/open",
-		mutation("POST", { ...request, vault }),
+		{ method: "POST", payload: { ...request, vault } },
 		CodeTargetOpenSuccessSchema,
 	);
 }
@@ -86,7 +88,7 @@ function saveOpenerSettings(
 ): Promise<OpenerSelectionReply | CodeTargetOpenFailure> {
 	return codeTargetReply(
 		"/api/settings/opener",
-		mutation("PUT", selection),
+		{ method: "PUT", payload: selection },
 		OpenerSelectionReplySchema,
 	);
 }
@@ -111,7 +113,7 @@ function testOpenerSettings(
 ): Promise<OpenerTestReply | CodeTargetOpenFailure> {
 	return codeTargetReply(
 		"/api/settings/opener/test",
-		mutation("POST", { selection, repository }),
+		{ method: "POST", payload: { selection, repository } },
 		OpenerTestReplySchema,
 	);
 }

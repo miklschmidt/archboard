@@ -4,12 +4,16 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
-import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
-import { DEFAULT_SEMANTIC_POLICY, type VaultCheck } from "@archboard/board/policy";
+import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import {
 	useVaultCheck,
 	useVaultPolicyRefresh,
 } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
+import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { z } from "zod";
+
+type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** The vault the check reads. */
 const VAULT = "/work/archboard/.archboard/vault";

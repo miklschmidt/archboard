@@ -1,0 +1,283 @@
+{
+	"nodes": [
+		{
+			"id": "skyIeErO",
+			"order": 2000,
+			"name": "Generation composition",
+			"kind": "module",
+			"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
+			"parent": "wkvnbMs8",
+			"groups": ["child"]
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+			"parent": "wkvnbMs8",
+			"groups": ["child"]
+		},
+		{
+			"id": "jylkTBp7",
+			"order": 6000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "One initialized session and the reviewed methods it will send",
+			"parent": "wkvnbMs8",
+			"groups": ["child"]
+		},
+		{
+			"id": "byMaoUe0",
+			"order": 7000,
+			"name": "Thread link",
+			"kind": "module",
+			"responsibility": "Which workhorse each tab session and checkout is bound to, under its link key, made by the first message or Talk in that checkout: the binding, and the refusal when two disagree",
+			"parent": "Fvl3uDPi",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "Fg9dkGj3",
+			"order": 9000,
+			"name": "Voice coordinator",
+			"kind": "module",
+			"responsibility": "The separate fast thread each tab session's voice attaches to, started with the tab's first message or Talk: the voice model's subconscious, which routes sustained work to a named checkout's workhorse",
+			"parent": "3vO7eN8L",
+			"groups": ["voice"]
+		},
+		{
+			"id": "Uz2qReYK",
+			"order": 12000,
+			"name": "Epoch ledger",
+			"kind": "module",
+			"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
+			"parent": "wkvnbMs8",
+			"groups": ["child"]
+		},
+		{
+			"id": "tlC2W839",
+			"order": 13000,
+			"name": "Workhorse operations",
+			"kind": "module",
+			"responsibility": "The four things the coordinator may ask of the workhorse of a checkout it names, one at a time: delegate, steer, inspect, manage its queue; each workhorse has its own",
+			"parent": "Fvl3uDPi",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "QGVPyMwG",
+			"order": 15000,
+			"name": "Approvals",
+			"kind": "module",
+			"responsibility": "Every approval the child raises: staged, published to the tab session whose thread asked, answered exactly once, settled",
+			"parent": "i5AuDn9L"
+		},
+		{
+			"id": "DNQTPTxE",
+			"order": 16000,
+			"name": "Thread tool calls",
+			"kind": "module",
+			"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
+			"parent": "Fvl3uDPi",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "RkhHgrhb",
+			"order": 18000,
+			"name": "Context delivery",
+			"kind": "module",
+			"responsibility": "Tells one workhorse each context change a host announces for its checkout: one quiet developer message, settled once",
+			"parent": "Fvl3uDPi",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "JHbKEH3A",
+			"order": 22000,
+			"name": "Conversation start",
+			"kind": "module",
+			"responsibility": "Starts a conversation on a chat's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then its context delivery bound to it",
+			"parent": "i5AuDn9L"
+		},
+		{
+			"id": "6Jjha6LN",
+			"order": 23000,
+			"name": "Workhorse start",
+			"kind": "module",
+			"responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+			"parent": "Fvl3uDPi",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "kEF4DfR4",
+			"order": 25000,
+			"name": "Session workhorses",
+			"kind": "module",
+			"responsibility": "One workhorse for each checkout of a tab session: its starter, context delivery, queue, operations and link actions, built on first use",
+			"parent": "Fvl3uDPi"
+		},
+		{
+			"id": "wkvnbMs8",
+			"order": 29000,
+			"name": "Child ownership",
+			"kind": "module",
+			"responsibility": "Owns the private Codex child and what outlives each generation of it: the process, the transport, the protocol session, the ledger of which generation owns a thread, and unloading idle threads"
+		},
+		{
+			"id": "i5AuDn9L",
+			"order": 31000,
+			"name": "Chat conversations",
+			"kind": "module",
+			"responsibility": "What a chat sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the list of the tab's workhorses, and the approvals raised to the person"
+		},
+		{
+			"id": "Fvl3uDPi",
+			"order": 32000,
+			"name": "Workhorses",
+			"kind": "module",
+			"responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and context delivery, built per tab session on first use, with its tool calls"
+		},
+		{
+			"id": "3vO7eN8L",
+			"order": 33000,
+			"name": "Voice",
+			"kind": "module",
+			"responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse news and context changes while voice is live"
+		},
+		{
+			"id": "7XZtb0wb",
+			"order": 37000,
+			"name": "Turn execution",
+			"kind": "module",
+			"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+			"parent": "tlC2W839",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "75E6lJHK",
+			"order": 38000,
+			"name": "Operation validation",
+			"kind": "module",
+			"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+			"parent": "tlC2W839",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "SsiEBdik",
+			"order": 41000,
+			"name": "Start contract",
+			"kind": "module",
+			"responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+			"parent": "6Jjha6LN",
+			"groups": ["workhorse"]
+		}
+	],
+	"edges": [
+		{
+			"id": "MZtuHuMT",
+			"order": 48000,
+			"from": "6Jjha6LN",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/start for the workhorse",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5gcxxoqv",
+			"order": 49000,
+			"from": "QGVPyMwG",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"label": "answer an approval request",
+			"emphasis": "muted"
+		},
+		{
+			"id": "7Hqt9ysu",
+			"order": 50000,
+			"from": "skyIeErO",
+			"to": "FxzIjbIO",
+			"kind": "call",
+			"label": "the transport a restarted child rejoins",
+			"emphasis": "muted"
+		},
+		{
+			"id": "zOHsZyzc",
+			"order": 51000,
+			"from": "DNQTPTxE",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/start, fork and turn/start for a tool call",
+			"emphasis": "normal"
+		},
+		{
+			"id": "yhm3JUJQ",
+			"order": 52000,
+			"from": "byMaoUe0",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/read and thread/list to classify a link",
+			"emphasis": "muted"
+		},
+		{
+			"id": "j1PGjoTR",
+			"order": 61000,
+			"from": "kEF4DfR4",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "turn/interrupt the turn each stopped workhorse runs",
+			"emphasis": "normal"
+		},
+		{
+			"id": "bso90XCw",
+			"order": 64000,
+			"from": "kEF4DfR4",
+			"to": "RkhHgrhb",
+			"kind": "dependency",
+			"label": "its own context delivery",
+			"emphasis": "normal"
+		},
+		{
+			"id": "QczS1Qpk",
+			"order": 65000,
+			"from": "kEF4DfR4",
+			"to": "SsiEBdik",
+			"kind": "dependency",
+			"label": "the workhorse starter port",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ITcuqCHT",
+			"order": 74000,
+			"from": "Fg9dkGj3",
+			"to": "kEF4DfR4",
+			"kind": "call",
+			"label": "stop_workhorses: stop every running workhorse of the tab",
+			"emphasis": "normal"
+		},
+		{
+			"id": "dOVhNk7R",
+			"order": 75000,
+			"from": "JHbKEH3A",
+			"to": "byMaoUe0",
+			"kind": "call",
+			"label": "read the link the chat named before starting anything",
+			"emphasis": "normal"
+		},
+		{
+			"id": "o63C7KPd",
+			"order": 76000,
+			"from": "6Jjha6LN",
+			"to": "Uz2qReYK",
+			"kind": "call",
+			"label": "stage, commit or roll back the start",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aLUB44Jp",
+			"order": 77000,
+			"from": "7XZtb0wb",
+			"to": "75E6lJHK",
+			"kind": "call",
+			"label": "classify and recheck the captured links",
+			"emphasis": "normal"
+		}
+	]
+}

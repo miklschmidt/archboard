@@ -7,5 +7,4 @@ export type {
 	PlacedBeat,
 	PlacedStep,
 	SubjectChange,
-	VariantComparison,
 } from "#shared/rules/compare/variants.ts";

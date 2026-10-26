@@ -183,6 +183,19 @@ test("apply writes the checked subject identities and correction evidence", asyn
 	expect((await response.json()).board).toEqual(stored);
 });
 
+test("a write that lands during the code check refuses the checked candidate", async () => {
+	const concurrent = JSON.stringify({ ...family(), version: 2 });
+	check.mockImplementation(() => {
+		writeFileSync(file, concurrent);
+		return Promise.resolve({ ok: true, findings: [], skipped: [], timings: [] });
+	});
+	const response = await ask("apply", { doing: "Correcting the historical account" });
+	expect(check).toHaveBeenCalledTimes(1);
+	expect(response.status).toBe(409);
+	expect(await response.json()).toMatchObject({ code: "BOARD_VERSION_CONFLICT", version: 2 });
+	expect(readFileSync(file, "utf8")).toBe(concurrent);
+});
+
 test("stale versions and undescribed applies stop before checking or writing", async () => {
 	const before = readFileSync(file, "utf8");
 	const stale = await ask("apply", {
@@ -194,6 +207,35 @@ test("stale versions and undescribed applies stop before checking or writing", a
 	const undescribed = await ask("apply");
 	expect(undescribed.status).toBe(400);
 	expect(await undescribed.json()).toMatchObject({ code: "DOING_REQUIRED" });
+	expect(check).not.toHaveBeenCalled();
+	expect(readFileSync(file, "utf8")).toBe(before);
+});
+
+test("a missing board and a candidate the vault refuses are answered in the route's codes", async () => {
+	rmSync(file);
+	const missing = await ask("preview");
+	expect(missing.status).toBe(422);
+	expect(await missing.json()).toMatchObject({ code: "BOARD_MISSING" });
+	writeFileSync(file, JSON.stringify(family()));
+	const before = readFileSync(file, "utf8");
+	const config = join(vault, ".archboard", "config.yaml");
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(
+		config,
+		Bun.YAML.stringify({
+			levels: ["system"],
+			nodeKinds: { service: { name: "Service", icon: "RiServerLine" } },
+			relationshipKinds: { request: { name: "Request", dash: "solid", arrowhead: "filled" } },
+			groups: {},
+		}),
+	);
+	try {
+		const unconfigured = await ask("preview", {}, { nodes: [{ name: "Probe", kind: "worker" }] });
+		expect(unconfigured.status).toBe(422);
+		expect(await unconfigured.json()).toMatchObject({ code: "INVALID_BOARD" });
+	} finally {
+		rmSync(config);
+	}
 	expect(check).not.toHaveBeenCalled();
 	expect(readFileSync(file, "utf8")).toBe(before);
 });

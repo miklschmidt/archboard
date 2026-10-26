@@ -96,12 +96,11 @@ const environment = {
 process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 process.env["ARCHBOARD_REPOS"] = path.join(root, "repos.json");
 // Imported only now, because the CLI reads where its server is as it loads.
-const [{ checkEmbedsAt }, client, { declareDirectory }] = await Promise.all([
+const [{ checkEmbedsAt }, { declareDirectory }] = await Promise.all([
 	import("#cli/operations/vault/embeds/embeds-check.ts"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("@archboard/workspace/checkouts"),
 ]);
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {

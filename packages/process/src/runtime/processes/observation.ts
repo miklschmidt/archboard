@@ -2,6 +2,8 @@ import fs from "node:fs";
 
 import { dlopen, type Library } from "bun:ffi";
 
+import { errnoCode } from "@archboard/diagnostics/errno";
+
 import { awaitFrozenGroup, type FrozenGroupSeam } from "#runtime/processes/frozen-group.ts";
 import { parseLinuxProcessStat } from "#runtime/processes/linux-stat.ts";
 
@@ -70,17 +72,6 @@ function positivePid(pid: number): boolean {
 }
 
 /**
- * Read the stable errno-like code from a filesystem failure.
- * @param cause Whatever the filesystem threw.
- * @returns Its code, when present.
- */
-function errorCode(cause: unknown): string | undefined {
-	return cause !== null && typeof cause === "object" && "code" in cause
-		? String((cause as { readonly code?: unknown }).code)
-		: undefined;
-}
-
-/**
  * Read one Linux process, returning undefined only after it vanished.
  * @param pid The process to inspect.
  * @returns Its observation, or undefined when it vanished.
@@ -89,7 +80,7 @@ function readLinuxProcess(pid: number): ProcessObservation | undefined {
 	try {
 		return parseLinuxProcessStat(pid, fs.readFileSync(`/proc/${pid}/stat`, "utf8"));
 	} catch (cause) {
-		const code = errorCode(cause);
+		const code = errnoCode(cause);
 		if (code === "ENOENT" || code === "ESRCH") return undefined;
 		throw cause;
 	}
@@ -164,7 +155,7 @@ function listDarwinGroupPids(library: DarwinLibrary, pgid: number): readonly num
  * EPERM while the kernel knows the group but may signal no member of it:
  * Darwin's kill(2) passes over zombies, so a group whose members have all
  * exited and wait to be reaped answers EPERM, and that answer once escaped a
- * killed Git group's census as a raw error (TASK-470, run 37776895342). A live
+ * killed Git group's census as a raw error. A live
  * member this process may not signal answers EPERM as well, so EPERM counts as
  * empty only when the full process census holds no live member of the group.
  * @param library The opened libproc library.
@@ -176,7 +167,7 @@ function darwinGroupHoldsNoLiveMember(library: DarwinLibrary, pgid: number): boo
 		process.kill(-pgid, 0);
 		return false;
 	} catch (cause) {
-		const code = errorCode(cause);
+		const code = errnoCode(cause);
 		if (code === "ESRCH") return true;
 		if (code !== "EPERM") throw cause;
 		const { records } = readDarwinRecords(library, listDarwinPids(library), pgid);

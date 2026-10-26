@@ -16,7 +16,6 @@
 // recipe it pointed at another board.
 
 import fs from "node:fs";
-import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { repoRootOf } from "@archboard/workspace/checkouts";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
@@ -62,6 +61,7 @@ import {
 	trackingBoards,
 } from "#cli/operations/vault/embeds/tracked-embeds.ts";
 import { removingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
+import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 /** What checking one embed found: its findings, a file `--fix` rewrote, or neither. */
 interface Checked {

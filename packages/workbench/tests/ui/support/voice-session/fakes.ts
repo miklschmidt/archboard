@@ -2,21 +2,24 @@
 // a realtime port with its own output level source, both publishing the way
 // the real owners do.
 
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "#shared/protocol/realtime-contract.ts";
-import type { RealtimeCorrelation, RealtimeState } from "#shared/protocol/realtime-contract.ts";
-import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/run.ts";
-import type { BrowserWorkbenchMediaState } from "#ui/clients/media/media-state.ts";
-import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
+} from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeCorrelation, RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type {
+	VoiceOutputLevelSource,
+	BrowserWorkbenchState,
+} from "@archboard/codex-realtime-voice/controllers";
+import type {
+	RealtimeMediaSnapshot,
+	BrowserWorkbenchMediaState,
+	BrowserWorkbenchCapabilities,
+} from "#ui/state/surfaces/voice-parts.ts";
+
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
-import type {
-	BrowserWorkbenchCapabilities,
-	BrowserWorkbenchState,
-} from "#ui/state/transport/contract.ts";
 
 /**
  * A correlation whose session and correlation ids are both the given id.

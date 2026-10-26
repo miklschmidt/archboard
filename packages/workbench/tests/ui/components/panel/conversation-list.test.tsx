@@ -7,7 +7,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, fireEvent, render } from "@testing-library/react";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import type { BrowserWorkhorses } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserWorkhorses } from "@archboard/codex-realtime-voice/contract";
 import { ConversationList } from "#ui/components/panel/ConversationList.tsx";
 
 beforeAll(() => {
@@ -30,7 +30,7 @@ const WORKTREE = "/work/shop-feature";
 function idle(checkout: string): BrowserWorkhorses["entries"][number] {
 	return {
 		checkout,
-		repository: "github.com/acme/shop",
+		label: "github.com/acme/shop",
 		live: true,
 		running: false,
 		waitingForApproval: false,

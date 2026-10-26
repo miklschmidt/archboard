@@ -2,7 +2,7 @@
 // as well as phase because the reason is the only thing that separates a first
 // start from a recovery, and a stop from a pane closing.
 
-import type { RealtimePhase, RealtimeState } from "#shared/protocol/realtime-contract.ts";
+import type { RealtimePhase, RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import type { VoiceSessionStatus } from "#ui/state/voice-session/contract.ts";
 
 type NarratedPhase = Exclude<RealtimePhase, "recoverable_error" | "terminal_error">;

@@ -6,13 +6,17 @@
 import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
-	type BrowserWorkbenchMediaOwnerOptions,
-} from "@archboard/workbench/voice";
+	type BrowserWorkbenchTransport,
+} from "@archboard/codex-realtime-voice/controllers";
 import type { PaneSession as SessionOf } from "#ui/rules/pane-session/session-contracts.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/workbench/controllers";
 
 /** The session of one pane, over the production transport. */
 type PaneSession = SessionOf<BrowserWorkbenchTransport>;
+
+/** What every pane's media owner is made with. */
+type BrowserWorkbenchMediaOwnerOptions = NonNullable<
+	Parameters<typeof createBrowserWorkbenchMediaOwner>[0]
+>;
 
 /** The handles by pane id. */
 class PaneHandles {
@@ -78,4 +82,4 @@ class PaneHandles {
 	}
 }
 
-export { PaneHandles, type PaneSession };
+export { PaneHandles, type BrowserWorkbenchMediaOwnerOptions, type PaneSession };

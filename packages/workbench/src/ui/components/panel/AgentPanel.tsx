@@ -6,13 +6,7 @@
 import { RiCloseLine, RiMoreLine } from "@remixicon/react";
 import type { JSX } from "react";
 
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@archboard/ui-kit/overlays";
+import { DropdownMenu } from "@archboard/ui-kit/components";
 import type { AgentActions, AgentView } from "#ui/state/surfaces/contracts.ts";
 import { AgentComposer } from "#ui/components/panel/AgentComposer.tsx";
 import { AgentDetails } from "#ui/components/dock/AgentDetails.tsx";
@@ -23,7 +17,7 @@ import { SignInCard } from "#ui/components/panel/SignInCard.tsx";
 import { VoiceLines } from "#ui/components/voice/VoiceLines.tsx";
 import { AgentRuntimeProvider } from "#ui/components/runtime/AgentRuntimeProvider.tsx";
 import { Conversation } from "#ui/components/thread/Conversation.tsx";
-import type { BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import type { DraftStore } from "#ui/state/surfaces/draft-store.ts";
 
 /** Inputs for the panel. */
@@ -202,24 +196,24 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 	const { actions } = props;
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger
+			<DropdownMenu.Trigger
 				aria-label="Conversation menu"
 				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-control flex size-7 items-center justify-center"
 			>
 				<RiMoreLine className="size-4" />
-			</DropdownMenuTrigger>
-			<DropdownMenuContent
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content
 				align="end"
 				sideOffset={6}
 				className="border-border w-52 rounded-md border"
 			>
-				<DropdownMenuItem onClick={actions.newConversation}>New conversation</DropdownMenuItem>
-				<DropdownMenuItem onClick={props.details ? props.onConversation : props.onDetails}>
+				<DropdownMenu.Item onClick={actions.newConversation}>New conversation</DropdownMenu.Item>
+				<DropdownMenu.Item onClick={props.details ? props.onConversation : props.onDetails}>
 					{props.details ? "Back to the conversation" : "Session details"}
-				</DropdownMenuItem>
-				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={actions.signOut}>Sign out</DropdownMenuItem>
-			</DropdownMenuContent>
+				</DropdownMenu.Item>
+				<DropdownMenu.Separator />
+				<DropdownMenu.Item onClick={actions.signOut}>Sign out</DropdownMenu.Item>
+			</DropdownMenu.Content>
 		</DropdownMenu>
 	);
 }

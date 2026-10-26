@@ -3,9 +3,11 @@ import type {
 	EpochSnapshot,
 	EpochStageInput,
 	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
-import { emptyManifest } from "#runtime/store/epoch/manifest.ts";
+	EpochOperationRecord,
+	ThreadLinkTarget,
+	CodexWaitGraph,
+} from "#runtime/protocol/voice/extension.ts";
+import { emptyManifest } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
 	ResponseOwner,
@@ -31,8 +33,6 @@ import type {
 	DynamicToolApprovalPort,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
 import type { DynamicImmutableEffect } from "#runtime/protocol/dynamic-tools/effect-contract.ts";
-import type { ThreadLinkTarget } from "#runtime/rules/thread-link/contract.ts";
-import type { CodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
 import {
 	CALLER_WIRE_ID,
 	authorityToken,
@@ -291,8 +291,8 @@ export function optionsFor(
 	const completedTransportRequestIds = new Set<string>();
 	const contextReads: Array<{ readonly operationId: OperationId; readonly kind: string }> = [];
 	const contextAuthority: DynamicContextAuthority = {
-		token: authorityToken("pane-authority"),
-		paneId: "pane-1",
+		token: authorityToken("thread-link-authority"),
+		linkKey: "link-1",
 		childId: caller.childId,
 		epoch: caller.epoch,
 		threadId: caller.threadId,
@@ -300,7 +300,7 @@ export function optionsFor(
 	};
 	const approval = new FakeApproval((request) => approvedFor(request, 100));
 	const context = {
-		issueAndRevalidatePaneLinkAuthority: () => contextAuthority,
+		issueAndRevalidateLinkAuthority: () => contextAuthority,
 		readOneFreshArchboardContext: async (input: {
 			readonly caller: DynamicCallerAuthority;
 			readonly authority: DynamicContextAuthority;

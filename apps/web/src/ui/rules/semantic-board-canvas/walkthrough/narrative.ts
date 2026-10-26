@@ -13,7 +13,6 @@
 // them asking the other.
 
 import type { SemanticVariant } from "@archboard/board/document";
-import type { WalkthroughBeat } from "@archboard/board/content";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { subjectOf } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
@@ -23,6 +22,10 @@ import {
 } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { subjectBox } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import { flowFocus } from "#ui/rules/semantic-board-canvas/camera/flow-head.ts";
+import type { WalkthroughBeatSchema } from "@archboard/board/content";
+import type { z } from "zod";
+
+type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** What a beat's subjects can be found in: the picture on screen. */
 interface FocusSource {

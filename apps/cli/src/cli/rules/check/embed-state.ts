@@ -10,9 +10,9 @@
 // alone is an edit the picture does not show, such as one outside the view:
 // the embed is current, and `--fix` only writes its new recipe.
 
-import type { RenderRecipe } from "@archboard/renderer/recipe";
 import { EVERYTHING_VIEW } from "@archboard/board/views";
 import type { EmbedFix, EmbedsPart, EmbedVault } from "#cli/protocol/check/embeds-answer.ts";
+import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 /**
  * How a kept embed stands against the same recipe drawn now.

@@ -43,7 +43,7 @@ interface OperationIdValidator {
 	readonly assertCurrentOperationId: (operationId: OperationId) => void;
 }
 
-/** Archboard-server-owned IDs are minted here; app-server-owned IDs can only enter via the trusted decoder. */
+/** Server-owned IDs are minted here; app-server-owned IDs can only enter via the trusted decoder. */
 interface IdentityIssuer {
 	readonly mintBrowserCommandId: () => BrowserCommandId;
 	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
@@ -51,7 +51,7 @@ interface IdentityIssuer {
 	readonly mintChildEpoch: () => ChildEpoch;
 }
 
-/** The only capability that can issue an Archboard-server-owned OperationId. */
+/** The only capability that can issue a server-owned OperationId. */
 interface OperationIdIssuer {
 	readonly mintOperationId: () => OperationId;
 }

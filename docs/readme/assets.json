@@ -25,7 +25,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "261d5bd4670712e40c9e07fdf97d1a4bed39cdd6a2cba897819fedf2b63c8c4f"
+			"hash": "cc1da493ee3ce13187e982ab67aaa0d439935a612d15a1a6a8a73dbf6d5bd4bc"
 		},
 		{
 			"name": "hero",
@@ -77,7 +77,7 @@
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
@@ -153,7 +153,7 @@
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
@@ -182,7 +182,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "e3c2a96c06079d9b4341cf77dea44529581dd3474947c77fab7659e428efa42a"
+			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
 		},
 		{
 			"name": "newcomer",
@@ -204,7 +204,7 @@
 				"packages/walkthrough/src/runtime",
 				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
-				"packages/workbench/src/runtime/services/realtime",
+				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
@@ -309,7 +309,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "e3c2a96c06079d9b4341cf77dea44529581dd3474947c77fab7659e428efa42a"
+			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
 		},
 		{
 			"name": "architecture",

@@ -10,24 +10,16 @@
 // reading changes nothing, so the route is a GET. It never runs inside
 // `/api/vault/check`, which every open canvas polls.
 //
-// The answer is not kept in memory (ADR 0045). A footprint is asked once for
-// one branch, and a ref such as `origin/main` can move while every HEAD stays,
-// so a kept answer would also need the commit the ref resolves to in each
-// checkout: most of the work of a walk between a merge base and HEAD.
+// The reading takes the board and its variants by name, and says itself which
+// variants it reads and when it refuses (`@archboard/code-intel/history-lens`).
+// The route maps a refusal to its status: a missing board is 404, and every
+// other refusal of the reading is 422. The answer is not kept in memory (ADR 0045).
 
 import type { Express, Request, Response } from "express";
-import { readFootprint, type FootprintRequest } from "@archboard/code-intel/history-lens";
-import { readSemanticBoard } from "@archboard/board/store-read";
+import { readFootprint } from "@archboard/code-intel/history-lens";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
-import { FootprintReplySchema, type FootprintAnswer } from "@archboard/code-intel/history";
-import type { SemanticBoard } from "@archboard/board/document";
-import {
-	type FootprintVariants,
-	isRefusal,
-	type Refusal,
-	variantsOf,
-} from "#server/rules/footprint/footprint-variants.ts";
+import { FootprintReplySchema } from "@archboard/code-intel/history";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
@@ -40,24 +32,16 @@ interface FootprintRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Read the footprint. */
-	readonly read: (request: FootprintRequest) => Promise<FootprintAnswer>;
+	readonly read: typeof readFootprint;
 }
 
-/** What a request asks for. */
+/** What a request asks for, by name. */
 interface Asked {
 	readonly board: string;
 	readonly base: string;
 	readonly head: string | undefined;
 	readonly variant: string | undefined;
 	readonly against: string | undefined;
-}
-
-/** A request the route can read: the board, its variants, and the ref. */
-interface Readable extends FootprintVariants {
-	readonly vault: string;
-	readonly board: SemanticBoard;
-	readonly base: string;
-	readonly head: string | undefined;
 }
 
 /**
@@ -91,27 +75,6 @@ function askedOf(request: Request): Asked | undefined {
 }
 
 /**
- * Read the board a request names and the variants it asks for.
- * @param vault The vault the request named.
- * @param wanted What the request asks for.
- * @returns What to read, or why the request is turned away.
- */
-function readableOf(vault: string, wanted: Asked): Readable | Refusal {
-	const read = readSemanticBoard(vault, wanted.board);
-	if (!read.ok) {
-		return {
-			status: read.code === "BOARD_MISSING" ? 404 : 422,
-			code: read.code,
-			error: read.problem,
-		};
-	}
-	const variants = variantsOf(read.board, wanted);
-	return isRefusal(variants)
-		? variants
-		: { vault, board: read.board, base: wanted.base, head: wanted.head, ...variants };
-}
-
-/**
  * Whether the caller has gone, so nothing is left to answer.
  * @param request The request.
  * @param response Its response.
@@ -124,43 +87,26 @@ function callerGone(request: Request, response: Response): boolean {
 /**
  * Turn a request away.
  * @param response Its response.
- * @param refusal Why.
+ * @param status The status.
+ * @param code The code the CLI maps to its exit status.
+ * @param error What happened and what to do next.
  */
-function refuse(response: Response, refusal: Refusal): void {
-	const { status, ...body } = refusal;
-	response.status(status).json({ success: false, ...body });
+function refuse(response: Response, status: number, code: string, error: string): void {
+	response.status(status).json({ success: false, code, error });
 }
 
 /**
- * Why a head the caller named is turned away: no checkout that holds a part of
- * the board resolves it, so no part was read and none may look unchanged. A
- * head only some checkouts have is read where it resolves, as a base is.
- * @param answer The footprint, read.
- * @returns The refusal, or undefined when the head resolved somewhere or none was named.
- */
-function headRefusal(answer: FootprintAnswer): Refusal | undefined {
-	const { head, repositories } = answer;
-	const resolved = repositories.some(
-		(one) => one.status === "read" || one.reason !== "head-unresolved",
-	);
-	if (head === undefined || repositories.length === 0 || resolved) return undefined;
-	return {
-		status: 422,
-		code: "HEAD_UNRESOLVED",
-		error: `--head "${head}" does not resolve in any checkout that holds a part of "${answer.board}". Name a branch, tag or commit that the checkout has; nothing is fetched.`,
-	};
-}
-
-/**
- * Send a footprint, or refuse a head that no checkout has.
+ * Send a footprint, or its refusal: a missing board is 404, and every other
+ * refusal of the reading 422.
  * @param response The response.
- * @param answer The footprint, read.
+ * @param reading The footprint, or why it reads nothing.
  */
-function send(response: Response, answer: FootprintAnswer): void {
-	const refusal = headRefusal(answer);
-	if (refusal === undefined) {
-		response.json(FootprintReplySchema.parse({ success: true, ...answer }));
-	} else refuse(response, refusal);
+function send(response: Response, reading: Awaited<ReturnType<typeof readFootprint>>): void {
+	if (reading.ok) {
+		response.json(FootprintReplySchema.parse({ success: true, ...reading.answer }));
+	} else {
+		refuse(response, reading.code === "BOARD_MISSING" ? 404 : 422, reading.code, reading.problem);
+	}
 }
 
 /**
@@ -176,27 +122,23 @@ async function answerFootprint(
 ): Promise<void> {
 	const wanted = askedOf(request);
 	if (wanted === undefined) {
-		refuse(response, {
-			status: 400,
-			code: "BAD_REQUEST",
-			error:
-				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&head=<ref>][&variant=<proposal>][&against=<variant>]",
-		});
+		refuse(
+			response,
+			400,
+			"BAD_REQUEST",
+			"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&head=<ref>][&variant=<proposal>][&against=<variant>]",
+		);
 		return;
 	}
 	try {
-		const readable = readableOf(vaultOfRequest(request), wanted);
-		if (isRefusal(readable)) {
-			refuse(response, readable);
-			return;
-		}
-		const answer = await dependencies.runCheckout(
+		const vault = vaultOfRequest(request);
+		const reading = await dependencies.runCheckout(
 			request,
 			response,
 			"GET /api/semantic-boards/footprint",
-			(signal) => dependencies.read({ ...readable, signal }),
+			(signal) => dependencies.read({ vault, ...wanted, signal }),
 		);
-		if (!callerGone(request, response)) send(response, answer);
+		if (!callerGone(request, response)) send(response, reading);
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });

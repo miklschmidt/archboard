@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import {
+	HOST_RECORD_PREFIX,
 	createHarness,
 	latestState,
 	makeNotification,
@@ -10,7 +11,7 @@ import {
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { parseRealtimeItemId } from "@archboard/workbench/browser-contract";
+import { parseRealtimeItemId } from "@archboard/codex-realtime-voice/realtime";
 import {
 	browserCorrelation,
 	expectPendingOffer,
@@ -106,7 +107,9 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			for (const part of ['"fresh-process-brief"', "_board_catalogue", "You are the"]) {
 				expect(told).not.toContain(part);
 			}
-			expect(start!["realtimeSessionId"]).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
+			expect(start!["realtimeSessionId"]).toMatch(
+				new RegExp(`^${HOST_RECORD_PREFIX}:realtime-session:h[a-f0-9]{32}$`),
+			);
 			// The fixture emits the after-start item events on timers after answering start.
 			await waitFor(() =>
 				generation.adapter.transcript().some((segment) => segment.status === "final"),

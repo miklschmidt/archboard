@@ -6,7 +6,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type * as LensModule from "#runtime/api/history-lens.ts";
+import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { BoardBehindSchema } from "#shared/protocol/code-check.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
@@ -120,7 +120,7 @@ beforeAll(async () => {
 	}
 	writeFileSync(join(root, "src/Shop/settings.json"), '{"enabled":true}\n');
 	commit("change project settings");
-	lens = await import("#runtime/api/history-lens.ts");
+	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
 
 afterAll(() => {
@@ -141,7 +141,7 @@ test("hotspots and coupling use the project directory and omit overlapping bindi
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createLocalityReading().read(vault, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(vault, board, current, new Date("2000-01-01")),
 	);
 	expect(answer.hotspots.find((part) => part.subject.id === "project")?.commits).toHaveLength(7);
 	const pairs = answer.coupling.map((pair) => pair.subjects.map((subject) => subject.id));
@@ -153,7 +153,7 @@ test("a footprint includes source-only and settings changes in a project directo
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readFootprint({ vault, board, against: current, base }),
+		await lens.readVariantFootprint({ vault, board, against: current, base }),
 	);
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	expect(answer.changed.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);

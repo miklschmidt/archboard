@@ -70,6 +70,7 @@
 					border-color 400ms ease;
 			}
 			.name {
+				opacity: 0;
 				margin-top: 18px;
 				font-size: 22px;
 				font-weight: 600;
@@ -78,6 +79,7 @@
 				transition: color 400ms ease;
 			}
 			.state {
+				opacity: 0;
 				margin-top: 8px;
 				font:
 					500 12px/1 "Archboard DM Mono",
@@ -102,9 +104,11 @@
 				border-color: var(--colour);
 			}
 			.stop.on .name {
+				opacity: 1;
 				color: var(--foreground);
 			}
 			.stop.on .state {
+				opacity: 1;
 				color: var(--colour);
 			}
 			.stop.on .why {

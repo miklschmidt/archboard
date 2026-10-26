@@ -1,4 +1,4 @@
-import type { OwnedWaitCleanupCause, WaitOwner } from "#runtime/state/wait-graph/wait-graph.ts";
+import type { OwnedWaitCleanupCause, WaitOwner } from "#runtime/protocol/voice/extension.ts";
 import type {
 	ChildEpoch,
 	ChildId,

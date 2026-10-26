@@ -4,12 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import {
-	CLAIM_LEASE_MS,
-	LOCK_LEASE_MS,
-	LOCK_POLL_MS,
-	LOCK_STEAL_GUARD_MS,
-} from "@archboard/timing";
+import { BOARD_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 const originalWarn = logger.warn;
@@ -20,7 +15,7 @@ const human = (id: string) => ({ id, kind: "human" as const });
 async function advanceLockTime(ms: number): Promise<void> {
 	let elapsed = 0;
 	while (elapsed < ms) {
-		const step = Math.min(LOCK_POLL_MS, ms - elapsed);
+		const step = Math.min(BOARD_LOCK_MS.poll, ms - elapsed);
 		jest.advanceTimersByTime(step);
 		await Promise.resolve();
 		await Promise.resolve();
@@ -90,7 +85,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			waitMs: 0,
 			revokeClaim: true,
 		});
-		await advanceLockTime(LOCK_STEAL_GUARD_MS);
+		await advanceLockTime(BOARD_LOCK_MS.stealGuard);
 		const takeover = await takeoverRequest;
 		expect(takeover.holder.id).toBe("user");
 		expect(lock.claimOn(vault, board)).toBeNull();
@@ -121,7 +116,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				revokeClaim: true,
 			});
 			if (mode === "expired") {
-				await advanceLockTime(LOCK_STEAL_GUARD_MS);
+				await advanceLockTime(BOARD_LOCK_MS.stealGuard);
 			}
 			const taken = await lapsedTakeover;
 			expect(taken.holder.id).toBe("user");
@@ -142,15 +137,15 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			reason: "reading",
 			forMs: 60_000,
 		});
-		jest.advanceTimersByTime(LOCK_LEASE_MS + 250);
+		jest.advanceTimersByTime(BOARD_LOCK_MS.lease + 250);
 		expect(lock.boardLockState(vault, idle)?.id).toBe(idleClaim.claim.holder.id);
 		expect(lock.boardLockState(vault, idle)?.since).toBe(idleClaim.claim.holder.since);
 		expect(lock.releaseClaim(vault, idle)).not.toBeNull();
 
 		const brief = "brief";
 		boards.add(brief);
-		await lock.claimBoard({ vault, board: brief, reason: "a moment", forMs: CLAIM_LEASE_MS });
-		jest.advanceTimersByTime(CLAIM_LEASE_MS);
+		await lock.claimBoard({ vault, board: brief, reason: "a moment", forMs: CLAIM_MS.lease });
+		jest.advanceTimersByTime(CLAIM_MS.lease);
 		expect(lock.boardLockState(vault, brief)).toBeNull();
 		expect(lock.claimOn(vault, brief)).toBeNull();
 		expect(lock.releaseClaim(vault, brief)).toBeNull();

@@ -18,8 +18,8 @@ import {
 	type ShownConversationReply,
 } from "@archboard/workbench/browser-contract";
 import { logger } from "@archboard/diagnostics/logger";
+import { type TabSessionId } from "@archboard/codex-realtime-voice/server";
 import {
-	type TabSessionId,
 	codexWiring,
 	paneCheckoutOf,
 	panesOfTabSession,

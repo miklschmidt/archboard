@@ -1,9 +1,12 @@
-import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#shared/rules/realtime-state.ts";
+import {
+	INITIAL_REALTIME_STATE,
+	transitionRealtimeState,
+} from "@archboard/codex-realtime-voice/realtime";
 import {
 	type RealtimeSemanticEvent,
 	type RealtimeState,
-} from "#shared/protocol/realtime-contract.ts";
-import type { CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
+} from "@archboard/codex-realtime-voice/realtime";
+import type { CodexRealtimeAdapter } from "@archboard/codex-realtime-voice/runtime";
 
 export function recordReducerCheckedEvents(
 	adapter: CodexRealtimeAdapter,

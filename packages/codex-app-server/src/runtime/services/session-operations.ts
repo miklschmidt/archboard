@@ -52,7 +52,7 @@ function loginVariant(value: unknown): string | undefined {
 }
 
 /**
- * Refuse a login variant the review rejected, and the two Bedrock setups Archboard does not
+ * Refuse a login variant the review rejected, and the two Bedrock setups the client does not
  * implement, naming which of the two reasons applies.
  * @param variant - The login variant the caller named.
  */
@@ -73,7 +73,7 @@ function assertReviewedLoginVariant(variant: string | undefined): void {
 }
 
 /**
- * Refuse the login variants Archboard does not implement before any RPC is sent, then prove the
+ * Refuse the login variants the client does not implement before any RPC is sent, then prove the
  * remainder against the supported-login schema. Doing this in the session, not at the wire,
  * keeps a refused sign-in from ever reaching the app-server.
  * @param value - The caller's login parameters.
@@ -86,7 +86,7 @@ function validateLogin(value: unknown): unknown {
 	if (!supported.success) {
 		throw new CodexSessionError(
 			"unsupported_login",
-			"The login variant is not supported by the reviewed Archboard session.",
+			"The login variant is not supported by the reviewed Codex session.",
 		);
 	}
 	return supported.data;
@@ -321,7 +321,7 @@ function createSessionOperations(ports: SessionOperationPorts): SessionOperation
 			mutate("thread/queue/start", params, "thread-capable"),
 		/**
 		 * Inject items into a thread's model-visible history without starting a turn; this is how
-		 * a board change reaches a running conversation.
+		 * a host's context change reaches a running conversation.
 		 * @param params - The inject_items parameters.
 		 * @returns The injection result.
 		 */

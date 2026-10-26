@@ -1,15 +1,18 @@
+import { type BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/schemas";
+import { projectDynamicApproval } from "#server/projections/browser-state/dynamic-approval-projection.ts";
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserDynamicApprovalActions,
-} from "#server/protocol/gateway/contract.ts";
-import type { BrowserDynamicApprovalResponse } from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#runtime/protocol/voice/extension.ts";
 import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
-} from "#server/protocol/projection/projection-contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
+} from "#server/protocol/projection/domain-approval-contract.ts";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type {
 	BrowserCommandId,
 	IdentityAuthorities,
@@ -38,6 +41,8 @@ interface ServerDynamicApprovalOwner {
 	readonly browser: BrowserDynamicApprovalActions;
 	/** Every approval awaiting an answer from one tab session. */
 	readonly pending: (tabSessionId: TabSessionId) => readonly DynamicApprovalOwnerView[];
+	/** Browser presentations from this owner's exact pending state. */
+	readonly projectPending: (tabSessionId: TabSessionId) => readonly BrowserDynamicApproval[];
 	/** Rebind a tab session's pending presentations to its pane holding the current lease. */
 	readonly bindLease: (
 		tabSessionId: TabSessionId,
@@ -163,7 +168,7 @@ function bindingIsStale(
 ): boolean {
 	return (
 		command.commandId !== binding.commandId ||
-		command.paneId !== binding.paneId ||
+		command.chatId !== binding.paneId ||
 		command.capturedLink.threadId !== binding.capturedLink.threadId ||
 		command.capturedLink.childId !== binding.capturedLink.childId ||
 		command.capturedLink.epoch !== binding.capturedLink.epoch
@@ -268,6 +273,7 @@ function approvalCancellation(
 function createServerDynamicApprovalOwner(
 	options: ServerDynamicApprovalOwnerOptions,
 ): ServerDynamicApprovalOwner {
+	const model = createCodexBrowserModel(options.identity);
 	const pending = new Map<string, PendingDynamicApproval>();
 	const decisions = new Map<string, DynamicToolApprovalDecision>();
 	const listeners = new Set<() => void>();
@@ -414,20 +420,37 @@ function createServerDynamicApprovalOwner(
 			return () => listeners.delete(listener);
 		},
 	});
+	/**
+	 * Read this tab session's current raw approvals.
+	 * @param tabSessionId The tab session.
+	 * @returns Its pending raw approval views.
+	 */
+	const pendingViews = (tabSessionId: TabSessionId): readonly DynamicApprovalOwnerView[] =>
+		Object.freeze(
+			[...pending.values()]
+				.filter((entry) => entry.tabSessionId === tabSessionId)
+				.map((entry) => Object.freeze({ request: entry.request, binding: entry.binding })),
+		);
 	return Object.freeze({
 		port,
 		browser,
+		/**
+		 * Read the browser approvals from this owner's current raw state.
+		 * @param tabSessionId The tab session.
+		 * @returns Its pending browser approvals.
+		 */
+		projectPending: (tabSessionId: TabSessionId) =>
+			Object.freeze(
+				pendingViews(tabSessionId).map((view) =>
+					projectDynamicApproval(model, options.identity.identity.decoder, view),
+				),
+			),
 		/**
 		 * Every approval awaiting an answer from one tab session, as its panes are shown it.
 		 * @param tabSessionId The tab session.
 		 * @returns The views.
 		 */
-		pending: (tabSessionId: TabSessionId) =>
-			Object.freeze(
-				[...pending.values()]
-					.filter((entry) => entry.tabSessionId === tabSessionId)
-					.map((entry) => Object.freeze({ request: entry.request, binding: entry.binding })),
-			),
+		pending: pendingViews,
 		/**
 		 * Re-point a tab session's presented approvals at its pane holding the
 		 * lease, so the pane that holds it can answer: an approval belongs to the

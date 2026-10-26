@@ -13,7 +13,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import { acceptedBoardNames, listedBoard, type BoardListing } from "@archboard/board/board-listing";
+import { acceptedBoardNames, listedBoard } from "@archboard/board/board-listing";
 import {
 	LayoutEngineSchema,
 	type LayoutEngineName,
@@ -25,8 +25,9 @@ import {
 import type { SemanticBoard } from "@archboard/board/document";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { checkSemanticVault, readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { vaultIdentity, vaultRepositoryIdentity } from "@archboard/code-binding/resolution";
-import { GitCommandError } from "@archboard/workspace/checkouts";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
+import { GitCommandError } from "@archboard/process/git";
+import { gitCheckoutOfVault } from "@archboard/workspace/checkouts";
 import { renderBoard } from "@archboard/renderer/bun";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
@@ -47,6 +48,9 @@ import {
 	resolveRoute,
 } from "#server/routes/semantic-boards/semantic-board-writes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import type { BoardListingSchema } from "@archboard/board/board-listing";
+
+type BoardListing = z.infer<typeof BoardListingSchema>;
 
 /**
  * The theme a render stands alone in. Absent asks for the page's picture, which
@@ -481,7 +485,7 @@ function recipeContext(vault: string):
 			readonly error: string;
 	  } {
 	try {
-		return { ok: true, context: { vault: { repo: vaultRepositoryIdentity(vault) } } };
+		return { ok: true, context: { vault: { repo: gitCheckoutOfVault(vault)?.identity ?? null } } };
 	} catch (error) {
 		if (!(error instanceof GitCommandError)) throw error;
 		return {

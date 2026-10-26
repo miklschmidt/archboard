@@ -1,202 +1,89 @@
-// Which browser tab each pane on screen belongs to, and when a tab has gone for good (TASK-373).
-//
-// A pane's socket names its tab's session (`?tabSession=`), which both panes of one tab share and
-// every other tab mints for itself. Keyed by client id, and held while the pane's socket is: the
-// pane's authoritative socket records it, and the same socket's close forgets it.
-//
-// A tab session is present while any pane of it is. When its last pane goes, it has a grace to
-// come back in, because a reload closes every socket of the tab and opens them again; a pane of it
-// that returns within the grace keeps the conversation. Once the grace passes with no pane back,
-// the session has ended, and whoever listens is told once. This outlives every Codex child: a tab
-// that was present before a restart is still present after it.
-//
-// Each tab also shows one checkout's conversation in its agent dock, the shown conversation (ADR
-// 0050). The first read pins it to the checkout of the tab's focused pane, and after that
-// only the person's own act in the browser changes it, through the activation route. What an
-// agent does to a pane never does, so it never changes while somebody types. It ends with the tab.
+import type { TabSessions } from "#runtime/protocol/voice/extension.ts";
+import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
-import { logger } from "@archboard/diagnostics/logger";
-import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
-import type { CodexWorkbenchComponents } from "#server/services/generation/lifecycle.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-
-/** The panes on screen by tab, and when each tab that has none left ends. */
-interface TabSessions {
-	/** Remember which tab a pane belongs to, as its authoritative socket named it. */
-	readonly note: (clientId: string, tabSessionId: TabSessionId | null) => void;
-	/** The tab a pane belongs to, or null while its socket named none. */
-	readonly of: (clientId: string) => TabSessionId | null;
-	/** Forget the tab of a pane whose socket has gone; its tab's grace starts if it was the last. */
-	readonly forget: (clientId: string) => void;
-	/** Forget every pane and every grace, because the server is stopping. Nothing ends. */
-	readonly forgetAll: () => void;
-	/** Hear each tab session that ended, once the grace passed with no pane of it back. */
-	readonly onEnded: (listener: (tabSessionId: TabSessionId) => void) => () => void;
-	/**
-	 * The checkout whose conversation a tab shows. A tab that shows none yet is pinned to the
-	 * checkout the asker names.
-	 */
-	readonly shown: (tabSessionId: TabSessionId, pin: () => string) => string;
-	/** The checkout whose conversation a tab shows, or null before anything read it. */
-	readonly current: (tabSessionId: TabSessionId) => string | null;
-	/** Show a checkout's conversation in a tab, as the person activated it; true when it changed. */
-	readonly show: (tabSessionId: TabSessionId, checkout: string) => boolean;
-	/** Hear each tab whose shown conversation changed. */
-	readonly onShownChange: (listener: (tabSessionId: TabSessionId) => void) => () => void;
-}
-
+let installed: TabSessions | null = null;
 /**
- * Add a listener to a set, and say how to take it out again.
- * @param listeners The set.
- * @param listener The listener.
- * @returns How to stop listening.
+ * Attach pane registration and browser activation to the core-owned tab sessions.
+ * @param tabs The current workbench's tab session store.
+ * @returns The cleanup that detaches this store if it remains installed.
  */
-function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () => void {
-	listeners.add(listener);
+function installWorkbenchTabSessions(tabs: TabSessions): () => void {
+	if (installed !== null) throw new Error("The browser tab sessions are already installed.");
+	installed = tabs;
 	return () => {
-		listeners.delete(listener);
+		if (installed === tabs) installed = null;
 	};
 }
-
-/**
- * The panes on screen by tab, and the grace each tab with no pane left has to come back in.
- * @param graceMs How long a tab with no pane left still holds its conversation.
- * @returns The tab sessions.
- */
-function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions {
-	const byClient = new Map<string, TabSessionId>();
-	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
-	const listeners = new Set<(tabSessionId: TabSessionId) => void>();
-	const shownByTab = new Map<TabSessionId, string>();
-	const shownListeners = new Set<(tabSessionId: TabSessionId) => void>();
-
+const tabSessions: TabSessions = {
 	/**
-	 * Whether any pane on screen belongs to a tab.
-	 * @param tabSessionId The tab.
-	 * @returns True while one does.
+	 * Record the tab session that a browser socket names.
+	 * @param client The browser client id.
+	 * @param id The tab session id, or null when the socket names none.
+	 * @returns Nothing after the installed store records the registration.
 	 */
-	const present = (tabSessionId: TabSessionId): boolean =>
-		[...byClient.values()].includes(tabSessionId);
-
+	note: (client, id) => installed?.note(client, id),
 	/**
-	 * Start a tab's grace once its last pane has gone.
-	 * @param tabSessionId The tab a pane just left.
+	 * Read the tab session that a browser socket names.
+	 * @param client The browser client id.
+	 * @returns The tab session id, or null when no store or registration exists.
 	 */
-	const left = (tabSessionId: TabSessionId): void => {
-		if (present(tabSessionId) || graces.has(tabSessionId)) {
-			return;
-		}
-		const grace = setTimeout(() => {
-			graces.delete(tabSessionId);
-			shownByTab.delete(tabSessionId);
-			for (const listener of listeners) listener(tabSessionId);
-		}, graceMs);
-		grace.unref();
-		graces.set(tabSessionId, grace);
-	};
-
+	of: (client) => installed?.of(client) ?? null,
 	/**
-	 * A pane of a tab is on screen: the tab is not ending.
-	 * @param tabSessionId The tab.
+	 * Forget a disconnected browser's tab registration.
+	 * @param client The browser client id.
+	 * @returns Nothing after the installed store releases the registration.
 	 */
-	const arrived = (tabSessionId: TabSessionId): void => {
-		clearTimeout(graces.get(tabSessionId));
-		graces.delete(tabSessionId);
-	};
-
-	return Object.freeze({
-		/**
-		 * Remember which tab a pane belongs to; a pane that moved tabs leaves the old one.
-		 * @param clientId The pane's client id.
-		 * @param tabSessionId The tab its socket named, or null.
-		 */
-		note: (clientId, tabSessionId) => {
-			const previous = byClient.get(clientId);
-			if (tabSessionId === null) {
-				byClient.delete(clientId);
-			} else {
-				byClient.set(clientId, tabSessionId);
-				arrived(tabSessionId);
-			}
-			if (previous !== undefined && previous !== tabSessionId) {
-				left(previous);
-			}
-		},
-		/**
-		 * The tab a pane belongs to.
-		 * @param clientId The pane's client id.
-		 * @returns Its tab session, or null.
-		 */
-		of: (clientId) => byClient.get(clientId) ?? null,
-		/**
-		 * Forget a pane whose socket has gone.
-		 * @param clientId The pane's client id.
-		 */
-		forget: (clientId) => {
-			const previous = byClient.get(clientId);
-			byClient.delete(clientId);
-			if (previous !== undefined) {
-				left(previous);
-			}
-		},
-		/** Forget every pane and every grace, ending nothing. */
-		forgetAll: () => {
-			byClient.clear();
-			for (const grace of graces.values()) clearTimeout(grace);
-			graces.clear();
-			shownByTab.clear();
-		},
-		/**
-		 * Hear each tab session that ended.
-		 * @param listener Told the session's id.
-		 * @returns How to stop listening.
-		 */
-		onEnded: (listener) => subscribe(listeners, listener),
-		/**
-		 * The checkout whose conversation a tab shows, pinned on the first read.
-		 * @param tabSessionId The tab.
-		 * @param pin The checkout to pin a tab that shows none yet to.
-		 * @returns The shown checkout.
-		 */
-		shown: (tabSessionId, pin) => {
-			const shown = shownByTab.get(tabSessionId);
-			if (shown !== undefined) {
-				return shown;
-			}
-			const pinned = pin();
-			shownByTab.set(tabSessionId, pinned);
-			return pinned;
-		},
-		/**
-		 * The checkout whose conversation a tab shows.
-		 * @param tabSessionId The tab.
-		 * @returns It, or null before anything read it.
-		 */
-		current: (tabSessionId) => shownByTab.get(tabSessionId) ?? null,
-		/**
-		 * Show a checkout's conversation in a tab, telling every listener when that changed it.
-		 * @param tabSessionId The tab.
-		 * @param checkout The checkout.
-		 * @returns True when the tab showed another one before.
-		 */
-		show: (tabSessionId, checkout) => {
-			if (shownByTab.get(tabSessionId) === checkout) {
-				return false;
-			}
-			shownByTab.set(tabSessionId, checkout);
-			for (const listener of shownListeners) listener(tabSessionId);
-			return true;
-		},
-		/**
-		 * Hear each tab whose shown conversation changed.
-		 * @param listener Told the tab's id.
-		 * @returns How to stop listening.
-		 */
-		onShownChange: (listener) => subscribe(shownListeners, listener),
-	} satisfies TabSessions);
-}
-
-const tabSessions = createTabSessions();
+	forget: (client) => installed?.forget(client),
+	/**
+	 * Forget every browser registration in the installed store.
+	 * @returns Nothing after the installed store releases the registrations.
+	 */
+	forgetAll: () => installed?.forgetAll(),
+	/**
+	 * Subscribe to tab sessions that lose their last browser registration.
+	 * @param listener Receives ended tab session ids.
+	 * @returns The subscription cleanup.
+	 */
+	onEnded: (listener) => {
+		if (installed === null) throw new Error("The workbench tab sessions are not installed.");
+		return installed.onEnded(listener);
+	},
+	/**
+	 * Read the tab's shown checkout and pin its first value when necessary.
+	 * @param id The tab session id.
+	 * @param pin Supplies the initial checkout if the tab shows none.
+	 * @returns The shown checkout.
+	 */
+	shown: (id, pin) => {
+		if (installed === null) throw new Error("The workbench tab sessions are not installed.");
+		return installed.shown(id, pin);
+	},
+	/**
+	 * Read the tab's shown checkout without pinning an initial value.
+	 * @param id The tab session id.
+	 * @returns The shown checkout, or null when none exists.
+	 */
+	current: (id) => installed?.current(id) ?? null,
+	/**
+	 * Change the tab's shown conversation after browser activation.
+	 * @param id The tab session id.
+	 * @param checkout The checkout whose conversation the browser activated.
+	 * @returns True when the shown checkout changes.
+	 */
+	show: (id, checkout) => {
+		if (installed === null) throw new Error("The workbench tab sessions are not installed.");
+		return installed.show(id, checkout);
+	},
+	/**
+	 * Subscribe to tabs whose shown conversations change.
+	 * @param listener Receives each changed tab session id.
+	 * @returns The subscription cleanup.
+	 */
+	onShownChange: (listener) => {
+		if (installed === null) throw new Error("The workbench tab sessions are not installed.");
+		return installed.onShownChange(listener);
+	},
+};
 
 /**
  * Remember which tab a pane belongs to, as its authoritative socket named it.
@@ -269,28 +156,9 @@ function forgetTabSessions(): void {
 	tabSessions.forgetAll();
 }
 
-/**
- * End each of one Codex generation's tab sessions once its tab has gone for good: no pane of it
- * came back within the grace. Its lease goes first, since no socket of it is left to hold one,
- * then everything the session ran.
- * @param components The generation's gateway and tab sessions.
- * @returns How to stop, when the generation is no longer the active one.
- */
-function endTabSessionsOnceGone(
-	components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
-): () => void {
-	return tabSessions.onEnded((tabSessionId) => {
-		components.gateway.endSession(tabSessionId);
-		void components.sessions
-			.end(tabSessionId)
-			.catch((error: unknown) => logger.error("Ending a browser tab's session failed:", error));
-	});
-}
-
 export {
-	createTabSessions,
+	installWorkbenchTabSessions,
 	currentShownCheckout,
-	endTabSessionsOnceGone,
 	forgetTabSession,
 	forgetTabSessions,
 	noteTabSession,

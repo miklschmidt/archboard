@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"description": "Logging, and thrown values read as text, for every layer of Archboard.",
-	"license": "BUSL-1.1",
+	"license": "MIT",
 	"type": "module",
 	"imports": {
 		"#*": "./src/*",

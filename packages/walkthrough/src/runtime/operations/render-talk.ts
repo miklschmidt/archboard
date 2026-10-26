@@ -24,12 +24,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
-import {
-	RECORDING_CALL_MS,
-	RECORDING_FRAME_CALL_MS,
-	RECORDING_PAGE_READY_MS,
-	RECORDING_POLL_MS,
-} from "@archboard/timing";
+import { RECORDER_MS } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import {
 	REPLAY_PAGE_GLOBAL,
@@ -173,15 +168,15 @@ async function openReplayPage(
 	chromium: HeadlessChromium,
 	request: RenderTalkRequest,
 ): Promise<HeadlessWindow> {
-	const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDING_CALL_MS);
+	const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDER_MS.call);
 	const { page } = window;
 	await page.call(
 		"Emulation.setEmulatedMedia",
 		{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-		RECORDING_CALL_MS,
+		RECORDER_MS.call,
 	);
 	const url = replayUrl(request.serverUrl);
-	const navigation = await page.call("Page.navigate", { url }, RECORDING_CALL_MS);
+	const navigation = await page.call("Page.navigate", { url }, RECORDER_MS.call);
 	const refused = navigation["errorText"];
 	if (typeof refused === "string" && refused !== "") {
 		throw new Error(
@@ -198,21 +193,21 @@ async function openReplayPage(
  * @throws {Error} When the page never publishes it: the server serves a frontend built without.
  */
 async function pageReady(window: HeadlessWindow, signal: AbortSignal): Promise<void> {
-	const deadline = performance.now() + RECORDING_PAGE_READY_MS;
+	const deadline = performance.now() + RECORDER_MS.pageReady;
 	for (;;) {
 		signal.throwIfAborted();
 		// oxlint-disable-next-line no-await-in-loop -- each look waits for the answer of the one before
 		const published = await window.page.evaluate(`typeof ${PAGE}?.frame === "function"`, {
-			timeoutMs: RECORDING_CALL_MS,
+			timeoutMs: RECORDER_MS.call,
 		});
 		if (published === true) return;
 		if (performance.now() >= deadline) {
 			throw new Error(
-				`The canvas page never offered a replay within ${RECORDING_PAGE_READY_MS / 1000} seconds: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server.`,
+				`The canvas page never offered a replay within ${RECORDER_MS.pageReady / 1000} seconds: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server.`,
 			);
 		}
 		// oxlint-disable-next-line no-await-in-loop -- a poll waits between looks
-		await delay(RECORDING_POLL_MS, undefined, { signal });
+		await delay(RECORDER_MS.poll, undefined, { signal });
 	}
 }
 
@@ -231,7 +226,7 @@ async function loadTalk(
 	const { frames } = share;
 	const loaded = await window.page.evaluate(
 		`${PAGE}.load(${JSON.stringify(request.talk)}, ${JSON.stringify(share.options)})`,
-		{ timeoutMs: RECORDING_FRAME_CALL_MS },
+		{ timeoutMs: RECORDER_MS.frameCall },
 	);
 	const counted = isJsonRecord(loaded) ? loaded["frames"] : undefined;
 	if (counted !== frames) {
@@ -240,7 +235,7 @@ async function loadTalk(
 		);
 	}
 	const size = await window.page.evaluate("[window.innerWidth, window.innerHeight]", {
-		timeoutMs: RECORDING_CALL_MS,
+		timeoutMs: RECORDER_MS.call,
 	});
 	if (
 		!Array.isArray(size) ||
@@ -296,7 +291,7 @@ async function screenshot(window: HeadlessWindow, index: number): Promise<Uint8A
 	const shot = await window.page.call(
 		"Page.captureScreenshot",
 		{ format: "jpeg", quality: 92, optimizeForSpeed: true, fromSurface: true },
-		RECORDING_CALL_MS,
+		RECORDER_MS.call,
 	);
 	const data = shot["data"];
 	if (typeof data !== "string") throw new Error(`Chromium returned no picture of frame ${index}.`);
@@ -331,7 +326,7 @@ async function drawFrames(window: HeadlessWindow, share: PageShare): Promise<voi
 		// oxlint-disable-next-line no-await-in-loop -- a page runs only so far ahead of the encoder
 		if (mine) await order.room(index, signal);
 		// oxlint-disable-next-line no-await-in-loop -- frame n is drawn on the page's clock only after frame n-1
-		await window.page.evaluate(`${PAGE}.frame(${index})`, { timeoutMs: RECORDING_FRAME_CALL_MS });
+		await window.page.evaluate(`${PAGE}.frame(${index})`, { timeoutMs: RECORDER_MS.frameCall });
 		if (!mine) continue;
 		// oxlint-disable-next-line no-await-in-loop -- the page holds still only until the next frame is asked for
 		const jpeg = await screenshot(window, index);

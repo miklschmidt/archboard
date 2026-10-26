@@ -9,12 +9,13 @@ import { vaultIn } from "../support/test-vault.ts";
 
 // Which variant a write lands on can be said on the command line, as it is for
 // every other variant command, or inside the stated change. The rule itself is
-// owned by the unit test beside targetedVariant; what is owned here is what the
-// rule does to a board: the flag decides where the change lands, it says what it
-// overrode even when the write it aimed at is refused, and edit and resolve both
-// behave that way. A board nobody has built has no current variant, so what its
-// bare name opens and what adopting it means are owned here too, as is adopting
-// a proposal whose base another adoption superseded (ADR 0037).
+// owned by the CLI's command test of edit and resolve (variant-change.test.ts);
+// what is owned here is what the rule does to a board: the flag decides where
+// the change lands, it says what it overrode even when the write it aimed at is
+// refused, and edit and resolve both behave that way. A board nobody has built
+// has no current variant, so what its bare name opens and what adopting it
+// means are owned here too, as is adopting a proposal whose base another
+// adoption superseded (ADR 0037).
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const holder = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-variant-targeting-"));

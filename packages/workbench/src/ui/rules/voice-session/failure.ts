@@ -3,11 +3,11 @@
 // type error here until it is given a code, and the module's message is
 // carried through untouched.
 
+import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import type {
 	RealtimeRecoverableErrorReason,
-	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "#shared/protocol/realtime-contract.ts";
+} from "#ui/state/surfaces/voice-parts.ts";
 import type {
 	VoiceSessionFailure,
 	VoiceSessionFailureCode,

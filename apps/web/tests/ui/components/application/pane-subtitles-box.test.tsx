@@ -16,12 +16,11 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { VOICE_BOX_OUT_MS } from "@archboard/timing/voice";
+import { VOICE_MS } from "@archboard/timing";
 import { PaneSubtitles } from "#ui/components/application/PaneSubtitles.tsx";
 import type { VoiceFeed } from "#ui/rules/application/subtitled-transcript.ts";
-import { TooltipProvider } from "@archboard/ui-kit/overlays";
-import { driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { createSteppedClock } from "@archboard/ui-kit/stepped-clock";
+import { Tooltip } from "@archboard/ui-kit/components";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import {
 	OrbStageProvider,
 	subtitlePreference,
@@ -139,7 +138,7 @@ function listenToNothing(): () => undefined {
  */
 function carried(text: string): ReturnType<VoiceFeed["voice"]> {
 	const said = [{ itemId: "said-1", speaker: "assistant", text, final: false }] as const;
-	return { state: "active", recording: false, transcript: text === "" ? [] : said };
+	return { state: "active", unattended: false, transcript: text === "" ? [] : said };
 }
 
 /** A voice a transport carries, with nothing said yet. */
@@ -219,7 +218,7 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
 	const given = { ...LIVE_PANE, ...setup };
 	return (
 		<OrbStageProvider>
-			<TooltipProvider>
+			<Tooltip.Provider>
 				<VoiceSurfaceProvider voice={voiceIn(given.stage)} actions={NO_ACTIONS}>
 					<PaneSubtitles
 						feed={given.feed}
@@ -228,7 +227,7 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
 						dockless={given.dockless}
 					/>
 				</VoiceSurfaceProvider>
-			</TooltipProvider>
+			</Tooltip.Provider>
 		</OrbStageProvider>
 	);
 }
@@ -285,7 +284,7 @@ test("turning subtitles off takes the box away once it has left", () => {
 			true,
 		);
 		act(() => {
-			clock.advanceTo(VOICE_BOX_OUT_MS);
+			clock.advanceTo(VOICE_MS.boxOut);
 		});
 		expect(boxed()).toBe(false);
 		// No plain subtitles come in its place: subtitles are off.

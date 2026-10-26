@@ -8,7 +8,7 @@
 // the board it is showing. This is the boardless account of the same two
 // facts, kept as one snapshot so the navigator can mark every board at once.
 //
-// An entry exists while a claim stands, and for ACTIVITY_LINGER_MS after an
+// An entry exists while a claim stands, and for CLAIM_MS.activityLinger after an
 // unclaimed agent write, so a lone write is on screen long enough to be seen.
 // Human holds are not activity: a person's own hold is what their pane is
 // doing, and it is nobody else's business.
@@ -17,14 +17,16 @@
 // boards. Every pane is told every vault's list, each naming its vault,
 // because the navigator marks the boards of every repository it lists.
 
-import type { DoingEntry } from "@archboard/board/doing";
-import type { LockHolder } from "@archboard/board/lock";
 import { boardMemoryKey } from "@archboard/board/address";
-import type {
-	AgentActivity,
-	AgentActivityMessage,
-} from "@archboard/server-lifecycle/pane-messages";
-import { ACTIVITY_LINGER_MS } from "@archboard/timing";
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/panes";
+import { CLAIM_MS } from "@archboard/timing";
+import type { boardLockState } from "@archboard/board/lock";
+import type { recentDoing } from "@archboard/board/doing";
+
+/** What one board's agent is doing, as a pane is told it. */
+type AgentActivity = AgentActivityMessage["activity"][number];
+type DoingEntry = ReturnType<typeof recentDoing>[number];
+type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
 
 interface Entry {
 	vault: string;
@@ -106,7 +108,7 @@ function createAgentActivity(options: {
 			}
 			entries.delete(key);
 			publish(entry.vault);
-		}, ACTIVITY_LINGER_MS);
+		}, CLAIM_MS.activityLinger);
 		timer.unref();
 		entry.linger = timer;
 	};

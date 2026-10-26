@@ -9,11 +9,11 @@ import {
 	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
 	CodexExecutableError,
 	requireCheckoutLocal,
-	resolveProjectCodexExecutable,
+	resolveCodexExecutable,
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
 function temporaryRoot(): string {
@@ -52,8 +52,9 @@ function oversizedFixture(root: string): string {
 }
 
 describe("Codex executable ownership", () => {
-	test("resolves and verifies the project-local pinned executable", () => {
-		const executable = resolveProjectCodexExecutable();
+	test("resolves and verifies the installed pinned executable inside the given checkout", () => {
+		const executable = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
+		expect(executable.startsWith(path.join(SOURCE_CHECKOUT, "node_modules") + path.sep)).toBe(true);
 		expect(executable).toContain(
 			`${path.sep}node_modules${path.sep}@openai${path.sep}codex${path.sep}`,
 		);
@@ -61,14 +62,6 @@ describe("Codex executable ownership", () => {
 			executablePath: executable,
 			version: CODEX_PROTOCOL_BINARY_VERSION,
 		});
-	});
-
-	test("resolves inside the node_modules of the checkout whose source runs", () => {
-		expect(
-			resolveProjectCodexExecutable().startsWith(
-				path.join(SOURCE_CHECKOUT, "node_modules") + path.sep,
-			),
-		).toBe(true);
 	});
 
 	test("refuses an executable of a global install or of another checkout", () => {
@@ -179,7 +172,7 @@ describe("Codex executable ownership", () => {
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
 			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
-			expect(observedOptions?.["timeout"]).toBe(CODEX_REQUEST_SETTLEMENT_MS);
+			expect(observedOptions?.["timeout"]).toBe(CODEX_SESSION_MS.requestSettlement);
 			expect(observedOptions?.["maxBuffer"]).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
 			expect(observedOptions?.["env"]).not.toHaveProperty("OPENAI_API_KEY");
 

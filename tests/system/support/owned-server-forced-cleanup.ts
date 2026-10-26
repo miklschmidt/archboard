@@ -163,12 +163,7 @@ function captureForcedServerCleanup(options: {
 					"archboard",
 				)
 			: join(fs.realpathSync(options.xdgState), "archboard");
-	const storageLock = join(
-		stateRoot,
-		"codex-workbench",
-		"codex-home",
-		".archboard-codex-process.lock",
-	);
+	const storageLock = join(stateRoot, "codex-workbench", "codex-home", ".codex-process.lock");
 	const operations = createCodexProcessGroupOperations();
 	return {
 		complete(parent) {

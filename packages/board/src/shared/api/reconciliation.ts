@@ -3,8 +3,4 @@ export {
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
 } from "#shared/schemas/reconciliation.ts";
-export type {
-	ReconciliationIssue,
-	ReconciliationKind,
-	ToldStanding,
-} from "#shared/schemas/reconciliation.ts";
+export type { ToldStanding } from "#shared/schemas/reconciliation.ts";

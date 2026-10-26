@@ -1,17 +1,14 @@
 import type {
-	CodexEpochStore,
 	EpochExecutionProof,
 	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
+	ThreadLinkClassification,
+	ThreadLinkTarget,
+	CodexWaitGraph,
+} from "#runtime/protocol/voice/extension.ts";
+import type { CodexEpochStore, CodexThreadLinkPort } from "#runtime/protocol/voice/extension.ts";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 import type { CodexSession, SessionThread } from "@archboard/codex-app-server/session";
-import type {
-	CodexThreadLinkPort,
-	ThreadLinkClassification,
-	ThreadLinkSource,
-	ThreadLinkTarget,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { CodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
+import type { SessionThreadSource as ThreadLinkSource } from "@archboard/codex-app-server/session";
 import type {
 	CodexTransport,
 	DynamicServerRequest,
@@ -166,7 +163,7 @@ interface DynamicThreadAuthorityPort {
 
 interface DynamicContextAuthority {
 	readonly token: DynamicAuthorityToken;
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -179,7 +176,7 @@ type DynamicContextKind =
 	| "send_message_to_thread";
 
 interface DynamicContextPort {
-	readonly issueAndRevalidatePaneLinkAuthority: (input: {
+	readonly issueAndRevalidateLinkAuthority: (input: {
 		readonly caller: DynamicCallerAuthority;
 		readonly existing?: DynamicContextAuthority;
 	}) => Promise<DynamicContextAuthority> | DynamicContextAuthority;

@@ -13,12 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import {
-	SemanticBoardSchema,
-	TrackedEmbedSchema,
-	type TrackedEmbed,
-} from "@archboard/board/document";
-import type { RenderRecipe } from "@archboard/renderer/recipe";
+import { SemanticBoardSchema } from "@archboard/board/document";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { listRegistry, repoIdentityAt, repoRootOf } from "@archboard/workspace/checkouts";
 import {
@@ -27,6 +22,11 @@ import {
 	type RestRelationship,
 } from "#cli/protocol/contract/contract.ts";
 import { gitOutput } from "#cli/clients/git/git-output.ts";
+import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
+
+/** One embed a board tracks. */
+const TrackedEmbedSchema = SemanticBoardSchema.shape.trackedEmbeds.unwrap().element;
+type TrackedEmbed = z.infer<typeof TrackedEmbedSchema>;
 
 /** What a render to a file says it tracked: the embed and the board's version after it. */
 const TrackedReceiptSchema = TrackedEmbedSchema.extend({ version: z.int() });

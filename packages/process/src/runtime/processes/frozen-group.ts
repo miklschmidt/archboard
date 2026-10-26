@@ -39,7 +39,7 @@ function stoppedMembership(members: readonly GroupMember[]): string | undefined 
  * One census in which every member reads as stopped is not enough. On macOS a
  * process can read as stopped while a fork it began is still completing, and
  * the child joins the group after that census, outside the SIGSTOP and the
- * SIGKILL sent to the group (TASK-470). So the group counts as frozen only when
+ * SIGKILL sent to the group. So the group counts as frozen only when
  * two censuses one poll apart find the same members, all of them stopped. A
  * kill sent after this returns reaches every member there can be.
  * @param seam The census, stop signal, clock and wait.

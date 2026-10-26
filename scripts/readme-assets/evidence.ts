@@ -40,11 +40,18 @@ const PARTNERS = "[data-slot='semantic-inspector-partners']";
  * @param browser The private browser.
  * @param board The board's name.
  * @param width The window's width.
+ * @param view The explicit view, when the scene needs nested parts.
  * @returns The ready page.
  */
-async function openBoard(server: TakeServer, browser: Browser, board: string, width: number) {
+async function openBoard(
+	server: TakeServer,
+	browser: Browser,
+	board: string,
+	width: number,
+	view?: string,
+) {
 	const page = await browser.open({
-		url: `${server.url}/?paneA=${encodeURIComponent(board)}`,
+		url: `${server.url}/?paneA=${encodeURIComponent(board)}${view === undefined ? "" : `&viewA=${encodeURIComponent(view)}`}`,
 		theme: "light",
 		width,
 		height: PANE.height,
@@ -222,6 +229,17 @@ async function filmInterfaces(
 }
 
 /**
+ * Remove CLI context metadata before the strict library result decoder.
+ * @param input The CLI response envelope.
+ * @returns The analysis result with every other field preserved for validation.
+ */
+function withoutVaultMetadata(input: unknown) {
+	const answer = z.record(z.string(), z.unknown()).parse(input);
+	delete answer["vault"];
+	return answer;
+}
+
+/**
  * Film recent commits, a pair that changes together, and the branch against its proposal.
  * @param server The take's server.
  * @param browser The private browser.
@@ -229,7 +247,7 @@ async function filmInterfaces(
  */
 async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.board, PANE.width);
+	const page = await openBoard(server, browser, fixture.board, PANE.width, "Everything");
 	await terminal.say(
 		"Read changes through the architecture.\nSynthetic checkout and example Git history.",
 	);
@@ -240,7 +258,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await pinInspector(page);
 		await terminal.command(`archboard semantic locality "${fixture.board}"`);
 		const locality = LocalityReplySchema.parse(
-			await server.cli(["semantic", "locality", fixture.board]),
+			withoutVaultMetadata(await server.cli(["semantic", "locality", fixture.board])),
 		);
 		const pair = locality.coupling.find(
 			(one) =>
@@ -270,15 +288,17 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 			`archboard semantic footprint "${fixture.board}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
 		);
 		const footprint = FootprintReplySchema.parse(
-			await server.cli([
-				"semantic",
-				"footprint",
-				fixture.board,
-				"--base",
-				fixture.base,
-				"--variant",
-				fixture.proposals.narrow,
-			]),
+			withoutVaultMetadata(
+				await server.cli([
+					"semantic",
+					"footprint",
+					fixture.board,
+					"--base",
+					fixture.base,
+					"--variant",
+					fixture.proposals.narrow,
+				]),
+			),
 		);
 		if (footprint.proposal === null) throw new Error("The example footprint has no proposal");
 		if (
