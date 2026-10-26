@@ -154,13 +154,22 @@ async function claimArchitectureSubjects(
 					(subject) =>
 						subject !== current.manifest.id &&
 						subject !== current.selectedState?.id &&
+						!current.proposals.some(
+							(proposal) =>
+								proposal.id === subject ||
+								proposal.changes.some((change) => change.subject === subject) ||
+								proposal.retiredIds?.includes(subject),
+						) &&
 						!current.modules.some((module) => module.id === subject) &&
 						!current.relationships.some((relationship) => relationship.id === subject) &&
-						!current.collections.some((collection) =>
-							collection.flows.some(
-								(flow) =>
-									flow.id === subject || everyStep(flow.steps).some((step) => step.id === subject),
-							),
+						!current.collections.some(
+							(collection) =>
+								`${current.manifest.id}#${collection.id}` === subject ||
+								collection.flows.some(
+									(flow) =>
+										flow.id === subject ||
+										everyStep(flow.steps).some((step) => step.id === subject),
+								),
 						),
 				)
 			)

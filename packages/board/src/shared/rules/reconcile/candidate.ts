@@ -112,6 +112,7 @@ const COLLECTIONS = ["nodes", "edges", "flows", "walkthroughs"] as const;
 function coherentPart(
 	states: ThreeStates,
 	merge: (states: ThreeStates) => Reconciliation,
+	incoherence = incoherenceOf,
 ): Reconciliation {
 	let held = changedSubjects(states.base, states.theirs);
 	let part: Reconciliation = { content: states.mine, issues: [], inherited: [] };
@@ -121,7 +122,7 @@ function coherentPart(
 		for (const id of held) {
 			const fewer = new Set([...held].filter((one) => one !== id));
 			const tried = merge({ ...states, theirs: subjectsAsIn(states.theirs, states.base, fewer) });
-			if (incoherenceOf(tried.content).length === 0) {
+			if (incoherence(tried.content).length === 0) {
 				held = fewer;
 				part = tried;
 			}

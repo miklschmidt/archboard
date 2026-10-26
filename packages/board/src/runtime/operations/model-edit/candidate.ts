@@ -92,15 +92,44 @@ function requireCurrentEdit(model: ArchitectureModel): void {
  * @param request The original operation.
  * @returns The checked candidate or refusal.
  */
-async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
+async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
 	const current = await requireTarget(vault, request.target);
 	if (!current.success) return current;
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
 	const captured = captureRevision(vault, current.revision);
-	if ("proposal" in request) {
+	if (current.selectedState?.standing?.blockedBy !== undefined)
+		throw new ArchiveError(
+			"PROPOSAL_BLOCKED",
+			"Settle the ancestor before editing this descendant.",
+			"model.json",
+			[current.selectedState.standing.blockedBy],
+		);
+	if ("proposal" in request && request.proposal.type === "reconcile") {
+		if (request.changes.length > 0)
+			throw new ArchiveError("MODEL_INVALID", "Reconcile accepts no accompanying changes.");
+		return {
+			success: true as const,
+			current,
+			inputs: captured.inputs,
+			revision: captured.revision,
+			files: [],
+			subjects: [],
+			scopes: [current.manifest.id],
+			selection: current.selectedState ?? undefined,
+			dependencies: [],
+		};
+	}
+	if ("proposal" in request && request.proposal.type === "settle") {
+		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
+		return settleCandidate(vault, request, current, captured);
+	}
+	if (
+		"proposal" in request &&
+		(request.proposal.type === "create" || request.proposal.type === "edit")
+	) {
 		const { proposalCandidate } = await import("#runtime/operations/proposals/candidate.ts");
-		return proposalCandidate(vault, request, current, captured);
+		return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 	}
 	requireCurrentEdit(current);
 	const candidate = applyStructure(current, request, captured.inputs.keys());
@@ -120,5 +149,22 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 		selection: undefined,
 		dependencies: [],
 	};
+}
+/**
+ * Add all dependent results to the same durable candidate.
+ * @param vault The explicitly addressed vault.
+ * @param request The complete architectural intent.
+ * @returns The checked family or its refusal.
+ */
+async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
+	const candidate = await initialCandidate(vault, request);
+	if (!candidate.success) return candidate;
+	const { familyCandidate } = await import("#runtime/operations/proposals/family.ts");
+	return familyCandidate(
+		vault,
+		request,
+		captureRevision(vault, request.expectedRevision),
+		candidate,
+	);
 }
 export { editCandidate, candidateInputs, changedFiles };

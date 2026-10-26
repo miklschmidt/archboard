@@ -126,6 +126,7 @@ const ArchitectureModelFailureSchema = z
 			"STATE_NOT_FOUND",
 			"STATE_AMBIGUOUS",
 			"PREDECESSOR_CHANGED",
+			"PROPOSAL_BLOCKED",
 			"MODEL_INVALID",
 			"MODEL_NOT_FOUND",
 			"MODEL_UNREADABLE",

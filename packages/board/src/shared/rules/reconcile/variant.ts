@@ -85,9 +85,12 @@ const MERGED = {
 		"groups",
 		"binding",
 		"drillDown",
+		"formerNames",
+		"documents",
+		"references",
 	],
 	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic", "anchor"],
-	flow: ["name", "summary", "participants"],
+	flow: ["name", "summary", "participants", "formerNames", "collection"],
 	walkthrough: ["name", "summary"],
 } as const;
 
@@ -387,9 +390,9 @@ function settledMembership(here: boolean, was: boolean, there: boolean): boolean
  * @param states The base, this proposal, and the predecessor as it stands.
  * @returns The proposal's content afterwards, and what is left to settle.
  */
-function reconcileVariant(states: ThreeStates): Reconciliation {
+function reconcileVariant(states: ThreeStates, incoherence = incoherenceOf): Reconciliation {
 	const merged = mergedCandidate(states);
-	const dangling = incoherenceOf(merged.content);
+	const dangling = incoherence(merged.content);
 	if (dangling.length === 0) {
 		return merged;
 	}
@@ -398,7 +401,7 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 	// subjects whose change does that keep this proposal's side; the rest of the
 	// change still arrives, and every reason is reported in the words the
 	// contract itself uses.
-	const part = coherentPart(states, mergedCandidate);
+	const part = coherentPart(states, mergedCandidate, incoherence);
 	return {
 		content: part.content,
 		issues: [...merged.issues, ...dangling],
@@ -466,4 +469,12 @@ function asIssues(issues: readonly OrderedIssue[]): ReconciliationIssue[] {
 	}));
 }
 
-export { MERGED, SUBJECT_WORDS, reconcileVariant, type Reconciliation, type ThreeStates };
+export {
+	mergeByIdentity,
+	sidesOf,
+	MERGED,
+	SUBJECT_WORDS,
+	reconcileVariant,
+	type Reconciliation,
+	type ThreeStates,
+};
