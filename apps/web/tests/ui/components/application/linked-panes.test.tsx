@@ -257,6 +257,23 @@ test("a no-op view choice does not label a later question reveal as a view gestu
 	expect(readings.some((reading) => reading.byUser?.includes("view"))).toBe(false);
 });
 
+test("a no-op linked view choice leaves no history intent for a later question reveal", async () => {
+	await twoPanes();
+	await viewsRead();
+	await chooseViewIn("A", "");
+	const before = window.history.length;
+	await stepIn("A", "charge");
+	expect(await viewsRead()).toEqual({ A: "Everything", B: null });
+	expect(window.history.length).toBe(before);
+
+	// This pane already reads Everything, but its linked pane still needs the choice.
+	await chooseViewIn("A", "Everything");
+	expect(await viewsRead()).toEqual({ A: "Everything", B: "Everything" });
+	expect(window.history.length).toBe(before + 1);
+	await goBack();
+	expect(await viewsRead()).toEqual({ A: "Everything", B: null });
+});
+
 test("a linked pick that overtakes a local pick reports only its own pane's gesture", async () => {
 	await twoPanes();
 	await stepIn("A", "charge");

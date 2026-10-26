@@ -86,7 +86,10 @@ function announcingViews(readings: PaneReadings, addressing: WorkspaceAddressing
 		 */
 		chooseView: (paneId: string, view: string | null) => {
 			const reached = readings.chooseView(paneId, view);
-			addressing.expect({ kind: "view", panes: reached });
+			// A no-op leaves no intent for a later automatic reveal to satisfy.
+			if (reached.some((pane) => pane.from !== view)) {
+				addressing.expect({ kind: "view", panes: reached });
+			}
 			return reached;
 		},
 	};
