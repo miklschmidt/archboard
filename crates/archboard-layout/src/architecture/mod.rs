@@ -11,6 +11,7 @@ mod joins;
 mod measured;
 mod page;
 mod solving;
+mod stacking;
 
 use std::collections::{BTreeMap, HashSet};
 use std::hash::BuildHasher;

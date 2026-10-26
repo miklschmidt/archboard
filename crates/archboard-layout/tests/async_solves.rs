@@ -389,3 +389,185 @@ fn dropping_a_layout_cancels_its_solves_and_late_replies_do_not_answer_a_new_lay
     let result = ready(next.as_mut().poll(&mut Context::from_waker(Waker::noop())));
     assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
 }
+
+/// The solves asked so far to lay the whole board, by index: whether each
+/// is laid stacked, and how it wraps the block that could stack.
+fn whole_solves(host: &Host) -> Vec<(usize, bool, Value)> {
+    host.0
+        .borrow()
+        .iter()
+        .enumerate()
+        .filter_map(|(index, asked)| {
+            let options = &asked.graph["layoutOptions"];
+            let wrap = options["archboard.blocks.wrap"].as_str()?;
+            let wrap = serde_json::from_str(wrap).expect("a wrap is asked for as JSON");
+            Some((index, options["archboard.blocks.stacking"] == "true", wrap))
+        })
+        .collect()
+}
+
+/// The two wraps every partial solve below tells: a grid, then a plan.
+fn candidates() -> Value {
+    json!(["grid", {"lowered": {"lowered": {"out": 0, "inner": 1}, "columns": false}}])
+}
+
+/// A partial solve's reply that tells its block's wrap search, a wrap needing
+/// to score more than `needed`.
+fn stood_searching(needed: f64) -> String {
+    let mut reply: Value = serde_json::from_str(&stood()).expect("a stood reply");
+    reply["layoutOptions"]["archboard.blocks.wraps"] =
+        Value::String(json!({"needed": needed, "candidates": candidates()}).to_string());
+    reply.to_string()
+}
+
+/// A solve that tried one wrap alone: its drawing, where it may be kept, and
+/// what the search weighs the wrap on, where it sank no card. A wrap that
+/// crosses more lines scores less.
+fn tried(width: Option<f64>, crossings: Option<f64>) -> String {
+    let mut reply: Value = match width {
+        Some(width) => serde_json::from_str(&whole(width)).expect("a whole reply"),
+        None => json!({"layoutOptions": {}}),
+    };
+    if let Some(crossings) = crossings {
+        let weighing =
+            json!({"weighed": {"width": 800, "height": 600, "crossings": crossings}, "rows": 2});
+        reply["layoutOptions"]["archboard.blocks.wrapped"] = Value::String(weighing.to_string());
+    }
+    reply.to_string()
+}
+
+/// The stacking board with both partial solves answered before the render
+/// asks anything else, the plain one telling a wrap search: answers the
+/// layout, waiting on the whole solve laid plain and one solve per wrap.
+fn searched_at_once(
+    host: &Host,
+    needed: f64,
+) -> Pin<Box<impl Future<Output = Result<Painted, String>> + '_>> {
+    let (content, measured) = stacking_board();
+    let (content, measured) = (Box::leak(Box::new(content)), Box::leak(Box::new(measured)));
+    let mut drawing = Box::pin(drawing(host, content, measured));
+    waits(drawing.as_mut());
+    host.answer(0, Ok(stood()));
+    host.answer(1, Ok(stood_searching(needed)));
+    waits(drawing.as_mut());
+    drawing
+}
+
+/// The layout polled once more: what it answered, which must be now.
+fn answered_now<F: Future>(layout: Pin<&mut F>) -> F::Output {
+    ready(layout.poll(&mut Context::from_waker(Waker::noop())))
+}
+
+#[test]
+fn partial_solves_answered_at_once_ask_the_chosen_whole_and_then_each_wrap_alone() {
+    let host = Host::default();
+    let _drawing = searched_at_once(&host, 0.5);
+    // Stood alike, the block is not stacked: only the plain way is laid
+    // whole, with no wrap, and then each candidate alone, in search order.
+    let wrap = |at: usize| json!({"candidate": candidates()[at], "needed": 0.5});
+    assert_eq!(
+        whole_solves(&host),
+        [
+            (2, false, Value::Null),
+            (3, false, wrap(0)),
+            (4, false, wrap(1))
+        ]
+    );
+}
+
+#[test]
+fn the_wrap_the_search_keeps_draws_and_calls_off_the_whole_with_no_wrap() {
+    // Whichever answers first, the wrap crossing fewer lines is kept.
+    for order in [[3, 4], [4, 3]] {
+        let host = Host::default();
+        let mut drawing = searched_at_once(&host, 0.0001);
+        for at in order {
+            waits(drawing.as_mut());
+            let (width, crossings) = if at == 3 { (300.0, 4.0) } else { (400.0, 1.0) };
+            host.answer(at, Ok(tried(Some(width), Some(crossings))));
+        }
+        let drawn = answered_now(drawing.as_mut()).expect("it draws");
+        assert_eq!(drawn.drawing.cards[0].bounds.width, 400.0);
+        assert!(
+            host.0.borrow()[2].dropped,
+            "the whole with no wrap is called off"
+        );
+    }
+}
+
+#[test]
+fn with_no_wrap_kept_the_whole_with_no_wrap_draws() {
+    let host = Host::default();
+    let mut drawing = searched_at_once(&host, 0.9);
+    // The grid sinks a card, and the plan scores too little to be kept.
+    host.answer(3, Ok(tried(None, None)));
+    host.answer(4, Ok(tried(None, Some(50.0))));
+    waits(drawing.as_mut());
+    host.answer(2, Ok(whole(100.0)));
+    let drawn = answered_now(drawing.as_mut()).expect("it draws");
+    assert_eq!(drawn.drawing.cards[0].bounds.width, 100.0);
+}
+
+#[test]
+fn a_failed_wrap_or_whole_answers_at_once_and_calls_off_every_solve() {
+    for failed in [2, 3, 4] {
+        let host = Host::default();
+        let mut drawing = searched_at_once(&host, 0.5);
+        host.answer(failed, Err(Unsolved::Failed("wrap failure".to_owned())));
+        let polled = drawing
+            .as_mut()
+            .poll(&mut Context::from_waker(Waker::noop()));
+        host.fails(polled, "wrap failure");
+    }
+}
+
+/// The stacking board laid out with both partial solves telling a wrap
+/// search, answering in this order (0 stacked, 1 plain) after both ways
+/// were asked whole. Answers, for each way laid whole, whether it is laid
+/// stacked, how it wraps the block, and whether it was called off, in the
+/// order they were asked.
+fn speculated_in(order: [usize; 2]) -> Vec<(bool, Value, bool)> {
+    let host = Host::default();
+    let (content, measured) = stacking_board();
+    let mut drawing = Box::pin(drawing(&host, &content, &measured));
+    waits(drawing.as_mut());
+    waits(drawing.as_mut());
+    for at in order {
+        host.answer(at, Ok(stood_searching(0.5)));
+        waits(drawing.as_mut());
+    }
+    let hosted = host.0.borrow();
+    whole_solves(&host)
+        .into_iter()
+        .map(|(index, stacked, wrap)| (stacked, wrap, hosted[index].dropped))
+        .collect()
+}
+
+#[test]
+fn a_partial_solve_answering_first_asks_its_wraps_and_the_way_not_chosen_is_called_off() {
+    // Stood alike, the plain way is chosen. Both ways are laid whole with no
+    // wrap beside the partial solves; a way's wraps are asked when its
+    // partial solve answers first, else only once the choice keeps that way.
+    // The way not chosen is called off, its wraps with it.
+    let wrap = |at: usize| json!({"candidate": candidates()[at], "needed": 0.5});
+    assert_eq!(
+        speculated_in([0, 1]),
+        [
+            (true, Value::Null, true),
+            (false, Value::Null, false),
+            (true, wrap(0), true),
+            (true, wrap(1), true),
+            (false, wrap(0), false),
+            (false, wrap(1), false),
+        ]
+    );
+    assert_eq!(
+        speculated_in([1, 0]),
+        [
+            (true, Value::Null, true),
+            (false, Value::Null, false),
+            (false, wrap(0), false),
+            (false, wrap(1), false),
+        ]
+    );
+}

@@ -154,6 +154,33 @@ where
     }
 }
 
+/// Every answer in request order, or the first failure without waiting for
+/// the other answers. Returning or dropping this future drops every solve.
+pub(crate) async fn try_all<F, One, Error>(asked: Vec<F>) -> Result<Vec<One>, Error>
+where
+    F: Future<Output = Result<One, Error>>,
+{
+    let mut asked: Vec<Pin<Box<F>>> = asked.into_iter().map(Box::pin).collect();
+    let mut answers: Vec<Option<One>> = asked.iter().map(|_| None).collect();
+    poll_fn(|context| {
+        for (one, answer) in asked.iter_mut().zip(&mut answers) {
+            if answer.is_none()
+                && let Poll::Ready(answered) = one.as_mut().poll(context)
+            {
+                match answered {
+                    Ok(answered) => *answer = Some(answered),
+                    Err(error) => return Poll::Ready(Err(error)),
+                }
+            }
+        }
+        if answers.iter().any(Option::is_none) {
+            return Poll::Pending;
+        }
+        Poll::Ready(Ok(answers.iter_mut().filter_map(Option::take).collect()))
+    })
+    .await
+}
+
 /// Both answers in request order, or either failure without waiting for the
 /// other answer. Returning or dropping this future drops both solves.
 pub(crate) async fn try_both<A, B, One, Other, Error>(
