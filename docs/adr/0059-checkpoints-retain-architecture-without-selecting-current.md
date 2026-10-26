@@ -40,6 +40,12 @@ A missing source revision leaves architecture readable with an explicit evidence
 Missing architecture or required baselines instead refuse the exact reading.
 Readers never substitute current content.
 
+The browser selects Current or one complete checkpoint identity as presentation state.
+Each selection reads that scope again through the shared contract.
+Separate cache keys prevent a current result from supplying a historical reading.
+The retained identity and source-evidence availability remain visible beside its architecture.
+The browser never creates checkpoints.
+
 This decision extends ADR 0058 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
 Publication, private archives, proposal changes, migration, and recoverable current-file installation remain separate delivery slices.

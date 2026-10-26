@@ -35,6 +35,18 @@ Use Refresh to read repaired or externally edited files.
 Opening the reading, returning to the tab, and reconnecting also refresh its content.
 Invalid input shows its source and recovery instructions instead of a partial model.
 
+Open the Current menu in the model header to select a saved reading.
+The menu lists the state, retention time, agent intent, and abbreviated identity.
+The selected reading shows its complete checkpoint identity and source evidence.
+Select Current to return to the working files.
+Each selection reads its own inputs again.
+
+Saved readings remain available when current model files are missing or invalid.
+Missing source evidence includes a recovery instruction and leaves retained architecture readable.
+Missing architecture shows its refusal and recovery instructions instead of current content.
+After you restore the archive, use Refresh to reopen the selected checkpoint.
+The browser never creates checkpoints or changes architecture inputs.
+
 The revision covers recognized input paths and exact bytes, including policy.
 A file rename changes the revision and preserves identity.
 A whitespace edit changes the revision and preserves meaning.
