@@ -13,16 +13,25 @@ import {
 import { structureIntent } from "#tests/runtime/operations/model-edit/fixture.ts";
 
 const originalState = process.env["XDG_STATE_HOME"];
+const originalRegistry = process.env["ARCHBOARD_REPOS"];
 afterEach(() => {
 	if (originalState === undefined) delete process.env["XDG_STATE_HOME"];
 	else process.env["XDG_STATE_HOME"] = originalState;
+	if (originalRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
+	else process.env["ARCHBOARD_REPOS"] = originalRegistry;
 	cleanPublicationFixtures();
 });
 
+function isolatedFixture() {
+	const fixture = publicationFixture();
+	process.env["XDG_STATE_HOME"] = join(fixture.home, "state");
+	process.env["ARCHBOARD_REPOS"] = join(fixture.home, "state", "repos.json");
+	return fixture;
+}
+
 async function referencedFixture() {
-	const local = publicationFixture();
+	const local = isolatedFixture();
 	const foreign = publicationFixture();
-	process.env["XDG_STATE_HOME"] = join(local.home, "state");
 	git(foreign.root, "remote", "set-url", "origin", "https://github.com/acme/ledger.git");
 	const model = readArchitectureModel(foreign.vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -47,7 +56,7 @@ async function referencedFixture() {
 }
 
 test("a bound module resolves code in its own checkout without changing architecture ownership", async () => {
-	const { root, vault } = publicationFixture();
+	const { root, vault } = isolatedFixture();
 	const edited = await editArchitectureModule(vault, {
 		...(await structureIntent(vault, ["Shop#Gateway"])),
 		changes: [
@@ -163,7 +172,7 @@ test("retained references reopen pinned foreign architecture despite changed or 
 });
 
 test("historical code resolution refuses changed or unavailable source while preserving architecture", async () => {
-	const { root, vault } = publicationFixture();
+	const { root, vault } = isolatedFixture();
 	symlinkSync("code.ts", join(root, "entry.ts"));
 	git(root, "add", "entry.ts");
 	git(root, "commit", "--quiet", "-m", "test: bind source through a link");
@@ -228,7 +237,7 @@ test("bindings into another repository retain its source association through exi
 });
 
 test("historical directory bindings ignore architecture-only changes in the same checkout", async () => {
-	const { vault } = publicationFixture();
+	const { vault } = isolatedFixture();
 	const edited = await editArchitectureModule(vault, {
 		...(await structureIntent(vault, ["Shop#Gateway"])),
 		changes: [

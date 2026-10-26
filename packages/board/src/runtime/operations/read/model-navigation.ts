@@ -1,7 +1,10 @@
 import { modelCodeTarget } from "#runtime/operations/read/model-code.ts";
 import { readArchitectureModel, failure } from "#runtime/operations/read/model-read.ts";
 import { readCheckpointModel } from "#runtime/operations/history/read.ts";
-import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
+import {
+	resolveModelReferences,
+	referenceState,
+} from "#runtime/operations/read/model-references.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
 
@@ -100,6 +103,12 @@ async function openReference(
 	});
 	const selected = selectReferenceSubject(target, address.subject);
 	if (!selected.success) return selected;
+	if (referenceState(selected) !== address.state)
+		return navigationFailure(
+			"REFERENCE_UNAVAILABLE",
+			"The foreign state changed during navigation.",
+			"Read the source reference again and retry its explicit state. No successor state was substituted.",
+		);
 	const located = { ...selected, location: address };
 	return code ? { ...located, ...(await modelCodeTarget(address.vault, located)) } : located;
 }
