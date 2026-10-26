@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 142,
+	"version": 143,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T03:58:14.045Z",
+	"updatedAt": "2026-10-26T04:17:59.119Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -26057,7 +26057,7 @@
 		{
 			"id": "0RcVGuzC",
 			"name": "TASK-538.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "pKMdG4qy",
 			"summary": "The browser application: the shell, panes and workspace, board drawing, the agent and voice, and recordings",
 			"content": {
@@ -29492,7 +29492,7 @@
 		{
 			"id": "FbryquXH",
 			"name": "TASK-538.03",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "0RcVGuzC",
 			"summary": "A view chosen in one linked pane is read in both",
 			"content": {
@@ -32925,7 +32925,7 @@
 			}
 		}
 	],
-	"current": "0RcVGuzC",
+	"current": "FbryquXH",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -33022,6 +33022,12 @@
 			"from": "pKMdG4qy",
 			"at": "2026-10-25T19:21:38.555Z",
 			"reason": "Two panes on one board of one vault are linked, so a part picked in one is picked in both (TASK-538.02)"
+		},
+		{
+			"variant": "FbryquXH",
+			"from": "0RcVGuzC",
+			"at": "2026-10-26T04:17:59.119Z",
+			"reason": "A view chosen in one linked pane is read in both, while the other pane reads the board it was opened on (TASK-538.03)"
 		}
 	],
 	"shelvings": [
