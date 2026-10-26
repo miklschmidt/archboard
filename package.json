@@ -35,6 +35,7 @@
 		"fmt:check": "vp run format:check",
 		"check": "vp run check:all",
 		"test": "vp run test:all",
+		"benchmark": "vp run benchmark:all",
 		"type-check": "vp run types",
 		"generate:codex-contract": "bun scripts/generate-codex-app-server-contract.ts",
 		"ensure:codex-contract": "bun scripts/generate-codex-app-server-contract.ts --ensure",
