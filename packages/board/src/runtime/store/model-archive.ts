@@ -11,6 +11,7 @@ import { join } from "node:path";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
+	type CheckoutSnapshot,
 } from "@archboard/code-binding/resolution";
 import {
 	ArchitectureCheckpointSchema,
@@ -409,6 +410,21 @@ async function sourceAvailable(
 }
 
 /**
+ * Resolve foreign evidence through the existing operation-local checkout snapshot.
+ * @param source The retained source association.
+ * @param snapshot The foreign checkout evidence, when needed.
+ * @returns Its chosen source root, when available.
+ */
+function foreignSourceRoot(
+	source: ArchitectureCheckpoint["sources"][number],
+	snapshot: CheckoutSnapshot | undefined,
+) {
+	if (snapshot === undefined) return undefined;
+	const checkout = resolveRegisteredCheckout(source.repo, snapshot);
+	return checkout.ok ? checkout.root : undefined;
+}
+
+/**
  * Assess source evidence separately from architecture availability. Code is never retained.
  * @param context The caller's checkout.
  * @param sources The recorded source associations.
@@ -419,12 +435,17 @@ async function sourceEvidence(
 	sources: ArchitectureCheckpoint["sources"],
 ): Promise<NonNullable<ArchitectureModel["sourceEvidence"]>> {
 	if (sources.length === 0) return [];
+	const ownIdentity =
+		context.sourceRoot === undefined ? "" : await repoIdentityAt(context.sourceRoot);
 	const vault = context.sourceRoot === undefined ? null : join(context.sourceRoot, context.vault);
-	const snapshot = await snapshotCheckoutAccess({ vault });
+	const snapshot = sources.some((source) => source.repo !== ownIdentity)
+		? await snapshotCheckoutAccess({ vault })
+		: undefined;
 	return settledValues(
 		sources.map(async (source) => {
-			const checkout = resolveRegisteredCheckout(source.repo, snapshot);
-			if (!(await sourceAvailable(checkout.ok ? checkout.root : undefined, source)))
+			const root =
+				source.repo === ownIdentity ? context.sourceRoot : foreignSourceRoot(source, snapshot);
+			if (!(await sourceAvailable(root, source)))
 				return {
 					...source,
 					status: "unavailable" as const,

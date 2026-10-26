@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 166,
+	"version": 168,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T19:36:17.010Z",
+	"updatedAt": "2026-10-26T19:45:16.565Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -281,14 +281,21 @@
 			"id": "5wOfHKS9",
 			"name": "Canonical reads",
 			"grammar": "architecture",
-			"summary": "The read interface, its canonical contracts, and the vault policy that constrains them.",
+			"summary": "Coherent architecture, exact foreign references, and bound source through the existing readers.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
 					"4P7YZdnj",
 					"cNaEpWjJ",
 					"ZLJy8ivl",
-					"AJGft3Pe"
+					"AJGft3Pe",
+					"vvxDSZoQ",
+					"Mv3r4IsX",
+					"QDE2xctM",
+					"jQ671Dxs",
+					"D5PpXrVK",
+					"ZRq51Ecz",
+					"RfwX9gsx"
 				],
 				"edges": [],
 				"flows": []

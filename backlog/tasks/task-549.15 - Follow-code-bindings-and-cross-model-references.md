@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:29:00Z'
+updated_date: '2026-10-26T19:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -70,4 +70,6 @@ TASK-549.04, TASK-549.10
 
 <!-- SECTION:NOTES:BEGIN -->
 The worktree starts at integration 5432fed897. The stable public contract is saved externally as task-549.15-contract.md. Draft proposals: Board persistence@TASK-549.15, Archboard server routes@TASK-549.15, Command interface@TASK-549.15. Public runtime RED/GREEN slices cover local and foreign bindings, explicit reference navigation, immutable foreign pins, missing retained content, changed source refusal, and foreign source associations. CLI/HTTP and existing opener system owners now pass their first new cases. The .06 source remains unmerged and uncopied.
+
+Signed implementation checkpoints 96ad2f9a1 and a87f293bd implement explicit foreign subject references, immutable foreign checkpoint pins, canonical binding resolution, and existing-opener activation. Signed merge 8df910922 incorporates integration 3a0efd30d9624cb472d343d72a3dda3c4da9ca86. No unintegrated .06 source was merged or copied. The final simplification shares one checkout snapshot per reference list and keeps own-repository source evidence on its existing direct context. The new runtime fixtures isolate their registry without timeout changes. The three architecture proposals remain draft. Parent browser acceptance and final ticket closure remain pending. No acceptance criterion is claimed complete.
 <!-- SECTION:NOTES:END -->

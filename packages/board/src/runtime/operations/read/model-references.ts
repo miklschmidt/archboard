@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
+	type CheckoutSnapshot,
 } from "@archboard/code-binding/resolution";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
@@ -63,20 +64,16 @@ function unavailableReference(
 
 /**
  * Read a foreign target through existing checkout and architecture authorities.
- * @param vault The source vault, whose own checkout takes precedence.
+ * @param snapshot The source vault's existing checkout snapshot.
  * @param reference The explicit target identity and state.
  * @param checkpoint The optional exact retained revision.
  * @returns The chosen target vault and its reading, or checkout diagnostics.
  */
 async function foreignReading(
-	vault: string,
+	snapshot: CheckoutSnapshot,
 	reference: ReferenceEntry["reference"],
 	checkpoint: string | undefined,
 ) {
-	const snapshot = await snapshotCheckoutAccess({
-		vault,
-		bindings: [{ repo: reference.repo, path: "" }],
-	});
 	const checkout = resolveRegisteredCheckout(reference.repo, snapshot);
 	if (!checkout.ok)
 		return {
@@ -154,13 +151,13 @@ function referencePin(model: ArchitectureModel, entry: ReferenceEntry): string |
 
 /**
  * Resolve one direct reference without recursively expanding foreign ownership.
- * @param vault The source vault.
+ * @param snapshot The source vault's existing checkout snapshot.
  * @param model The coherent current or retained source.
  * @param entry The authored reference and its owner.
  * @returns The replaceable navigation entry.
  */
 async function resolveReference(
-	vault: string,
+	snapshot: CheckoutSnapshot,
 	model: ArchitectureModel,
 	entry: ReferenceEntry,
 ): Promise<Resolution> {
@@ -171,7 +168,7 @@ async function resolveReference(
 			"This retained reading has no exact foreign revision pin.",
 			"Restore the original retained pin. Historical navigation never substitutes current architecture.",
 		);
-	const target = await foreignReading(vault, entry.reference, checkpoint);
+	const target = await foreignReading(snapshot, entry.reference, checkpoint);
 	if (target.reading === undefined)
 		return { ...entry, status: "unavailable", diagnostics: target.diagnostics };
 	return resolvedReference(entry, target.vault, target.reading, checkpoint);
@@ -198,10 +195,16 @@ async function resolveModelReferences(
 	vault: string,
 	model: ArchitectureModel,
 ): Promise<ArchitectureModel> {
+	const entries = modelReferences(model);
+	if (entries.length === 0) return model;
+	const snapshot = await snapshotCheckoutAccess({
+		vault,
+		bindings: entries.map((entry) => ({ repo: entry.reference.repo, path: "" })),
+	});
 	const resolvedReferences = await Promise.all(
-		modelReferences(model).map((entry) => resolveReference(vault, model, entry)),
+		entries.map((entry) => resolveReference(snapshot, model, entry)),
 	);
-	return resolvedReferences.length === 0 ? model : { ...model, resolvedReferences };
+	return { ...model, resolvedReferences };
 }
 
 export { resolveModelReferences, referenceState, matchesReference };
