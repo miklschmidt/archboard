@@ -10,12 +10,17 @@ sound. Modules, containment, relationships, flows, explanations, and proposals
 remain. The problem is duplicated ownership across boards and flat JSON files.
 
 Deployment scope clarified on 2026-10-26: prove the complete system locally
-before moving board storage and frontend hosting to Scaleway Kapsule.
-Rendering stays local or runs in the client. Agents stay machine-local, and
-the hosted service contains no repository checkouts.
+before deploying hosted services to Scaleway Kapsule. The full frontend,
+renderer, and agents stay local. Hosted services provide architecture storage
+and a web app for accounts, billing, access control, and a simplified viewer.
+The viewer renders in the reader's client and opens private links from shared
+SVGs. The hosted service contains no repository checkouts or agent workers.
 The [deployment boundary](architecture-discovery-and-interaction.md#local-operation-and-hosted-boundary)
-records this direction. The selected engine must run locally. Managed offerings
-remain useful comparisons rather than required dependencies.
+records this direction. The selected architecture engine must run locally.
+Managed PostgreSQL is the expected separate store for application account,
+billing, and sharing data, with local PostgreSQL for development. This report
+compares PostgreSQL as an architecture engine independently of that account role.
+Clerk and WorkOS remain identity-provider candidates, not selected dependencies.
 
 ## Recommendation
 

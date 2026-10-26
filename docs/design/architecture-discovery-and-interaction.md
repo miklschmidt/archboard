@@ -189,34 +189,71 @@ replacement must work locally before deployment to a hosted environment.
 Local operation includes the new storage model, frontend, renderer, and their
 integration with machine-local agents.
 
-The eventual hosted service contains board storage and serves the frontend.
-The renderer runs locally or in the client. All agent execution and agent
-session state stay on the user's machine. The hosted service contains no
-repository checkouts. Code bindings continue to identify source that local
-tools can access.
+The current direction keeps the full Archboard frontend local, alongside the
+renderer and agents. Local frontend operation keeps agent communication on the
+user's machine. All agent execution and agent session state remain there.
+Code bindings identify source that local tools can access.
+
+The eventual hosted service provides architecture storage and a separate web
+app for billing, account management, authentication, authorization, and a
+simplified viewer. Authentication identifies the caller. Authorization controls
+what the caller can access. The hosted service contains no repository checkouts
+or agent workers. Rendering remains on the reader's machine or in the client.
 
 Scaleway Kapsule is the intended production deployment target. EU sovereignty
 and low maintenance guide that deployment. Kapsule is a future operating
 environment, not a prerequisite for developing or using the new model locally.
-The database engine remains undecided.
+The architecture database engine remains undecided.
 
 The storage interface must support both local and hosted operation. Rendering
-stays local in either deployment. The connection between the frontend and
-machine-local agents remains a design decision. Hosted agent workers and cloud
-repository checkouts are outside this direction.
+stays local in either deployment. The full frontend communicates with local
+agents. The simplified hosted viewer does not need a connection to those agents.
+
+## Shared diagrams and private links
+
+An SVG in a GitHub pull request or README can link to the simplified viewer.
+The viewer loads the permitted architecture data and renders the diagram in
+the reader's client. Readers need no repository checkout or running agent to
+open a shared diagram.
+
+A private link identifies an architectural reading. The access policy remains
+open: it can require an authorized account or grant access through possession
+of the link. Whether a link pins a revision or follows later changes also
+remains open. The hosted service must enforce the chosen access policy when
+it serves architecture data.
+
+## Account and architecture storage
+
+Managed PostgreSQL is the expected production store for data outside the
+architecture model. This includes application account records, identity-provider
+references, billing state, and sharing permissions. Local development must run
+PostgreSQL locally before using a managed service.
+
+The architecture store owns modules, relationships, flows, explanations,
+proposals, and their history. Account and sharing records reference stable
+architecture identifiers. They do not copy the architecture model into
+PostgreSQL. PostgreSQL's account role does not decide the architecture engine.
+
+Clerk and WorkOS are identity-provider candidates. Provider selection remains
+open, including fit with the EU sovereignty preference. The sign-in flow for
+the local app and the division of authorization responsibilities still need
+design. Local operation must not depend on deploying the account portal to
+Kapsule first.
 
 ## Open decisions
 
 The following choices remain unresolved:
 
-- The database engine and local startup and storage configuration.
-- The connection between the hosted frontend and machine-local agents.
+- The architecture database engine and local startup and storage configuration.
+- The managed PostgreSQL provider and application account schema.
+- The identity provider, local sign-in flow, and authorization responsibilities.
+- The access policy and revision behavior of private viewer links.
 - The storage and revision model for canonical subjects and proposals.
 - The role of Merkle structures in snapshots, comparisons, or synchronization.
 - The migration of overlapping board subjects and their historical identities.
 - The scope of editing claims and transactions after board ownership ends.
 - The association between architectural states, repositories, branches, and worktrees.
-- Whether saved readings have names, and how shared readings pin a revision.
+- Whether saved readings have names.
 - The exact distinction between opening one module and focusing an arbitrary selection.
 - The default outside context, filter behavior, and treatment of hidden selections.
 - The placement and wording of explanation actions, and how readers retain an answer.
