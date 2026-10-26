@@ -3,6 +3,7 @@ import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
@@ -24,13 +25,14 @@ interface ModelSelectionDetailsProps {
 function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	const { ids } = props.selection;
 	const only = ids.size === 1 ? [...ids][0] : undefined;
-	const module = props.model.modules.find((entry) => entry.id === only);
+	const module = inspectedModule(props, only);
 	if (module !== undefined) return <SelectedModule {...props} module={module} />;
 	if (props.projection.flow !== null)
 		return (
 			<ModelFlowDetails
 				model={props.model}
 				flow={props.projection.flow}
+				reference={props.projection.reference}
 				selection={props.selection}
 			/>
 		);
@@ -38,11 +40,18 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 		({ joins }) => joins.length === ids.size && joins.every((edge) => ids.has(edge.id)),
 	);
 	if (connection !== undefined)
-		return <ConnectionDetails connection={connection} model={props.model} />;
+		return (
+			<ConnectionDetails
+				connection={connection}
+				model={props.model}
+				reference={props.projection.reference}
+			/>
+		);
 	if (ids.size > 0)
 		return (
 			<SelectedSubjects
 				model={props.model}
+				reference={props.projection.reference}
 				selected={ids}
 				title="Selected subjects"
 				slot="model-selected-subjects"
@@ -61,6 +70,7 @@ function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 		return (
 			<SelectedSubjects
 				model={props.model}
+				reference={props.projection.reference}
 				selected={props.projection.focused}
 				title="Focused subjects"
 				slot="model-focused-subjects"
@@ -68,7 +78,8 @@ function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 		);
 	return (
 		<>
-			<ScopeIntroduction model={props.model} scope={props.scope} />
+			<ModelSubjectStanding model={props.model} subject={props.scope} />
+			<ScopeIntroduction model={scopeModel(props)} scope={props.scope} />
 			<ModelInterface
 				model={props.model}
 				projection={props.projection}
@@ -79,13 +90,57 @@ function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 }
 
 /**
- * A selected open scope keeps its complete interface beside its authored details.
- * @param props The selected module and reading actions.
- * @returns Module details and, for the open scope, its complete interface.
+ * A comparison can inspect a removed definition only from its verified reference.
+ * @param props The selected state and optional coherent reference.
+ * @param id The inspected identity.
+ * @returns Its selected definition, otherwise the explicit reference definition.
+ */
+function inspectedModule(props: ModelSelectionDetailsProps, id: string | undefined) {
+	return (
+		props.model.modules.find((entry) => entry.id === id) ??
+		props.projection.reference?.modules.find((entry) => entry.id === id)
+	);
+}
+
+/**
+ * A removed scope explains its reference definition without changing selected architecture.
+ * @param props The requested scope and coherent readings.
+ * @returns The model that actually owns the scope definition.
+ */
+function scopeModel(props: ModelSelectionDetailsProps): Model {
+	if (props.scope === null) return props.model;
+	if (props.model.modules.some((entry) => entry.id === props.scope)) return props.model;
+	return props.projection.reference ?? props.model;
+}
+
+/**
+ * Removed module details stay read-only in their reference state.
+ * @param props The selected module and verified comparison.
+ * @returns Change details followed by the appropriate authored definition.
  */
 function SelectedModule(
 	props: ModelSelectionDetailsProps & { module: Model["modules"][number] },
 ): JSX.Element {
+	const removed = props.projection.standing?.[props.module.id] === "removed";
+	const source =
+		removed && props.projection.reference !== undefined ? props.projection.reference : props.model;
+	return (
+		<>
+			<ModelSubjectStanding model={props.model} subject={props.module.id} />
+			<SelectedModuleContent {...props} model={source} removed={removed} />
+		</>
+	);
+}
+
+/**
+ * A selected open scope keeps its complete interface beside its authored details.
+ * @param props The selected module and reading actions.
+ * @returns Module details and, for the open scope, its complete interface.
+ */
+function SelectedModuleContent(
+	props: ModelSelectionDetailsProps & { module: Model["modules"][number]; removed: boolean },
+): JSX.Element {
+	if (props.removed) return <ModuleDetails module={props.module} model={props.model} />;
 	if (props.module.id === props.scope)
 		return (
 			<>
@@ -115,6 +170,7 @@ function SelectedModule(
  * Several selected subjects keep their canonical names together in the inspector.
  * @param props The selected identities and complete model.
  * @param props.model The coherent model.
+ * @param props.reference The verified base for removed subjects.
  * @param props.selected Canonical selected identities.
  * @param props.title The selection or focus heading.
  * @param props.slot The represented reading context.
@@ -122,11 +178,17 @@ function SelectedModule(
  */
 function SelectedSubjects(props: {
 	model: Model;
+	reference: Model | undefined;
 	selected: ReadonlySet<string>;
 	title: string;
 	slot: "model-selected-subjects" | "model-focused-subjects";
 }): JSX.Element {
-	const subjects = modelSubjects(props.model).filter((subject) => props.selected.has(subject.id));
+	const fromBase = props.reference === undefined ? [] : modelSubjects(props.reference);
+	const subjects = [
+		...new Map(
+			[...fromBase, ...modelSubjects(props.model)].map((subject) => [subject.id, subject]),
+		).values(),
+	].filter((subject) => props.selected.has(subject.id));
 	return (
 		<section className="space-y-4">
 			<h3 className="text-title font-semibold">{props.title}</h3>
@@ -139,6 +201,7 @@ function SelectedSubjects(props: {
 				{subjects.map((subject) => (
 					<li key={subject.id} data-subject-id={subject.id}>
 						{subjectName(subject)}
+						<ModelSubjectStanding model={props.model} subject={subject.id} />
 					</li>
 				))}
 			</ul>

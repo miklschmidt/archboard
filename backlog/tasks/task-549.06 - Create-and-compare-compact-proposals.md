@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T20:06:00Z'
+updated_date: '2026-10-26T20:39:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -107,4 +107,6 @@ The selected-draft update regression failed after a successful public edit, then
 Draft claims now name their target state independently of the pane reading. The new visible-claim regression failed with only subject names, then passed after state metadata resolved the claim label. The proposal browser owner remains1case/7assertions, with source/frontend types and full lint passing. Comparison detail and projection work is next.
 
 Browser comparison integration exposed a missing coherence field: an exact retained draft can compare with live current, whose input revision differs from the selected snapshot. The shared response now includes comparison.revision from the actual base. ModelRevisionSchema moved to the existing common definition owner without new public exports. The new public-runtime regression fails before the field and passes afterward (1case/3assertions); proposal and adapter regressions pass11cases/83assertions. Types and lint pass. Consumers must match separately read base definitions against this token. ADR0061, consumer guidance, and the external exact contract record this extension.
+
+Comparison visualization passes its browser owner (1case/5assertions). Removed modules and relationships come from the verified base, added/changed subjects use authoritative semantic marks, and the inspector reuses existing field-change details. Current inputs remain unchanged. The existing drawingOf operation now also accepts complete canonical contents; its single removed-subject algorithm still serves legacy callers. Legacy comparison owners pass37cases/109assertions. Types and corrected full lint pass. Projection keeps selected interface facts separate from the depiction, separates differing standings in aggregated lines, and uses comparison.revision before accepting reference definitions. Explicit base controls and further planning/refusal acceptance remain unfinished.
 <!-- SECTION:NOTES:END -->

@@ -19,6 +19,8 @@ function modelDrawingQuery(
 		grammar,
 		content: projection.content,
 		variant: projection.complete,
+		held: projection.held,
+		standing: projection.standing,
 		policy: model.policy,
 	});
 	return queryOptions({
