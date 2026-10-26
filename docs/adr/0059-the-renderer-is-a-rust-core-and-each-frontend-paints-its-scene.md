@@ -144,6 +144,10 @@ the durations of `@archboard/timing` and, where a document can stand alone, the
 theme colours. Through a port, it runs the layout's solves and gives the path
 data of the icons that a picture draws.
 
+[ADR 0061](0061-group-regions-are-packed-before-solving.md) proposes choosing group packing
+from the graph before solving (TASK-548.08). Its changed drawings await the grading council.
+The group-packing competition below describes the baseline until that decision is accepted.
+
 The core chooses between the solves of a board itself: which joins to keep,
 whether a block stacks, whether groups pack. It asks for every solve that a
 choice reads before it waits for any of them, so a host runs them side by side
