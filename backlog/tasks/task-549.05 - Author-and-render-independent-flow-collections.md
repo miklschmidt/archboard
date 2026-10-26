@@ -1,11 +1,11 @@
 ---
 id: TASK-549.05
 title: Author and render independent flow collections
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T17:44:00Z'
+updated_date: '2026-10-26T17:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,16 +45,16 @@ TASK-549.04
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent creates and edits a flow spanning several modules, then renders it as a sequence or flowchart through an explicit flow selection.
-- [ ] #2 Preserve participant order, messages, decisions, loops, notes, repeat counts, and evidence. Collection filenames impose no participant ownership.
-- [ ] #3 Steps retain identity across moves between flows and nested holders. Alternative renames move affected placements together. Missing holders and incompatible ordering fail explicitly.
-- [ ] #4 Returns remain messages without creating reverse structural relationships. Flow reference repairs participate in the same operation and claim calculation as module edits.
+- [x] #1 An agent creates and edits a flow spanning several modules, then renders it as a sequence or flowchart through an explicit flow selection.
+- [x] #2 Preserve participant order, messages, decisions, loops, notes, repeat counts, and evidence. Collection filenames impose no participant ownership.
+- [x] #3 Steps retain identity across moves between flows and nested holders. Alternative renames move affected placements together. Missing holders and incompatible ordering fail explicitly.
+- [x] #4 Returns remain messages without creating reverse structural relationships. Flow reference repairs participate in the same operation and claim calculation as module edits.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -77,4 +77,12 @@ Early contract: /home/msc/.local/state/archboard-implementation/task-549/task-54
 Runtime slices now prove collection creation, cross-module nested flow preservation, stable step moves, atomic alternative renames, explicit placement/order refusals, and same-operation module-removal repairs. Public read and retained reads expose explicit selectedFlow. CLI rendering reuses renderArchitecture with a grammar choice and keeps renderer exports at 60. A real missing-flow CLI refusal exposed unconditional artifact installation before nonzero outcome presentation; the existing execution operation now skips artifact installation for a declared failure.
 
 Signed implementation checkpoint ea4deb3ea records the initial delivery. Simplification shares module/collection serialization and field assignment, and keeps placement and reference repair private to the existing candidate. Focused runtime/adapter/execution evidence passes 39 cases with 187 assertions. Real CLI evidence in task-549.05-evidence includes signed source and architecture commits, creation and editing, sequence.svg, flowchart.svg, exact retained-sequence.svg, stable retry, preserved source index, preserved refused output, and released fixture claims. Added Command dispatch@TASK-549.05 for the successful-artifact contract. Renderer width remains 60/60; the known board retirement gate is now 245/188 without any ceiling change.
+
+Final evidence: 39 focused cases pass in task-549.05-focused-accepted.log; the final eight flow cases pass with 44 assertions in task-549.05-flows-final.log after the removal/move conflict slice. Another 81 regression cases pass with 691 assertions in task-549.05-regression-accepted.log. Source and frontend types pass. Full lint has zero warnings/errors, formatting passes, and evaluation inputs pass 21 scenarios/21 fixtures/14 parts. No model evaluation ran. All five proposal code scopes have zero warnings; ten known warnings remain outside scope. Original .04 registry, .17 archive/probe/state files and S20 inputs remain exact. The latest integration merge reports Already up to date at 62853e30f. Production rasterizer captures of actual CLI SVGs were inspected; both diagrams show the authored nested behavior and rasterizer cleanup is clean. No frontend source or browser test changed. TASK-549.12 owns later browser grammar switching.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Agents can author independent flow collections and continuing nested steps through the existing durable batch. Explicit CLI/HTTP selection renders sequence or flowchart SVGs through the existing renderer. Complete claims, identity reservations, reference repair, exact retry, checkpoints and recovery remain in the shared runtime. Public runtime and real signed CLI evidence demonstrate all four criteria. Consumer guidance, example, ADR0060, glossary, architecture proposals and evaluation coverage match the delivery. The separate board export retirement gate remains 245/188 under TASK-549.24; renderer stays 60/60. Browser grammar controls remain TASK-549.12.
+<!-- SECTION:FINAL_SUMMARY:END -->

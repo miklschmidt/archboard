@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 95,
+	"version": 96,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-26T17:41:33.817Z",
+	"updatedAt": "2026-10-26T17:53:12.596Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -28304,7 +28304,7 @@
 		{
 			"id": "E13nRMYa",
 			"name": "TASK-549.10 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "WwMsHkt1",
 			"content": {
 				"nodes": [
@@ -30916,7 +30916,7 @@
 		{
 			"id": "oxAjmaS3",
 			"name": "TASK-549.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "E13nRMYa",
 			"content": {
 				"nodes": [
@@ -33526,7 +33526,7 @@
 			}
 		}
 	],
-	"current": "E13nRMYa",
+	"current": "oxAjmaS3",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -33635,6 +33635,12 @@
 			"from": "WwMsHkt1",
 			"at": "2026-10-26T17:04:01.313Z",
 			"reason": "Recursive reading, complete connection inspection, and client scene reuse pass their browser contracts."
+		},
+		{
+			"variant": "oxAjmaS3",
+			"from": "E13nRMYa",
+			"at": "2026-10-26T17:53:12.596Z",
+			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
 		}
 	],
 	"shelvings": [
