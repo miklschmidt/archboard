@@ -65,8 +65,40 @@ in another reading does not create another parent.
 
 Boards no longer provide a sound ownership boundary for overlapping parts.
 The replacement must make subject ownership explicit across the overall model.
-Its storage layout, address format, and migration rules remain open. Shared
-identity does not require one enormous file or one global editing claim.
+Its exact schema, file placement, address format, and migration rules remain
+open. Shared identity does not require one enormous file or one global editing
+claim.
+
+## Module and flow files
+
+The current focus returns to improving JSON files in the repository. Database
+selection and hosted deployment are deferred. The later deployment sections
+preserve that future direction.
+
+`[name].module.json` holds one canonical module definition and its outgoing
+relationships. The module supplies each relationship's source. Each relationship
+has a stable ID and names its target by module ID. Incoming relationships are
+derived from references across the repository.
+
+A module can name one parent. Modules without a parent form the repository's
+top-level reading. Moving or renaming a file does not change module identity.
+The combined model resolves references across files and derives the selected
+scope without copying module definitions into another document.
+
+`[name].flows.json` holds one or more named flows. Flow messages reference module
+IDs, and the existing ordered steps, decisions, and loops retain their meaning.
+The filename groups flows for authoring. It does not restrict their participants
+to one module or require a matching module file.
+
+The target format retires `[name].semantic.json`. Module and flow files carry
+the semantic facts. The combined model is derived from those files, so no
+separately authored aggregate board is needed. Repository-wide vocabulary and
+policy remain configuration concerns.
+
+Proposals, variant history, and walkthroughs still need an explicit storage
+design before migration. Retiring the board document must preserve those
+capabilities. Their placement is unresolved and does not establish another
+per-module board or variant tree.
 
 ## Dynamic readings and selection
 
@@ -244,11 +276,12 @@ Kapsule first.
 
 The following choices remain unresolved:
 
-- The architecture database engine and local startup and storage configuration.
+- The exact module and flow schemas, file placement, and local startup behavior.
+- The deferred architecture database engine and deployment configuration.
 - The managed PostgreSQL provider and application account schema.
 - The identity provider, local sign-in flow, and authorization responsibilities.
 - The access policy and revision behavior of private viewer links.
-- The storage and revision model for canonical subjects and proposals.
+- The storage and revision model for proposals, variant history, and walkthroughs.
 - The role of Merkle structures in snapshots, comparisons, or synchronization.
 - The migration of overlapping board subjects and their historical identities.
 - The scope of editing claims and transactions after board ownership ends.
