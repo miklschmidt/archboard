@@ -320,7 +320,12 @@ export default defineConfig({
 		ignorePatterns: [
 			".archboard/vault/**/*.semantic.json",
 			"examples/**/*.semantic.json",
+			// Third-party agent skills keep their upstream formatting, so they diff cleanly
+			// against a later upstream version: those in .agents/skills here, and those in
+			// .claude/skills through .claude/**. The skills this repository distributes are
+			// authored in skills/, which is formatted.
 			".claude/**",
+			".agents/skills/**",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
