@@ -215,7 +215,9 @@ and Graphviz is 67% and 74% of it.
   lays one candidate (110 ms core, 77 ms Graphviz).
 - The pool: it starts one worker at a time, after every worker answered its
   first solve, so a cold pool queues solves. Solves that run side by side on
-  this box take 30 to 40% longer than alone.
+  this box take 30 to 40% longer than alone. Since TASK-527 a worker says it
+  is ready before its first answer, and since TASK-548.05 the Bun pool stays
+  on fast WebAssembly memories ("A ready worker for every solve" below).
 
 These changes could reach the target. None of them was made here.
 
@@ -227,7 +229,7 @@ These changes could reach the target. None of them was made here.
   beside this work. The partial and whole solves ask the same stack prefix
   graphs.
 - A warm pool: a worker start that does not wait for the first answer of
-  every worker.
+  every worker. TASK-527 made this change.
 - About 5.6% of routing time is `routed` called again with the same input.
   A memo could save it.
 
@@ -235,3 +237,170 @@ These changes could reach the target. None of them was made here.
 
 None. The corpus compare against the baseline reported 0 of 2,344 drawings
 differ after each change and after the last one.
+
+## A ready worker for every solve (TASK-548.05)
+
+Measured on 2026-10-26 with Bun 1.4.3, the repository's, on the 24-core
+box, against the parent commit e05d1abfa. Other agents loaded the box during
+all of it: the load average stayed between 25 and 34. The times below are
+therefore about twice the times of the sections above and of the task's
+notes, measured at load 5 to 11. Compare them only with each other. Agent
+workbench left the vault on main (6cae688bb). Its rows render the board as
+it was before that commit.
+
+### Every solve goes to a worker at once
+
+A trace through the pool, with a ceiling of six, of a cold Agent workbench.
+The render asks eleven solves within 35 ms. The pool sends the first six to
+six new workers within 170 ms, one after another. Each worker says it is
+ready 24 to 45 ms after it starts. The first answer comes 617 ms after the
+first send. No solve waits for another solve's answer while the pool is
+below its ceiling. The other five wait because the pool is at its ceiling.
+
+A pool that starts its workers all at once, not one after another, was
+measured four times against the pool above. Cold Agent workbench took 2212,
+2095, 2134 and 2928 ms against 2325, 2513, 2048 and 3133 ms. Three other
+boards showed no direction. The pool keeps one start at a time.
+
+### Fast WebAssembly memories
+
+JavaScriptCore gives a process eight WebAssembly memories that grow in place.
+Every memory after them is bounds-checked, so each grow copies the whole
+memory. A probe instantiated the core on the main thread and in workers, one
+after another. Each instance then grew its memory by one page twenty times,
+from 53 pages. Bun 1.4.3 and 1.4.4 gave the same split:
+
+| made first in the process      | grow in place, 0.0 ms | copy, 15 to 33 ms |
+| ------------------------------ | --------------------- | ----------------- |
+| the main thread's core         | workers 1 to 7        | workers 8 to 12   |
+| web-tree-sitter, then the core | workers 1 to 6        | workers 7 to 9    |
+
+web-tree-sitter holds one memory, however many grammars it loads (three were
+loaded). The Archboard server loads it for the code check. A worker that
+stops gives its memory back: three workers started after three were stopped
+grew in place. A module that holds a memory and no code grew in place in
+all thirteen instances, so a probe must use the core.
+
+Chromium 155 showed no such limit. Beside a memory of the page's own,
+thirty workers each grew a 320-page memory by 200 pages, in 0 to 4 ms each.
+
+The Bun host now runs at most six layout workers: eight, less the main
+thread's core and web-tree-sitter. The browser keeps one fewer than the
+cores. Agent workbench, cold, through a probe that reports each solve's
+memory (median of nine one-page grows after each solve):
+
+| ceiling | render, ms | workers that copy on grow | longest solve                        |
+| ------- | ---------- | ------------------------- | ------------------------------------ |
+| 23      | 3030       | 8 to 11, 2.6 to 15.7 ms   | 2350 ms on worker 8, 33 to 319 pages |
+| 6       | 2196       | none, 0.00 ms             | 1433 ms on worker 6                  |
+
+The ceiling was chosen by alternation. Agent workbench, in ms:
+
+| ceiling | cold             | third of a warm sequence |
+| ------- | ---------------- | ------------------------ |
+| 23      | 2523, 2660, 2973 | 1581, 1846, 2492         |
+| 7       | 2273, 2232, 2369 | 1609, 1680, 1949         |
+| 6       | 2564, 2098, 2395 | 1424, 1820, 2065         |
+
+Six and seven measure the same. Six keeps the server's workers on fast
+memories after a code check.
+
+### First renders against the parent
+
+`scripts/tmp-warm.ts` (a cold render of one board, or a warm sequence after
+the first) and `timing.ts 7` through the real Bun host, alternating parent,
+this task, parent, this task. Load average 27 to 31.
+
+| render                               | parent       | TASK-548.05  |
+| ------------------------------------ | ------------ | ------------ |
+| Agent workbench, cold                | 2709, 2624   | 2417, 2252   |
+| Board viewer, cold                   | 5673, 4755   | 5298, 4284   |
+| Board viewer before the rebase, cold | 2026, 1967   | 1861, 2020   |
+| Board viewer, warm sequence          | 5009, 4378   | 4318, 4888   |
+| Browser application, warm sequence   | 3100, 3146   | 2410, 2822   |
+| Agent workbench, warm sequence       | 1614, 1825   | 1633, 2368   |
+| every vault board once, total        | 22743, 22210 | 22191, 20804 |
+| timing.ts first renders, total       | 23623, 24312 | 23595, 25147 |
+| timing.ts renders again, total       | 688, 723     | 809, 934     |
+
+First renders of timing.ts, in ms:
+
+| board                   | parent     | TASK-548.05 |
+| ----------------------- | ---------- | ----------- |
+| Board viewer            | 4294, 4756 | 4636, 4822  |
+| Archboard server routes | 3982, 4055 | 2612, 2708  |
+| Board persistence       | 3328, 3413 | 3951, 3456  |
+| Browser application     | 2601, 2539 | 2315, 2356  |
+| Codex realtime voice    | 2243, 2631 | 2168, 3262  |
+| Command interface       | 1197, 1227 | 1342, 1238  |
+
+A cold first render of every vault board, each in a process of its own
+after the one small render of `tmp-warm.ts`, alternating the same way at
+load 29 to 32, in ms:
+
+| board                   | parent       | TASK-548.05  |
+| ----------------------- | ------------ | ------------ |
+| Agent workbench         | 2931, 2881   | 2146, 2161   |
+| Board viewer            | 5040, 4490   | 5555, 5363   |
+| Board persistence       | 4386, 4046   | 3694, 3820   |
+| Archboard server routes | 3943, 4138   | 3598, 3254   |
+| Browser application     | 3780, 3942   | 2899, 3407   |
+| Codex realtime voice    | 3404, 3712   | 2805, 3633   |
+| Command interface       | 2060, 2307   | 1731, 1824   |
+| Skill evaluation        | 1324, 1183   | 780, 885     |
+| Semantic renderer       | 1085, 1177   | 1325, 1370   |
+| all 18 boards, total    | 35252, 35443 | 31321, 33297 |
+
+Board viewer's cold render was traced three more times at each ceiling,
+alternating. Its longest solve ran on a fast memory at both ceilings and was
+sent within 0.2 s of the first: 5072, 4991 and 4785 ms of solve and 5512,
+5564 and 5240 ms of render at 23 workers; 5007, 4724 and 4467 ms and 5575,
+5175 and 4797 ms at six. The ceiling does not slow it.
+
+Archboard server routes gains in every run: a fifth to a third in timing.ts
+and the vault sequence, a tenth to a fifth cold. Cold Agent workbench gains
+a tenth to a quarter, and all 18 cold renders together 6 to 11%. The other
+differences are within the noise of this load. The second run of this task had a load spike during timing.ts:
+its renders again took twice as long on several boards.
+
+### Measured and not kept
+
+- A memory reserve at worker start. Allocating and freeing 32 MiB through
+  the core's own allocator keeps every solve from growing memory. On fast
+  memories that saves nothing measurable: cold Agent workbench took 2714,
+  2104 and 2313 ms with it and 2186, 2571 and 2198 ms without, and each
+  solve took the same time. No `reserveMemory` export was added.
+- Stopping a worker whose solve was called off. The pool cannot tell a
+  dropped solve from one that a choice called off but may still read: both
+  abort the same signal, and the layout shares a called-off solve's answer
+  with a later turn (TASK-464). A dropped solve of a cold Agent workbench
+  kept its worker 0.9 s after the render dropped it.
+
+### Drawings and tests
+
+No drawing changed. The corpus of current variants, rendered with `--jobs 1`
+under the parent and under this task, compared 0 of 2,376 drawings
+different.
+
+At this load `bun test packages/renderer` fails under the parent and under
+this task alike, on the 3 s bound for a first layout in
+`wide-boards.test.ts`. In two runs each, the parent failed it on Archboard
+server routes, Board persistence and Board viewer, and this task on Board
+persistence and Board viewer. The `test:modules` lane, which runs each file
+in isolation, passed.
+
+### What stands between these boards and 500 ms now
+
+Not the pool. Each slow board waits on one solve. A trace with a ceiling of
+six, at load 25 to 28, gave each board's render and its three longest solves:
+
+| board                   | render, ms | longest solves, ms | before the rebase: render, longest solves, ms |
+| ----------------------- | ---------- | ------------------ | --------------------------------------------- |
+| Board viewer            | 3815       | 1794, 2010, 3487   | about 2000 (above), 1631 the longest          |
+| Board persistence       | 3597       | 1230, 1664, 3200   | 1326; 622, 768, 977                           |
+| Archboard server routes | 2842       | 638, 698, 2163     | 904; 460, 464, 523                            |
+
+"Before the rebase" is the board as b39ce7afa held it, drawn by this code.
+The boards that the rebase onto main left (889af5401, 3194b3b2e) ask for
+solves two to four times longer. The work on the core's layout and on
+Graphviz must take those solves on.
