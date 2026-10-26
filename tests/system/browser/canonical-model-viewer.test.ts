@@ -20,12 +20,7 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
-import {
-	fixtureGit as git,
-	initializeSource,
-	selectReading,
-	gatewayDetails,
-} from "./support/canonical-model.ts";
+import { initializeSource, selectReading, gatewayDetails } from "./support/canonical-model.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
 

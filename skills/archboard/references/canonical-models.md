@@ -161,6 +161,13 @@ Immutable checkpoint metadata cannot be redacted during publication.
 Keep such checkpoints local and use portable source repository identities for future archives.
 Private archive initialization and portable export remain separate delivery slices.
 
+The browser shows sharing status when the reader selects a retained checkpoint.
+The reader can set its destination, publish history, retry a failed exchange, or fetch missing history.
+Configuration sends no history.
+Every network action uses the displayed checkpoint and destination.
+The reader keeps that checkpoint selected while recovery restores its content.
+The visible retention limitation states that a successful exchange does not establish remote protection.
+
 ## Reopen and recover
 
 Exact reads require the complete `checkpoint.id`, rather than a branch name or abbreviated hash.
@@ -194,7 +201,7 @@ Switch that worktree to another branch before retrying retention.
 Preserve that branch and resolve its ownership before retrying.
 An unsuccessful operation keeps its structured JSON and exits with status 2.
 
-This delivery supports manifest and module inputs plus local checkpoints.
+This delivery supports manifest and module inputs, retained checkpoints, description edits, and explicit archive publication.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
 Module structure, proposal changes, private archives, and cutover arrive through later TASK-549 slices.

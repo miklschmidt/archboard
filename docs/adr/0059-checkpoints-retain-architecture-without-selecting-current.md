@@ -54,7 +54,8 @@ Private archives, proposal changes, and migration remain separate delivery slice
 
 TASK-549.16 adds a configured named remote and independent archive ref.
 Normal source pushes create no archive publication evidence.
-A private sidecar beside common Git objects records the destination and pending intent per portable vault address.
+A private sidecar beside common Git objects records the destination per portable vault address.
+Private pending refs retain publication intent and its archive ancestry.
 Immutable receipt refs retain the exact closures acknowledged by explicit exchanges.
 Linked worktrees share this evidence while their current architecture remains independent.
 The current-edit journal remains checkout-specific and separate from publication state.
@@ -78,7 +79,13 @@ It retains the fetched closure under a named private ref and makes those checkpo
 A shallow archive boundary triggers a deeper fetch of the configured archive ref.
 The runtime refuses incomplete or foreign archive ancestry and keeps current files, the index, source HEAD, and source fetch mappings unchanged.
 Machine-local source repository paths remain local because publication cannot redact immutable metadata.
-The browser's publication controls and visible recovery workflow remain parent-owned until their delivery evidence is complete.
+The browser reads publication status separately from the exact architecture cache.
+The reader explicitly sets the destination and starts each publish or fetch action.
+Network failures leave a pending status with a retry action and recovery instructions.
+Missing history shows an unavailable reading until the explicit fetch restores that exact checkpoint.
+The selection stays fixed throughout the exchange.
+The browser shows the remote retention limitation beside the status.
+Publication updates fresh reading metadata but never changes a completed edit receipt.
 
 ## Canonical description installation
 

@@ -129,10 +129,6 @@ test("saved architecture publishes only after the reader chooses its destination
 		),
 	).toBe("ARCHIVE_NETWORK_FAILED");
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
-	await browser.run([
-		"screenshot",
-		"/home/msc/.local/state/archboard-implementation/task-549/task-549.16-publication-pending.png",
-	]);
 	renameSync(`${remote}.offline`, remote);
 	await waitForAction(browser, "publish");
 	await browser.run(["click", '[data-slot="publication-publish"]']);
@@ -194,8 +190,4 @@ test("saved architecture publishes only after the reader chooses its destination
 			`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-reading') ?? null`,
 		),
 	).toBe(checkpoint);
-	await browser.run([
-		"screenshot",
-		"/home/msc/.local/state/archboard-implementation/task-549/task-549.16-publication-recovered.png",
-	]);
 }, 60_000);

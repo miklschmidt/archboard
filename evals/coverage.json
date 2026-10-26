@@ -1083,7 +1083,7 @@
 					"expectedUse": "configure a named remote and independent archive ref; explicitly publish or fetch an exact checkpoint; retry pending publication without losing local work; report unprotected retention honestly",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/history/publication.test.ts, fetch-history.test.ts, concurrent-publication.test.ts and archive-boundary.test.ts; tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+					"owner": "packages/board/tests/runtime/operations/history/publication.test.ts, fetch-history.test.ts, concurrent-publication.test.ts and archive-boundary.test.ts; tests/system/semantic-boards/model-read.test.ts; visible destination choice, pending retry and exact recovery: tests/system/browser/canonical-model-publication.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
 					"path": "canonical description edit: subject claims, complete read tokens, signed preparation, durable recovery and idempotent completion",
