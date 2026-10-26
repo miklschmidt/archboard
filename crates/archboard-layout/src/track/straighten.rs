@@ -230,7 +230,7 @@ impl Track<'_> {
                 bands
                     .iter()
                     .filter_map(|other| {
-                        let (&one, &two) = (other.get(&upper_band)?, other.get(&lower_band)?);
+                        let (&one, &two) = (other.get(upper_band)?, other.get(lower_band)?);
                         if self.meets(one, upper) || self.meets(two, lower) {
                             return None;
                         }

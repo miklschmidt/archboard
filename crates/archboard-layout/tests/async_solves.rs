@@ -159,6 +159,15 @@ fn answer(width: f64) -> String {
     .to_string()
 }
 
+/// Require the layout to wait for another host reply.
+fn waits<F: Future>(layout: Pin<&mut F>) {
+    assert!(
+        layout
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending()
+    );
+}
+
 /// Require the layout to answer without another host reply.
 fn ready<T>(answer: Poll<T>) -> T {
     match answer {
@@ -315,36 +324,47 @@ fn either_nesting_failure_returns_without_the_other_layout() {
     }
 }
 
+/// Lay the stacking board out, its whole solves answering first in one
+/// order and its partial solves after them in the same order; answers the
+/// width drawn and whether the whole solve laid stacked was dropped.
+fn replied_in(order: [usize; 2]) -> (f64, bool) {
+    let host = Host::default();
+    let (content, measured) = stacking_board();
+    let mut drawing = Box::pin(drawing(&host, &content, &measured));
+    waits(drawing.as_mut());
+    waits(drawing.as_mut());
+    let asked = stacking_solves(&host);
+    let partials: Vec<usize> = asked.iter().filter(|one| one.1).map(|one| one.0).collect();
+    let wholes: Vec<(usize, bool)> = asked
+        .iter()
+        .filter(|one| !one.1)
+        .map(|one| (one.0, one.2))
+        .collect();
+    for &at in &order {
+        let (index, stacked) = wholes[at];
+        host.answer(index, Ok(whole(if stacked { 200.0 } else { 100.0 })));
+    }
+    waits(drawing.as_mut());
+    host.answer(partials[order[0]], Ok(stood()));
+    waits(drawing.as_mut());
+    host.answer(partials[order[1]], Ok(stood()));
+    let drawn = ready(
+        drawing
+            .as_mut()
+            .poll(&mut Context::from_waker(Waker::noop())),
+    )
+    .expect("it draws");
+    let stacked_whole = wholes.iter().find(|one| one.1).expect("a stacked whole").0;
+    let dropped = host.0.borrow()[stacked_whole].dropped;
+    (drawn.drawing.cards[0].bounds.width, dropped)
+}
+
 #[test]
 fn reversing_reply_order_keeps_the_chosen_drawing() {
+    // Stood alike, the block is not stacked, so the whole solve laid plain is
+    // kept, and the one laid stacked is called off, whichever answers first.
     for order in [[0, 1], [1, 0]] {
-        let host = Host::default();
-        let (content, measured) = stacking_board();
-        let mut drawing = Box::pin(drawing(&host, &content, &measured));
-        let mut context = Context::from_waker(Waker::noop());
-        assert!(drawing.as_mut().poll(&mut context).is_pending());
-        assert!(drawing.as_mut().poll(&mut context).is_pending());
-        let asked = stacking_solves(&host);
-        let partials: Vec<usize> = asked.iter().filter(|one| one.1).map(|one| one.0).collect();
-        let wholes: Vec<(usize, bool)> = asked
-            .iter()
-            .filter(|one| !one.1)
-            .map(|one| (one.0, one.2))
-            .collect();
-        // The whole solves answer first, in either order, and only count once chosen.
-        for &at in &order {
-            let (index, stacked) = wholes[at];
-            host.answer(index, Ok(whole(if stacked { 200.0 } else { 100.0 })));
-        }
-        assert!(drawing.as_mut().poll(&mut context).is_pending());
-        host.answer(partials[order[0]], Ok(stood()));
-        assert!(drawing.as_mut().poll(&mut context).is_pending());
-        host.answer(partials[order[1]], Ok(stood()));
-        let result = ready(drawing.as_mut().poll(&mut context));
-        // Stood alike, the block is not stacked, so the whole solve laid plain is kept.
-        assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
-        let stacked_whole = wholes.iter().find(|one| one.1).expect("a stacked whole").0;
-        assert!(host.0.borrow()[stacked_whole].dropped);
+        assert_eq!(replied_in(order), (100.0, true));
     }
 }
 
@@ -353,20 +373,19 @@ fn dropping_a_layout_cancels_its_solves_and_late_replies_do_not_answer_a_new_lay
     let host = Host::default();
     let (content, measured) = stacking_board();
     let mut first = Box::pin(drawing(&host, &content, &measured));
-    let mut context = Context::from_waker(Waker::noop());
-    assert!(first.as_mut().poll(&mut context).is_pending());
-    assert!(first.as_mut().poll(&mut context).is_pending());
+    waits(first.as_mut());
+    waits(first.as_mut());
     drop(first);
     assert!(host.0.borrow().iter().all(|asked| asked.dropped));
     let earlier = host.0.borrow().len();
     let (content, measured) = board(false);
     let mut next = Box::pin(drawing(&host, &content, &measured));
-    assert!(next.as_mut().poll(&mut context).is_pending());
+    waits(next.as_mut());
     for late in 0..earlier {
         host.answer(late, Ok(answer(200.0)));
     }
-    assert!(next.as_mut().poll(&mut context).is_pending());
+    waits(next.as_mut());
     host.answer(earlier, Ok(answer(100.0)));
-    let result = ready(next.as_mut().poll(&mut context));
+    let result = ready(next.as_mut().poll(&mut Context::from_waker(Waker::noop())));
     assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
 }
