@@ -23,7 +23,7 @@ function modelContent(model: Model): VariantContent {
 function projectModel(model: Model, scope: string | null = null) {
 	const complete = modelContent(model);
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
-	const trail = scope === null ? [] : ancestors(byId, scope).reverse();
+	const trail = scope === null ? [] : ancestors(byId, scope).toReversed();
 	const boundary = new Set(trail);
 	const inside = new Set(
 		complete.nodes
@@ -54,9 +54,9 @@ function projectModel(model: Model, scope: string | null = null) {
 		...children.map((node) => node.id),
 		...connections.flatMap(({ line }) => [line.from, line.to]),
 	]);
-	if (scope !== null && byId.has(scope)) visible.add(scope);
+	const scoped = byId.get(scope ?? "");
+	if (scoped !== undefined) visible.add(scoped.id);
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !inside.has(node.id));
-	const scoped = scope === null ? undefined : byId.get(scope);
 	return {
 		complete,
 		connections,
@@ -67,7 +67,7 @@ function projectModel(model: Model, scope: string | null = null) {
 			return node === undefined ? [] : [node];
 		}),
 		missing: scope !== null && scoped === undefined,
-		inspection: scoped === undefined ? undefined : inspectContainer(complete, scoped),
+		inspection: interfaceOf(complete, scoped),
 		content: {
 			nodes: complete.nodes
 				.filter((node) => visible.has(node.id))
@@ -81,6 +81,19 @@ function projectModel(model: Model, scope: string | null = null) {
 			walkthroughs: [],
 		},
 	};
+}
+
+/**
+ * Read the open module's interface from the complete state before projection.
+ * @param complete The full architectural state.
+ * @param scoped The selected module, when it exists.
+ * @returns Complete interface facts, independently of visible context.
+ */
+function interfaceOf(
+	complete: VariantContent,
+	scoped: VariantContent["nodes"][number] | undefined,
+) {
+	return scoped === undefined ? undefined : inspectContainer(complete, scoped);
 }
 
 /**

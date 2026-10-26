@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T14:56:00Z'
+updated_date: '2026-10-26T15:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -81,4 +81,6 @@ Affected architecture proposals: Browser application@TASK-549.10 and Semantic re
 Checkpoint: root modules now render through the existing browser renderer and camera. The focused browser regression failed before implementation and passes afterward with 12 assertions. Source and browser types pass. Recursive scope navigation, nearby context, connection inspection, and complete freshness coverage remain in progress. Both architecture proposals remain drafts.
 
 Integrated durable reads through signed merge 88578767e. The first recursive browser case failed on the absent opening action after correcting a duplicate fixture identity. It now passes root-to-module-to-child navigation, containment breadcrumbs, Back/Forward, reload, and unchanged input revisions, with four assertions. A router reducer type mismatch was identified and corrected through the existing search validator. The slice remains incomplete: exact-checkpoint URL state, mixed pane address ownership, model identity guards, connection inspection, complete interface presentation, geometry reuse, and obsolete-layout behavior still need delivery.
+
+The corrected recursive slice passes source and frontend types. Focused production lint passes after six initial findings were fixed without changing rules. The DOM installation now keeps its SVG in refs and updates selection without replacing unchanged SVG. The browser navigation owner passes again after that change. This is a partial checkpoint, not completion of TASK-549.10.
 <!-- SECTION:NOTES:END -->

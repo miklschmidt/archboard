@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState, type JSX } from "react";
+import { useCallback, useLayoutEffect, useRef, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { RenderedDiagram } from "@archboard/renderer/picture";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
@@ -55,7 +55,16 @@ interface ModelSceneProps extends ModelDiagramProps {
  */
 function ModelScene(props: ModelSceneProps): JSX.Element {
 	const { drawing, camera, selected, onSelect } = props;
-	const [surface, attach] = useState<HTMLDivElement | null>(null);
+	const surface = useRef<HTMLDivElement | null>(null);
+	const installed = useRef<string | null>(null);
+	const attach = useCallback((element: HTMLDivElement | null): void => {
+		surface.current = element;
+		installed.current = null;
+	}, []);
+	const attachViewport = useCallback(
+		(element: HTMLDivElement | null): void => camera.attachViewport(element),
+		[camera],
+	);
 	const ignore = useCallback((): void => {}, []);
 	const { pointer, gesture } = useDiagramGestures({
 		camera,
@@ -66,11 +75,14 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		openDown: ignore,
 	});
 	useLayoutEffect(() => {
-		if (surface !== null) surface.innerHTML = drawing.svg;
-	}, [surface, drawing.svg]);
-	useLayoutEffect(() => {
-		if (surface !== null) markSubjects(surface, new Set(selected === null ? [] : [selected]));
-	}, [surface, selected, drawing.svg]);
+		const root = surface.current;
+		if (root === null) return;
+		if (installed.current !== drawing.svg) {
+			root.innerHTML = drawing.svg;
+			installed.current = drawing.svg;
+		}
+		markSubjects(root, new Set(selected === null ? [] : [selected]));
+	}, [selected, drawing.svg]);
 	useLayoutEffect(() => {
 		if (camera.room !== null && !camera.handled())
 			camera.fit({ kind: "whole", content: drawing }, true);
@@ -80,7 +92,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			data-slot="model-diagram"
 			data-revision={props.model.revision.digest}
 			className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
-			ref={camera.attachViewport}
+			ref={attachViewport}
 			{...pointer}
 		>
 			<CameraSurface
