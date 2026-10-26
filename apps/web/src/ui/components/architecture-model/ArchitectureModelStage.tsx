@@ -21,6 +21,7 @@ import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
+import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
 import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
 import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
@@ -60,6 +61,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		state,
 		against,
 		selectState,
+		compareAgainst,
 		selectCheckpoint,
 		model: requestedModel,
 		identify,
@@ -111,6 +113,12 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 					catalogue={catalogue}
 					onState={selectState}
 					onSelect={selectCheckpoint}
+					history={history}
+				/>
+				<ModelComparisonSelector
+					against={against}
+					onSelect={compareAgainst}
+					catalogue={catalogue}
 					history={history}
 				/>
 			</ModelHeader>
@@ -297,7 +305,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 					data-slot="model-stale"
 					className="border-border bg-status-subtle text-status-foreground text-body border-b px-4 py-2"
 				>
-					Showing the last coherent reading. Current architecture is not confirmed. Refresh to
+					Showing the last coherent reading. The selected architecture is not confirmed. Refresh to
 					retry.
 				</output>
 			)}

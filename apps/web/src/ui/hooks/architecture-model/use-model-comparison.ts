@@ -57,8 +57,20 @@ function coherentReference(reference: Model | undefined, selected: Model): boole
 	if (reference === undefined || selected.comparison === undefined) return false;
 	return (
 		reference.manifest.id === selected.manifest.id &&
+		sameBaseIdentity(reference, selected.comparison) &&
 		reference.revision.digest === selected.comparison.revision.digest
 	);
+}
+
+/**
+ * Several materialized states can share the same complete input revision.
+ * @param reference The separately read comparison content.
+ * @param comparison The state and optional checkpoint selected by the runtime.
+ * @returns Whether the content names the exact requested base.
+ */
+function sameBaseIdentity(reference: Model, comparison: NonNullable<Model["comparison"]>): boolean {
+	if (reference.selectedState?.id !== comparison.against?.id) return false;
+	return comparison.checkpoint === undefined || reference.checkpoint?.id === comparison.checkpoint;
 }
 
 /**

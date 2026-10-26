@@ -15,11 +15,26 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource } from "./support/canonical-model.ts";
+import { initializeSource, selectReading } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
+
+async function selectComparison(browser: AgentBrowserSession, id: string): Promise<void> {
+	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const item = document.querySelector('[data-against-id="${id}"]'); if (!item) return false; const r = item.getBoundingClientRect(); return r.height > 0 && item.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
+			),
+		Boolean,
+		"the comparison base choice",
+		WAIT,
+	);
+	await browser.run(["click", `[data-against-id="${id}"]`]);
+}
 
 test("proposal comparison draws removed definitions from its coherent base and explains changed fields", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -143,4 +158,133 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	expect(after.body.revision).toEqual(current.body.revision);
 	expect(after.body.modules.map((module) => module.id)).toContain("Shop#Worker");
 	expect(after.body.modules.map((module) => module.id)).not.toContain(queue.id);
+	const otherClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			writer: "fixture-agent",
+			reason: "Comparing an independent alternative",
+			subjects: ["Shop", "Shop#Worker"],
+		},
+	});
+	if (!otherClaim.body.success) throw new Error(JSON.stringify(otherClaim.body));
+	const alternative = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			expectedRevision: after.body.revision,
+			operationId: "worker-alternative",
+			writer: "fixture-agent",
+			doing: "Naming an independent alternative",
+			claim: otherClaim.body.claim.id,
+			proposal: { type: "create", name: "Other worker" },
+			changes: [
+				{ type: "edit-module", subject: "Shop#Worker", set: { name: "Alternative worker" } },
+			],
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: otherClaim.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!alternative.body.success || alternative.body.target.state === null)
+		throw new Error(JSON.stringify(alternative.body));
+	const alternativeId = alternative.body.target.state;
+	await selectComparison(browser, alternativeId);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-comparison"][data-against="${alternativeId}"][data-reason="explicit"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]')?.textContent?.includes('Alternative worker') === true`,
+			),
+		Boolean,
+		"the independent proposal as the explicit base",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('againstA')`),
+	).toBe(alternativeId);
+	await browser.run(["reload"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-comparison"][data-against="${alternativeId}"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]')?.textContent?.includes('Alternative worker') === true`,
+			),
+		Boolean,
+		"the explicit base after reload",
+		WAIT,
+	);
+	await selectComparison(browser, "current");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-comparison"][data-against="Current"][data-reason="explicit"]') !== null`,
+			),
+		Boolean,
+		"the explicit current base",
+		WAIT,
+	);
+	const base = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!base.body.success) throw new Error(JSON.stringify(base.body));
+	const baseClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			writer: "fixture-agent",
+			reason: "Advancing the current comparison base",
+			subjects: ["Shop", "Shop#Worker"],
+		},
+	});
+	if (!baseClaim.body.success) throw new Error(JSON.stringify(baseClaim.body));
+	const advanced = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			expectedRevision: base.body.revision,
+			operationId: "advance-comparison-base",
+			writer: "fixture-agent",
+			doing: "Advancing the current comparison base",
+			claim: baseClaim.body.claim.id,
+			changes: [
+				{ type: "edit-module", subject: "Shop#Worker", set: { name: "Current worker revised" } },
+			],
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: baseClaim.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!advanced.body.success) throw new Error(JSON.stringify(advanced.body));
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"][data-code="PREDECESSOR_CHANGED"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') !== null`,
+			),
+		Boolean,
+		"the changed predecessor and unavailable comparison",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"][data-semantic-standing="removed"]') === null`,
+		),
+	).toBe(true);
+	await selectReading(browser, created.body.checkpoint.id);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"][data-semantic-standing="removed"]')?.textContent?.includes('Current worker revised') === true`,
+			),
+		Boolean,
+		"the retained draft against the verified newer current base",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="draft"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') === null`,
+		),
+	).toBe(true);
 }, 60_000);
