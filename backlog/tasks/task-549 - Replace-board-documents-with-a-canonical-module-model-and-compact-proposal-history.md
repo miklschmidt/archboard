@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T23:43:00Z'
+updated_date: '2026-10-26T23:44:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -344,4 +344,6 @@ TASK-549.07 is Done. TASK-549 remains In Progress. Reused the signed source evid
 The recomputed ready frontier is TASK-549.08, TASK-549.13, TASK-549.14, and TASK-549.20. TASK-549.08 and .20 are newly eligible after .07 completion. The .13 backend is complete and awaits parent browser work. The .14 backend delegate is already active through T3; do not re-dispatch it. No other task status changed.
 
 Frontier clarification: TASK-549.08 becomes newly eligible after .07 completion. TASK-549.20 was already dependency-ready after .15 because its direct dependencies .05, .15, and .19 were complete; it remains in the current frontier.
+
+Correction to the .14 frontier note: TASK-549.14 backend completed at signed source f2b90da5041e043ddafbb1695498d33dbe3d1447 on feat/backend-recording-replay in t3-e2633130. Its terminal result is delivered and owning exec744 is closed; no T3 implementation delegate is active. TASK-549.14 remains In Progress for parent frontend work. The parent will dispatch .08 and take .13 browser work. No other task status or worktree was changed by this merger.
 <!-- SECTION:NOTES:END -->
