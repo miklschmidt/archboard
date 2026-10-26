@@ -39,21 +39,25 @@ What it writes:
 <out>/runs/{before,after}/     each side's corpus run with its SVGs
 ```
 
-Give the graders `<out>/pairs` only. `key.json` and `runs/` show which side is
-which.
+Give the graders a copy of `<out>/pairs` in a directory of its own, such as
+`cp -r <out>/pairs /tmp/grading-<run>/`, never `<out>` itself: `key.json` and
+`runs/` show which side is which.
 
 ## Grading
 
 1. **Criteria first.** Before it sees any pair, each grader writes down what
    makes an architecture diagram readable, in its own words. It does not use
    the old scorecard metrics (`drawn-scorecard.ts` and the `drawn-*` checks).
-   Record the criteria in the task notes with the grader's name.
+   The council's criteria are in `grading-council/criteria-<grader>.md`
+   (Opus, gpt-6.1-sol and gpt-6-astra, written on 2026-10-26). A grader
+   rereads its own file before each run, and only its own.
 2. **One verdict per pair.** The grader looks at `A.png` and `B.png` (and may
    zoom into either) and records `A better`, `B better` or `same`, with a
    one-line reason that names what it saw. It also records every defect it
    sees in either picture. A defect is a line that is missing, an arrow
    through a card, or a label off its route. The verdicts go to a file per
-   grader, for example `<out>/verdicts/<grader>.json`, keyed by pair number.
+   grader in the grading copy, for example
+   `/tmp/grading-<run>/verdicts/<grader>.json`, keyed by pair number.
    A grader does not see the verdicts of the other graders.
 3. **Unblinding and the majority.** After all three graders are done, read
    `key.json` and turn each verdict into `better`, `worse` or `same` for the
