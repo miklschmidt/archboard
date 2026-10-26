@@ -3,9 +3,9 @@ id: TASK-549.03
 title: Edit one module with durable recovery
 status: In Progress
 assignee:
-  - '@codex-backend'
+  - '@codex-parent'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T12:29:00Z'
+updated_date: '2026-10-26T12:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -68,6 +68,8 @@ TASK-549.02
 4. Expose fresh coherent event snapshots, completion and external-change news, visible claim data and explicit take-back. Keep every browser component and browser test with the parent.
 5. Preserve signed backup/task-549.03-before-main-refactor, transplant only own commits after a60b0980eca566a0aedcf664544ec598be67ef03 onto new integration 56d468883, and merge the adopted integration follow-up normally. Adapt the relocated clients, process Git API and timing groups.
 6. Simplify, run focused public-boundary tests, lint, both type projects, formatting and draft checks. Record the unchanged board interface-width gate for TASK-549.24. Save the backend handoff, release claims, stop the server, commit signed checkpoints, and keep the mixed ticket In Progress.
+
+7. Parent browser work: show current subject claims and human take-back through the shared runtime. Subscribe to fresh model events, preserve the last coherent current scene with an explicit stale indication, refresh after stable edits and reconnects, and keep exact checkpoint caches independent. Use the existing browser owner for visible behavior, one red-to-green slice at a time. Align and adopt the delivery proposals only after these workflows pass.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -88,4 +90,6 @@ Backend completion evidence: the accepted public-runtime command passes 48 tests
 A final real-process regression found that an already completed request returned MODEL_BUSY while another process held its cleanup lease. The new reference-transaction hook pauses real cleanup after durable completion. 14-red.log records that refusal. The runtime now returns the retained applied success with pending cleanup in that case, and 14-green.log passes both exclusion owners. The completed checkpoint and original request remain identical after the other cleaner releases its lease. The final complete focused runtime command will include this twentieth edit/recovery case. The public schemas and event shapes remain unchanged.
 
 Final backend source includes the completed-cleanup concurrency correction. delivery-runtime-final.log passes 49 tests across seven files with zero failures and 263 assertions. That matrix contains all 20 edit, claim/news, exclusion and recovery cases plus the existing 29 read, checkpoint and inventory cases. After the final dispatch simplification, delivery-exclusion-final.log passes both real-process exclusion owners. delivery-process-accepted.log repeats the HTTP/CLI and skill boundary subset with ten passes. These are reruns within the 41 already recorded adapter and contract cases, not extra unique tests. The functional evidence therefore covers 90 distinct tests across 20 files. delivery-types-accepted.log passes both type projects. delivery-lint-accepted.log passes with zero warnings and errors. delivery-format-accepted.log passes formatting. The width gate remains explicitly failed at board 234/188, unchanged and owned by TASK-549.24. All browser work and final draft adoption remain with the parent. The worktree stays clean after the signed handoff commit, and its server stays stopped. No push or PR edit occurs.
+
+Parent browser checkpoint: current subject claims show the agent, purpose, subjects, and start time. Human take-back uses the exact displayed claim and refreshes ownership without an architecture write. The approved browser owner failed before implementation and passes with five assertions. Source and browser types pass. Three lint documentation findings are corrected. Automatic change/reconnect refresh and stale-scene behavior remain in progress.
 <!-- SECTION:NOTES:END -->

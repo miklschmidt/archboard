@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureClaimListSchema,
 	type ArchitectureModelRead,
 	type ArchitectureCheckpointList,
 } from "@archboard/board/model";
@@ -24,6 +25,12 @@ const architectureModelKeys = {
 	 * @returns Its query key.
 	 */
 	checkpoints: (vault: string) => ["architecture-model", vault, "checkpoints"] as const,
+	/**
+	 * Current ownership remains separate from any historical reading.
+	 * @param vault The addressed vault.
+	 * @returns Its claim-list query key.
+	 */
+	claims: (vault: string) => ["architecture-model", vault, "claims"] as const,
 };
 
 /**
@@ -116,6 +123,29 @@ function architectureCheckpointsQuery(vault: string) {
 }
 
 /**
+ * Read current subject ownership independently of architecture content.
+ * @param vault The addressed vault.
+ * @returns The shared claim outcome.
+ */
+function architectureClaimsQuery(vault: string) {
+	return queryOptions({
+		queryKey: architectureModelKeys.claims(vault),
+		/**
+		 * Read the current claim list.
+		 * @param context The query cancellation signal.
+		 * @returns The shared ownership result.
+		 */
+		queryFn: ({ signal }) =>
+			readReply(inVault("/api/architecture/claims", vault), ArchitectureClaimListSchema, signal),
+		staleTime: 0,
+		refetchOnMount: "always",
+		refetchOnWindowFocus: "always",
+		refetchOnReconnect: "always",
+		retry: false,
+	});
+}
+
+/**
  * Only a known empty or uninitialized archive permits legacy empty guidance.
  * @param result The retained metadata result.
  * @returns True when no saved reading can be offered.
@@ -141,6 +171,7 @@ export {
 	architectureModelKeys,
 	architectureModelQuery,
 	architectureCheckpointsQuery,
+	architectureClaimsQuery,
 	hasNoCanonicalModel,
 	hasNoCheckpoints,
 };

@@ -19,6 +19,7 @@ import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
+import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
 
 interface ModelStageProps {
 	vault: string;
@@ -67,6 +68,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 					history={history}
 				/>
 			</ModelHeader>
+			{checkpoint === null && <ModelClaims vault={props.vault} model={data} />}
 			<ModelResponse query={query} />
 		</section>
 	);
