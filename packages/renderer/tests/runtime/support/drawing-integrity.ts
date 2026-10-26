@@ -3,6 +3,7 @@ import type { LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
+import { hiddenParentFrames } from "#tests/runtime/support/drawn-parents.ts";
 import {
 	labelsAcrossWalls,
 	nearLanes,
@@ -22,6 +23,10 @@ export function expectDrawingIntact(
 	content: VariantContent,
 	layout: LayoutEngineName,
 ) {
+	expect(
+		hiddenParentFrames(drawing, content),
+		"parents with no visible frame or line boundary",
+	).toEqual([]);
 	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
 	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);

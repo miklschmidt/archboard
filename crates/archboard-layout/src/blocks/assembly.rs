@@ -254,7 +254,8 @@ impl<'a> Assembly<'a> {
             self.origins
                 .insert(item.clone(), Point { x: at.x, y: at.y });
             let framed = usize::from(self.tree.get(inner).kind == Kind::Frame);
-            self.depths.insert(item.clone(), depth + framed);
+            self.depths
+                .insert(item.clone(), depth + frames_around(block, item) + framed);
             self.descend(inner);
         }
     }
@@ -406,9 +407,7 @@ impl<'a> Assembly<'a> {
             .map(|block| PlacedCard {
                 id: block.id.clone(),
                 bx: self.frame_box(block),
-                depth: block
-                    .parent
-                    .map_or(0, |parent| self.depths[self.tree.get(parent).id.as_str()]),
+                depth: self.depths[block.id.as_str()] - 1,
                 header: self.laid_of(block).header,
             });
         let inline = self.blocks().flat_map(|block| {

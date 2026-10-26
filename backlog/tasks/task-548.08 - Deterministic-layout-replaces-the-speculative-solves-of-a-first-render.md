@@ -1,10 +1,11 @@
 ---
 id: TASK-548.08
 title: Deterministic layout replaces the speculative solves of a first render
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-26T18:09:00Z'
+updated_date: '2026-10-26T19:03:00Z'
 labels:
   - renderer
   - performance
@@ -26,8 +27,36 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 - [ ] #3 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reproduce the missing parent frames in Groups nesting with a fast failing assertion. Minimize the graph and fix the cause without excluding Browser application.
+2. Extend drawing integrity to name unframed parents and lines that end in empty space. Include whole-board drawings for every current vault board beside each standard corpus.
+3. Test upfront group packing without the empirical 32-card threshold after the defect is fixed. Preserve both SVG sides for every changed drawing and let the parent convene the council.
+4. Replace more speculative stacking, joins, and wraps with graph decisions. Measure native instructions, native critical paths, pool first renders, and growing-card edits against the parent baseline.
+5. Build the matching core, run changed Rust crates, renderer and drawing-integrity tests, inspect raster samples, and commit each verified milestone. Record kept and dropped rules, update ADRs and board proposals, and leave TASK-548.08 In Progress.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Council, 2026-10-26, on f55ca07dc (the only changed drawings: the whole-board Track pictures of Browser application and Command interface). Blind pairs in /tmp/grading-548-08 (overview and full-size Chromium rasters), key and verdicts kept in /tmp/548-08/council. Unanimous: Command interface reads better after (Opus, gpt-6.1-sol, gpt-6-astra: top-to-bottom reading, shorter routes). Browser application reads worse after, and all three name a defect new in the after picture: parent cards (Semantic viewer, Workspace routing, Pane session, Walkthrough replay, Walkthrough recording, Voice session) are drawn with no frame, so their lines end in blank space beside a title. The parent confirmed it on Semantic viewer in the full-size after picture; the before picture frames it. By the procedure (docs/design/grading-council.md), the change fails as it stands and is not merged.
+
+Earlier implementation evidence, rejected at f55ca07dc:
+
+Retained milestone: grouped Track graphs with at least 32 leaf cards choose Groups before solving. Compact graphs retain their existing comparison. The leaf count reuses the block tree that discovers regions. The final net Rust change touches choosing.rs in architecture and blocks, plus one async failure-contract test. The row-support checkpoint 54efd0759 is reverted because four alternating pool runs show no gain. The unconditional after-2 experiment is rejected after nine renderer failures and a visible empty-region regression. A compact inline-only probe also fails three reduced fixtures.
+
+Pinned native work across routes/persistence/viewer falls from 152.711 to 58.131 billion instructions, a 61.9% reduction. Solve counts change from 27/25/24 to 27/5/4. Best retained native paths are 506/262/351 ms at load 49.06 to 48.01. The design note explains virtual-clock and load limits. The final alternating pool pair reports viewer 3525 to 1785 ms, persistence 4189 to 564 ms, and routes 2590 to 3085 ms. Loads are 41.51 to 42.19 before and 41.71 to 46.62 after. Growing edits take 4669 to 1430 ms, 5065 to 1365 ms, and 1710 to 2363 ms, respectively. The harness asserts that the cards grow. The 500 ms pool goal remains unmet.
+
+Corpus directories are /tmp/548-08/base, after-1, after-2, and after-3. The retained standard corpus changes 0 of 2376 drawings. Complete-source captures in base-full-vault and after-3-full-vault change 2 of 17 Track drawings: Browser application and Command interface. Both use less width and more height. Chromium captures and detail regions are preserved. Existing geometry helpers pass on both versions with no missing parts or lines. Container-header crossings remain visible in both Browser application versions and lie outside those helpers. The parent council must judge the two changed full drawings. TASK-548.10 remains separate, and this change does not alter routing.
+
+Final validation: 106 Rust tests pass, Clippy passes with warnings denied, renderer tests report 662 passes and one platform skip, and six focused drawing-integrity cases pass. The complete bun run check gate passes, including all 19 browser files. The standard corpus comparison and repeated full-source SVG hashes match their captured evidence. ADR 0061 remains proposed. Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 are drafts, with claims released. Their code check reports no new finding on modified parts. The temporary server is stopped. docs/design/deterministic-first-layout.md records all experiments and logs. Parent council tools from cb137ed03 are merged at bd02b970e.
+
+Second round after the council: merged 2cfbda3dd at b5a47aa9a and preserved the rejection notes. The actual Browser application render reproduces seven hidden parents. The SVG contains frame rectangles, but Groups assigns the same depth to a packed child frame and its enclosing inline frame. The painter uses authored order to break that tie and covers the child. A four-node regression fails before the fix in 0.01 s. Assembly now carries inline frame depths into child blocks, and a frame paints one step before its own contents. The new hiddenParentFrames helper names absent or covered parent frames and line ends without a visible boundary. Browser application now reports zero frame failures, and a Chromium detail shows Semantic viewer's frame and connected lines.
+
+The corpus now explicitly draws complete architectures through renderArchitecture, beside the default overview and authored views. The parent baseline is /tmp/548-08/round-2/base, from 2cfbda3dd's Rust sources and matching core. It preserves all previous 2376 pictures and adds 76 whole-board pictures, including all 17 current vault boards on both engines and themes. The frame-fix candidate is /tmp/548-08/round-2/after-4. It changes 22 of 2452 pictures, with both SVG sides preserved. Eighteen changes are whole boards. The nine changed boards are Archboard server, Archboard server routes, Board persistence, Board rasterizer, Board viewer, Browser application, Codex realtime voice, Codex workhorse, and Command interface.
+
+Frame-fix checks: 102 layout Rust tests pass, Clippy denies warnings and passes, TypeScript checks and focused lints pass. Renderer tests report 661 passes, one platform skip, and one existing 3 s timing failure on Codex realtime voice (3093 ms). A focused rerun also exceeds that bound at 3082 ms. A separate complete-source run applies all geometry helpers without the speed bound and reports zero findings on all 17 current vault boards. Pool and native measurements are recorded before the next optimization. The empirical 32-card choice remains only in this defect-fix checkpoint. The next step removes redundant stacking solves from a graph proof, then tests a graph-based packing decision.
+
+Frame-fix measurements: 58.114 billion native instructions, with 27/5/4 solves for routes/persistence/viewer. Best native paths are 458/260/793 ms at load 41.91 to 40.39. The new alternating pool pair reports viewer 4359 to 1733 ms, persistence 3315 to 1180 ms, and routes 2437 to 2607 ms. Growing edits take 4043 to 2111 ms, 2943 to 1094 ms, and 1926 to 2730 ms, respectively. Parent load is 40.39 to 41.47, and frame-fix load is 41.47 to 45.53. These timings do not establish the 500 ms target. The design note and /tmp/548-08/round-2 keep the logs and full corpus.
 <!-- SECTION:NOTES:END -->
