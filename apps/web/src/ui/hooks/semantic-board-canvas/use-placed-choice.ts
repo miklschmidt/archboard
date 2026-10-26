@@ -18,9 +18,12 @@
 import { useCallback, useState } from "react";
 
 import type { SemanticVariant } from "@archboard/board/document";
+import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 
 /** Where a choice was made: which board, and which state of it. */
 interface ChoicePlace<T extends object | string> {
+	/** The vault of the board, so separate checkouts keep separate choices. */
+	readonly vault: string;
 	/** The board on screen. */
 	readonly board: string;
 	/** The resolved variant on screen. */
@@ -91,16 +94,20 @@ function usePlacedChoice<T extends object | string>(
 	keeps: (variant: SemanticVariant, chosen: T) => boolean,
 	displaced: boolean,
 ): PlacedChoice<T> {
+	const vault = usePaneVault();
 	const shown = variant === null ? null : variant.id;
 	const [place, setPlace] = useState<ChoicePlace<T> | null>(null);
-	if (place !== null && (displaced || choiceOver(place, board, variant, keeps))) {
+	if (
+		place !== null &&
+		(displaced || place.vault !== vault || choiceOver(place, board, variant, keeps))
+	) {
 		setPlace(null);
 	}
 	const choose = useCallback(
 		(chosen: T | null): void => {
-			setPlace(chosen === null || shown === null ? null : { board, variant: shown, chosen });
+			setPlace(chosen === null || shown === null ? null : { vault, board, variant: shown, chosen });
 		},
-		[board, shown],
+		[vault, board, shown],
 	);
 	return { chosen: chosenHere(place, board, shown), choose };
 }
