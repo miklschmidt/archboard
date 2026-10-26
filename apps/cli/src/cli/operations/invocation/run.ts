@@ -7,6 +7,7 @@ import {
 	semanticConfigContract,
 } from "#cli/operations/vault/vault.ts";
 import { statusContract } from "#cli/operations/server/status.ts";
+import { modelContract, modelReadContract } from "#cli/operations/model/read.ts";
 import { restartContract, startContract, stopContract } from "#cli/operations/server/server.ts";
 import {
 	browserContract,
@@ -62,6 +63,13 @@ import { registryOf } from "#cli/rules/routing/registry.ts";
 // The one command table: every top-level command and its subcommands. What each is
 // called and what it accepts is its contract's; dispatch, the registry and help live in rules/routing/.
 const COMMANDS: Record<string, CommandRoute> = {
+	model: {
+		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
+		children: {
+			read: child(contract(modelReadContract, "apps/cli/src/cli/operations/model/read.ts")),
+		},
+		bare: { kind: "default", child: "read", withLeadingOptions: true },
+	},
 	check: {
 		owner: contract(checkContract, "apps/cli/src/cli/operations/vault/vault.ts"),
 		children: {

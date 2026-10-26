@@ -1063,6 +1063,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests integrity; packages/skills/tests/runtime/operations/distribution/artifacts.test.ts (obligations named)"
+				},
+				{
+					"path": "canonical model read: manifest, qualified module identities, source-owned relationships, strict discovery and exact input revision",
+					"expectedUse": "read an authored model through model read; preserve legacy authority and use qualified identities after an ambiguous name",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/read/model-read.test.ts and tests/system/semantic-boards/model-read.test.ts; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

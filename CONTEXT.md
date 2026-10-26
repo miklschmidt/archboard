@@ -7,6 +7,24 @@ that express its meaning, and users read them.
 
 ### The surface
 
+Canonical models use the following terms.
+Legacy boards retain their definitions below until explicit migration.
+
+**Canonical model**:
+One repository architecture whose modules keep the same identities across readings.
+
+**Module**:
+One architectural unit with at most one parent in its model.
+Its outgoing relationships belong to its definition.
+
+**Qualified identity**:
+A stable origin namespace and a short local subject ID.
+The namespace records provenance and owns no diagram or containment.
+
+**Input revision**:
+A fingerprint of discovered architecture paths and their exact bytes.
+File moves and whitespace edits change this revision without replacing subject identities.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording

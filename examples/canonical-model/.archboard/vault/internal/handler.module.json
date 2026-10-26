@@ -1,0 +1,9 @@
+{
+	"schemaVersion": 1,
+	"id": "Shop#Handler",
+	"name": "Handler",
+	"kind": "module",
+	"order": 30,
+	"parent": "Shop#Gateway",
+	"outgoing": []
+}
