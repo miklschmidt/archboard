@@ -1,6 +1,6 @@
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
 import { Button } from "@archboard/ui-kit/components";
@@ -11,6 +11,7 @@ import {
 } from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import {
 	architectureModelQuery,
+	architectureModelKeys,
 	architectureCheckpointsQuery,
 	hasNoCanonicalModel,
 	hasNoCheckpoints,
@@ -19,6 +20,7 @@ import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
+import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
 
 interface ModelStageProps {
 	vault: string;
@@ -45,11 +47,12 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const [checkpoint, selectCheckpoint] = useState<string | null>(null);
 	const query = useQuery(architectureModelQuery(props.vault, checkpoint));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
-	const { refetch, data } = query;
-	const { refetch: refetchHistory } = history;
+	const { data } = query;
+	const client = useQueryClient();
+	const { vault } = props;
 	const refresh = useCallback((): void => {
-		void Promise.all([refetch(), refetchHistory()]);
-	}, [refetch, refetchHistory]);
+		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
+	}, [client, vault]);
 	if (hasNoReadings(query, history, checkpoint)) return <>{props.children}</>;
 	return (
 		<section
@@ -67,6 +70,9 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 					history={history}
 				/>
 			</ModelHeader>
+			{checkpoint !== null && (
+				<ModelPublication key={checkpoint} vault={vault} checkpoint={checkpoint} />
+			)}
 			<ModelResponse query={query} />
 		</section>
 	);
