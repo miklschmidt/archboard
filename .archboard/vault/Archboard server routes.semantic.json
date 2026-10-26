@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 159,
+	"version": 160,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T21:29:18.221Z",
+	"updatedAt": "2026-10-26T22:47:40.958Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -145798,7 +145798,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+					"path": "backlog/tasks/task-549.15 - Follow-code-bindings-and-cross-model-references.md"
 				}
 			],
 			"content": {

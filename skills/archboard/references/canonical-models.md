@@ -571,6 +571,8 @@ archboard model read 'Shop#Gateway' --model Shop --code
 
 `--reference` selects a zero-based index in the module's authored list.
 `resolvedReferences` reports each target address or its unavailable diagnostics.
+Available entries include the authored subject, model, and state names from that exact reading.
+The browser uses those names for reference actions and keeps unavailable destinations visible.
 A successful follow returns the foreign reading and its `location` address.
 `selectedSubject` preserves the exact subject identity.
 A module also sets `selectedModule`.

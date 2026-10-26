@@ -8,7 +8,10 @@ import {
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
 import { readCheckpointModel } from "#runtime/operations/history/read.ts";
-import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
+import {
+	selectReferenceSubject,
+	referenceSubjectName,
+} from "#runtime/operations/read/reference-subject.ts";
 
 type Resolution = NonNullable<ArchitectureModel["resolvedReferences"]>[number];
 type ReferenceEntry = Pick<Resolution, "module" | "index" | "reference">;
@@ -125,6 +128,10 @@ function resolvedReference(
 	return {
 		...entry,
 		status: "available",
+		name: referenceSubjectName(reading, entry.reference.subject),
+		modelName: reading.manifest.name,
+		stateName: reading.selectedState?.name,
+		lifecycle: reading.selectedState?.lifecycle,
 		diagnostics: [],
 		address: {
 			vault,

@@ -251,6 +251,26 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await selectGateway(browser);
+	await pollUntil(
+		() =>
+			browser.eval<number>(
+				`document.querySelectorAll('[data-slot="module-reference"][data-status="available"]').length`,
+			),
+		(count) => count === 5,
+		"the named reference destinations",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="module-reference"] > p:first-child')].map(node => node.textContent ?? '')`,
+		),
+	).toEqual([
+		"Gateway",
+		"Dispatch request",
+		"Ledger requests",
+		"Ledger request",
+		"Store ledger entry",
+	]);
 	await followGateway(browser);
 	expect(
 		await browser.eval<unknown>(

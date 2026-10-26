@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 171,
+	"version": 172,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T21:29:17.090Z",
+	"updatedAt": "2026-10-26T22:47:38.342Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -156044,7 +156044,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+					"path": "backlog/tasks/task-549.15 - Follow-code-bindings-and-cross-model-references.md"
 				}
 			],
 			"content": {
@@ -156977,6 +156977,7 @@
 						"name": "Foreign model references",
 						"kind": "module",
 						"responsibility": "Reads explicit foreign models and states without expanding or transferring ownership",
+						"description": "Uses the existing checkout resolver and selected-state reader for explicit model, subject, and state identities. Available references carry authored subject, model, and state names from that exact reading. Historical navigation requires the retained foreign pin. Missing destinations remain explicit and never substitute current content. A follow writes neither model.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

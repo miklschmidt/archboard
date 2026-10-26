@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T22:39:00Z'
+updated_date: '2026-10-26T22:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -98,4 +98,8 @@ The first browser slice now opens canonical module code through the existing pub
 Foreign module navigation now resolves explicit repository addresses through the existing repository query, preserves model/state/checkpoint/subject in the pane router, and seeds only the explicit arrival selection. Pointer selection remains temporary. The shared read must return the captured destination before navigation; source-context changes cancel pending actions. Unbound modules can expose references independently of code. Missing live targets remain explicit, while exact local history reopens its pinned foreign checkpoint without restoring foreign files. The new browser owner reaches a missing-control RED after real repository registration, then passes1case/7assertions. References, code, navigation, and selection regressions pass6cases/34assertions. Source/frontend types and corrected full lint pass. Foreign non-module subject presentation, final visual inspection, architecture closure, and adoption remain pending.
 
 Foreign references now open every canonical subject kind. An exact relationship inspects only its selected aggregate members and opens required endpoint paths. Collections offer their authored flows and participate in relevant-flow selection without becoming module nodes. Flow and step references reuse the returned containing flow and exact arrival identity. The expanded browser owner first failed on relationship inspection, then collection details, and now passes1case/13assertions. The final step failure was a below-viewport control in the test adapter; explicit scrollintoview plus a real hit-target wait fixes that fixture action. Parent inspected the failure screenshot and removed temporary capture/error logging. Types and lint pass. Readable reference labels and final complete-slice validation/architecture closure remain pending.
+
+The final reference presentation uses authored subject, model, and state names from the exact resolved reading. A public runtime regression first fails on missing draft labels. Browser controls retain stable addresses and distinguish draft or shelved targets. The parent completes final validation and architecture evidence before adoption.
+
+Final readable reference labels preserve the exact selected foreign state and saved checkpoint. The isolated public runtime reference owner passes 9 cases and 34 assertions. The other 23 focused proposal, adapter, and opener cases pass in the combined run. That combined run hit three unchanged five-second reference deadlines and cleanup errors; the isolated owner resolves those failures without changing timeouts. Ten focused browser cases pass, and the final reference-only pass succeeds with 14 assertions after simplifying the label components. Types, full lint, formatting, and vault semantics pass. The four affected draft code checks have zero warnings. Ten inherited warnings remain elsewhere. Parent inspected destination names, flow collection details, and the canonical architecture rendering. The two indirect navigation relationships were traced through useModelNavigation and useReferenceNavigation into the existing query and router owners. No second cache, registry, renderer, or writer exists. The known board width remains assigned to TASK-549.24.
 <!-- SECTION:NOTES:END -->
