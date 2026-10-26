@@ -39,12 +39,20 @@ type OpenBeside = ShellActions["openBeside"];
 
 /**
  * The view a board opened beside a pane is read through: that pane's, when the
- * board has the name of the one on screen there.
+ * board has the name and repository of the one on screen there.
  * @param from What the pane it came from shows.
  * @param key The board opened beside it.
+ * @param repository Its repository, or undefined for the source pane's.
  * @returns The board's name and the view, or null for another board.
  */
-function arrivalFrom(from: PaneStatus, key: string): Arrival | null {
+function arrivalFrom(
+	from: PaneStatus,
+	key: string,
+	repository: string | undefined,
+): Arrival | null {
+	if (repository !== undefined && repository !== from.repository) {
+		return null;
+	}
 	const board = boardAddressOf(key);
 	const onScreen = boardAddressOf(from.boardKey);
 	if (board === null || onScreen === null || !sameBoardName(board.board, onScreen.board)) {
@@ -133,7 +141,7 @@ function useBesideOpening(
 				key,
 				repository: repository ?? status.repository ?? undefined,
 				from: source,
-				arrival: arrivalFrom(status, key),
+				arrival: arrivalFrom(status, key, repository),
 			};
 			const actors: BesideActors = { ...actions, showView, arriveThrough };
 			const other = list.panes.find((pane) => pane.paneId !== source);
