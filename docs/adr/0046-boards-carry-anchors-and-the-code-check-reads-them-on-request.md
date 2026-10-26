@@ -219,7 +219,7 @@ The decision has these parts:
   the Archboard server cannot find gets the same skip.
 - At its start, a pass reads `repos.json` once. It takes the root and the
   servers of every checkout from that one reading. A change that another process
-  writes during the pass applies to the next pass. `check --code` runs in the
+  writes during the pass applies to the next pass. `check code` runs in the
   Archboard server. That server reads the file again for each pass, so a running
   server needs no restart for a new configuration. It looks up a command that is
   a name on the `PATH` that it started with. That `PATH` can differ from the
@@ -356,7 +356,8 @@ section "What ADR 0045 assumed" answers each assumption.
 
 - The **code check** reads, on request, the code and the infrastructure that the
   bindings and anchors of a board name, and reports findings.
-  `archboard check --code` runs it. The plain `archboard check` never does.
+  `archboard check code`, `archboard check` and `archboard check all` run it.
+  `archboard check semantics` never does.
 - An **anchor** is the one place in code that an author cites as proof of a
   relationship or a flow step: a repository, a file in it and a symbol in that
   file.
@@ -729,12 +730,13 @@ names no subject. That is how the check says a thing once.
 
 ### The command, the route and the answer
 
-`archboard check --code [--variant <name>]` runs the plain check and then the
-code pass, and prints both. TASK-367.17 adds `--plan <file>`, which names a
-Terraform or OpenTofu plan JSON inside a registered checkout. It can repeat.
+`archboard check code [--variant <name>]` runs the code pass and prints it in
+the answer's `code` part. `archboard check` and `archboard check all` also run
+the semantics and embeds checks. TASK-367.17 adds `--plan <file>`, which names
+a Terraform or OpenTofu plan JSON inside a registered checkout. It can repeat.
 
-The CLI asks the plain check's route and then `GET /api/vault/code-check`, a
-route of its own. A pass changes nothing, so the route is a `GET`. The pass runs
+The CLI asks `GET /api/vault/code-check`, a route of its own.
+A pass changes nothing, so the route is a `GET`. The pass runs
 in the Archboard server as checkout work
 (`src/server/archboard/lib/checkout-work.ts`), the admission that the code
 opener already uses. A caller that disconnects cancels the pass. A stop cancels
@@ -743,7 +745,7 @@ refuses because of one. Before a pass settles, it stops every language server
 that it started. `/api/vault/check`, which every open canvas polls, never runs
 a pass.
 
-The answer has four parts:
+The answer's `code` part holds:
 
 - `boards`: each board that the pass read, the variant that it read, and the
   version of the board.
@@ -1044,7 +1046,7 @@ criterion as the tasks must now read it.
 - **TASK-367.24 #3** ("The pane reads cached findings"). The server keeps the
   findings of the last pass in memory, and TASK-367.24 builds that memory.
 - **TASK-367.26 #1** ("on each proposal before adoption"). One run of
-  `archboard check --code --variant TASK-<n>` reads every proposal of the
+  `archboard check code --variant TASK-<n>` reads every proposal of the
   task, because they share its name.
 
 ### What ADR 0045 assumed
@@ -1052,7 +1054,7 @@ criterion as the tasks must now read it.
 ADR 0045 assumed six things about the code check. This decision keeps four and
 changes two.
 
-1. "`archboard check --code` runs on a route of its own that only a request
+1. "`archboard check code` runs on a route of its own that only a request
    starts, never inside the polled check." Kept. The route is
    `GET /api/vault/code-check`.
 2. "The server keeps its answer in memory, keyed on the HEAD of each checkout it
@@ -1078,7 +1080,7 @@ changes two.
    decision does." Kept. A relationship or a step with such a part at an end is
    skipped with its anchor.
 
-Behind joins the answer of `archboard check --code` as information, apart from
+Behind joins the answer of `archboard check code` as information, apart from
 the findings, as ADR 0045 decides.
 
 ## Considered and rejected
@@ -1308,12 +1310,12 @@ These are the sources that TASK-367.01 rejected:
   `RELATIONSHIP_UNSUPPORTED` then says which side has no evidence.
 - TASK-367.24 builds the memory of the findings of the last pass and the route
   that reads it. The pane never starts a pass. The bell stays the plain check's.
-- TASK-367.26 runs `archboard check --code --variant TASK-<n>` once for all
+- TASK-367.26 runs `archboard check code --variant TASK-<n>` once for all
   the proposals of a task.
 - TASK-367.27 adds the `evidence` key to the dogfood configuration, and anchors
   to the dogfood boards.
 - TASK-368.10 and TASK-368.11 report under the severity rule of this decision.
-- TASK-369.02 fills `behind` in the answer of `archboard check --code`.
+- TASK-369.02 fills `behind` in the answer of `archboard check code`.
 - `CONTEXT.md` gains code check, anchor, symbol, code facts, evidence kind,
   candidate and finding. Its Binding and Logical address entries name the
   symbol.

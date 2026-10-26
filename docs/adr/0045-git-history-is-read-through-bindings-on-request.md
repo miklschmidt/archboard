@@ -129,7 +129,7 @@ machine has, which is the code that "open the code" opens.
 
 A repository with no registered checkout stays silent: its parts get no
 diagnostic, as `BINDING_PATH_MISSING` gives them none. The answer of
-`archboard check --code` only says that it did not read them. So a reader
+`archboard check code` only says that it did not read them. So a reader
 never takes them for parts that no commit changed.
 
 A binding can be pinned to a branch or a commit (TASK-311). If its checkout has
@@ -334,12 +334,12 @@ the proposal changed from a part at the far end of a new relationship.
 
 | Reading         | Where it answers                                    | Severity    |
 | --------------- | --------------------------------------------------- | ----------- |
-| Behind          | `archboard check --code`, per board and per part    | information |
+| Behind          | `archboard check code`, per board and per part      | information |
 | Hotspots        | `archboard semantic locality <board>`               | information |
 | Change coupling | `archboard semantic locality <board>`               | information |
 | Footprint       | `archboard semantic footprint <board> --base <ref>` | information |
 
-`archboard check --code` reads every board. Its answer keeps behind apart from
+`archboard check code` reads every board. Its `code` part keeps behind apart from
 its diagnostics. Both `semantic` commands take `--variant` for a draft, and
 `semantic footprint` takes it for the proposal that it sets the commits
 against.
@@ -430,7 +430,7 @@ rule of TASK-367.24 for the code pass.
 ADR 0046 decides the code check of TASK-367 at the same time as this decision.
 This decision assumes the following. ADR 0046 keeps or changes it.
 
-- `archboard check --code` runs on a route of its own that only a request
+- `archboard check code` runs on a route of its own that only a request
   starts, never inside the polled check.
 - The server keeps its answer in memory, keyed on the HEAD of each checkout it
   read.
@@ -443,7 +443,7 @@ This decision assumes the following. ADR 0046 keeps or changes it.
 - It skips a part pinned to a ref that its checkout does not have out, as this
   decision does.
 
-Behind joins the answer of `archboard check --code` as information. If ADR 0046
+Behind joins the answer of `archboard check code` as information. If ADR 0046
 puts the code check somewhere else, behind keeps every rule above, and ADR 0046
 names where it answers.
 
@@ -565,7 +565,7 @@ checkout. The next selection reads the HEADs anyway.
 ## Consequences
 
 - TASK-369.02 builds the walk, the mapping and behind in
-  `archboard check --code`. It depends on the code check's route of
+  `archboard check code`. It depends on the code check's route of
   TASK-367.05, or it builds that route first.
 - The default period is a duration, so it lives in
   `packages/timing/src/shared/constants/timing.ts`.

@@ -350,7 +350,7 @@
 					"expectedUse": "when deciding what a module's entry points are or what a change reaches, add --exposed to check code and read the names and their users in the answer in place of reading the module's code for its callers; an ordinary check code does not carry them",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "apps/cli/tests/cli/operations/vault/check-code.test.ts (the flag asks the route, the answer carries the exposures, one line for each container, refused without --code, no exposures without the flag); apps/server/tests/server/routes/code-check/code-findings-route.test.ts (the route answer carries exposures only with exposed=true, and the memory keeps them either way); packages/code-intel/tests/runtime/operations/code-check/interfaces.test.ts (the caps, the barrel via, the users and their parts). Mechanical validation: an author run is not asked to use the flag"
+					"owner": "apps/cli/tests/cli/operations/vault/check-parts.test.ts (the flag asks the route, code.exposures carries the exposures, one line for each container, refused by check semantics and check embeds, no exposures without the flag); apps/server/tests/server/routes/code-check/code-findings-route.test.ts (the route answer carries exposures only with exposed=true, and the memory keeps them either way); packages/code-intel/tests/runtime/operations/code-check/interfaces.test.ts (the caps, the barrel via, the users and their parts). Mechanical validation: an author run is not asked to use the flag"
 				},
 				{
 					"path": "node.binding.branch, .commit, .confirmedAt",
