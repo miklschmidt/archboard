@@ -29,7 +29,24 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	);
 	if (connection !== undefined)
 		return <ConnectionDetails connection={connection} model={props.model} />;
-	if (ids.size > 0) return <SelectedSubjects model={props.model} selected={ids} />;
+	if (ids.size > 0)
+		return (
+			<SelectedSubjects
+				model={props.model}
+				selected={ids}
+				title="Selected subjects"
+				slot="model-selected-subjects"
+			/>
+		);
+	if (props.projection.focused !== null)
+		return (
+			<SelectedSubjects
+				model={props.model}
+				selected={props.projection.focused}
+				title="Focused subjects"
+				slot="model-focused-subjects"
+			/>
+		);
 	return (
 		<>
 			<ScopeIntroduction model={props.model} scope={props.scope} />
@@ -80,21 +97,28 @@ function SelectedModule(
  * @param props The selected identities and complete model.
  * @param props.model The coherent model.
  * @param props.selected Canonical selected identities.
+ * @param props.title The selection or focus heading.
+ * @param props.slot The represented reading context.
  * @returns Authored subjects without discarding the rest of the selection.
  */
-function SelectedSubjects(props: { model: Model; selected: ReadonlySet<string> }): JSX.Element {
+function SelectedSubjects(props: {
+	model: Model;
+	selected: ReadonlySet<string>;
+	title: string;
+	slot: "model-selected-subjects" | "model-focused-subjects";
+}): JSX.Element {
 	const subjects = [...props.model.modules, ...props.model.relationships].filter((subject) =>
 		props.selected.has(subject.id),
 	);
 	return (
 		<section className="space-y-4">
-			<h3 className="text-title font-semibold">Selected subjects</h3>
+			<h3 className="text-title font-semibold">{props.title}</h3>
 			{subjects.length < props.selected.size && (
 				<output data-slot="module-missing-selection" className="text-body block">
 					{props.selected.size - subjects.length} selected subjects are unavailable in this reading.
 				</output>
 			)}
-			<ul data-slot="model-selected-subjects" className="text-body space-y-3">
+			<ul data-slot={props.slot} className="text-body space-y-3">
 				{subjects.map((subject) => (
 					<li key={subject.id} data-subject-id={subject.id}>
 						{"name" in subject ? subject.name : (subject.label ?? subject.id)}

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T17:59:00Z'
+updated_date: '2026-10-26T18:24:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -78,4 +78,6 @@ Parent frontend work starts in its own Worktrunk checkout /home/msc/Projects/arc
 First selection slice is implemented and remains partial. The browser owner passed1case/5assertions for pointer modifiers, Ctrl/Cmd+Enter, Escape, unchanged scene identity, unchanged history, and unchanged model revision. Selection now survives scope navigation; the existing navigation owner passes3cases/19assertions. Source/frontend types and corrected lint pass. The inspector has a dedicated component and keeps the open scope interface visible. Deferred ModelDiagram loading removes the ineffective dynamic import warning without changing renderer interfaces. Its browser owner and types pass; final focused lint exits0. Existing large index/layout-worker chunks remain outside this loading-boundary repair. Drag selection, focus projection, filters, hidden/reveal behavior, final docs, and architecture adoption remain unfinished.
 
 The gesture slice passes its red-to-green browser owner. Primary dragging from empty canvas draws an immediate rectangle and selects intersecting canonical subjects through renderer-owned bounds. Middle-button and Space dragging pan without changing selection, history, or scene identity. The selection row keeps viewport height stable. Keyboard handlers remain separate from legacy pointer handlers, preserving the existing keyboard owner. Combined gesture, selection, and legacy exploration owners pass3cases/65assertions. Source/frontend types and full lint pass with zero findings. Focus, filters, hidden/reveal behavior, final docs, and adoption remain pending.
+
+Focus now captures selected canonical identities in the router address, preserves mixed ancestors and descendants, and opens only required containment paths with direct endpoint context. Collapsed private self-relationships do not invent visible self-loops. Back, Forward, and reload restore focus without changing model revisions. The focused browser owner passes one case and six assertions. Source/frontend types and full lint pass with zero findings. Filters, hidden/reveal behavior, final documentation, and adoption remain pending.
 <!-- SECTION:NOTES:END -->

@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|focus)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -210,6 +210,7 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		id,
 		scope: search[`scope${paneId}`] ?? null,
 		checkpoint: search[`checkpoint${paneId}`] ?? null,
+		focus: search[`focus${paneId}`]?.split(","),
 	};
 }
 
@@ -267,6 +268,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 		...(pane.repository === null ? {} : { [repoParam(pane.paneId)]: pane.repository }),
 		...(model.scope === null ? {} : { [`scope${pane.paneId}`]: model.scope }),
 		...(model.checkpoint === null ? {} : { [`checkpoint${pane.paneId}`]: model.checkpoint }),
+		...(model.focus === undefined ? {} : { [`focus${pane.paneId}`]: model.focus.join(",") }),
 	};
 }
 
