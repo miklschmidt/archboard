@@ -71,7 +71,7 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 	const unsupportedState = await fetch(
 		`${server.base}/api/architecture/model?${query}&state=missing`,
 	);
-	expect(unsupportedState.status).toBe(400);
+	expect(unsupportedState.status).toBe(404);
 	writeFileSync(join(vault, "bad.module.json"), "{");
 	const failedHttp = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(failedHttp.status).toBe(422);
@@ -124,6 +124,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const exact = ArchitectureModelReadSchema.parse(await response.json());
 	expect(exact).toMatchObject({
 		...current,
+		selectedState: { ...current.selectedState, lifecycle: "historical" },
 		selectedModule: "Shop#Gateway",
 		checkpoint: retained.checkpoint,
 	});

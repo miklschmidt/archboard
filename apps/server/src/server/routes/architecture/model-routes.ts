@@ -22,13 +22,44 @@ const QuerySchema = z
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
 		checkpoint: z.string().min(1).optional(),
+		state: z.string().min(1).optional(),
+		against: z.string().min(1).optional(),
+		compare: z.enum(["true", "false"]).optional(),
 	})
-	.strict();
+	.strict()
+	.refine(
+		(query) => query.checkpoint === undefined || query.state === undefined,
+		"Select either state or checkpoint.",
+	);
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
-const ListQuerySchema = QuerySchema.pick({ vault: true });
+const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 	vault: z.string().optional(),
 });
+/**
+ * Translate state query selectors without interpreting architecture.
+ * @param vault The explicitly addressed vault.
+ * @param query The parsed wire selection.
+ * @returns The shared runtime reading.
+ */
+function selectedReading(vault: string, query: z.infer<typeof QuerySchema>) {
+	const comparison = {
+		against: query.against,
+		compare: query.compare === undefined ? undefined : query.compare === "true",
+	};
+	if (query.checkpoint !== undefined)
+		return readArchitectureCheckpoint(
+			vault,
+			query.checkpoint,
+			query.module,
+			query.flow,
+			comparison,
+		);
+	return readArchitectureModel(vault, query.module, query.flow, {
+		state: query.state,
+		...comparison,
+	});
+}
 /**
  * Expose the shared current and retained architecture contracts.
  * @param app The server application.
@@ -47,22 +78,27 @@ function mountArchitectureModelRoutes(app: Express): void {
 		}
 		respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
 	});
-	app.get("/api/architecture/model", requireVault, async (req, res) => {
-		const query = QuerySchema.safeParse(req.query);
-		if (!query.success) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
-			return;
-		}
-		const { module, checkpoint, flow } = query.data;
-		respond(
-			res,
-			checkpoint === undefined
-				? readArchitectureModel(vaultOfRequest(req), module, flow)
-				: await readArchitectureCheckpoint(vaultOfRequest(req), checkpoint, module, flow),
-		);
-	});
+	app.get(
+		["/api/architecture/model", "/api/architecture/proposals"],
+		requireVault,
+		async (req, res) => {
+			const query = QuerySchema.safeParse(req.query);
+			if (
+				!query.success ||
+				(query.data.checkpoint !== undefined && query.data.state !== undefined)
+			) {
+				res.status(400).json({
+					success: false,
+					code: "INVALID_REQUEST",
+					error: query.success
+						? "Select either state or checkpoint."
+						: z.prettifyError(query.error),
+				});
+				return;
+			}
+			respond(res, await selectedReading(vaultOfRequest(req), query.data));
+		},
+	);
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {
 		const query = ListQuerySchema.safeParse(req.query);
 		if (!query.success) {

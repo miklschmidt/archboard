@@ -72,6 +72,59 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
 		: board.variants.find((one) => one.id === variant.parent);
 }
 
+/** A complete comparison picture, independent of legacy board ownership. */
+interface ComparedContent {
+	readonly content: VariantContent;
+	readonly standing: DrawnChanges["standing"];
+}
+
+/**
+ * Restore removed definitions through the existing comparison owner before projection.
+ * @param content The complete selected content.
+ * @param base The coherent comparison base.
+ * @param scope The reading applied after comparison.
+ * @returns A temporary depiction and its semantic standing, without authored copies.
+ */
+function drawingOf(
+	content: VariantContent,
+	base: VariantContent,
+	scope?: ReadingScope,
+): ComparedContent;
+function drawingOf(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	scope?: ReadingScope,
+	named?: SemanticVariant,
+): DrawnProposal;
+function drawingOf(
+	source: SemanticBoard | VariantContent,
+	reading: SemanticVariant | VariantContent,
+	scope: ReadingScope = { kind: "all" },
+	named?: SemanticVariant,
+): ComparedContent | DrawnProposal {
+	if ("nodes" in source && "nodes" in reading) return comparedContent(reading, source, scope);
+	if ("variants" in source && "content" in reading)
+		return boardDrawing(source, reading, scope, named);
+	throw new TypeError("Compare two complete contents, or a board and its variant.");
+}
+
+/**
+ * One comparison mechanism restores content for both legacy and canonical readers.
+ * @param base Complete reference meaning.
+ * @param selected Complete selected meaning.
+ * @param scope The reading applied after removed definitions return.
+ * @returns Only the temporary depiction and its semantic standing.
+ */
+function comparedContent(
+	base: VariantContent,
+	selected: VariantContent,
+	scope: ReadingScope,
+): ComparedContent {
+	const comparison = compareVariants(base, selected);
+	const content = scopedContent(withRemoved(base, selected, comparison), scope);
+	return { content, standing: standingOfDrawn(comparison, content) };
+}
+
 /**
  * The picture to draw for one variant, and how it differs.
  *
@@ -87,7 +140,7 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
  * `comparedWith`.
  * @returns The content to draw and the changes to mark on it.
  */
-function drawingOf(
+function boardDrawing(
 	board: SemanticBoard,
 	variant: SemanticVariant,
 	scope: ReadingScope = { kind: "all" },
@@ -99,8 +152,7 @@ function drawingOf(
 	}
 	// Compared whole, before any view narrowed it: a view that hides a node is a
 	// narrower reading of the variant, never a variant that lost one.
-	const comparison = compareVariants(base.content, variant.content);
-	const content = scopedContent(withRemoved(base.content, variant.content, comparison), scope);
+	const { content, standing } = comparedContent(base.content, variant.content, scope);
 	return {
 		content,
 		// Read off the picture rather than off the comparison, so what the answer
@@ -109,7 +161,7 @@ function drawingOf(
 		// picture had no context for is in neither.
 		changes: {
 			against: { id: base.id, name: base.name, lifecycle: base.lifecycle },
-			standing: standingOfDrawn(comparison, content),
+			standing,
 		},
 	};
 }

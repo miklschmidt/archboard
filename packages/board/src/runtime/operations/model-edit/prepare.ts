@@ -1,3 +1,4 @@
+import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { editCandidate } from "#runtime/operations/model-edit/candidate.ts";
@@ -21,9 +22,13 @@ import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store
  * @param subjects The complete affected claim scope.
  * @returns The still-current reading or a structured refusal.
  */
-function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjects: string[]) {
+async function requireUnchanged(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	subjects: string[],
+) {
 	requireSubjectClaim(vault, request, subjects);
-	const current = requireTarget(vault, request.target);
+	const current = await requireTarget(vault, request.target);
 	if (!current.success) return current;
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
 		throw new ArchiveError(
@@ -39,7 +44,7 @@ function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjec
  * @returns The signed preparation journal or a structured refusal.
  */
 async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
-	const candidate = editCandidate(vault, request);
+	const candidate = await editCandidate(vault, request);
 	if (!candidate.success) return candidate;
 	const context = await archiveContext(vault);
 	const checkout = await checkoutContext(context);
@@ -50,7 +55,10 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		kind: "checkpoint",
 		vault: context.vault,
 		model: candidate.current.manifest.id,
-		state: candidate.current.manifest.current,
+		state: StateMetadataSchema.strip().parse(
+			candidate.selection ?? candidate.current.manifest.current,
+		),
+		selection: candidate.selection,
 		revision: candidate.revision,
 		createdAt: new Date().toISOString(),
 		request: {
@@ -59,7 +67,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 			writer: request.writer,
 			doing: request.doing,
 			expectedRevision: request.expectedRevision.digest,
-			dependencies: [],
+			dependencies: candidate.dependencies,
 		},
 		edit: request,
 		subjects: candidate.subjects,
@@ -70,10 +78,10 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 	const checkpoint = await archiveCommit(
 		context,
 		await tree(context, inputs),
-		tip === undefined ? [] : [tip],
+		[...new Set([...(tip === undefined ? [] : [tip]), ...candidate.dependencies])],
 		"archboard: edit canonical architecture",
 	);
-	const latest = requireUnchanged(vault, request, candidate.scopes);
+	const latest = await requireUnchanged(vault, request, candidate.scopes);
 	if (!latest.success) return latest;
 	const journal: ModelJournal = {
 		schemaVersion: 1,

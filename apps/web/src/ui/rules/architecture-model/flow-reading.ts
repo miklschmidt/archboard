@@ -1,17 +1,18 @@
 import { everyStep, type SemanticFlow } from "@archboard/board/flow";
+import type { VariantContent } from "@archboard/board/content";
 import type { Model, ModelFlow, projectModel } from "#ui/rules/architecture-model/projection.ts";
 
 /**
  * Offer flows that touch selected subjects or the current scope, including hidden descendants.
- * @param model The complete architecture state.
+ * @param content The complete depicted architecture.
  * @param subjects Explicit subjects, or an empty set for the repository reading.
  * @returns Relevant authored flows without inventing execution order.
  */
-function relevantFlows(model: Model, subjects: ReadonlySet<string>): ModelFlow[] {
-	const flows = model.collections.flatMap((collection) => collection.flows);
+function relevantFlows(content: VariantContent, subjects: ReadonlySet<string>): ModelFlow[] {
+	const { flows } = content;
 	if (subjects.size === 0) return flows;
 	const seeds = new Set(subjects);
-	for (const edge of model.relationships.filter((entry) => subjects.has(entry.id))) {
+	for (const edge of content.edges.filter((entry) => subjects.has(entry.id))) {
 		seeds.add(edge.from);
 		seeds.add(edge.to);
 	}
@@ -19,7 +20,7 @@ function relevantFlows(model: Model, subjects: ReadonlySet<string>): ModelFlow[]
 		if (flowSubjects([flow]).some((subject) => subjects.has(subject.id)))
 			for (const id of flow.participants) seeds.add(id);
 	}
-	const parents = new Map(model.modules.map((module) => [module.id, module.parent]));
+	const parents = new Map(content.nodes.map((module) => [module.id, module.parent]));
 	return flows.filter((flow) => flow.participants.some((id) => touchesScope(id, parents, seeds)));
 }
 
@@ -51,7 +52,7 @@ function projectFlow(
 	architecture: ReturnType<typeof projectModel>,
 	flow: ModelFlow,
 ): ReturnType<typeof projectModel> {
-	const byId = new Map(architecture.complete.nodes.map((module) => [module.id, module]));
+	const byId = new Map(architecture.depicted.nodes.map((module) => [module.id, module]));
 	const nodes = flow.participants.flatMap((id) => byId.get(id) ?? []);
 	return {
 		...architecture,
@@ -62,6 +63,8 @@ function projectFlow(
 		children: nodes,
 		context: [],
 		inspection: undefined,
+		held:
+			architecture.reference === undefined ? undefined : heldFlow(architecture.complete, flow.id),
 		connections: [],
 		allConnections: [],
 		content: {
@@ -70,6 +73,23 @@ function projectFlow(
 			flows: [flow],
 			walkthroughs: [],
 		},
+	};
+}
+
+/**
+ * Removed flow subjects stay outside the content that the selected state actually holds.
+ * @param complete Complete selected architecture.
+ * @param id The depicted flow identity.
+ * @returns Only its authored participants and steps, or an empty selected reading.
+ */
+function heldFlow(complete: VariantContent, id: string): VariantContent {
+	const flow = complete.flows.find((entry) => entry.id === id);
+	const participants = new Set(flow?.participants ?? []);
+	return {
+		nodes: complete.nodes.filter((node) => participants.has(node.id)),
+		edges: [],
+		flows: flow === undefined ? [] : [flow],
+		walkthroughs: [],
 	};
 }
 

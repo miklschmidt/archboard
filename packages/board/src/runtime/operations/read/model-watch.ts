@@ -44,7 +44,8 @@ function readingEvent(
 		type: "architecture_changed",
 		vault,
 		model: latest.manifest.id,
-		state: latest.manifest.current?.id ?? null,
+		state:
+			completion === undefined ? (latest.manifest.current?.id ?? null) : completion.target.state,
 		revision: latest.revision,
 		...changedSubjects(latest, previous, completion),
 	};

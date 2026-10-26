@@ -34,8 +34,10 @@ const ArchitectureFlowRenderResultSchema = z.discriminatedUnion("success", [
 	}),
 	ArchitectureModelFailureSchema,
 ]);
+import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
+
 const ArchitectureTargetSchema = z
-	.object({ model: SemanticIdSchema, state: SemanticIdSchema })
+	.object({ model: SemanticIdSchema, state: SemanticIdSchema.nullable() })
 	.strict();
 const ArchitectureClaimRequestSchema = z
 	.object({
@@ -120,7 +122,24 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 		})
 		.strict(),
 ]);
+const ProposalIntentSchema = z.discriminatedUnion("type", [
+	z.strictObject({
+		type: z.literal("create"),
+		...StateMetadataSchema.omit({ id: true, formerNames: true }).shape,
+	}),
+	z.strictObject({
+		type: z.literal("edit"),
+		set: StateMetadataSchema.omit({ id: true, formerNames: true }).partial().optional(),
+		clear: z.array(z.enum(["summary", "documents"])).optional(),
+	}),
+]);
 const ArchitectureModuleEditSchema = z.union([
+	DescriptionEditSchema.omit({ subject: true, description: true })
+		.extend({
+			proposal: ProposalIntentSchema,
+			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])),
+		})
+		.strict(),
 	DescriptionEditSchema,
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({ changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1) })
@@ -137,6 +156,7 @@ const ArchitectureEditSuccessSchema = z
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema,
+		selectedState: StateMetadataSchema.extend({ lifecycle: z.literal("draft") }).optional(),
 		cleanup: z.enum(["complete", "pending"]),
 	})
 	.strict();
