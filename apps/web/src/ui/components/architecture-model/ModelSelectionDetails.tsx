@@ -1,7 +1,9 @@
+import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
@@ -24,6 +26,14 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	const only = ids.size === 1 ? [...ids][0] : undefined;
 	const module = props.model.modules.find((entry) => entry.id === only);
 	if (module !== undefined) return <SelectedModule {...props} module={module} />;
+	if (props.projection.flow !== null)
+		return (
+			<ModelFlowDetails
+				model={props.model}
+				flow={props.projection.flow}
+				selection={props.selection}
+			/>
+		);
 	const connection = props.projection.allConnections.find(
 		({ joins }) => joins.length === ids.size && joins.every((edge) => ids.has(edge.id)),
 	);
@@ -38,6 +48,15 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 				slot="model-selected-subjects"
 			/>
 		);
+	return <UnselectedDetails {...props} />;
+}
+
+/**
+ * With no transient selection, explain the captured focus or the open scope.
+ * @param props The current architectural reading.
+ * @returns Focused identities or the complete scope introduction and interface.
+ */
+function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	if (props.projection.focused !== null)
 		return (
 			<SelectedSubjects
@@ -107,9 +126,7 @@ function SelectedSubjects(props: {
 	title: string;
 	slot: "model-selected-subjects" | "model-focused-subjects";
 }): JSX.Element {
-	const subjects = [...props.model.modules, ...props.model.relationships].filter((subject) =>
-		props.selected.has(subject.id),
-	);
+	const subjects = modelSubjects(props.model).filter((subject) => props.selected.has(subject.id));
 	return (
 		<section className="space-y-4">
 			<h3 className="text-title font-semibold">{props.title}</h3>
@@ -121,7 +138,7 @@ function SelectedSubjects(props: {
 			<ul data-slot={props.slot} className="text-body space-y-3">
 				{subjects.map((subject) => (
 					<li key={subject.id} data-subject-id={subject.id}>
-						{"name" in subject ? subject.name : (subject.label ?? subject.id)}
+						{subjectName(subject)}
 					</li>
 				))}
 			</ul>
