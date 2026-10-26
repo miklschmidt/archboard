@@ -19,7 +19,7 @@ type ReferenceEntry = Pick<Resolution, "module" | "index" | "reference">;
  * @returns Its selected state identity, when one exists.
  */
 function referenceState(model: ArchitectureModel) {
-	return model.checkpoint?.state.id ?? model.manifest.current?.id;
+	return model.selectedState?.id;
 }
 
 /**
@@ -90,8 +90,13 @@ async function foreignReading(
 	const targetVault = join(checkout.root, ".archboard/vault");
 	const reading =
 		checkpoint === undefined
-			? readArchitectureModel(targetVault)
-			: await readCheckpointModel(targetVault, checkpoint);
+			? await readArchitectureModel(targetVault, undefined, undefined, {
+					state: reference.state,
+					compare: false,
+				})
+			: await readCheckpointModel(targetVault, checkpoint, undefined, undefined, {
+					compare: false,
+				});
 	return { vault: targetVault, reading: selectReferenceSubject(reading, reference.subject) };
 }
 

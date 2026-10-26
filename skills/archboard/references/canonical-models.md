@@ -543,7 +543,9 @@ Omission preserves the list.
 
 `current` explicitly follows the foreign current designation.
 A stable state ID requires that exact state.
-For a non-current state, include its complete `checkpoint` identity beside its stable `state` ID.
+An active draft reference names its stable `state` ID.
+For an exact retained state, include its complete `checkpoint` identity beside that ID.
+Draft navigation preserves the selected lifecycle and reports reference changes in proposal comparisons.
 A pinned reference cannot use `state:"current"`.
 References create no containment, relationship, claim, or ownership transfer.
 
