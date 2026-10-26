@@ -1,0 +1,64 @@
+import { useQuery } from "@tanstack/react-query";
+import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import { architectureModelQuery } from "#ui/clients/architecture-model/queries.ts";
+
+/**
+ * Navigation details belong to the exact state whose module the inspector shows.
+ * @param vault The addressed vault.
+ * @param model The inspector's coherent reading.
+ * @param subject The selected module identity.
+ * @returns The ordinary query and a matching source target, when available.
+ */
+function useModelNavigation(vault: string, model: Model, subject: string) {
+	const target = navigationTarget(model, subject);
+	const { checkpoint, state } = target;
+	const query = useQuery(
+		architectureModelQuery(vault, checkpoint ?? null, {
+			module: subject,
+			state,
+			code: true,
+			compare: false,
+		}),
+	);
+	const coherent = !query.isError && matchingNavigation(query.data, model);
+	return {
+		query,
+		coherent,
+		code: coherent ? query.data?.codeTarget : undefined,
+		target,
+	};
+}
+
+/**
+ * A later or different reading never supplies actions for an older inspector.
+ * @param actual The separately read navigation details.
+ * @param shown The exact state that the person sees.
+ * @returns Whether both responses identify one coherent reading.
+ */
+function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
+	if (actual === undefined) return false;
+	return JSON.stringify(navigationIdentity(actual)) === JSON.stringify(navigationIdentity(shown));
+}
+
+/**
+ * One canonical read selects either mutable state or immutable checkpoint.
+ * @param model The coherent inspected model.
+ * @param subject The inspected module.
+ * @returns The existing opener destination fields.
+ */
+function navigationTarget(model: Model, subject: string) {
+	const checkpoint = model.checkpoint?.id;
+	const state = checkpoint === undefined ? model.selectedState?.id : undefined;
+	return { model: model.manifest.id, subject, state, checkpoint };
+}
+
+/**
+ * State, checkpoint, and input revision all contribute to reading identity.
+ * @param model One complete query response.
+ * @returns Its ordered identity fields.
+ */
+function navigationIdentity(model: Model) {
+	return [model.manifest.id, model.selectedState?.id, model.checkpoint?.id, model.revision.digest];
+}
+
+export { useModelNavigation };

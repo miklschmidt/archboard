@@ -1,5 +1,5 @@
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
-import { useCallback, useEffect, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
@@ -32,7 +32,7 @@ import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architectu
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
-interface ModelStageProps {
+interface ModelStageProps extends Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice"> {
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
@@ -131,6 +131,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				current={current}
 				stale={stale}
 				failure={feed.failure}
+				onCodeTargetNotice={props.onCodeTargetNotice}
 			/>
 		</section>
 	);
@@ -277,10 +278,10 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 	return stale ? "stale" : "ready";
 }
 
-interface ModelResponseProps {
-	vault: string;
-	paneId: string;
-	reducedMotion: boolean;
+interface ModelResponseProps extends Pick<
+	ModelStageProps,
+	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
+> {
 	query: ModelQuery;
 	current: boolean;
 	stale: boolean;
@@ -320,6 +321,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
+						onCodeTargetNotice={props.onCodeTargetNotice}
 					/>
 				</>
 			)}

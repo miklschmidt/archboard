@@ -512,6 +512,10 @@ Unrelated files keep their exact bytes.
 
 ## Follow code and foreign references
 
+In the browser, select a module and use Open code beside its authored binding.
+The action follows the selected current state, draft, or exact saved reading.
+If source is unavailable, the architecture remains readable and the disabled action states the reason.
+
 Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
 A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
 
