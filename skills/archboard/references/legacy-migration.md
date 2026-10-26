@@ -89,7 +89,10 @@ Keep this authored plan in version control when the vault is tracked.
 The plan file is independent of every board claim and version.
 No board content, current designation, archive checkpoint, or pane announcement changes.
 
-A changed source or plan returns `MAPPING_STALE` without replacing the saved plan.
+If captured inputs differ from your request, saving returns `MAPPING_STALE` without replacing the plan.
+A changing inventory returns `INVENTORY_CHANGED`.
+Keep external file edits idle while saving choices.
+Fingerprints detect observed interference but do not lock external editors.
 Read a fresh inventory before revising the request.
 If the source changes, review mappings and rebuild conflict choices against its new fingerprint.
 If the saved namespace differs, use its original namespace.

@@ -1,11 +1,11 @@
 ---
 id: TASK-549.19
 title: Inventory legacy boards and record identity choices
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-26T09:10:00Z'
+updated_date: '2026-10-26T09:12:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -44,16 +44,16 @@ None. This ticket can start immediately.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An owner requests a read-only inventory of legacy boards, states, reconciliation bases, views, walkthroughs, aliases, and document references.
-- [ ] #2 The inventory records a source fingerprint and an explicit mapping plan. Matching names, bindings, or drill-down links provide evidence, never automatic identity merges.
-- [ ] #3 Report conflicts in definitions, parents, order, relationship ownership, and policy. Record deliberate canonical choices while preserving original identity namespaces and aliases.
-- [ ] #4 This workflow changes no active architecture and needs no completed target writer.
+- [x] #1 An owner requests a read-only inventory of legacy boards, states, reconciliation bases, views, walkthroughs, aliases, and document references.
+- [x] #2 The inventory records a source fingerprint and an explicit mapping plan. Matching names, bindings, or drill-down links provide evidence, never automatic identity merges.
+- [x] #3 Report conflicts in definitions, parents, order, relationship ownership, and policy. Record deliberate canonical choices while preserving original identity namespaces and aliases.
+- [x] #4 This workflow changes no active architecture and needs no completed target writer.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -76,4 +76,12 @@ Implemented public readLegacyInventory and saveLegacyMappingPlan through shared 
 Acceptance evidence: inventory preserves complete original source and normalized supported documents, including lifecycle records, reconciliation bases, views, walkthroughs, former addresses and document references. Exact source paths/bytes include policy and exclude the separate plan. Six public runtime cases prove provenance, evidence without identity merges, all five conflict categories, persistent explicit choices, stale refusal, invalid mappings, and unchanged legacy files. One real CLI/server process case proves vault transport and structured stale refusals; its red failure reproduces the required-body-vault bug before the fix.
 Consumer guidance, worked example, ADR 0058, domain terms and S20 evaluation coverage are updated. No model evaluation ran. Proposals Board persistence@TASK-549.19, Command interface@TASK-549.19 and Archboard server routes@TASK-549.19 were compared, checked, adopted at versions 108/149/109 and released. Touched boards have zero semantics/code warnings. The all-vault code pass still warns on unrelated Archboard, Archboard server and Live panes boards.
 Simplification: reused the in-memory legacy decoder, existing vocabulary references, ID/schema authorities, lease and atomic writer. Removed redundant mapping validation. The plan has no active-model writer, journal, history conversion or cutover; explicit replacement values record intent for later composition validation. External referenced documents/source bytes are not retained by inventory.
+
+Final validation: 27 runtime/CLI contract tests, 22 policy/skill/document tests and 2 isolated CLI/server process tests pass (51 tests across 9 files). lint reports zero warnings/errors; source and browser TypeScript projects pass; formatting passes. The latest local integration tip f1b91c9a98537a29238ac1575f45d2fcfd5d3259 remains an ancestor. Merging feat/canonical-module-model reports Already up to date. Signed checkpoints are 0e152ac11 and 84c7ae889. No frontend implementation or browser test ran.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered read-only legacy inventory and a separately persisted identity mapping plan through the shared runtime, CLI and server. Original namespaces, addresses, lifecycle records, reconciliation bases and document references remain intact. Owner choices cover definitions, containment, sibling order, relationship ownership and policy without changing active architecture. Fifty-one focused tests, lint, types and formatting pass. Architecture proposals are adopted and released. Composition, history conversion and migration installation remain in later tickets. Other vault boards still report code warnings outside this scope.
+<!-- SECTION:FINAL_SUMMARY:END -->
