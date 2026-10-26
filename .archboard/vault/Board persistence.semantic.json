@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 121,
+	"version": 122,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T12:37:22.563Z",
+	"updatedAt": "2026-10-26T13:03:02.139Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -82730,9 +82730,10 @@
 					{
 						"id": "yEqHs86l",
 						"order": 51000,
-						"name": "Archive publication sidecar",
+						"name": "Archive publication storage",
 						"kind": "module",
-						"responsibility": "Persists explicit destinations and publication evidence beside shared Git objects",
+						"responsibility": "Owns private destinations, publication refs and complete named fetches",
+						"description": "The Git common directory owns destination configuration per portable vault address. Pending refs retain intended publication closure. Receipt refs retain acknowledged closure. Temporary incoming refs are released after the consuming operation retains its result. Git transport cannot establish host retention protection.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-publication.ts"
@@ -84540,6 +84541,45 @@
 						"kind": "data",
 						"label": "Explicit complete fetch and non-forced publication",
 						"emphasis": "normal"
+					},
+					{
+						"id": "6v2wIOX0",
+						"order": 131000,
+						"from": "yEqHs86l",
+						"to": "ZLJy8ivl",
+						"kind": "dependency",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-publication.ts",
+							"symbol": "ArchitecturePublicationDestinationSchema"
+						}
+					},
+					{
+						"id": "GdViIM9f",
+						"order": 132000,
+						"from": "yEqHs86l",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-publication.ts",
+							"symbol": "archiveContext"
+						}
+					},
+					{
+						"id": "LfosB6s2",
+						"order": 133000,
+						"from": "Bd4GPG6d",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/publication.ts",
+							"symbol": "git"
+						}
 					}
 				],
 				"flows": [

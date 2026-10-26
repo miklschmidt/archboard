@@ -1,4 +1,4 @@
-# Read and retain a canonical model
+# Read, retain, and publish a canonical model
 
 Use this path when the addressed vault contains an authored `model.json` manifest.
 Existing `.semantic.json` boards retain authority until explicit migration.
@@ -88,10 +88,76 @@ The operation retains only recognized architecture inputs and checkpoint metadat
 It creates no source-code snapshot and publishes nothing.
 
 The result carries `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, and `sources`.
-Its `publication` remains `saved-locally`.
+Its `publication` reports explicit archive publication evidence.
+Read [Publish and fetch history](#publish-and-fetch-history) before sharing a retained reading.
 A normal source-code push does not publish this archive.
 Linked worktrees share the archive through Git's common repository directory.
 Their current architecture remains separate.
+
+## Publish and fetch history
+
+A source-code push does not establish archive publication.
+Configure an existing named Git remote and a complete independent archive branch ref.
+Configuration stays private beside shared Git objects.
+It applies to the portable vault address across linked worktrees.
+It changes no architecture inputs and sends no history.
+
+```bash
+archboard model publication-configure -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+archboard model publication <checkpoint.id> -C <directory>
+archboard model publish <checkpoint.id> -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+```
+
+Use the configured destination on every publication and recovery request.
+If the remote URL changes, explicitly configure that destination again.
+`PUBLICATION_DESTINATION_CHANGED` refuses use of the former authorization and publication evidence.
+Local retention and exact reads remain available.
+
+`saved-locally` means that the architecture exists locally without publication evidence for the selected destination.
+`publication-pending` means that a durable publication intent awaits a successful exchange.
+That intent includes the retained dependency closure.
+`published` means that an explicit push or fetch established remote availability for that checkpoint.
+`unavailable` means that the requested history cannot be opened or restored by that operation.
+
+Publication evidence persists across server restarts.
+It describes availability at the last successful explicit exchange.
+It does not promise that the remote still exists or keeps its retention policy.
+The result reports `retention.protected: false` and explains the enforceability limitation.
+The remote owner must deny ref rewrites and deletion through server policy and keep a backup.
+Generic Git transport cannot install or inspect those host controls.
+
+A stale push fetches complete named history and joins archive ancestry through a signed synchronization record.
+The record preserves both tips without merging model content.
+Publication preserves checkpoint identities and never force-pushes.
+Configured identity and signing apply to the join.
+If signing fails, repair the signer and retry the same explicit publication request.
+
+If the network fails, local architecture remains retained.
+Use `model publication` to read the saved status without contacting the remote.
+After access returns, repeat `model publish` with the same checkpoint and destination.
+An interrupted request remains pending until an explicit exchange proves publication.
+
+To recover a missing reading, configure the owner's named archive destination first.
+Then fetch that complete archive explicitly.
+
+```bash
+archboard model fetch <checkpoint.id> -C <directory> \
+  --remote <remote-name> --ref refs/heads/archboard-history
+archboard model read -C <directory> --checkpoint <checkpoint.id>
+```
+
+The fetch retains a named local reference and restores the referenced ancestry.
+An existing shallow archive triggers a deeper fetch of that archive ref.
+Current files, the index, source HEAD, and stored source fetch mappings remain unchanged.
+Fetched checkpoints appear in `model checkpoints`.
+Archive order never selects the checkout's current state.
+
+`ARCHIVE_NOT_PORTABLE` refuses publication of retained machine-local source repository paths.
+Immutable checkpoint metadata cannot be redacted during publication.
+Keep such checkpoints local and use portable source repository identities for future archives.
+Private archive initialization and portable export remain separate delivery slices.
 
 ## Reopen and recover
 
@@ -115,8 +181,9 @@ Architecture remains readable when source evidence is unavailable.
 
 `ARCHITECTURE_UNAVAILABLE` means that architecture inputs or a required baseline are missing.
 Restore the archive from its owner or backup.
-If the owner publishes history, explicitly fetch the named `archboard-history` branch with its required ancestry.
-This delivery performs no automatic fetch or publication.
+If the owner publishes history, use `model fetch` with the configured remote, archive ref, and exact checkpoint.
+The fetch restores complete archive ancestry, including required baselines in shallow clones.
+Exact reads perform no automatic network operation.
 Never substitute current content for missing history.
 
 `ARCHIVE_IN_USE` means that a worktree has `archboard-history` checked out.
@@ -128,4 +195,4 @@ An unsuccessful operation keeps its structured JSON and exits with status 2.
 This delivery supports manifest and module inputs plus local checkpoints.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
-Canonical composition, authoring, proposal changes, publication, private archives, and cutover arrive through later TASK-549 slices.
+Canonical composition, authoring, proposal changes, private archives, and cutover arrive through later TASK-549 slices.

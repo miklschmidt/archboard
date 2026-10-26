@@ -5,6 +5,8 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	ARCHIVE_UNREADABLE:
+		"Inspect the named archive ref. Preserve unrelated source branches and restore a complete Archboard archive or configure its correct independent ref.",
 	ARCHIVE_NOT_PORTABLE:
 		"Keep this checkpoint local. Publication cannot redact immutable checkpoint metadata. Future retained source associations require a portable repository identity rather than a machine path.",
 	ARCHIVE_NETWORK_FAILED:
@@ -79,6 +81,7 @@ async function historyResult<T>(
  * Present one retained record without private archive fields.
  * @param id The immutable checkpoint identity.
  * @param record The retained checkpoint record.
+ * @param publication The current explicit publication evidence.
  * @returns Public checkpoint metadata.
  */
 function checkpointMetadata(

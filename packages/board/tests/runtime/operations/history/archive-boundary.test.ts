@@ -42,3 +42,21 @@ test("a successful archive fetch reports a missing requested identity as unavail
 		await fetchArchitectureHistory(vault, { ...destination, checkpoint: "f".repeat(40) }),
 	).toMatchObject({ success: false, code: "ARCHITECTURE_UNAVAILABLE", publication: "unavailable" });
 });
+
+test("a configured source branch never becomes archive ancestry or changes during publication", async () => {
+	const { root, vault, remote } = publicationFixture();
+	git(root, "push", "--quiet", "archive", "main:main");
+	const head = git(remote, "rev-parse", "refs/heads/main");
+	const checkpoint = await retain(vault);
+	const destination = { remote: "archive", ref: "refs/heads/main" };
+	await configureArchitecturePublication(vault, destination);
+	expect(
+		await publishArchitectureHistory(vault, { ...destination, checkpoint: checkpoint.id }),
+	).toMatchObject({
+		success: false,
+		code: "ARCHIVE_UNREADABLE",
+		publication: "publication-pending",
+	});
+	expect(git(remote, "rev-parse", "refs/heads/main")).toBe(head);
+	expect(git(root, "rev-parse", "archboard-history")).toBe(checkpoint.id);
+});

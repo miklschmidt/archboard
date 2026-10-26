@@ -1077,6 +1077,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/history/checkpoints.test.ts and tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical archive publication: explicit destination, durable publication states, complete shallow fetch, signed concurrent ancestry and retention limitation",
+					"expectedUse": "configure a named remote and independent archive ref; explicitly publish or fetch an exact checkpoint; retry pending publication without losing local work; report unprotected retention honestly",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/history/publication.test.ts, fetch-history.test.ts, concurrent-publication.test.ts and archive-boundary.test.ts; tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

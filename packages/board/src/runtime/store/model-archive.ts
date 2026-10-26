@@ -477,6 +477,7 @@ async function retainOperation(
 /**
  * Read archive records in traversal order without assigning architectural meaning.
  * @param context The caller's checkout.
+ * @param tips The retained archive roots, or the local archive tip by default.
  * @returns The retained record identities and metadata.
  */
 async function archiveRecords(context: ArchiveContext, tips?: string[]) {

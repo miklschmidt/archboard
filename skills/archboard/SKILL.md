@@ -13,7 +13,7 @@ description: >-
 
 # Archboard
 
-For an authored vault with `model.json`, read [canonical models](references/canonical-models.md) before using `model read`, `model retain`, or `model checkpoints`.
+For an authored vault with `model.json`, read [canonical models](references/canonical-models.md) before reading, retaining, publishing, or fetching canonical history.
 Legacy vaults keep the board workflow below until explicit migration.
 For legacy inventory or identity choices, read [legacy migration](references/legacy-migration.md) before using `model inventory` or `model plan`.
 

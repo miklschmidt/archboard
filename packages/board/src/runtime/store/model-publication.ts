@@ -1,13 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { git } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
-import {
-	ArchitecturePublicationDestinationSchema,
-	GitObjectIdSchema,
-} from "#shared/schemas/model.ts";
+import { ArchitecturePublicationDestinationSchema } from "#shared/schemas/model.ts";
 import {
 	ArchiveError,
 	archiveContext,
@@ -20,7 +17,6 @@ const ConfigurationSchema = ArchitecturePublicationDestinationSchema.extend({
 	schemaVersion: z.literal(1),
 	fingerprint: z.string(),
 }).strict();
-const PendingSchema = z.object({ checkpoint: GitObjectIdSchema, tip: GitObjectIdSchema }).strict();
 const retention = {
 	protected: false as const,
 	limitation:
@@ -173,15 +169,17 @@ async function configuredDestination(
  * @param checkpoint The complete immutable checkpoint identity.
  * @param tip The retained archive tip.
  */
-function markPending(
+async function markPending(
 	context: PublicationContext,
 	fingerprint: string,
 	checkpoint: string,
 	tip: string,
 ) {
-	const directory = join(context.directory, fingerprint);
-	mkdirSync(directory, { recursive: true, mode: 0o700 });
-	writeFileAtomic(join(directory, `${checkpoint}.json`), JSON.stringify({ checkpoint, tip }));
+	await git(context.root, [
+		"update-ref",
+		`refs/archboard/pending/${fingerprint}/${checkpoint}`,
+		tip,
+	]);
 }
 
 /**
@@ -222,17 +220,68 @@ async function acknowledgePublication(
 }
 
 /**
+ * Own temporary fetch retention until the operation keeps its durable result.
+ * @param context The resolved archive context.
+ * @param destination The explicit archive destination.
+ * @param read The operation that consumes the fetched tip.
+ * @returns The operation's complete result.
+ */
+async function withFetchedArchive<T>(
+	context: PublicationContext,
+	destination: Awaited<ReturnType<typeof configuredDestination>>,
+	read: (tip: string) => Promise<T>,
+): Promise<T> {
+	const ref = `refs/archboard/incoming/${randomUUID()}`;
+	try {
+		return await read(await fetchTip(context, destination, ref));
+	} finally {
+		try {
+			await git(context.root, ["update-ref", "-d", ref]);
+		} catch {
+			// Cleanup failure only retains additional objects. It cannot undo a completed exchange.
+		}
+	}
+}
+
+/**
  * Fetch one named archive without touching source refs, FETCH_HEAD or fetch configuration.
  * @param context The resolved archive context.
  * @param destination The explicit archive destination.
- * @returns The complete operation result.
+ * @param ref The private incoming ref.
+ * @param deepen Whether to restore an observed archive shallow boundary.
+ * @returns The completely fetched archive tip.
  */
-async function fetchArchive(
+async function fetchTip(
 	context: PublicationContext,
 	destination: Awaited<ReturnType<typeof configuredDestination>>,
+	ref: string,
 	deepen = false,
+): Promise<string> {
+	const tip = await fetchNamedRef(context, destination, ref, deepen);
+	try {
+		await requireCompleteArchive(context, tip);
+	} catch (error) {
+		if (error instanceof ShallowArchiveError && !deepen)
+			return fetchTip(context, destination, ref, true);
+		throw error;
+	}
+	return tip;
+}
+
+/**
+ * Fetch a named ref through Git without changing the source fetch mapping.
+ * @param context The resolved archive context.
+ * @param destination The explicit archive destination.
+ * @param ref The private incoming ref.
+ * @param deepen Whether to request complete archive depth.
+ * @returns The fetched immutable tip.
+ */
+async function fetchNamedRef(
+	context: PublicationContext,
+	destination: Awaited<ReturnType<typeof configuredDestination>>,
+	ref: string,
+	deepen: boolean,
 ) {
-	const ref = `refs/archboard/incoming/${randomUUID()}`;
 	await git(context.root, [
 		"fetch",
 		"--no-tags",
@@ -249,38 +298,31 @@ async function fetchArchive(
 	]);
 	const tip = await git(context.root, ["rev-parse", "--verify", ref]);
 	if (tip === undefined) throw new Error("The fetched archive has no tip.");
-	try {
-		await requireCompleteArchive(context, tip);
-	} catch (error) {
-		if (error instanceof ShallowArchiveError && !deepen)
-			return fetchArchive(context, destination, true);
-		throw error;
-	}
-	return { tip, ref };
+	return tip;
 }
 
 /**
  * Refuse incomplete objects, shallow boundaries, and foreign source ancestry.
  * @param context The resolved archive context.
  * @param tip The retained archive tip.
+ * @param forPublication Whether this closure will be sent to a remote.
  */
-async function requireCompleteArchive(context: ArchiveContext, tip: string) {
+async function requireCompleteArchive(
+	context: ArchiveContext,
+	tip: string,
+	forPublication = false,
+) {
 	await git(context.root, ["rev-list", "--objects", "--missing=error", tip], {
 		maxOutputBytes: Infinity,
 	});
-	const records = await archiveRecords(context, [tip]);
-	if (
-		records.some(
-			({ record }) =>
-				record.kind === "checkpoint" &&
-				record.sources.some((source) => /^(?:file:|\/|\\|\.{1,2}\/|[A-Za-z]:)/u.test(source.repo)),
-		)
-	)
+	const records = await archiveRecords(context, [tip]).catch((error: unknown) => {
 		throw new ArchiveError(
-			"ARCHIVE_NOT_PORTABLE",
-			"The archive contains a machine-local source repository path. Its immutable metadata cannot be published unchanged.",
+			"ARCHIVE_UNREADABLE",
+			error instanceof Error ? error.message : String(error),
 			tip,
 		);
+	});
+	if (forPublication) requirePortableRecords(records, tip);
 	const shallowPath = await git(context.root, [
 		"rev-parse",
 		"--path-format=absolute",
@@ -296,6 +338,26 @@ async function requireCompleteArchive(context: ArchiveContext, tip: string) {
 		throw new ShallowArchiveError(
 			"ARCHITECTURE_UNAVAILABLE",
 			"The archive still has a shallow boundary. Restore complete history at the configured remote.",
+			tip,
+		);
+}
+
+/**
+ * Refuse machine-local metadata before sending immutable objects to a remote.
+ * @param records The complete supported archive records.
+ * @param tip The closure that will be published.
+ */
+function requirePortableRecords(records: Awaited<ReturnType<typeof archiveRecords>>, tip: string) {
+	if (
+		records.some(
+			({ record }) =>
+				record.kind === "checkpoint" &&
+				record.sources.some((source) => /^(?:file:|\/|\\|\.{1,2}\/|[A-Za-z]:)/u.test(source.repo)),
+		)
+	)
+		throw new ArchiveError(
+			"ARCHIVE_NOT_PORTABLE",
+			"The archive contains a machine-local source repository path. Its immutable metadata cannot be published unchanged.",
 			tip,
 		);
 }
@@ -326,43 +388,39 @@ async function publicationEvidence(context: ArchiveContext, checkpoint: string) 
 	const publication = await publicationContext(context);
 	if (publication.configuration === undefined) return { publication: "saved-locally" as const };
 	const destination = await configuredDestination(publication);
-	const receipts = await git(
-		context.root,
-		["for-each-ref", "--format=%(objectname)", receiptPrefix(destination.fingerprint)],
-		{ maxOutputBytes: Infinity },
+	const publishedTip = await retainingTip(
+		context,
+		checkpoint,
+		receiptPrefix(destination.fingerprint),
 	);
-	for (const tip of (receipts ?? "").split("\n").filter(Boolean)) {
-		// oxlint-disable-next-line no-await-in-loop -- stop at the first retained proof for this checkpoint
-		if (await isArchiveAncestor(context, checkpoint, tip))
-			return { publication: "published" as const, publishedTip: tip };
-	}
+	if (publishedTip !== undefined) return { publication: "published" as const, publishedTip };
+	const pending = await retainingTip(
+		context,
+		checkpoint,
+		`refs/archboard/pending/${destination.fingerprint}/`,
+	);
 	return {
-		publication: (await pendingClosure(publication, destination.fingerprint, checkpoint))
-			? ("publication-pending" as const)
-			: ("saved-locally" as const),
+		publication:
+			pending === undefined ? ("saved-locally" as const) : ("publication-pending" as const),
 	};
 }
 
 /**
- * Include every retained baseline in the pending publication intent.
- * @param context The private publication context.
- * @param fingerprint The private destination fingerprint.
+ * Find a retained tip whose real ancestry includes this checkpoint.
+ * @param context The resolved archive context.
  * @param checkpoint The exact checkpoint to classify.
- * @returns Whether a pending intent retains the checkpoint.
+ * @param prefix The private ref namespace to inspect.
+ * @returns The retaining tip, when one exists.
  */
-async function pendingClosure(
-	context: PublicationContext,
-	fingerprint: string,
-	checkpoint: string,
-) {
-	const directory = join(context.directory, fingerprint);
-	if (!existsSync(directory)) return false;
-	for (const file of readdirSync(directory).filter((name) => name.endsWith(".json"))) {
-		const pending = PendingSchema.parse(JSON.parse(readFileSync(join(directory, file), "utf8")));
-		// oxlint-disable-next-line no-await-in-loop -- stop after the first pending ancestry proof
-		if (await isArchiveAncestor(context, checkpoint, pending.tip)) return true;
+async function retainingTip(context: ArchiveContext, checkpoint: string, prefix: string) {
+	const refs = await git(context.root, ["for-each-ref", "--format=%(objectname)", prefix], {
+		maxOutputBytes: Infinity,
+	});
+	for (const tip of (refs ?? "").split("\n").filter(Boolean)) {
+		// oxlint-disable-next-line no-await-in-loop -- stop at the first retained ancestry proof
+		if (await isArchiveAncestor(context, checkpoint, tip)) return tip;
 	}
-	return false;
+	return undefined;
 }
 
 export {
@@ -375,7 +433,7 @@ export {
 	checkpointPublication,
 	publicationEvidence,
 	retainedPublicationTips,
-	fetchArchive,
+	withFetchedArchive,
 	requireCompleteArchive,
 	retention,
 	type PublicationContext,

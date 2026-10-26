@@ -65,6 +65,7 @@ test("an explicit named archive fetch restores the full dependency closure in a 
 	});
 	expect(await readArchitecturePublication(addressed, checkpoint.id)).toMatchObject({
 		publication: "unavailable",
+		destination,
 	});
 	expect(
 		await fetchArchitectureHistory(addressed, { ...destination, checkpoint: checkpoint.id }),
