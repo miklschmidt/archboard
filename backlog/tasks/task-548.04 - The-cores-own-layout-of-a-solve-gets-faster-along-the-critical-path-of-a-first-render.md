@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T04:38:00Z'
+updated_date: '2026-10-26T05:06:00Z'
 labels:
   - renderer
   - performance
@@ -62,6 +62,8 @@ Evidence:
 - bun test packages/renderer: 651 pass, 1 skip, 0 fail. cargo test and clippy -D warnings for archboard-layout, archboard-render, archboard-router pass. type-check, lint, fmt:check pass. bun run benchmark: 40 pass.
 
 The 500 ms target is not reached. What stands in the way: Graphviz in the whole solve's stack prefix and wrap sink checks, and the pool's cold start and contention. docs/design/first-render-critical-path.md names the changes that could reach it: wrap candidates as their own solves, faster and shared Graphviz (TASK-548.01 to 548.03), and a warm pool.
+
+Tools ported to the in-core Graphviz (branch task-548.04-tools, from feat/faster-first-render). capture-solves.ts and examples/replay.rs are gone, because the host can no longer see Graphviz calls. capture-render-requests.ts writes each timing.ts board's render request, and the critical_path example of archboard-render draws it natively with one worker for each solve. On the combined branch it measures Agent workbench 644 ms (Graphviz 431) and Board viewer 647 ms (Graphviz 478), each path one whole solve. Over all 23 boards the path is 4517 ms.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
