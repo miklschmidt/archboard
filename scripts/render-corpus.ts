@@ -37,7 +37,7 @@ import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { renderBoard } from "@archboard/renderer/bun";
 
 /** One drawing of the corpus, as a run recorded it. */
-interface Drawn {
+export interface Drawn {
 	readonly sha256: string;
 	readonly ms: number;
 	readonly width: number;
@@ -59,13 +59,73 @@ interface Job {
 
 type Policy = ReturnType<typeof readSemanticBoardConfiguration>["configuration"];
 
-/** The vaults of the corpus: the dogfood vault and every example's. */
-const VAULTS = [
-	".archboard/vault",
-	...readdirSync("examples")
-		.map((name) => join("examples", name))
-		.filter((dir) => existsSync(join(dir, ".archboard", "config.yaml"))),
-];
+/** What a drawing's key names, in the order the key names it. */
+export interface DrawingKey {
+	readonly vault: string;
+	readonly board: string;
+	/** The variant's name. */
+	readonly variant: string;
+	/** The view's name, or `overview`. */
+	readonly view: string;
+	readonly engine: string;
+	readonly theme: string;
+	readonly comparison: boolean;
+}
+
+/** What separates the fields of a key. */
+const KEY_SEPARATOR = " | ";
+
+/**
+ * The key a run records a drawing under.
+ * @param drawing What the drawing is.
+ * @returns The key.
+ */
+export function keyOf(drawing: DrawingKey): string {
+	const { vault, board, variant, view, engine, theme, comparison } = drawing;
+	return [vault, board, variant, view, engine, theme, comparison ? "comparison" : "plain"].join(
+		KEY_SEPARATOR,
+	);
+}
+
+/**
+ * What a key names.
+ * @param key A key a run recorded.
+ * @returns Its fields.
+ */
+export function drawingOf(key: string): DrawingKey {
+	const [vault, board, variant, view, engine, theme, comparison] = key.split(KEY_SEPARATOR);
+	return {
+		vault: vault!,
+		board: board!,
+		variant: variant!,
+		view: view!,
+		engine: engine!,
+		theme: theme!,
+		comparison: comparison === "comparison",
+	};
+}
+
+/**
+ * The file `--svg` writes a drawing to, in the run's `svg` directory.
+ * @param key The drawing's key.
+ * @returns The file name.
+ */
+export function svgFileOf(key: string): string {
+	return `${key.replaceAll(/[^\w-]+/gu, "_")}.svg`;
+}
+
+/**
+ * The vaults of the corpus: the dogfood vault and every example's.
+ * @returns Their directories, relative to the repository root.
+ */
+function corpusVaults(): string[] {
+	return [
+		".archboard/vault",
+		...readdirSync("examples")
+			.map((name) => join("examples", name))
+			.filter((dir) => existsSync(join(dir, ".archboard", "config.yaml"))),
+	];
+}
 
 /**
  * Every board of a vault, read from a copy so the vault is never touched, and its policy.
@@ -136,7 +196,7 @@ function listOf(value: string | boolean | undefined, fallback: string): string[]
  * @param dir The run's directory.
  * @returns Each drawing by its key.
  */
-function runOf(dir: string): Record<string, Drawn> {
+export function runOf(dir: string): Record<string, Drawn> {
 	return JSON.parse(readFileSync(join(dir, "corpus.json"), "utf8"));
 }
 
@@ -179,9 +239,15 @@ function jobsOfBoard(vault: string, board: SemanticBoard, policy: Policy, axes: 
 			axes.engines.flatMap((engine) =>
 				axes.themes.flatMap((theme) =>
 					axes.comparisons.map((comparison) => ({
-						key: [vault, board.name, variant.name, view ?? "overview", engine, theme]
-							.concat(comparison ? "comparison" : "plain")
-							.join(" | "),
+						key: keyOf({
+							vault,
+							board: board.name,
+							variant: variant.name,
+							view: view ?? "overview",
+							engine,
+							theme,
+							comparison,
+						}),
 						vault,
 						board,
 						policy,
@@ -220,8 +286,7 @@ async function drawAll(
 			if (next % 200 === 0) console.log(`${next} of ${jobs.length}`);
 			if (result === undefined) continue;
 			drawn[job.key] = result.drawn;
-			if (svgs !== undefined)
-				writeFileSync(join(svgs, `${job.key.replaceAll(/[^\w-]+/gu, "_")}.svg`), result.svg);
+			if (svgs !== undefined) writeFileSync(join(svgs, svgFileOf(job.key)), result.svg);
 		}
 	}
 	await Promise.all(Array.from({ length: parallel }, worker));
@@ -235,7 +300,7 @@ async function drawAll(
  */
 async function render(out: string, options: Record<string, string | boolean | undefined>) {
 	const axes = axesOf(options);
-	const jobs = VAULTS.flatMap((vault) => {
+	const jobs = corpusVaults().flatMap((vault) => {
 		const { boards, policy } = readVault(vault);
 		return boards.flatMap((board) => jobsOfBoard(vault, board, policy, axes));
 	});
@@ -264,10 +329,11 @@ function compare(before: string, after: string) {
 		console.log(
 			`differs: ${key}${one[key] === undefined ? " (only after)" : other[key] === undefined ? " (only before)" : ""}`,
 		);
-	const engines = [...new Set(keys.map((key) => key.split(" | ")[4]!))];
+	const engines = [...new Set(keys.map((key) => drawingOf(key).engine))];
 	for (const engine of engines) {
 		const shared = keys.filter(
-			(key) => key.split(" | ")[4] === engine && one[key] !== undefined && other[key] !== undefined,
+			(key) =>
+				drawingOf(key).engine === engine && one[key] !== undefined && other[key] !== undefined,
 		);
 		/**
 		 * The time a run spent on the shared drawings.
@@ -290,23 +356,29 @@ function compare(before: string, after: string) {
 	console.log(`${differ.length} of ${keys.length} drawings differ`);
 }
 
-const { positionals, values } = parseArgs({
-	allowPositionals: true,
-	options: {
-		engines: { type: "string" },
-		variants: { type: "string" },
-		themes: { type: "string" },
-		comparison: { type: "string" },
-		jobs: { type: "string" },
-		svg: { type: "boolean" },
-	},
-});
-const [command, first, second] = positionals;
-if (command === "render" && first !== undefined) await render(first, values);
-else if (command === "compare" && first !== undefined && second !== undefined)
-	compare(first, second);
-else {
-	console.error("Usage: render <out> [options] | compare <before> <after>");
-	process.exit(2);
+/** Run the command the command line names. */
+async function main() {
+	const { positionals, values } = parseArgs({
+		allowPositionals: true,
+		options: {
+			engines: { type: "string" },
+			variants: { type: "string" },
+			themes: { type: "string" },
+			comparison: { type: "string" },
+			jobs: { type: "string" },
+			svg: { type: "boolean" },
+		},
+	});
+	const [command, first, second] = positionals;
+	if (command === "render" && first !== undefined) await render(first, values);
+	else if (command === "compare" && first !== undefined && second !== undefined)
+		compare(first, second);
+	else {
+		console.error("Usage: render <out> [options] | compare <before> <after>");
+		process.exit(2);
+	}
+	process.exit(0);
 }
-process.exit(0);
+
+// council-pairs.ts reads a run's key format from here without running a command.
+if (import.meta.main) await main();
