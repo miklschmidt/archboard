@@ -12,7 +12,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{js_max, js_min, sort_by, sorted_by, unique};
+use crate::ecma::{js_max, js_min, sorted_by, sorted_unique};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, StationId, Track};
 use crate::track::labels::extent_of;
 use crate::track::occupancy::Occupancy;
@@ -51,13 +51,6 @@ struct Search {
     traffic: Map<usize, Traffic>,
     masks: Map<StationId, Vec<bool>>,
     standing: Standing,
-}
-
-/// What a chain's crossings are counted by: line by line, or trunk by trunk.
-#[derive(Clone, Copy)]
-enum Count {
-    Lines,
-    Trunks,
 }
 
 /// What the chains a line crosses at one card are grouped by.
@@ -192,23 +185,17 @@ impl Relay {
         kinds.values().fold(0.0, |sum, one| sum + one.len() as f64)
     }
 
-    /// How many lines a chain's stations at some x cross, counted one way.
-    fn crossings(
-        &self,
-        track: &Track<'_>,
-        stations: &[StationId],
-        xs: &[f64],
-        count: Count,
-    ) -> f64 {
-        match count {
-            Count::Lines => track.crossings_of(stations, xs, &self.bands, None),
-            Count::Trunks => {
-                let mut counted = |track: &Track<'_>, crossed: &[usize], upper, lower| {
-                    self.trunks_among(track, crossed, upper, lower)
-                };
-                track.crossings_of(stations, xs, &self.bands, Some(&mut counted))
-            }
-        }
+    /// How many lines a chain's stations at some x cross.
+    fn lines_crossed(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
+        track.crossings_of(stations, xs, &self.bands, None)
+    }
+
+    /// How many trunks the lines a chain's stations at some x cross make.
+    fn trunks_crossed(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
+        let mut counted = |track: &Track<'_>, crossed: &[usize], upper, lower| {
+            self.trunks_among(track, crossed, upper, lower)
+        };
+        track.crossings_of(stations, xs, &self.bands, Some(&mut counted))
     }
 
     /// Relay one chain onto its cheapest free route when that saves enough.
@@ -221,12 +208,10 @@ impl Relay {
             .expect("a relayed chain");
         let stations = track.chain(chain).stations.clone();
         let old: Vec<f64> = stations.iter().map(|&station| track.x(station)).collect();
+        let crossings = self.lines_crossed(track, &stations, &old);
         let standing = Standing {
-            costs: [
-                self.cost(track, &stations, &old, Count::Lines),
-                self.cost(track, &stations, &old, Count::Trunks),
-            ],
-            crossings: track.crossings_of(&stations, &old, &self.bands, None),
+            costs: self.costs(track, &stations, &old, crossings),
+            crossings,
         };
         let occupancy = self.occupancy_without(track, chain);
         // Every reading passes the same bands with the same x, so it has the
@@ -271,24 +256,24 @@ impl Relay {
         stations: &[StationId],
         moved: bool,
     ) -> Option<Relaid> {
-        let masks: Vec<Vec<bool>> = stations[1..stations.len() - 1]
+        let middle = &stations[1..stations.len() - 1];
+        for &station in middle {
+            self.find_mask(track, search, station);
+        }
+        let masks: Vec<&[bool]> = middle
             .iter()
-            .map(|&station| self.mask_of(track, search, station))
+            .map(|station| search.masks[station].as_slice())
             .collect();
         let chosen = Self::cheapest(track, stations, &search.xs, &masks, &search.traffic)?;
         let mut route = vec![track.x(stations[0])];
         route.extend(chosen);
         route.push(track.x(*stations.last().expect("a station")));
-        let costs = [
-            self.cost(track, stations, &route, Count::Lines),
-            self.cost(track, stations, &route, Count::Trunks),
-        ];
+        let crossings = self.lines_crossed(track, stations, &route);
         // A label box moved to another band crosses no more lines than its line does.
-        if moved
-            && track.crossings_of(stations, &route, &self.bands, None) > search.standing.crossings
-        {
+        if moved && crossings > search.standing.crossings {
             return None;
         }
+        let costs = self.costs(track, stations, &route, crossings);
         let saves = (0..2).any(|at| costs[at] <= search.standing.costs[at] - SAVING);
         saves.then(|| Relaid {
             stations: stations.to_vec(),
@@ -297,14 +282,12 @@ impl Relay {
         })
     }
 
-    /// Which columns a station may stand on, found once per search.
-    fn mask_of(&self, track: &Track<'_>, search: &mut Search, station: StationId) -> Vec<bool> {
-        if let Some(known) = search.masks.get(&station) {
-            return known.clone();
+    /// Find which columns a station may stand on, once per search.
+    fn find_mask(&self, track: &Track<'_>, search: &mut Search, station: StationId) {
+        if !search.masks.contains_key(&station) {
+            let mask = self.free_at(track, search.chain, station, &search.xs, &search.occupancy);
+            search.masks.insert(station, mask);
         }
-        let mask = self.free_at(track, search.chain, station, &search.xs, &search.occupancy);
-        search.masks.insert(station, mask.clone());
-        mask
     }
 
     /// What each band holds besides one chain: every item but its label box,
@@ -343,15 +326,20 @@ impl Relay {
         let (a, b) = track.reach_of(stations[0]);
         let (c, d) = track.reach_of(*stations.last().expect("a station"));
         all.extend([a, b, c, d]);
-        let mut xs = unique(&all);
-        sort_by(&mut xs, |one, other| one - other);
-        xs
+        sorted_unique(&all)
     }
 
-    /// What a chain's line costs with its stations at some x: its sideways
-    /// travel, a share of the length it runs down beyond the drawing, and a
-    /// crossing's worth for each line, or trunk, it crosses.
-    fn cost(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64], count: Count) -> f64 {
+    /// What a chain's line costs with its stations at some x, where it
+    /// crosses `crossings` lines: its sideways travel, a share of the length
+    /// it runs down beyond the drawing, and a crossing's worth for each line
+    /// it crosses, and for each trunk.
+    fn costs(
+        &self,
+        track: &Track<'_>,
+        stations: &[StationId],
+        xs: &[f64],
+        crossings: f64,
+    ) -> [f64; 2] {
         let mut travel = 0.0;
         for index in 0..stations.len() - 1 {
             let (top, bottom) = (xs[index], xs[index + 1]);
@@ -361,7 +349,11 @@ impl Relay {
         }
         let far = self.beyond(track, stations, xs);
         let lap = js_min(far / BEYOND_SHARE, CROSSING + SAVING);
-        travel + lap + CROSSING * self.crossings(track, stations, xs, count)
+        let run = travel + lap;
+        [
+            run + CROSSING * crossings,
+            run + CROSSING * self.trunks_crossed(track, stations, xs),
+        ]
     }
 
     /// How far a chain's line runs down beyond everything the drawing holds,
