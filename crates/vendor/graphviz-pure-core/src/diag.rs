@@ -337,6 +337,9 @@ pub fn fmt_g(v: f64, prec: usize) -> String {
     if v == 0.0 {
         return if v.is_sign_negative() { "-0" } else { "0" }.to_string();
     }
+    if let Some(fixed) = fmt_g_fixed(v, p) {
+        return fixed;
+    }
     // The exponent after rounding to `p` significant digits.
     let e_form = format!("{:.*e}", p - 1, v);
     let exp: i32 = e_form
@@ -352,6 +355,76 @@ pub fn fmt_g(v: f64, prec: usize) -> String {
         let decimals = (p as i32 - 1 - exp).max(0) as usize;
         trim(format!("{v:.decimals$}"))
     }
+}
+
+/// archboard: not in C. [`fmt_g`] of a finite, non-zero `v` that prints in fixed notation,
+/// without the two exact decimal conversions, where its digits are certain; `None`
+/// elsewhere, for [`fmt_g`]'s own path.
+///
+/// `v` times `10^d`, with `d` the decimals the fixed notation prints, holds the `p` digits
+/// as an integer and the rest as a fraction. The double product is within `10^p * 2^-53`
+/// of the exact one, as `10^d` is exact for `d <= 22`. Where it is further than four times
+/// that from the next power of ten and from a half, the exact product rounds to the same
+/// integer, to `p` digits, and the exponent after rounding is the one before; a product
+/// near either, `p` over 9, or `d` out of `0..=22` takes the exact path.
+fn fmt_g_fixed(v: f64, p: usize) -> Option<String> {
+    if p > 9 {
+        return None;
+    }
+    let magnitude = v.abs();
+    let low = 10f64.powi(p as i32 - 1);
+    let high = 10f64.powi(p as i32);
+    let tolerance = high * f64::EPSILON * 2.0;
+    let mut d = p as i32 - 1 - magnitude.log10().floor() as i32;
+    let mut scaled = 0.0;
+    for _ in 0..3 {
+        if !(0..=22).contains(&d) {
+            return None;
+        }
+        scaled = magnitude * 10f64.powi(d);
+        if scaled < low {
+            d += 1;
+        } else if scaled >= high {
+            d -= 1;
+        } else {
+            break;
+        }
+    }
+    if !(0..=22).contains(&d) || scaled - low < tolerance || high - 0.5 - scaled < tolerance {
+        return None;
+    }
+    let whole = scaled.floor();
+    if (scaled - whole - 0.5).abs() < tolerance {
+        return None;
+    }
+    // In fixed notation: the exponent `p - 1 - d` lies in -4..p.
+    if p as i32 - 1 - d < -4 {
+        return None;
+    }
+    let digits = (scaled.round() as u64).to_string();
+    let d = d as usize;
+    let mut out = String::with_capacity(digits.len() + d + 3);
+    if v < 0.0 {
+        out.push('-');
+    }
+    if d == 0 {
+        out.push_str(&digits);
+        return Some(out);
+    }
+    let (int, frac) = if digits.len() > d {
+        digits.split_at(digits.len() - d)
+    } else {
+        ("", digits.as_str())
+    };
+    out.push_str(if int.is_empty() { "0" } else { int });
+    let frac_zeros = d.saturating_sub(frac.len());
+    let frac = frac.trim_end_matches('0');
+    if !frac.is_empty() {
+        out.push('.');
+        out.extend(std::iter::repeat_n('0', frac_zeros));
+        out.push_str(frac);
+    }
+    Some(out)
 }
 
 /// Number of errors reported on this thread since the last [`reset_errors`].

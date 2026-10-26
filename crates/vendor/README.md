@@ -44,6 +44,9 @@ archboard changed three things:
      plain arithmetic first, and the fused one only where it decides a box.
    - `graphviz-pure-geom/src/pathplan/triang.rs`: `ccw` reads the sign of its
      fused multiply-add from the plain one where that sign is certain.
+   - `graphviz-pure-core/src/diag.rs`: `fmt_g` prints a number in fixed
+     notation from one double product where its digits are certain, instead
+     of two exact decimal conversions.
 
 ## Why they are not workspace members
 
