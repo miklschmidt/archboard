@@ -28,9 +28,6 @@ import {
 import type { AppliedAppearance, PictureKey } from "@archboard/board/render-reply";
 import { LINE_MARKS, type LineMark } from "@archboard/renderer/picture";
 
-/** One kind of line the key shows. */
-type LineMark = (typeof LINE_MARKS)[number]["mark"];
-
 /** How wide every sample of the legend is, so its labels start on one line. */
 const SAMPLE_WIDTH = 28;
 
