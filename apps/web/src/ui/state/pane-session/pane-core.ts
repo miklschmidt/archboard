@@ -75,7 +75,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 
 /** One pane's wiring, as the hook holds it. */
 interface PaneCore<Transport extends WorkbenchTransportPort> {
-	readonly connect: () => void;
+	readonly connect: (startsOn?: string) => void;
 	readonly publishStatus: () => void;
 	/** The pane's facets the server hears about changed. */
 	readonly facetsChanged: () => void;

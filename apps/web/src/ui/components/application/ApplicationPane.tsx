@@ -101,6 +101,8 @@ interface ApplicationPaneProps {
 	reducedMotion: boolean;
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
 	openingVault: string;
+	/** The board a pane added for one opens on, as a board opened beside is. */
+	openingBoard?: string | undefined;
 	/**
 	 * Show a board in this pane: where a part its search found is, or where a drill-down leads.
 	 * @param key The board key.
@@ -149,6 +151,7 @@ function optionsFor(
 		recording: props.recording === true,
 		theme: props.theme,
 		openingVault: props.openingVault,
+		...(props.openingBoard === undefined ? {} : { openingBoard: props.openingBoard }),
 		onStatus: callbacks.onStatus,
 		onHolder: callbacks.onHolder,
 		onPaneStateAccepted: callbacks.onPaneStateAccepted,

@@ -1,11 +1,13 @@
 // A proposal opened beside, from the About page or the navigator, is read
 // through the view of the pane it was opened from (TASK-538.04). With one pane
-// the second opens; with two, the pane beside is replaced and no pane is added.
+// the second opens on the board, which its socket names so the server starts it
+// there, as one history entry that Back undoes (TASK-550). With two, the pane
+// beside is replaced and no pane is added.
 //
 // What the panes report to the server is what is checked, because that is what
 // an agent is told each pane reads (ADR 0023).
 
-import { expect, test } from "bun:test";
+import { afterEach, expect, spyOn, test, type Mock } from "bun:test";
 
 import {
 	FakeSocket,
@@ -20,8 +22,33 @@ import {
 	chooseViewIn,
 	draws,
 	pane,
+	pointAt,
+	readings,
+	twoPanes,
 	viewsRead,
 } from "#tests/ui/support/application/shop-panes.ts";
+
+/** Every address the page writes, pushed or replaced, while a test watches. */
+const written: URLSearchParams[] = [];
+/** The watches on the history, which each test lets go. */
+const watches: Mock<History["pushState"]>[] = [];
+
+/** Watch the addresses the page writes from here on. */
+function watchAddresses(): void {
+	for (const method of ["pushState", "replaceState"] as const) {
+		const write = window.history[method].bind(window.history);
+		const watch = spyOn(window.history, method).mockImplementation((state, title, url) => {
+			written.push(new URL(String(url), window.location.href).searchParams);
+			write(state, title, url);
+		});
+		watches.push(watch);
+	}
+}
+
+afterEach(() => {
+	for (const watch of watches.splice(0)) watch.mockRestore();
+	written.length = 0;
+});
 
 /**
  * Open a variant beside from one pane's About page, the way a person does.
@@ -55,33 +82,67 @@ function besideControl(paneId: string, name: string): Element | null {
 }
 
 /**
- * The second pane's socket, opened, once the page has made it.
+ * The second pane's socket, once the page has made it, opened and started as the
+ * server starts it: on the board it names, else on the board in front of the person.
  * @param made How many sockets the page had made before.
+ * @returns The board the socket named, or null.
  */
-async function secondPaneOpens(made: number): Promise<void> {
+async function secondPaneStarts(made: number): Promise<string | null> {
 	await settleUntil(() => FakeSocket.made.length > made);
-	act(() => FakeSocket.made.at(-1)!.open());
+	const socket = FakeSocket.made.at(-1)!;
+	act(() => socket.open());
 	await settle();
+	const named = new URL(socket.url).searchParams.get("board");
+	pointAt(socket, named ?? "shop");
+	return named;
 }
 
-test("the About page opens a proposal beside through the view on screen, and the next one replaces the pane beside", async () => {
+test("with one pane, the About page opens a proposal beside on its board through the view on screen, as one history entry that Back undoes", async () => {
 	await paneShowing("shop");
 	await chooseViewIn("A", QUERIES.id);
 	const made = FakeSocket.made.length;
+	const before = window.history.length;
+	watchAddresses();
 	await openBesideFromAbout("A", "Returns desk");
-	await secondPaneOpens(made);
+	expect(await secondPaneStarts(made)).toBe("shop@v2");
 	await settleUntil(() => draws("B", "shop@v2"));
 	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+	// The person chose the board, so the pane says so, as a board shown by hand does (ADR 0034).
+	const reportsOfB = readings.filter((one) => one.paneId === "B");
+	expect(reportsOfB.some((one) => one.byUser?.includes("board") === true)).toBe(true);
 
-	// A shelved variant takes the pane beside, and no pane is added.
-	await openBesideFromAbout("A", "Gift wrap");
-	await settleUntil(() => draws("B", "shop@v3"));
-	expect(FakeSocket.made.length).toBe(made + 1);
-	expect(document.querySelectorAll("[data-slot='pane-stage']")).toHaveLength(2);
-	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+	expect(window.history.length).toBe(before + 1);
+	// No address names the pane beside on another board, or as the active pane.
+	const naming = written.filter((address) => address.has("paneB"));
+	expect(naming.map((address) => [address.get("paneB"), address.get("pane")])).toContainEqual([
+		"shop@v2",
+		null,
+	]);
+	expect(naming.every((address) => address.get("paneB") === "shop@v2")).toBe(true);
+	expect(naming.every((address) => address.get("pane") === null)).toBe(true);
+
+	act(() => {
+		window.history.back();
+	});
+	await settleUntil(() => pane("B") === null);
+	expect(new URLSearchParams(window.location.search).get("viewA")).toBe(QUERIES.id);
+	expect((await viewsRead()).A).toBe(QUERIES.id);
 });
 
-test("Alt on a navigator row opens a proposal beside through the view of the active pane", async () => {
+test("with two panes, a shelved variant opened beside replaces the pane beside, as one history entry, and adds no pane", async () => {
+	await twoPanes();
+	await chooseViewIn("A", QUERIES.id);
+	const made = FakeSocket.made.length;
+	const before = window.history.length;
+	await openBesideFromAbout("A", "Gift wrap");
+	await settleUntil(() => draws("B", "shop@v3"));
+	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+	expect(FakeSocket.made.length).toBe(made);
+	expect(document.querySelectorAll("[data-slot='pane-stage']")).toHaveLength(2);
+	expect(window.history.length).toBe(before + 1);
+});
+
+test("Alt on a navigator row opens a proposal beside on its board through the view of the active pane", async () => {
 	await paneShowing("shop");
 	await chooseViewIn("A", QUERIES.id);
 	const made = FakeSocket.made.length;
@@ -91,7 +152,7 @@ test("Alt on a navigator row opens a proposal beside through the view of the act
 	act(() => {
 		row!.dispatchEvent(new MouseEvent("click", { bubbles: true, altKey: true }));
 	});
-	await secondPaneOpens(made);
+	expect(await secondPaneStarts(made)).toBe("shop@v2");
 	await settleUntil(() => draws("B", "shop@v2"));
 	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
 });

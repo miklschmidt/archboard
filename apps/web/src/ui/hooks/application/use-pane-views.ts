@@ -15,6 +15,7 @@ import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
+import type { PaneEntry } from "#ui/rules/application/pane-list.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
@@ -89,14 +90,31 @@ interface PaneRecording {
 }
 
 /**
+ * Where a pane opens: in the vault and on the board it was added for, else in the
+ * vault the server serves, on the board the server gives it.
+ * @param entry The pane.
+ * @returns Its opening vault, and its opening board if it has one.
+ */
+function openingOf(entry: PaneEntry): {
+	readonly openingVault: string;
+	readonly openingBoard?: string;
+} {
+	const { opensOn } = entry;
+	return opensOn === undefined
+		? { openingVault: servedVault() }
+		: { openingVault: opensOn.vault, openingBoard: opensOn.board };
+}
+
+/**
  * One pane's mounted element.
  * @param sources Everything the panes are made from.
- * @param paneId The pane.
+ * @param entry The pane, and the board it was added for if any.
  * @param index Its place in reading order.
  * @returns The element.
  */
-function paneElement(sources: PaneViewSources, paneId: string, index: number): ReactNode {
+function paneElement(sources: PaneViewSources, entry: PaneEntry, index: number): ReactNode {
 	const { panes, readings } = sources;
+	const { paneId } = entry;
 	/**
 	 * The person chose a different way of reading this pane's board.
 	 * @param view The view's id, or null for the overview.
@@ -156,7 +174,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
-		openingVault: servedVault(),
+		...openingOf(entry),
 		onOpenBoard: openBoardHere,
 		onOpenBeside: openBesideHere,
 		ask: ask === null ? null : (text: string): void => ask(paneId, text),
@@ -239,7 +257,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					openBoard,
 					openBeside,
 				},
-				entry.paneId,
+				entry,
 				index,
 			);
 		});

@@ -8,7 +8,11 @@ import { useCallback, useMemo, useState } from "react";
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
-import { initialPaneList, type PaneList } from "#ui/rules/application/pane-list.ts";
+import {
+	initialPaneList,
+	type PaneList,
+	type PaneOpening,
+} from "#ui/rules/application/pane-list.ts";
 import { createPaneMoves } from "#ui/state/application/pane-moves.ts";
 import {
 	PaneHandles,
@@ -95,8 +99,8 @@ interface Panes {
 	readonly links: PaneLinks;
 	readonly handles: PaneHandles;
 	readonly callbacks: PaneCallbacks;
-	/** Open the second pane; false when there is no pane to open. */
-	readonly add: () => boolean;
+	/** Open the second pane, on a board it is added for if any; false when there is no pane to open. */
+	readonly add: (opensOn?: PaneOpening) => boolean;
 	/** Close a pane; false when the list refuses, and nothing is forgotten. */
 	readonly close: (paneId: string) => boolean;
 	/** Focus a pane; false when it is already the focused one. */
@@ -259,7 +263,7 @@ function usePanes(
 	const patch = useCallback((paneId: string, next: Partial<PaneRecord>): void => {
 		setRecords((current) => relinked(current, patchRecord(current.records, paneId, next)));
 	}, []);
-	const add = useCallback((): boolean => moves.add(), [moves]);
+	const add = useCallback((opensOn?: PaneOpening): boolean => moves.add(opensOn), [moves]);
 	// A close the list refuses — the last pane, or one that is not open — leaves
 	// the pane running, so its record stays with it. Only a close that happens
 	// forgets anything.

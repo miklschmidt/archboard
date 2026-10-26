@@ -63,6 +63,11 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	openingVault: string;
 	/**
+	 * The board a pane added for one opens on, as a board opened beside is: what its
+	 * socket names until one opens, so the server starts it there. Read once, when the pane mounts.
+	 */
+	openingBoard?: string;
+	/**
 	 * The pane said what it is.
 	 * @param status The pane's status.
 	 */

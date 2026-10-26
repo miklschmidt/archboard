@@ -36,6 +36,8 @@ export async function openPaneSession(
 	options: {
 		clientId: string;
 		x?: number;
+		/** The board its socket names to start on. */
+		startsOn?: string;
 		board?: string;
 		primary?: boolean;
 		focused?: boolean;
@@ -53,6 +55,7 @@ export async function openPaneSession(
 		base,
 		clientId: options.clientId,
 		vault: requireVault(request.vault),
+		...(options.startsOn === undefined ? {} : { startsOn: options.startsOn }),
 		...(options.board === undefined ? {} : { preferredBoard: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {

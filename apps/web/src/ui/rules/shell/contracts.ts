@@ -118,6 +118,13 @@ interface ShellView {
 	notices: readonly ShellNotice[];
 }
 
+/** A board a pane is added for, as a board opened beside is. */
+interface BoardBeside {
+	readonly key: string;
+	/** Its repository, when it is not that of the active pane. */
+	readonly repository?: string | undefined;
+}
+
 /** Everything a person can do from the shell. */
 interface ShellActions {
 	setTheme(theme: ThemeChoice): void;
@@ -152,7 +159,13 @@ interface ShellActions {
 	chooseCheckout(repository: string, root: string): void;
 	refreshBoards(): void;
 	selectPane(paneId: string): void;
-	addPane(): void;
+	/**
+	 * Add the second pane: on the board in front of the person, or on a board it is
+	 * added for, as one opened beside is, which the server starts it on.
+	 * @param beside The board it is added for, and its repository when it is not that of the active pane.
+	 * @returns Whether a pane was added.
+	 */
+	addPane(beside?: BoardBeside): boolean;
 	closePane(paneId: string): void;
 	/** Present one pane fullscreen, or null to return to the workspace. */
 	present(presentation: ShellPresentation | null): void;
@@ -175,5 +188,6 @@ export type {
 	SettingsSurface,
 	ShellRepository,
 	ShellView,
+	BoardBeside,
 	ShellActions,
 };

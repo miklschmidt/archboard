@@ -12,14 +12,20 @@
 // reads the workspace once per render and needs to know whether that reading
 // is still good.
 
-import { addPane, closePane, selectPane, type PaneList } from "#ui/rules/application/pane-list.ts";
+import {
+	addPane,
+	closePane,
+	selectPane,
+	type PaneList,
+	type PaneOpening,
+} from "#ui/rules/application/pane-list.ts";
 
 /** The moves, over one list. */
 interface PaneMoves {
 	/** The list as it is now. */
 	readonly list: () => PaneList;
-	/** Open the second pane; false when there is no pane to open. */
-	readonly add: () => boolean;
+	/** Open the second pane, on a board it is added for if any; false when there is no pane to open. */
+	readonly add: (opensOn?: PaneOpening) => boolean;
 	/** Close a pane; false when the list refuses it. */
 	readonly close: (paneId: string) => boolean;
 	/** Focus a pane; false when it is already the focused one. */
@@ -55,9 +61,10 @@ function createPaneMoves(initial: PaneList, changed: (list: PaneList) => void): 
 		list: (): PaneList => list,
 		/**
 		 * Open the second pane.
+		 * @param opensOn The board it is added for, if any.
 		 * @returns Whether it opened.
 		 */
-		add: (): boolean => take(addPane(list)),
+		add: (opensOn?: PaneOpening): boolean => take(addPane(list, opensOn)),
 		/**
 		 * Close a pane.
 		 * @param paneId The pane.

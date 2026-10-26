@@ -1,17 +1,18 @@
 // Opening a board beside the one being read. With two panes that is the pane
-// that is not active; with one, the second pane is added first, and the board
-// is shown in it once the server has accepted it, since a pane the server has
-// not registered cannot be pointed at anything.
+// that is not active; with one, the second pane is added on the board, so the
+// server starts it there and the address writes one entry (TASK-550): there is
+// no moment in which the new pane shows the board it was not added for.
 //
 // A board opened beside the board on screen in the pane it came from, as a
 // proposal opened beside the current variant is, is read through that pane's
 // view (TASK-538.04), so the two are read the same way from the start.
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 
 import type { Arrival, PaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
-import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
+import { freePaneId, type PaneList } from "#ui/rules/application/pane-list.ts";
+import { recordFor } from "#ui/rules/application/pane-records.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type { ShellActions } from "#ui/rules/shell/contracts.ts";
@@ -27,39 +28,14 @@ interface Beside {
 	readonly arrival: Arrival | null;
 }
 
-/** A board waiting for the pane being added for it. */
-interface PendingBeside extends Beside {
-	/** The new pane has appeared: should it go again before it is ready, the board is not wanted any more. */
-	seen: boolean;
-}
+/** What opening beside acts through. */
+interface BesideActors
+	extends
+		Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
+		Pick<PaneReadings, "showView" | "arriveThrough"> {}
 
 /** How a board is opened beside a pane. */
 type OpenBeside = ShellActions["openBeside"];
-
-/**
- * The pane a pending board is waiting for, once the server has accepted it.
- * @param panes The panes.
- * @param pending The pending board.
- * @returns The pane id, or null while it is not there or not ready.
- */
-function readyTarget(panes: Panes, pending: PendingBeside): string | null {
-	const target = panes.list.panes.find((pane) => pane.paneId !== pending.from);
-	if (target === undefined) return null;
-	pending.seen = true;
-	return paneReady(recordFor(panes.records, target.paneId).status) ? target.paneId : null;
-}
-
-/**
- * Whether a pending board is no longer wanted: the pane added for it went
- * before it was ready, or the pane it was asked from did.
- * @param panes The panes.
- * @param pending The pending board.
- * @returns True when it should be forgotten.
- */
-function abandoned(panes: Panes, pending: PendingBeside): boolean {
-	const ids = panes.list.panes.map((pane) => pane.paneId);
-	return !ids.includes(pending.from) || (pending.seen && ids.length < 2);
-}
 
 /**
  * The view a board opened beside a pane is read through: that pane's, when the
@@ -90,8 +66,49 @@ function openedOn(status: PaneStatus, board: string): boolean {
 }
 
 /**
+ * Add the second pane on the board, and keep the pane it came from active.
+ * @param actors The actions and readings.
+ * @param list The one pane.
+ * @param beside The board.
+ */
+function addBeside(actors: BesideActors, list: PaneList, beside: Beside): void {
+	const added = freePaneId(list);
+	if (added === null || !actors.addPane(beside)) {
+		return;
+	}
+	actors.arriveThrough(added, beside.arrival);
+	// Beside means the person stays where they were reading, as with two panes.
+	actors.selectPane(beside.from);
+}
+
+/**
+ * Show the board in the pane beside, which reads it through the view it arrives with.
+ * @param actors The actions and readings.
+ * @param paneId The pane beside.
+ * @param status What it shows now.
+ * @param beside The board.
+ */
+function showBeside(
+	actors: BesideActors,
+	paneId: string,
+	status: PaneStatus,
+	beside: Beside,
+): void {
+	const { arrival } = beside;
+	if (arrival !== null && openedOn(status, arrival.board)) {
+		actors.showView(paneId, arrival.view);
+	} else {
+		actors.arriveThrough(paneId, arrival);
+	}
+	void actors.selectBoard(beside.key, paneId, beside.repository).then((shown) => {
+		// A board that never comes is no board for the pane to arrive on.
+		if (!shown) actors.arriveThrough(paneId, null);
+		return shown;
+	});
+}
+
+/**
  * Open a board beside the one being read.
- * @param panes The panes, watched for the pane an opening waits on.
  * @param livePanes The panes as they are when the person acts, which the action reads
  * so that it keeps one identity through every pane's news.
  * @param actions The shell's board and pane actions.
@@ -99,43 +116,11 @@ function openedOn(status: PaneStatus, board: string): boolean {
  * @returns The action.
  */
 function useBesideOpening(
-	panes: Panes,
 	livePanes: Panes,
 	actions: Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
 	readings: Pick<PaneReadings, "showView" | "arriveThrough">,
 ): OpenBeside {
-	const pending = useRef<PendingBeside | null>(null);
 	const { showView, arriveThrough } = readings;
-	const show = useCallback(
-		(beside: Beside, paneId: string, status: PaneStatus): void => {
-			const { arrival } = beside;
-			if (arrival !== null && openedOn(status, arrival.board)) {
-				showView(paneId, arrival.view);
-			} else {
-				arriveThrough(paneId, arrival);
-			}
-			void actions.selectBoard(beside.key, paneId, beside.repository).then((shown) => {
-				// A board that never comes is no board for the pane to arrive on.
-				if (!shown) arriveThrough(paneId, null);
-				return shown;
-			});
-		},
-		[actions, showView, arriveThrough],
-	);
-	useEffect(() => {
-		const wanted = pending.current;
-		if (wanted === null) return;
-		if (abandoned(panes, wanted)) {
-			pending.current = null;
-			return;
-		}
-		const paneId = readyTarget(panes, wanted);
-		if (paneId === null) return;
-		pending.current = null;
-		show(wanted, paneId, recordFor(panes.records, paneId).status);
-		// Beside means the person stays where they were reading, as with two panes.
-		actions.selectPane(wanted.from);
-	}, [panes, actions, show]);
 	return useCallback(
 		(key: string, repository?: string, from?: string): void => {
 			const { list, records } = livePanes;
@@ -147,15 +132,15 @@ function useBesideOpening(
 				from: source,
 				arrival: arrivalFrom(status, key),
 			};
+			const actors: BesideActors = { ...actions, showView, arriveThrough };
 			const other = list.panes.find((pane) => pane.paneId !== source);
-			if (other !== undefined) {
-				show(beside, other.paneId, recordFor(records, other.paneId).status);
-				return;
+			if (other === undefined) {
+				addBeside(actors, list, beside);
+			} else {
+				showBeside(actors, other.paneId, recordFor(records, other.paneId).status, beside);
 			}
-			pending.current = { ...beside, seen: false };
-			actions.addPane();
 		},
-		[livePanes, actions, show],
+		[livePanes, actions, showView, arriveThrough],
 	);
 }
 

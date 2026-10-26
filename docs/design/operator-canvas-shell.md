@@ -424,8 +424,8 @@ to show is absent from the page and from the outline.
    on screen is marked, and choosing another reads it in the pane. While the
    pane reads the variant that the board's name opens, a draft or a shelved
    variant ends its row with Open beside. It opens that variant in the pane
-   beside, through the view on screen. With one pane the second pane opens,
-   and with two the pane beside changes.
+   beside, through the view on screen. With one pane the second pane opens on
+   that variant, as one history entry, and with two the pane beside changes.
 
 Choosing a row or a chip picks its subject in the pane, and the page stays. The
 sidebar explains the subject, and the picture marks it when the diagram comes
