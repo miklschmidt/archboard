@@ -30,6 +30,7 @@ import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/serve
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { watchSemanticBoardFiles } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { mountServiceRoutes } from "#server/routes/service/service-routes.ts";
+import { mountArchitectureModelRoutes } from "#server/routes/architecture/model-routes.ts";
 
 // The Archboard server application, assembled in the order Express will run it. Each
 // mount owns one concern; this file decides only their order, which is the
@@ -118,6 +119,7 @@ mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
 mountRepositoryRoutes(app);
 mountSemanticBoardRoutes(app);
+mountArchitectureModelRoutes(app);
 mountLocalityRoute(app);
 mountCodeCheckRoute(app);
 mountFootprintRoute(app);

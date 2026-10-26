@@ -9,6 +9,8 @@ import { VaultCheckSchema, VaultDiagnosticSchema } from "@archboard/board/policy
 // reloaded.
 
 import { z } from "zod";
+import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { BoardDiscardAnswerSchema, BoardMoveAnswerSchema } from "@archboard/board/commands";
@@ -478,3 +480,25 @@ async function readSemanticBoardAnswerOnServer(board: string) {
 	);
 }
 export { checkSemanticVaultOnServer, readSemanticBoardAnswerOnServer };
+
+/**
+ * Read one canonical model, preserving actionable runtime refusals.
+ * @param module A qualified module id or a unique name.
+ * @returns The coherent model or its structured diagnostics.
+ */
+async function readArchitectureModelOnServer(module?: string): Promise<ArchitectureModelRead> {
+	const query = new URLSearchParams(module === undefined ? {} : { module });
+	try {
+		return ArchitectureModelReadSchema.parse(
+			await requestJson<unknown>(`/api/architecture/model?${query}`),
+		);
+	} catch (error) {
+		const parsed = ArchitectureModelReadSchema.safeParse(
+			isRecord(error) ? error["answer"] : undefined,
+		);
+		if (parsed.success && !parsed.data.success) return parsed.data;
+		throw error;
+	}
+}
+
+export { readArchitectureModelOnServer };
