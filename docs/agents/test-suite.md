@@ -505,6 +505,15 @@ The flow-repair case in `structure-recovery.test.ts` owns interrupted module and
 Existing renderer owners retain sequence and flowchart drawing rules.
 No browser owner is added for this backend delivery.
 
+The canonical reference owner is `packages/board/tests/runtime/operations/model-edit/references.test.ts`.
+It uses the public architecture operations with real files, signed checkpoints, and disposable Git repositories.
+It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
+`tests/system/semantic-boards/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
+`tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
+`canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
+`canonical-model-references.test.ts` owns portable addresses for every canonical subject kind, reload, Back, unavailable targets, and pinned recovery.
+Both browser owners use real files and Git with the existing browser adapter and public architecture operations.
+
 ## Compact canonical proposals
 
 `packages/board/tests/runtime/operations/proposals/` owns proposal behavior at the public architecture read/write interface.

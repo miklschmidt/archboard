@@ -30,6 +30,7 @@ import {
 	checkpointPublication,
 	retainedPublicationTips,
 } from "#runtime/store/model-publication.ts";
+import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
 
 /**
  * Require an architectural checkpoint for the addressed vault.
@@ -202,13 +203,13 @@ async function exactReading(
  * @param comparison The optional explicit or default comparison intent.
  * @returns One retained architecture or actionable diagnostics.
  */
-async function readArchitectureCheckpoint(
+async function readCheckpointModel(
 	vault: string,
 	checkpoint: string,
 	module?: string,
 	flow?: string,
 	comparison?: Omit<
-		Parameters<typeof import("#runtime/operations/read/model-read.ts").readArchitectureModel>[3],
+		Parameters<typeof import("#runtime/operations/proposals/read.ts").readSelectedState>[3],
 		"state"
 	>,
 ): Promise<ArchitectureModelRead> {
@@ -220,6 +221,26 @@ async function readArchitectureCheckpoint(
 		);
 	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
 	return readSelectedState(vault, module, flow, { state: checkpoint, ...comparison });
+}
+
+/**
+ * Read exact inputs and report foreign availability through retained pins only.
+ * @param vault The explicitly addressed vault.
+ * @param checkpoint The immutable architecture checkpoint.
+ * @param module The optional retained module selector.
+ * @param flow The optional retained flow selector.
+ * @param comparison The optional exact or default comparison selection.
+ * @returns The coherent retained reading and direct reference availability.
+ */
+async function readArchitectureCheckpoint(
+	vault: string,
+	checkpoint: string,
+	module?: string,
+	flow?: string,
+	comparison?: Parameters<typeof readCheckpointModel>[4],
+): Promise<ArchitectureModelRead> {
+	const reading = await readCheckpointModel(vault, checkpoint, module, flow, comparison);
+	return reading.success ? resolveModelReferences(vault, reading) : reading;
 }
 
 /**
@@ -254,4 +275,9 @@ async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureC
 	});
 }
 
-export { readArchitectureCheckpoint, listArchitectureCheckpoints, exactReading };
+export {
+	readArchitectureCheckpoint,
+	readCheckpointModel,
+	listArchitectureCheckpoints,
+	exactReading,
+};
