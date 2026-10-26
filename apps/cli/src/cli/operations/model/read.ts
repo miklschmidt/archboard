@@ -14,6 +14,14 @@ const modelReadContract = defineCommand({
 	parameters: [
 		{
 			kind: "option",
+			key: "flow",
+			spellings: ["--flow"],
+			value: "required",
+			placeholder: "id",
+			description: "Select one flow by qualified identity or unique current or former name",
+		},
+		{
+			kind: "option",
 			key: "checkpoint",
 			spellings: ["--checkpoint"],
 			value: "required",
@@ -28,7 +36,11 @@ const modelReadContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: z.object({ module: z.string().optional(), checkpoint: z.string().optional() }),
+		ingress: z.object({
+			module: z.string().optional(),
+			checkpoint: z.string().optional(),
+			flow: z.string().optional(),
+		}),
 	},
 	result: ArchitectureModelReadSchema,
 	output: {
@@ -75,7 +87,7 @@ const modelReadContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model read");
-		const result = await readArchitectureModelOnServer(input.module, input.checkpoint);
+		const result = await readArchitectureModelOnServer(input.module, input.checkpoint, input.flow);
 		return {
 			result,
 			...(result.success

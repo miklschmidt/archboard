@@ -115,9 +115,9 @@ const modelEditContract = defineCommand({
 	...modelClaimContract,
 	path: ["model", "edit"],
 	shared: ["url", "directory", "doing"],
-	summary: "Edit canonical module structure and relationships durably",
+	summary: "Edit canonical modules and independent flow behavior durably",
 	description:
-		"Reads the explicit target, complete expectedRevision, operationId, writer, claim and changes from JSON. Changes add, edit or remove modules and relationships. Description requests remain supported. The doing line comes from --doing. Retry the exact request after a lost response.",
+		"Reads the explicit target, complete expectedRevision, operationId, writer, claim and changes from JSON. Changes add, edit or remove modules, relationships, collections, flows and steps. Placements preserve continuing step identities. Description requests remain supported. The doing line comes from --doing. Retry the exact request after a lost response.",
 	examples: [
 		'archboard model edit --input edit.json --doing "explaining request routing" -C /tmp/shop',
 	],
