@@ -1,6 +1,6 @@
 // The layout engine's workers, in the browser and under Bun alike: a few
-// workers, each running Graphviz and the renderer core and solving one
-// graph at a time.
+// workers, each running the renderer core, Graphviz included, and solving
+// one graph at a time.
 //
 // A render settles several candidate drawings, and a worker answers its
 // messages in order, so one worker would hold every candidate behind every
@@ -10,10 +10,10 @@
 // another worker stood idle (TASK-377). The pool starts a worker only when a
 // solve finds every running one busy and none of them still starting, up to
 // one fewer than the cores the place reports, so a small board starts one and
-// a wide one spreads its candidates out without compiling the engine a dozen
-// times at once. Each solve starts from the engine's memory as it was loaded
-// (`loadLayoutEngine`), so neither which worker answers a solve nor what that
-// worker solved before changes the drawing.
+// a wide one spreads its candidates out without starting a dozen workers at
+// once. A solve's answer depends on its graph alone (`layout-engine.ts`), so
+// neither which worker answers a solve nor what that worker solved before
+// changes the drawing.
 //
 // An engine that aborts stays aborted: every later solve on that worker fails
 // the same way. A worker whose engine aborted or failed to start, or that
@@ -70,19 +70,19 @@ interface Pending {
 /** One worker, and the solve it was sent and has not answered yet. */
 interface PooledEngine {
 	readonly worker: EngineWorker;
-	/** Whether it has answered anything yet, which is when its engine is compiled. */
+	/** Whether it has answered anything yet, which is when it has started. */
 	answered: boolean;
 	solving?: { readonly id: number; readonly pending: Pending } | undefined;
 }
 
 /**
  * Whether an engine error means the engine can answer nothing more: a trap in
- * its WebAssembly, or an Emscripten runtime that aborted.
+ * its WebAssembly.
  * @param error What a solve threw.
  * @returns True when the worker must be replaced.
  */
 function engineAborted(error: unknown): boolean {
-	return error instanceof WebAssembly.RuntimeError || /\babort/iu.test(String(error));
+	return error instanceof WebAssembly.RuntimeError;
 }
 
 /**
@@ -246,7 +246,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		const idle = engines.find((engine) => engine.solving === undefined);
 		if (idle !== undefined) return idle;
 		// One worker starting at a time: a worker that has not answered is still
-		// compiling the engine, and starting another beside it only compiles it again.
+		// loading its script and instantiating the core, and a solve sent to it waits for that.
 		if (engines.length < ceiling && engines.every((engine) => engine.answered)) return start();
 		return undefined;
 	}

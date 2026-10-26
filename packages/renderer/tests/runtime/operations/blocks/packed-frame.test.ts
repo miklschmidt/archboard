@@ -3,8 +3,6 @@
 // short row above had room, and a block alone on its row stood centred under
 // a wide one, not under the block its line comes from.
 import { expect, test } from "bun:test";
-import { instance } from "@viz-js/viz";
-import { createLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
 import { loadCore } from "#runtime/services/core.ts";
 
 /** What these tests read of a solved graph: its root options. */
@@ -16,10 +14,9 @@ interface Solved {
  * The worker's layout engine, over graphs as objects.
  * @returns A solve of one graph.
  */
-async function layoutEngine(): Promise<(graph: object) => Solved> {
-	loadCore();
-	const solve = createLayoutEngine(await instance());
-	return (graph) => JSON.parse(solve(JSON.stringify(graph))) as Solved;
+function layoutEngine(): (graph: object) => Solved {
+	const { layOutBoard } = loadCore();
+	return (graph) => JSON.parse(layOutBoard(JSON.stringify(graph))) as Solved;
 }
 
 /**
@@ -39,8 +36,8 @@ function frame(id: string, width: number, height: number) {
 	};
 }
 
-test("a small block late in the order fills the room a short row leaves", async () => {
-	const solved = await layoutEngine();
+test("a small block late in the order fills the room a short row leaves", () => {
+	const solved = layoutEngine();
 	const call = { "archboard.relationship.kind": "call" };
 	const placed = solved({
 		id: "root",
@@ -59,8 +56,8 @@ test("a small block late in the order fills the room a short row leaves", async 
 	expect(box("c").y + box("c").height).toBeLessThan(box("b").y);
 });
 
-test("a block alone on its row stands under the block its line comes from", async () => {
-	const solved = await layoutEngine();
+test("a block alone on its row stands under the block its line comes from", () => {
+	const solved = layoutEngine();
 	const placed = solved({
 		id: "root",
 		layoutOptions: { "archboard.blocks.nesting": "blocks" },

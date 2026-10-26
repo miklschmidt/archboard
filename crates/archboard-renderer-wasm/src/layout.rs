@@ -1,30 +1,9 @@
 //! The layout's binding: one solve of a board, Track or Blocks, its measured
 //! graph in and its answer out, each as JSON. A host's layout engine runs it
-//! for each solve a render asks for (`crate::render`).
-//!
-//! The host runs Graphviz (`GraphvizHost`): the core hands it each graph as
-//! a viz-js `Graph` object, and the host answers what viz-js renders of it as
-//! `json0`, y inverted.
+//! for each solve a render asks for (`crate::render`). Graphviz runs in the
+//! core (`archboard_graphviz`, ADR 0058), so a solve asks its host for nothing.
 
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen(typescript_custom_section)]
-const GRAPHVIZ_HOST: &str = r#"
-/** The host's Graphviz: one graph laid out and answered as its `json0` output, y inverted. */
-export interface GraphvizHost {
-    render(graph: import("@viz-js/viz").Graph): string;
-}
-"#;
-
-#[wasm_bindgen]
-extern "C" {
-    /// The host's Graphviz.
-    #[wasm_bindgen(typescript_type = "GraphvizHost")]
-    pub type GraphvizHost;
-
-    #[wasm_bindgen(method, catch)]
-    fn render(this: &GraphvizHost, graph: &JsValue) -> Result<String, JsValue>;
-}
 
 /// What a value the host threw or refused with says.
 pub(crate) fn said(error: &JsValue, what: &str) -> String {
@@ -35,38 +14,13 @@ pub(crate) fn said(error: &JsValue, what: &str) -> String {
         .unwrap_or_else(|| format!("{what} failed without saying why"))
 }
 
-/// The host's Graphviz, as the layout asks for it.
-struct Host<'a> {
-    graphviz: &'a GraphvizHost,
-    /// Keep the host's error intact across the core's text-only error port.
-    failure: Option<JsValue>,
-}
-
-impl archboard_layout::Graphviz for Host<'_> {
-    fn render(&mut self, graph: &str) -> Result<String, String> {
-        let graph = js_sys::JSON::parse(graph).map_err(|error| said(&error, "Reading a graph"))?;
-        self.graphviz.render(&graph).map_err(|error| {
-            let words = said(&error, "Graphviz");
-            self.failure = Some(error);
-            words
-        })
-    }
-}
-
 /// Lay a measured board out one way (`archboard_layout::lay_out_board`).
 ///
 /// # Errors
 ///
 /// A graph or options the layout cannot read, and a block's graph Graphviz refused.
 #[wasm_bindgen(js_name = layOutBoard)]
-pub fn lay_out_board(graph: &str, graphviz: &GraphvizHost) -> Result<String, JsValue> {
-    let mut host = Host {
-        graphviz,
-        failure: None,
-    };
-    archboard_layout::lay_out_board(graph, &mut host).map_err(|error| {
-        // A WebAssembly trap must reach the worker as a RuntimeError, so the
-        // pool replaces the failed engine instead of sending it more work.
-        host.failure.unwrap_or_else(|| JsError::new(&error).into())
-    })
+pub fn lay_out_board(graph: &str) -> Result<String, JsValue> {
+    archboard_layout::lay_out_board(graph, &mut archboard_graphviz::InCore)
+        .map_err(|error| JsError::new(&error).into())
 }

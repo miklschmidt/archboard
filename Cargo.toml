@@ -21,7 +21,7 @@ publish = false
 # every warning. An exception is a local #[expect(lint, reason = "...")] at the
 # site: an expect that no longer matches fails too.
 [workspace.lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "deny"
 missing_docs = "warn"
 unreachable_pub = "warn"
 future_incompatible = { level = "warn", priority = -1 }

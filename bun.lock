@@ -17,7 +17,6 @@
         "@tanstack/react-router": "1.170.33",
         "@teddyzhu/clipboard": "0.0.10",
         "@tree-sitter-grammars/tree-sitter-hcl": "1.2.0",
-        "@viz-js/viz": "3.30.0",
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
         "cn": "0.2.5",
@@ -804,8 +803,6 @@
     "@vitest/ui": ["@vitest/ui@5.0.5", "", { "dependencies": { "@vitest/utils": "5.0.5", "fflate": "^0.8.3", "flatted": "^3.4.4", "pathe": "^2.0.3", "sirv": "^3.0.2", "tinyrainbow": "^3.2.0" }, "peerDependencies": { "vitest": "5.0.5" } }, "sha512-dCoGUOdgmCaSB2g+WQ/spPCBkytAWdNUkFSXY4z+eYp2d8JEOY8v0uDRaJTG9qf/kTlTVZ4CuYMYMz/f1HS/qQ=="],
 
     "@vitest/utils": ["@vitest/utils@5.0.5", "", { "dependencies": { "@vitest/pretty-format": "5.0.5", "convert-source-map": "^2.0.0", "tinyrainbow": "^3.2.0" } }, "sha512-/rBu7gzLDQI/SC79Tn98b5DwOgaHU/Gt4I9OVeP3YofzNaYtbImRCOJQmT1S6vOJg9gEIlWC+r3QxKkjuSa1nQ=="],
-
-    "@viz-js/viz": ["@viz-js/viz@3.30.0", "", {}, "sha512-2zmcP55QY44uQfZ+GvgNHmGd8S6KUD+2eMur9AbYybSzrOd/m8nMUg0ZircJNiJRKGgVBKAE8kh0hAwpUFUFQQ=="],
 
     "@voidzero-dev/vite-plus-darwin-arm64": ["@voidzero-dev/vite-plus-darwin-arm64@1.4.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-5Ie3vnrFrF5GFU+0VhbLuyoSmnzd8m42BvbLjncMOmAb6D1sEq4g37dlxPiVcJEqITM0t4zFnLkNSF4YAlk0FQ=="],
 

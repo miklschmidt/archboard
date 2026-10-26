@@ -2,9 +2,10 @@
 //! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
 //! drawing is chosen between the solves of one board, each a measured graph
 //! laid out one way ([`lay_out_board`]) and read for what the choice weighs;
-//! the host runs the solves ([`Solver`]), side by side where it can, and gives
-//! each its Graphviz ([`Graphviz`]). The chosen drawing is put on a page
-//! fitted to it, and its crossings are settled before the drawing is returned.
+//! the host runs the solves ([`Solver`]), side by side where it can, and each
+//! solve lays out its graphs with a [`Graphviz`]. The chosen drawing is put on
+//! a page fitted to it, and its crossings are settled before the drawing is
+//! returned.
 //!
 //! The layout was first written in TypeScript, and every solve answers what
 //! that engine answered, to the bit: floating point in the same order, maps
@@ -31,9 +32,10 @@ pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_board;
 pub use routes::LineLook;
 
-/// Graphviz, as the host runs it: lay out one graph and answer its `json0`
-/// output. The graph is a viz-js `Graph` object given as JSON, and the host
-/// renders it with `{ yInvert: true, format: "json0" }`.
+/// Graphviz: lay out one graph and answer its `json0` output, y inverted. The
+/// graph is a viz-js `Graph` object given as JSON, and the answer is what
+/// viz-js renders of it with `{ yInvert: true, format: "json0" }`. The core's
+/// is `archboard_graphviz::InCore` (ADR 0058).
 pub trait Graphviz {
     /// Lay a graph out.
     ///

@@ -32,6 +32,19 @@ class CoreBuildError extends Error {
 	}
 }
 
+/** The build this thread compiled, which it hands each layout worker it starts. */
+let compiled: WebAssembly.Module | undefined;
+
+/**
+ * The glue wasm-bindgen wrote. Bun loads a module synchronously on require,
+ * so a picture is painted in the same turn it is laid out in.
+ * @returns The glue.
+ */
+function glue(): Core {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the glue wasm-bindgen wrote, typed by its own declarations
+	return require("#shared/protocol/generated/core/archboard_renderer_wasm.js") as Core;
+}
+
 /**
  * Load the core's build on this thread, at once, and check it against the
  * sources it must be made from. The glue keeps the instance it made first, so
@@ -41,14 +54,43 @@ class CoreBuildError extends Error {
  * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
  */
 function loadCore(expected: string = coreSourceHash()): Core {
+	return loadBuild(expected).core;
+}
+
+/**
+ * The core this thread loaded and checked, compiled, for a layout worker to
+ * instantiate without reading, hashing or compiling the build again.
+ * @returns The compiled core.
+ * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
+ */
+function compiledCore(): WebAssembly.Module {
+	return loadBuild(coreSourceHash()).module;
+}
+
+/**
+ * Instantiate on this thread the core another thread compiled and checked
+ * ({@link compiledCore}).
+ * @param module The compiled core.
+ * @returns The core.
+ */
+function instantiateCore(module: WebAssembly.Module): Core {
+	const core = glue();
+	core.initSync({ module });
+	return core;
+}
+
+/**
+ * Load the build on this thread, compiling it the first time, and check it.
+ * @param expected The source hash the build must record.
+ * @returns The core and the module it was instantiated from.
+ * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
+ */
+function loadBuild(expected: string): { core: Core; module: WebAssembly.Module } {
 	let core: Core;
 	let bytes: Buffer;
 	try {
-		// Bun loads a module synchronously on require, so a picture is painted
-		// in the same turn it is laid out in.
 		// A missing build is refused with what to run, not thrown at import.
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the glue wasm-bindgen wrote, typed by its own declarations
-		core = require("#shared/protocol/generated/core/archboard_renderer_wasm.js") as Core;
+		core = glue();
 		bytes = readFileSync(CORE_WASM);
 	} catch {
 		throw new CoreBuildError(
@@ -56,8 +98,11 @@ function loadCore(expected: string = coreSourceHash()): Core {
 			`The renderer core is not built. Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT} inside \`nix develop\`.`,
 		);
 	}
+	let module: WebAssembly.Module;
 	try {
-		core.initSync({ module: bytes });
+		module = compiled ?? new WebAssembly.Module(new Uint8Array(bytes));
+		core.initSync({ module });
+		compiled = module;
 	} catch {
 		throw new CoreBuildError(
 			"CORE_BUILD_INVALID",
@@ -72,7 +117,7 @@ function loadCore(expected: string = coreSourceHash()): Core {
 				`Run \`${CORE_BUILD_COMMAND}\` there inside \`nix develop\`.`,
 		);
 	}
-	return core;
+	return { core, module };
 }
 
-export { CoreBuildError, loadCore, type Core };
+export { CoreBuildError, compiledCore, instantiateCore, loadCore, type Core };

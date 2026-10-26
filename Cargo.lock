@@ -14,6 +14,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "archboard-graphviz"
+version = "0.0.0"
+dependencies = [
+ "archboard-layout",
+ "archboard-scene",
+ "graphviz-pure",
+ "libm",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
@@ -30,6 +42,7 @@ name = "archboard-render"
 version = "0.0.0"
 dependencies = [
  "archboard-flows",
+ "archboard-graphviz",
  "archboard-layout",
  "archboard-scene",
  "archboard-svg",
@@ -43,6 +56,7 @@ dependencies = [
 name = "archboard-renderer-wasm"
 version = "0.0.0"
 dependencies = [
+ "archboard-graphviz",
  "archboard-layout",
  "archboard-render",
  "js-sys",
@@ -171,6 +185,63 @@ dependencies = [
  "futures-task",
  "pin-project-lite",
  "slab",
+]
+
+[[package]]
+name = "graphviz-pure"
+version = "0.2.1"
+dependencies = [
+ "graphviz-pure-core",
+ "graphviz-pure-geom",
+ "graphviz-pure-layout",
+ "graphviz-pure-parser",
+ "graphviz-pure-render",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "graphviz-pure-core"
+version = "0.2.1"
+dependencies = [
+ "libm",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "graphviz-pure-geom"
+version = "0.2.1"
+dependencies = [
+ "graphviz-pure-core",
+]
+
+[[package]]
+name = "graphviz-pure-layout"
+version = "0.2.1"
+dependencies = [
+ "graphviz-pure-core",
+ "graphviz-pure-geom",
+]
+
+[[package]]
+name = "graphviz-pure-parser"
+version = "0.2.1"
+dependencies = [
+ "graphviz-pure-core",
+ "thiserror",
+]
+
+[[package]]
+name = "graphviz-pure-render"
+version = "0.2.1"
+dependencies = [
+ "graphviz-pure-core",
+ "graphviz-pure-geom",
+ "graphviz-pure-parser",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

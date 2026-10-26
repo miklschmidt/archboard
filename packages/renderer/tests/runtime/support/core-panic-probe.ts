@@ -82,7 +82,7 @@ async function refusal(call: () => unknown): Promise<unknown> {
 armed = phase !== "resume";
 const first =
 	phase === "layout"
-		? refusal(() => core.layOutBoard("{}", { render: () => "{}" }))
+		? refusal(() => core.layOutBoard("{}"))
 		: refusal(() => core.render(request, host));
 const pending = refusal(() => core.render(request, host));
 const failures = await Promise.all([first, pending]);
