@@ -89,9 +89,11 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 			],
 		},
 	});
-	expect((await selected(vault, child.target.state!)).selectedState).toMatchObject({
-		standing: { blockedBy: first.target.state },
-	});
+	const blockedCatalogue = readArchitectureModel(vault);
+	if (!blockedCatalogue.success) throw new Error(JSON.stringify(blockedCatalogue));
+	expect(
+		blockedCatalogue.proposals.find((proposal) => proposal.id === child.target.state),
+	).toMatchObject({ standing: { blockedBy: first.target.state } });
 	expect(
 		await editArchitectureModule(vault, {
 			...advance,
