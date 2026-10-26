@@ -2,7 +2,11 @@ import { afterEach, expect, test } from "bun:test";
 import { chmodSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/board/store-read";
+import {
+	readArchitectureModel,
+	readArchitectureCheckpoint,
+	listArchitectureCheckpoints,
+} from "@archboard/board/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/board/store-write";
 import { BOARD_LOCK_MS } from "@archboard/timing";
 import {
@@ -118,9 +122,25 @@ test(
 		const { root, vault, input } = await interrupted("file");
 		const applied = readBytes(vault);
 		writeFileSync(join(vault, "gateway.module.json"), "foreign incomplete bytes\n");
-		expect(await recoverArchitectureModel(vault)).toMatchObject({
+		const conflict = await recoverArchitectureModel(vault);
+		expect(conflict).toMatchObject({
 			success: false,
 			code: "RECOVERY_CONFLICT",
+			applied: "unknown",
+			reconciliation: false,
+			recovery: {
+				operationId: input.operationId,
+				phase: "installing",
+				before: input.expectedRevision,
+				checkout: { branch: "refs/heads/main", head: git(root, "rev-parse", "HEAD") },
+			},
+		});
+		if (conflict.success || conflict.recovery === undefined)
+			throw new Error(JSON.stringify(conflict));
+		expect(JSON.stringify(conflict.recovery)).not.toContain(root);
+		expect(await readArchitectureCheckpoint(vault, conflict.recovery.checkpoint)).toMatchObject({
+			success: true,
+			revision: conflict.recovery.after,
 		});
 		expect(readBytes(vault).toString()).toBe("foreign incomplete bytes\n");
 		writeFileSync(join(vault, "gateway.module.json"), applied);

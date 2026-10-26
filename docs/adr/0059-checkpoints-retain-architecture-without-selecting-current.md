@@ -84,6 +84,10 @@ Operation identities belong to the addressed checkout and vault.
 An interrupted journal with before or after images resumes the logged installation.
 Foreign values and changed branch context block replay while preserving all bytes.
 The caller receives recovery instructions and restores a logged image or original branch before retrying.
+The refusal identifies the operation, retained checkpoint, progress, fingerprints, and original branch and HEAD.
+It exposes no private directory or logged input bytes.
+An edit refusal states `applied: false` before installation or `applied: "unknown"` when application remains uncertain.
+The caller resolves an uncertain result through recovery or the original request.
 A completed installation stays applied when cleanup fails.
 Its current architecture remains readable, and a retry finishes cleanup without another checkpoint.
 

@@ -10,6 +10,7 @@ import { mintId } from "#shared/rules/ids.ts";
 import {
 	type ArchitectureModelRead,
 	ModelRevisionSchema,
+	ModelRecoverySchema,
 	GitObjectIdSchema,
 } from "#shared/schemas/model.ts";
 import {
@@ -23,7 +24,11 @@ import { ArchiveError, optionalValue, type ArchiveContext } from "#runtime/store
 const MODEL_LOCK = "@canonical-install";
 const MODEL_STATE = "archboard-transactions";
 const CheckoutContextSchema = z
-	.object({ root: z.string(), vault: z.string(), branch: z.string(), head: z.string().nullable() })
+	.object({
+		root: z.string(),
+		vault: z.string(),
+		...ModelRecoverySchema.shape.checkout.shape,
+	})
 	.strict();
 const ClaimsStateSchema = z
 	.object({ claims: z.array(ArchitectureClaimSchema), revoked: z.array(z.string()) })
@@ -37,7 +42,7 @@ const JournalSchema = z
 		after: ModelRevisionSchema,
 		checkpoint: GitObjectIdSchema,
 		ref: z.string(),
-		phase: z.enum(["prepared", "installing", "installed", "completed"]),
+		phase: ModelRecoverySchema.shape.phase,
 		files: z.array(
 			z
 				.object({ path: z.string(), before: z.string().nullable(), after: z.string().nullable() })
@@ -46,6 +51,57 @@ const JournalSchema = z
 	})
 	.strict();
 type ModelJournal = z.infer<typeof JournalSchema>;
+type ModelFailure = Extract<ArchitectureModelRead, { success: false }>;
+
+/**
+ * Expose the original context and retained candidate without publishing private paths or input images.
+ * @param journal The durable installation record.
+ * @returns Public recovery details.
+ */
+function recoveryDetails(journal: ModelJournal): z.infer<typeof ModelRecoverySchema> {
+	return {
+		operationId: journal.request.operationId,
+		checkpoint: journal.checkpoint,
+		phase: journal.phase,
+		subjects: [journal.request.subject],
+		before: journal.before,
+		after: journal.after,
+		checkout: { branch: journal.context.branch, head: journal.context.head },
+	};
+}
+/**
+ * Make an incomplete write inspectable without treating an uncertain installation as a refusal before application.
+ * @param vault The explicitly addressed vault.
+ * @param failure The operation refusal.
+ * @param operationId The requested identity, or absence for explicit recovery.
+ * @returns The refusal with safe recovery and application information.
+ */
+function modelWriteFailure(
+	vault: string,
+	failure: ModelFailure,
+	operationId?: string,
+): ModelFailure {
+	const result = {
+		...failure,
+		applied: false as false | "unknown",
+		reconciliation: false as const,
+	};
+	try {
+		const journal = readState(vault, "transaction.json", JournalSchema);
+		if (journal === undefined) return result;
+		const requested = operationId ?? journal.request.operationId;
+		return {
+			...result,
+			applied:
+				requested === journal.request.operationId && journal.phase !== "prepared"
+					? "unknown"
+					: false,
+			recovery: recoveryDetails(journal),
+		};
+	} catch {
+		return { ...result, applied: "unknown" };
+	}
+}
 
 /**
  * Resolve the checkout's own Git administrative directory.
@@ -234,11 +290,14 @@ function modelBoundaryFailure(
 	try {
 		const journal = readState(vault, "transaction.json", JournalSchema);
 		if (journal !== undefined && journal.phase !== "completed")
-			return blockedRead(
-				"RECOVERY_REQUIRED",
-				"A durable architecture transaction is pending.",
-				"Run model recover in this checkout. Preserve foreign inputs and restore its original branch if recovery refuses.",
-			);
+			return {
+				...blockedRead(
+					"RECOVERY_REQUIRED",
+					"A durable architecture transaction is pending.",
+					"Run model recover in this checkout. Preserve foreign inputs and restore its original branch if recovery refuses.",
+				),
+				recovery: recoveryDetails(journal),
+			};
 		const lease = modelLease(vault);
 		if (boardLockState(lease.vault, lease.board) !== null)
 			return blockedRead(
@@ -286,4 +345,5 @@ export {
 	requireCheckout,
 	withModelLock,
 	modelBoundaryFailure,
+	modelWriteFailure,
 };

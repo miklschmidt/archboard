@@ -18,6 +18,7 @@ import {
 	withModelLock,
 	writeState,
 	operationRef,
+	modelWriteFailure,
 	type ModelJournal,
 } from "#runtime/store/model-state.ts";
 import { activeJournal, installJournal } from "#runtime/store/model-install.ts";
@@ -131,7 +132,7 @@ async function editArchitectureModule(
 		return result;
 	}
 	return {
-		...result,
+		...modelWriteFailure(vault, result, request.operationId),
 		diagnostics: result.diagnostics.map((diagnostic) => ({
 			...diagnostic,
 			subjects: diagnostic.subjects ?? [request.subject],
@@ -151,7 +152,8 @@ async function recoverArchitectureModel(vault: string): Promise<ArchitectureReco
 			return { success: true as const, operation: await resumeEdit(vault, journal, guard) };
 		}),
 	);
-	if (result.success) notifyArchitecture(vault, result.operation);
+	if (!result.success) return modelWriteFailure(vault, result);
+	notifyArchitecture(vault, result.operation);
 	return result;
 }
 export { editArchitectureModule, recoverArchitectureModel };
