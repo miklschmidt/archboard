@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 145,
+	"version": 146,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T04:21:45.593Z",
+	"updatedAt": "2026-10-26T04:39:36.564Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -29492,7 +29492,7 @@
 		{
 			"id": "FbryquXH",
 			"name": "TASK-538.03",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "0RcVGuzC",
 			"summary": "A view chosen in one linked pane is read in both",
 			"content": {
@@ -32927,7 +32927,7 @@
 		{
 			"id": "iphW7PZx",
 			"name": "TASK-538.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "FbryquXH",
 			"summary": "Open a proposal beside, keeping the view",
 			"content": {
@@ -36402,7 +36402,7 @@
 			}
 		}
 	],
-	"current": "FbryquXH",
+	"current": "iphW7PZx",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -36505,6 +36505,12 @@
 			"from": "0RcVGuzC",
 			"at": "2026-10-26T04:17:59.119Z",
 			"reason": "A view chosen in one linked pane is read in both, while the other pane reads the board it was opened on (TASK-538.03)"
+		},
+		{
+			"variant": "iphW7PZx",
+			"from": "FbryquXH",
+			"at": "2026-10-26T04:39:36.564Z",
+			"reason": "A proposal opens beside from the About page and the navigator, read through the view of the pane it came from (TASK-538.04)"
 		}
 	],
 	"shelvings": [
