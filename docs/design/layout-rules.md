@@ -3066,3 +3066,14 @@ machine, alternating with the commit before, two runs of `timing.ts 7` took
 10,729 ms and 10,649 ms of first renders in all, against 10,273 ms and
 10,062 ms, and the slowest first render, Agent workbench, took 1,703 ms and
 1,674 ms against 1,754 ms and 1,702 ms.
+
+## 58. The critical path of a first render (2026-10-26, TASK-548.04)
+
+The slowest first renders waited for two solves of the stacking choice in a
+row: a partial solve, then the whole solve that it chose. The whole solve
+laid each way is now asked beside the partial solves, and the one not chosen
+is called off. Track's router also got 24.5% cheaper in the core.
+[first-render-critical-path.md](first-render-critical-path.md) records the
+measurements, the capture and replay tools, the critical paths against the
+500 ms target and what still stands between the boards and it. No drawing
+changed.
