@@ -9,7 +9,9 @@ import {
 import {
 	configureArchitecturePublication,
 	publishArchitectureHistory,
+	editArchitectureModule,
 } from "@archboard/board/store-write";
+import { intent } from "#tests/runtime/operations/model-edit/fixture.ts";
 import {
 	cleanPublicationFixtures,
 	publicationFixture,
@@ -19,6 +21,26 @@ import {
 } from "#tests/runtime/support/publication-fixture.ts";
 
 afterEach(cleanPublicationFixtures);
+
+test("publication refreshes reading evidence without changing a completed edit receipt", async () => {
+	const { vault, destination } = publicationFixture();
+	const request = await intent(vault, "published-edit");
+	const completed = await editArchitectureModule(vault, request);
+	if (!completed.success) throw new Error(JSON.stringify(completed));
+	await configureArchitecturePublication(vault, destination);
+	expect(
+		await publishArchitectureHistory(vault, {
+			...destination,
+			checkpoint: completed.checkpoint.id,
+		}),
+	).toMatchObject({ success: true, publication: "published" });
+	expect(await readArchitectureCheckpoint(vault, completed.checkpoint.id)).toMatchObject({
+		success: true,
+		checkpoint: { id: completed.checkpoint.id, publication: "published" },
+		revision: completed.after,
+	});
+	expect(await editArchitectureModule(vault, request)).toEqual(completed);
+});
 
 test("explicit archive publication persists evidence while code pushes remain local-only", async () => {
 	const { root, vault, remote, destination } = publicationFixture();

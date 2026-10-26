@@ -40,8 +40,9 @@ Their historical inputs remain independent of current files.
 A pane lists root modules and opens their authored details.
 The browser keeps the selected identity as presentation state.
 One cached server reading supplies both the list and those details.
-Refresh, returning to the tab, and reconnecting obtain a fresh reading.
+Model events, Refresh, returning to the tab, and reconnecting obtain a fresh reading.
 Invalid inputs expose their diagnostic and recovery action.
+The last coherent current reading can remain visible only with an explicit stale indication.
 An empty model remains readable.
 A removed selection never silently selects another subject.
 

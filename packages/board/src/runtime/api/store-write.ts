@@ -20,3 +20,12 @@ export {
 	fetchArchitectureHistory,
 } from "#runtime/operations/history/publication.ts";
 export { saveLegacyMappingPlan } from "#runtime/operations/legacy-inventory/save-plan.ts";
+export {
+	editArchitectureModule,
+	recoverArchitectureModel,
+} from "#runtime/operations/model-edit/edit.ts";
+export {
+	claimArchitectureSubjects,
+	releaseArchitectureClaim,
+	takeBackArchitectureClaim,
+} from "#runtime/operations/model-edit/claims.ts";

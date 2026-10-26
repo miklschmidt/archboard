@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T11:26:00Z'
+updated_date: '2026-10-26T14:12:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -278,4 +278,6 @@ The new main branch owns ADR 0058 for interface width. The canonical-read decisi
 The rebased integration passes source/browser types, lint, 44 focused tests, three CLI/server process tests, seven request/refresh tests, and the four canonical/legacy browser cases. All four reconciliation proposals pass their affected code checks and are adopted. All original variant meanings remain intact. RequestFailure stays private, so server-requests meets its interface ceiling. Board currently has 209 public names against 188 during the dual-model transition; TASK-549.24 explicitly owns removal of superseded legacy APIs before completion. Parent UI checkpoint rebased cleanly to 097d2b1fc and passes types. Final current-vault validation and child branch synchronization remain.
 
 Main-refactor final evidence: current vault semantics pass with zero diagnostics. Current code checks report zero warnings on the four reconciled boards and 10 warnings elsewhere. Formatting passes. Provenance assertions retain every variant meaning, adoption, and shelving from both sources. Four shared views use upstream summaries or expanded selections. Their effective selections remain identical on every original historical variant. The parent recursive-viewer branch is rebased and synchronized; the backend delegate received the new base and transplant instructions. The draft PR remains unpublished at its previous head pending review of changed code. The interface-width ceiling is unchanged and remains a final-cutover gate.
+
+Integrated TASK-549.03 from signed source 68e4d914fbd993673d592a314a68a4df5ac33883 through signed no-ff merge af919ac17a107a9f111024c15e62b84740d6a5f2. The conflict-free merge tree equals source tree f26e3ee04d36629c67422b39b34f2126fc18e4de, preserving all architecture proposals, history, and Backlog state. Reused recorded evidence: 90 backend tests, six browser cases with 43 assertions, 15 skill tests, source/browser types, lint, formatting, and semantics. Four affected boards have zero code warnings. Ten unrelated warnings remain. TASK-549.24 retains the unchanged board interface-width gate of 234/188 for final cutover. TASK-549 remains In Progress and TASK-549.03 remains Done. The dependency-ready frontier is TASK-549.04, TASK-549.10, TASK-549.16, and TASK-549.17. Newly dispatchable work is .04 and .17. The parent retains .10 in feat/recursive-module-readings and .16 frontend in t3-94639c42. The old .16 backend delegate is finished, and no delegate runs. No implementation, fresh review, push, PR update, or delegation occurred. Exact merge evidence is in /home/msc/.local/state/archboard-implementation/task-549/task-549.03-merged.md.
 <!-- SECTION:NOTES:END -->
