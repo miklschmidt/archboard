@@ -28,7 +28,12 @@ It renders the current variant of every board in this checkout’s `.archboard/v
 plus three fixed wide-board fixtures, on both layout engines.
 It retains the drawing assertions and first-layout speed limits.
 It does not scan other repositories or historical variants.
-The normal gate retains focused renderer correctness tests and process cancellation deadlines.
+The normal gate also renders three fixed fixtures on both engines in
+`packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
+They cover labeled dependencies, dense cross-links, and nested containers.
+Shared assertions detect missing parts, routes through cards, misplaced labels,
+and line clearance defects. These six cases read no vault and enforce no speed limit.
+Focused renderer tests and process cancellation deadlines also remain in the normal gate.
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
