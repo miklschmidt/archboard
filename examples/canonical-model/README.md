@@ -94,7 +94,13 @@ The result reports the remote retention limitation through `retention`.
 This example installs no rewrite or deletion protection on the disposable remote.
 For a shared remote, its owner must establish those controls and maintain backups.
 The focused runtime owners also cover network loss, signed stale-publication joins, shallow archive recovery, and independent current models.
-The parent owns the visible browser publication and recovery workflow.
+The browser shows the selected checkpoint with its sharing status.
+Select Set sharing destination to enter the configured remote and archive ref.
+Select Publish history to send the archive explicitly.
+After a network failure, select Retry publication when the remote returns.
+For missing history, select Fetch this reading.
+The reading stays selected while the archive restores its exact content.
+The browser keeps the remote retention limitation visible beside these controls.
 
 ## Durable description edit
 

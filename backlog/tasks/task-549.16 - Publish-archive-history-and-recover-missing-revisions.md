@@ -1,11 +1,11 @@
 ---
 id: TASK-549.16
 title: Publish archive history and recover missing revisions
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T13:59:00Z'
+updated_date: '2026-10-26T14:36:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,8 +45,8 @@ TASK-549.02
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An owner explicitly publishes history to a configured remote and archive ref. A collaborator fetches a missing reading, including from a shallow clone.
-- [ ] #2 Distinguish saved-locally, publication-pending, published, and unavailable states. Normal code pushes never count as history publication.
+- [x] #1 An owner explicitly publishes history to a configured remote and archive ref. A collaborator fetches a missing reading, including from a shallow clone.
+- [x] #2 Distinguish saved-locally, publication-pending, published, and unavailable states. Normal code pushes never count as history publication.
 - [x] #3 Stale publication fetches and joins archive ancestry without force-pushing or merging model content. Fetches include the complete referenced history.
 - [x] #4 Publication setup establishes remote retention policy or reports its limitation. Network failure never reverses a completed local write.
 <!-- AC:END -->
@@ -68,6 +68,8 @@ TASK-549.02
 6. Merge latest feat/canonical-module-model, resolve affected contracts, record parent UI work, release claims, stop this server, and leave signed checkpoints.
 
 7. Parent browser delivery: keep publication status separate from immutable reading content. Add explicit destination configuration, publish, pending retry, and missing-history fetch for the selected exact checkpoint. Keep retention limits visible and refresh publication, checkpoint metadata, and the selected reading after accepted actions. Use the existing browser seam and real local bare remotes for the visible workflow. Align the browser proposal and adopt all delivery drafts after the complete slice passes.
+
+8. Integrate TASK-549.03 before closure. Preserve exact edit receipts, publication metadata, live reading recovery, and every architecture record. Rebase the four publication proposals through ordinary CLI branches named TASK-549.16 integration, then retain the superseded drafts as shelved history.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -88,10 +90,14 @@ Final simplification: one atomic destination sidecar belongs to the Git common d
 Failure record: the first combined multi-file test command omitted this repository standard --isolate flag. Bun reset later case timeouts to five seconds and fixture cleanup produced dangling asynchronous errors. The corrected isolated owner run passes all 32 tests without changing global timing policy. Red/green logs record the missing exports, network status, truncated archive, stale push, missing history catalogue, changed destination, pending baseline closure, private source path, missing identity, source-ref refusal, and missing-reading destination. All logs are under /home/msc/.local/state/archboard-implementation/task-549/task-549.16-evidence. Model evaluations and browser tests did not run in this backend assignment.
 
 Parent browser checkpoint: exact readings show separately queried publication status, explicit remote/ref configuration, retention limits, and publish/fetch controls. The initial browser test failed before the surface existed and passes after explicit configuration and publication, with four assertions and the same selected checkpoint. Source and browser types pass. Three form lint findings are corrected. Publication receives a separate browser owner because combining this work with TASK-549.03 exceeds the existing file limit; both owners share interaction helpers. Pending failure/retry and missing-history recovery remain in progress.
+
+The publication browser owner passes network failure, pending retry, and missing-history fetch with nine assertions. It preserves the selected checkpoint and never substitutes current content. Signed merge c3aca3c46 combines the integrated durable-edit slice with publication. A public-runtime regression now covers immutable edit receipts after publication, while the viewer reads mutable sharing evidence separately. Both source histories retain exact variant meanings, views, adoptions, and shelvings. Existing current variants become historical through the integration adoption records.
+
+Complete delivery: nine browser cases and 53 assertions pass across publication, current/historical readings, and legacy workspace navigation. Twenty-three combined runtime tests and four CLI/HTTP adapter tests pass. Fifteen consumer artifact tests pass. Source/frontend types, lint with zero warnings, and formatting pass after removing one unused helper import. Parent inspected pending/recovered browser captures and all affected architecture comparisons. The four TASK-549.16 integration proposals are adopted. A final persistence overview proposal groups publication storage under canonical architecture and extends the existing checkpoint view; current semantics now has zero diagnostics. Affected boards have zero code warnings, with ten unrelated warnings elsewhere. The unchanged board interface-width gate is 241/188, explicitly owned by TASK-549.24. All original variant meanings and decision records survive. No model evaluation, push, or PR action ran.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The backend explicitly configures, publishes, fetches, and reports archive history through one shared runtime contract and CLI/HTTP adapters. Durable private refs distinguish local, pending, published, and unavailable readings. Complete fetches recover shallow history. Signed ancestry joins preserve concurrent checkpoints without force-pushing or merging model content. Local files, index, source HEAD, and current-state identity remain independent of network outcomes. Consumer guidance, the worked example, evaluation coverage, ADR 0059, domain terms, and task proposals match this backend. TASK-549.16 remains In Progress. AC 1 and AC 2 remain open for parent-owned browser configuration, publication/status/retry, missing-history recovery, query refresh, and visible workflow evidence. Board persistence@TASK-549.16, Command interface@TASK-549.16, and Archboard server routes@TASK-549.16 remain draft. The parent also owns integration with pending TASK-549.03 and the single PR.
+Owners explicitly configure, publish, and fetch retained architecture through the shared runtime, CLI, HTTP API, and local browser. Durable status distinguishes local, pending, published, and unavailable history. The browser supports retry and exact missing-history recovery without substituting current architecture. Signed archive joins and complete fetches preserve history independently of current files. Remote retention limits stay visible. Publication refreshes read metadata while completed edit receipts remain unchanged. Focused browser, runtime, adapter, consumer, type, lint, formatting, and semantic checks pass. TASK-549.24 still owns the unchanged interface-width gate. Four delivery proposals and the persistence overview correction are adopted.
 <!-- SECTION:FINAL_SUMMARY:END -->

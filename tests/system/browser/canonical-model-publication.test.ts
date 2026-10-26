@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync } from "node:fs";
+import { cpSync, renameSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ArchitectureCheckpointRetain, ArchitectureModelRead } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
@@ -11,6 +11,7 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import {
@@ -21,6 +22,32 @@ import {
 } from "./support/canonical-model.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
+
+async function configureDestination(browser: AgentBrowserSession): Promise<void> {
+	await browser.run(["click", '[data-slot="publication-destination-toggle"]']);
+	await browser.run(["fill", '[data-slot="publication-destination"] [name="remote"]', "archive"]);
+	await browser.run([
+		"fill",
+		'[data-slot="publication-destination"] [name="ref"]',
+		"refs/heads/architecture-history",
+	]);
+	await browser.run(["click", '[data-slot="publication-configure"]']);
+}
+
+async function waitForAction(
+	browser: AgentBrowserSession,
+	action: "publish" | "fetch",
+): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="publication-${action}"]:not(:disabled)') !== null`,
+			),
+		Boolean,
+		`the available ${action} action`,
+		WAIT,
+	);
+}
 
 test("saved architecture publishes only after the reader chooses its destination", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -80,27 +107,30 @@ test("saved architecture publishes only after the reader chooses its destination
 		"the explicit local-only state",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="publication-destination-toggle"]']);
-	await browser.run(["fill", '[data-slot="publication-destination"] [name="remote"]', "archive"]);
-	await browser.run([
-		"fill",
-		'[data-slot="publication-destination"] [name="ref"]',
-		"refs/heads/architecture-history",
-	]);
-	await browser.run(["click", '[data-slot="publication-configure"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="publication-publish"]') !== null`),
-		Boolean,
-		"the configured publication action",
-		WAIT,
-	);
+	await configureDestination(browser);
+	await waitForAction(browser, "publish");
 	expect(await publication()).toBe("saved-locally");
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('[data-slot="publication-retention"]')?.getAttribute('data-protected') ?? null`,
 		),
 	).toBe("false");
+	renameSync(remote, `${remote}.offline`);
+	await browser.run(["click", '[data-slot="publication-publish"]']);
+	await pollUntil(
+		publication,
+		(state) => state === "publication-pending",
+		"the pending publication",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="publication-failure"]')?.getAttribute('data-code') ?? null`,
+		),
+	).toBe("ARCHIVE_NETWORK_FAILED");
+	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
+	renameSync(`${remote}.offline`, remote);
+	await waitForAction(browser, "publish");
 	await browser.run(["click", '[data-slot="publication-publish"]']);
 	await pollUntil(
 		publication,
@@ -114,4 +144,50 @@ test("saved architecture publishes only after the reader chooses its destination
 		),
 	).toBe(checkpoint);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
-}, 40_000);
+	// A clone can contain current files without the independent archive ancestry.
+	renameSync(join(root, ".git"), join(root, "retained-git"));
+	initializeSource(root);
+	fixtureGit(root, "remote", "add", "archive", remote);
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await pollUntil(
+		publication,
+		(state) => state === "unavailable",
+		"the missing historical reading",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-reading') ?? null`,
+		),
+	).toBe(checkpoint);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"]') !== null && document.querySelector('[data-slot="module-details"]') === null`,
+			),
+		Boolean,
+		"unavailable history without substituted current content",
+		WAIT,
+	);
+	await configureDestination(browser);
+	await waitForAction(browser, "fetch");
+	await browser.run(["click", '[data-slot="publication-fetch"]']);
+	await pollUntil(publication, (state) => state === "published", "the fetched archive", {
+		timeoutMs: 12_000,
+	});
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null`,
+			),
+		(state) => state === "ready",
+		"the restored exact architecture",
+		WAIT,
+	);
+	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-reading') ?? null`,
+		),
+	).toBe(checkpoint);
+}, 60_000);
