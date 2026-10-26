@@ -5,6 +5,8 @@ import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureCheckpointList,
 	ArchitectureModelRead,
+	ArchitectureClaimResult,
+	ArchitectureClaimList,
 } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -125,6 +127,65 @@ test("canonical modules open their authored details without writing architecture
 	await server.assertRunning();
 }, 30_000);
 
+test("canonical subject claims name the agent and let the reader take back control", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "claimed-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	initializeSource(root);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const model = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!model.body.success || !model.body.manifest.current) throw new Error("Missing fixture model");
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-connection') === 'live'`,
+			),
+		Boolean,
+		"the connected model reading before an agent claims it",
+		WAIT,
+	);
+	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
+			writer: "Agent Ada",
+			reason: "Explain gateway responsibility",
+			subjects: ["Shop#Gateway"],
+		},
+	});
+	if (!claimed.body.success) throw new Error(claimed.body.error);
+	const claim = claimed.body.claim.id;
+	const claimVisible = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claim}"]') !== null`,
+		);
+	await pollUntil(claimVisible, Boolean, "the current subject claim", WAIT);
+	const notice = await browser.eval<string>(
+		`document.querySelector('[data-slot="model-claim"]').textContent`,
+	);
+	expect(notice).toContain("Agent Ada");
+	expect(notice).toContain("Explain gateway responsibility");
+	expect(notice).toContain("Gateway");
+	await browser.run(["click", '[data-slot="model-take-back"]']);
+	await pollUntil(claimVisible, (visible) => !visible, "the claim to end", WAIT);
+	const claims = await request<ArchitectureClaimList>("/api/architecture/claims");
+	if (!claims.body.success) throw new Error(claims.body.error);
+	expect(claims.body.claims).toEqual([]);
+	const after = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!after.body.success) throw new Error(after.body.error);
+	expect(after.body.revision).toEqual(model.body.revision);
+}, 30_000);
+
 function git(root: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", "-C", root, ...args], {
 		env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
@@ -138,6 +199,80 @@ function initializeSource(root: string): void {
 	git(root, "config", "user.email", "reader@example.test");
 	git(root, "remote", "add", "origin", "https://github.com/acme/shop.git");
 }
+
+test("current model readings refresh after external edits and reconnect with explicit stale content", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "live-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	initializeSource(root);
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+			),
+		Boolean,
+		"the current modules",
+		WAIT,
+	);
+	await gatewayDetails(browser);
+	const details = (): Promise<string> =>
+		browser.eval<string>(
+			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
+		);
+	const gatewayPath = join(vault, "gateway.module.json");
+	const gateway = JSON.parse(readFileSync(gatewayPath, "utf8")) as Record<string, unknown>;
+	gateway["description"] = "Observed external description";
+	writeFileSync(gatewayPath, JSON.stringify(gateway));
+	await pollUntil(
+		details,
+		(text) => text.includes("Observed external description"),
+		"the external edit without a manual refresh",
+		WAIT,
+	);
+	writeFileSync(gatewayPath, "{");
+	const stale = (): Promise<boolean> =>
+		browser.eval<boolean>(`document.querySelector('[data-slot="model-stale"]') !== null`);
+	await pollUntil(stale, Boolean, "the stale reading notice", WAIT);
+	expect(await details()).toContain("Observed external description");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+		),
+	).toBe("MODEL_INVALID");
+	gateway["description"] = "Repaired external description";
+	writeFileSync(gatewayPath, JSON.stringify(gateway));
+	await pollUntil(
+		details,
+		(text) => text.includes("Repaired external description"),
+		"the repaired current reading",
+		WAIT,
+	);
+	await pollUntil(stale, (value) => !value, "the stale notice to clear", WAIT);
+	await server.restart({
+		whileStopped: async () => {
+			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
+			expect(await details()).toContain("Repaired external description");
+			gateway["description"] = "Changed while disconnected";
+			writeFileSync(gatewayPath, JSON.stringify(gateway));
+		},
+	});
+	await pollUntil(
+		details,
+		(text) => text.includes("Changed while disconnected"),
+		"a fresh reading after reconnection",
+		WAIT,
+	);
+	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
+}, 40_000);
 
 async function selectReading(browser: AgentBrowserSession, id: string): Promise<void> {
 	await browser.run(["click", '[data-slot="model-reading-selector"]']);

@@ -24,14 +24,13 @@ function EmptyBoardCatalog(props: EmptyBoardCatalogProps): JSX.Element | null {
 			const read = reads[index];
 			return {
 				...architectureCheckpointsQuery(vault),
-				enabled: read?.isSuccess === true && hasNoCanonicalModel(read.data),
+				enabled:
+					read?.isError === true && read.data === undefined && hasNoCanonicalModel(read.error),
 			};
 		}),
 	});
 	if (
-		reads.some(
-			(read) => read.data === undefined || read.isError || !hasNoCanonicalModel(read.data),
-		) ||
+		reads.some((read) => read.data !== undefined || !hasNoCanonicalModel(read.error)) ||
 		histories.some(
 			(history) => history.data === undefined || history.isError || !hasNoCheckpoints(history.data),
 		)
