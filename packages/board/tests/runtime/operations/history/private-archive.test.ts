@@ -91,7 +91,7 @@ test("private initialization refuses a state directory inside a source repositor
 	expect(existsSync(join(source, "private-state"))).toBe(false);
 });
 
-test("private edits honor signing, retain dependency history and publish only to an explicit destination", async () => {
+test("private structural batches honor signing, retain dependency history and publish only to an explicit destination", async () => {
 	const { home, root, vault } = fixture();
 	const initialized = await initializeArchitectureArchive(vault);
 	if (!initialized.success) throw new Error(JSON.stringify(initialized));
@@ -108,8 +108,8 @@ test("private edits honor signing, retain dependency history and publish only to
 	const claim = await claimArchitectureSubjects(vault, {
 		target,
 		writer: "agent",
-		reason: "explaining local architecture",
-		subjects: ["Shop#Gateway"],
+		reason: "changing local architecture",
+		subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"],
 	});
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const request = {
@@ -118,9 +118,16 @@ test("private edits honor signing, retain dependency history and publish only to
 		writer: "agent",
 		doing: "explaining private history",
 		expectedRevision: current.revision,
-		subject: "Shop#Gateway",
 		claim: claim.claim.id,
-		description: "The local architecture remains independent of source code.",
+		changes: [
+			{ type: "edit-module" as const, subject: "Shop#Gateway", set: { name: "API" } },
+			{
+				type: "edit-relationship" as const,
+				subject: "Shop#Dispatch",
+				source: "Shop#Worker",
+				set: { to: "Shop#Gateway" },
+			},
+		],
 	};
 	const refused = await editArchitectureModule(vault, request);
 	expect(refused).toMatchObject({
@@ -151,9 +158,21 @@ test("private edits honor signing, retain dependency history and publish only to
 	git(archive, "merge-base", "--is-ancestor", baseline.checkpoint.id, edited.checkpoint.id);
 	expect(edited).toMatchObject({
 		applied: true,
+		subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Worker"],
 		checkpoint: { sources: [], publication: "saved-locally" },
 	});
 	expect(await editArchitectureModule(vault, request)).toEqual(edited);
+	expect(readArchitectureModel(vault)).toMatchObject({
+		success: true,
+		modules: expect.arrayContaining([
+			expect.objectContaining({
+				id: "Shop#Gateway",
+				name: "API",
+				formerNames: ["Public API", "Gateway"],
+			}),
+		]),
+		relationships: [{ id: "Shop#Dispatch", from: "Shop#Worker", to: "Shop#Gateway" }],
+	});
 	const remote = join(home, "remote.git");
 	git(archive, "init", "--quiet", "--bare", remote);
 	git(archive, "remote", "add", "archive", `file://${remote}`);

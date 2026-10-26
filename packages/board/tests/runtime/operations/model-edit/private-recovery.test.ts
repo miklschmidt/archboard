@@ -6,18 +6,21 @@ import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
+	readArchitecturePublication,
 } from "@archboard/board/store-read";
 import {
 	initializeArchitectureArchive,
 	editArchitectureModule,
 	recoverArchitectureModel,
+	configureArchitecturePublication,
+	publishArchitectureHistory,
 } from "@archboard/board/store-write";
 import { BOARD_LOCK_MS } from "@archboard/timing";
 import {
 	untrackedFixture,
 	cleanPrivateArchiveFixtures,
 } from "#tests/runtime/support/private-archive-fixture.ts";
-import { intent } from "#tests/runtime/operations/model-edit/fixture.ts";
+import { structureIntent } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { git } from "#tests/runtime/support/publication-fixture.ts";
 
 const actualNow = Date.now;
@@ -26,14 +29,25 @@ afterEach(() => {
 	cleanPrivateArchiveFixtures();
 });
 
-test("a private interrupted edit preserves foreign bytes and recovers its original checkpoint after restart", async () => {
+test("a private interrupted transfer preserves affected subjects and publication through recovery", async () => {
 	const { root, vault } = untrackedFixture();
 	const initialized = await initializeArchitectureArchive(vault);
 	if (!initialized.success) throw new Error(JSON.stringify(initialized));
 	git(initialized.archive, "config", "user.name", "Private Author");
 	git(initialized.archive, "config", "user.email", "private@example.test");
 	git(initialized.archive, "config", "commit.gpgsign", "false");
-	const input = await intent(vault, "private-interruption");
+	const input = {
+		...(await structureIntent(vault, ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"])),
+		changes: [
+			{ type: "edit-module" as const, subject: "Shop#Gateway", set: { name: "API" } },
+			{
+				type: "edit-relationship" as const,
+				subject: "Shop#Dispatch",
+				source: "Shop#Worker",
+				set: { to: "Shop#Gateway" },
+			},
+		],
+	};
 	const request = join(root, "request.json");
 	writeFileSync(request, JSON.stringify(input));
 	const child = Bun.spawn(
@@ -53,7 +67,10 @@ test("a private interrupted edit preserves foreign bytes and recovers its origin
 	expect(interrupted).toMatchObject({
 		success: false,
 		code: "RECOVERY_REQUIRED",
-		recovery: { operationId: input.operationId },
+		recovery: {
+			operationId: input.operationId,
+			subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Worker"],
+		},
 	});
 	if (interrupted.success || interrupted.recovery === undefined)
 		throw new Error(JSON.stringify(interrupted));
@@ -62,6 +79,19 @@ test("a private interrupted edit preserves foreign bytes and recovers its origin
 		success: true,
 		revision: interrupted.recovery.after,
 	});
+	const remote = join(root, "remote.git");
+	git(initialized.archive, "init", "--quiet", "--bare", remote);
+	git(initialized.archive, "remote", "add", "archive", `file://${remote}`);
+	const destination = { remote: "archive", ref: "refs/heads/architecture-archive" };
+	expect(await configureArchitecturePublication(vault, destination)).toMatchObject({
+		success: true,
+	});
+	expect(await publishArchitectureHistory(vault, { ...destination, checkpoint })).toMatchObject({
+		success: true,
+		publication: "published",
+	});
+	// Publication of the retained candidate cannot expose a partial current installation.
+	expect(readArchitectureModel(vault)).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });
 	const file = join(vault, "gateway.module.json");
 	const installed = readFileSync(file);
 	writeFileSync(file, "foreign architecture bytes");
@@ -86,11 +116,24 @@ test("a private interrupted edit preserves foreign bytes and recovers its origin
 	rmSync(join(root, ".git"), { recursive: true });
 	expect(await recoverArchitectureModel(vault)).toMatchObject({
 		success: true,
-		operation: { applied: true, checkpoint: { id: checkpoint } },
+		operation: {
+			applied: true,
+			subjects: interrupted.recovery.subjects,
+			checkpoint: { id: checkpoint, publication: "saved-locally" },
+		},
 	});
 	expect(await editArchitectureModule(vault, input)).toMatchObject({
 		success: true,
 		checkpoint: { id: checkpoint },
+	});
+	expect(readArchitectureModel(vault)).toMatchObject({
+		success: true,
+		revision: interrupted.recovery.after,
+		relationships: [{ id: "Shop#Dispatch", from: "Shop#Worker", to: "Shop#Gateway" }],
+	});
+	expect(await readArchitecturePublication(vault, checkpoint)).toMatchObject({
+		success: true,
+		publication: "published",
 	});
 	expect(await listArchitectureCheckpoints(vault)).toMatchObject({
 		success: true,

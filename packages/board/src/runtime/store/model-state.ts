@@ -22,7 +22,12 @@ import {
 } from "#shared/schemas/model-operations.ts";
 import { holdBoard, BoardHeldError } from "#runtime/store/lock/lock.ts";
 import { boardLockState, releaseHold, renewRecord } from "#runtime/store/lock/lease-state.ts";
-import { ArchiveError, optionalValue, type ArchiveContext } from "#runtime/store/model-archive.ts";
+import {
+	ArchiveError,
+	optionalValue,
+	settledValues,
+	type ArchiveContext,
+} from "#runtime/store/model-archive.ts";
 
 const MODEL_LOCK = "@canonical-install";
 const MODEL_STATE = "archboard-transactions";
@@ -206,9 +211,16 @@ function writeState(vault: string, file: string, value: unknown): void {
  * @returns The private branch and checkout identity.
  */
 async function checkoutContext(context: ArchiveContext) {
-	const branch = (await optionalValue(context, ["symbolic-ref", "--quiet", "HEAD"])) ?? "detached";
-	const head = (await optionalValue(context, ["rev-parse", "--verify", "--quiet", "HEAD"])) ?? null;
-	return { root: resolve(context.root), vault: context.vault, branch, head };
+	const [branch, head] = await settledValues([
+		optionalValue(context, ["symbolic-ref", "--quiet", "HEAD"]),
+		optionalValue(context, ["rev-parse", "--verify", "--quiet", "HEAD"]),
+	]);
+	return {
+		root: resolve(context.root),
+		vault: context.vault,
+		branch: branch ?? "detached",
+		head: head ?? null,
+	};
 }
 /**
  * Refuse replay when a branch switch changes the private checkout context.
