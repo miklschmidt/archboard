@@ -1,9 +1,11 @@
 ---
 id: TASK-549.06
 title: Create and compare compact proposals
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-compact-proposals'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T18:19:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,21 @@ TASK-549.05
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Confirm signed integration base 24f76895d and preserve completed flow, reader, and archive contracts.
+2. Create draft Board persistence@TASK-549.06, Command interface@TASK-549.06, and Archboard server routes@TASK-549.06 proposals.
+3. Record the early backend contract outside the repository. Use TDD at the approved architecture read/write seam with real files and Git.
+4. Add compact identity changes, retained immutable baselines, state selection, metadata, safe predecessor refusal, and semantic comparisons through existing readers and durable writes.
+5. Expose the contract through normal CLI and HTTP adapters. Update consumer guidance, examples, ADRs, test ownership, and evaluation inputs without model evaluation.
+6. Run focused behavior, type, lint, formatting, and architecture checks. Simplify, merge latest integration, release claims, stop the server, and sign all commits.
+7. Leave browser acceptance and task completion to the parent. Keep architecture proposals draft and TASK-549.06 In Progress.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend and CLI only. Initial HEAD equals feat/canonical-module-model at 24f76895d1555418782e973b021c4aceeb5a7f5c. No child agents, frontend source, browser tests, review phase, push, or PR changes. The owner already approved the public architecture read/write seam with real temporary files and Git.
+<!-- SECTION:NOTES:END -->
