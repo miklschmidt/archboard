@@ -454,6 +454,7 @@ const controlTimer = setInterval(() => {
 			exit?: unknown;
 			completeLogin?: boolean;
 			completeWorkhorseTurn?: boolean;
+			explanationText?: string;
 			speaks?: number;
 		};
 		if (control.exit === true) {
@@ -469,7 +470,8 @@ const controlTimer = setInterval(() => {
 				turnId: turn["id"],
 				tokenUsage: workhorseTokenUsage,
 			});
-			if (initialControl.explanationQueue) completeExplanationTurn(workhorse.id, turn, notify);
+			if (initialControl.explanationQueue)
+				completeExplanationTurn(workhorse.id, turn, notify, control.explanationText);
 			turn["status"] = "completed";
 			turn["completedAt"] = unixSeconds();
 			workhorse.status = { type: "idle" };

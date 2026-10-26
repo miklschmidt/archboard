@@ -97,10 +97,10 @@ test("local explanations share captured text, cancellation, and retry through th
 				}),
 			})
 		).json();
-	const read = async () =>
+	const read = async (actionId = "capture-1") =>
 		(
 			await fetch(
-				`${server.base}/api/architecture/explanations/capture-1?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
+				`${server.base}/api/architecture/explanations/${encodeURIComponent(actionId)}?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
 			)
 		).json();
 	const [started, duplicate] = await Promise.all([
@@ -171,7 +171,88 @@ test("local explanations share captured text, cancellation, and retry through th
 	});
 	expect(cli.status, cli.stderr).toBe(0);
 	expect(JSON.parse(cli.stdout).action).toEqual((await read()).action);
+	writeFileSync(fixture.controlPath, JSON.stringify({ completeWorkhorseTurn: false }));
+	const latest = readArchitectureModel(fixture.vault);
+	if (!latest.success) throw new Error(JSON.stringify(latest));
+	expect(
+		await invoke("", {
+			request: { ...request, actionId: "empty-answer", expectedRevision: latest.revision.digest },
+		}),
+	).toMatchObject({ success: true, action: { status: "running" } });
+	writeFileSync(
+		fixture.controlPath,
+		JSON.stringify({ completeWorkhorseTurn: true, explanationText: "" }),
+	);
+	await waitFor(
+		async () => (await read("empty-answer")).action?.status === "failed",
+		"the explicit empty-answer failure",
+	);
+	expect(await read("empty-answer")).toMatchObject({
+		success: true,
+		action: { retryable: true, text: "", error: expect.any(String) },
+	});
 	expect(readFileSync(join(fixture.vault, "gateway.module.json"))).toEqual(
 		Buffer.from(`${before.toString()}\n`),
 	);
+});
+
+test("a signed-out local agent retains an unavailable capture without starting a thread", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = prepareProductionFixture(
+		resources,
+		join(import.meta.dir, "fixtures/fake-codex-production.ts"),
+	);
+	cpSync("examples/canonical-model/.archboard/vault", fixture.vault, { recursive: true });
+	writeFileSync(
+		fixture.controlPath,
+		JSON.stringify({ signedOut: true, ordinaryOnly: true, explanationQueue: true }),
+	);
+	const server = await startOwnedServer({
+		...productionServer,
+		vault: fixture.vault,
+		env: {
+			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+		},
+	});
+	resources.defer(() => server.dispose());
+	const socket = await openApplicationSocket(server.base, "unavailable-client", {
+		vault: fixture.vault,
+		tabSession: "unavailable-tab",
+	});
+	resources.defer(() => socket.close());
+	await fetch(`${server.base}/api/panes?vault=${encodeURIComponent(fixture.vault)}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(productionPane("unavailable-client", "unavailable-pane", true, true)),
+	});
+	expect(await socket.request("connect")).toMatchObject({ ok: true });
+	const model = readArchitectureModel(fixture.vault);
+	if (!model.success) throw new Error(JSON.stringify(model));
+	const response = await fetch(`${server.base}/api/architecture/explanations`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			vault: fixture.vault,
+			tabSessionId: "unavailable-tab",
+			request: {
+				actionId: "unavailable-1",
+				action: "trace-flow",
+				model: model.manifest.id,
+				expectedRevision: model.revision.digest,
+				subjects: [],
+				reading: { focus: [], relationshipKinds: [], groups: true, grammar: "architecture" },
+			},
+		}),
+	});
+	expect(await response.json()).toMatchObject({
+		success: true,
+		action: { status: "unavailable", attempt: 1, retryable: true, capture: { investigate: true } },
+	});
+	expect(
+		productionRecords(fixture.logPath).filter(
+			(record) => record.kind === "frame" && record.method === "thread/start",
+		),
+	).toHaveLength(0);
 });

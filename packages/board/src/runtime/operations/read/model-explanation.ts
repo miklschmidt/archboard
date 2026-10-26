@@ -80,7 +80,12 @@ function actionFailure(
  * @returns A refusal for an empty or invalid selection.
  */
 function relationshipFailure(model: ArchitectureModel, request: Request) {
-	const ids = new Set(model.relationships.map((edge) => edge.id));
+	const ids = new Set([
+		...model.relationships.map((edge) => edge.id),
+		...(model.comparison?.subjects
+			.filter((subject) => subject.subjectKind === "relationship")
+			.map((subject) => subject.id) ?? []),
+	]);
 	if (request.subjects.length === 0 || request.subjects.some((id) => !ids.has(id)))
 		return refuse(
 			"MODEL_INVALID",
@@ -125,7 +130,7 @@ function captureFailure(model: ArchitectureModel, request: Request) {
 			[],
 			"A requested relationship kind is unavailable in this reading.",
 		);
-	return actionFailure(model, request);
+	return readingFailure(model, request) ?? actionFailure(model, request);
 }
 /**
  * Read one exact requested state through the existing public runtime owners.
@@ -211,3 +216,19 @@ function attachCapture(
 }
 
 export { readRequestedArchitecture };
+
+/**
+ * Refuse positional selectors that contradict the explicit captured reading.
+ * @param model The public selected reading.
+ * @param request The invocation intent.
+ * @returns A refusal instead of a retargeted capture.
+ */
+function readingFailure(model: ArchitectureModel, request: Request) {
+	if (model.selectedModule !== request.reading.scope || model.selectedFlow !== request.reading.flow)
+		return refuse(
+			"MODEL_INVALID",
+			request.subjects,
+			"The selected scope or flow does not match the explanation reading.",
+		);
+	return undefined;
+}

@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 158,
+	"version": 162,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T22:18:24.815Z",
+	"updatedAt": "2026-10-26T22:43:10.914Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -140877,6 +140877,7 @@
 						"name": "Codex workbench",
 						"kind": "service",
 						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"description": "The Archboard host integrates existing Codex lifecycle owners, tab sessions, canonical explanation actions, pane context, and provider notifications.",
 						"groups": [
 							"agent"
 						],
@@ -141229,6 +141230,30 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/flow-routes.ts"
+						}
+					},
+					{
+						"id": "QboPNrzG",
+						"order": 42000,
+						"name": "Canonical explanation routes",
+						"kind": "module",
+						"responsibility": "Translates explicitly addressed local explanation actions without interpreting model content",
+						"description": "The existing workbench action owns capture delivery, temporary progress, exact retry, cancellation, and the shared text result. A route names the actual vault and tab session.",
+						"parent": "ETrslazw",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/explanation-routes.ts"
+						}
+					},
+					{
+						"id": "YRHoGRbV",
+						"order": 43000,
+						"name": "Canonical explanation actions",
+						"kind": "module",
+						"responsibility": "Captures and runs temporary architecture explanations on existing local workhorses",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations"
 						}
 					}
 				],
@@ -142801,6 +142826,71 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
 							"symbol": "mountArchitectureModelRoutes"
+						}
+					},
+					{
+						"id": "WaYJBOUv",
+						"order": 124000,
+						"from": "nn1ec9Tw",
+						"to": "QboPNrzG",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
+							"symbol": "mountArchitectureModelRoutes"
+						}
+					},
+					{
+						"id": "NKyQrZnS",
+						"order": 125000,
+						"from": "QboPNrzG",
+						"to": "YRHoGRbV",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+							"symbol": "explainArchitecture"
+						}
+					},
+					{
+						"id": "yBgqPUx8",
+						"order": 126000,
+						"from": "YRHoGRbV",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations/actions.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "qRuxyaeW",
+						"order": 127000,
+						"from": "QboPNrzG",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "pN2j4pnv",
+						"order": 128000,
+						"from": "3LoKNA2g",
+						"to": "YRHoGRbV",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "createExplanationActions"
 						}
 					}
 				],

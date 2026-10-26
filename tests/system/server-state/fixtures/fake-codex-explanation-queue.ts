@@ -70,11 +70,13 @@ export function completeExplanationTurn(
 	threadId: string,
 	turn: Record<string, unknown>,
 	notify: (method: string, params: unknown) => void,
+	text = "The gateway accepts shopping requests.",
 ): void {
+	if (text === "") return;
 	const item = {
 		type: "agentMessage",
 		id: "explanation-answer",
-		text: "The gateway accepts shopping requests.",
+		text,
 		phase: "final_answer",
 		memoryCitation: null,
 		delivery: null,

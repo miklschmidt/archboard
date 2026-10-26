@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 97,
+	"version": 98,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-26T22:18:22.757Z",
+	"updatedAt": "2026-10-26T22:39:39.106Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -23058,6 +23058,19 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/runtime/rules/instructions/context-policy.ts"
 						}
+					},
+					{
+						"id": "bxWDGUJk",
+						"order": 32000,
+						"name": "Canonical explanation actions",
+						"kind": "module",
+						"responsibility": "Runs one temporary captured request through the existing local workhorse and queue",
+						"description": "One action serves browser, typed requests, CLI, and voice. It retains only temporary invocation and result state. Exact retry reuses captured architecture. Existing queue deletion, turn interruption, and provider notifications establish cancellation and the one textual answer.",
+						"parent": "WkOwgUIR",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations"
+						}
 					}
 				],
 				"edges": [
@@ -23660,6 +23673,45 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
 							"symbol": "canonicalJson"
+						}
+					},
+					{
+						"id": "iBhsibnc",
+						"order": 43000,
+						"from": "bxWDGUJk",
+						"to": "5SYKj5bN",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations/start.ts",
+							"symbol": "enqueue"
+						}
+					},
+					{
+						"id": "QvQYycYS",
+						"order": 44000,
+						"from": "bxWDGUJk",
+						"to": "mWD948LG",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations/start.ts",
+							"symbol": "readyWorkhorse"
+						}
+					},
+					{
+						"id": "rCIdAV06",
+						"order": 45000,
+						"from": "bxWDGUJk",
+						"to": "4slFgCMu",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/explanations/actions.ts",
+							"symbol": "interrupt"
 						}
 					}
 				],

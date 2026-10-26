@@ -3,7 +3,7 @@ import {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,
 } from "#shared/schemas/architecture-explanation.ts";
-import { errorMessage } from "@archboard/diagnostics/errno";
+import { logger } from "@archboard/diagnostics/logger";
 
 type Dispatch = (
 	vault: string,
@@ -60,7 +60,12 @@ async function explainArchitecture(
 	try {
 		return await installed(vault, parsed.data);
 	} catch (error) {
-		return { success: false, code: "AGENT_UNAVAILABLE", error: errorMessage(error) };
+		logger.error("Cannot handle an explanation action:", error);
+		return {
+			success: false,
+			code: "AGENT_UNAVAILABLE",
+			error: "The local agent could not handle this request. Reconnect it and retry.",
+		};
 	}
 }
 /**

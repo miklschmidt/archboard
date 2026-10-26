@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 192,
+	"version": 195,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T22:18:23.947Z",
+	"updatedAt": "2026-10-26T22:41:53.495Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -137115,7 +137115,7 @@
 						"name": "Model read",
 						"kind": "module",
 						"responsibility": "Reads explicit current, named draft, or exact retained states and compares coherent readings without changing architecture.",
-						"description": "Read coherent canonical architecture through the shared runtime. Explain captured selections, relationships, flows, and proposals through the same local workbench action as the browser and voice. Read progress, retry the captured request, or cancel its exact queued submission or turn.",
+						"description": "Read coherent current, selected proposal, or exact checkpoint architecture through the public runtime. Comparison metadata keeps the actual base and its separate revision.",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -137221,6 +137221,19 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/render.ts"
+						}
+					},
+					{
+						"id": "twkUdQwl",
+						"order": 64000,
+						"name": "Model explanation command",
+						"kind": "module",
+						"responsibility": "Translates invocation, progress, retry, and cancellation through one local action contract",
+						"description": "The command reads explicit tab and reading intent from JSON. The server captures model meaning. It returns one temporary answer or a structured refusal without authoring architecture.",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/explain.ts"
 						}
 					}
 				],
@@ -138787,6 +138800,32 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/render.ts",
 							"symbol": "modelRenderContract"
+						}
+					},
+					{
+						"id": "yIjJPf8X",
+						"order": 111000,
+						"from": "twkUdQwl",
+						"to": "TsCise1I",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/explain.ts",
+							"symbol": "modelExplainContract"
+						}
+					},
+					{
+						"id": "yiZPCy4w",
+						"order": 112000,
+						"from": "iIVu1bGE",
+						"to": "twkUdQwl",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "COMMANDS"
 						}
 					}
 				],

@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 169,
+	"version": 170,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T22:18:21.989Z",
+	"updatedAt": "2026-10-26T22:39:38.353Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -150224,6 +150224,19 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals"
 						}
+					},
+					{
+						"id": "FlAxCoeb",
+						"order": 66000,
+						"name": "Canonical explanation capture",
+						"kind": "module",
+						"responsibility": "Captures one exact reading and validates explanation intent without writing architecture",
+						"description": "The existing public reader owns model identity, complete revision, state or checkpoint, stable subjects, reading filters, grammar, explicit flow, and the actual proposal comparison base. Missing and stale content refuse coherently.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-explanation.ts"
+						}
 					}
 				],
 				"edges": [
@@ -153005,6 +153018,45 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
 							"symbol": "archiveContext"
+						}
+					},
+					{
+						"id": "SF2mgNXu",
+						"order": 202000,
+						"from": "cNaEpWjJ",
+						"to": "FlAxCoeb",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"symbol": "readRequestedArchitecture"
+						}
+					},
+					{
+						"id": "sz0cVTkg",
+						"order": 203000,
+						"from": "FlAxCoeb",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-explanation.ts",
+							"symbol": "readArchitectureCheckpoint"
+						}
+					},
+					{
+						"id": "FheDJtzv",
+						"order": 204000,
+						"from": "FlAxCoeb",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-explanation.ts",
+							"symbol": "readSelectedState"
 						}
 					}
 				],

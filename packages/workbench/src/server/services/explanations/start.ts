@@ -1,6 +1,6 @@
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import { errorMessage } from "@archboard/diagnostics/errno";
+import { logger } from "@archboard/diagnostics/logger";
 import type { CodexWorkbenchDomainScope } from "#runtime/protocol/voice/extension.ts";
 import type { Entry, Workhorse } from "#server/services/explanations/contract.ts";
 
@@ -112,7 +112,8 @@ function requireCorrelatedTurn(entry: Entry) {
  */
 function fail(entry: Entry, error: unknown) {
 	entry.action.status = entry.threadId === undefined ? "unavailable" : "failed";
-	entry.action.error = errorMessage(error);
+	logger.error("Cannot answer a captured explanation:", error);
+	entry.action.error = failureMessage(entry, error);
 	entry.action.retryable = !unknownOutcome(error) && entry.submission === undefined;
 }
 /**
@@ -157,4 +158,18 @@ async function requireAccount(scope: CodexWorkbenchDomainScope) {
 	const account = await scope.session.accountRead();
 	if (account.account === null && account.requiresOpenaiAuth)
 		throw new Error("Sign in to the local agent, then retry this explanation.");
+}
+
+/**
+ * Give the reader recovery guidance while detailed agent failures stay in the server log.
+ * @param entry The captured request.
+ * @param error The existing owner refusal.
+ * @returns The visible recovery message.
+ */
+function failureMessage(entry: Entry, error: unknown) {
+	if (entry.threadId === undefined)
+		return "The local agent is unavailable. Sign in or reconnect it, then retry this explanation.";
+	if (unknownOutcome(error))
+		return "The agent did not confirm this request. Read its conversation before starting another explanation.";
+	return "The local agent could not answer this captured request. Read its conversation, then retry if this action allows it.";
 }

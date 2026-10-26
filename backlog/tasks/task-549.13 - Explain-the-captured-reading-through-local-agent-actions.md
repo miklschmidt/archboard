@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T22:16:00Z'
+updated_date: '2026-10-26T22:48:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -67,10 +67,19 @@ TASK-549.06, TASK-549.12
 4. Route UI, CLI, typed, and voice invocations through one temporary local explanation action over the existing workhorse queue and text notifications. Preserve captured input for retry and cancellation.
 5. Update consumer guidance, ADRs, test ownership, and evaluation coverage without live evaluation. Simplify, run focused behavior and adapter tests, both type projects, lint, formatting, and affected proposal checks.
 6. Merge latest integration, leave task In Progress and proposals draft for parent browser acceptance, release claims, stop this server, sign commits, and save external backend handoff.
+
+Keep workbench within its existing interface ceiling by moving shown-conversation request assembly behind its existing public showConversation operation. Remove three routing-only public helpers. Preserve the HTTP contract and all browser behavior.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Signed base verified in clean supplied worktree feat/task-549-cli-backend. Material value: architects receive an answer about the exact selected reading after navigation changes, through one existing local workhorse.
+
+Public width gate exposed three added workbench names. The implementation will replace the apps/server assembly of workbench internals with the existing showConversation operation. Board width remains the pre-existing 245/188 debt assigned to .24.
+
+Backend and CLI implementation is complete for parent acceptance. The shared public architecture reader captures exact model, state or checkpoint, complete revision, stable subjects, reading intent, and the actual comparison base with its separate revision. One local action serves HTTP, CLI, typed requests, and voice through existing workhorse queues and notifications. Canonical pane reports expose the actual reading and tab identity without legacy inference. Concurrent action identity, queued cancellation, exact turn interruption, unavailable sign-in, empty answers, and captured retries have controlled-provider evidence. Answers remain temporary.
+Simplification moved conversation-selection assembly behind the existing workbench operation and made three routing helpers private. Workbench remains at its 138-name ceiling. The existing retained-comparison test now owns checkpoint explanation capture, which removes a duplicate Git fixture. Board width stays at the known 245/188 debt for .24.
+Validation: 24 public model tests pass; 5 pane/action/activation tests pass; 88 transport and package/skill contract tests pass; 52 guidance and CLI help tests pass; final action/instruction subset passes 43 tests. Both TypeScript projects, lint with zero warnings, formatting, and evaluation input validation pass. No live model evaluation ran. Draft code checks have zero warnings on the seven affected boards. Nine unrelated warnings remain on Archboard and Archboard server.
+All TASK-549.13 proposals remain draft: Board persistence, Archboard server routes, Codex workhorse, Voice coordinator, Command interface, Live panes, and Codex realtime voice. Parent owns Browser application, all frontend controls, canonical pane report emission, browser interaction and voice acceptance, and adoption. Task remains In Progress. External contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.13-contract.md.
 <!-- SECTION:NOTES:END -->

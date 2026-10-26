@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 74,
+	"version": 78,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-25T05:26:21.863Z",
+	"updatedAt": "2026-10-26T22:41:55.150Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -21974,6 +21974,3105 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
 							"symbol": "readBoardVariant"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "gHdpius0",
+						"name": "A pane arrives on a board",
+						"participants": [
+							"K385etzX",
+							"MqTq68P3",
+							"BL7LFThw",
+							"TCMBvDpL",
+							"UNYvWHmE",
+							"hBDu6P2M"
+						],
+						"steps": [
+							{
+								"id": "nmTW3VBe",
+								"from": "K385etzX",
+								"to": "MqTq68P3",
+								"label": "report what the pane shows",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+									"symbol": "reportPane"
+								}
+							},
+							{
+								"id": "KLphWHnu",
+								"kind": "decision",
+								"question": "Is this pane live, and in the vault it reports?",
+								"alternatives": [
+									{
+										"label": "no socket owns it",
+										"steps": [
+											{
+												"id": "DStHkhVx",
+												"from": "MqTq68P3",
+												"to": "K385etzX",
+												"label": "registered: false",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+													"symbol": "postPaneRoute"
+												}
+											}
+										]
+									},
+									{
+										"label": "it was moved to another vault",
+										"steps": [
+											{
+												"id": "nRHJkT7c",
+												"from": "MqTq68P3",
+												"to": "K385etzX",
+												"label": "PANE_MOVED: wait for the move, then report",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+													"symbol": "postPaneRoute"
+												}
+											}
+										]
+									},
+									{
+										"label": "live",
+										"steps": [
+											{
+												"id": "37YiBMNg",
+												"from": "MqTq68P3",
+												"to": "BL7LFThw",
+												"label": "record the pane",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+													"symbol": "registerLivePane"
+												}
+											},
+											{
+												"id": "OhGfmgJ5",
+												"kind": "decision",
+												"question": "Is the pane on a board it did not report before?",
+												"alternatives": [
+													{
+														"label": "a new board",
+														"steps": [
+															{
+																"id": "hkFrf24D",
+																"from": "MqTq68P3",
+																"to": "TCMBvDpL",
+																"label": "the file it arrives on, as it is now",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+																	"symbol": "noteBoardShown"
+																}
+															},
+															{
+																"id": "4indnS6I",
+																"from": "MqTq68P3",
+																"to": "UNYvWHmE",
+																"label": "who holds the board",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+																	"symbol": "tellPaneAboutLock"
+																}
+															},
+															{
+																"id": "wND6kmfa",
+																"from": "UNYvWHmE",
+																"to": "BL7LFThw",
+																"label": "send the pane the lock and what was said",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+																	"symbol": "sendToPane"
+																}
+															},
+															{
+																"id": "BaZBoE0w",
+																"from": "BL7LFThw",
+																"to": "K385etzX",
+																"label": "board_lock and board_doing, to this pane only",
+																"kind": "async",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/workbench/src/server/services/panes/registry.ts",
+																	"symbol": "sendToPane"
+																}
+															}
+														]
+													},
+													{
+														"label": "the same board",
+														"steps": []
+													}
+												]
+											},
+											{
+												"id": "Qs173OO2",
+												"kind": "decision",
+												"question": "Did the board or the person's focus change?",
+												"alternatives": [
+													{
+														"label": "yes",
+														"steps": [
+															{
+																"id": "UoTcx06y",
+																"from": "MqTq68P3",
+																"to": "hBDu6P2M",
+																"label": "the pane's focus, for its agent",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+																	"symbol": "publishPaneContext"
+																}
+															}
+														]
+													},
+													{
+														"label": "no",
+														"steps": []
+													}
+												]
+											},
+											{
+												"id": "8VN9U3tB",
+												"from": "MqTq68P3",
+												"to": "K385etzX",
+												"label": "registered: true",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+													"symbol": "postPaneRoute"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "StrSdB9p",
+						"name": "A page connects its socket",
+						"participants": [
+							"K385etzX",
+							"X07YebBP",
+							"RjaKX25k",
+							"bEBbXPKc",
+							"4smEPsmF"
+						],
+						"steps": [
+							{
+								"id": "gId3lbYc",
+								"from": "K385etzX",
+								"to": "X07YebBP",
+								"label": "open a socket naming its vault, pane and tab",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+									"symbol": "socketUrl"
+								}
+							},
+							{
+								"id": "x1Byggls",
+								"from": "X07YebBP",
+								"to": "RjaKX25k",
+								"label": "is it the page's own origin?",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+									"symbol": "checkBrowserCsrf"
+								}
+							},
+							{
+								"id": "nyaoOyy7",
+								"from": "RjaKX25k",
+								"to": "X07YebBP",
+								"label": "the verdict",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+									"symbol": "checkBrowserCsrf"
+								}
+							},
+							{
+								"id": "K0jfIWXV",
+								"kind": "decision",
+								"question": "Does the upgrade come from the page's own origin?",
+								"alternatives": [
+									{
+										"label": "a foreign page",
+										"steps": [
+											{
+												"id": "Z1AwOpO4",
+												"from": "X07YebBP",
+												"to": "K385etzX",
+												"label": "refused with 403",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "startWebSocketServer"
+												}
+											}
+										]
+									},
+									{
+										"label": "the page",
+										"steps": [
+											{
+												"id": "L1mHc5CO",
+												"from": "X07YebBP",
+												"to": "bEBbXPKc",
+												"label": "which vault does it name?",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "vaultOfUpgrade"
+												}
+											},
+											{
+												"id": "rNJVEA2C",
+												"from": "bEBbXPKc",
+												"to": "X07YebBP",
+												"label": "the canonical vault, or why not",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/request/vault.ts",
+													"symbol": "namedVault"
+												}
+											},
+											{
+												"id": "maZONSSM",
+												"kind": "decision",
+												"question": "Can the server read the vault the socket names?",
+												"alternatives": [
+													{
+														"label": "it names none, or no directory",
+														"steps": [
+															{
+																"id": "UXFumNQO",
+																"from": "X07YebBP",
+																"to": "K385etzX",
+																"label": "refused: VAULT_REQUIRED or VAULT_UNREADABLE",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																	"symbol": "startWebSocketServer"
+																}
+															}
+														]
+													},
+													{
+														"label": "readable",
+														"steps": [
+															{
+																"id": "hn2Q6jbD",
+																"from": "X07YebBP",
+																"to": "K385etzX",
+																"label": "accepted",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																	"symbol": "acceptWebSocketConnection"
+																}
+															}
+														]
+													},
+													{
+														"label": "its vault is gone",
+														"steps": [
+															{
+																"id": "RPw8zIHG",
+																"from": "X07YebBP",
+																"to": "4smEPsmF",
+																"label": "its repository's chosen checkout, else the opening vault",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																	"symbol": "placeOfVault"
+																}
+															},
+															{
+																"id": "iV6tUF2l",
+																"from": "4smEPsmF",
+																"to": "X07YebBP",
+																"label": "a vault to put it in, or none",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																	"symbol": "placeInstead"
+																}
+															},
+															{
+																"id": "lbMwIQ2e",
+																"kind": "decision",
+																"question": "Is there a readable vault to put it in?",
+																"alternatives": [
+																	{
+																		"label": "none",
+																		"steps": [
+																			{
+																				"id": "J5gyfFop",
+																				"from": "X07YebBP",
+																				"to": "K385etzX",
+																				"label": "refused: VAULT_UNREADABLE",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																					"symbol": "startWebSocketServer"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "one",
+																		"steps": [
+																			{
+																				"id": "h8QBd6aC",
+																				"from": "X07YebBP",
+																				"to": "K385etzX",
+																				"label": "accepted, and its first message names the vault it is in",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+																					"symbol": "placeInstead"
+																				}
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "lbInHQXv",
+						"name": "The agent is told what a pane shows",
+						"participants": [
+							"hBDu6P2M",
+							"BL7LFThw",
+							"tHLqdtCJ",
+							"QqyAf3RP",
+							"bNG9UbLQ"
+						],
+						"steps": [
+							{
+								"id": "27yNJN6i",
+								"from": "hBDu6P2M",
+								"to": "BL7LFThw",
+								"label": "look up the pane",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/owner/wiring.ts",
+									"symbol": "panes"
+								}
+							},
+							{
+								"id": "829FAlA9",
+								"from": "BL7LFThw",
+								"to": "hBDu6P2M",
+								"label": "its vault and the board it shows",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/registry.ts",
+									"symbol": "boardForPane"
+								}
+							},
+							{
+								"id": "BzfNFhTi",
+								"from": "hBDu6P2M",
+								"to": "tHLqdtCJ",
+								"label": "the agent's brief of that board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/owner/wiring.ts",
+									"symbol": "fullInputFor"
+								}
+							},
+							{
+								"id": "EAL1E255",
+								"from": "tHLqdtCJ",
+								"to": "BL7LFThw",
+								"label": "which board the pane shows",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "boardForPane"
+								}
+							},
+							{
+								"id": "JuQfd7z4",
+								"from": "BL7LFThw",
+								"to": "tHLqdtCJ",
+								"label": "the board's key",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/registry.ts",
+									"symbol": "boardForPane"
+								}
+							},
+							{
+								"id": "jPdMdAsA",
+								"from": "tHLqdtCJ",
+								"to": "QqyAf3RP",
+								"label": "read the board, as it is on disk",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "readSemanticBoard"
+								}
+							},
+							{
+								"id": "huBQ7tpS",
+								"from": "QqyAf3RP",
+								"to": "tHLqdtCJ",
+								"label": "the board, or why it could not be read",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "readSemanticBoard"
+								}
+							},
+							{
+								"id": "gwwYh2j4",
+								"kind": "decision",
+								"question": "Could the board be read?",
+								"alternatives": [
+									{
+										"label": "unreadable",
+										"steps": [
+											{
+												"id": "F2NzlEKN",
+												"from": "tHLqdtCJ",
+												"to": "tHLqdtCJ",
+												"label": "report it missing or unreadable, and stale",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+													"symbol": "readBoardForContext"
+												}
+											}
+										]
+									},
+									{
+										"label": "read",
+										"steps": [
+											{
+												"id": "6q56Cgfu",
+												"from": "tHLqdtCJ",
+												"to": "tHLqdtCJ",
+												"label": "match the pane's report to the board; mark what is stale",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+													"symbol": "reportFor"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "q4g3NWNr",
+								"from": "tHLqdtCJ",
+								"to": "bNG9UbLQ",
+								"label": "who holds the board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "boardLockState"
+								}
+							},
+							{
+								"id": "x1PZ2U9s",
+								"from": "bNG9UbLQ",
+								"to": "tHLqdtCJ",
+								"label": "the holder, or none",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "claimOf"
+								}
+							},
+							{
+								"id": "GsaQD0lL",
+								"from": "tHLqdtCJ",
+								"to": "hBDu6P2M",
+								"label": "the brief's input: board, version, claim, what is stale",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+									"symbol": "semanticInputFor"
+								}
+							}
+						]
+					},
+					{
+						"id": "Mv4zLn7g",
+						"name": "A socket starts a pane",
+						"participants": [
+							"X07YebBP",
+							"BL7LFThw",
+							"QqyAf3RP",
+							"mAwzQrjT",
+							"UNYvWHmE",
+							"K385etzX"
+						],
+						"steps": [
+							{
+								"id": "NT0HK6zF",
+								"from": "X07YebBP",
+								"to": "BL7LFThw",
+								"label": "which board does the pane start on?",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+									"symbol": "boardForNewPane"
+								}
+							},
+							{
+								"id": "LAQlo67J",
+								"kind": "loop",
+								"condition": "for each board it held or the front pane shows, until found",
+								"steps": [
+									{
+										"id": "g23smLxG",
+										"from": "BL7LFThw",
+										"to": "QqyAf3RP",
+										"label": "is the board, and its variant, still there?",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/workbench/src/server/services/panes/registry.ts",
+											"symbol": "readBoardVariant"
+										}
+									},
+									{
+										"id": "Ruw4CZTC",
+										"from": "QqyAf3RP",
+										"to": "BL7LFThw",
+										"label": "the board, or why not",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/workbench/src/server/services/panes/registry.ts",
+											"symbol": "stillThere"
+										}
+									}
+								]
+							},
+							{
+								"id": "r69bno13",
+								"kind": "decision",
+								"question": "Is there a board to resume or copy?",
+								"alternatives": [
+									{
+										"label": "none left",
+										"steps": [
+											{
+												"id": "PejZzigh",
+												"from": "BL7LFThw",
+												"to": "QqyAf3RP",
+												"label": "the vault's first board",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "listSemanticBoards"
+												}
+											},
+											{
+												"id": "ilpQ6Htv",
+												"from": "QqyAf3RP",
+												"to": "BL7LFThw",
+												"label": "the boards, or none",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "listSemanticBoards"
+												}
+											}
+										]
+									},
+									{
+										"label": "one is still there",
+										"steps": [
+											{
+												"id": "ET63Nc0J",
+												"from": "BL7LFThw",
+												"to": "BL7LFThw",
+												"label": "resume that board",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "copyableBoards"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "JMLcGUQw",
+								"from": "BL7LFThw",
+								"to": "X07YebBP",
+								"label": "the board's key, or none",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/registry.ts",
+									"symbol": "boardForNewPane"
+								}
+							},
+							{
+								"id": "AY1WQdps",
+								"from": "X07YebBP",
+								"to": "K385etzX",
+								"label": "pane_board: its vault, repository and board",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+									"symbol": "sendStartingBoard"
+								}
+							},
+							{
+								"id": "k0Mjnz6K",
+								"kind": "decision",
+								"question": "Did a later socket take this pane's authority meanwhile?",
+								"alternatives": [
+									{
+										"label": "yes",
+										"steps": [
+											{
+												"id": "kkvmXClW",
+												"from": "X07YebBP",
+												"to": "X07YebBP",
+												"label": "terminate this socket",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "takePaneAuthority"
+												}
+											}
+										]
+									},
+									{
+										"label": "no",
+										"steps": [
+											{
+												"id": "PFaNU9C4",
+												"from": "X07YebBP",
+												"to": "mAwzQrjT",
+												"label": "note the pane's tab",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "noteTabSession"
+												}
+											},
+											{
+												"id": "t5el71L7",
+												"from": "X07YebBP",
+												"to": "BL7LFThw",
+												"label": "register the page's socket",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "clients"
+												}
+											},
+											{
+												"id": "p5D3ojRq",
+												"from": "X07YebBP",
+												"to": "UNYvWHmE",
+												"label": "who holds the board",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+													"symbol": "tellPaneAboutLock"
+												}
+											},
+											{
+												"id": "GZ5Ns0wq",
+												"from": "UNYvWHmE",
+												"to": "BL7LFThw",
+												"label": "send the pane the lock and what was said",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+													"symbol": "sendToPane"
+												}
+											},
+											{
+												"id": "bQ1ZCp9V",
+												"from": "BL7LFThw",
+												"to": "K385etzX",
+												"label": "board_lock and board_doing",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "sendToPane"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "XSzt4PYz",
+						"name": "A board write reaches the panes and the agent",
+						"participants": [
+							"Qyu8T7UT",
+							"UNYvWHmE",
+							"BL7LFThw",
+							"K385etzX",
+							"mStVd7fZ",
+							"hBDu6P2M"
+						],
+						"steps": [
+							{
+								"id": "2dwbEJVU",
+								"from": "Qyu8T7UT",
+								"to": "Qyu8T7UT",
+								"label": "commit the write under the board's lease, at a new version",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+									"symbol": "writeSemanticBoard"
+								}
+							},
+							{
+								"id": "tjKs2wAZ",
+								"from": "Qyu8T7UT",
+								"to": "UNYvWHmE",
+								"label": "what the writer said it was doing",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+									"symbol": "announceDoing"
+								}
+							},
+							{
+								"id": "injHk2o3",
+								"from": "UNYvWHmE",
+								"to": "BL7LFThw",
+								"label": "board_doing, to the panes of the board's vault",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+									"symbol": "broadcast"
+								}
+							},
+							{
+								"id": "C39u4TtS",
+								"from": "BL7LFThw",
+								"to": "K385etzX",
+								"label": "board_doing",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/registry.ts",
+									"symbol": "sendToVaultClients"
+								}
+							},
+							{
+								"id": "V7RJTxZD",
+								"from": "Qyu8T7UT",
+								"to": "BL7LFThw",
+								"label": "board_note: the board is at this version",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+									"symbol": "broadcast"
+								}
+							},
+							{
+								"id": "4ueVnUlH",
+								"from": "BL7LFThw",
+								"to": "K385etzX",
+								"label": "board_note, with the version and no content",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/registry.ts",
+									"symbol": "sendToVaultClients"
+								}
+							},
+							{
+								"id": "oXeBYJGX",
+								"kind": "decision",
+								"question": "Is the pane showing that board?",
+								"alternatives": [
+									{
+										"label": "yes",
+										"steps": [
+											{
+												"id": "2djAuVke",
+												"from": "K385etzX",
+												"to": "K385etzX",
+												"label": "ask the server for the board again",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+													"symbol": "boardChanged"
+												}
+											}
+										]
+									},
+									{
+										"label": "another board",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "LRAVU6mu",
+								"from": "BL7LFThw",
+								"to": "mStVd7fZ",
+								"label": "the same announcement, for the agent's context",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/change-feed.ts",
+									"symbol": "onBoardBroadcast"
+								}
+							},
+							{
+								"id": "sofQR8Hh",
+								"from": "mStVd7fZ",
+								"to": "hBDu6P2M",
+								"label": "the settled change: board, version and cursor",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/workbench/src/server/services/panes/change-feed.ts",
+									"symbol": "semanticChangeFeed"
+								}
+							}
+						]
+					},
+					{
+						"id": "hduvezXg",
+						"name": "A board changes on disk behind the server",
+						"participants": [
+							"bNG9UbLQ",
+							"TCMBvDpL",
+							"QqyAf3RP",
+							"BL7LFThw",
+							"K385etzX"
+						],
+						"steps": [
+							{
+								"id": "A5stobR5",
+								"from": "bNG9UbLQ",
+								"to": "TCMBvDpL",
+								"label": "a sweep reaches a board on screen",
+								"kind": "async",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+									"symbol": "onBoardSweep"
+								}
+							},
+							{
+								"id": "LyzGs8on",
+								"from": "TCMBvDpL",
+								"to": "QqyAf3RP",
+								"label": "locate the board's file",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+									"symbol": "locateSemanticBoard"
+								}
+							},
+							{
+								"id": "ASQELYrz",
+								"from": "QqyAf3RP",
+								"to": "TCMBvDpL",
+								"label": "the file",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+									"symbol": "locateSemanticBoard"
+								}
+							},
+							{
+								"id": "xlIoLEuQ",
+								"from": "TCMBvDpL",
+								"to": "TCMBvDpL",
+								"label": "fingerprint it: inode, size and modification time",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+									"symbol": "fingerprintOf"
+								}
+							},
+							{
+								"id": "4ZOqs8xu",
+								"kind": "decision",
+								"question": "Is the fingerprint the one last seen?",
+								"alternatives": [
+									{
+										"label": "never seen",
+										"steps": [
+											{
+												"id": "5aI8SJle",
+												"from": "TCMBvDpL",
+												"to": "TCMBvDpL",
+												"label": "take it as the baseline, and tell nobody",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+													"symbol": "observe"
+												}
+											}
+										]
+									},
+									{
+										"label": "the same",
+										"steps": []
+									},
+									{
+										"label": "different",
+										"steps": [
+											{
+												"id": "j63FM36B",
+												"from": "TCMBvDpL",
+												"to": "BL7LFThw",
+												"label": "board_note, with no version",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+													"symbol": "announceChangedOnDisk"
+												}
+											},
+											{
+												"id": "gmdEjVRf",
+												"from": "BL7LFThw",
+												"to": "K385etzX",
+												"label": "board_note: read the board again",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "sendToVaultClients"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "eFY1ph4z",
+						"name": "A show points a pane at a board",
+						"participants": [
+							"kY0K1YbB",
+							"Qyu8T7UT",
+							"nPjqFn3J",
+							"BL7LFThw",
+							"K385etzX",
+							"MqTq68P3",
+							"etiWAAKH",
+							"QqyAf3RP"
+						],
+						"steps": [
+							{
+								"id": "iGdqSKT6",
+								"from": "kY0K1YbB",
+								"to": "Qyu8T7UT",
+								"label": "browser show: the board and the pane",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+									"symbol": "showPaneRoute"
+								}
+							},
+							{
+								"id": "QPwtUmv2",
+								"from": "Qyu8T7UT",
+								"to": "QqyAf3RP",
+								"label": "open the board and variant the address names",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+									"symbol": "readBoardVariant"
+								}
+							},
+							{
+								"id": "NKbmY4k6",
+								"from": "QqyAf3RP",
+								"to": "Qyu8T7UT",
+								"label": "the board it answers to now, or why not",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+									"symbol": "shownIdentity"
+								}
+							},
+							{
+								"id": "epfDoW3e",
+								"kind": "decision",
+								"question": "Can the board be shown?",
+								"alternatives": [
+									{
+										"label": "no board named, or the board or pane is not there",
+										"steps": [
+											{
+												"id": "KljVMx9v",
+												"from": "Qyu8T7UT",
+												"to": "kY0K1YbB",
+												"label": "refused, saying what to name",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+													"symbol": "showPaneRoute"
+												}
+											}
+										]
+									},
+									{
+										"label": "yes",
+										"steps": [
+											{
+												"id": "Zbrei2S6",
+												"kind": "decision",
+												"question": "Did an agent ask?",
+												"alternatives": [
+													{
+														"label": "an agent",
+														"steps": [
+															{
+																"id": "2M9RkuTA",
+																"from": "Qyu8T7UT",
+																"to": "Qyu8T7UT",
+																"label": "make the checkout of the shown vault the chosen one",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+																	"symbol": "chooseShownCheckout"
+																}
+															}
+														]
+													},
+													{
+														"label": "the page",
+														"steps": []
+													}
+												]
+											},
+											{
+												"id": "DEWpJSJR",
+												"from": "Qyu8T7UT",
+												"to": "nPjqFn3J",
+												"label": "move the pane into the board's vault",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+													"symbol": "movePaneVault"
+												}
+											},
+											{
+												"id": "9bcoKQ4U",
+												"from": "nPjqFn3J",
+												"to": "BL7LFThw",
+												"label": "re-key its sockets; renew the lease watch",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+													"symbol": "syncLockWatch"
+												}
+											},
+											{
+												"id": "SbRn5Ch4",
+												"from": "Qyu8T7UT",
+												"to": "BL7LFThw",
+												"label": "pane_board: the board, its vault and repository",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+													"symbol": "sendToPane"
+												}
+											},
+											{
+												"id": "FyB6LIQ3",
+												"from": "BL7LFThw",
+												"to": "K385etzX",
+												"label": "pane_board",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workbench/src/server/services/panes/registry.ts",
+													"symbol": "sendToPane"
+												}
+											},
+											{
+												"id": "x8kHBXuK",
+												"from": "Qyu8T7UT",
+												"to": "MqTq68P3",
+												"label": "the pane arrived on the board",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+													"symbol": "arrivedOnBoard"
+												}
+											},
+											{
+												"id": "vKV1ADCK",
+												"kind": "decision",
+												"question": "Did the show choose another checkout?",
+												"alternatives": [
+													{
+														"label": "yes",
+														"steps": [
+															{
+																"id": "6siWY9OQ",
+																"from": "Qyu8T7UT",
+																"to": "etiWAAKH",
+																"label": "every pane follows the choice",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+																	"symbol": "followRegistry"
+																}
+															},
+															{
+																"id": "nL0KU9Mg",
+																"from": "etiWAAKH",
+																"to": "BL7LFThw",
+																"label": "tell every pane where it is now",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+																	"symbol": "sendBoardlessToPane"
+																}
+															}
+														]
+													},
+													{
+														"label": "no",
+														"steps": []
+													}
+												]
+											},
+											{
+												"id": "oKVdGOe8",
+												"from": "Qyu8T7UT",
+												"to": "kY0K1YbB",
+												"label": "the pane, its board, repository and checkout",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+													"symbol": "showPaneRoute"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "YkrftZyC",
+						"name": "A person chooses a checkout",
+						"participants": [
+							"kWJQlgwG",
+							"etiWAAKH",
+							"nPjqFn3J",
+							"BL7LFThw",
+							"MqTq68P3",
+							"K385etzX"
+						],
+						"steps": [
+							{
+								"id": "8lDS120l",
+								"from": "kWJQlgwG",
+								"to": "etiWAAKH",
+								"label": "choose a checkout of a repository",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+									"symbol": "mountRepositoryRoutes"
+								}
+							},
+							{
+								"id": "Xymg9Rr4",
+								"kind": "decision",
+								"question": "Is the root a known checkout of the repository?",
+								"alternatives": [
+									{
+										"label": "unknown",
+										"steps": [
+											{
+												"id": "ZstWLA7K",
+												"from": "etiWAAKH",
+												"to": "kWJQlgwG",
+												"label": "refused, naming the checkouts it knows",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+													"symbol": "refuseUnknownCheckout"
+												}
+											}
+										]
+									},
+									{
+										"label": "known",
+										"steps": [
+											{
+												"id": "Cmp2uTOo",
+												"from": "etiWAAKH",
+												"to": "etiWAAKH",
+												"label": "make it the chosen checkout",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+													"symbol": "chooseCheckoutRoute"
+												}
+											},
+											{
+												"id": "XFiY1bF6",
+												"kind": "loop",
+												"condition": "for each pane the server holds",
+												"steps": [
+													{
+														"id": "e14nWX5g",
+														"kind": "decision",
+														"question": "Is the pane in the vault of the chosen checkout?",
+														"alternatives": [
+															{
+																"label": "yes",
+																"steps": [
+																	{
+																		"id": "l5rDHunS",
+																		"from": "etiWAAKH",
+																		"to": "BL7LFThw",
+																		"label": "tell it where it is, with its repository's name",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+																			"symbol": "sendBoardlessToPane"
+																		}
+																	}
+																]
+															},
+															{
+																"label": "no",
+																"steps": [
+																	{
+																		"id": "D9yzkvrZ",
+																		"from": "etiWAAKH",
+																		"to": "nPjqFn3J",
+																		"label": "move it into the chosen checkout's vault",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+																			"symbol": "movePaneVault"
+																		}
+																	},
+																	{
+																		"id": "vJTlDcZe",
+																		"from": "etiWAAKH",
+																		"to": "BL7LFThw",
+																		"label": "pane_board: its board, read again there",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+																			"symbol": "sendToPane"
+																		}
+																	},
+																	{
+																		"id": "Z5pzIome",
+																		"from": "etiWAAKH",
+																		"to": "MqTq68P3",
+																		"label": "the pane arrived on its board",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+																			"symbol": "arrivedOnBoard"
+																		}
+																	}
+																]
+															}
+														]
+													}
+												]
+											},
+											{
+												"id": "U31cZhAR",
+												"from": "etiWAAKH",
+												"to": "nPjqFn3J",
+												"label": "tell every tab",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+													"symbol": "broadcastEverywhere"
+												}
+											},
+											{
+												"id": "Q6IZmbLE",
+												"from": "nPjqFn3J",
+												"to": "K385etzX",
+												"label": "repositories_changed",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+													"symbol": "broadcastEverywhere"
+												}
+											},
+											{
+												"id": "eEuiCZSD",
+												"from": "etiWAAKH",
+												"to": "kWJQlgwG",
+												"label": "the repository and the root",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+													"symbol": "chooseCheckoutRoute"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "kRgKQV8N",
+						"name": "What a live pane keeps",
+						"beats": [
+							{
+								"id": "F6Fxaitr",
+								"heading": "The socket owns screen presence",
+								"body": "Only the authoritative socket owns a pane identity. Its close removes pane and tab presence; a replaced socket cannot retire its successor.",
+								"subjects": [
+									"X07YebBP",
+									"BL7LFThw",
+									"mAwzQrjT"
+								],
+								"view": "FHeGlSwG"
+							},
+							{
+								"id": "ohpgvs6y",
+								"heading": "News carries a version, never the board",
+								"body": "A board write, claim or disk change reaches the panes through announcements. The pane reads content again from the store; no pane owns a board copy.",
+								"subjects": [
+									"4ueVnUlH",
+									"K385etzX"
+								],
+								"view": "wY7PpZYv"
+							},
+							{
+								"id": "uOHnsW1B",
+								"heading": "Agents read the same news",
+								"body": "The change feed records each board broadcast and lets the workbench read changes since its cursor. Tab presence allows a reload to keep its conversation.",
+								"subjects": [
+									"LRAVU6mu",
+									"sofQR8Hh"
+								],
+								"view": "wY7PpZYv"
+							},
+							{
+								"id": "hGIeGP0i",
+								"heading": "A change on disk is announced like a write",
+								"body": "One vault can be open in more than one server, so a write from another process reaches no pane through this server's broadcast. The lock sweep compares each board on screen with the fingerprint it last saw, and a difference is announced as a change with no version. The pane answers by reading the board again.",
+								"subjects": [
+									"TCMBvDpL",
+									"BL7LFThw",
+									"QqyAf3RP"
+								],
+								"view": "clDKM68H"
+							},
+							{
+								"id": "DcBRVb3O",
+								"heading": "The server decides which vault a pane is in",
+								"body": "A show that names a pane, or a new chosen checkout of the repository it shows, moves the pane into another vault. The pane only mirrors that: it takes the vault from pane_board and names it on its socket, reports and calls. A report that names the vault it left is answered as not registered, so it cannot undo the move.",
+								"subjects": [
+									"nPjqFn3J",
+									"etiWAAKH",
+									"K385etzX"
+								],
+								"view": "yY5LFU9G"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "4kUjYSbo",
+			"name": "TASK-549.13",
+			"lifecycle": "draft",
+			"parent": "AiVALJQa",
+			"summary": "Report exact canonical reading intent and keep shown-conversation assembly with its workbench owner",
+			"content": {
+				"nodes": [
+					{
+						"id": "r1aZDJtl",
+						"order": 1000,
+						"name": "HTTP application",
+						"kind": "module",
+						"responsibility": "Composes the middleware and mounts every route on the one application",
+						"parent": "xwAgUBmW",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts"
+						}
+					},
+					{
+						"id": "hwACZ2zb",
+						"order": 2000,
+						"name": "Application lifetime",
+						"kind": "module",
+						"responsibility": "Boots and stops the server: the vault and loopback refusals, the pidfile, the ordered shutdown",
+						"parent": "xwAgUBmW",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/lifecycle/startup/server-startup.ts"
+						}
+					},
+					{
+						"id": "QqyAf3RP",
+						"order": 3000,
+						"name": "Semantic board store",
+						"kind": "module",
+						"responsibility": "The one place a board is read or written",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime"
+						},
+						"drillDown": {
+							"board": "Board persistence",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "BL7LFThw",
+						"order": 4000,
+						"name": "Pane registry",
+						"kind": "module",
+						"responsibility": "The sockets and the vault each belongs to, what each pane is showing, which pane a show names in any vault, and the news broadcast to the sockets of one vault",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/registry.ts"
+						}
+					},
+					{
+						"id": "TCMBvDpL",
+						"order": 5000,
+						"name": "Disk change watcher",
+						"kind": "module",
+						"responsibility": "Notices a board changed on disk that this process did not write",
+						"parent": "YXy1uQYC",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts"
+						}
+					},
+					{
+						"id": "hBDu6P2M",
+						"order": 6000,
+						"name": "Codex workbench",
+						"kind": "service",
+						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner"
+						},
+						"drillDown": {
+							"board": "Codex realtime voice",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "kY0K1YbB",
+						"order": 7000,
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "kWJQlgwG",
+						"order": 8000,
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "MqTq68P3",
+						"order": 9000,
+						"name": "Pane routes",
+						"kind": "route",
+						"responsibility": "What each pane shows and where, pushed by the browser, which answers a report naming a vault the pane left as not registered; the CLI opens, closes and shows panes through it",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts"
+						}
+					},
+					{
+						"id": "X07YebBP",
+						"order": 10000,
+						"name": "Pane socket",
+						"kind": "module",
+						"responsibility": "One socket per page, named for its vault, or put in a readable one when that vault is gone: registers it, tells it its vault and repository, notes its tab, and passes agent messages to the workbench",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts"
+						}
+					},
+					{
+						"id": "bNG9UbLQ",
+						"order": 11000,
+						"name": "Board lease",
+						"kind": "module",
+						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
+						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/lock"
+						}
+					},
+					{
+						"id": "UNYvWHmE",
+						"order": 12000,
+						"name": "Board announcements",
+						"kind": "module",
+						"responsibility": "Tells every pane on a board of one vault who holds it and what they said they were doing, and every pane what agents are doing in each vault",
+						"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+						"parent": "YXy1uQYC",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts"
+						}
+					},
+					{
+						"id": "mStVd7fZ",
+						"order": 13000,
+						"name": "Change feed",
+						"kind": "module",
+						"responsibility": "Every settled board change, filed under its vault, as one stream with a cursor, read off the panes' announcements, for the agent's context",
+						"parent": "YXy1uQYC",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/change-feed.ts"
+						}
+					},
+					{
+						"id": "mAwzQrjT",
+						"order": 14000,
+						"name": "Pane tab adapter",
+						"kind": "module",
+						"responsibility": "Attach pane registration and browser conversation activation to the shared tab session owner",
+						"description": "The Archboard adapter selects the initial checkout from pane focus and forwards registrations, shown-conversation reads, and browser activation to the core-owned tab store. The store outlives Codex child generations.",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+						}
+					},
+					{
+						"id": "6IrxnwXk",
+						"order": 16000,
+						"name": "HTTP listener",
+						"kind": "module",
+						"responsibility": "The one Express application and the HTTP server that answers for it",
+						"parent": "xwAgUBmW",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/http/server-app.ts"
+						}
+					},
+					{
+						"id": "brCoVV57",
+						"order": 17000,
+						"name": "Server entry",
+						"kind": "function",
+						"responsibility": "The process entry that archboard start spawns: it starts the server and reports a startup failure",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server.ts"
+						}
+					},
+					{
+						"id": "RjaKX25k",
+						"order": 18000,
+						"name": "Browser origin guard",
+						"kind": "module",
+						"responsibility": "Checks browser request origins at HTTP and WebSocket entry points",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/code-opener/src/server/middleware"
+						}
+					},
+					{
+						"id": "bEBbXPKc",
+						"order": 19000,
+						"name": "Vault requirement",
+						"kind": "module",
+						"responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, including a directory whose real path is not <dir>/.archboard/vault, and hands a route the canonical vault it named",
+						"description": "ADR 0049: the socket names its vault once in its URL and the pane routes name it on every call. News of a board goes only to the panes of that board's vault.",
+						"parent": "xwAgUBmW",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/request/vault.ts"
+						}
+					},
+					{
+						"id": "K385etzX",
+						"order": 20000,
+						"name": "Pane session",
+						"kind": "module",
+						"responsibility": "One pane's contact with the server: holds the vault and repository the server put it in, and names that vault on its socket, reports, readings and calls",
+						"description": "pane-arrival adopts the vault and repository that a pane_board message names, and pane-core keeps them as a mirror of the server. pane-socket opens the socket with ?vault= and socket-messages routes each message. A report is keyed by its vault, so the server answers one naming a vault the pane left with registered:false.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/pane-session"
+						}
+					},
+					{
+						"id": "etiWAAKH",
+						"order": 21000,
+						"name": "Repository routes",
+						"kind": "route",
+						"responsibility": "Lists the repositories and chooses a checkout, and watches the registry file: each pane in an unchosen checkout's vault moves to the chosen one, and every pane hears its repository's name",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts"
+						}
+					},
+					{
+						"id": "nPjqFn3J",
+						"order": 22000,
+						"name": "Pane vaults",
+						"kind": "module",
+						"responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading, and broadcasts machine news to every tab",
+						"description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts"
+						}
+					},
+					{
+						"id": "4smEPsmF",
+						"order": 23000,
+						"name": "Repository list",
+						"kind": "module",
+						"responsibility": "Names each vault the way the navigator lists it: a repository identity, or an untracked vault's registry name, read from the chosen checkout",
+						"description": "A vault whose real path is not <dir>/.archboard/vault, such as one that a link leads out of the layout, is no vault here: its checkout reads no-vault, and an untracked one is not listed. A vault that no registry entry holds has no repository name. Every vault has a checkout, the directory that holds it, so a pane and a shown board always report one. No environment variable names a vault: the page opens in the first ready repository by name.",
+						"parent": "UvFpXmwp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/server/projections/repository-listing.ts"
+						}
+					},
+					{
+						"id": "Am1mLDP5",
+						"order": 24000,
+						"name": "Panes report",
+						"kind": "route",
+						"responsibility": "What every pane on screen shows, with the repository and checkout of its vault, and whether that is the vault of the caller's own checkout",
+						"description": "Report each pane, its tab session identity, and its explicit canonical reading intent. A canonical report names its actual vault, model, complete observed revision, stable subjects, reading filters, grammar, and state or checkpoint. The report remains temporary.",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts"
+						}
+					},
+					{
+						"id": "80IozszZ",
+						"order": 25000,
+						"name": "Shown conversation",
+						"kind": "route",
+						"responsibility": "The person's own act in the page names the checkout whose conversation every pane of the tab shows; a pick of a checkout the tab does not work in is refused",
+						"description": "The existing workbench showConversation operation validates a pane and its vault, resolves allowed checkouts, and changes the shown conversation. The server route delegates the complete request without assembling workbench internals.",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+							"symbol": "shownConversationRoute"
+						}
+					},
+					{
+						"id": "UvFpXmwp",
+						"order": 26000,
+						"name": "Pane connections",
+						"kind": "module",
+						"responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, reports what the panes show, and moves a pane to the checkout a person chooses"
+					},
+					{
+						"id": "YXy1uQYC",
+						"order": 27000,
+						"name": "Board news",
+						"kind": "module",
+						"responsibility": "Notices that a board changed and tells the panes of its vault, and files each change for the agent's context"
+					},
+					{
+						"id": "xwAgUBmW",
+						"order": 29000,
+						"name": "Server plumbing",
+						"kind": "module",
+						"responsibility": "Boots and stops the server, mounts every route, and holds each call to the vault it names"
+					},
+					{
+						"id": "Qyu8T7UT",
+						"order": 30000,
+						"name": "Board routes",
+						"kind": "module",
+						"responsibility": "The routes that write, rename, move and show boards: each tells the panes what it did, and a show or a move takes panes to another vault",
+						"drillDown": {
+							"board": "Archboard server routes",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "tHLqdtCJ",
+						"order": 31000,
+						"name": "Semantic context input",
+						"kind": "module",
+						"responsibility": "Reads each board a thread works on, with its claim, into the brief the agent is given",
+						"description": "Accept ordered pane reports and notify the coordinator context source directly when canonical reading intent changes. Resolve explanation actions from that explicit canonical report, never from the initial legacy board.",
+						"parent": "UvFpXmwp",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+						}
+					},
+					{
+						"id": "pbmVZ2Bh",
+						"order": 32000,
+						"name": "Pane messages",
+						"kind": "module",
+						"responsibility": "Applies server board and version messages to the pane",
+						"parent": "K385etzX",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
+						}
+					},
+					{
+						"id": "Bfh2rRfX",
+						"order": 33000,
+						"name": "Shared tab sessions",
+						"kind": "module",
+						"responsibility": "Own browser tab presence, disconnect grace, shown checkout, and session end notifications",
+						"parent": "UvFpXmwp",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "PoXHqEaa",
+						"order": 1000,
+						"from": "r1aZDJtl",
+						"to": "MqTq68P3",
+						"kind": "dependency",
+						"label": "mounts the pane routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "mountPaneRoutes"
+						}
+					},
+					{
+						"id": "HquZNzap",
+						"order": 2000,
+						"from": "TCMBvDpL",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"label": "locate watched file",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+							"symbol": "locateSemanticBoard"
+						}
+					},
+					{
+						"id": "ISZ2PYLl",
+						"order": 3000,
+						"from": "TCMBvDpL",
+						"to": "BL7LFThw",
+						"kind": "event",
+						"label": "announce file change",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "UxINwpn6",
+						"order": 4000,
+						"from": "X07YebBP",
+						"to": "hBDu6P2M",
+						"kind": "event",
+						"label": "the page's agent messages",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "handleBrowserMessage"
+						}
+					},
+					{
+						"id": "wH0rE1x7",
+						"order": 5000,
+						"from": "K385etzX",
+						"to": "MqTq68P3",
+						"kind": "http",
+						"label": "reports, readings and calls, each naming the pane's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+							"symbol": "reportPane"
+						}
+					},
+					{
+						"id": "gK39PRbo",
+						"order": 6000,
+						"from": "BL7LFThw",
+						"to": "K385etzX",
+						"kind": "event",
+						"label": "board and agent news; the vault a pane is in",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/registry.ts",
+							"symbol": "sendToVaultClients"
+						}
+					},
+					{
+						"id": "dl8GcVsN",
+						"order": 7000,
+						"from": "Qyu8T7UT",
+						"to": "BL7LFThw",
+						"kind": "event",
+						"label": "announce the accepted write",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "JHTQ2avc",
+						"order": 8000,
+						"from": "Qyu8T7UT",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "point its panes at the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+							"symbol": "sendToPane"
+						}
+					},
+					{
+						"id": "9u0bbBDT",
+						"order": 9000,
+						"from": "bNG9UbLQ",
+						"to": "UNYvWHmE",
+						"kind": "event",
+						"label": "the holder changed",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+							"symbol": "onBoardLockChanged"
+						}
+					},
+					{
+						"id": "pO57FCEs",
+						"order": 10000,
+						"from": "UNYvWHmE",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "tell the panes on the board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "esNJ3K32",
+						"order": 11000,
+						"from": "Qyu8T7UT",
+						"to": "UNYvWHmE",
+						"kind": "call",
+						"label": "what the writer said it was doing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+							"symbol": "announceDoing"
+						}
+					},
+					{
+						"id": "CJ5JwtNl",
+						"order": 12000,
+						"from": "kY0K1YbB",
+						"to": "MqTq68P3",
+						"kind": "http",
+						"label": "open, close and show panes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "mountPaneRoutes"
+						}
+					},
+					{
+						"id": "oi6YF8VO",
+						"order": 13000,
+						"from": "MqTq68P3",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "record the pane; send it a board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "panes"
+						}
+					},
+					{
+						"id": "yG8Hyadm",
+						"order": 14000,
+						"from": "K385etzX",
+						"to": "X07YebBP",
+						"kind": "event",
+						"label": "one socket per page, naming its vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+							"symbol": "socketUrl"
+						}
+					},
+					{
+						"id": "BIqHpV5C",
+						"order": 15000,
+						"from": "X07YebBP",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "register the page's socket",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "clients"
+						}
+					},
+					{
+						"id": "P1queZnK",
+						"order": 16000,
+						"from": "hwACZ2zb",
+						"to": "X07YebBP",
+						"kind": "dependency",
+						"label": "starts the socket server",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+							"symbol": "startWebSocketServer"
+						}
+					},
+					{
+						"id": "gMK54vsq",
+						"order": 17000,
+						"from": "BL7LFThw",
+						"to": "mStVd7fZ",
+						"kind": "event",
+						"label": "every board broadcast",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/change-feed.ts",
+							"symbol": "onBoardBroadcast"
+						}
+					},
+					{
+						"id": "52NUP6Ut",
+						"order": 18000,
+						"from": "hBDu6P2M",
+						"to": "mStVd7fZ",
+						"kind": "data",
+						"label": "changes since its cursor",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "semanticChangeFeed"
+						}
+					},
+					{
+						"id": "1MfDpq9X",
+						"order": 19000,
+						"from": "X07YebBP",
+						"to": "mAwzQrjT",
+						"kind": "call",
+						"label": "note the pane's tab, and forget it on close",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "noteTabSession"
+						}
+					},
+					{
+						"id": "AfSjx649",
+						"order": 20000,
+						"from": "hBDu6P2M",
+						"to": "mAwzQrjT",
+						"kind": "call",
+						"label": "a pane's tab, its shown checkout, a tab's end",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "shownCheckoutOf"
+						}
+					},
+					{
+						"id": "4fPIYyd3",
+						"order": 21000,
+						"from": "X07YebBP",
+						"to": "6IrxnwXk",
+						"kind": "dependency",
+						"label": "upgrades on the same listener",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "server"
+						}
+					},
+					{
+						"id": "dHRkaEZq",
+						"order": 22000,
+						"from": "MqTq68P3",
+						"to": "hBDu6P2M",
+						"kind": "call",
+						"label": "the pane's focus, for its agent",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "publishPaneContext"
+						}
+					},
+					{
+						"id": "UVtcPHc3",
+						"order": 23000,
+						"from": "Qyu8T7UT",
+						"to": "MqTq68P3",
+						"kind": "call",
+						"label": "the moved pane arrives on the new name",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+							"symbol": "arrivedOnBoard"
+						}
+					},
+					{
+						"id": "KpSOz34r",
+						"order": 24000,
+						"from": "BL7LFThw",
+						"to": "bNG9UbLQ",
+						"kind": "call",
+						"label": "watch the leases of the boards on screen",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/registry.ts",
+							"symbol": "watchBoardLocks"
+						}
+					},
+					{
+						"id": "ialffxnW",
+						"order": 25000,
+						"from": "bNG9UbLQ",
+						"to": "TCMBvDpL",
+						"kind": "event",
+						"label": "each sweep of a board on screen",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
+							"symbol": "onBoardSweep"
+						}
+					},
+					{
+						"id": "Y5c0eIar",
+						"order": 26000,
+						"from": "MqTq68P3",
+						"to": "UNYvWHmE",
+						"kind": "call",
+						"label": "who holds the board a pane arrives on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "tellPaneAboutLock"
+						}
+					},
+					{
+						"id": "DomT7qYj",
+						"order": 27000,
+						"from": "X07YebBP",
+						"to": "UNYvWHmE",
+						"kind": "call",
+						"label": "who holds a new pane's board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "tellPaneAboutLock"
+						}
+					},
+					{
+						"id": "ZGGx69Il",
+						"order": 28000,
+						"from": "Qyu8T7UT",
+						"to": "mStVd7fZ",
+						"kind": "call",
+						"description": "the write, as a settled change",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+							"symbol": "settledChangeFields"
+						}
+					},
+					{
+						"id": "yYx1C8Dw",
+						"order": 29000,
+						"from": "MqTq68P3",
+						"to": "TCMBvDpL",
+						"kind": "call",
+						"description": "the file it arrives on, as it is now",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "noteBoardShown"
+						}
+					},
+					{
+						"id": "HgatVqjT",
+						"order": 30000,
+						"from": "hBDu6P2M",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"description": "the pane a context is for, and its board",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "panes"
+						}
+					},
+					{
+						"id": "YX6joWZa",
+						"order": 31000,
+						"from": "r1aZDJtl",
+						"to": "TCMBvDpL",
+						"kind": "call",
+						"description": "watch the boards on screen",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "watchSemanticBoardFiles"
+						}
+					},
+					{
+						"id": "vNyjT5NQ",
+						"order": 32000,
+						"from": "BL7LFThw",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"description": "the vault's first board",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/registry.ts",
+							"symbol": "listSemanticBoards"
+						}
+					},
+					{
+						"id": "f5cM7cLA",
+						"order": 33000,
+						"from": "hwACZ2zb",
+						"to": "6IrxnwXk",
+						"kind": "dependency",
+						"label": "owns listener",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+							"symbol": "server"
+						}
+					},
+					{
+						"id": "7HmEZgi5",
+						"order": 34000,
+						"from": "QqyAf3RP",
+						"to": "bNG9UbLQ",
+						"kind": "call",
+						"label": "hold the board for each write",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/write/write.ts",
+							"symbol": "withBoardLock"
+						}
+					},
+					{
+						"id": "wYcfvDau",
+						"order": 35000,
+						"from": "r1aZDJtl",
+						"to": "6IrxnwXk",
+						"kind": "dependency",
+						"label": "mounts every route on the one app",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "app"
+						}
+					},
+					{
+						"id": "NoHUsyG6",
+						"order": 36000,
+						"from": "brCoVV57",
+						"to": "hwACZ2zb",
+						"kind": "call",
+						"label": "start the server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server.ts",
+							"symbol": "startServer"
+						}
+					},
+					{
+						"id": "2ssPZnZc",
+						"order": 38000,
+						"from": "X07YebBP",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"description": "Guards the WebSocket handshake through the shared public request policy",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "checkBrowserCsrf"
+						}
+					},
+					{
+						"id": "E1Tpzwjx",
+						"order": 39000,
+						"from": "r1aZDJtl",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"description": "Checks every browser request before admission and routing",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "createBrowserOriginGuard"
+						}
+					},
+					{
+						"id": "hDNka8yA",
+						"order": 40000,
+						"from": "MqTq68P3",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "requires a vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "kUKOPjAB",
+						"order": 41000,
+						"from": "X07YebBP",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "refuses an upgrade naming none",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "namedVault"
+						}
+					},
+					{
+						"id": "wfZNifHF",
+						"order": 42000,
+						"from": "r1aZDJtl",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "requires a vault on the code opener's route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "5x06MUNV",
+						"order": 43000,
+						"from": "r1aZDJtl",
+						"to": "etiWAAKH",
+						"kind": "dependency",
+						"label": "mounts the repository routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/wiring/application/application.ts",
+							"symbol": "mountRepositoryRoutes"
+						}
+					},
+					{
+						"id": "j3HPQ3Ng",
+						"order": 44000,
+						"from": "kWJQlgwG",
+						"to": "etiWAAKH",
+						"kind": "http",
+						"label": "list the repositories; choose a checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "mountRepositoryRoutes"
+						}
+					},
+					{
+						"id": "0L2qr5ja",
+						"order": 45000,
+						"from": "etiWAAKH",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"description": "Holds the list and the choice of a checkout to the browser origin, as the opener settings are",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "createBrowserOriginGuard"
+						}
+					},
+					{
+						"id": "aXFI100m",
+						"order": 46000,
+						"from": "etiWAAKH",
+						"to": "4smEPsmF",
+						"kind": "call",
+						"label": "the repositories and their vaults",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "listRepositories"
+						}
+					},
+					{
+						"id": "YawQAO0P",
+						"order": 47000,
+						"from": "etiWAAKH",
+						"to": "nPjqFn3J",
+						"kind": "call",
+						"label": "move each pane out of an unchosen checkout; tell every tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "movePaneVault"
+						}
+					},
+					{
+						"id": "ic9G2qN4",
+						"order": 48000,
+						"from": "etiWAAKH",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "tell every pane where it is now; a moved one its board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "sendBoardlessToPane"
+						}
+					},
+					{
+						"id": "rnMTaURu",
+						"order": 50000,
+						"from": "etiWAAKH",
+						"to": "MqTq68P3",
+						"kind": "call",
+						"label": "the moved pane arrives on its board",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "arrivedOnBoard"
+						}
+					},
+					{
+						"id": "tqLvLUcA",
+						"order": 51000,
+						"from": "Qyu8T7UT",
+						"to": "nPjqFn3J",
+						"kind": "call",
+						"label": "a show or a move takes the panes to another vault",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "movePaneVault"
+						}
+					},
+					{
+						"id": "6o2ZXOzG",
+						"order": 52000,
+						"from": "Qyu8T7UT",
+						"to": "4smEPsmF",
+						"kind": "call",
+						"label": "the repository and checkout of a shown board's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "placeOfVault"
+						}
+					},
+					{
+						"id": "FrlPt4zQ",
+						"order": 53000,
+						"from": "X07YebBP",
+						"to": "4smEPsmF",
+						"kind": "call",
+						"label": "place the pane, and name the repository it starts in",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "placeOfVault"
+						}
+					},
+					{
+						"id": "7wxK5YUi",
+						"order": 54000,
+						"from": "nPjqFn3J",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "re-key the pane's sockets; renew the lease watch",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+							"symbol": "syncLockWatch"
+						}
+					},
+					{
+						"id": "HZkTRFtf",
+						"order": 55000,
+						"from": "nPjqFn3J",
+						"to": "K385etzX",
+						"kind": "event",
+						"label": "repositories_changed to every tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+							"symbol": "broadcastEverywhere"
+						}
+					},
+					{
+						"id": "5zgh8igv",
+						"order": 56000,
+						"from": "kWJQlgwG",
+						"to": "K385etzX",
+						"kind": "call",
+						"label": "one session per pane, opened in the page's opening vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "usePaneSession"
+						}
+					},
+					{
+						"id": "zxnqlgqO",
+						"order": 57000,
+						"from": "UNYvWHmE",
+						"to": "nPjqFn3J",
+						"kind": "call",
+						"label": "tell every pane what agents are doing, by vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+							"symbol": "broadcastEverywhere"
+						}
+					},
+					{
+						"id": "2QfUVQT9",
+						"order": 59000,
+						"from": "hwACZ2zb",
+						"to": "etiWAAKH",
+						"kind": "dependency",
+						"label": "watch the registry file while the server runs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+							"symbol": "watchRegistry"
+						}
+					},
+					{
+						"id": "gwCn1bx5",
+						"order": 60000,
+						"from": "Qyu8T7UT",
+						"to": "etiWAAKH",
+						"kind": "call",
+						"label": "a show that chose a checkout: every pane follows",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "followRegistry"
+						}
+					},
+					{
+						"id": "wX9a448V",
+						"order": 61000,
+						"from": "MqTq68P3",
+						"to": "Am1mLDP5",
+						"kind": "dependency",
+						"label": "mounts the panes report",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "getPanesRoute"
+						}
+					},
+					{
+						"id": "b3mWnCLw",
+						"order": 62000,
+						"from": "kY0K1YbB",
+						"to": "Am1mLDP5",
+						"kind": "http",
+						"label": "browser panes: each pane's repository, checkout and own",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "getPanesRoute"
+						}
+					},
+					{
+						"id": "hiqkoWmI",
+						"order": 63000,
+						"from": "Am1mLDP5",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "every pane and the board it shows",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "panes"
+						}
+					},
+					{
+						"id": "8IdEaZWJ",
+						"order": 64000,
+						"from": "Am1mLDP5",
+						"to": "4smEPsmF",
+						"kind": "call",
+						"label": "each pane's repository and checkout",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "placeOfVault"
+						}
+					},
+					{
+						"id": "ugb7cB3Q",
+						"order": 65000,
+						"from": "Am1mLDP5",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "the caller's vault, when it names one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "statedVault"
+						}
+					},
+					{
+						"id": "Evb1IqVj",
+						"order": 66000,
+						"from": "MqTq68P3",
+						"to": "80IozszZ",
+						"kind": "dependency",
+						"label": "mounts the activation route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "shownConversationRoute"
+						}
+					},
+					{
+						"id": "MCGiGynf",
+						"order": 67000,
+						"from": "K385etzX",
+						"to": "80IozszZ",
+						"kind": "http",
+						"label": "the person activated a checkout, naming the pane's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "iUsWhMaM",
+						"order": 68000,
+						"from": "80IozszZ",
+						"to": "mAwzQrjT",
+						"kind": "call",
+						"label": "show the activated checkout in the pane's tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+							"symbol": "showConversation"
+						}
+					},
+					{
+						"id": "RxeyNuay",
+						"order": 69000,
+						"from": "80IozszZ",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "the pane, and the vault it is in",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+							"symbol": "panes"
+						}
+					},
+					{
+						"id": "aBvYXyej",
+						"order": 70000,
+						"from": "80IozszZ",
+						"to": "hBDu6P2M",
+						"kind": "call",
+						"label": "the tab's live workhorses, which a pick may name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+							"symbol": "liveWorkhorseCheckouts"
+						}
+					},
+					{
+						"id": "NuehJHbK",
+						"order": 71000,
+						"from": "MqTq68P3",
+						"to": "RjaKX25k",
+						"kind": "call",
+						"label": "only the page reaches the activation route",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+							"symbol": "createBrowserOriginGuard"
+						}
+					},
+					{
+						"id": "5odPEFwu",
+						"order": 72000,
+						"from": "80IozszZ",
+						"to": "bEBbXPKc",
+						"kind": "call",
+						"label": "the vault the call names, which the pane must be in",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+							"symbol": "vaultOfRequest"
+						}
+					},
+					{
+						"id": "ouRI3SQQ",
+						"order": 73000,
+						"from": "hBDu6P2M",
+						"to": "4smEPsmF",
+						"kind": "call",
+						"label": "the repository of a thread's vault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "repositoryOfVault"
+						}
+					},
+					{
+						"id": "uiV0btMb",
+						"order": 74000,
+						"from": "tHLqdtCJ",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "the board a pane shows",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+							"symbol": "boardForPane"
+						}
+					},
+					{
+						"id": "IFPR1GJT",
+						"order": 75000,
+						"from": "hBDu6P2M",
+						"to": "tHLqdtCJ",
+						"kind": "call",
+						"label": "the brief's input for the board a pane shows",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "semanticInputFor"
+						}
+					},
+					{
+						"id": "Q85nTD4V",
+						"order": 76000,
+						"from": "tHLqdtCJ",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"label": "read the board for the brief",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "FrzjCHPF",
+						"order": 77000,
+						"from": "tHLqdtCJ",
+						"to": "bNG9UbLQ",
+						"kind": "call",
+						"label": "who holds the board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+							"symbol": "boardLockState"
+						}
+					},
+					{
+						"id": "HO533F7P",
+						"order": 78000,
+						"from": "mAwzQrjT",
+						"to": "Bfh2rRfX",
+						"kind": "dependency",
+						"label": "forward pane presence and shown conversation operations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+							"symbol": "installWorkbenchTabSessions"
+						}
+					},
+					{
+						"id": "6kzjcG2u",
+						"order": 79000,
+						"from": "BL7LFThw",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"label": "is the board a pane shows still there, in its variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/registry.ts",
+							"symbol": "readBoardVariant"
+						}
+					},
+					{
+						"id": "oVsV7Zvz",
+						"order": 80000,
+						"from": "Qyu8T7UT",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"label": "open the board and variant a show names",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+							"symbol": "readBoardVariant"
+						}
+					},
+					{
+						"id": "2wIgQ9t1",
+						"order": 81000,
+						"from": "UNYvWHmE",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
+							"symbol": "normalizeBoardKey"
+						}
+					},
+					{
+						"id": "ZX8UUIpb",
+						"order": 82000,
+						"from": "Am1mLDP5",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "parseBoardKey"
+						}
+					},
+					{
+						"id": "wNDcc9zW",
+						"order": 83000,
+						"from": "etiWAAKH",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+							"symbol": "parseBoardKey"
+						}
+					},
+					{
+						"id": "2HMvI71J",
+						"order": 84000,
+						"from": "X07YebBP",
+						"to": "QqyAf3RP",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+							"symbol": "parseBoardKey"
+						}
+					},
+					{
+						"id": "qHLocIlw",
+						"order": 85000,
+						"from": "Am1mLDP5",
+						"to": "mAwzQrjT",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+							"symbol": "tabSessionOf"
 						}
 					}
 				],

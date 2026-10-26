@@ -61,6 +61,10 @@ test("relationship and missing-flow explanations retain stable reading intent an
 			grammar: "architecture" as const,
 		},
 	};
+	expect(await readArchitectureModel(vault, "Shop#Worker", undefined, { explain })).toMatchObject({
+		success: false,
+		code: "MODEL_INVALID",
+	});
 	expect(await readArchitectureModel(vault, undefined, undefined, { explain })).toMatchObject({
 		success: true,
 		explanation: { request: explain },
@@ -90,68 +94,3 @@ test("relationship and missing-flow explanations retain stable reading intent an
 		}),
 	).toMatchObject({ success: false, code: "FLOW_NOT_FOUND" });
 });
-
-test("a proposal explanation pins its exact checkpoint and the independent comparison revision", async () => {
-	const { behaviorFixture } = await import("#tests/runtime/operations/model-edit/flow-fixture.ts");
-	const { structureIntent } = await import("#tests/runtime/operations/model-edit/fixture.ts");
-	const { editArchitectureModule } = await import("@archboard/board/store-write");
-	const { vault } = behaviorFixture();
-	const intent = await structureIntent(vault, ["Shop", "Shop#Gateway"]);
-	const created = await editArchitectureModule(vault, {
-		...intent,
-		proposal: { type: "create", name: "Queue requests" },
-		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued gateway" } }],
-	});
-	if (!created.success) throw new Error(JSON.stringify(created));
-	const current = readArchitectureModel(vault);
-	if (!current.success) throw new Error(JSON.stringify(current));
-	const advanced = await editArchitectureModule(vault, {
-		...intent,
-		operationId: "advance-for-explanation",
-		expectedRevision: current.revision,
-		changes: [
-			{
-				type: "edit-module",
-				subject: "Shop#Gateway",
-				set: { description: "The implementation changed." },
-			},
-		],
-	});
-	if (!advanced.success) throw new Error(JSON.stringify(advanced));
-	const explain = {
-		actionId: "proposal-1",
-		action: "explain-proposal" as const,
-		model: current.manifest.id,
-		expectedRevision: created.checkpoint.revision.digest,
-		subjects: ["Shop#Gateway"],
-		reading: {
-			focus: [],
-			relationshipKinds: ["call"],
-			groups: true,
-			grammar: "sequence" as const,
-			flow: "Shop#Checkout",
-		},
-	};
-	const result = await readArchitectureModel(vault, undefined, undefined, {
-		checkpoint: created.checkpoint.id,
-		explain,
-	});
-	expect(result).toMatchObject({
-		success: true,
-		selectedFlow: "Shop#Checkout",
-		explanation: {
-			checkpoint: created.checkpoint.id,
-			state: { id: created.target.state, lifecycle: "draft" },
-			revision: created.checkpoint.revision,
-			comparison: { against: { id: "Current" }, revision: advanced.after },
-			investigate: false,
-		},
-	});
-	expect(
-		await readArchitectureModel(vault, undefined, undefined, {
-			checkpoint: created.checkpoint.id,
-			state: "current",
-			explain,
-		}),
-	).toMatchObject({ success: false, code: "MODEL_INVALID" });
-}, 15_000);

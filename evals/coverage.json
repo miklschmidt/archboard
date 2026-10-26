@@ -1154,6 +1154,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical explanations: exact reading capture, shared local actions, one text answer, cancellation, unavailable agents, and explicit captured retry",
+					"expectedUse": "Resolve the actual canonical vault, model, selected state or checkpoint, complete revision, stable subjects, reading intent, and action identity before delivery. Preserve the comparison base revision. Keep answers temporary and use normal claimed writes only after an explicit save request.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/explanations.test.ts; packages/board/tests/runtime/operations/proposals/proposals.test.ts; tests/system/server-state/canonical-explanations.test.ts; guidance skills/archboard/references/canonical-models.md; parent owns visible browser acceptance"
 				}
 			]
 		},

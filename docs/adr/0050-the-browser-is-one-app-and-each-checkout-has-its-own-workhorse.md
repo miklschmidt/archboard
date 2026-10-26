@@ -124,3 +124,28 @@ causes, for the same reason.
   workhorse.
 - The pane address, the picture cache, the socket messages and the change feed
   name the vault of each board.
+
+## Canonical explanation actions
+
+TASK-549.13 adds one local action for selection, relationship, flow, and proposal explanations.
+The public architecture reader captures the model, state or checkpoint, complete revision, stable subjects, and reading intent.
+A proposal capture keeps the actual comparison base and its independent revision.
+The action addresses the actual canonical vault after foreign repository navigation.
+It never infers that address from the initial legacy pane.
+
+The existing tab coordinator and checkout workhorse own execution.
+The workhorse queue holds captured input and existing provider notifications supply one textual answer.
+The browser and voice consume that same answer.
+Explicit retry reuses the capture, even after navigation or source changes.
+Uncertain delivery prevents retry until its outcome is known.
+Cancellation uses queue deletion or interruption of the exact correlated turn.
+
+Canonical pane reports carry reading intent without architecture content.
+Their existing report sequence rejects older navigation reports.
+The coordinator context source receives accepted reports directly.
+Conversation selection stays inside the workbench operation that owns its allowed checkouts and tab state.
+The server translates the complete request without assembling those internal owners.
+
+Explanations remain temporary and author no architecture.
+A later explicit edit requires normal claims and the complete stale-write token.
+No additional agent process, session manager, or durable explanation store exists.

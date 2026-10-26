@@ -517,3 +517,14 @@ These adapters do not repeat the domain matrix.
 `canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.
 These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.
+
+## Canonical explanation actions
+
+`packages/board/tests/runtime/operations/model-edit/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
+It covers stale revisions, stable subjects, relationship intent, and missing-flow investigation.
+The existing retained-comparison case in `packages/board/tests/runtime/operations/proposals/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
+`tests/system/server-state/canonical-explanations.test.ts` owns normal CLI and HTTP actions through the controlled production provider.
+It covers concurrent invocation identity, canonical pane reports, queue cancellation, exact turn interruption, captured retries, final text, empty answers, and unavailable sign-in.
+`tests/system/server-state/shown-conversation.test.ts` retains ownership of browser activation and tab checkout rules through the same HTTP contract.
+The parent browser delivery owns visible controls, keyboard access, navigation during requests, and result presentation.
+No live model evaluation or extra renderer owner belongs to this backend slice.
