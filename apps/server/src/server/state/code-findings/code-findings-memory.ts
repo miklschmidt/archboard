@@ -51,7 +51,8 @@ interface CodeFindingsMemory {
 	/**
 	 * Everything remembered of one vault.
 	 * @param vault The vault.
-	 * @returns One reading for each board and variant a pass has read there.
+	 * @returns One reading for each board and variant a pass has read there, and
+	 * when its last pass ran.
 	 */
 	recall(vault: string): RememberedFindings;
 	/**
@@ -103,6 +104,8 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 		string,
 		{ vault: string; reading: RememberedReading; exposures: readonly ContainerExposure[] }
 	>();
+	// When each vault's last pass ran, also a pass that read no board.
+	const lastChecked = new Map<string, string>();
 	/**
 	 * Keep what one finished pass found on each board it read.
 	 * @param vault The vault the pass read.
@@ -111,6 +114,7 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 */
 	function remember(vault: string, pass: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
+		lastChecked.set(vault, at);
 		for (const read of pass.boards) {
 			const exposures = (pass.exposures ?? []).filter((each) => isAbout(each, read));
 			readings.set(keyOf(vault, read.board, read.variant), {
@@ -138,10 +142,12 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 * @returns One reading for each board and variant a pass has read there.
 	 */
 	function recall(vault: string): RememberedFindings {
+		const lastCheckedAt = lastChecked.get(vault);
 		return {
 			readings: [...readings.values()]
 				.filter((kept) => kept.vault === vault)
 				.map((kept) => kept.reading),
+			...(lastCheckedAt === undefined ? {} : { lastCheckedAt }),
 		};
 	}
 	/**

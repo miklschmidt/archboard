@@ -12,8 +12,11 @@ import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check"
 import type { z } from "zod";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 
+/** What the server remembers of the vault's passes. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+
 /** What the last pass found on one board at one variant. */
-type RememberedReading = z.infer<typeof RememberedFindingsSchema>["readings"][number];
+type RememberedReading = RememberedFindings["readings"][number];
 
 /** The counts a pass left for one judged container. */
 type ContainerCounts = RememberedReading["containers"][number];
@@ -43,20 +46,6 @@ interface ExposedNamesPlace {
 const NONE: ExposedNamesState = { kind: "none" };
 
 /**
- * When the most recent of some passes ran.
- * @param readings The readings, at least one.
- * @returns Its time.
- */
-function latest(readings: readonly RememberedReading[]): string {
-	return (
-		readings
-			.map((reading) => reading.checkedAt)
-			.toSorted()
-			.at(-1) ?? ""
-	);
-}
-
-/**
  * What the region says about one container, from the reading of the board and
  * variant on screen.
  * @param reading The reading.
@@ -84,12 +73,12 @@ function stateOfReading(reading: RememberedReading, place: ExposedNamesPlace): E
 
 /**
  * What the region says about one picked part.
- * @param readings Every reading the server remembers for the pane's vault.
+ * @param remembered What the server remembers of the pane's vault.
  * @param place The part, and what is on screen.
  * @returns The state of the region.
  */
 function exposedNamesState(
-	readings: readonly RememberedReading[],
+	remembered: RememberedFindings,
 	place: ExposedNamesPlace,
 ): ExposedNamesState {
 	const { node } = place;
@@ -97,14 +86,15 @@ function exposedNamesState(
 	if (!holdsParts || node.binding === undefined) {
 		return NONE;
 	}
-	if (readings.length === 0) {
+	const { readings, lastCheckedAt } = remembered;
+	if (lastCheckedAt === undefined) {
 		return { kind: "no-pass" };
 	}
 	const reading = readings.find(
 		(one) => one.board === place.board && one.variant === place.variant,
 	);
 	return reading === undefined
-		? { kind: "variant-unread", checkedAt: latest(readings) }
+		? { kind: "variant-unread", checkedAt: lastCheckedAt }
 		: stateOfReading(reading, place);
 }
 

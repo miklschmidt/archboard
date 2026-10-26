@@ -455,8 +455,15 @@ const RememberedReadingSchema = CodeCheckBoardSchema.extend({
  * the server's memory and never starts a pass, so it is empty until somebody
  * runs the code check, with `archboard check` or `archboard check code`. The
  * route answers it beside `success: true`, and a parse keeps only the answer.
+ *
+ * `lastCheckedAt` is when the vault's last pass ran, absent before the first. A
+ * pass can read no board at all, as in a vault whose every board is a draft, so
+ * no readings is not the same as no pass.
  */
-const RememberedFindingsSchema = z.object({ readings: z.array(RememberedReadingSchema) });
+const RememberedFindingsSchema = z.object({
+	readings: z.array(RememberedReadingSchema),
+	lastCheckedAt: z.iso.datetime().optional(),
+});
 
 /**
  * The answer of `GET /api/vault/code-findings/exposure`: what one container of

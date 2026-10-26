@@ -3,7 +3,8 @@
 // memory, beside the version of each board it read; `GET
 // /api/vault/code-findings` answers from that memory alone. A later pass
 // replaces the readings of the boards it read and keeps the others, and a pass
-// the caller cancelled leaves the memory as it was.
+// the caller cancelled leaves the memory as it was. The memory keeps when the
+// vault's last pass ran, so a pass that read no board is not taken for none.
 //
 // The pass also leaves what each container it judged exposes (TASK-539.01): the
 // panes poll its counts with the findings, and `GET
@@ -179,6 +180,20 @@ test("a later pass replaces what it read and keeps the rest", async () => {
 			["payments", 1],
 		]),
 	);
+});
+
+test("a pass that read no board is remembered as a pass, with the time it ran", async () => {
+	const { base } = await serverWith([answerOver([], [])]);
+	const before = RememberedFindingsSchema.parse(
+		await (await fetch(`${base}/api/vault/code-findings?${named()}`)).json(),
+	);
+	expect(before.lastCheckedAt).toBeUndefined();
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+	const after = RememberedFindingsSchema.parse(
+		await (await fetch(`${base}/api/vault/code-findings?${named()}`)).json(),
+	);
+	expect(after.readings).toEqual([]);
+	expect(after.lastCheckedAt).toBeString();
 });
 
 test("a cancelled pass leaves the memory as it was", async () => {

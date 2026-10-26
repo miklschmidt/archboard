@@ -44,6 +44,7 @@ const AT = { board: "pipeline", variant: "v1" };
 /** What the last pass left for the board on screen: Orders judged, with its counts. */
 const FINDINGS = {
 	success: true,
+	lastCheckedAt: CHECKED_AT,
 	readings: [
 		{
 			...AT,

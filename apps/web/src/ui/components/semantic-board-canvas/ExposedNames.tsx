@@ -70,7 +70,7 @@ function ExposedNames(props: ExposedNamesProps): JSX.Element | null {
 	const { node, content, on } = props;
 	const select = useCallback(
 		(remembered: RememberedFindings): ExposedNamesState =>
-			exposedNamesState(remembered.readings, { ...on, node, content }),
+			exposedNamesState(remembered, { ...on, node, content }),
 		[on, node, content],
 	);
 	const { data: state } = useQuery({ ...codeFindingsQuery(vault), select });
