@@ -356,3 +356,9 @@ A retry returns the same allocated identities and result.
 A transfer or removal that stops during installation uses the existing `model recover` command.
 The recovery path preserves foreign bytes and refuses changed checkout context.
 Unrelated authored files remain byte-identical.
+
+The browser refreshes current module names, root membership, and connections after the complete operation.
+The selected module keeps its identity through a rename or reparent.
+Its details identify its parent when it has one.
+Removing that module leaves an explicit missing selection until the reader chooses another subject.
+Exact historical readings keep their original names, containment, and relationships.

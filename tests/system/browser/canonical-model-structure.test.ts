@@ -213,10 +213,6 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("API");
-	await browser.run([
-		"screenshot",
-		"/home/msc/.local/state/archboard-implementation/task-549/task-549.04-structural-parent.png",
-	]);
 	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${cache.id}"]`]);
 	await edit(request, vault, "remove-cache", [{ type: "remove-module", subject: cache.id }]);
 	await pollUntil(

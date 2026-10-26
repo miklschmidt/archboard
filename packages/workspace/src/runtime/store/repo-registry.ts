@@ -244,6 +244,7 @@ async function worktreesOf(
 	// exhaust the command deadlines before Git starts. Settle each bounded group
 	// before returning a refusal, so its other inspections do not outlive this call.
 	for (let start = 0; start < paths.length; start += 8) {
+		// oxlint-disable-next-line no-await-in-loop -- each batch must settle before the next can own Git processes
 		const results = await Promise.allSettled(
 			paths.slice(start, start + 8).map((each) => inspectCheckout(each, options)),
 		);

@@ -1097,7 +1097,7 @@
 					"expectedUse": "claim every affected subject and the model structure scope when allocating or retiring identities; submit one complete batch; preserve former names, authored order, unrelated bytes and retired identities; recover interrupted file transfers through the existing operation",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/model-edit/structure.test.ts and structure-recovery.test.ts; tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+					"owner": "packages/board/tests/runtime/operations/model-edit/structure.test.ts and structure-recovery.test.ts; tests/system/semantic-boards/model-read.test.ts; visible updates and pinned history: tests/system/browser/canonical-model-structure.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
 					"path": "model inventory: exact originals, source fingerprints, namespaces, aliases and evidence",

@@ -226,3 +226,9 @@ Its new source is Worker and its new target is Gateway.
 The retry returns the same checkpoint and complete affected subject set.
 The child module file and manifest remain byte-identical.
 Use the canonical model reference for module additions, removals, reparenting, and relationship field clearing.
+
+If the browser already shows Gateway, its details update to API after the operation.
+The incoming connection now names Worker, while the outgoing Dispatch connection is absent.
+A reparented module keeps its selection and identifies its parent in the details.
+Removing the selected module shows an unavailable selection instead of opening another module.
+A retained reading still shows the original Gateway and Dispatch connection.

@@ -1,11 +1,11 @@
 ---
 id: TASK-549.04
 title: Author module structure and transfer relationships
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T15:24:00Z'
+updated_date: '2026-10-26T16:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,7 +45,7 @@ TASK-549.03
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent adds, removes, renames, or reparents modules and edits their relationships through normal commands. The browser reflects the resulting model.
+- [x] #1 An agent adds, removes, renames, or reparents modules and edits their relationships through normal commands. The browser reflects the resulting model.
 - [x] #2 One operation can transfer a relationship source between files without changing its identity. Deletion repairs references under the existing confirmation rules.
 - [x] #3 Extend claims and stale-read coverage to every affected subject and file. Conflicting claims refuse admission, while unrelated subjects remain available.
 - [x] #4 Preserve reserved identities, former names, authored order, and containment rules. A one-field edit leaves unrelated files byte-identical.
@@ -54,7 +54,7 @@ TASK-549.03
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -80,4 +80,14 @@ Backend runtime now supports one checked batch for module add/remove/rename/repa
 Backend delivery evidence: 60 public runtime tests pass across nine files, including eleven new structure/recovery cases. Three CLI/HTTP cases pass; the structural edit/event case passes again after the final CLI parser change. The contract/skill selection passes 31 cases, and its one default-timeout case passes on the focused 30-second-timeout command. Source and browser types, full lint with zero warnings, formatting, vault semantics, and all three affected proposal code checks pass. Ten known unrelated code warnings remain. Package API checks pass; the unchanged width gate reports board 234/188 and remains TASK-549.24 work. Evaluation-input checking refuses existing S20 capture and guidance-anchor errors; evals/evals.json is byte-identical to integration baseline d1d6d8524d1f7ba663cf5d347f0c3c341279e1f7. No model evaluation ran. Signed CLI fixture transfer/retry matches exactly and changes only gateway.module.json and worker.module.json. Every baseline variant, current designation, adoption and shelving remains exact. Delivery drafts are Board persistence@TASK-549.04 (QPUue1PK, version 131), Command interface@TASK-549.04 (p7gVQwFB, version 167), and Archboard server routes@TASK-549.04 (ZAL4r7Bj, version 132). They remain draft for parent browser closure. Frontend source and browser tests match the baseline exactly. Latest integration merge is already up to date at d1d6d8524d1f7ba663cf5d347f0c3c341279e1f7. Do not consume TASK-549.16 source directly. TASK-549.04 remains In Progress; acceptance criterion 1 and full documentation/architecture closure remain parent-owned.
 
 Parent structural browser path passes one case with nine assertions. It verifies pinned historical content after current rename/addition/transfer, live parent changes, and explicit missing selection after deletion. The missing-parent presentation red is fixed. Parent also repairs the existing TASK-549.19 evaluation metadata: S20 now has named harness captures and an existing guidance anchor; migration coverage stays intact under the established document-state category instead of invalid part15. No schema or validation rule changes and no model evaluation runs.
+
+Publication integration is retained through signed98f900712. The combined browser evidence covers ten distinct cases and63assertions across structure, current/historical viewing, explicit publication, and workspace navigation. An intermittent publication test failure was diagnosed: the API already held publication-pending while the UI correctly remained Working. The owner now waits for action completion using the existing vault-command budget before asserting pending status and the unchanged network failure code. Product timeouts are unchanged. Debug logging and temporary screenshot calls are removed. The structural parent screenshot was inspected. Registry registration of198worktrees also reproduced an actual unbounded-process failure; the parent-owned bounded inspection fix restores registration without weakening deadlines. Complete architecture integration proposals now preserve all structural and publication meaning.
+
+All four TASK-549.04 integration proposals are adopted. Current semantics has zero diagnostics. Final provenance preserves every earlier variant meaning, adoption, and shelving from 98f900712. The edit view adds only the candidate owner. The parent inspected current/proposed diagrams and the selected-parent browser screenshot. Types, lint, formatting, consumer artifacts, and evaluation inputs pass. The interface width remains 241/188, owned by TASK-549.24. No model evaluation runs.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Module and relationship batches preserve identities, former names, affected claims, and durable recovery. The browser reflects additions, renames, transfers, parent changes, and removals while exact history stays pinned. Backend evidence covers 60 runtime cases. Combined browser evidence covers 10 cases and 63 assertions. The separate registry repair passes 22 cases and restores a real 198-worktree scan without changing deadlines. Architecture records, ADRs, examples, and consumer guidance match the delivered behavior. TASK-549.24 retains the transitional interface-width work.
+<!-- SECTION:FINAL_SUMMARY:END -->
