@@ -274,25 +274,29 @@ const semanticRecordContract = defineCommand({
 	path: ["semantic", "record"],
 	shared: ["url", "directory", "doing", "as-session"],
 	summary: "Record a board's walkthrough to a video file, narrated by the voice",
-	description:
-		"Presents one walkthrough of a semantic board in a private headless Chromium at 1920x1080, " +
-		"with no shell around the pane, while the Codex voice explains each step. Each step moves " +
-		"on once the voice has finished explaining it, and the talk ends after the last. The talk " +
-		"is kept, with the board as it was drawn, in the state directory's recordings (the newest " +
-		"ten) or in --talk. Its picture is then rendered frame by frame at 30 frames a second, with " +
-		"the voice, to an MP4 or WebM file (by the --out extension); a render that fails keeps the " +
-		"talk for semantic replay. It runs on the Archboard server the CLI talks to, which must " +
-		"have Codex signed in. A recording is a conversation of its own, so voice live in a browser " +
-		"tab does not stop it. The voice speaks only the --language it is given, whatever language " +
-		"the steps are written in. Every frame is laid out by the --layout engine, which the talk " +
-		"keeps, so a replay draws the same layout. With --against every frame is drawn relative to " +
-		"that variant, without the Planned frame, and the talk keeps it too. " +
-		"--discard " +
-		"deletes the board once the recording is written, for a board made only to be recorded; " +
-		"a failed recording keeps it, and so does a board changed while it was " +
-		"recorded, which the receipt says. Needs a Chromium or Google Chrome executable " +
-		"on PATH or named by ARCHBOARD_RENDERER_CHROMIUM, and ffmpeg: the one named by " +
-		"ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through Nix.",
+	description: [
+		"Presents one walkthrough of a semantic board in a private headless Chromium at 1920x1080, with no shell around the pane, while the Codex voice explains each step. Each step moves on once the voice has finished explaining it, and the talk ends after the last. The command renders the picture of the talk to an MP4 or WebM file, chosen by the --out extension.",
+		"",
+		"The talk:",
+		"- The command keeps the talk, with the board as it was drawn, in the state directory's recordings (the newest ten) or in --talk.",
+		"- The command renders the picture frame by frame at 30 frames a second, with the voice.",
+		"- A render that fails keeps the talk for semantic replay.",
+		"",
+		"The voice:",
+		"- The command runs on the Archboard server that the CLI talks to. That server must have Codex signed in.",
+		"- A recording is a conversation of its own, so voice live in a browser tab does not stop it.",
+		"- The voice speaks only the --language it is given, whatever language the steps are written in.",
+		"",
+		"The layout:",
+		"- The --layout engine lays out every frame. The talk keeps the engine, so a replay draws the same layout.",
+		"- With --against every frame is drawn relative to that variant, without the Planned frame. The talk keeps it too.",
+		"",
+		"--discard deletes the board once the recording is written, for a board made only to be recorded. A failed recording keeps the board. So does a board that changed while it was recorded, which the receipt says.",
+		"",
+		"Needs:",
+		"- A Chromium or Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
+		"- ffmpeg: the one named by ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through Nix.",
+	].join("\n"),
 	examples: [
 		"archboard semantic record pipeline --out pipeline.mp4",
 		'archboard semantic record pipeline --variant "TASK-2" --against "TASK-1" --out task-2.mp4',

@@ -114,27 +114,32 @@ const semanticMoveContract = defineCommand({
 	path: ["semantic", "move"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Move a board, with every variant, into another repository's vault",
-	description:
-		"Moves the whole board in the vault this command finds into the vault found from --to, as -C " +
-		"finds one: every variant, every former name and every subject id stay as they are, and the " +
-		"board keeps its name. Every drill-down whose meaning the move changes is rewritten, on every " +
-		"variant: one in the source vault that opens the board then names the target's repository; " +
-		"one on the board that opens another board of the source vault then names the source's " +
-		"repository; and one in the target vault, the board's own included, that opens the board " +
-		"through the source's repository then names no repository. The answer lists every drill-down " +
-		"it rewrote. The move holds the board in the source vault and its name in the target vault, " +
-		"writes the target vault first, then the rewritten drill-downs of the source vault, and " +
-		"deletes the source note last. A move that stopped part way leaves the board in both vaults " +
-		"and lists the drill-downs it rewrote already, and running the same move again finishes it. " +
-		"Each repository commits its own half. It is refused between two checkouts of one " +
-		"repository, while somebody else holds the board or its name in the target vault, when the " +
-		"target vault has a board or a " +
-		"former name that the board's names answer to, and when it needs a drill-down into an " +
-		"untracked vault, which has no identity to name. A pane that showed the board shows it in " +
-		"its new repository. When --to is a known checkout that is not the chosen one of its " +
-		"repository, a finished move makes it the chosen one for the whole machine, as an agent's " +
-		"browser show does, and the answer's chose names the checkout it replaced. The move ends this writer's claim on the board; claim it again in the " +
-		"target vault to go on.",
+	description: [
+		"Moves the whole board in the vault that this command finds into the vault found from --to, as -C finds one. Every variant, every former name and every subject id stay as they are, and the board keeps its name. The move holds the board in the source vault and its name in the target vault.",
+		"",
+		"Drill-downs:",
+		"- The move rewrites every drill-down whose meaning it changes, on every variant.",
+		"- A drill-down in the source vault that opens the board then names the target's repository.",
+		"- A drill-down on the board that opens another board of the source vault then names the source's repository.",
+		"- A drill-down in the target vault that opens the board through the source's repository then names no repository. The board's own drill-downs are included.",
+		"- The answer lists every drill-down that the move rewrote.",
+		"",
+		"Order of the writes:",
+		"- The move writes the target vault first, then the rewritten drill-downs of the source vault. It deletes the source note last.",
+		"- Each repository commits its own half.",
+		"- MOVE_STOPPED: when a move stopped part way. The board is then in both vaults and the answer lists the drill-downs that were rewritten already. Run the same move again to finish it.",
+		"",
+		"Refusals:",
+		"- MOVE_SAME_REPOSITORY: between two checkouts of one repository.",
+		"- BOARD_HELD: while somebody else holds the board or its name in the target vault.",
+		"- BOARD_EXISTS: when the target vault has a board or a former name that the board's names answer to.",
+		"- MOVE_NEEDS_IDENTITY: when the move needs a drill-down into an untracked vault, which has no identity to name.",
+		"",
+		"After the move:",
+		"- A pane that showed the board shows it in its new repository.",
+		"- When --to is a known checkout that is not the chosen one of its repository, a finished move makes it the chosen one for the whole machine, as an agent's browser show does. The answer's chose names the checkout that it replaced.",
+		"- The move ends this writer's claim on the board. Claim it again in the target vault to go on.",
+	].join("\n"),
 	examples: [
 		'archboard semantic move Payments --to ../payments --expect-version 14 --doing "moving the board into the repository it describes"',
 		'archboard -C ~/meta semantic move Payments --to ~/payments --expect-version 14 --doing "moving the board into the repository it describes"',

@@ -419,21 +419,20 @@ const semanticCompareContract = defineCommand({
 	path: ["semantic", "compare"],
 	shared: ["url", "directory"],
 	summary: "Read how one variant differs from the current one",
-	description:
-		"Reports one variant against the variant its picture is drawn against — the board's current " +
-		"variant, or on a board with none the one it came from — or against the variant --against " +
-		"names: every part, relationship, sequence, " +
-		"step, walkthrough and beat either of them has, how it stands — added, removed, changed or " +
-		"unchanged — and, for anything changed, which fields moved and what they moved between. " +
-		"Relationships and steps carry the endpoints they now have, named as well as identified, so " +
-		"a connection whose end moved onto a replacing part reads as one relationship that moved " +
-		"rather than as a deletion beside an addition. Before them, for each container, the interface " +
-		"changes: the entry points added and removed, the parts that moved between the interface and " +
-		"the hidden parts, and the callers gained and lost; they set no standing on any part. Beside " +
-		"them, each container's interface measures on the variant, the one it is read against and " +
-		"each variant --beside names, side by side and unranked. Read over " +
-		"the whole variant before any view narrows it. With no --against, the current variant and a first draft on a board with no " +
-		"current one have nothing to be read against and are refused.",
+	description: [
+		"Reports one variant against the variant its picture is drawn against, or against the variant that --against names. The picture is drawn against the board's current variant, or on a board with none, against the one that the variant came from. The report is read over the whole variant before any view narrows it.",
+		"",
+		"For every part, relationship, sequence, step, walkthrough and beat that either variant has:",
+		"- How it stands: added, removed, changed or unchanged.",
+		"- For anything changed, which fields moved and what they moved between.",
+		"- For a relationship or a step, the endpoints that it now has, named as well as identified. A connection whose end moved onto a replacing part then reads as one relationship that moved, and not as a deletion beside an addition.",
+		"",
+		"For each container:",
+		"- Before the rest, the interface changes: the entry points added and removed, the parts that moved between the interface and the hidden parts, and the callers gained and lost. They set no standing on any part.",
+		"- Beside the rest, the interface measures on the variant, on the one that it is read against and on each variant that --beside names, side by side and unranked.",
+		"",
+		"With no --against, the current variant is refused. So is a first draft on a board with no current variant. Neither has anything to be read against.",
+	].join("\n"),
 	examples: [
 		'archboard semantic compare payments --variant "Queued ingest"',
 		'archboard semantic compare payments --variant "Queued ingest" --against "As built in May"',

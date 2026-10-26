@@ -35,16 +35,22 @@ const semanticRenameContract = defineCommand({
 	path: ["semantic", "rename"],
 	shared: ["url", "directory", "doing", "expect-version", "as-session"],
 	summary: "Give a board, or one of its variants, another name",
-	description:
-		"Renames the board, or with --variant one variant of it, and changes nothing else: every id, " +
-		"every variant with its lifecycle and ancestry, and every record of adoption, shelving and " +
-		"reconciliation stay as they were. The old name is kept as a former name and goes on opening " +
-		"the board or variant, so a drill-down on another board, a saved pane address or a command " +
-		"that named it still reaches it, and panes showing it move to the new name. A board's file is " +
-		"renamed with it. A board name follows the usual rules: case does not make two boards, and " +
-		"`@` is reserved for the variant, so a change of case alone keeps every address as it is. A " +
-		"name another board carries or used to carry is refused, as is a variant name another variant " +
-		"of the board answers to, and a name that is already the one it has.",
+	description: [
+		"Renames the board, or with --variant one variant of it, and changes nothing else. Every id, every variant with its lifecycle and ancestry, and every record of adoption, shelving and reconciliation stay as they were.",
+		"",
+		"The old name:",
+		"- The command keeps the old name as a former name. It goes on opening the board or variant.",
+		"- A drill-down on another board, a saved pane address or a command that named it still reaches it.",
+		"- Panes that show it move to the new name.",
+		"- A board's file is renamed with it.",
+		"",
+		"A board name follows the usual rules. Case does not make two boards, and `@` is reserved for the variant. A change of case alone keeps every address as it is.",
+		"",
+		"Refusals:",
+		"- A name that another board carries or used to carry.",
+		"- A variant name that another variant of the board answers to.",
+		"- A name that is already the one the board or variant has.",
+	].join("\n"),
 	examples: [
 		'archboard semantic rename "Canvas server" --to "Archboard server" --expect-version 14 --doing "naming the board for the server it describes"',
 		'archboard semantic rename "Archboard server" --variant readable-layout --to "Readable layout" --expect-version 15 --doing "giving the proposal a readable name"',
