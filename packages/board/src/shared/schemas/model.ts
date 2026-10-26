@@ -1,3 +1,7 @@
+import {
+	ExplanationRequestSchema,
+	ReadingSelectionSchema,
+} from "#shared/schemas/model-explanation.ts";
 import { z } from "zod";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import {
@@ -105,6 +109,17 @@ const ArchitectureModelSchema = z
 		selectedState: SelectedStateSchema.nullable(),
 		proposals: z.array(ProposalSchema.extend({ file: z.string() })),
 		comparison: ComparisonSchema.optional(),
+		explanation: z
+			.strictObject({
+				request: ExplanationRequestSchema,
+				selection: ReadingSelectionSchema,
+				comparison: ComparisonSchema.optional(),
+				state: SelectedStateSchema.nullable(),
+				checkpoint: GitObjectIdSchema.optional(),
+				revision: ModelRevisionSchema,
+				investigate: z.boolean(),
+			})
+			.optional(),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,

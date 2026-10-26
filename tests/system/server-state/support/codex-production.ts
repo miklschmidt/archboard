@@ -56,6 +56,10 @@ function prepareProductionFixture(
 		executablePath,
 		readFileSync(executableSource, "utf8")
 			.replaceAll(
+				"./fake-codex-explanation-queue.ts",
+				join(dirname(executableSource), "fake-codex-explanation-queue.ts"),
+			)
+			.replaceAll(
 				"./fake-codex-production-data.ts",
 				join(dirname(executableSource), "fake-codex-production-data.ts"),
 			)

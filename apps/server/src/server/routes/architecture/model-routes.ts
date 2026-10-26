@@ -1,3 +1,4 @@
+import { mountArchitectureExplanationRoutes } from "#server/routes/architecture/explanation-routes.ts";
 import { mountArchitectureFlowRoutes } from "#server/routes/architecture/flow-routes.ts";
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express } from "express";
@@ -65,6 +66,7 @@ function selectedReading(vault: string, query: z.infer<typeof QuerySchema>) {
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
+	mountArchitectureExplanationRoutes(app);
 	mountArchitecturePublicationRoutes(app);
 	mountArchitectureEditRoutes(app);
 	mountArchitectureFlowRoutes(app);

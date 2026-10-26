@@ -1,3 +1,4 @@
+import { readRequestedArchitecture } from "#runtime/operations/read/model-explanation.ts";
 import { ProposalSchema, StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
@@ -362,9 +363,8 @@ function readArchitectureModel(
 	if (selection !== undefined)
 		return (async () => {
 			if (blocked !== undefined) return blocked;
-			const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
-			const result = await readSelectedState(vault, module, flow, selection);
-			return modelBoundaryFailure(vault) ?? result;
+			const captured = await readRequestedArchitecture(vault, module, flow, selection);
+			return modelBoundaryFailure(vault) ?? captured;
 		})();
 	if (blocked !== undefined) return blocked;
 	const reading = readCurrentModel(vault, module, flow);

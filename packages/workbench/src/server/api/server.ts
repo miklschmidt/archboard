@@ -10,3 +10,5 @@ export {
 	tabSessionOf,
 } from "#server/services/panes/tab-sessions.ts";
 export { paneCheckoutOf, panesOfTabSession } from "#server/services/sessions/panes.ts";
+
+export { explainArchitecture } from "#server/services/explanations/dispatch.ts";
