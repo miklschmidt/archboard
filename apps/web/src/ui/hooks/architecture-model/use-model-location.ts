@@ -18,11 +18,13 @@ function useModelLocation(paneId: string) {
 		 */
 		select: (state) => state.location.search,
 	});
-	const model = search[`model${paneId}`] ?? null;
-	const scope = search[`scope${paneId}`] ?? null;
-	const checkpoint = search[`checkpoint${paneId}`] ?? null;
+	const model = nullableParameter(search[`model${paneId}`]);
+	const scope = nullableParameter(search[`scope${paneId}`]);
+	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
+	const state = nullableParameter(search[`state${paneId}`]);
+	const against = nullableParameter(search[`against${paneId}`]);
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
-	const flow = search[`flow${paneId}`] ?? null;
+	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
 	const hiddenGroups = search[`hideGroups${paneId}`];
@@ -77,7 +79,7 @@ function useModelLocation(paneId: string) {
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
-			navigate({ checkpoint: next });
+			navigate({ checkpoint: next, state: undefined, against: undefined });
 		},
 		[navigate],
 	);
@@ -128,7 +130,23 @@ function useModelLocation(paneId: string) {
 		},
 		[grammar, navigate],
 	);
+	const selectState = useCallback(
+		(next: string): void => {
+			navigate({ state: next, checkpoint: null, against: undefined });
+		},
+		[navigate],
+	);
+	const compareAgainst = useCallback(
+		(next: string | null): void => {
+			navigate({ against: next ?? undefined });
+		},
+		[navigate],
+	);
 	return {
+		state,
+		against,
+		selectState,
+		compareAgainst,
 		openFlow,
 		grammar,
 		flow,
@@ -146,6 +164,15 @@ function useModelLocation(paneId: string) {
 		selectCheckpoint,
 		identify,
 	};
+}
+
+/**
+ * Missing optional address fields have one absent-value convention in the reader.
+ * @param value A validated string parameter, or absence.
+ * @returns The requested value or null.
+ */
+function nullableParameter(value: string | undefined): string | null {
+	return value ?? null;
 }
 
 /**

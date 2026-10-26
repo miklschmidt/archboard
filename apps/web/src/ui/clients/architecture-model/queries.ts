@@ -1,3 +1,4 @@
+import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import { queryOptions } from "@tanstack/react-query";
 import {
 	ArchitectureModelReadSchema,
@@ -7,6 +8,8 @@ import {
 	type ArchitectureCheckpointList,
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
+
+type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null };
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -33,10 +36,18 @@ const architectureModelKeys = {
 	 * One explicit current or retained reading.
 	 * @param vault The explicitly addressed vault.
 	 * @param checkpoint The exact identity, or null for current inputs.
+	 * @param selection The explicit mutable state and comparison base.
 	 * @returns Its query key.
 	 */
-	reading: (vault: string, checkpoint: string | null) =>
-		["architecture-model", vault, "reading", checkpoint] as const,
+	reading: (vault: string, checkpoint: string | null, selection: StateSelection = {}) =>
+		[
+			"architecture-model",
+			vault,
+			"reading",
+			checkpoint,
+			selection.state ?? null,
+			selection.against ?? null,
+		] as const,
 	/**
 	 * The retained metadata in one vault.
 	 * @param vault The explicitly addressed vault.
@@ -73,19 +84,22 @@ async function readReply<T>(url: string, schema: ReplySchema<T>, signal: AbortSi
  * @param vault The addressed vault.
  * @param checkpoint The exact identity, or null for current inputs.
  * @param signal Cancels an obsolete request.
+ * @param selection The explicit state and comparison selectors.
  * @returns The shared runtime reading.
  */
 async function readModel(
 	vault: string,
 	checkpoint: string | null,
 	signal: AbortSignal,
+	selection: StateSelection,
 ): Promise<Extract<ArchitectureModelRead, { success: true }>> {
-	const url = inVault("/api/architecture/model", vault);
-	const result = await readReply(
-		checkpoint === null ? url : `${url}&checkpoint=${encodeURIComponent(checkpoint)}`,
-		ArchitectureModelReadSchema,
-		signal,
+	const parameters = new URLSearchParams(
+		Object.entries({ checkpoint, ...selection }).flatMap(([key, value]) =>
+			typeof value === "string" ? [[key, value]] : [],
+		),
 	);
+	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
+	const result = await readReply(url, ArchitectureModelReadSchema, signal);
 	if (!result.success) throw new ArchitectureReadError(result);
 	return result;
 }
@@ -96,17 +110,22 @@ async function readModel(
  * Query cancellation discards obsolete reads. A failed refresh keeps the last coherent data.
  * @param vault The addressed vault.
  * @param checkpoint The exact identity, or null for current inputs.
+ * @param selection The explicit mutable state and comparison base.
  * @returns Query options for the shared model result.
  */
-function architectureModelQuery(vault: string, checkpoint: string | null = null) {
+function architectureModelQuery(
+	vault: string,
+	checkpoint: string | null = null,
+	selection: StateSelection = {},
+) {
 	return queryOptions({
-		queryKey: architectureModelKeys.reading(vault, checkpoint),
+		queryKey: architectureModelKeys.reading(vault, checkpoint, selection),
 		/**
 		 * Read the addressed model through the shared transport.
 		 * @param context The query cancellation signal.
 		 * @returns The runtime answer.
 		 */
-		queryFn: (context) => readModel(vault, checkpoint, context.signal),
+		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
 		staleTime: 0,
 		refetchOnMount: "always",
 		refetchOnWindowFocus: "always",

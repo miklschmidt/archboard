@@ -168,16 +168,13 @@ function ScopeIntroduction(props: { model: Model; scope: string | null }): JSX.E
 /**
  * The model introduces itself until the reader selects a module.
  * @param props The coherent model.
- * @returns Its authored name, current state, and summary.
+ * @returns Its authored model name and exploration action.
  */
 function ModelIntroduction(props: Pick<ModelSelectionDetailsProps, "model">): JSX.Element {
 	const { model } = props;
-	const current = model.manifest.current;
 	return (
 		<div className="max-w-prose space-y-4">
 			<h3 className="text-figure font-display uppercase">{model.manifest.name}</h3>
-			<p className="text-control text-muted-foreground">{current?.name ?? "Not built"}</p>
-			{current?.summary && <p className="text-reading">{current.summary}</p>}
 			{model.roots.length > 0 && (
 				<p className="text-body text-muted-foreground">
 					Select a module to read its responsibility and connections.
