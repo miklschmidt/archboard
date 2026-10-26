@@ -175,7 +175,7 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
 	await Promise.all([
 		repositoriesChanged(client),
 		listingsChanged(client),
-		readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]),
+		readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders, architectureModelKeys.all]),
 	]);
 }
 

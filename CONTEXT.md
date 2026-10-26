@@ -37,6 +37,14 @@ It is neither a state nor an adoption.
 The source revision associated with an architectural reading and its uncommitted-code status.
 Architecture retention does not preserve the source code itself.
 
+Migration inventory:
+A read-only account of original legacy meaning and identity evidence.
+Each original state keeps its own coverage.
+
+Mapping plan:
+An owner's explicit identity mappings and conflict decisions for migration.
+The plan changes no active architecture.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording

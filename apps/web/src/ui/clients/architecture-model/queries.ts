@@ -6,7 +6,6 @@ import {
 	type ArchitectureCheckpointList,
 } from "@archboard/board/model";
 import {
-	cancellable,
 	inVault,
 	RequestFailure,
 	strictReply,

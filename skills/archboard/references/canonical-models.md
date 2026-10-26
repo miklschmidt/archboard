@@ -127,4 +127,5 @@ An unsuccessful operation keeps its structured JSON and exits with status 2.
 
 This delivery supports manifest and module inputs plus local checkpoints.
 Use existing board commands for legacy vaults.
-Canonical authoring, proposal changes, publication, private archives, and explicit migration arrive through later TASK-549 slices.
+For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
+Canonical composition, authoring, proposal changes, publication, private archives, and cutover arrive through later TASK-549 slices.

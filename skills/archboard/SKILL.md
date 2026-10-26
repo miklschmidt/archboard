@@ -15,6 +15,7 @@ description: >-
 
 For an authored vault with `model.json`, read [canonical models](references/canonical-models.md) before using `model read`, `model retain`, or `model checkpoints`.
 Legacy vaults keep the board workflow below until explicit migration.
+For legacy inventory or identity choices, read [legacy migration](references/legacy-migration.md) before using `model inventory` or `model plan`.
 
 An agent states what an architecture IS; archboard draws it. A **board** is one
 document in the vault holding a family of **variants** (the current architecture,

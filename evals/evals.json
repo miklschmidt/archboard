@@ -631,7 +631,9 @@
 					"check": "walkthrough-beat-references",
 					"board": "Flask request pipeline",
 					"minBeats": 1,
-					"beatSubjectKinds": { "step": 2 }
+					"beatSubjectKinds": {
+						"step": 2
+					}
 				},
 				{
 					"check": "render-ok",
@@ -1771,6 +1773,54 @@
 					"board": "Flask application"
 				}
 			]
+		},
+		{
+			"id": "S20",
+			"name": "inventory legacy identities without changing architecture",
+			"report": "primary",
+			"workflow": "read",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S20.json",
+			"sources": ["src/flask/app.py"],
+			"prompt": "Inventory all legacy architecture in this checkout with import namespace Flask. Report original states, aliases, document references, and identity evidence. Explain why the two Flask app descriptions cannot be combined automatically and identify the unresolved definition choice. Preserve both boards exactly. Do not save a mapping plan, compose a model, render, or migrate anything.",
+			"expectedFeatures": [
+				{
+					"feature": "migration.inventory",
+					"requirement": "Uses model inventory with origin Flask and reports exact source fingerprint plus complete original board coverage.",
+					"skill": ["references/legacy-migration.md#read-the-inventory"]
+				},
+				{
+					"feature": "migration.explicit-identity",
+					"requirement": "Reports distinct original namespaces for the two Flask app descriptions. Matching names and bindings remain evidence. Reports the conflicting responsibilities without selecting a canonical identity.",
+					"skill": ["references/legacy-migration.md#record-owner-choices"]
+				},
+				{
+					"feature": "read-only",
+					"requirement": "Creates no plan and changes no active architecture. Explains that composition and installation remain unavailable in this workflow.",
+					"skill": ["references/legacy-migration.md"]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "version-advanced-by",
+					"board": "Flask detail",
+					"max": 0
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/legacy-migration.md"],
+			"captures": []
 		}
 	]
 }
