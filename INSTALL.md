@@ -404,9 +404,12 @@ fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
 Both take `--variant`, `--view` and `--theme`. To export a variant
 without comparison marks and removed subjects, add `--no-comparison`. To draw a
 variant relative to another one, with no "Planned" frame, add `--against <variant>`.
-`semantic render --theme auto` draws one SVG that shows the ground of the reader's colour
-scheme. Both commands take `--title` and `--legend horizontal|vertical` to draw
-a title and the key into the picture, and `--legend-only` to draw the key alone.
+`semantic render` draws one SVG that shows the ground of the reader's colour
+scheme (`--theme auto`), and `semantic rasterize` draws dark. Both commands draw
+the key under the picture. `--legend vertical` draws it beside the picture,
+`--no-legend` draws none, and `--legend-only` draws the key alone. `--title`
+draws a title above the picture. Each SVG and PNG carries its render recipe,
+which names the board and the drawing choices.
 
 The CLI starts the browser itself, with a private temporary profile, and stops
 it and removes the profile before the command ends. It uses the first of

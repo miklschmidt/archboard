@@ -4,11 +4,15 @@
 // only the rule can get wrong; the CLI and opener owners prove the readers use it.
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { declareDirectory, setLanguageServer } from "@archboard/workspace/checkouts";
-import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
+import {
+	declareDirectory,
+	GitCommandError,
+	setLanguageServer,
+} from "@archboard/workspace/checkouts";
+import { checkoutsReadFrom, vaultRepositoryIdentity } from "#runtime/services/vault-checkout.ts";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
@@ -134,18 +138,46 @@ test("a vault whose Git does not answer for its origin reads the chosen checkout
 	const vault = join(holder, ".archboard", "vault");
 	const chosen = checkoutsReadFrom(null);
 	// A Git that is killed when asked for the remote, as one that times out is.
+	withGitKilledAt("remote", () => {
+		expect(checkoutsReadFrom(vault)).toEqual(chosen);
+	});
+});
+
+/**
+ * Run a body with a `git` first on the PATH that is killed when asked for one subcommand.
+ * @param subcommand The Git subcommand that dies.
+ * @param body What runs with that Git.
+ */
+function withGitKilledAt(subcommand: string, body: () => void): void {
 	const bin = join(fixture.root, "bin");
 	mkdirSync(bin);
 	writeFileSync(
 		join(bin, "git"),
-		`#!/bin/sh\n[ "$1" = remote ] && kill -9 $$\nexec ${Bun.which("git")} "$@"\n`,
+		`#!/bin/sh\n[ "$1" = ${subcommand} ] && kill -9 $$\nexec ${Bun.which("git")} "$@"\n`,
 	);
 	chmodSync(join(bin, "git"), 0o755);
 	const path = process.env["PATH"];
 	process.env["PATH"] = `${bin}:${path}`;
 	try {
-		expect(checkoutsReadFrom(vault)).toEqual(chosen);
+		body();
 	} finally {
 		process.env["PATH"] = path;
+	}
+}
+
+test("the repository a vault is in is null only when it is in no Git repository", () => {
+	expect(vaultRepositoryIdentity(join(holder, ".archboard", "vault"))).toBe(fixture.repository);
+	const untracked = join(fixture.root, "untracked", ".archboard", "vault");
+	mkdirSync(untracked, { recursive: true });
+	expect(vaultRepositoryIdentity(untracked)).toBeNull();
+});
+
+test("a Git that does not answer is no answer for the repository a vault is in, never null", () => {
+	const vault = join(holder, ".archboard", "vault");
+	for (const subcommand of ["rev-parse", "remote"]) {
+		withGitKilledAt(subcommand, () => {
+			expect(() => vaultRepositoryIdentity(vault)).toThrow(GitCommandError);
+		});
+		rmSync(join(fixture.root, "bin"), { recursive: true });
 	}
 });

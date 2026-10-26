@@ -23,6 +23,7 @@ import {
 	SemanticRasterReceiptSchema,
 	type SemanticRasterPageSize,
 } from "@archboard/renderer/rasterizer";
+import { embedRecipeInPng, type RenderRecipe } from "@archboard/renderer/recipe";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { refuseNothingDrawn, viewEmptyRefusal } from "#cli/rules/semantic/draw/nothing-drawn.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
@@ -32,13 +33,16 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
-	TITLE_OPTION,
-	TitleOptionSchema,
+} from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	drawnLegend,
 	LEGEND_OPTIONS,
-	LEGEND_ONLY_REFUSAL,
 	LegendInputSchema,
 	legendStated,
-} from "#cli/operations/semantic/input/semantic-input.ts";
+	NO_LEGEND_REFUSAL,
+	TITLE_OPTION,
+	TitleOptionSchema,
+} from "#cli/operations/semantic/draw/framing-options.ts";
 import {
 	AGAINST_NO_COMPARISON_REFUSAL,
 	AGAINST_OPTION,
@@ -48,6 +52,10 @@ import {
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { copyImageToClipboard } from "#cli/operations/semantic/draw/image-clipboard.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
+import {
+	recipeOfPicture,
+	vaultRepositoryUnknownRefusal,
+} from "#cli/rules/semantic/draw/picture-recipe.ts";
 
 const THEMES = DiagramThemeSchema.options;
 
@@ -56,7 +64,7 @@ const RasterizeInputSchema = z
 		name: z.string(),
 		variant: SelectorSchema.optional(),
 		view: SelectorSchema.optional(),
-		theme: DiagramThemeSchema.default("light"),
+		theme: DiagramThemeSchema.default("dark"),
 		layout: LayoutEngineSchema.optional(),
 		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
@@ -77,7 +85,7 @@ const RasterizeInputSchema = z
 		out: z.string().optional(),
 		clipboard: z.boolean().default(false),
 	})
-	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL)
 	.refine((input) => !input.clipboard || input.out === undefined, {
 		message: "Use either --clipboard or --out, not both.",
@@ -108,7 +116,9 @@ const rasterFailedRefusal = {
 	code: "RASTER_FAILED",
 	exit: 1,
 	stream: "stderr" as const,
-	description: "The browser did not produce the bitmap the diagram asks for; nothing was written.",
+	description:
+		"The browser did not produce the bitmap the diagram asks for, or the server's picture carried no " +
+		"render recipe for it; nothing was written.",
 };
 
 /**
@@ -182,21 +192,43 @@ async function captureBoard(
 	return capture;
 }
 
+/**
+ * The recipe of the SVG the bitmap is drawn from, and the scale and region that
+ * draw it from that SVG, so every PNG this command gives out, on stdout, in a
+ * file or on the clipboard, carries one recipe (ADR 0057). Read before any
+ * browser starts: a picture without one is refused.
+ * @param svg The SVG the server drew, which carries its recipe.
+ * @param input The bitmap's scale and region.
+ * @returns The recipe the bitmap carries.
+ * @throws {SemanticRasterError} When the SVG carries no recipe to give.
+ */
+function bitmapRecipe(svg: string, input: z.infer<typeof RasterizeInputSchema>): RenderRecipe {
+	const read = recipeOfPicture(svg);
+	if ("problem" in read) throw new SemanticRasterError("RASTER_FAILED", read.problem);
+	return { ...read.recipe, raster: { scale: input.scale, region: input.region ?? null } };
+}
+
 const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
 	shared: ["url", "directory"],
 	summary: "Draw a semantic board as PNG, headlessly, at native scale",
-	description:
-		"Draws the same picture `semantic render` draws and rasterizes it in a private headless Chromium: " +
-		"one bitmap pixel per diagram pixel by default, whatever the display or any open pane is doing. " +
-		"The whole diagram is captured, never fitted or cropped; a bitmap that would exceed what one " +
-		"capture may hold is refused. Traffic animation is paused at its first frame. Needs a Chromium or " +
-		"Google Chrome executable on PATH or named by ARCHBOARD_RENDERER_CHROMIUM. " +
-		"Without --out or --clipboard, stdout carries PNG bytes. " +
-		"Use --clipboard to copy PNG and HTML with the accessible description on Linux and macOS. " +
-		"Use --no-comparison to hide comparison marks and removed subjects. " +
-		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
-		"leaving out the Planned frame.",
+	description: [
+		"Draws the same picture that `semantic render` draws, and rasterizes it in a private headless Chromium. It needs a Chromium or Google Chrome executable on PATH, or one that ARCHBOARD_RENDERER_CHROMIUM names.",
+		"",
+		"The picture:",
+		"- One bitmap pixel for each diagram pixel by default, whatever the display or an open pane does.",
+		"- The whole diagram, never fitted or cropped. A bitmap larger than one capture can hold is refused.",
+		"- The traffic animation stops at its first frame.",
+		"- Each PNG carries the render recipe of its SVG, with the scale and the region, in a text chunk.",
+		"",
+		"Output:",
+		"- Without --out or --clipboard, stdout carries the PNG bytes.",
+		"- --clipboard copies PNG and HTML with the accessible description, on Linux and macOS.",
+		"",
+		"Comparison:",
+		"- --no-comparison hides the comparison marks and the removed subjects.",
+		"- --against draws relative to another variant. It marks only what the drawn variant changes over that variant, and leaves out the Planned frame.",
+	].join("\n"),
 	examples: [
 		"archboard semantic rasterize pipeline --out pipeline.png",
 		'archboard semantic rasterize pipeline --view "Startup exchange" --scale 2 --out startup@2x.png',
@@ -262,7 +294,7 @@ const semanticRasterizeContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: THEMES,
-			default: "light",
+			default: "dark",
 			description: "Which ground to draw on",
 		},
 		{
@@ -339,6 +371,7 @@ const semanticRasterizeContract = defineCommand({
 		rasterizerUnavailableRefusal,
 		rasterBoundsRefusal,
 		rasterFailedRefusal,
+		vaultRepositoryUnknownRefusal,
 		{
 			code: "CLIPBOARD_UNAVAILABLE",
 			exit: 4,
@@ -372,11 +405,17 @@ const semanticRasterizeContract = defineCommand({
 		await context.require("server", "semantic rasterize");
 		const drawn = await renderSemanticBoardOnServer(
 			input.name,
-			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+			exportRenderRequest({
+				...input,
+				legend: drawnLegend(input),
+				against: await resolvedAgainst(input.name, input),
+			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
+		const recipe = bitmapRecipe(drawn.svg, input);
 		const capture = await captureBoard(drawn, input, context.signal);
-		if (!input.clipboard && input.out === undefined) return { result: capture.png };
+		const png = embedRecipeInPng(capture.png, recipe);
+		if (!input.clipboard && input.out === undefined) return { result: png };
 		const receipt = {
 			success: true as const,
 			board: drawn.board,
@@ -403,12 +442,12 @@ const semanticRasterizeContract = defineCommand({
 			const file = context.resolvePath(input.out);
 			return {
 				result: { ...receipt, file },
-				pendingArtifact: { path: file, content: capture.png, encoding: "binary" as const },
+				pendingArtifact: { path: file, content: png, encoding: "binary" as const },
 			};
 		}
 		const description = await copyImageToClipboard(
 			{
-				png: capture.png,
+				png,
 				width: capture.width,
 				height: capture.height,
 				svg: drawn.svg,

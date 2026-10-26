@@ -59,13 +59,16 @@ about how it was drawn. The recipe holds:
 - the variant by id, or "current" for a render that named no variant, so that
   the render follows an adoption
 - the view by id, the variant drawn against, and the drawing choices: theme,
-  layout, legend and title
-- a fingerprint of what the renderer was given: the drawn variant, the view
-  and the vault's presentation policy
+  layout, legend and title, and for a PNG its scale and region
+- a fingerprint of what the renderer was given: the drawn variant without its
+  walkthroughs and the code that it cites, the variant it is drawn against,
+  the view, the board's level, the vault's presentation policy and the title
+  text
 - a hash of the picture as drawn, without the recipe
 
-The recipe holds no output path and no board version. A draft edit raises the
-version and changes nothing that the picture draws.
+The recipe holds no output path and no board version. An edit of a variant
+that the picture neither draws nor is drawn against raises the version and
+changes nothing that the picture draws.
 
 An SVG holds the recipe in its `<metadata>` element, and a PNG in a text chunk.
 A post-processor that keeps the recipe, such as a font subsetter, leaves the
@@ -73,24 +76,33 @@ embed checkable. A file without a recipe is not an embed. SVGO removes
 `<metadata>` by default, so the documentation says to keep it.
 
 A render on stdout carries the recipe too, so stdout and `--out` give the same
-bytes. An SVG render defaults to `--theme auto` and a horizontal legend, and
-`--no-legend` turns the legend off. A PNG cannot follow the reader's colour
-scheme, so `rasterize` defaults to `dark`.
+bytes. An SVG render defaults to `--theme auto`. A PNG cannot follow the
+reader's colour scheme, so `rasterize` defaults to `dark`. Both `render` and
+`rasterize` draw a horizontal legend by default, and `--no-legend` turns the
+legend off.
 
 ### An embed and when it is outdated
 
 An embed is a board render that a repository keeps under Git. `check embeds`
-reads the files that Git tracks in the checkout that it runs in, and each one
-with a recipe is an embed. A render that Git ignores is no embed.
+reads the files that Git tracks in the checkout that it runs in. Each SVG
+document and each PNG with a recipe is an embed. A render that Git ignores is
+no embed. An SVG inside an HTML, Markdown or MDX page is no embed either,
+because `--fix` rewrites a whole file.
 
 The check finds the board by the recipe's `id` in the vault that the recipe
 names, draws it again from the recipe and compares:
 
-| What the check finds                                | Severity    |
-| --------------------------------------------------- | ----------- |
-| The fingerprint differs: the architecture changed   | warning     |
-| Only the picture hash differs: the renderer changed | information |
-| The board, its variant or its view is gone          | warning     |
+| What the check finds                                      | Severity    |
+| --------------------------------------------------------- | ----------- |
+| The fingerprint and the picture differ: the board changed | warning     |
+| Only the picture differs: the renderer changed            | information |
+| Only the fingerprint differs: nothing drawn changed       | none        |
+| The board, its variant or its view is gone                | warning     |
+
+The fingerprint covers the whole drawn variant, also the parts that a view
+leaves out. So an edit outside the view moves the fingerprint and leaves the
+picture as it was. Such an embed is current, and `--fix` only writes its new
+recipe.
 
 Archboard runs from a clone, so two machines can run two commits of the
 renderer. With a pure picture hash, one machine marks every embed outdated and
@@ -130,8 +142,10 @@ checkout, and otherwise the answer names it.
 
 A move (ADR 0051) carries the list with the note. The target vault's check
 then names each tracked embed whose recipe still names the old repository, and
-`--fix` rewrites the recipe. A rename needs nothing, because former names
-answer forever and the recipe names the board by id.
+`--fix` rewrites the recipe. A rename needs nothing to find the board, because
+former names answer forever and the recipe names the board by id. A title
+without words names the board, so a titled picture shows the old name after a
+rename. The check then reports it outdated, and `--fix` draws the new name.
 
 ### A vault in another repository
 

@@ -78,21 +78,31 @@ function gitAnswer(cwd: string, args: readonly string[]): string | undefined {
 }
 
 /**
+ * The checkout that holds a vault, asking Git without hiding a failure.
+ * @param vault The vault directory.
+ * @returns Its checkout, or undefined when the vault is in no Git repository.
+ * @throws {GitCommandError} When Git could not start, was killed or timed out.
+ */
+function locatedVaultCheckout(vault: string): VaultCheckout | undefined {
+	const start = existingDir(path.resolve(vault));
+	if (start === undefined) return undefined;
+	const top = gitAnswer(start, ["rev-parse", "--show-toplevel"]);
+	if (top === undefined) return undefined;
+	const remote = gitAnswer(top, ["remote", "get-url", "origin"]);
+	// A repository with no remote is named by its main checkout, which only Git's listing knows.
+	const listing =
+		remote === undefined ? gitAnswer(top, ["worktree", "list", "--porcelain"]) : undefined;
+	return { root: fs.realpathSync.native(top), identity: repoIdentityFor(top, remote, listing) };
+}
+
+/**
  * The checkout that holds a vault.
  * @param vault The vault directory.
  * @returns Its checkout, or undefined when the vault is in none or Git did not answer.
  */
 function vaultCheckoutOf(vault: string): VaultCheckout | undefined {
-	const start = existingDir(path.resolve(vault));
-	if (start === undefined) return undefined;
 	try {
-		const top = gitAnswer(start, ["rev-parse", "--show-toplevel"]);
-		if (top === undefined) return undefined;
-		const remote = gitAnswer(top, ["remote", "get-url", "origin"]);
-		// A repository with no remote is named by its main checkout, which only Git's listing knows.
-		const listing =
-			remote === undefined ? gitAnswer(top, ["worktree", "list", "--porcelain"]) : undefined;
-		return { root: fs.realpathSync.native(top), identity: repoIdentityFor(top, remote, listing) };
+		return locatedVaultCheckout(vault);
 	} catch (error) {
 		if (error instanceof GitCommandError) return undefined;
 		throw error;
@@ -150,4 +160,17 @@ function vaultIdentity(vault: string): string | undefined {
 	return vaultCheckoutOf(vault)?.identity;
 }
 
-export { checkoutsReadFrom, vaultIdentity };
+/**
+ * The repository identity of the checkout that holds a vault, for a reader that
+ * writes it down. `vaultIdentity` answers undefined when Git did not answer, as
+ * it does for a vault in no repository; a record of "no repository" must tell
+ * the two apart.
+ * @param vault The vault directory.
+ * @returns The identity, or null when the vault is in no Git repository.
+ * @throws {GitCommandError} When Git could not start, was killed or timed out.
+ */
+function vaultRepositoryIdentity(vault: string): string | null {
+	return locatedVaultCheckout(vault)?.identity ?? null;
+}
+
+export { checkoutsReadFrom, vaultIdentity, vaultRepositoryIdentity };

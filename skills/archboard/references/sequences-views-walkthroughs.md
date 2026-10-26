@@ -124,21 +124,33 @@ archboard semantic render pr-128 --variant "This pull request" --against "Pull r
 ```
 
 For a picture in a document, a README or a pull request, draw one SVG with
-`semantic render <board> --theme auto --out <file.svg>`. It carries both
-grounds and shows the one of the reader's colour scheme (the page's own scheme where the
-page declares one, else the browser's), as an
-image, a background or inline. A PNG holds one ground, so `semantic rasterize` takes
-`--theme light` or `--theme dark`.
+`semantic render <board> --out <file.svg>`. Its default theme is `auto`: it
+carries both grounds and shows the one of the reader's colour scheme (the
+page's own scheme where the page declares one, else the browser's), as an
+image, a background or inline. A PNG holds one ground, so `semantic rasterize`
+draws `--theme dark` by default and takes `--theme light`.
 
 Both export commands can draw what a reader needs beside the picture:
 
 - `--title` draws the board, the view, the variant and what it is compared
   with above the picture. `--title "<text>"` draws your own words.
-- `--legend horizontal` draws the key under the picture, and
-  `--legend vertical` draws it beside the picture. The key lists what the
-  board's legend on the page lists for the same picture.
-- `--legend-only` with `--legend <layout>` draws the key alone, for a page
-  that shows several pictures with one key.
+- The key is drawn under the picture by default (`--legend horizontal`).
+  `--legend vertical` draws it beside the picture, and `--no-legend` draws
+  none. The key lists what the board's legend on the page lists for the same
+  picture.
+- `--legend-only` draws the key alone, in the layout `--legend` names, for a
+  page that shows several pictures with one key.
+
+Every SVG and PNG that the two commands give out carries its render recipe:
+the board, the variant (or "current" when you named none), the view and the
+comparison by id, the drawing choices, and a fingerprint of what the picture
+is drawn from: the drawn variant and the one it is drawn against, the view, the
+vault's presentation policy and the title. A walkthrough edit or a changed code
+citation leaves the picture current. A rename leaves it current too, unless its
+title names the board. An SVG keeps the recipe in its `<metadata>` element and
+a PNG in a text chunk.
+A post-processor that strips metadata, such as SVGO with its default
+`removeMetadata`, removes the recipe, so keep the metadata.
 
 ### Copy an image with its description
 
