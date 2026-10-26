@@ -217,7 +217,7 @@ function readArchitectureModel(vault: string, module?: string): ArchitectureMode
 function failure(
 	code: Extract<ArchitectureModelRead, { success: false }>["code"],
 	diagnostics: ModelDiagnostic[],
-): ArchitectureModelRead {
+): Extract<ArchitectureModelRead, { success: false }> {
 	return {
 		success: false,
 		code,
@@ -226,4 +226,4 @@ function failure(
 	};
 }
 
-export { readArchitectureModel };
+export { readArchitectureModel, decodeModel, discoveryFailure, selectModule, failure };
