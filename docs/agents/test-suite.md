@@ -37,7 +37,9 @@ The normal gate also renders three fixed fixtures on both engines in
 `packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
 Shared assertions detect missing parts, routes through cards, misplaced labels,
-and line clearance defects. These six cases read no vault and enforce no speed limit.
+hidden parent frames, and line clearance defects.
+A parent frame must paint above each enclosing container, so its lines meet a visible boundary.
+These six cases read no vault and enforce no speed limit.
 Focused renderer tests and process cancellation deadlines also remain in the normal gate.
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 

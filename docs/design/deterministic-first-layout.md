@@ -1,6 +1,8 @@
 # Deterministic choices for a first layout
 
-The retained change chooses group packing before solving graphs with at least 32 leaf cards.
+The first candidate chooses group packing before solving graphs with at least 32 leaf cards.
+The council rejects that candidate because Groups hides parent frames.
+The next round fixes the layout defect before it replaces the tuned cutoff.
 Compact graphs retain their existing comparison because reduced fixtures need both nestings.
 The standard corpus changes zero of 2376 drawings.
 A separate complete-source comparison changes Browser application and Command interface.
@@ -12,6 +14,75 @@ TASK-548.08 starts at `764d3b9ca` on `task-548.08`.
 The owner targets first renders and size-changing edits below 500 ms.
 The current slow boards are Board viewer, Board persistence, and Archboard server routes.
 The grading council of TASK-548.09 decides whether changed drawings can land.
+
+## Council rejection and the second round
+
+The council rejects `f55ca07dc` on 2026-10-26.
+All three graders prefer its complete Command interface drawing.
+All three reject its complete Browser application drawing because parent frames disappear.
+The lines into those parents end beside bare titles.
+The vote and blind artifacts stay in `/tmp/grading-548-08` and `/tmp/548-08/council`.
+
+The old geometry helpers only compare line endpoints with atlas boxes.
+The atlas still contains each hidden frame, so those helpers miss this defect.
+The new `hiddenParentFrames` helper names missing frames and frames painted below their enclosing container.
+The actual Browser application render goes red on seven parent frames.
+These include the six named by the council and Workbench client.
+
+A reduced four-node graph also fails the Rust depth contract.
+Its inner parent and outer parent both have depth zero under Groups nesting.
+The painter then uses authored order to break the tie and paints the outer frame over the inner frame.
+The assembly pass adds a depth step for a block frame but omits inline frames around a packed group.
+The fix carries those inline depth steps into each child block.
+A frame paints one depth step before its own contents.
+The regression exercises the layout port without a renderer or worker.
+
+The corpus command previously drew an implicit overview through the board's default view.
+That overview does not always include every part.
+The command now also draws each complete architecture directly, under a synthetic `(whole board)` key.
+It draws the whole board on both engines and both themes, without comparison.
+The expanded parent baseline is `/tmp/548-08/round-2/base`.
+It preserves all 2376 previous drawings and adds 76 complete drawings, for 2452 drawings in total.
+The current vault contributes 68 complete drawings from its 17 boards.
+The example vaults contribute the other eight.
+
+### Frame-fix checkpoint
+
+The frame-fix corpus is `/tmp/548-08/round-2/after-4`.
+Its core source hash is `eafa399121717f42`.
+It changes 22 of 2452 pictures against the expanded parent baseline.
+Eighteen changes are complete Track diagrams, with two themes each.
+The changed boards are Archboard server, Archboard server routes, Board persistence, Board rasterizer, Board viewer, Browser application, Codex realtime voice, Codex workhorse, and Command interface.
+The other four changes are authored Codex realtime voice views.
+Every changed picture has its SVG on both sides.
+The Chromium detail now shows Semantic viewer's frame, header, and connected lines.
+All 17 complete current vault diagrams report zero geometry findings, including the new frame assertion.
+
+The layout crate passes 102 Rust tests, including the red-then-green depth regression.
+Clippy passes with warnings denied, and types and focused lints pass.
+The renderer suite reports 661 passes, one platform skip, and one timing failure.
+Codex realtime voice takes 3093 ms against its 3000 ms bound, then 3082 ms in a focused rerun.
+The separate full-source geometry run imposes no timing bound and reports zero findings.
+This checkpoint leaves the layout choices unchanged from the rejected candidate.
+It repairs the cause rather than excluding Browser application from Groups.
+
+The native instruction count is 58.114 billion, against the original parent baseline's 152.711 billion.
+This difference still comes from the packing shortcut, not from the frame repair.
+The three native solve counts remain 27, 5, and 4 in routes, persistence, and viewer order.
+The best three-round paths are 458, 260, and 793 ms at load 41.91 to 40.39.
+The pool pair uses the parent sources first and restores the checkpoint through an exit trap.
+
+| Board                   | Parent first, ms | Frame-fix first, ms | Parent growing edit, ms | Frame-fix growing edit, ms |
+| ----------------------- | ---------------: | ------------------: | ----------------------: | -------------------------: |
+| Board viewer            |             4359 |                1733 |                    4043 |                       2111 |
+| Board persistence       |             3315 |                1180 |                    2943 |                       1094 |
+| Archboard server routes |             2437 |                2607 |                    1926 |                       2730 |
+
+The parent pool reports load 40.39 to 41.47.
+The checkpoint pool reports load 41.47 to 45.53.
+Their first-render totals are 22092 and 19952 ms across the same 23 workloads.
+The card-growth assertions pass, and the pool still exceeds the 500 ms target.
+The next work replaces the tuned packing cutoff and removes redundant stacking choices from graph facts.
 
 ## Measurement method
 
@@ -199,7 +270,7 @@ It leaves the remaining joins, stacking, and wrap choices intact.
 It does not yet make every first render one solve or establish the 500 ms target on a quiet machine.
 A future change can replace more choices after the parent judges this milestone.
 
-## Retained candidate results
+## First candidate results, rejected by the council
 
 The final corpus is `/tmp/548-08/after-3`, rendered with the parent council tools merged at `bd02b970e`.
 It changes zero of 2376 drawings against `/tmp/548-08/base`.
@@ -219,7 +290,8 @@ This milestone leaves that existing routing defect in place.
 The geometry helpers find no missing parts or lines, routes through leaf cards, misplaced labels, wall hugs, slants, or near lanes.
 Those helpers exclude container headers.
 Both versions pass the same geometry assertions, and their repeated SVG hashes match the timing captures.
-The new pictures are not an obvious rejection, but the parent council must judge their reading.
+The initial inspection misses the hidden frames.
+The council rejects this first candidate, as recorded above.
 The manifests and SVGs stay in `/tmp/548-08/base-full-vault` and `/tmp/548-08/after-3-full-vault`.
 
 The native binary is `/tmp/548-08/after-3-critical-path`.
