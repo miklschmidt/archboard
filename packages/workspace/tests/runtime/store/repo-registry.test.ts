@@ -156,6 +156,15 @@ test("the worktrees that git lists for a known checkout are known, and a deleted
 	expect(orders().chosen).toEqual([worktree]);
 });
 
+test("a larger worktree family is registered completely without replacing the chosen checkout", async () => {
+	const family = repository(join(scratch, "larger-family"));
+	const linked = Array.from({ length: 12 }, (_, index) => addWorktree(family, `family-${index}`));
+	await declareDirectory(clone);
+	await declareDirectory(family);
+	expect(orders().roots).toEqual([clone, family, ...linked].toSorted());
+	expect(orders().chosen).toEqual([clone]);
+});
+
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);
