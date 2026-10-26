@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-26T19:16:00Z'
+updated_date: '2026-10-26T19:18:00Z'
 labels:
   - renderer
   - performance
@@ -35,6 +35,8 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 3. Test upfront group packing without the empirical 32-card threshold after the defect is fixed. Preserve both SVG sides for every changed drawing and let the parent convene the council.
 4. Replace more speculative stacking, joins, and wraps with graph decisions. Measure native instructions, native critical paths, pool first renders, and growing-card edits against the parent baseline.
 5. Build the matching core, run changed Rust crates, renderer and drawing-integrity tests, inspect raster samples, and commit each verified milestone. Record kept and dropped rules, update ADRs and board proposals, and leave TASK-548.08 In Progress.
+
+6. Replace the rejected size cutoff with the explicit group-region contract in proposed ADR 0061. Update Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 before implementation. Test Groups on every multi-member region and fix its physical defects, including parent frames, routes, and alignment. Preserve all changed fixture and whole-board SVGs for the parent council.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,4 +65,6 @@ Frame-fix measurements: 58.114 billion native instructions, with 27/5/4 solves f
 TASK-553 measurement reset: rebased task-548.08 onto f06fa5317 before further work. The frame-fix checkpoint is now adc7bc3de (formerly e2cfd77e7). The core rebuild succeeds with source hash 6f1dfb479391b4f8 for the current no-op stacking proof. ps finds no actual git-owner.ts worker. The parent found 37 orphan Git owners that held the box at load 40, so all earlier wall-clock comparisons are noise. Keep their logs as history, use instruction counts with the recorded caveat, and replace elapsed evidence with fresh measurements under /tmp/548-08/post-553. The baseline uses f06fa5317 source files and its matching ce42bd12e4ee9ccb core. No orphan in this worktree needed SIGTERM.
 
 Fresh measurements after TASK-553: parent f06fa5317 has 152.714 billion native instructions and 27/25/24 solves for routes/persistence/viewer. The repaired candidate has 58.158 billion instructions and 27/5/4 solves. Native best paths are 329/1100/1059 ms before and 329/186/255 ms after. At pool loads 3.32 to 4.08 before and 4.40 to 4.59 after, first renders are viewer 1503 to 392 ms, persistence 1572 to 297 ms, and routes 637 to 653 ms. Growing edits take 1627 to 644 ms, 1564 to 297 ms, and 640 to 638 ms, respectively. The 500 ms target remains unmet for viewer edits and routes. Fresh complete corpora are /tmp/548-08/post-553/base and after-5; 22 of 2452 drawings change, matching the frame-fix checkpoint. No-op stacking proof: all blocks use the same graph predicate, with one solve when no ranked line enters an inline container from another. Its async regression goes from two requests to one, and all 102 layout tests plus Clippy pass. All 662 renderer cases pass with one platform skip. The proof adds no claimed speed gain on the three slow whole boards, whose actual stacking choices remain.
+
+The next candidate treats each multi-member group region as a block before solving. This removes the 32-card threshold and the competing whole-board inline solve. Proposed ADR 0061 states that contract and records the council rejection and frame repair. The remaining small-graph failures from the earlier unconditional probe remain diagnostic inputs. Geometry checks stay strict; the parent council judges changed readings. Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 will describe this candidate before code changes.
 <!-- SECTION:NOTES:END -->
