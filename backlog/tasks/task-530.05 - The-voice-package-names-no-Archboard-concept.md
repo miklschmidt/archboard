@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: Done
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-25T19:09:00Z'
+updated_date: '2026-10-26T04:36:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -115,6 +115,14 @@ cdd4a2bf8, the commit of the other agent, changes no part that these boards bind
 Final `archboard check`: exit 0, `configurationValid: true`, `diagnostics: []`.
 
 Closing evidence (2026-10-25): git grep of packages/codex-realtime-voice for archboard, board, vault, pane, walkthrough, narration, navigator, dock, canvas, semantic change, ADR and TASK citations finds only the browser global navigator (browser-environment.ts) and the two unnamed-host.test.ts assertions that the words are absent. voice-package.test.ts installs the packed package outside the repository, type-checks the README's code and finds no Archboard concept in any packed file. archboard check reports no diagnostics after the adoptions, and the code check comparison has no > line. Gate at 5602f1f86: lint, types, contracts and format pass; the voice package 1142 pass, test:system 260 pass, test:repository 153 pass, test:serial-browser passes; test:modules 4973 pass and 4 fail, all Track first-layout timing cases in packages/renderer (4.3 to 9.1 s on a shared machine at high load). The user waived renderer performance gates because the renderer is being rewritten. PR #2 carries the reviewer's walkthrough, recorded on Codex realtime voice and removed again (5a47f709a).
+
+Follow-up review of bee542ed4 through 2ae2d45fd: review the announcement boundary and the browser and thread-link renames. Fix confirmed findings with focused regressions, then run the requested type, lint, format and package tests. The changes preserve existing module ownership and architecture. Codex realtime voice, Voice coordinator and Codex workhorse remain accurate, so no board proposal or consumer skill change is needed.
+
+Follow-up review results: Standards found one incomplete thread-link rename, fixed in 73434c41f. Spec found two announcement validation gaps, fixed in c16f06d79: array values skipped by Object.values, and array class instances. Three new regression cases failed before the fix and pass after it. The fix keeps validation in the existing function and adds no architecture or public interface.
+
+Final validation passes for TypeScript. Lint reports zero warnings and errors. Formatting passes for six touched TypeScript files. The voice package reports 1145 pass and 0 fail, the workbench reports 390 pass and 0 fail, and the packed-package contract reports 1 pass and 0 fail.
+
+Both fix commits carry valid SSH signatures and Refs: TASK-530.05. No confirmed finding remains open. The setup build reports one existing bundle-size warning outside the touched code. No push was made.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
