@@ -9,7 +9,6 @@ import {
 
 import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
 import {
-	CodeTargetOpenRequestSchema,
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
 	type CodeTargetOpenRequest,
@@ -38,6 +37,8 @@ import {
 } from "#server/store/configuration.ts";
 import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/lifecycle/launch.ts";
 import { resolveInVault } from "#server/projections/resolve-target.ts";
+import { parseActivationRequest } from "#server/projections/activation-request.ts";
+import { canonicalModelTarget } from "#server/projections/model-target.ts";
 import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
@@ -59,10 +60,6 @@ interface RouteFailure {
 	error: string;
 }
 
-type ActivationRequest =
-	| { ok: true; request: CodeTargetOpenRequest }
-	| { ok: false; failure: RouteFailure };
-
 const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"charset.unsupported",
 	"encoding.unsupported",
@@ -80,6 +77,7 @@ const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>>
 	CROSS_ORIGIN_REFUSED: 403,
 	BOARD_NOT_FOUND: 404,
 	ELEMENT_NOT_FOUND: 404,
+	MODEL_UNAVAILABLE: 404,
 	CHECKOUT_IDENTITY_CHANGED: 409,
 	CHECKOUT_ON_OTHER_REF: 409,
 	OPENER_SPAWN_FAILED: 500,
@@ -203,6 +201,30 @@ const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement
 	 */
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
+
+/**
+ * Select a binding through the reader that owns the addressed architecture.
+ * @param request The legacy board or canonical module address.
+ * @param vault The explicitly addressed vault.
+ * @param signal The owning request cancellation signal.
+ * @param dependencies The existing legacy binding and checkout adapters.
+ * @returns The effective binding and resolver target or an opening refusal.
+ */
+async function activationTarget(
+	request: CodeTargetOpenRequest,
+	vault: string,
+	signal: AbortSignal,
+	dependencies: CodeOpenerRouteDependencies,
+) {
+	if ("model" in request) return canonicalModelTarget(vault, request);
+	const found = dependencies.bindingForElement(request.board, request.element, vault);
+	if (!found.ok) return found;
+	return {
+		ok: true as const,
+		binding: found.binding,
+		target: await dependencies.resolveTarget(found.binding, signal, vault),
+	};
+}
 
 /**
  * Adapts an async handler so a rejection reaches Express's error pipeline instead of hanging.
@@ -398,30 +420,6 @@ export async function openInEditor(
 }
 
 /**
- * Reads an activation request, refusing query parameters and malformed bodies.
- * @param request The incoming activation request.
- * @returns The typed request, or the 400 failure to answer with.
- */
-function parseActivationRequest(request: Request): ActivationRequest {
-	if (request.url.includes("?")) {
-		return {
-			ok: false,
-			failure: { code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
-		};
-	}
-	// The vault the call names is the server's own requirement and is read from the call
-	// before this route runs (ADR 0049); what is left is the board and the element.
-	const { vault: _named, ...link } = typeof request.body === "object" ? (request.body ?? {}) : {};
-	const parsed = CodeTargetOpenRequestSchema.safeParse(link);
-	return parsed.success
-		? { ok: true, request: parsed.data }
-		: {
-				ok: false,
-				failure: { code: "REQUEST_INVALID", error: "The activation request is invalid." },
-			};
-}
-
-/**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
  * @param vault Names the vault root whose boards carry the bindings a request opens; asked
  * per request, because every call names its own vault (ADR 0049).
@@ -550,16 +548,9 @@ export function createCodeOpenerRouter(
 				const activation = parseActivationRequest(request);
 				if (!activation.ok) return sendFailure(response, activation.failure, 400);
 				const vaultRoot = vault(request);
-				const found = dependencies.bindingForElement(
-					activation.request.board,
-					activation.request.element,
-					vaultRoot,
-				);
+				const found = await activationTarget(activation.request, vaultRoot, signal, dependencies);
 				if (!found.ok) return sendFailure(response, found);
-				const opening = openable(
-					await dependencies.resolveTarget(found.binding, signal, vaultRoot),
-					found.binding,
-				);
+				const opening = openable(found.target, found.binding);
 				if (!opening.ok)
 					return sendFailure(response, opening.failure, opening.status, found.binding);
 				const { target } = opening;

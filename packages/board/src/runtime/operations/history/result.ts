@@ -7,6 +7,8 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	REFERENCE_UNAVAILABLE:
+		"Restore the named foreign model and exact checkpoint. Retain its current reading first if needed, then retry the local operation. No foreign model is written.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",

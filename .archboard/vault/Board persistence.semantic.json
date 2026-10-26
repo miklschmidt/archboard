@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 163,
+	"version": 166,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T19:15:20.409Z",
+	"updatedAt": "2026-10-26T19:36:17.010Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -142602,6 +142602,7 @@
 			"name": "TASK-549.15",
 			"lifecycle": "draft",
 			"parent": "lGNHPMqK",
+			"summary": "TASK-549.15 backend and CLI reference navigation. Browser acceptance remains with the parent.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -143202,7 +143203,7 @@
 						"order": 40000,
 						"name": "Canonical model read",
 						"kind": "function",
-						"responsibility": "Reads one coherent authored model with exact path and byte revisions",
+						"responsibility": "Reads coherent local architecture and explicit foreign references through existing readers and checkout selection",
 						"description": "Decodes captured architecture through shared schemas and coherence rules. Current reads capture paths and exact bytes twice. Retained reads reuse its decoder and module selection without opening current files. Pending canonical installation blocks a current read with recovery instructions.",
 						"parent": "1VHRyajb",
 						"binding": {
@@ -143215,7 +143216,7 @@
 						"order": 42000,
 						"name": "Canonical model contracts",
 						"kind": "module",
-						"responsibility": "Defines canonical modules, independent collections, exact revisions, checkpoint metadata and shared outcomes",
+						"responsibility": "Defines canonical meaning, explicit model references, exact revisions and immutable foreign checkpoint pins",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -143240,7 +143241,7 @@
 						"order": 46000,
 						"name": "Canonical archive objects",
 						"kind": "module",
-						"responsibility": "Stores architecture-only Git objects and joins concurrent archive ancestry",
+						"responsibility": "Retains architecture and foreign revision pins without writing another model or retaining source code",
 						"description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD.",
 						"parent": "1VHRyajb",
 						"binding": {
@@ -143505,6 +143506,66 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/structure.ts"
+						}
+					},
+					{
+						"id": "vvxDSZoQ",
+						"order": 66000,
+						"name": "Canonical navigation",
+						"kind": "function",
+						"responsibility": "Resolves explicit references and bound code through the public model reader",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts"
+						}
+					},
+					{
+						"id": "Mv3r4IsX",
+						"order": 67000,
+						"name": "Foreign model references",
+						"kind": "module",
+						"responsibility": "Reads explicit foreign models and states without expanding or transferring ownership",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts"
+						}
+					},
+					{
+						"id": "QDE2xctM",
+						"order": 68000,
+						"name": "Foreign revision pins",
+						"kind": "module",
+						"responsibility": "Requires existing exact foreign checkpoints before local signed preparation",
+						"parent": "Bd4GPG6d",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/reference-pins.ts"
+						}
+					},
+					{
+						"id": "jQ671Dxs",
+						"order": 69000,
+						"name": "Canonical code targets",
+						"kind": "module",
+						"responsibility": "Resolves current bindings and refuses substitutes for historical source",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-code.ts"
+						}
+					},
+					{
+						"id": "D5PpXrVK",
+						"order": 70000,
+						"name": "Bound source associations",
+						"kind": "module",
+						"responsibility": "Captures chosen foreign source revisions without retaining code",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-source.ts"
 						}
 					}
 				],
@@ -145066,11 +145127,12 @@
 						"from": "4P7YZdnj",
 						"to": "Bd4GPG6d",
 						"kind": "call",
+						"label": "retains exact local checkpoints",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
-							"symbol": "readArchitectureCheckpoint"
+							"symbol": "retainArchitectureCheckpoint"
 						}
 					},
 					{
@@ -146105,6 +146167,188 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
 							"symbol": "selectedId"
+						}
+					},
+					{
+						"id": "PA8QWoMK",
+						"order": 189000,
+						"from": "cNaEpWjJ",
+						"to": "vvxDSZoQ",
+						"kind": "call",
+						"label": "readModelNavigation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"symbol": "readModelNavigation"
+						}
+					},
+					{
+						"id": "aEqCF5VY",
+						"order": 190000,
+						"from": "vvxDSZoQ",
+						"to": "Mv3r4IsX",
+						"kind": "call",
+						"label": "resolveModelReferences",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "resolveModelReferences"
+						}
+					},
+					{
+						"id": "wlWo6SPu",
+						"order": 191000,
+						"from": "vvxDSZoQ",
+						"to": "jQ671Dxs",
+						"kind": "call",
+						"label": "modelCodeTarget",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "modelCodeTarget"
+						}
+					},
+					{
+						"id": "gcijTSIS",
+						"order": 192000,
+						"from": "vvxDSZoQ",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "readArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "vpsNmFef",
+						"order": 193000,
+						"from": "Mv3r4IsX",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "readCheckpointModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts",
+							"symbol": "readCheckpointModel"
+						}
+					},
+					{
+						"id": "5J0MoNa1",
+						"order": 194000,
+						"from": "8Uq1mtzw",
+						"to": "QDE2xctM",
+						"kind": "call",
+						"label": "captureReferencePins",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "captureReferencePins"
+						}
+					},
+					{
+						"id": "e0O9TV5d",
+						"order": 195000,
+						"from": "Bd4GPG6d",
+						"to": "QDE2xctM",
+						"kind": "call",
+						"label": "captureReferencePins",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/retain.ts",
+							"symbol": "captureReferencePins"
+						}
+					},
+					{
+						"id": "pG0y6qDe",
+						"order": 196000,
+						"from": "QDE2xctM",
+						"to": "Mv3r4IsX",
+						"kind": "call",
+						"label": "resolveModelReferences",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/reference-pins.ts",
+							"symbol": "resolveModelReferences"
+						}
+					},
+					{
+						"id": "kn7RIsa6",
+						"order": 197000,
+						"from": "ZRq51Ecz",
+						"to": "D5PpXrVK",
+						"kind": "call",
+						"label": "captureBoundSources",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive.ts",
+							"symbol": "captureBoundSources"
+						}
+					},
+					{
+						"id": "Yw4B2gp3",
+						"order": 198000,
+						"from": "Mv3r4IsX",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "readArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "AjGkFCES",
+						"order": 199000,
+						"from": "vvxDSZoQ",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "readCheckpointModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readCheckpointModel"
+						}
+					},
+					{
+						"id": "RQgSYJGP",
+						"order": 200000,
+						"from": "jQ671Dxs",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "git",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-code.ts",
+							"symbol": "git"
+						}
+					},
+					{
+						"id": "815HRSTZ",
+						"order": 201000,
+						"from": "D5PpXrVK",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "git",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-source.ts",
+							"symbol": "git"
 						}
 					}
 				],

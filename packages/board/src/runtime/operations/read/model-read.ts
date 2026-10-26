@@ -13,6 +13,10 @@ import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/rules/coherence/model.ts";
 
 import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
+import {
+	readModelNavigation,
+	type NavigationOptions,
+} from "#runtime/operations/read/model-navigation.ts";
 
 type CapturedModel = ReturnType<typeof readModelFiles>;
 
@@ -277,7 +281,20 @@ function readArchitectureModel(
 	vault: string,
 	module?: string,
 	flow?: string,
-): ArchitectureModelRead {
+): ArchitectureModelRead;
+function readArchitectureModel(
+	vault: string,
+	module: string | undefined,
+	flow: string | undefined,
+	options: NavigationOptions,
+): Promise<ArchitectureModelRead>;
+function readArchitectureModel(
+	vault: string,
+	module?: string,
+	flow?: string,
+	options?: NavigationOptions,
+): ArchitectureModelRead | Promise<ArchitectureModelRead> {
+	if (options !== undefined) return readModelNavigation(vault, module, flow, options);
 	const blocked = modelBoundaryFailure(vault);
 	if (blocked !== undefined) return blocked;
 	const reading = readCurrentModel(vault, module, flow);

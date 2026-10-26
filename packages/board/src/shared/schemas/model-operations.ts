@@ -114,7 +114,15 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 			set: ModuleFieldsSchema.partial().optional(),
 			clear: z
 				.array(
-					z.enum(["responsibility", "description", "parent", "groups", "binding", "documents"]),
+					z.enum([
+						"responsibility",
+						"description",
+						"parent",
+						"groups",
+						"binding",
+						"documents",
+						"references",
+					]),
 				)
 				.optional(),
 		})

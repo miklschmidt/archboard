@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
+import { CodeBindingSchema, DocumentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
 import {
 	SemanticIdSchema,
@@ -9,6 +9,27 @@ import {
 import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
+
+const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
+const ModelReferenceSchema = z
+	.strictObject({
+		repo: z.string().min(1),
+		model: SemanticIdSchema,
+		subject: QualifiedSubjectIdSchema,
+		state: SemanticIdSchema,
+		checkpoint: GitObjectIdSchema.optional(),
+	})
+	.refine((reference) => reference.checkpoint === undefined || reference.state !== "current", {
+		message: "An exact reference requires a stable state identity.",
+		path: ["state"],
+	});
+const ModelReferenceAddressSchema = z.strictObject({
+	vault: z.string(),
+	model: SemanticIdSchema,
+	subject: QualifiedSubjectIdSchema,
+	state: SemanticIdSchema,
+	checkpoint: GitObjectIdSchema.optional(),
+});
 
 const StateMetadataSchema = z
 	.object({
@@ -44,6 +65,7 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	parent: QualifiedSubjectIdSchema.optional(),
 	formerNames: z.array(DisplayNameSchema).optional(),
 	documents: z.array(DocumentReferenceSchema).optional(),
+	references: z.array(ModelReferenceSchema).optional(),
 	outgoing: z.array(OwnedRelationshipSchema),
 });
 
@@ -58,7 +80,6 @@ const ModelDiagnosticSchema = z
 	})
 	.strict();
 
-const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
 const PublicationStateSchema = z.enum([
 	"saved-locally",
 	"publication-pending",
@@ -125,6 +146,16 @@ const ArchitectureCheckpointSchema = z
 				.strict(),
 		),
 		publication: PublicationStateSchema,
+		references: z
+			.array(
+				z.strictObject({
+					module: QualifiedSubjectIdSchema,
+					index: z.number().int().nonnegative(),
+					reference: ModelReferenceSchema,
+					checkpoint: GitObjectIdSchema,
+				}),
+			)
+			.optional(),
 	})
 	.strict();
 
@@ -141,6 +172,34 @@ const ArchitectureModelSchema = z
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema.optional(),
+		location: ModelReferenceAddressSchema.optional(),
+		codeBinding: CodeBindingSchema.optional(),
+		resolvedReferences: z
+			.array(
+				z.strictObject({
+					module: QualifiedSubjectIdSchema,
+					index: z.number().int().nonnegative(),
+					reference: ModelReferenceSchema,
+					status: z.enum(["available", "unavailable"]),
+					address: ModelReferenceAddressSchema.optional(),
+					diagnostics: z.array(ModelDiagnosticSchema),
+				}),
+			)
+			.optional(),
+		codeTarget: z
+			.discriminatedUnion("ok", [
+				z.strictObject({
+					ok: z.literal(true),
+					repository: z.string(),
+					root: z.string(),
+					target: z.string(),
+					path: z.string(),
+					kind: z.enum(["file", "directory"]),
+					otherRef: z.strictObject({ named: z.string(), checkedOut: z.string() }).optional(),
+				}),
+				z.strictObject({ ok: z.literal(false), code: z.string(), error: z.string() }),
+			])
+			.optional(),
 		sourceEvidence: z
 			.array(
 				ArchitectureCheckpointSchema.shape.sources.element.extend({
@@ -167,6 +226,7 @@ const ArchitectureModelFailureSchema = z
 			"RELATIONSHIP_NOT_FOUND",
 			"NODE_HAS_CHILDREN",
 			"MODULE_AMBIGUOUS",
+			"REFERENCE_UNAVAILABLE",
 			"ARCHIVE_NOT_INITIALIZED",
 			"ARCHIVE_UNREADABLE",
 			"ARCHIVE_IN_USE",

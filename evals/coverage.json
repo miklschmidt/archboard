@@ -1140,6 +1140,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/model-edit/flows.test.ts; structure-recovery.test.ts; tests/system/semantic-boards/model-flows.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical code bindings and explicit foreign model references",
+					"expectedUse": "Resolve source through existing checkout selection. Follow explicit model, module and state references without changing ownership. Retain exact foreign pins and expose unavailable architecture or source without current substitutes.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts; tests/system/semantic-boards/model-references.test.ts; tests/system/code-targets/canonical-model.test.ts; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

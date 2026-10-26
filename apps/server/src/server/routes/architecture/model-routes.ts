@@ -2,11 +2,7 @@ import { mountArchitectureFlowRoutes } from "#server/routes/architecture/flow-ro
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express } from "express";
 import { z } from "zod";
-import {
-	readArchitectureModel,
-	readArchitectureCheckpoint,
-	listArchitectureCheckpoints,
-} from "@archboard/board/store-read";
+import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/board/store-read";
 import {
 	retainArchitectureCheckpoint,
 	initializeArchitectureArchive,
@@ -22,6 +18,16 @@ const QuerySchema = z
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
 		checkpoint: z.string().min(1).optional(),
+		model: z.string().min(1).optional(),
+		references: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
+		reference: z.coerce.number().int().nonnegative().optional(),
+		code: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 	})
 	.strict();
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
@@ -55,13 +61,8 @@ function mountArchitectureModelRoutes(app: Express): void {
 				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 			return;
 		}
-		const { module, checkpoint, flow } = query.data;
-		respond(
-			res,
-			checkpoint === undefined
-				? readArchitectureModel(vaultOfRequest(req), module, flow)
-				: await readArchitectureCheckpoint(vaultOfRequest(req), checkpoint, module, flow),
-		);
+		const { vault: _vault, module, flow, ...navigation } = query.data;
+		respond(res, await readArchitectureModel(vaultOfRequest(req), module, flow, navigation));
 	});
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {
 		const query = ListQuerySchema.safeParse(req.query);

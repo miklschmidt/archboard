@@ -497,6 +497,67 @@ Retired flow and step IDs stay reserved in the manifest.
 The existing signed transaction, exact retry, recovery, and publication contracts apply to these files.
 Unrelated files keep their exact bytes.
 
+## Follow code and foreign references
+
+A module binding names source code, independently of its architecture owner.
+Use `model read <module> --code` to resolve that binding through the existing checkout selection.
+The vault uses its own checkout for its repository and the chosen checkout for each other repository.
+The result reports `codeTarget` and the effective `codeBinding`.
+Unavailable source includes a structured failure and recovery action without hiding readable architecture.
+
+An explicit module reference names another model, its module, and its state.
+Author `references` through the existing `edit-module.set` field.
+Use `edit-module.clear:["references"]` to remove that list.
+Omission preserves the list.
+
+```json
+{
+	"type": "edit-module",
+	"subject": "Shop#Gateway",
+	"set": {
+		"references": [
+			{
+				"repo": "github.com/acme/ledger",
+				"model": "Ledger",
+				"subject": "Ledger#Gateway",
+				"state": "current"
+			}
+		]
+	}
+}
+```
+
+`current` explicitly follows the foreign current designation.
+A stable state ID requires that exact state.
+For a non-current state, include its complete `checkpoint` identity beside its stable `state` ID.
+A pinned reference cannot use `state:"current"`.
+References create no containment, relationship, claim, or ownership transfer.
+
+```bash
+archboard model read 'Shop#Gateway' --references
+archboard model read 'Shop#Gateway' --reference 0
+archboard model read 'Shop#Gateway' --reference 0 --code
+archboard model read 'Shop#Gateway' --model Shop --code
+```
+
+`--reference` selects a zero-based index in the module's authored list.
+`resolvedReferences` reports each target address or its unavailable diagnostics.
+A successful follow returns the foreign reading and its `location` address.
+The address names the target vault, model, subject, state, and any exact checkpoint.
+Unavailable models never resolve against another model with a similar name.
+These commands change neither model.
+
+Before a local edit or retention, retain each referenced foreign reading through its own separate operation.
+Archboard requires an existing exact foreign checkpoint that matches the selected reading.
+The local checkpoint records those pins without writing a foreign vault or archive.
+Historical navigation uses those pins even when foreign current files change or disappear.
+Missing pins or checkpoint objects remain unavailable and never select foreign current content.
+Restore the foreign archive through its existing history recovery commands, then retry the exact reading.
+
+For historical code, Archboard uses retained source associations and refuses changed working files or another source revision.
+An uncommitted source association does not retain those source bytes.
+Recover that source separately before opening it.
+
 ## Render a selected flow
 
 Use `model read --flow <id>` to resolve an explicit flow selection.

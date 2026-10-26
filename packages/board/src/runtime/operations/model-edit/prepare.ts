@@ -13,6 +13,7 @@ import {
 	ArchiveError,
 } from "#runtime/store/model-archive.ts";
 import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store/model-state.ts";
+import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
 
 /**
  * Recheck the caller's complete token after the asynchronous signer finishes.
@@ -63,7 +64,8 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		},
 		edit: request,
 		subjects: candidate.subjects,
-		sources: await captureSource(context),
+		sources: await captureSource(context, candidate.model, vault),
+		...(await captureReferencePins(vault, candidate.model)),
 	});
 	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	inputs.set("record.json", Buffer.from(JSON.stringify(record)));

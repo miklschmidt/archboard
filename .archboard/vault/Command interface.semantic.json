@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 188,
+	"version": 189,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T19:15:21.553Z",
+	"updatedAt": "2026-10-26T19:15:47.480Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -132285,6 +132285,7 @@
 			"name": "TASK-549.15",
 			"lifecycle": "draft",
 			"parent": "l5wQV8vl",
+			"summary": "TASK-549.15 backend and CLI reference navigation. Browser acceptance remains with the parent.",
 			"content": {
 				"nodes": [
 					{
@@ -133010,7 +133011,7 @@
 						"order": 53000,
 						"name": "Model read",
 						"kind": "module",
-						"responsibility": "Reads current or exact retained modules and independent flows with explicit subject selection",
+						"responsibility": "Reads current or retained architecture and explicitly resolves foreign references and bound source",
 						"description": "The checkpoint selector requires a complete immutable identity. Module names resolve within that reading alone.",
 						"parent": "bLpk2XKU",
 						"binding": {
@@ -133035,7 +133036,7 @@
 						"order": 57000,
 						"name": "Canonical model client",
 						"kind": "module",
-						"responsibility": "Preserves shared canonical reads, edits, claims, history and explicit flow render outcomes across HTTP",
+						"responsibility": "Preserves canonical reads, navigation, claims, edits and archive outcomes through HTTP",
 						"description": "Preserves shared current reads, checkpoint results, edit outcomes, claims and recovery across HTTP, including structured domain refusals.",
 						"parent": "dHZeNcMs",
 						"binding": {

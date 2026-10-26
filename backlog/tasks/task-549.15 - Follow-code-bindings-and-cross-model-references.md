@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:14:00Z'
+updated_date: '2026-10-26T19:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -65,3 +65,9 @@ TASK-549.04, TASK-549.10
 3. Extend the CLI and HTTP adapters, consumer guidance, ADR 0060, and coverage. Preserve package ceilings and leave frontend and browser acceptance to the parent.
 4. Merge the latest integration, run applicable backend checks, simplify, commit with signatures, release claims, stop the worktree server, and save the backend handoff. Keep the ticket In Progress and proposals draft.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The worktree starts at integration 5432fed897. The stable public contract is saved externally as task-549.15-contract.md. Draft proposals: Board persistence@TASK-549.15, Archboard server routes@TASK-549.15, Command interface@TASK-549.15. Public runtime RED/GREEN slices cover local and foreign bindings, explicit reference navigation, immutable foreign pins, missing retained content, changed source refusal, and foreign source associations. CLI/HTTP and existing opener system owners now pass their first new cases. The .06 source remains unmerged and uncopied.
+<!-- SECTION:NOTES:END -->
