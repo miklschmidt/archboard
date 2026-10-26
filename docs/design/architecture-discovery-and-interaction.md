@@ -1,10 +1,10 @@
 # Architecture discovery and interaction
 
-Design direction recorded from the owner discussion on 2026-10-25, during
-TASK-543. This document preserves the agreed product direction before the
-storage research starts. It describes intended behavior, not the product as
-implemented today. The final section separates unresolved choices from that
-direction.
+Design direction recorded from the owner discussion starting on 2026-10-25,
+during TASK-543. This document describes intended behavior, not the product
+as implemented today. The [TASK-549 specification](<../../backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md>)
+defines the implementation contracts for repository JSON, proposals, history,
+migration, and interaction. Hosted choices remain deferred.
 
 ## Purpose and retained meaning
 
@@ -65,9 +65,10 @@ in another reading does not create another parent.
 
 Boards no longer provide a sound ownership boundary for overlapping parts.
 The replacement must make subject ownership explicit across the overall model.
-Its exact schema, file placement, address format, and migration rules remain
-open. Shared identity does not require one enormous file or one global editing
-claim.
+TASK-549 defines identity, addressing, file discovery, and migration contracts.
+Imported identities retain their existing short IDs inside stable origin
+namespaces. Shared identity does not require one enormous file or one global
+editing claim.
 
 ## Module and flow files
 
@@ -95,17 +96,17 @@ the semantic facts. The combined model is derived from those files, so no
 separately authored aggregate board is needed. Repository-wide vocabulary and
 policy remain configuration concerns.
 
-Proposals and variant history still need an explicit storage design before
-migration. Retiring the board document must preserve those capabilities.
-Their placement is unresolved and does not establish another per-module board
-or variant tree. Walkthroughs carry narrative and reading instructions in
+Active proposals use `[name].proposal.json` with changes against retained
+baselines. Completed states live in a Git archive. These records preserve
+proposal ancestry and lifecycle without another per-module board or variant
+tree. Walkthroughs carry narrative and reading instructions in
 `[name].walkthrough.json`, as described below.
 
-## Proposal and history storage candidate
+## Proposal and history storage
 
 The [churn investigation](proposal-history-churn.md) measures repeated snapshots
-in the current format. The following approach is under discussion, not selected
-or implemented.
+in the current format. TASK-549 selects the following approach for implementation.
+The existing implementation continues to use board documents until migration.
 
 An active proposal stores a baseline reference and changes to subjects by stable
 ID. It can add or remove subjects and change individual fields across modules
@@ -113,9 +114,9 @@ and flows. Reconciliation compares the retained baseline, proposed state, and
 updated parent. Conflicting edits and invalid combined architecture remain
 explicit outcomes.
 
-One candidate retains architecture checkpoints on a dedicated Git branch,
-such as `archboard-history`. Each checkpoint contains ordinary architecture
-files and event metadata. The branch's commit ancestry retains older states.
+The Git archive retains architecture checkpoints on `archboard-history`.
+Each checkpoint contains ordinary architecture files and event metadata.
+The branch's commit ancestry retains older states.
 The current module files do not embed those states as JSON arrays.
 
 A shelved proposal needs both its final patch and its original baseline.
@@ -131,10 +132,22 @@ Archive updates must preserve concurrent appends and existing checkpoint IDs.
 Remote policy must prevent history rewrites and deletion of the archive branch.
 This design adds archive synchronization work even though Git stores the objects.
 
+One short vault transaction lock gates installation and recovery. A private
+durable write-ahead log holds before and after images. Temporary Git refs retain
+prepared checkpoints until installation and the final archive append complete.
+Unknown external edits block replay rather than being overwritten.
+
+Archive synchronization retains concurrent tips without merging their models.
+Its commits do not designate current architecture or establish proposal ancestry.
+Worktrees keep separate current models. Untracked vaults use an explicitly
+initialized private bare archive through the same history interface.
+
 Git documents [retained objects](https://git-scm.com/docs/git-gc#_notes),
 [history fetching](https://git-scm.com/docs/git-fetch), and
 [reading files at revisions](https://git-scm.com/docs/git-show#_examples).
-Retention, publication, and recovery behavior need evidence before migration.
+The [Git experiment](git-architecture-history-experiment.md) establishes the
+tested retention mechanics. Implementation must prove the specified transaction,
+publication, migration, and recovery contracts before live cutover.
 
 ## Dynamic readings and selection
 
@@ -152,9 +165,9 @@ The reading can retain directly connected callers and dependencies as context.
 Outside the current scope does not mean third-party code. The existing
 `external` kind continues to describe code that the project does not own.
 
-Named views are no longer a prerequisite for navigation. Whether the product
-keeps optional named bookmarks remains open. Sharing, documentation, and
-walkthroughs still need a way to reproduce the reading that somebody discussed.
+Named views are no longer a prerequisite for navigation. Migration preserves
+existing named views as optional bookmarks and expands walkthrough references
+into explicit reading instructions. Bookmarks own no architectural content.
 
 ## Visibility and noise
 
@@ -169,8 +182,9 @@ must remain apparent so that a hidden relationship does not look absent from
 the model.
 
 A container's interface remains a fact derived from the architectural state.
-Focus and filtering do not redefine its entry points or callers. The exact
-default amount of outside context remains an interaction decision.
+Focus and filtering do not redefine its entry points or callers. The default
+outside context contains direct callers and outgoing targets, projected to
+relevant outside modules. It does not recursively expand their dependencies.
 
 ## Diagram modes
 
@@ -178,15 +192,16 @@ Architecture, sequence, and flowchart are complementary readings of shared
 subjects. Architecture shows parts and relationships. Sequence shows an ordered
 exchange. Flowchart shows decisions and control flow.
 
-A mode switcher is a proposed way to reach these readings without creating
-separate boards. The modes must use information that supports their meaning.
+A mode switcher reaches these readings without creating separate boards.
+The modes must use information that supports their meaning.
 Dependency arrows alone do not establish execution order, conditions, retries,
 or asynchronous behavior.
 
 Sequence and flowchart readings need an appropriate flow. When that flow does
 not exist, an agent can investigate and explain it. The product must expose
-the missing information rather than invent an order. The exact interaction for
-choosing or requesting a flow remains open.
+the missing information rather than invent an order. The switcher offers flows
+that involve the current subjects and requires a choice when several match.
+The behavioral reading includes every participant needed by the selected flow.
 
 ## Dynamic walkthroughs
 
@@ -204,17 +219,17 @@ Authors do not record coordinates or require a named view for each beat.
 
 The narrative and reading instructions live in `[name].walkthrough.json`.
 Historical playback needs access to the referenced architecture state.
-The choice between a fixed revision and an explicitly evolving reading remains
-part of the revision design. Missing subjects or states must be reported,
-without silently substituting a different subject or revision.
+Current and named-proposal targets resolve to an exact revision when playback
+starts. Every beat uses that revision until playback restarts. Recorded and
+shared playback pin a retained revision. Missing subjects or states must be
+reported without substituting a different subject or revision.
 
 ## Explanations in the reading
 
-Readers need quick access to agent actions for the subjects on screen. A toolbar
-or right-click menu can expose those actions. The final placement remains open.
-The controls need a visible, keyboard-accessible route as well.
+Readers reach agent actions through a visible toolbar control, a context menu,
+and equivalent keyboard actions.
 
-Candidate actions include the following:
+Actions include the following:
 
 - Explain the selected subject or subjects.
 - Explain a selected relationship.
@@ -231,10 +246,9 @@ The text and spoken explanation share that result, so they do not develop
 independent accounts of what the architecture means.
 
 Later navigation does not silently retarget an action already requested.
-Temporary answers stay associated with their original reading. Whether a useful
-answer becomes persistent subject documentation remains an explicit design
-choice. Persistent explanations must not become another set of diagram-owned
-copies.
+Temporary answers stay associated with their original reading. An explicit agent
+edit can retain an answer in a module description or walkthrough. That edit uses
+the normal claim and stale-write rules and creates no separate explanation copy.
 
 ## Rendering and interaction
 
@@ -328,26 +342,16 @@ the local app and the division of authorization responsibilities still need
 design. Local operation must not depend on deploying the account portal to
 Kapsule first.
 
-## Open decisions
+## Deferred choices
 
-The following choices remain unresolved:
+TASK-549 resolves the repository model contracts. These choices remain outside
+that implementation:
 
-- The exact module and flow schemas, file placement, and local startup behavior.
 - The deferred architecture database engine and deployment configuration.
 - The managed PostgreSQL provider and application account schema.
 - The identity provider, local sign-in flow, and authorization responsibilities.
 - The access policy and revision behavior of private viewer links.
-- The storage and revision model for proposals and variant history.
-- Revision references for walkthroughs and recovery of missing historical states.
-- The role of Merkle structures in snapshots, comparisons, or synchronization.
-- The migration of overlapping board subjects and their historical identities.
-- The scope of editing claims and transactions after board ownership ends.
-- The association between architectural states, repositories, branches, and worktrees.
-- Whether saved readings have names.
-- The exact distinction between opening one module and focusing an arbitrary selection.
-- The default outside context, filter behavior, and treatment of hidden selections.
-- The placement and wording of explanation actions, and how readers retain an answer.
-- The interaction for choosing a flow when the reader switches diagram mode.
+- Cross-model ownership transfers and multi-model write transactions.
 
 The owner specifically names [Dolt](https://github.com/dolthub/dolt) as a storage
 candidate. That is an input to TASK-543, not a technology decision.
