@@ -50,9 +50,10 @@ const board = (name: string, id: string, variants: object[], current?: string) =
 	variants,
 });
 
+const built = (content: object) => [{ id: "v1", name: "Built", lifecycle: "current", content }];
+
 beforeAll(async () => {
 	mkdirSync(vault, { recursive: true });
-	const built = (content: object) => [{ id: "v1", name: "Built", lifecycle: "current", content }];
 	// Cart receives a call and passes one on, so it is a pass-through entry point of Shop.
 	writeFileSync(
 		join(vault, "Shop.semantic.json"),
