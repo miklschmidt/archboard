@@ -30,6 +30,10 @@ An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.
 A reader can take it back without undoing completed work.
 
+Structure scope:
+The model identity claimed for subject allocation and retirement.
+It protects identity changes without claiming every module.
+
 Model operation:
 One stated architectural intent with a stable retry identity.
 The operation names its target state and complete observed input revision.

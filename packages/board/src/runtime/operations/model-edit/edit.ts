@@ -1,3 +1,5 @@
+import { operationSubjects } from "#shared/rules/model-operation.ts";
+import type { z } from "zod";
 import { isDeepStrictEqual } from "node:util";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import {
@@ -73,16 +75,22 @@ async function resumeEdit(vault: string, journal: ModelJournal, guard: () => voi
 			error instanceof ArchiveError &&
 			["RECOVERY_CONFLICT", "RECOVERY_CONTEXT_CHANGED"].includes(error.code)
 		)
-			throw new ArchiveError(error.code, error.message, error.checkpoint, [
-				journal.request.subject,
-			]);
-		throw new ArchiveError("RECOVERY_REQUIRED", errorMessage(error), journal.checkpoint, [
-			journal.request.subject,
-		]);
+			throw new ArchiveError(
+				error.code,
+				error.message,
+				error.checkpoint,
+				operationSubjects(journal.request, journal.subjects),
+			);
+		throw new ArchiveError(
+			"RECOVERY_REQUIRED",
+			errorMessage(error),
+			journal.checkpoint,
+			operationSubjects(journal.request, journal.subjects),
+		);
 	}
 }
 /**
- * Apply the narrow operation while the cross-process installation lease stands.
+ * Apply the checked operation while the cross-process installation lease stands.
  * @param vault The explicitly addressed vault.
  * @param request The original operation intent.
  * @param guard The installation lease ownership assertion.
@@ -128,14 +136,14 @@ async function serializedEdit(
 	}
 }
 /**
- * Apply one explicit description intent, or return its immutable recorded outcome.
+ * Apply one complete architecture intent, or return its immutable recorded outcome.
  * @param vault The explicitly addressed vault.
  * @param input The complete caller input.
  * @returns The recorded edit result or structured refusal.
  */
 async function editArchitectureModule(
 	vault: string,
-	input: ArchitectureModuleEdit,
+	input: z.input<typeof ArchitectureModuleEditSchema>,
 ): Promise<ArchitectureModuleEditResult> {
 	const request = ArchitectureModuleEditSchema.parse(input);
 	const result = await historyResult("MODEL_WRITE_FAILED", async () => {
@@ -153,7 +161,7 @@ async function editArchitectureModule(
 		...modelWriteFailure(vault, result, request.operationId),
 		diagnostics: result.diagnostics.map((diagnostic) => ({
 			...diagnostic,
-			subjects: diagnostic.subjects ?? [request.subject],
+			subjects: diagnostic.subjects ?? operationSubjects(request),
 		})),
 	};
 }
