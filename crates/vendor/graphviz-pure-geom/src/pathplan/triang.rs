@@ -44,17 +44,16 @@ fn between(pa: Ppoint, pb: Ppoint, pc: Ppoint) -> bool {
 }
 
 fn intersects(pa: Ppoint, pb: Ppoint, pc: Ppoint, pd: Ppoint) -> bool {
-    if ccw(pa, pb, pc) == ISON
-        || ccw(pa, pb, pd) == ISON
-        || ccw(pc, pd, pa) == ISON
-        || ccw(pc, pd, pb) == ISON
-    {
+    // archboard: C finds each orientation twice when none is `ISON`; `ccw` answers the
+    // same every time, so each is found once.
+    let (abc, abd, cda, cdb) = (ccw(pa, pb, pc), ccw(pa, pb, pd), ccw(pc, pd, pa), ccw(pc, pd, pb));
+    if abc == ISON || abd == ISON || cda == ISON || cdb == ISON {
         between(pa, pb, pc) || between(pa, pb, pd) || between(pc, pd, pa) || between(pc, pd, pb)
     } else {
-        let c1 = ccw(pa, pb, pc) == ISCCW;
-        let c2 = ccw(pa, pb, pd) == ISCCW;
-        let c3 = ccw(pc, pd, pa) == ISCCW;
-        let c4 = ccw(pc, pd, pb) == ISCCW;
+        let c1 = abc == ISCCW;
+        let c2 = abd == ISCCW;
+        let c3 = cda == ISCCW;
+        let c4 = cdb == ISCCW;
         (c1 ^ c2) && (c3 ^ c4)
     }
 }
