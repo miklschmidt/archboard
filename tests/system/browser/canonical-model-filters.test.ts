@@ -11,10 +11,37 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
+
+async function openFilters(browser: AgentBrowserSession): Promise<void> {
+	await browser.run(["click", '[data-slot="model-filters"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-filters"]')?.getAttribute('aria-expanded') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
+			),
+		Boolean,
+		"the opened filter controls",
+		WAIT,
+	);
+}
+
+async function closeFilters(browser: AgentBrowserSession): Promise<void> {
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-filters"]')?.getAttribute('aria-expanded') === 'false' && document.querySelector('[data-filter-kind="call"]') === null`,
+			),
+		Boolean,
+		"the dismissed filter controls",
+		WAIT,
+	);
+}
 
 test("reading filters preserve selection and authored meaning with an explicit reveal action", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -49,7 +76,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		"click",
 		'[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]',
 	]);
-	await browser.run(["click", '[data-slot="model-filters"]']);
+	await openFilters(browser);
 	await browser.run(["click", '[data-filter-kind="call"]']);
 	await pollUntil(
 		() =>
@@ -85,7 +112,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 			`[...new Set([...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')))].sort()`,
 		),
 	).toEqual(["Shop#Gateway", "Shop#Worker"]);
-	await browser.run(["press", "Escape"]);
+	await closeFilters(browser);
 	await browser.run(["click", '[data-slot="model-reveal-selection"]']);
 	await pollUntil(
 		() =>
@@ -96,13 +123,13 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		"the revealed selection",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-filters"]']);
+	await openFilters(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'true' && document.querySelector('[data-filter-group="public"]')?.getAttribute('aria-checked') === 'false'`,
 		),
 	).toBe(true);
-	await browser.run(["press", "Escape"]);
+	await closeFilters(browser);
 	await browser.eval("window.history.back()");
 	await pollUntil(
 		() =>
@@ -120,7 +147,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		"restored filter controls",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-filters"]']);
+	await openFilters(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

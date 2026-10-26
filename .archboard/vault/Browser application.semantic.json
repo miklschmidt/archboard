@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 169,
+	"version": 170,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T18:30:55.986Z",
+	"updatedAt": "2026-10-26T18:43:53.876Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -61248,7 +61248,7 @@
 		{
 			"id": "wwirh4GU",
 			"name": "TASK-549.10 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Kh42glKp",
 			"documents": [
 				{
@@ -64868,7 +64868,7 @@
 		{
 			"id": "dfw8YWLy",
 			"name": "TASK-549.11",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "wwirh4GU",
 			"documents": [
 				{
@@ -68486,7 +68486,7 @@
 			}
 		}
 	],
-	"current": "wwirh4GU",
+	"current": "dfw8YWLy",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -68625,6 +68625,12 @@
 			"from": "Kh42glKp",
 			"at": "2026-10-26T17:03:59.813Z",
 			"reason": "Recursive reading, complete connection inspection, and client scene reuse pass their browser contracts."
+		},
+		{
+			"variant": "dfw8YWLy",
+			"from": "wwirh4GU",
+			"at": "2026-10-26T18:43:53.876Z",
+			"reason": "Selection, focus, and filters now preserve canonical subjects and complete interface meaning"
 		}
 	],
 	"shelvings": [

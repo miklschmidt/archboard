@@ -104,8 +104,9 @@ test("empty-canvas dragging selects while middle and Space dragging pan", async 
 		WAIT,
 	);
 	const middleCamera = await cameraTransform(browser);
+	await browser.run(["focus", '[data-slot="model-focus"]']);
 	await browser.eval(
-		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }))`,
+		`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }))`,
 	);
 	await drag(browser, rectangle.left + 8, rectangle.top + 8, "left");
 	await browser.eval(

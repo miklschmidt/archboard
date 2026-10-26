@@ -1,11 +1,11 @@
 ---
 id: TASK-549.11
 title: Select, focus, and filter a reading
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T18:32:00Z'
+updated_date: '2026-10-26T18:44:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,16 +45,16 @@ TASK-549.10
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A reader selects by dragging, toggles subjects with Ctrl/Cmd-click, and focuses the result. Keyboard users receive equivalent actions.
-- [ ] #2 Space-drag and middle-button drag pan. Escape clears selection. Selection and highlighting never wait for layout or flood browser history.
-- [ ] #3 Focus preserves mixed ancestor and descendant selections. It expands only the required paths and retains necessary endpoint context.
-- [ ] #4 Visible controls filter relationship kinds and groups. Hidden selections retain an inspector count and reveal action. These actions change no architecture files.
+- [x] #1 A reader selects by dragging, toggles subjects with Ctrl/Cmd-click, and focuses the result. Keyboard users receive equivalent actions.
+- [x] #2 Space-drag and middle-button drag pan. Escape clears selection. Selection and highlighting never wait for layout or flood browser history.
+- [x] #3 Focus preserves mixed ancestor and descendant selections. It expands only the required paths and retains necessary endpoint context.
+- [x] #4 Visible controls filter relationship kinds and groups. Hidden selections retain an inspector count and reveal action. These actions change no architecture files.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -82,4 +82,12 @@ The gesture slice passes its red-to-green browser owner. Primary dragging from e
 Focus now captures selected canonical identities in the router address, preserves mixed ancestors and descendants, and opens only required containment paths with direct endpoint context. Collapsed private self-relationships do not invent visible self-loops. Back, Forward, and reload restore focus without changing model revisions. The focused browser owner passes one case and six assertions. Source/frontend types and full lint pass with zero findings. Filters, hidden/reveal behavior, final documentation, and adoption remain pending.
 
 The filter and Focus browser owners pass two cases and fourteen assertions, including partial/all-missing focus, relationship/group visibility, hidden selection details, Reveal, Back, reload, and unchanged revisions. Filters reuse the existing dropdown checkbox owner and its keyboard dismissal. Source/frontend types and evaluation metadata pass. Documentation and coverage now describe the delivered selection workflow. Browser application@TASK-549.11 is updated at version169. Final integrated regressions, visual inspection, proposal adoption, and closure remain.
+
+Final integrated evidence: nine distinct browser cases and108assertions pass. Owners cover selection1/5, gestures1/6, focus1/9, filters1/6, navigation3/19, structure1/9, and legacy exploration1/54. Both extra boundary REDs are fixed: Space works before canvas focus, and explicit self-connection focus stays visible. The filter owner now observes menu opening and dismissal before actions; two serial runs pass without product timing changes. Source/frontend types, full lint, formatting,16scope cases/25assertions,81API/consumer cases, and evaluation metadata pass. Parent inspected the focused UI, filters, and architecture render. Browser application@TASK-549.11 is adopted as dfw8YWLy at version170. The affected code check has zero warnings; ten unrelated warnings remain elsewhere. All29prior variants, views, and decision records remain intact. The simplification pass keeps one router authority, one transient selection owner, the existing camera and atlas, one projection boundary, and the shared menu checkbox. Renderer width stays60; known board245/188 remains TASK-549.24. No full-gate success, push, or PR readiness is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Readers can select modules and relationships by pointer, drag, or keyboard, then focus the exact identities with required containment and endpoint context. Filters keep complete architectural meaning and hidden selections, with an explicit reveal action. Selection stays independent of layout and browser history; focus and filters restore through the existing router. Browser and public contract evidence passes. Architecture, consumer guidance, ADRs, and coverage match delivery. The complete TASK-549 specification and its final review remain open.
+<!-- SECTION:FINAL_SUMMARY:END -->

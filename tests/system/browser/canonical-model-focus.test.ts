@@ -217,6 +217,24 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"the underlying scope after clearing missing focus",
 		WAIT,
 	);
+	partial.searchParams.set("focusA", "Shop#Private");
+	await browser.run(["open", partial.href]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Private"]') !== null`,
+			),
+		Boolean,
+		"the explicitly focused authored self-connection",
+		WAIT,
+	);
+	await pollUntil(
+		() => drawnModules(browser),
+		(ids) => ids.includes("Shop#Hidden"),
+		"the self-connection scene",
+		WAIT,
+	);
+	expect(await drawnModules(browser)).toEqual(["Shop#Gateway", "Shop#Hidden"]);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);
