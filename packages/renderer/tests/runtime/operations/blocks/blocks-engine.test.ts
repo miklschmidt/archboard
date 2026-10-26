@@ -501,37 +501,47 @@ test("a line out of nested containers by their walls runs level between them", a
 });
 
 /**
- * Where a route crosses a box's side walls.
+ * Where a route crosses a box's walls.
  * @param route The route.
  * @param box The box.
- * @returns Each crossing, as its wall and height.
+ * @returns Each crossing, as its wall and where along it.
  */
-function sideWallCrossings(
+function wallCrossings(
 	route: readonly { x: number; y: number }[],
 	box: { x: number; y: number; width: number; height: number },
 ): string[] {
 	return route.slice(1).flatMap((end, index) => {
 		const start = route[index]!;
-		if (start.y !== end.y || start.y <= box.y || start.y >= box.y + box.height) return [];
-		const [low, high] = [Math.min(start.x, end.x), Math.max(start.x, end.x)];
-		return [box.x, box.x + box.width]
-			.filter((x) => low < x && x < high)
-			.map((x) => `${x === box.x ? "left" : "right"}:${start.y}`);
+		if (start.y === end.y && start.y > box.y && start.y < box.y + box.height) {
+			const [low, high] = [Math.min(start.x, end.x), Math.max(start.x, end.x)];
+			return [box.x, box.x + box.width]
+				.filter((x) => low < x && x < high)
+				.map((x) => `${x === box.x ? "left" : "right"}:${start.y}`);
+		}
+		if (start.x === end.x && start.x > box.x && start.x < box.x + box.width) {
+			const [low, high] = [Math.min(start.y, end.y), Math.max(start.y, end.y)];
+			return [box.y, box.y + box.height]
+				.filter((y) => low < y && y < high)
+				.map((y) => `${y === box.y ? "top" : "bottom"}:${start.x}`);
+		}
+		return [];
 	});
 }
 
 // Reduced from Codex realtime voice (TASK-536): a container stood each of
 // its own ports on a side wall level with the pin its lines reach, so the
 // ports of an RPC and a call out of one block stood on one point. The two
-// lines drew as one there, and libavoid finds no route to the later of two
-// pins on one point of a block: on the whole board three trunks took a
-// dogleg through the Chat conversations container and its Workhorse list.
-test("lines of two kinds out of a container's side wall cross it apart", async () => {
+// lines drew as one there, and the later of two pins on one point of a
+// block found no route: on the whole board three trunks took a dogleg
+// through the Chat conversations container and its Workhorse list. The
+// core lays this fixture's lines out of the container's bottom wall, so
+// the test reads every wall.
+test("lines of two kinds out of a container cross its walls apart", async () => {
 	const content = orderedFixture(wallPortKinds);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const routes = corridorPoints(drawn.svg);
 	const [rpc, call] = ["MZtuHuMT", "o63C7KPd"].map((id) =>
-		sideWallCrossings(routes.get(id)!, drawn.atlas.nodes["Fvl3uDPi"]!),
+		wallCrossings(routes.get(id)!, drawn.atlas.nodes["Fvl3uDPi"]!),
 	);
 	expect(rpc!.length * call!.length).toBeGreaterThan(0);
 	expect(rpc!.filter((crossing) => call!.includes(crossing))).toEqual([]);

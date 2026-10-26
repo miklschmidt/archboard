@@ -6,7 +6,7 @@
 use crate::ecma::{abs, js_max, js_min, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
-use crate::track::channels::spread_ports;
+use crate::track::channels::{spread_along, spread_ports};
 use crate::track::scene::Set;
 
 use super::super::laid::SAME;
@@ -131,55 +131,69 @@ impl PackLayout<'_> {
     }
 
     /// Place the block's own ports on its side walls, within the block: each
-    /// level with the pins its lines reach on that wall of their blocks, else
-    /// their middle, between where the packed items start and end.
+    /// level with the pins its lines reach (`level_of`), and a lane from the
+    /// others on its wall, between where the packed items start and end.
+    /// Ports of two kinds that reach one block want one place: on one point
+    /// they drew the two lines as one, and the later of two pins on one point
+    /// of a block found no route, so on Codex realtime voice (Blocks) three
+    /// trunks out of Workhorses took a dogleg through Chat conversations and
+    /// its Workhorse list (TASK-536).
     fn place_walls(&mut self, width: f64, top: f64, bottom: f64) {
-        let walls: Vec<(String, Side)> = self
-            .block
-            .ports
-            .iter()
-            .filter(|&(_, side)| matches!(side, Side::Left | Side::Right))
-            .map(|(port, &side)| (port.clone(), side))
-            .collect();
-        for (port, side) in walls {
-            let reached: Vec<f64> = self
+        for side in [Side::Left, Side::Right] {
+            let mut wanted: Vec<(String, f64)> = self
                 .block
-                .lines
-                .values()
-                .filter_map(|line| {
-                    if line.to == port {
-                        Some(&line.from)
-                    } else if line.from == port {
-                        Some(&line.to)
-                    } else {
-                        None
-                    }
-                })
-                .filter_map(|end| {
-                    let pin = self.tree.pins.get(end.as_str())?;
-                    let owner = self.boxes.get(&self.tree.get(pin.block).id)?;
-                    let (at, on) = self.pin_at(end);
-                    Some(if on == side {
-                        at.y
-                    } else {
-                        owner.y + owner.height / 2.0
-                    })
-                })
+                .ports
+                .iter()
+                .filter(|&(_, &at)| at == side)
+                .map(|(port, _)| (port.clone(), self.level_of(port, side)))
                 .collect();
-            let middle =
-                reached.iter().fold(0.0, |sum, y| sum + y) / js_max(1.0, reached.len() as f64);
-            let y = js_min(bottom, js_max(top, middle));
+            sort_by(&mut wanted, |one, other| one.1 - other.1);
+            let levels: Vec<f64> = wanted.iter().map(|&(_, y)| y).collect();
+            let ys = spread_along((top, bottom), &levels);
             let x = if side == Side::Left { 0.0 } else { width };
-            self.boxes.insert(
-                port,
-                Rect {
-                    x: x - PORT / 2.0,
-                    y: y - PORT / 2.0,
-                    width: PORT,
-                    height: PORT,
-                },
-            );
+            for ((port, _), y) in wanted.into_iter().zip(ys) {
+                self.boxes.insert(
+                    port,
+                    Rect {
+                        x: x - PORT / 2.0,
+                        y: y - PORT / 2.0,
+                        width: PORT,
+                        height: PORT,
+                    },
+                );
+            }
         }
+    }
+
+    /// Where one of the block's own ports on a side wall wants to stand: level
+    /// with the pins its lines reach on that wall of their blocks, else with
+    /// their blocks' middle.
+    fn level_of(&self, port: &str, side: Side) -> f64 {
+        let reached: Vec<f64> = self
+            .block
+            .lines
+            .values()
+            .filter_map(|line| {
+                if line.to == port {
+                    Some(&line.from)
+                } else if line.from == port {
+                    Some(&line.to)
+                } else {
+                    None
+                }
+            })
+            .filter_map(|end| {
+                let pin = self.tree.pins.get(end.as_str())?;
+                let owner = self.boxes.get(&self.tree.get(pin.block).id)?;
+                let (at, on) = self.pin_at(end);
+                Some(if on == side {
+                    at.y
+                } else {
+                    owner.y + owner.height / 2.0
+                })
+            })
+            .collect();
+        reached.iter().fold(0.0, |sum, y| sum + y) / js_max(1.0, reached.len() as f64)
     }
 
     /// Place the block's header and its own ports on every edge, its top and
