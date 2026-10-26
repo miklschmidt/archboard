@@ -129,3 +129,24 @@ The details show the selected module's parent.
 Removing the selected module leaves an explicit missing state without selecting a replacement.
 Pinned historical readings remain unchanged by those current events.
 Unrelated files remain byte-identical.
+
+## Recursive browser readings
+
+A canonical pane reads its model identity, scope, and exact checkpoint from the existing workspace router.
+Opening a module changes the reading and adds a browser history entry.
+Selecting a subject does not add history.
+Reload, Back, and Forward preserve each pane independently, including unavailable readings.
+The reader refuses a model identity that differs from the model in the addressed vault.
+
+A scope shows its immediate children and directly connected outside modules.
+Outside connections remain context without expanding their dependency graph.
+Connections aggregate by directed visible endpoints and relationship kind.
+Inspection retains every authored relationship and distinct label in deterministic order.
+A connection to the scoped module stays on its boundary.
+An authored self-connection remains visible when that module is open.
+
+The renderer prepares a scene key from projected meaning, policy, and complete interface classification.
+The query cache accepts only the scene key for the current reading revision.
+A late result for another key cannot replace that reading.
+File paths, formatting, evidence, and hidden descriptions do not require a new scene.
+The existing camera and selection owners remain independent of layout.

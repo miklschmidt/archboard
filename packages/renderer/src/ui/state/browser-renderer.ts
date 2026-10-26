@@ -13,6 +13,7 @@
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
+import { entryPointsOf } from "#shared/rules/layout/compound-graph.ts";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
 import type {
 	SemanticViewRenderRequest,
@@ -118,17 +119,29 @@ async function drawBoardHere(
 }
 
 /**
- * Draw an already scoped reading through the same local renderer as a board.
- * @param request The content, complete model, and presentation policy.
- * @returns The picture and its interaction geometry.
- * @throws {Error} When the browser renderer is not started or rendering fails.
+ * Prepare a scoped drawing with the renderer's complete interface classification.
+ * @param request The visible content, complete model, and presentation policy.
+ * @returns A stable scene key and its local rendering operation.
  */
-async function drawContentHere(
+function prepareContentHere(
 	request: Omit<SemanticViewRenderRequest, "fonts" | "theme"> & { policy: SemanticPolicy },
-): Promise<RenderedDiagram> {
-	if (started === undefined) throw new Error("Start the browser renderer before drawing content.");
-	await Promise.all([started, loadDiagramIcons(request.policy)]);
-	return renderSemanticView({ ...request, fonts: "linked" });
+) {
+	const { variant, ...visible } = request;
+	const entries = entryPointsOf(request.content, variant ?? request.content);
+	return {
+		key: JSON.stringify([visible, [...entries]]),
+		/**
+		 * Render only after the browser's fonts and icons are available.
+		 * @returns The picture and its interaction geometry.
+		 * @throws {Error} When the browser renderer is not started or rendering fails.
+		 */
+		draw: async (): Promise<RenderedDiagram> => {
+			if (started === undefined)
+				throw new Error("Start the browser renderer before drawing content.");
+			await Promise.all([started, loadDiagramIcons(request.policy)]);
+			return renderSemanticView({ ...request, fonts: "linked" });
+		},
+	};
 }
 
-export { drawBoardHere, drawContentHere, startBrowserRenderer, type BrowserRendererSetup };
+export { drawBoardHere, prepareContentHere, startBrowserRenderer, type BrowserRendererSetup };

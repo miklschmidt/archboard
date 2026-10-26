@@ -362,3 +362,20 @@ The selected module keeps its identity through a rename or reparent.
 Its details identify its parent when it has one.
 Removing that module leaves an explicit missing selection until the reader chooses another subject.
 Exact historical readings keep their original names, containment, and relationships.
+
+## Explore a module
+
+Select a module, then choose Open module.
+The reading shows its immediate children and directly connected outside modules.
+Use the path above the diagram to return to a parent or the repository.
+Browser Back and Forward restore earlier scopes and saved readings.
+The address preserves each pane independently across reload.
+
+Select a connection in the diagram or the Connections list.
+Its details list every underlying relationship, original endpoint, identity, and distinct label.
+Connections with different directions or kinds remain separate.
+The open module shows entry points and callers from the complete architecture.
+A connection to the module itself never names an invented child.
+
+A missing scope or checkpoint stays unavailable until the reader changes the address or restores the missing history.
+Navigation never copies modules, creates a board, or changes architecture files.

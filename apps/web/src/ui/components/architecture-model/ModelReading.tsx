@@ -2,6 +2,11 @@ import { useCallback, useMemo, useState, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import { Button } from "@archboard/ui-kit/components";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
+import {
+	ModelConnections,
+	ConnectionDetails,
+} from "#ui/components/architecture-model/ModelConnections.tsx";
+import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
 import { ModelDiagram } from "#ui/components/architecture-model/ModelDiagram.tsx";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
@@ -74,6 +79,9 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 	const [selected, select] = useState<string | null>(null);
 	const module = model.modules.find((entry) => entry.id === selected);
 	const { children, context } = props.projection;
+	const connection = props.projection.connections.find(({ joins }) =>
+		joins.some((edge) => edge.id === selected),
+	);
 	const clear = useCallback((): void => select(null), []);
 	return (
 		<div className="flex min-h-0 flex-1">
@@ -83,7 +91,7 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 			>
 				<h3 className="text-title mb-4 font-semibold">Modules</h3>
 				{children.length === 0 && (
-					<p className="text-body text-muted-foreground">This model has no modules.</p>
+					<p className="text-body text-muted-foreground">This scope has no child modules.</p>
 				)}
 				<ul data-slot="module-list" className="space-y-1">
 					{children.map((entry) => (
@@ -110,12 +118,19 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 						</ul>
 					</>
 				)}
+				<ModelConnections
+					model={model}
+					connections={props.projection.connections}
+					selected={selected}
+					onSelect={select}
+				/>
 			</nav>
 			<ModelDiagram
 				model={model}
 				projection={props.projection}
 				selected={selected}
 				onSelect={select}
+				onOpen={props.onOpen}
 				reducedMotion={props.reducedMotion}
 			/>
 			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
@@ -124,6 +139,8 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 						<OpenModule id={module.id} onOpen={props.onOpen} />
 						<ModuleDetails module={module} model={model} />
 					</>
+				) : connection !== undefined ? (
+					<ConnectionDetails connection={connection} model={model} />
 				) : selected !== null ? (
 					<div data-slot="module-missing-selection" className="text-body space-y-3">
 						<output className="block">
@@ -134,7 +151,10 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 						</Button>
 					</div>
 				) : (
-					<ModelIntroduction model={model} />
+					<>
+						<ScopeIntroduction model={model} scope={props.scope} />
+						<ModelInterface model={model} projection={props.projection} onSelect={select} />
+					</>
 				)}
 			</div>
 		</div>
@@ -171,6 +191,25 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
 				)}
 			</button>
 		</li>
+	);
+}
+
+/**
+ * Opening a module makes that module the subject of the explanation.
+ * @param props The coherent model and current scope.
+ * @param props.model The complete reading.
+ * @param props.scope The open module, or repository roots.
+ * @returns Authored module meaning or the repository introduction.
+ */
+function ScopeIntroduction(props: { model: Model; scope: string | null }): JSX.Element {
+	const module = props.model.modules.find((entry) => entry.id === props.scope);
+	if (module === undefined) return <ModelIntroduction model={props.model} />;
+	return (
+		<section data-slot="model-scope-introduction" className="space-y-3">
+			<h3 className="text-figure font-display uppercase">{module.name}</h3>
+			{module.responsibility && <p className="text-reading">{module.responsibility}</p>}
+			{module.description && <p className="text-body whitespace-pre-wrap">{module.description}</p>}
+		</section>
 	);
 }
 

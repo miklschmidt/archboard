@@ -11,7 +11,21 @@ type Model = Extract<ArchitectureModelRead, { success: true }>;
  * @returns Complete semantic content without a board or variant document.
  */
 function modelContent(model: Model): VariantContent {
-	return { nodes: model.modules, edges: model.relationships, flows: [], walkthroughs: [] };
+	return {
+		nodes: model.modules.map(
+			({
+				file: _file,
+				schemaVersion: _schema,
+				formerNames: _former,
+				documents: _documents,
+				outgoing: _outgoing,
+				...node
+			}) => node,
+		),
+		edges: model.relationships,
+		flows: [],
+		walkthroughs: [],
+	};
 }
 
 /**
@@ -42,11 +56,14 @@ function projectModel(model: Model, scope: string | null = null) {
 	const kinds = new Set(relevant.map((edge) => edge.kind));
 	const connections = [...kinds]
 		.flatMap((kind) =>
-			overviewLines({
-				...complete,
-				nodes: flat,
-				edges: relevant.filter((edge) => edge.kind === kind),
-			}),
+			overviewLines(
+				{
+					...complete,
+					nodes: flat,
+					edges: relevant.filter((edge) => edge.kind === kind),
+				},
+				new Set(scope === null ? [] : [scope]),
+			),
 		)
 		.toSorted((one, other) => one.line.order - other.line.order);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
@@ -72,11 +89,14 @@ function projectModel(model: Model, scope: string | null = null) {
 			nodes: complete.nodes
 				.filter((node) => visible.has(node.id))
 				.map((node) => {
-					if (scope !== null && node.parent === scope) return node;
-					const { parent: _parent, ...unframed } = node;
+					const { description: _description, binding: _binding, ...drawn } = node;
+					if (scope !== null && node.parent === scope) return drawn;
+					const { parent: _parent, ...unframed } = drawn;
 					return unframed;
 				}),
-			edges: connections.map(({ line }) => line),
+			edges: connections.map(
+				({ line: { anchor: _anchor, description: _description, ...line } }) => line,
+			),
 			flows: [],
 			walkthroughs: [],
 		},
