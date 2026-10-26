@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: Done
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-26T04:26:00Z'
+updated_date: '2026-10-26T04:40:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -117,6 +117,8 @@ Final `archboard check`: exit 0, `configurationValid: true`, `diagnostics: []`.
 Closing evidence (2026-10-25): git grep of packages/codex-realtime-voice for archboard, board, vault, pane, walkthrough, narration, navigator, dock, canvas, semantic change, ADR and TASK citations finds only the browser global navigator (browser-environment.ts) and the two unnamed-host.test.ts assertions that the words are absent. voice-package.test.ts installs the packed package outside the repository, type-checks the README's code and finds no Archboard concept in any packed file. archboard check reports no diagnostics after the adoptions, and the code check comparison has no > line. Gate at 5602f1f86: lint, types, contracts and format pass; the voice package 1142 pass, test:system 260 pass, test:repository 153 pass, test:serial-browser passes; test:modules 4973 pass and 4 fail, all Track first-layout timing cases in packages/renderer (4.3 to 9.1 s on a shared machine at high load). The user waived renderer performance gates because the renderer is being rewritten. PR #2 carries the reviewer's walkthrough, recorded on Codex realtime voice and removed again (5a47f709a).
 
 Follow-up fixes (2026-10-26), after the branch was rebased onto the signed upstream main: bee542ed4 checks the payload object the host passed, because the z.record copy left out an own __proto__ key (a case in announce.test.ts fails without it); 294d54ab6 keys browser-tabs.ts by browserId, which every caller passes; 65d4e0100 says the timing package also times the packages Archboard publishes; 2ae2d45fd renames the dynamic-tool context authority's paneId to linkKey (issueAndRevalidateLinkAuthority, executableLinkKeyFor), because it holds a thread link key while an approval binding's paneId is a real pane. Only the authority's token is stored, so no record changes.
+
+Follow-up review (gpt-6.1-sol, xhigh) of bee542ed4 through 2ae2d45fd: Spec found two gaps in the payload check, fixed in c16f06d79: an array subclass passed the class-instance rule, and values that only an array's iterator yields went unchecked. Three regression cases fail without the fix. Standards found the thread-link rename unfinished in four places, fixed in 73434c41f with no change in behaviour. The voice package 1145 pass, the workbench 390 pass, the packed-package test 1 pass; types, lint and format pass. A second review of the rebase onto the signed main found no merge defect; apps/cli 128 pass and the drawing-integrity tests 6 pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

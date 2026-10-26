@@ -175,10 +175,10 @@ function callIsExecuting(
 }
 
 /**
- * Exact caller/target and pane-context authority over live link and epoch
+ * Exact caller/target and thread-link context authority over live link and epoch
  * evidence.
- * @param options The identities, the epoch store, the link port, which tab
- * session started a thread, and how one session's context is read.
+ * @param options The identities, the epoch store, the link port, which workhorse
+ * started a thread, and how its context is read.
  * @returns The adapters.
  */
 export function createServerDynamicAuthorityAdapters(

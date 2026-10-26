@@ -291,7 +291,7 @@ export function optionsFor(
 	const completedTransportRequestIds = new Set<string>();
 	const contextReads: Array<{ readonly operationId: OperationId; readonly kind: string }> = [];
 	const contextAuthority: DynamicContextAuthority = {
-		token: authorityToken("pane-authority"),
+		token: authorityToken("thread-link-authority"),
 		linkKey: "link-1",
 		childId: caller.childId,
 		epoch: caller.epoch,
