@@ -271,8 +271,10 @@ async function proposalCandidate(
 	const scopes = proposalScopes(structure.scopes, predecessor.manifest.id, existing);
 	requireSubjectClaim(vault, request, scopes);
 	updateChanges(proposal, baseline, draft);
-	if (existing === undefined)
+	if (existing === undefined) {
 		proposal.baseline = await retainBaseline(vault, request, predecessor, proposal);
+		blockNewProposal(proposal, predecessor, request);
+	}
 	const candidate = proposalInputs(captured, proposal, existing);
 	if (!candidate.raw.success) return candidate.raw;
 	return {
@@ -285,6 +287,27 @@ async function proposalCandidate(
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
 		dependencies: proposalDependencies(proposal),
+	};
+}
+/**
+ * Expose inherited waiting as soon as a dependent draft exists.
+ * @param proposal The newly retained compact draft.
+ * @param predecessor The coherent but possibly unsettled predecessor.
+ * @param request The complete creation intent.
+ */
+function blockNewProposal(
+	proposal: Proposal,
+	predecessor: ArchitectureModel,
+	request: Request,
+): void {
+	const parent = predecessor.selectedState;
+	if (parent?.standing === undefined) return;
+	proposal.standing = {
+		against: parent.id,
+		baseline: proposal.baseline,
+		atRevision: request.expectedRevision.digest,
+		issues: [],
+		blockedBy: parent.standing.blockedBy ?? parent.id,
 	};
 }
 /**
