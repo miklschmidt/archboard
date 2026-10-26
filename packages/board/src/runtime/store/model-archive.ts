@@ -10,9 +10,16 @@ import {
 	type ArchitectureModelRead,
 } from "#shared/schemas/model.ts";
 
+import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
+
 const ARCHIVE_REF = "refs/heads/archboard-history";
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
-	.extend({ schemaVersion: z.literal(1), kind: z.literal("checkpoint"), vault: z.string() })
+	.extend({
+		schemaVersion: z.literal(1),
+		kind: z.literal("checkpoint"),
+		vault: z.string(),
+		edit: ArchitectureModuleEditSchema.optional(),
+	})
 	.strict();
 const ArchiveRecordSchema = z.discriminatedUnion("kind", [
 	CheckpointRecordSchema,
@@ -26,11 +33,13 @@ class ArchiveError extends Error {
 	 * @param code The shared architecture failure code.
 	 * @param message The underlying failure.
 	 * @param checkpoint The unavailable object or reserved ref.
+	 * @param subjects The affected architecture identities.
 	 */
 	constructor(
 		readonly code: Extract<ArchitectureModelRead, { success: false }>["code"],
 		message: string,
 		readonly checkpoint = ARCHIVE_REF,
+		readonly subjects: string[] = [],
 	) {
 		super(message);
 	}
@@ -358,6 +367,39 @@ async function appendCheckpoint(
 }
 
 /**
+ * Prepare every archive commit that installation can need before any current file changes.
+ * @param context The caller's checkout.
+ * @param checkpoint The prepared architecture checkpoint.
+ * @returns A signed conditional append plan, or an already-retained checkpoint.
+ */
+async function prepareCheckpointAppend(context: ArchiveContext, checkpoint: string) {
+	const expected = await archiveTip(context);
+	if (expected !== undefined && (await isArchiveAncestor(context, checkpoint, expected)))
+		return { checkpoint, expected, candidate: expected };
+	await assertArchiveWritable(context);
+	return { checkpoint, expected, candidate: await appendCandidate(context, checkpoint, expected) };
+}
+
+/**
+ * Install a prepared archive ref without invoking a signer after current-file changes.
+ * @param context The caller's checkout.
+ * @param plan The signed append prepared before installation.
+ */
+async function commitCheckpointAppend(
+	context: ArchiveContext,
+	plan: Awaited<ReturnType<typeof prepareCheckpointAppend>>,
+): Promise<void> {
+	const latest = await archiveTip(context);
+	if (latest !== undefined && (await isArchiveAncestor(context, plan.checkpoint, latest))) return;
+	await assertArchiveWritable(context);
+	if (!(await conditionalAppend(context, plan.candidate, plan.expected)))
+		throw new ArchiveError(
+			"ARCHIVE_BUSY",
+			"The archive advanced after signed preparation. Retry model recover to prepare its join before any further file changes.",
+		);
+}
+
+/**
  * Determine whether a recorded source commit remains available.
  * @param context The caller's checkout.
  * @param source The retained source association.
@@ -494,6 +536,9 @@ async function archiveRecords(context: ArchiveContext, tips?: string[]) {
 }
 
 export {
+	optionalValue,
+	prepareCheckpointAppend,
+	commitCheckpointAppend,
 	readCheckpointInputs,
 	archiveRecords,
 	retainOperation,

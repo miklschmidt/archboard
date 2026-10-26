@@ -1,5 +1,5 @@
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
-import type { Express, Response } from "express";
+import type { Express } from "express";
 import { z } from "zod";
 import {
 	readArchitectureModel,
@@ -7,12 +7,9 @@ import {
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
-import {
-	ArchitectureCheckpointRequestSchema,
-	type ArchitectureModelRead,
-	type ArchitectureCheckpointRetain,
-	type ArchitectureCheckpointList,
-} from "@archboard/board/model";
+import { ArchitectureCheckpointRequestSchema } from "@archboard/board/model";
+import { respond } from "#server/routes/architecture/model-response.ts";
+import { mountArchitectureEditRoutes } from "#server/routes/architecture/model-edit-routes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 
 const QuerySchema = z
@@ -26,42 +23,13 @@ const ListQuerySchema = QuerySchema.pick({ vault: true });
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 	vault: z.string().optional(),
 });
-const failureStatuses: Partial<
-	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
-> = {
-	MODEL_NOT_FOUND: 404,
-	MODULE_NOT_FOUND: 404,
-	ARCHITECTURE_UNAVAILABLE: 404,
-	MODULE_AMBIGUOUS: 409,
-	LEGACY_AUTHORITY: 409,
-	STALE_REVISION: 409,
-	OPERATION_REUSED: 409,
-	ARCHIVE_NOT_INITIALIZED: 409,
-	ARCHIVE_IN_USE: 409,
-	ARCHIVE_BUSY: 409,
-};
-
-/**
- * Keep runtime results intact at the HTTP boundary.
- * @param res The outgoing HTTP response.
- * @param result The shared architecture outcome.
- */
-function respond(
-	res: Response,
-	result: ArchitectureModelRead | ArchitectureCheckpointRetain | ArchitectureCheckpointList,
-): void {
-	res
-		.set("Cache-Control", "no-store")
-		.status(result.success ? 200 : (failureStatuses[result.code] ?? 422))
-		.json(result);
-}
-
 /**
  * Expose the shared current and retained architecture contracts.
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
 	mountArchitecturePublicationRoutes(app);
+	mountArchitectureEditRoutes(app);
 	app.get("/api/architecture/model", requireVault, async (req, res) => {
 		const query = QuerySchema.safeParse(req.query);
 		if (!query.success) {

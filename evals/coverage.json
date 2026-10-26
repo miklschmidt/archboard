@@ -1084,6 +1084,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/history/publication.test.ts, fetch-history.test.ts, concurrent-publication.test.ts and archive-boundary.test.ts; tests/system/semantic-boards/model-read.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical description edit: subject claims, complete read tokens, signed preparation, durable recovery and idempotent completion",
+					"expectedUse": "claim qualified modules, edit one description with the complete observed token and explicit current target, retry the same operation after a lost response, preserve foreign bytes and restore checkout context before recovery",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit and tests/system/semantic-boards/model-read.test.ts; visible ownership, stale readings and reconnect: tests/system/browser/canonical-model-viewer.test.ts; fixture examples/canonical-model/README.md; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

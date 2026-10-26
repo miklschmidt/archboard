@@ -287,3 +287,110 @@ test("publication adapters preserve runtime status across a server restart", asy
 	);
 	expect(malformed.status).toBe(400);
 }, 45_000);
+
+test("CLI and HTTP share claimed edit outcomes and an event connection starts with fresh coherent content", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	const current = readArchitectureModel(vault);
+	if (!current.success || current.manifest.current === null)
+		throw new Error(JSON.stringify(current));
+	const target = { model: current.manifest.id, state: current.manifest.current.id };
+	const claimResponse = await fetch(`${server.base}/api/architecture/claims`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			vault,
+			target,
+			writer: "surface-agent",
+			reason: "explaining routing",
+			subjects: ["Shop#Gateway"],
+		}),
+	});
+	expect(claimResponse.status).toBe(200);
+	const {
+		ArchitectureClaimResultSchema,
+		ArchitectureModuleEditResultSchema,
+		ArchitectureEventSchema,
+	} = await import("@archboard/board/model");
+	const claim = ArchitectureClaimResultSchema.parse(await claimResponse.json());
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	const request = {
+		target,
+		subject: "Shop#Gateway",
+		expectedRevision: current.revision,
+		operationId: "surface-edit",
+		writer: "surface-agent",
+		claim: claim.claim.id,
+		description: "A durable surface edit.",
+	};
+	const cli = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "edit", "--doing", "explaining routing"],
+		input: JSON.stringify(request),
+	});
+	expect(cli.status, cli.stderr).toBe(0);
+	const { vault: _vault, ...answer } = z
+		.record(z.string(), z.unknown())
+		.parse(JSON.parse(cli.stdout));
+	const result = ArchitectureModuleEditResultSchema.parse(answer);
+	expect(result).toMatchObject({ success: true, applied: true, cleanup: "complete" });
+	if (!result.success) throw new Error(JSON.stringify(result));
+	const retry = await fetch(`${server.base}/api/architecture/module`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ ...request, vault, doing: "explaining routing" }),
+	});
+	expect(retry.status).toBe(200);
+	expect(await retry.json()).toEqual(result);
+	const malformed = await fetch(
+		`${server.base}/api/architecture/module?${new URLSearchParams({ vault })}`,
+		{ method: "POST", headers: { "Content-Type": "application/json" }, body: "[]" },
+	);
+	expect(malformed.status).toBe(400);
+
+	const controller = new AbortController();
+	try {
+		const stream = await fetch(
+			`${server.base}/api/architecture/events?${new URLSearchParams({ vault })}`,
+			{ signal: controller.signal },
+		);
+		expect(stream.headers.get("content-type")).toContain("text/event-stream");
+		const reader = stream.body!.getReader();
+		const first = new TextDecoder().decode((await reader.read()).value);
+		const data = first.split("\n").find((line) => line.startsWith("data: "));
+		expect(data).toBeDefined();
+		const event = ArchitectureEventSchema.parse(JSON.parse(data!.slice(6)));
+		expect(event).toMatchObject({
+			type: "architecture_snapshot",
+			vault,
+			reading: {
+				success: true,
+				modules: expect.arrayContaining([
+					expect.objectContaining({ id: "Shop#Gateway", description: request.description }),
+				]),
+			},
+			claims: { success: true, claims: [{ id: claim.claim.id }] },
+		});
+	} finally {
+		controller.abort();
+	}
+	const taken = await fetch(`${server.base}/api/architecture/claims/take-back`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ vault, claim: claim.claim.id, origin: "human" }),
+	});
+	expect(taken.status).toBe(200);
+	const rejected = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "edit", "--doing", "explaining routing"],
+		input: JSON.stringify({
+			...request,
+			operationId: "revoked-edit",
+			expectedRevision: result.after,
+		}),
+	});
+	expect(rejected.status, rejected.stderr).toBe(2);
+	expect(JSON.parse(rejected.stdout)).toMatchObject({ success: false, code: "CLAIM_REVOKED" });
+});
