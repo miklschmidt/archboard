@@ -7,11 +7,16 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
+	MODULE_NOT_FOUND:
+		"Read the model and use an existing qualified module ID or a unique current or former name.",
+	MODULE_AMBIGUOUS: "Use one of the qualified module identities in the diagnostic.",
 	RELATIONSHIP_NOT_FOUND: "Read the model relationships and use an existing qualified identity.",
 	NODE_HAS_CHILDREN: "Reparent or remove the remaining children in the same batch.",
 	MODEL_BUSY: "Retry after the short installation lease releases.",
 	TARGET_CHANGED: "Read the intended model and current state again before preparing a new intent.",
-	CLAIM_REQUIRED: "Claim every affected module identity before editing it.",
+	CLAIM_REQUIRED:
+		"Claim every affected existing subject and required model structure scope before editing.",
 	CLAIM_HELD: "Wait for the owner to release the scope, or ask the reader to take the claim back.",
 	CLAIM_REVOKED:
 		"Stop the former intent. Obtain a new explicit claim before preparing another edit.",
