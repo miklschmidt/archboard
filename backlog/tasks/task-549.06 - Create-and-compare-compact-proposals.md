@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:49:00Z'
+updated_date: '2026-10-26T19:56:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -103,4 +103,6 @@ Parent browser proposal Browser application@TASK-549.06 now describes state sele
 First browser slice passes one case and seven assertions. Real HTTP proposal creation updates the existing state picker, selectedState drives explicit draft/current labels, module and flow changes read from the selected draft, reload preserves state, Current stays unchanged, and an exact checkpoint retains draft identity. State and checkpoint query keys are distinct and router selections are mutually exclusive. Source/frontend types and corrected full lint pass. The comparison summary shows the backend base metadata. Detailed comparison projection, mutable draft refresh, refusal/planning coverage, complete docs, and final adoption remain pending.
 
 The selected-draft update regression failed after a successful public edit, then passed after the existing event feed refreshed mutable reading keys. Current snapshots still populate only the default current query. Exact checkpoint keys remain separate and retain original draft flow content. The fixture now claims the model structure scope required by proposal metadata edits. Browser owner1/7, source/frontend types, and full lint pass. Detailed comparisons, claim-state labels, planning/refusal coverage, final docs, and adoption remain pending.
+
+Draft claims now name their target state independently of the pane reading. The new visible-claim regression failed with only subject names, then passed after state metadata resolved the claim label. The proposal browser owner remains1case/7assertions, with source/frontend types and full lint passing. Comparison detail and projection work is next.
 <!-- SECTION:NOTES:END -->
