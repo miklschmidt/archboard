@@ -258,6 +258,8 @@ fn a_board_that_could_stack_asks_both_whole_solves_beside_its_partial_ones() {
     let mut drawing = Box::pin(drawing(&host, &content, &measured));
     let mut context = Context::from_waker(Waker::noop());
     assert!(drawing.as_mut().poll(&mut context).is_pending());
+    // The whole solves are asked once every solve the render is sure to need is.
+    assert!(drawing.as_mut().poll(&mut context).is_pending());
     let asked = stacking_solves(&host);
     assert_eq!(
         asked
@@ -321,6 +323,7 @@ fn reversing_reply_order_keeps_the_chosen_drawing() {
         let mut drawing = Box::pin(drawing(&host, &content, &measured));
         let mut context = Context::from_waker(Waker::noop());
         assert!(drawing.as_mut().poll(&mut context).is_pending());
+        assert!(drawing.as_mut().poll(&mut context).is_pending());
         let asked = stacking_solves(&host);
         let partials: Vec<usize> = asked.iter().filter(|one| one.1).map(|one| one.0).collect();
         let wholes: Vec<(usize, bool)> = asked
@@ -351,6 +354,7 @@ fn dropping_a_layout_cancels_its_solves_and_late_replies_do_not_answer_a_new_lay
     let (content, measured) = stacking_board();
     let mut first = Box::pin(drawing(&host, &content, &measured));
     let mut context = Context::from_waker(Waker::noop());
+    assert!(first.as_mut().poll(&mut context).is_pending());
     assert!(first.as_mut().poll(&mut context).is_pending());
     drop(first);
     assert!(host.0.borrow().iter().all(|asked| asked.dropped));
