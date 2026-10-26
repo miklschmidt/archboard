@@ -38,7 +38,7 @@ interface DiagramGestureInputs {
 	 * The person picked a subject out, or cleared the selection.
 	 * @param id The semantic id, or null.
 	 */
-	readonly onSelect: (id: string | null) => void;
+	readonly onSelect: (id: string | null, toggle?: boolean) => void;
 	/**
 	 * The pointer moved over the diagram with nothing pressed.
 	 * @param event The move.
@@ -225,7 +225,10 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			}
 			// A click with no press behind it can only have been synthesised; there
 			// its own target is the only thing there is to go on.
-			onSelect(landed === null ? subjectAt(event.target, atlas) : landed.subject);
+			onSelect(
+				landed === null ? subjectAt(event.target, atlas) : landed.subject,
+				event.ctrlKey || event.metaKey,
+			);
 		},
 		[onSelect, atlas],
 	);
