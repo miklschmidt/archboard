@@ -18,7 +18,7 @@ use crate::geometry::Rect;
 use crate::track::grid::grids;
 use crate::track::scene::Map;
 use crate::track::score::{
-    Plan, Weighed, crossings_of, score_of, scores_better, sinks, wrap_plans,
+    Plan, Weighed, crossings_of, score_of, scores_better, sinks, unsupported, wrap_plans,
 };
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
@@ -354,6 +354,7 @@ fn wraps_of(whole: &Laid, tree: &BlockTree, block: BlockId) -> Vec<Plan> {
     });
     wrap_plans(&runs)
         .into_iter()
+        .filter(|plan| !unsupported(plan, |card| held.cluster_of.get(card).cloned()))
         .filter(|plan| {
             runs.iter()
                 .all(|(ids, _)| ids.iter().all(|id| plan.get(id) == plan.get(&ids[0])))
