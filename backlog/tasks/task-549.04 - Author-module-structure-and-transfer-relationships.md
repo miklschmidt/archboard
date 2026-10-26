@@ -3,9 +3,9 @@ id: TASK-549.04
 title: Author module structure and transfer relationships
 status: In Progress
 assignee:
-  - '@codex'
+  - '@codex-parent'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T15:04:00Z'
+updated_date: '2026-10-26T15:14:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -66,6 +66,8 @@ TASK-549.03
 4. Publish the stable shared request/result and event contract in the external task-549.04-contract.md handoff. Add normal CLI and HTTP adapters without frontend changes.
 5. Update affected ADRs, consumer guidance, examples, and evaluation coverage. Run focused behavior, types, lint, formatting, semantics, and affected code checks. Simplify the resulting implementation.
 6. Merge the latest integration tip, preserve all histories, leave proposals draft, release claims, stop the worktree server, and commit signed checkpoints. Keep TASK-549.04 In Progress for parent browser acceptance.
+
+7. Parent browser closure: exercise live rename, relationship source transfer, root additions, reparenting, removal, and pinned historical readings through the existing browser adapter and public HTTP writer. Show the selected module parent and preserve explicit missing selection. Merge the publication integration before final validation, reconcile task proposals, and adopt only after complete evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
