@@ -332,14 +332,12 @@ function focusCamera(viewport: Size, target: Extract<FitTarget, { kind: "focus" 
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function cameraFor(viewport: Size, target: FitTarget): Camera | null {
-	switch (target.kind) {
-		case "whole":
-			return fitCamera(viewport, target.content);
-		case "around":
-			return aroundCamera(viewport, target.subject, target.around);
-		case "focus":
-			return focusCamera(viewport, target);
+	if (target.kind === "whole") {
+		return fitCamera(viewport, target.content);
 	}
+	return target.kind === "around"
+		? aroundCamera(viewport, target.subject, target.around)
+		: focusCamera(viewport, target);
 }
 
 /**
