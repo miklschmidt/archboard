@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 138,
+	"version": 139,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T15:44:49.736Z",
+	"updatedAt": "2026-10-26T15:59:04.658Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -105371,7 +105371,7 @@
 		{
 			"id": "lqAW8lFC",
 			"name": "TASK-549.16 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mZJIVvtW",
 			"documents": [
 				{
@@ -110405,7 +110405,7 @@
 		{
 			"id": "9nF2q4sV",
 			"name": "TASK-549.17",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "lqAW8lFC",
 			"summary": "Initialize private archives through the existing engine",
 			"documents": [
@@ -115438,7 +115438,7 @@
 			}
 		}
 	],
-	"current": "lqAW8lFC",
+	"current": "9nF2q4sV",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -115614,6 +115614,12 @@
 			"from": "mZJIVvtW",
 			"at": "2026-10-26T14:32:29.325Z",
 			"reason": "Explicit history publication and browser recovery are implemented and tested"
+		},
+		{
+			"variant": "9nF2q4sV",
+			"from": "lqAW8lFC",
+			"at": "2026-10-26T15:59:04.658Z",
+			"reason": "TASK-549.17 private archive initialization is implemented and proven through the approved public runtime"
 		}
 	],
 	"shelvings": [
